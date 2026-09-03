@@ -22,6 +22,7 @@ import org.keycloak.truststore.TruststoreProvider;
 
 import io.netty.handler.ssl.OpenSsl;
 import io.quarkus.arc.Arc;
+import io.vertx.core.http.HttpClient;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.JksOptions;
@@ -41,8 +42,11 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
     public static final String PROVIDER_ID = "vertx";
 
     private volatile WebClient webClient;
+    private volatile HttpClient httpClient;
     private Config.Scope config;
+    private Config.Scope vertxConfig;
     private long maxConsumedResponseSize;
+    private long socketTimeoutMs;
     private int maxRetries;
     private long initialBackoffMillis;
     private double backoffMultiplier;
@@ -52,8 +56,8 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
     @Override
     public HttpClientProvider create(KeycloakSession session) {
         lazyInit(session);
-        return new VertxHttpClientProvider(webClient, maxConsumedResponseSize, maxRetries,
-                initialBackoffMillis, backoffMultiplier, useJitter, jitterFactor);
+        return new VertxHttpClientProvider(webClient, httpClient, maxConsumedResponseSize, socketTimeoutMs,
+                maxRetries, initialBackoffMillis, backoffMultiplier, useJitter, jitterFactor);
     }
 
     @Override
@@ -63,14 +67,18 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
 
     @Override
     public void init(Config.Scope config) {
-        // Quarkus routes config differently; share the "default" scope like OTelHttpClientFactory
+        // Shared properties (timeouts, pool, etc.) read from "default" scope so users
+        // don't reconfigure when switching v1→v2. Same pattern as OTelHttpClientFactory.
         this.config = Config.scope("connectionsHttpClient", "default");
+        // Vertx-only properties read from the provider's own scope.
+        this.vertxConfig = config;
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         maxConsumedResponseSize = config.getLong("max-consumed-response-size",
                 HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE);
+        socketTimeoutMs = config.getLong("socket-timeout-millis", 5000L);
 
         maxRetries = config.getInt("max-retries", 0);
         initialBackoffMillis = config.getLong("initial-backoff-millis", 1000L);
@@ -103,48 +111,15 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
 
     @Override
     public List<ProviderConfigProperty> getConfigMetadata() {
+        // Only vertx-specific properties here. Shared properties (socket-timeout-millis,
+        // max-pooled-per-route, etc.) are read from the "default" scope and documented
+        // on DefaultHttpClientFactory's metadata.
         return ProviderConfigurationBuilder.create()
-                .property()
-                .name("socket-timeout-millis")
-                .type("long")
-                .helpText("Socket inactivity timeout.")
-                .defaultValue(5000L)
-                .add()
-                .property()
-                .name("establish-connection-timeout-millis")
-                .type("long")
-                .helpText("Maximum time to establish connection.")
-                .defaultValue(-1L)
-                .add()
-                .property()
-                .name("max-pooled-per-route")
-                .type("int")
-                .helpText("Maximum connections per host.")
-                .defaultValue(64)
-                .add()
-                .property()
-                .name("max-connection-idle-time-millis")
-                .type("long")
-                .helpText("Maximum idle time for pooled connections.")
-                .defaultValue(900000L)
-                .add()
-                .property()
-                .name("disable-trust-manager")
-                .type("boolean")
-                .helpText("Disable trust verification (INSECURE).")
-                .defaultValue(false)
-                .add()
                 .property()
                 .name("openssl-required")
                 .type("string")
                 .helpText("OpenSSL presence policy when HTTP_CLIENT_V2 is enabled: 'warn' (default), 'fail', or 'none'.")
                 .defaultValue("warn")
-                .add()
-                .property()
-                .name("max-retries")
-                .type("int")
-                .helpText("Maximum number of retry attempts for outgoing HTTP requests. Set to 0 to disable retries (default).")
-                .defaultValue(0)
                 .add()
                 .build();
     }
@@ -155,7 +130,8 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
                 if (webClient == null) {
                     Vertx vertx = Arc.requireContainer().instance(Vertx.class).get();
                     WebClientOptions options = buildOptions(session);
-                    webClient = WebClient.create(vertx, options);
+                    httpClient = vertx.createHttpClient(options);
+                    webClient = WebClient.wrap(httpClient, options);
                     logger.info("Vert.x HTTP client initialized (HTTP_CLIENT_V2)");
                 }
             }
@@ -163,7 +139,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
     }
 
     private void checkOpenSslPresence() {
-        String policy = config.get("openssl-required", "warn");
+        String policy = vertxConfig.get("openssl-required", "warn");
         if (!"fail".equals(policy) && !"warn".equals(policy) && !"none".equals(policy)) {
             throw new RuntimeException("Invalid openssl-required value: '" + policy
                     + "'. Valid values: 'fail', 'warn', 'none'.");
@@ -220,17 +196,16 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
             logger.warn("TrustManager is disabled — all certificates will be trusted");
             options.setTrustAll(true);
             options.setVerifyHost(false);
-            return;
-        }
-
-        TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
-        if (truststoreProvider == null || truststoreProvider.getTruststore() == null) {
-            logger.warn("TruststoreProvider is disabled");
         } else {
-            HostnameVerificationPolicy policy = truststoreProvider.getPolicy();
-            options.setVerifyHost(policy != HostnameVerificationPolicy.ANY);
-            options.setTrustOptions(keystoreToJksOptions(truststoreProvider.getTruststore(), null));
-            options.setSsl(true);
+            TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
+            if (truststoreProvider == null || truststoreProvider.getTruststore() == null) {
+                logger.warn("TruststoreProvider is disabled");
+            } else {
+                HostnameVerificationPolicy policy = truststoreProvider.getPolicy();
+                options.setVerifyHost(policy != HostnameVerificationPolicy.ANY);
+                options.setTrustOptions(keystoreToJksOptions(truststoreProvider.getTruststore(), null));
+                options.setSsl(true);
+            }
         }
 
         String clientKeystore = config.get("client-keystore");
@@ -303,10 +278,14 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
         if (!isBlank(noProxy)) {
             for (String host : noProxy.split(",")) {
                 host = host.trim();
+                if (host.startsWith(".")) {
+                    host = host.substring(1);
+                }
                 if (!host.isEmpty()) {
-                    // Vert.x uses glob matching; prefix with *. for suffix matching like no_proxy expects
                     options.addNonProxyHost(host);
-                    options.addNonProxyHost("*." + host);
+                    if (!host.contains("*")) {
+                        options.addNonProxyHost("*." + host);
+                    }
                 }
             }
         }

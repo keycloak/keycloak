@@ -7,18 +7,24 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.ext.web.client.WebClient;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.RequestOptions;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpVersion;
 import org.apache.http.StatusLine;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.entity.BasicHttpEntity;
@@ -28,36 +34,36 @@ import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicStatusLine;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
+import org.jboss.logging.Logger;
 
 public class VertxHttpClientBridge extends CloseableHttpClient {
 
-    private final WebClient webClient;
+    private static final Logger logger = Logger.getLogger(VertxHttpClientBridge.class);
+
+    private final HttpClient httpClient;
     private final VertxHttpClientProvider provider;
 
-    VertxHttpClientBridge(WebClient webClient, VertxHttpClientProvider provider) {
-        this.webClient = webClient;
+    VertxHttpClientBridge(HttpClient httpClient, VertxHttpClientProvider provider) {
+        this.httpClient = httpClient;
         this.provider = provider;
     }
 
     @Override
     protected CloseableHttpResponse doExecute(HttpHost target, HttpRequest request, HttpContext context) throws IOException {
+        if (context != null) {
+            throw new UnsupportedOperationException(
+                    "HttpContext is not supported by the Vert.x HTTP client bridge (HTTP_CLIENT_V2). "
+                    + "Remove the HttpContext parameter or switch back to the Apache HTTP client (HTTP_CLIENT v1).");
+        }
         return provider.executeWithRetry(() -> doExecuteInternal(target, request));
     }
 
     private CloseableHttpResponse doExecuteInternal(HttpHost target, HttpRequest request) throws IOException {
         URI uri = resolveUri(target, request);
         String method = request.getRequestLine().getMethod();
+        long maxSize = provider.getMaxConsumedResponseSize();
 
-        io.vertx.ext.web.client.HttpRequest<Buffer> vertxRequest = webClient.requestAbs(
-                io.vertx.core.http.HttpMethod.valueOf(method), uri.toString());
-
-        for (Header header : request.getAllHeaders()) {
-            vertxRequest.putHeader(header.getName(), header.getValue());
-        }
-
-        // Vert.x timeout() covers the full request lifecycle (pool wait + connect + transfer),
-        // so use the stricter of Apache's split timeouts.
-        long timeoutMs = VertxHttpClientProvider.DEFAULT_TIMEOUT_SECONDS * 1000;
+        long timeoutMs = provider.getEffectiveTimeoutMs();
         if (request instanceof HttpRequestBase) {
             RequestConfig rc = ((HttpRequestBase) request).getConfig();
             if (rc != null) {
@@ -71,43 +77,97 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
                     effectiveTimeout = Math.min(effectiveTimeout, connRequestTimeout);
                 }
                 if (effectiveTimeout < Integer.MAX_VALUE) {
-                    vertxRequest.timeout(effectiveTimeout);
                     timeoutMs = effectiveTimeout;
                 }
             }
         }
 
         Buffer bodyBuffer = null;
-        if (request instanceof HttpEntityEnclosingRequestBase) {
-            HttpEntity entity = ((HttpEntityEnclosingRequestBase) request).getEntity();
+        Header entityContentType = null;
+        Header entityContentEncoding = null;
+        if (request instanceof HttpEntityEnclosingRequest) {
+            HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
             if (entity != null) {
-                if (entity.getContentType() != null && !request.containsHeader(entity.getContentType().getName())) {
-                    vertxRequest.putHeader(entity.getContentType().getName(), entity.getContentType().getValue());
-                }
-                if (entity.getContentEncoding() != null && !request.containsHeader(entity.getContentEncoding().getName())) {
-                    vertxRequest.putHeader(entity.getContentEncoding().getName(), entity.getContentEncoding().getValue());
-                }
                 bodyBuffer = readEntity(entity);
+                entityContentType = entity.getContentType();
+                entityContentEncoding = entity.getContentEncoding();
             }
         }
 
-        CompletableFuture<io.vertx.ext.web.client.HttpResponse<Buffer>> future = new CompletableFuture<>();
+        RequestOptions reqOptions = new RequestOptions()
+                .setMethod(HttpMethod.valueOf(method))
+                .setAbsoluteURI(uri.toString())
+                .setTimeout(timeoutMs);
 
-        if (bodyBuffer != null) {
-            vertxRequest.sendBuffer(bodyBuffer).onComplete(ar -> {
-                if (ar.succeeded()) future.complete(ar.result());
-                else future.completeExceptionally(ar.cause());
-            });
-        } else {
-            vertxRequest.send().onComplete(ar -> {
-                if (ar.succeeded()) future.complete(ar.result());
-                else future.completeExceptionally(ar.cause());
-            });
-        }
+        CompletableFuture<CloseableHttpResponse> future = new CompletableFuture<>();
+        Buffer sendBody = bodyBuffer;
+        Header sendContentType = entityContentType;
+        Header sendContentEncoding = entityContentEncoding;
 
-        io.vertx.ext.web.client.HttpResponse<Buffer> vertxResponse =
-                VertxHttpClientProvider.awaitResult(future, timeoutMs);
-        return toApacheResponse(vertxResponse);
+        httpClient.request(reqOptions).onComplete(reqAr -> {
+            if (reqAr.failed()) {
+                future.completeExceptionally(reqAr.cause());
+                return;
+            }
+
+            HttpClientRequest clientReq = reqAr.result();
+
+            for (Header header : request.getAllHeaders()) {
+                clientReq.putHeader(header.getName(), header.getValue());
+            }
+
+            if (sendContentType != null && !request.containsHeader(sendContentType.getName())) {
+                clientReq.putHeader(sendContentType.getName(), sendContentType.getValue());
+            }
+            if (sendContentEncoding != null && !request.containsHeader(sendContentEncoding.getName())) {
+                clientReq.putHeader(sendContentEncoding.getName(), sendContentEncoding.getValue());
+            }
+
+            clientReq.response().onComplete(respAr -> {
+                if (respAr.failed()) {
+                    future.completeExceptionally(respAr.cause());
+                    return;
+                }
+
+                HttpClientResponse resp = respAr.result();
+                Buffer accumulated = Buffer.buffer();
+                AtomicLong bytesReceived = new AtomicLong();
+                AtomicBoolean aborted = new AtomicBoolean();
+
+                resp.handler(chunk -> {
+                    long total = bytesReceived.addAndGet(chunk.length());
+                    if (total > maxSize) {
+                        if (aborted.compareAndSet(false, true)) {
+                            resp.request().reset();
+                            future.completeExceptionally(new VertxHttpClientProvider.NonRetryableIOException(
+                                    "Response size exceeds limit of " + maxSize + " bytes"));
+                        }
+                    } else {
+                        accumulated.appendBuffer(chunk);
+                    }
+                });
+
+                resp.endHandler(v -> {
+                    if (!aborted.get()) {
+                        future.complete(toApacheResponse(resp, accumulated));
+                    }
+                });
+
+                resp.exceptionHandler(ex -> {
+                    if (!aborted.get()) {
+                        future.completeExceptionally(ex);
+                    }
+                });
+            });
+
+            if (sendBody != null) {
+                clientReq.end(sendBody);
+            } else {
+                clientReq.end();
+            }
+        });
+
+        return VertxHttpClientProvider.awaitResult(future, timeoutMs);
     }
 
     @Override
@@ -154,27 +214,24 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
         }
     }
 
-    private CloseableHttpResponse toApacheResponse(io.vertx.ext.web.client.HttpResponse<Buffer> vertxResponse) {
+    private CloseableHttpResponse toApacheResponse(HttpClientResponse resp, Buffer body) {
         StatusLine statusLine = new BasicStatusLine(HttpVersion.HTTP_1_1,
-                vertxResponse.statusCode(), vertxResponse.statusMessage());
+                resp.statusCode(), resp.statusMessage());
 
         CloseableBasicHttpResponse response = new CloseableBasicHttpResponse(statusLine);
 
-        if (vertxResponse.headers() != null) {
-            for (String name : vertxResponse.headers().names()) {
-                for (String value : vertxResponse.headers().getAll(name)) {
-                    response.addHeader(new BasicHeader(name, value));
-                }
+        for (String name : resp.headers().names()) {
+            for (String value : resp.headers().getAll(name)) {
+                response.addHeader(new BasicHeader(name, value));
             }
         }
 
-        Buffer body = vertxResponse.body();
         if (body != null && body.length() > 0) {
             BasicHttpEntity entity = new BasicHttpEntity();
             entity.setContent(new ByteArrayInputStream(body.getBytes()));
             entity.setContentLength(body.length());
 
-            String contentType = vertxResponse.getHeader("Content-Type");
+            String contentType = resp.getHeader("Content-Type");
             if (contentType != null) {
                 entity.setContentType(contentType);
             }
