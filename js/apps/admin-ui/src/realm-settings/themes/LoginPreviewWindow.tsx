@@ -4,6 +4,7 @@ import { Environment } from "../../environment-types";
 import { joinPath } from "../../utils/joinPath";
 import { usePreviewBackground } from "./BackgroundContext";
 import { LoginForm, LoginPage } from "@patternfly/react-core";
+import { toPf6CssVar } from "./pf5ToPf6Tokens";
 
 type LoginPreviewWindowProps = {
   cssVars: Record<string, string>;
@@ -42,7 +43,11 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
       <style>{`
         .login-preview {
             ${Object.entries(cssVars)
-              .map(([key, value]) => `--pf-t--global--${key}: ${value};`)
+              .map(([key, value]) => {
+                const cssVar = toPf6CssVar(key);
+                return cssVar ? `${cssVar}: ${value};` : undefined;
+              })
+              .filter((line): line is string => line !== undefined)
               .join("\n")}
 
           /* Keycloak login theme variables - override with local/uploaded images */
