@@ -143,4 +143,67 @@ This feature is not yet supported by {project_name}, because Google does not all
 XOAUTH2 is not supported by the AWS-SMTP service.
 The AWS-service requires the use of a password.
 
+If {project_name} runs on AWS, <<amazon-ses-api,sending through the Amazon SES API>> avoids that password entirely.
+
+[[amazon-ses-api]]
+== Sending email through the Amazon SES API
+
+Amazon SES also exposes an HTTPS API, and {project_name} ships an email sender that uses it. Compared with the SMTP interface, it authenticates with ordinary AWS credentials — an IAM role where the deployment has one — instead of a dedicated SES SMTP username and password stored in the realm.
+
+The message itself is unchanged: it is composed exactly as the SMTP sender composes it, from the same realm email settings, and handed to SES as a raw MIME message.
+
+NOTE: This section has been contributed by the Keycloak community. As the Keycloak core team does not have means to test third-party providers, it is provided as-is. If you find this documentation outdated or incomplete, please contribute to improve it.
+
+=== Enabling it
+
+[source,bash]
+----
+bin/kc.sh start --spi-email-sender--provider=aws-ses --spi-email-sender--aws-ses--region=eu-central-1
+----
+
+The provider selection is a build-time option, so it takes effect through {project_name}'s build step, not through a restart alone. The corresponding environment variables are `KC_SPI_EMAIL_SENDER__PROVIDER` and `KC_SPI_EMAIL_SENDER__AWS_SES__REGION`.
+
+The legacy single-dash spelling (`--spi-email-sender-provider`, `KC_SPI_EMAIL_SENDER_PROVIDER`) is still accepted and is the only form older servers understand, which is why it is the spelling the provider's own error messages use.
+
+=== Configuration
+
+|===
+|Option |Environment fallback |Default |Description
+
+|`--spi-email-sender--aws-ses--region`
+|`AWS_REGION`, `AWS_DEFAULT_REGION`
+|_required_
+|Region of the verified SES identity. SES identities are per region, and a send from a different region is denied rather than redirected.
+
+|`--spi-email-sender--aws-ses--endpoint`
+|`AWS_ENDPOINT_URL_SESV2`, `AWS_ENDPOINT_URL`
+|`https://email.<region>.amazonaws.com`
+|Overrides the endpoint, for a VPC endpoint or a FIPS endpoint.
+
+|`--spi-email-sender--aws-ses--configuration-set`
+|
+|
+|SES configuration set to send through, which is how bounce, complaint and open events are published.
+
+|`--spi-email-sender--aws-ses--connect-timeout`
+|
+|`10000`
+|Milliseconds. The realm's own connection timeout, when set, takes precedence.
+
+|`--spi-email-sender--aws-ses--read-timeout`
+|
+|`10000`
+|Milliseconds. The realm's own timeout, when set, takes precedence.
+|===
+
+There is no option for credentials. They are resolved in the order the AWS SDKs use — JVM system properties, environment variables, a web identity token (EKS IRSA), the shared AWS config files, container credentials (ECS and EKS Pod Identity), and finally the EC2 instance metadata service. Shared profiles are read for static keys only: a profile that delegates through `role_arn`, `credential_process` or SSO is skipped rather than resolved. Temporary credentials are refreshed before they expire. On a server that is not on AWS, set `AWS_EC2_METADATA_DISABLED=true` to skip the metadata probe.
+
+The sending principal needs `ses:SendEmail` on the sending identity. A policy written for the SMTP interface grants `ses:SendRawEmail`, which is the action for the v1 API and does not authorize the v2 `SendEmail` operation — such a policy has to be updated, and keeping the old action alongside the new one is what preserves the ability to switch back to SMTP. Because {project_name} only ever sends from the realm's configured *From* address, the policy can be narrowed with a `ses:FromAddress` condition.
+
+=== What the realm still controls
+
+*From*, *From Display Name*, *Reply To*, *Reply To Display Name* and the two timeouts keep their meaning. *Envelope From* is mapped to the SES feedback-forwarding address, which routes bounces and complaints; the SMTP envelope sender itself is fixed by the sending identity's MAIL FROM domain and cannot be set per message over the API. The SMTP host, port and credentials are ignored, since no SMTP connection is made.
+
+An internationalised domain is converted to its ASCII form, as the SMTP sender does. A non-ASCII local part needs the SMTPUTF8 extension, which Amazon SES does not implement, and is rejected before the message is sent.
+
 endif::[]

@@ -36,6 +36,12 @@ When upgrading {project_name} with large database tables, index creation was pre
 
 For installation instructions, see the link:{operatorguide_link}[{operatorguide_name}].
 
+== Amazon SES email sender
+
+{project_name} can now send its email through the Amazon SES API instead of the SES SMTP interface. The SMTP route requires a dedicated SES SMTP username and password derived from a long-lived IAM user secret, stored in the realm; the API route signs the request with the AWS credentials the server already has, including an assumed role on EKS, ECS or EC2.
+
+Enable it with `--spi-email-sender--provider=aws-ses`. The realm's existing email settings — sender, display name, reply-to — keep their meaning, and the message sent is the one {project_name} already composed. For details, see the link:{adminguide_link}#amazon-ses-api[{adminguide_name}].
+
 = Themes
 
 == Redesigned identity provider buttons on the login page

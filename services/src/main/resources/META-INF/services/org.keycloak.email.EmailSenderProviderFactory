@@ -16,3 +16,4 @@
 #
 
 org.keycloak.email.DefaultEmailSenderProviderFactory
+org.keycloak.email.aws.AwsSesEmailSenderProviderFactory
