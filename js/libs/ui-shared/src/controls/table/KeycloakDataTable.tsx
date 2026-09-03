@@ -662,7 +662,9 @@ export function KeycloakDataTable<T>({
         </PaginatingTableToolbar>
       )}
       {loading && noData && !searching && <KeycloakSpinner />}
-      {!loading && noData && !searching && emptyState}
+      {!loading && noData && !searching && (
+        <div data-testid="table-ready">{emptyState}</div>
+      )}
     </>
   );
 }

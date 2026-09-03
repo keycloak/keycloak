@@ -58,8 +58,6 @@ export const SwitchControl = <
             label={labelOn}
             aria-label={props.label}
             isChecked={stringify ? value === "true" : value}
-            isDisabled={props.isDisabled}
-            aria-busy={props.isDisabled}
             onChange={(e, checked) => {
               const value = stringify ? checked.toString() : checked;
               props.onChange?.(e, checked);
