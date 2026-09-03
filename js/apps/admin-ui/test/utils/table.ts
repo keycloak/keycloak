@@ -3,6 +3,25 @@ import { waitForLoadingComplete, waitForLoadingCycle } from "./loading.ts";
 
 const TABLE_LOAD_TIMEOUT_MS = 5_000;
 
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+async function clickLinkWhenAvailable(link: Locator): Promise<boolean> {
+  const candidate = link.first();
+  if ((await candidate.count()) === 0) {
+    return false;
+  }
+
+  try {
+    await candidate.waitFor({ state: "visible", timeout: 500 });
+    await candidate.click({ timeout: 500 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function searchItem(
   page: Page,
   placeHolder: string,
@@ -26,11 +45,46 @@ export async function clickTableRowItem(page: Page, itemName: string) {
   const tableBody = page.locator("table tbody");
   await tableBody.waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
 
-  const link = tableBody
-    .getByRole("link", { name: itemName, exact: true })
-    .first();
-  await expect(link).toBeVisible({ timeout: TABLE_LOAD_TIMEOUT_MS });
-  await link.click();
+  const exactNameRegex = new RegExp(`^${escapeRegex(itemName)}$`, "i");
+
+  for (let attempt = 0; attempt < 6; attempt++) {
+    if (
+      await clickLinkWhenAvailable(
+        tableBody.getByRole("link", { name: itemName, exact: true }),
+      )
+    ) {
+      return;
+    }
+
+    if (
+      await clickLinkWhenAvailable(
+        tableBody.getByRole("link", { name: exactNameRegex }),
+      )
+    ) {
+      return;
+    }
+
+    if (
+      await clickLinkWhenAvailable(
+        tableBody
+          .locator("tr")
+          .filter({ has: page.getByRole("link", { name: exactNameRegex }) })
+          .getByRole("link", { name: exactNameRegex }),
+      )
+    ) {
+      return;
+    }
+
+    if (
+      await clickLinkWhenAvailable(
+        tableBody.getByRole("link", { name: itemName }),
+      )
+    ) {
+      return;
+    }
+  }
+
+  throw new Error(`Table row item "${itemName}" not found`);
 }
 
 export function getRowByCellText(page: Page, cellText: string): Locator {
