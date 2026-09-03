@@ -143,7 +143,7 @@ public abstract class AbstractKeycloakTest {
     protected KeycloakTestingClient.Server runOnServerMaster;
     protected KeycloakTestingClient.Server runOnServer;
 
-    protected TimeOffSet timeOffSet = new TimeOffSet(this);
+    protected TimeOffSet timeOffSet = new TimeOffSet((Object) this);
 
     @ArquillianResource
     protected OAuthClient oauth;
