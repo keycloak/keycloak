@@ -41,6 +41,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
     public static final String PROVIDER_ID = "vertx";
 
     private volatile WebClient webClient;
+    private volatile io.vertx.core.http.HttpClient httpClient;
     private Config.Scope config;
     private long maxConsumedResponseSize;
     private int maxRetries;
@@ -52,7 +53,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
     @Override
     public HttpClientProvider create(KeycloakSession session) {
         lazyInit(session);
-        return new VertxHttpClientProvider(webClient, maxConsumedResponseSize, maxRetries,
+        return new VertxHttpClientProvider(webClient, httpClient, maxConsumedResponseSize, maxRetries,
                 initialBackoffMillis, backoffMultiplier, useJitter, jitterFactor);
     }
 
@@ -155,7 +156,8 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
                 if (webClient == null) {
                     Vertx vertx = Arc.requireContainer().instance(Vertx.class).get();
                     WebClientOptions options = buildOptions(session);
-                    webClient = WebClient.create(vertx, options);
+                    httpClient = vertx.createHttpClient(options);
+                    webClient = WebClient.wrap(httpClient, options);
                     logger.info("Vert.x HTTP client initialized (HTTP_CLIENT_V2)");
                 }
             }

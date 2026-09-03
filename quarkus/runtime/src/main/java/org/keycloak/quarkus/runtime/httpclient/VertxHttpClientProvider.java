@@ -34,7 +34,8 @@ public class VertxHttpClientProvider implements HttpClientProvider {
     private final boolean useJitter;
     private final double jitterFactor;
 
-    VertxHttpClientProvider(WebClient webClient, long maxConsumedResponseSize, int maxRetries,
+    VertxHttpClientProvider(WebClient webClient, io.vertx.core.http.HttpClient httpClient,
+                            long maxConsumedResponseSize, int maxRetries,
                             long initialBackoffMillis, double backoffMultiplier, boolean useJitter, double jitterFactor) {
         this.webClient = webClient;
         this.maxConsumedResponseSize = maxConsumedResponseSize;
@@ -43,7 +44,7 @@ public class VertxHttpClientProvider implements HttpClientProvider {
         this.backoffMultiplier = backoffMultiplier;
         this.useJitter = useJitter;
         this.jitterFactor = jitterFactor;
-        this.bridge = new VertxHttpClientBridge(webClient, this);
+        this.bridge = new VertxHttpClientBridge(httpClient, this);
     }
 
     @Override
