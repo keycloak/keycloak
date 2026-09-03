@@ -1400,6 +1400,19 @@ public class UserTest extends AbstractScimTest {
         assertTrue(groups.stream().noneMatch(g -> orgGroup.getId().equals(g.getValue())));
         // neither the organization group nor the organization's internal group are exposed
         assertEquals(1, groups.size());
+
+        // filtering by organization group should not return any users
+        String orgGroupFilter = ResourceFilter.filter().eq("groups.value", orgGroup.getId()).build();
+        ListResponse<User> orgGroupResponse = client.users().getAll(orgGroupFilter);
+        assertNotNull(orgGroupResponse);
+        assertEquals(0, orgGroupResponse.getTotalResults());
+
+        // filtering by realm group should return the user
+        String realmGroupFilter = ResourceFilter.filter().eq("groups.value", realmGroup.getId()).build();
+        ListResponse<User> realmGroupResponse = client.users().getAll(realmGroupFilter);
+        assertNotNull(realmGroupResponse);
+        assertEquals(1, realmGroupResponse.getTotalResults());
+        assertEquals(expected.getId(), realmGroupResponse.getResources().get(0).getId());
     }
 
     private static void assertGroup(List<GroupMembership> groups, GroupRepresentation group, String type) {

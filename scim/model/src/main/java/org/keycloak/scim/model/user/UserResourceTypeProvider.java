@@ -213,22 +213,24 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         RealmModel realm = session.getContext().getRealm();
         Permissions permissions = session.getContext().getPermissions();
 
-        // When FGAP is enabled, only the eq operator is supported for groups.value filters. The callback
-        // verifies that the caller has VIEW permission on the specific group being matched. Other operators
-        // (ne, pr, gt, co, etc.) cannot be safely authorized through value comparison because they can match
-        // rows the caller is not permitted to see, so they silently return empty results for this path.
-        // This restriction only applies to the groups.value/groups paths; all other filter attributes are
-        // unaffected. When FGAP is disabled, all operators are allowed.
+        // Organization groups are always excluded from groups.value/groups filter paths, consistent with
+        // the serialization boundary in AbstractUserModelSchema. When FGAP is enabled, only the eq operator
+        // is supported; other operators (ne, pr, gt, co, etc.) silently return empty results because they
+        // cannot be safely authorized through value comparison. When FGAP is disabled, non-eq operators are
+        // allowed but eq filters still reject organization groups.
         BiPredicate<String, String> authCheck = (path, value) -> {
             if ("groups.value".equalsIgnoreCase(path) || "groups".equalsIgnoreCase(path)) {
+                if (value == null) {
+                    return !realm.isAdminPermissionsEnabled();
+                }
+                GroupModel group = session.groups().getGroupById(realm, value);
+                if (group == null || AbstractUserModelSchema.isOrganizationGroup(group)) {
+                    return false;
+                }
                 if (!realm.isAdminPermissionsEnabled()) {
                     return true;
                 }
-                if (value == null) {
-                    return false;
-                }
-                GroupModel group = session.groups().getGroupById(realm, value);
-                return group != null && permissions.hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
+                return permissions.hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
             }
             return true;
         };
