@@ -307,11 +307,11 @@ public class ServerInfoAdminResource {
             filteredNames.remove("keycloak.v3");
         }
 
-        boolean filterAccountV3 = (type == Theme.Type.ACCOUNT) &&
-            !Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_V3);
+        boolean filterAccountV4 = (type == Theme.Type.ACCOUNT) &&
+            !Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_V4);
 
-        if (filterAccountV3) {
-            filteredNames.remove("keycloak.v3");
+        if (filterAccountV4) {
+            filteredNames.remove("keycloak.v4");
         }
 
         return filteredNames;
