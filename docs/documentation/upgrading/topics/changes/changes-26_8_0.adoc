@@ -188,6 +188,41 @@ This option is now superseded by the first-class CLI option `--cache-embedded-cl
 If you use the `stateless` feature, add `--cache-embedded-cluster-name=<unique-name>` to your startup command with a name that is unique per deployment.
 Two deployments sharing the same database must use different cluster names so that cross-cluster cache invalidation works correctly.
 
+=== First-class CLI options for cluster and node name
+// https://github.com/keycloak/keycloak/issues/44605
+
+The embedded cache cluster name and node name are now configurable with the first-class CLI options `--cache-embedded-cluster-name` (environment variable `KC_CACHE_EMBEDDED_CLUSTER_NAME`) and `--cache-embedded-node-name` (environment variable `KC_CACHE_EMBEDDED_NODE_NAME`).
+These replace the low-level SPI options `spi-cache-embedded--default--cluster-name` and `spi-cache-embedded--default--node-name`.
+The SPI options continue to work but the new CLI options are recommended.
+
+The node name appears in Infinispan and JGroups log messages, metrics tags, and management tools.
+By default, a random name is generated on each start, which makes it difficult to correlate metrics and logs across restarts.
+Setting a stable node name improves observability, especially with tools such as Grafana dashboards and log aggregation.
+
+*{project_name} Operator*
+
+When deploying with the {project_name} Operator, `KC_CACHE_EMBEDDED_NODE_NAME` is now set automatically to the Kubernetes pod name (for example, `keycloak-0`) via the downward API.
+No additional configuration is needed.
+If you previously set the node name manually through `additionalOptions` or the unsupported pod template, you can remove that configuration.
+If your configuration explicitly sets `cache-embedded-node-name` or `KC_CACHE_EMBEDDED_NODE_NAME`, your value takes precedence over the Operator default.
+
+*Standalone Kubernetes deployments (without the Operator)*
+
+Add the following environment variable to your pod spec to set the node name to the pod name:
+
+[source,yaml]
+----
+env:
+  - name: KC_CACHE_EMBEDDED_NODE_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+----
+
+*Non-Kubernetes deployments*
+
+Pass `--cache-embedded-node-name=<name>` with a value that uniquely identifies each node, for example the hostname.
+
 === Keycloak validates cluster names when using jdbc-ping discovery
 
 {project_name} nodes that use the `jdbc-ping` cluster stack periodically check whether other {project_name} deployments with a different cluster name are connecting to the same database.
