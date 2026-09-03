@@ -5,7 +5,14 @@ import {
   label,
 } from "@keycloak/keycloak-ui-shared";
 import type { Action } from "@keycloak/keycloak-ui-shared";
-import { Button, Modal, ModalVariant } from "@patternfly/react-core";
+import {
+	Button,
+	Modal,
+	ModalBody,
+	ModalFooter,
+	ModalHeader,
+	ModalVariant,
+} from '@patternfly/react-core';
 import {
   ExclamationTriangleIcon,
   ExternalLinkAltIcon,
@@ -44,12 +51,10 @@ const RevokeDialog = ({
   if (!isOpen || !credential) return null;
 
   return (
-    <Modal
-      variant={ModalVariant.small}
-      title={t("revokeIssuedCredentialTitle")}
-      isOpen={true}
-      onClose={onClose}
-      actions={[
+    <Modal variant={ModalVariant.small} isOpen onClose={onClose}>
+      <ModalHeader title={t("revokeIssuedCredentialTitle")} />
+      <ModalBody>{t("deleteIssuedCredentialConfirm")}</ModalBody>
+      <ModalFooter>
         <Button
           key="confirm"
           variant="danger"
@@ -59,13 +64,11 @@ const RevokeDialog = ({
           }}
         >
           {t("doRevoke")}
-        </Button>,
+        </Button>
         <Button key="cancel" variant="link" onClick={onClose}>
           {t("doCancel")}
-        </Button>,
-      ]}
-    >
-      {t("deleteIssuedCredentialConfirm")}
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };
@@ -147,11 +150,14 @@ export const IssuedCredentialsModal = ({
       />
       <Modal
         variant={ModalVariant.large}
-        title={`${t("issuedCredentials")}: ${credentialScopeName}`}
-        isOpen={true}
+        isOpen
         onClose={onClose}
         width="90%"
       >
+        <ModalHeader
+          title={`${t("issuedCredentials")}: ${credentialScopeName}`}
+        />
+        <ModalBody>
         <ErrorBoundaryProvider>
           <KeycloakDataTable
             loader={loader}
@@ -177,7 +183,7 @@ export const IssuedCredentialsModal = ({
                     <span
                       style={{
                         color: isExpired
-                          ? "var(--pf-v5-global--danger-color--100)"
+                          ? "var(--pf-t--global--color--status--danger--default)"
                           : "inherit",
                       }}
                     >
@@ -206,13 +212,13 @@ export const IssuedCredentialsModal = ({
                   // If client has a base URL, create a clickable link
                   if (credential.clientBaseUrl) {
                     return (
-                      <Button
-                        className="pf-v5-u-pl-0 title-case"
+                      <Button icon={<ExternalLinkAltIcon />}
+                        className="pf-v6-u-pl-0 title-case"
                         component="a"
                         variant="link"
                         onClick={() => window.open(credential.clientBaseUrl)}
                       >
-                        {label(t, displayName)} <ExternalLinkAltIcon />
+                        {label(t, displayName)} 
                       </Button>
                     );
                   }
@@ -237,14 +243,15 @@ export const IssuedCredentialsModal = ({
                 : []
             }
             emptyState={
-              <div className="pf-v5-u-text-align-center pf-v5-u-py-md">
-                <span className="pf-v5-u-color-200">
+              <div className="pf-v6-u-text-align-center pf-v6-u-py-md">
+                <span className="pf-v6-u-color-200">
                   {t("noIssuedCredentials")}
                 </span>
               </div>
             }
           />
         </ErrorBoundaryProvider>
+        </ModalBody>
       </Modal>
     </>
   );

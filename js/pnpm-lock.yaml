@@ -78,21 +78,21 @@ importers:
 
   apps/account-ui:
     dependencies:
-      '@keycloak/keycloak-ui-shared':
+      '@keycloak/keycloak-ui-shared-pf6':
         specifier: workspace:*
-        version: link:../../libs/ui-shared
+        version: link:../../libs/ui-shared-pf6
       '@patternfly/patternfly':
-        specifier: ^5.4.2
-        version: 5.4.2
+        specifier: ^6.6.1
+        version: 6.6.1
       '@patternfly/react-core':
-        specifier: ^5.4.14
-        version: 5.4.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^6.6.1
+        version: 6.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons':
-        specifier: ^5.4.2
-        version: 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^6.6.1
+        version: 6.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-table':
-        specifier: ^5.4.16
-        version: 5.4.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^6.6.1
+        version: 6.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       i18next:
         specifier: ^25.7.3
         version: 25.7.3(typescript@5.9.3)
@@ -457,6 +457,76 @@ importers:
       vitest:
         specifier: ^4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(jsdom@27.4.0)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.3)
+
+  libs/ui-shared-pf6:
+    dependencies:
+      '@keycloak/keycloak-admin-client':
+        specifier: workspace:*
+        version: link:../keycloak-admin-client
+      '@patternfly/react-core':
+        specifier: ^6.6.1
+        version: 6.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-icons':
+        specifier: ^6.6.1
+        version: 6.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-styles':
+        specifier: ^6.6.1
+        version: 6.6.1
+      '@patternfly/react-table':
+        specifier: ^6.6.1
+        version: 6.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      i18next:
+        specifier: ^25.7.3
+        version: 25.7.3(typescript@5.9.3)
+      keycloak-js:
+        specifier: ^26.2.2
+        version: 26.2.2
+      lodash-es:
+        specifier: ^4.18.1
+        version: 4.18.1
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+      react-hook-form:
+        specifier: 7.70.0
+        version: 7.70.0(react@18.3.1)
+      react-i18next:
+        specifier: ^16.5.1
+        version: 16.5.1(i18next@25.7.3(typescript@5.9.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
+    devDependencies:
+      '@types/lodash-es':
+        specifier: ^4.17.12
+        version: 4.17.12
+      '@types/react':
+        specifier: ^18.3.18
+        version: 18.3.23
+      '@types/react-dom':
+        specifier: ^18.3.5
+        version: 18.3.7(@types/react@18.3.23)
+      '@vitejs/plugin-react-swc':
+        specifier: ^4.2.2
+        version: 4.2.2(vite@7.3.5(@types/node@26.1.0)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.3))
+      rollup-plugin-peer-deps-external:
+        specifier: ^2.2.4
+        version: 2.2.4(rollup@4.62.0)
+      vite:
+        specifier: ^7.3.5
+        version: 7.3.5(@types/node@26.1.0)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.3)
+      vite-plugin-checker:
+        specifier: ^0.12.0
+        version: 0.12.0(eslint@9.39.4)(optionator@0.9.4)(typescript@5.9.3)(vite@7.3.5(@types/node@26.1.0)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.3))
+      vite-plugin-dts:
+        specifier: ^4.5.4
+        version: 4.5.4(@types/node@26.1.0)(rollup@4.62.0)(typescript@5.9.3)(vite@7.3.5(@types/node@26.1.0)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.3))
+      vite-plugin-lib-inject-css:
+        specifier: ^2.2.2
+        version: 2.2.2(vite@7.3.5(@types/node@26.1.0)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.3))
+      vitest:
+        specifier: ^4.0.16
+        version: 4.0.16(@opentelemetry/api@1.9.1)(@types/node@26.1.0)(jsdom@27.4.0)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.3)
 
   themes-vendor:
     dependencies:
@@ -1167,11 +1237,20 @@ packages:
   '@patternfly/patternfly@5.4.2':
     resolution: {integrity: sha512-+BaokNR8/AmTYMESxby9UtQXPGACg449BXQd0KejAvW/uGxlgO6mY1X1205DeBEHoK3e/vXkYXjvZPpv/tcxSA==}
 
+  '@patternfly/patternfly@6.6.1':
+    resolution: {integrity: sha512-8P9C1TmFk5y5s2/1XVjmP9JmSyDXDiNBwPZewhPizULtqlaRu+Evljx/X1HTSFrCNY0qgI1uDKy+NXiorIniyA==}
+
   '@patternfly/react-core@5.4.14':
     resolution: {integrity: sha512-oXVMzLs9Pa+xmdc39L2u05zbXfY3mWuOFi4GDv44GPdDexZUFy5W69+Nv5P8cwfMim55Nf5kKYpcqmatD2bBXw==}
     peerDependencies:
       react: ^17 || ^18
       react-dom: ^17 || ^18
+
+  '@patternfly/react-core@6.6.1':
+    resolution: {integrity: sha512-1XEBj+RllMnx+nQNaQaEH08umNdW1/HoqiNiZVBrVACI7GAGqjNR/NOWCbfl3p/o6OggD3M3mlJPhCMmcoOaGg==}
+    peerDependencies:
+      react: ^17 || ^18 || ^19
+      react-dom: ^17 || ^18 || ^19
 
   '@patternfly/react-icons@5.4.2':
     resolution: {integrity: sha512-CMQ5oHYzW6TPVTs2jpNJmP2vGCAKR/YeTPwHGO9dLkAUej1IcIxtCCWK2Fdo2UJsnBjuZihasyw2b6ehvbUm9Q==}
@@ -1179,8 +1258,17 @@ packages:
       react: ^17 || ^18
       react-dom: ^17 || ^18
 
+  '@patternfly/react-icons@6.6.1':
+    resolution: {integrity: sha512-EUHnTliMlUMNfaueyGTaNcdCDGN4CjLtQpNdSg6iWcl5oloHtUDEAIltP0nbCWnepMJDoM2YgjMlyjwWlkNzXg==}
+    peerDependencies:
+      react: ^17 || ^18 || ^19
+      react-dom: ^17 || ^18 || ^19
+
   '@patternfly/react-styles@5.4.1':
     resolution: {integrity: sha512-XA8PXksD8uiA3RTwxdUwJXOCf+V6sVd+2HKapWAdRLvtSV+Sdk7NgCvalb4IAQncsddLopjPQD8gAHA298+N8w==}
+
+  '@patternfly/react-styles@6.6.1':
+    resolution: {integrity: sha512-hwByXA4wSpOIBJFtrYUdkFDIqvzHRP5yzvip/NHDlG0y/kXausOh5Z4m00SbTA6t7Hzudw5eU1lf+IOPCm5C6Q==}
 
   '@patternfly/react-table@5.4.16':
     resolution: {integrity: sha512-K/xNdTvFKFyD6WhuBU/GCq/3LTrSaObdXSTmzefWWcPcN0gcf/J3ouiuapj951JIsP13CMmwJBNtEa3aHR8igg==}
@@ -1188,8 +1276,17 @@ packages:
       react: ^17 || ^18
       react-dom: ^17 || ^18
 
+  '@patternfly/react-table@6.6.1':
+    resolution: {integrity: sha512-owyLpkhFg28nQWkTA3jnhmbe8FOX5vXqZntbrjse4BfdaBTOzsBxPqtBzbf6o214Q8OQBzC2Atgz9C3j0yFscQ==}
+    peerDependencies:
+      react: ^17 || ^18 || ^19
+      react-dom: ^17 || ^18 || ^19
+
   '@patternfly/react-tokens@5.4.1':
     resolution: {integrity: sha512-eygdHE7Krta1mijAv/E8RHiKIgysD0eeNTo8EXUYC8/M4e5K6sqpr2p6rQBF8QiRMN8FnbXvZT3K2OQ28pYt9Q==}
+
+  '@patternfly/react-tokens@6.6.1':
+    resolution: {integrity: sha512-t7dDEJMnO3QkdIKyjbyKJznVYki9ONZG27Cn/9RXwaM0lDGCrgQEJXy2XoVUCdYhIdXZu+TGSEqXeNFYUyZECg==}
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -2898,6 +2995,9 @@ packages:
   focus-trap@7.6.2:
     resolution: {integrity: sha512-9FhUxK1hVju2+AiQIDJ5Dd//9R2n2RAfJ0qfhF4IHGHgcoEUTMpbTeG/zbEuwaiYXfuAH6XE0/aCyxDdRM+W5w==}
 
+  focus-trap@7.6.6:
+    resolution: {integrity: sha512-v/Z8bvMCajtx4mEXmOo7QEsIzlIOqRXTIwgUfsFOF9gEsespdbD0AkPIka1bSXZ8Y8oZ+2IVDQZePkTfEHZl7Q==}
+
   follow-redirects@1.15.9:
     resolution: {integrity: sha512-gew4GsXizNgdoRyqmyfMHyAmXsZDk6mHkSxZFCzW9gwlbtOW44CDtYavM+y+72qD/Vq2l550kMF52DT8fOLJqQ==}
     engines: {node: '>=4.0'}
@@ -4277,6 +4377,9 @@ packages:
   tabbable@6.2.0:
     resolution: {integrity: sha512-Cat63mxsVJlzYvN51JmVXIgNoUokrIaT2zLclCXjRd8boZ0004U4KCs/sToJ75C6sdlByWxpYnb5Boif1VSFew==}
 
+  tabbable@6.5.0:
+    resolution: {integrity: sha512-wieBHXygIm7OyQOu5hQlkk62/WyCFYGlWg7L6/ZCUZwx0o398Zkn4pVmMyfYhfMG8kGrj/Krt8eIk6UKC6VzwA==}
+
   tar-fs@3.1.1:
     resolution: {integrity: sha512-LZA0oaPOc2fVo82Txf3gw+AkEd38szODlptMYejQUhndHMLQ9M059uXR+AfS7DNo0NpINvSqDsvyaCrBVkptWg==}
 
@@ -5532,6 +5635,8 @@ snapshots:
 
   '@patternfly/patternfly@5.4.2': {}
 
+  '@patternfly/patternfly@6.6.1': {}
+
   '@patternfly/react-core@5.4.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@patternfly/react-icons': 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -5543,12 +5648,31 @@ snapshots:
       react-dropzone: 14.3.8(react@18.3.1)
       tslib: 2.8.1
 
+  '@patternfly/react-core@6.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@patternfly/react-icons': 6.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-styles': 6.6.1
+      '@patternfly/react-tokens': 6.6.1
+      focus-trap: 7.6.6
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-dropzone: 14.3.8(react@18.3.1)
+      tslib: 2.8.1
+
   '@patternfly/react-icons@5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
+  '@patternfly/react-icons@6.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      tslib: 2.8.1
+
   '@patternfly/react-styles@5.4.1': {}
+
+  '@patternfly/react-styles@6.6.1': {}
 
   '@patternfly/react-table@5.4.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -5561,7 +5685,20 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       tslib: 2.8.1
 
+  '@patternfly/react-table@6.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@patternfly/react-core': 6.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-icons': 6.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-styles': 6.6.1
+      '@patternfly/react-tokens': 6.6.1
+      lodash: 4.18.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      tslib: 2.8.1
+
   '@patternfly/react-tokens@5.4.1': {}
+
+  '@patternfly/react-tokens@6.6.1': {}
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
@@ -7342,6 +7479,10 @@ snapshots:
     dependencies:
       tabbable: 6.2.0
 
+  focus-trap@7.6.6:
+    dependencies:
+      tabbable: 6.5.0
+
   follow-redirects@1.15.9: {}
 
   font-awesome@4.7.0: {}
@@ -8888,6 +9029,8 @@ snapshots:
       '@pkgr/core': 0.2.9
 
   tabbable@6.2.0: {}
+
+  tabbable@6.5.0: {}
 
   tar-fs@3.1.1:
     dependencies:
