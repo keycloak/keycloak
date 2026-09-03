@@ -35,6 +35,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
 import org.keycloak.models.cache.infinispan.LazyLoader;
 import org.keycloak.models.utils.StorageUnavailableUserModelDelegate;
+import org.keycloak.models.utils.UserModelDelegate;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -79,8 +80,14 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         this.storedCredentials = new DefaultLazyLoader<>(userModel -> userModel.credentialManager().getStoredCredentialsStream().collect(Collectors.toCollection(LinkedList::new)), LinkedList::new, CachedUser::isStorageAvailable);
     }
 
-    private static boolean isStorageAvailable(UserModel userModel) {
-        return !(userModel instanceof StorageUnavailableUserModelDelegate);
+    static boolean isStorageAvailable(UserModel userModel) {
+        while (userModel instanceof UserModelDelegate delegate) {
+            if (userModel instanceof StorageUnavailableUserModelDelegate) {
+                return false;
+            }
+            userModel = delegate.getDelegate();
+        }
+        return true;
     }
 
     public String getRealm() {
