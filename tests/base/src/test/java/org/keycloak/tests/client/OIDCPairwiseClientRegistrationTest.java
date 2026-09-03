@@ -42,9 +42,12 @@ import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
+import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.SectorIdentifierRedirectUrisProvider;
 import org.keycloak.testframework.oauth.annotations.InjectSectorIdentifierRedirectUrisProvider;
+import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.tests.common.BasicUserConfig;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -66,6 +69,9 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
 
     @InjectSectorIdentifierRedirectUrisProvider
     private SectorIdentifierRedirectUrisProvider sectorIdentifierRedirectUrisProvider;
+
+    @InjectUser(config = BasicUserConfig.class)
+    ManagedUser managedUser;
 
     @BeforeEach
     @Override
@@ -345,15 +351,15 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
 
         // Login to public client
         oauth.client(publicClient.getClientId(), publicClient.getClientSecret());
-        AuthorizationEndpointResponse loginResponse = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse loginResponse = oauth.doLogin(managedUser.getEmail(), managedUser.getPassword());
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(loginResponse.getCode());
         AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken());
-        Assertions.assertEquals("test-user", accessToken.getPreferredUsername());
-        Assertions.assertEquals("test-user@localhost", accessToken.getEmail());
+        Assertions.assertEquals(managedUser.getUsername(), accessToken.getPreferredUsername());
+        Assertions.assertEquals(managedUser.getEmail(), accessToken.getEmail());
         String tokenUserId = accessToken.getSubject();
 
         // Assert public client has same subject like userId
-        UserRepresentation user = managedRealm.admin().users().search("test-user", 0, 1).get(0);
+        UserRepresentation user = managedRealm.admin().users().search(managedUser.getUsername(), 0, 1).get(0);
         Assertions.assertEquals(user.getId(), tokenUserId);
 
         // Create pairwise client
@@ -374,8 +380,8 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         Assertions.assertEquals(1, StringUtils.countMatches(refreshTokenPayload, "\"sub\""));
 
         accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken());
-        Assertions.assertEquals("test-user", accessToken.getPreferredUsername());
-        Assertions.assertEquals("test-user@localhost", accessToken.getEmail());
+        Assertions.assertEquals(managedUser.getUsername(), accessToken.getPreferredUsername());
+        Assertions.assertEquals(managedUser.getEmail(), accessToken.getEmail());
 
         // Assert pairwise client has different subject than userId
         String pairwiseUserId = accessToken.getSubject();
@@ -385,8 +391,8 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         UserInfoResponse userInfoResponse = oauth.doUserInfoRequest(accessTokenResponse.getAccessToken());
         Assertions.assertEquals(200, userInfoResponse.getStatusCode());
         UserInfo userInfo = userInfoResponse.getUserInfo();
-        Assertions.assertEquals("test-user", userInfo.getPreferredUsername());
-        Assertions.assertEquals("test-user@localhost", userInfo.getEmail());
+        Assertions.assertEquals(managedUser.getUsername(), userInfo.getPreferredUsername());
+        Assertions.assertEquals(managedUser.getEmail(), userInfo.getEmail());
         Assertions.assertEquals(pairwiseUserId, userInfo.getSubject());
     }
 
@@ -395,7 +401,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         // Create pairwise client
         OIDCClientRepresentation pairwiseClient = createPairwise();
         // Login to pairwise client
-        AccessTokenResponse accessTokenResponse = login(pairwiseClient, "test-user@localhost", "password");
+        AccessTokenResponse accessTokenResponse = login(pairwiseClient, managedUser.getEmail(),managedUser.getPassword());
 
         // Verify tokens
         oauth.verifyToken(accessTokenResponse.getAccessToken());
@@ -435,11 +441,11 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         OIDCClientRepresentation pairwiseClient = createPairwise();
 
         // Login to pairwise client
-        AccessTokenResponse accessTokenResponse = login(pairwiseClient, "test-user@localhost", "password");
+        AccessTokenResponse accessTokenResponse = login(pairwiseClient, managedUser.getEmail(), managedUser.getPassword());
 
         JsonNode jsonNode = oauth.client(pairwiseClient.getClientId(), pairwiseClient.getClientSecret()).doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asJsonNode();
         Assertions.assertEquals(true, jsonNode.get("active").asBoolean());
-        Assertions.assertEquals("test-user@localhost", jsonNode.get("email").asText());
+        Assertions.assertEquals(managedUser.getEmail(), jsonNode.get("email").asText());
     }
 
     @Test

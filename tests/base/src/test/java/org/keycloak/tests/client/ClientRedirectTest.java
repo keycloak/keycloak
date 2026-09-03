@@ -29,6 +29,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectSimpleHttp;
+import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
@@ -37,9 +38,11 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.tests.common.BasicUserConfig;
 
 import org.apache.http.client.config.RequestConfig;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,6 +62,9 @@ public class ClientRedirectTest extends AbstractClientRegistrationTest {
 
     @InjectRealm(ref = "redirect", config = ClientRedirectRealmConfig.class)
     ManagedRealm managedRealm;
+
+    @InjectUser(config = BasicUserConfig.class, realmRef = "redirect")
+    ManagedUser managedUser;
 
     @InjectWebDriver(lifecycle = LifeCycle.METHOD)
     ManagedWebDriver driver;
@@ -84,7 +90,7 @@ public class ClientRedirectTest extends AbstractClientRegistrationTest {
      */
     @Test
     public void testClientRedirectEndpoint() {
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.doLogin(managedUser.getUsername(), managedUser.getPassword());
 
         driver.open(managedRealm.getBaseUrl() + "/clients/launchpad-test/redirect");
         assertEquals("http://example.org/launchpad", driver.getCurrentUrl());
@@ -95,7 +101,7 @@ public class ClientRedirectTest extends AbstractClientRegistrationTest {
 
     @Test
     public void testRedirectStatusCode() throws IOException {
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.doLogin(managedUser.getEmail(), managedUser.getPassword());
         String code = oauth.parseLoginResponse().getCode();
         String token = oauth.doAccessTokenRequest(code).getAccessToken();
 
@@ -118,7 +124,7 @@ public class ClientRedirectTest extends AbstractClientRegistrationTest {
         log.debug("log in");
         driver.open(managedRealm.getBaseUrl());
         driver.cookies().deleteAll();
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.doLogin(managedUser.getEmail(), managedUser.getPassword());
         EventAssertion.expectLoginSuccess(events.poll());
 
         String code = oauth.parseLoginResponse().getCode();

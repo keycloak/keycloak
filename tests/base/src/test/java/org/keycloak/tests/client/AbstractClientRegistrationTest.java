@@ -183,14 +183,7 @@ public abstract class AbstractClientRegistrationTest {
                     .email("no-access@test.com")
                     .emailVerified(true);
 
-            UserBuilder appUser = UserBuilder.create()
-                    .username("test-user") // TODO could be changed into a manageduser
-                    .name("test", "user")
-                    .password("password")
-                    .email("test-user@localhost")
-                    .emailVerified(true);
-
-            realm.users(manageClientUser, createClientUser, noAccessUser, appUser);
+            realm.users(manageClientUser, createClientUser, noAccessUser);
 
             return realm;
         }
