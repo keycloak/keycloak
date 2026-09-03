@@ -73,6 +73,9 @@ done
 # Replace {{ $.Chart.Name }} with the fixed operator name across all templates
 for tmpl in "${TEMPLATES_DIR}"/*.yaml "${TEMPLATES_DIR}"/*.yml; do
   [[ -f "${tmpl}" ]] || continue
-  sed -i 's/{{ \$\?.Chart\.Name }}/keycloak-operator/g' "${tmpl}"
+  tmp="${tmpl}.tmp"
+  sed -e 's/{{ \$\.Chart\.Name }}/keycloak-operator/g' \
+      -e 's/{{ \.Chart\.Name }}/keycloak-operator/g' "${tmpl}" > "${tmp}"
+  mv "${tmp}" "${tmpl}"
 done
 echo "post-process-helm-chart: replaced Chart.Name references in templates"
