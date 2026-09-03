@@ -4,8 +4,20 @@ function hasNewTabModifiers(event) {
     return NEW_TAB_MODIFIERS.some((modifier) => event[modifier]);
 }
 
-function opensInNewTab(form) {
-    return form.target && form.target !== "_self";
+function opensInNewTab(form, event) {
+    if (form.target && form.target !== "_self") {
+        return true;
+    }
+
+    const submitter = event.submitter;
+    if (submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement) {
+        const formTarget = submitter.formTarget || submitter.getAttribute("formtarget");
+        if (formTarget && formTarget !== "_self") {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function isImplicitSubmitControl(element) {
@@ -35,12 +47,12 @@ export function bindDisableSubmitOnSameTab(form) {
     let modifierNewTabSubmit = false;
 
     form.addEventListener("click", (event) => {
-        const submitButton = event.target.closest('button[type="submit"], input[type="submit"]');
+        const submitButton = event.target?.closest?.('button[type="submit"], input[type="submit"]');
         if (submitButton && form.contains(submitButton) && hasNewTabModifiers(event)) {
             modifierNewTabSubmit = true;
-            queueMicrotask(() => {
+            setTimeout(() => {
                 modifierNewTabSubmit = false;
-            });
+            }, 0);
         }
     }, true);
 
@@ -50,13 +62,13 @@ export function bindDisableSubmitOnSameTab(form) {
         }
 
         modifierNewTabSubmit = true;
-        queueMicrotask(() => {
+        setTimeout(() => {
             modifierNewTabSubmit = false;
-        });
+        }, 0);
     }, true);
 
     form.addEventListener("submit", (event) => {
-        const newTabSubmit = modifierNewTabSubmit || opensInNewTab(form);
+        const newTabSubmit = modifierNewTabSubmit || opensInNewTab(form, event);
         modifierNewTabSubmit = false;
 
         if (newTabSubmit) {
@@ -64,7 +76,7 @@ export function bindDisableSubmitOnSameTab(form) {
         }
 
         const button = form.elements.namedItem(buttonName);
-        if (button) {
+        if (button instanceof HTMLButtonElement || button instanceof HTMLInputElement) {
             button.disabled = true;
         }
     });
