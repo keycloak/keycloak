@@ -25,6 +25,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
@@ -337,7 +338,49 @@ public interface OrganizationProvider extends Provider {
      * @param identityProvider the identity provider
      * @return {@code true} if the identity provider was associated with the organization. Otherwise, returns {@code false}
      */
-    boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider);
+    default boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider) {
+        return addIdentityProvider(organization, identityProvider, true, MembershipType.UNMANAGED);
+    }
+
+    /**
+     * Associate the given {@link IdentityProviderModel} with the given {@link OrganizationModel}
+     * using the specified per-association config.
+     *
+     * <p>A single identity provider can be linked to multiple organizations, if the identity provider is
+     * already associated with this organization, the call is rejected. If it is associated with a different
+     * organization, the new link is created alongside the existing one.
+     *
+     * @param organization the organization
+     * @param identityProvider the identityProvider
+     * @param autoMembership whether users authenticating via this IdP should be auto-added to the organization
+     * @param membershipType the membership type for auto-added members
+     * @return {@code true} if the identityProvider was associated with the organization. Otherwise, returns {@code false}
+     * @throws ModelValidationException if the config violates validation rules
+     */
+    boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                boolean autoMembership, MembershipType membershipType);
+
+    /**
+     * Returns the per-association config for the link between the given organization and identity provider.
+     *
+     * @param organization the organization
+     * @param identityProvider the identity provider
+     * @return the link config, or {@code null} if no link exists
+     */
+    OrganizationIdentityProviderLinkModel getIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider);
+
+    /**
+     * Updates the per-association config on an existing link between the organization and identity provider.
+     *
+     * @param organization the organization
+     * @param identityProvider the identity provider
+     * @param autoMembership whether users authenticating via this IdP should be auto-added to the organization
+     * @param membershipType the membership type for auto-added members
+     * @throws ModelValidationException if the config violates validation rules
+     * @throws ModelException if no link exists between the organization and identity provider
+     */
+    void updateIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                    boolean autoMembership, MembershipType membershipType);
 
     /**
      * Returns all identity providers associated with the given organization.

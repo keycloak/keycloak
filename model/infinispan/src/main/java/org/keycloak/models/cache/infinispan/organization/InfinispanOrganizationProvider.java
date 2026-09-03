@@ -27,6 +27,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderStorageProvider.FetchMode;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -38,6 +39,7 @@ import org.keycloak.models.cache.infinispan.RealmCacheSession;
 import org.keycloak.models.cache.infinispan.UserCacheSession;
 import org.keycloak.organization.InvitationManager;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.representations.idm.MembershipType;
 
 import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyForLogin;
 import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyIdpAlias;
@@ -391,13 +393,27 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider) {
-        boolean added = getDelegate().addIdentityProvider(organization, identityProvider);
+    public boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                       boolean autoMembership, MembershipType membershipType) {
+        boolean added = getDelegate().addIdentityProvider(organization, identityProvider, autoMembership, membershipType);
         if (added) {
             registerOrganizationInvalidation(organization);
             registerIdentityProviderInvalidation(identityProvider);
         }
         return added;
+    }
+
+    @Override
+    public OrganizationIdentityProviderLinkModel getIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider) {
+        return getDelegate().getIdentityProviderLink(organization, identityProvider);
+    }
+
+    @Override
+    public void updateIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                           boolean autoMembership, MembershipType membershipType) {
+        getDelegate().updateIdentityProviderLink(organization, identityProvider, autoMembership, membershipType);
+        registerOrganizationInvalidation(organization);
+        registerIdentityProviderInvalidation(identityProvider);
     }
 
     @Override
