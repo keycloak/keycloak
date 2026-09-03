@@ -6,6 +6,7 @@ import { LogoContext } from "./LogoContext";
 import { ThemeColors } from "./ThemeColors";
 import { BackgroundContext } from "./BackgroundContext";
 import type { Environment } from "../../environment-types";
+import { pf5VarsToPf5Css, pf5VarsToPf6Css } from "./pf5ToPf6Tokens";
 
 export type ThemeRealmRepresentation = RealmRepresentation & {
   themeName?: string;
@@ -142,11 +143,6 @@ styles=css/styles.css css/theme-styles.css
       }),
     );
 
-    const toCss = (obj?: object) =>
-      Object.entries(obj || {})
-        .map(([key, value]) => `--pf-v5-global--${key}: ${value};`)
-        .join("\n");
-
     const loginCss = (
       await fetch(
         joinPath(
@@ -168,10 +164,14 @@ styles=css/styles.css css/theme-styles.css
         ${logo ? `--keycloak-logo-url: url('../${logoName}');` : ""}
         --keycloak-logo-height: ${realm.logoHeight};
         --keycloak-logo-width: ${realm.logoWidth};
-        ${toCss(styles.light)}
+        ${pf5VarsToPf5Css(styles.light)}
+        ${pf5VarsToPf6Css(styles.light)}
       }
       .pf-v5-theme-dark {
-        ${toCss(styles.dark)}
+        ${pf5VarsToPf5Css(styles.dark)}
+      }
+      .pf-v6-theme-dark {
+        ${pf5VarsToPf6Css(styles.dark)}
       }
       `,
     );

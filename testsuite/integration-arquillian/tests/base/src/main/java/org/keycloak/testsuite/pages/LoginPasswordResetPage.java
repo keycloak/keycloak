@@ -36,7 +36,7 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
     @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(css = "[class='pf-v6-c-success'], [class='alert-success']")
+    @FindBy(css = ".pf-v6-c-alert.pf-m-success, [class='alert-success']")
     private WebElement emailSuccessMessage;
 
     @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
