@@ -11,9 +11,14 @@ export async function waitForLoadingComplete(
   const root = scope ?? page;
   const spinner = root.getByTestId("loading-spinner");
   const tableReady = root.locator("[data-testid='table-ready']");
+  const readyCount = await tableReady.count();
 
-  if ((await tableReady.count()) > 0) {
-    await expect(tableReady.first()).toBeVisible({ timeout });
+  for (let index = 0; index < readyCount; index++) {
+    const candidate = tableReady.nth(index);
+    if (await candidate.isVisible()) {
+      await expect(candidate).toBeVisible({ timeout });
+      break;
+    }
   }
 
   await expect.poll(async () => await spinner.count(), { timeout }).toBe(0);
