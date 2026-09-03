@@ -35,7 +35,7 @@ public class OAuth2DeviceVerificationPage extends LanguageComboboxAwarePage {
     @FindBy(css = "button[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(className = "pf-v5-c-alert")
+    @FindBy(className = "pf-v6-c-alert")
     private WebElement verifyErrorMessage;
 
     public void submit(String userCode) {

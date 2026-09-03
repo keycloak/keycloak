@@ -104,7 +104,7 @@ styles=css/theme-styles.css
     zip.file(
       `theme/${themeNameClean}/login/theme.properties`,
       `
-parent=keycloak.v2
+parent=keycloak.v3
 import=common/${themeNameClean}
 
 styles=css/styles.css css/theme-styles.css
@@ -153,7 +153,7 @@ styles=css/styles.css css/theme-styles.css
           environment.adminBaseUrl,
           "resources",
           environment.resourceVersion,
-          "/login/keycloak.v2/css/styles.css",
+          "/login/keycloak.v3/css/styles.css",
         ),
       )
     ).text();
