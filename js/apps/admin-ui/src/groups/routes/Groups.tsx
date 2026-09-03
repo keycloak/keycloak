@@ -38,14 +38,9 @@ export const OrgGroupsWithIdRoute: AppRouteObject = {
 };
 
 export const toGroups = (params: GroupsParams): Partial<Path> => {
-  const routes = {
-    orgGroups: params.id ? OrgGroupsWithIdRoute.path : OrgGroupsRoute.path,
-    realmGroups: params.id ? GroupsWithIdRoute.path : GroupsRoute.path,
-  };
-
-  const path = params.orgId ? routes.orgGroups : routes.realmGroups;
+  const path = params.orgId ? OrgGroupsRoute.path : GroupsRoute.path;
 
   return {
-    pathname: generatePath(path, params),
+    pathname: generatePath(path, { ...params, "*": params.id }),
   };
 };
