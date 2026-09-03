@@ -18,6 +18,7 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
@@ -62,30 +63,44 @@ public class JwksProvider implements Closeable {
             String keyType;
 
             switch (jwaAlgorithm) {
-                case Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.PS256, Algorithm.PS384, Algorithm.PS512 -> {
+                case Algorithm.RS256:
+                case Algorithm.RS384:
+                case Algorithm.RS512:
+                case Algorithm.PS256:
+                case Algorithm.PS384:
+                case Algorithm.PS512:
                     keyType = KeyType.RSA;
                     keyPair = KeyUtils.generateRsaKeyPair(2048);
-                }
-                case Algorithm.ES256 -> {
+                    break;
+                case Algorithm.ES256:
                     keyType = KeyType.EC;
                     keyPair = KeyUtils.generateEcKeyPair(EC_KEY_SECP256R1);
-                }
-                case Algorithm.ES384 -> {
+                    break;
+                case Algorithm.ES384:
                     keyType = KeyType.EC;
                     keyPair = KeyUtils.generateEcKeyPair(EC_KEY_SECP384R1);
-                }
-                case Algorithm.ES512 -> {
+                    break;
+                case Algorithm.ES512:
                     keyType = KeyType.EC;
                     keyPair = KeyUtils.generateEcKeyPair(EC_KEY_SECP521R1);
-                }
-                case Algorithm.EdDSA -> {
+                    break;
+                case Algorithm.EdDSA:
                     if (curve == null) {
                         curve = Algorithm.Ed25519;
                     }
                     keyType = KeyType.OKP;
                     keyPair = KeyUtils.generateEddsaKeyPair(curve);
-                }
-                default -> throw new IllegalArgumentException("Unsupported signature algorithm: " + jwaAlgorithm);
+                    break;
+                case JWEConstants.RSA1_5:
+                case JWEConstants.RSA_OAEP:
+                case JWEConstants.RSA_OAEP_256:
+                    // for JWE KEK Key Encryption
+                    keyType = KeyType.RSA;
+                    keyUse = KeyUse.ENC;
+                    keyPair = KeyUtils.generateRsaKeyPair(2048);
+                    break;
+                default :
+                    throw new RuntimeException("Unsupported signature algorithm");
             }
 
             KeyData keyData = new KeyData();
@@ -178,20 +193,16 @@ public class JwksProvider implements Closeable {
     }
 
     public static class KeyData {
-        private String kid;
+
         private KeyPair keyPair;
-        private String keyType;
-        private String curve;
+
+        private String keyType = KeyType.RSA;
         private String keyAlgorithm;
-        private KeyUse keyUse;
+        private KeyUse keyUse = KeyUse.SIG;
+        private String curve;
 
-        public String getKid() {
-            return kid;
-        }
-
-        public void setKid(String kid) {
-            this.kid = kid;
-        }
+        // Kid will be randomly generated (based on the key hash) if not provided here
+        private String kid;
 
         public KeyPair getKeyPair() {
             return keyPair;
@@ -209,14 +220,6 @@ public class JwksProvider implements Closeable {
             this.keyType = keyType;
         }
 
-        public String getCurve() {
-            return curve;
-        }
-
-        public void setCurve(String curve) {
-            this.curve = curve;
-        }
-
         public String getKeyAlgorithm() {
             return keyAlgorithm;
         }
@@ -231,6 +234,22 @@ public class JwksProvider implements Closeable {
 
         public void setKeyUse(KeyUse keyUse) {
             this.keyUse = keyUse;
+        }
+
+        public String getKid() {
+            return kid;
+        }
+
+        public void setKid(String kid) {
+            this.kid = kid;
+        }
+
+        public String getCurve() {
+            return curve;
+        }
+
+        public void setCurve(String curve) {
+            this.curve = curve;
         }
     }
 }
