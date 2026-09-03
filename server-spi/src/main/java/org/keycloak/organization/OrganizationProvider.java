@@ -163,6 +163,20 @@ public interface OrganizationProvider extends Provider {
     boolean addMember(OrganizationModel organization, UserModel user);
 
     /**
+     * Updates the membership type of an existing member of the given {@link OrganizationModel}.
+     *
+     * <p>Returns {@code true} if the member exists and the operation was handled successfully,
+     * including the idempotent case where the membership type is already the requested value.
+     * Returns {@code false} only if the user is not a member of the organization.
+     *
+     * @param organization the organization
+     * @param member the member
+     * @param membershipType the new membership type
+     * @return {@code true} if the member exists and the operation succeeded. Otherwise, returns {@code false}
+     */
+    boolean updateMembershipType(OrganizationModel organization, UserModel member, MembershipType membershipType);
+
+    /**
      * Returns the members of a given {@link OrganizationModel} filtered according to the specified parameters.
      *
      * @param organization the organization
