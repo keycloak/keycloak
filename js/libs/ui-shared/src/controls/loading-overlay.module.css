@@ -2,6 +2,10 @@
   position: relative;
 }
 
+.overlayContent {
+  position: relative;
+}
+
 .overlayBusy {
   pointer-events: none;
 }
