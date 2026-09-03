@@ -35,7 +35,8 @@ public enum LoginFailureExpirationAction implements ExpirationAction {
         }
         var expired = LoginFailureUtils.computeExpirationCutOffTimestamp(realm, currentTime);
         if (expired == -1) {
-            return false;
+            // Permanent-lockout realm: still purge cleared entries (lastFailure = 0)
+            expired = 1;
         }
         var em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
         var userIds = em.createNamedQuery("findExpiredLoginFailureUserIdsByRealm", String.class)
