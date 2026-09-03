@@ -75,7 +75,7 @@ public class DatabaseIndexCheckerTest {
 
         var schema = factory.getSchema();
 
-        markIndexInvalid(factory, INDEX_NAME, schema);
+        createInvalidIndex(factory, INDEX_NAME, schema);
         boolean recreated = false;
 
         try {
@@ -209,17 +209,39 @@ public class DatabaseIndexCheckerTest {
         }
     }
 
-    private static void markIndexInvalid(JpaConnectionProviderFactory factory, String indexName, String schema) {
+    private static void createInvalidIndex(JpaConnectionProviderFactory factory, String indexName, String schema) {
+        String indexId = indexName.toLowerCase();
+        String tableId = TABLE_NAME.toLowerCase();
+        String qualifiedTable = schema != null ? schema + "." + tableId : tableId;
+        String qualifiedIndex = schema != null ? schema + "." + indexId : indexId;
+
+        String columns = "user_session_id, offline_flag, user_id, realm_id, created_on, last_session_refresh, version, session_bucket, last_session_refresh_coarse";
+        String values = "'%s', '0', '__test', '__test', 0, 0, 0, 0, 0";
+
+        dropIndex(factory, indexName);
+
         try (Connection connection = factory.getConnection();
-             var ps = connection.prepareStatement(
-                     "UPDATE pg_index SET indisvalid = false WHERE indexrelid = ("
-                             + "SELECT c.oid FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
-                             + "WHERE c.relname = ? AND n.nspname = coalesce(?, current_schema))")) {
-            ps.setString(1, indexName.toLowerCase());
-            ps.setString(2, schema);
-            ps.executeUpdate();
+             Statement stmt = connection.createStatement()) {
+            stmt.executeUpdate(String.format("INSERT INTO %s (%s) VALUES (%s)", qualifiedTable, columns, String.format(values, "__test_invalid_idx_1")));
+            stmt.executeUpdate(String.format("INSERT INTO %s (%s) VALUES (%s)", qualifiedTable, columns, String.format(values, "__test_invalid_idx_2")));
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to mark index " + indexName + " as invalid", e);
+            throw new RuntimeException("Failed to insert test rows", e);
+        }
+
+        try (Connection connection = factory.getConnection()) {
+            connection.setAutoCommit(true);
+            try (Statement stmt = connection.createStatement()) {
+                stmt.executeUpdate(String.format("CREATE UNIQUE INDEX CONCURRENTLY %s ON %s (realm_id)", qualifiedIndex, qualifiedTable));
+            }
+        } catch (SQLException e) {
+            // Expected: unique violation leaves an invalid index
+        }
+
+        try (Connection connection = factory.getConnection();
+             Statement stmt = connection.createStatement()) {
+            stmt.executeUpdate(String.format("DELETE FROM %s WHERE user_session_id LIKE '__test_invalid_idx_%%'", qualifiedTable));
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to clean up test rows", e);
         }
     }
 
