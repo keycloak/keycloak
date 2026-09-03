@@ -99,7 +99,9 @@ public class JpaUserLoginFailureProvider implements UserLoginFailureProvider {
                 .executeUpdate();
         var key = new LoginFailureKey(realm.getId(), userId);
         notInDatabaseCache.remove(key);
-        var entity = em.find(LoginFailureEntity.class, key);
+        var entity = inserted == 0
+                ? em.find(LoginFailureEntity.class, key, LockModeType.PESSIMISTIC_WRITE)
+                : em.find(LoginFailureEntity.class, key);
         UserLoginFailureModel model = new UserLoginFailureAdapter(em, entity);
         if (inserted == 0 && isExpired(realm, entity)) {
             // The entity already existed but is expired — clear its stale data so new failure counting starts fresh.
