@@ -18,6 +18,7 @@
 package org.keycloak.tests.federation.ldap;
 
 import java.io.IOException;
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.util.List;
 import java.util.Properties;
@@ -47,6 +48,7 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.util.ldap.LDAPEmbeddedServer;
 
+import org.apache.directory.api.ldap.model.exception.LdapConfigurationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -73,15 +75,7 @@ public class LDAPUserProfileValidationTest {
     public void startLdapServerAndCreateProvider() throws Exception {
         // Use a freely available port rather than the ApacheDS default (10389) - hard-coding it is prone to
         // collisions when tests run in parallel or on a machine that already has something bound to that port.
-        int ldapPort = findFreePort();
-
-        Properties serverProperties = new Properties();
-        serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_DSF, LDAPEmbeddedServer.DSF_INMEMORY);
-        serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_SSL, "false");
-        serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_BIND_PORT, String.valueOf(ldapPort));
-        ldapEmbeddedServer = new LDAPEmbeddedServer(serverProperties);
-        ldapEmbeddedServer.init();
-        ldapEmbeddedServer.start();
+        int ldapPort = startLdapEmbeddedServer();
 
         ComponentRepresentation ldapRep = new ComponentRepresentation();
         ldapRep.setName("test-ldap");
@@ -209,6 +203,44 @@ public class LDAPUserProfileValidationTest {
                 UserModel user = session.users().getUserByUsername(realm, invalidUsername);
                 Assertions.assertNotNull(user, "Local user should exist with the updated username");
             });
+    }
+
+    private static final int MAX_LDAP_BIND_ATTEMPTS = 5;
+
+    // Probing for a free port and then closing the socket before the embedded server binds to it is inherently
+    // racy: something else can claim that exact port in between. Rather than try to close that window (there is no
+    // way to reserve a port for another process to bind to later), retry with a newly-probed port whenever the
+    // failure we get back is actually that race and not a real startup problem.
+    private static int startLdapEmbeddedServer() throws Exception {
+        for (int attempt = 1; ; attempt++) {
+            int port = findFreePort();
+
+            Properties serverProperties = new Properties();
+            serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_DSF, LDAPEmbeddedServer.DSF_INMEMORY);
+            serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_SSL, "false");
+            serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_BIND_PORT, String.valueOf(port));
+
+            LDAPEmbeddedServer server = new LDAPEmbeddedServer(serverProperties);
+            server.init();
+            try {
+                server.start();
+                ldapEmbeddedServer = server;
+                return port;
+            } catch (LdapConfigurationException e) {
+                if (attempt >= MAX_LDAP_BIND_ATTEMPTS || !isBindConflict(e)) {
+                    throw e;
+                }
+            }
+        }
+    }
+
+    private static boolean isBindConflict(Throwable e) {
+        for (Throwable cause = e; cause != null; cause = cause.getCause()) {
+            if (cause instanceof BindException) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static int findFreePort() throws IOException {
