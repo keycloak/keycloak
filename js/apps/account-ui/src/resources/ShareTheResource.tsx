@@ -4,17 +4,18 @@ import {
   useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
 import {
-  Button,
-  Chip,
-  ChipGroup,
-  Form,
-  FormGroup,
-  InputGroup,
-  InputGroupItem,
-  Modal,
-  TextInput,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+	Label, LabelGroup, Button,
+	Form,
+	FormGroup,
+	InputGroup,
+	InputGroupItem,
+	Modal,
+	ModalBody,
+	ModalFooter,
+	ModalHeader,
+	TextInput,
+	ValidatedOptions
+} from '@patternfly/react-core';
 import { useEffect } from "react";
 import {
   FormProvider,
@@ -120,27 +121,9 @@ export const ShareTheResource = ({
   };
 
   return (
-    <Modal
-      title={t("shareTheResource", { name: resource.name })}
-      variant="medium"
-      isOpen={open}
-      onClose={onClose}
-      actions={[
-        <Button
-          key="confirm"
-          variant="primary"
-          data-testid="done"
-          isDisabled={!isValid}
-          type="submit"
-          form="share-form"
-        >
-          {t("done")}
-        </Button>,
-        <Button key="cancel" variant="link" onClick={onClose}>
-          {t("cancel")}
-        </Button>,
-      ]}
-    >
+    <Modal variant="medium" isOpen={open} onClose={onClose}>
+      <ModalHeader title={t("shareTheResource", { name: resource.name })} />
+      <ModalBody>
       <Form id="share-form" onSubmit={handleSubmit(addShare)}>
         <FormGroup
           label={t("shareUser")}
@@ -177,16 +160,16 @@ export const ShareTheResource = ({
             </InputGroupItem>
           </InputGroup>
           {fields.length > 1 && (
-            <ChipGroup categoryName={t("shareWith") + " "}>
+            <LabelGroup categoryName={t("shareWith") + " "}>
               {fields.map(
                 (field, index) =>
                   index !== fields.length - 1 && (
-                    <Chip key={field.id} onClick={() => remove(index)}>
+                    <Label variant="outline" key={field.id} onClose={() => remove(index)}>
                       {field.value}
-                    </Chip>
+                    </Label>
                   ),
               )}
-            </ChipGroup>
+            </LabelGroup>
           )}
           {errors.usernames && (
             <FormErrorText message={errors.usernames.message!} />
@@ -213,6 +196,22 @@ export const ShareTheResource = ({
           <SharedWith permissions={permissions} />
         </FormGroup>
       </Form>
+      </ModalBody>
+      <ModalFooter>
+        <Button
+          key="confirm"
+          variant="primary"
+          data-testid="done"
+          isDisabled={!isValid}
+          type="submit"
+          form="share-form"
+        >
+          {t("done")}
+        </Button>
+        <Button key="cancel" variant="link" onClick={onClose}>
+          {t("cancel")}
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

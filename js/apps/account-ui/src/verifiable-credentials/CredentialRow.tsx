@@ -1,16 +1,19 @@
 import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
-  Button,
-  DataListAction,
-  DataListCell,
-  DataListItem,
-  DataListItemCells,
-  DataListItemRow,
-  Flex,
-  FlexItem,
-  Modal,
-  ModalVariant,
-} from "@patternfly/react-core";
+	Button,
+	DataListAction,
+	DataListCell,
+	DataListItem,
+	DataListItemCells,
+	DataListItemRow,
+	Flex,
+	FlexItem,
+	Modal,
+	ModalBody,
+	ModalFooter,
+	ModalHeader,
+	ModalVariant,
+} from '@patternfly/react-core';
 import { ExternalLinkAltIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -45,12 +48,14 @@ const RevokeDialog = ({
   if (!isOpen) return null;
 
   return (
-    <Modal
-      variant={ModalVariant.small}
-      title={t("revokeVerifiableCredentialTitle")}
-      isOpen={true}
-      onClose={onClose}
-      actions={[
+    <Modal variant={ModalVariant.small} isOpen onClose={onClose}>
+      <ModalHeader title={t("revokeVerifiableCredentialTitle")} />
+      <ModalBody>
+        {t("deleteCredentialConfirm", {
+          credentialName,
+        })}
+      </ModalBody>
+      <ModalFooter>
         <Button
           key="confirm"
           variant="danger"
@@ -60,15 +65,11 @@ const RevokeDialog = ({
           }}
         >
           {t("doRevoke")}
-        </Button>,
+        </Button>
         <Button key="cancel" variant="link" onClick={onClose}>
           {t("doCancel")}
-        </Button>,
-      ]}
-    >
-      {t("deleteCredentialConfirm", {
-        credentialName,
-      })}
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

@@ -25,11 +25,11 @@
     "test": "wireit"
   },
   "dependencies": {
-    "@keycloak/keycloak-ui-shared": "workspace:*",
-    "@patternfly/patternfly": "^5.4.2",
-    "@patternfly/react-core": "^5.4.14",
-    "@patternfly/react-icons": "^5.4.2",
-    "@patternfly/react-table": "^5.4.16",
+    "@keycloak/keycloak-ui-shared": "workspace:@keycloak/keycloak-ui-shared",
+    "@patternfly/patternfly": "^6.6.1",
+    "@patternfly/react-core": "^6.6.1",
+    "@patternfly/react-icons": "^6.6.1",
+    "@patternfly/react-table": "^6.6.1",
     "i18next": "^25.7.3",
     "i18next-fetch-backend": "^7.0.0",
     "keycloak-js": "^26.2.2",
@@ -57,21 +57,21 @@
     "dev": {
       "command": "vite --host",
       "dependencies": [
-        "../../libs/ui-shared:build",
+        "../../libs/ui-shared-pf6:build",
         "../../libs/keycloak-admin-client:build"
       ]
     },
     "preview": {
       "command": "vite preview",
       "dependencies": [
-        "../../libs/ui-shared:build",
+        "../../libs/ui-shared-pf6:build",
         "../../libs/keycloak-admin-client:build"
       ]
     },
     "build": {
       "command": "vite build",
       "dependencies": [
-        "../../libs/ui-shared:build",
+        "../../libs/ui-shared-pf6:build",
         "../../libs/keycloak-admin-client:build"
       ],
       "files": [
@@ -81,20 +81,20 @@
         "vite.config.ts"
       ],
       "output": [
-        "target/classes/theme/keycloak.v3/account/resources"
+        "target/classes/theme/keycloak.v4/account/resources"
       ]
     },
     "build-lib": {
       "command": "cross-env LIB=true vite build",
       "dependencies": [
-        "../../libs/ui-shared:build",
+        "../../libs/ui-shared-pf6:build",
         "../../libs/keycloak-admin-client:build"
       ]
     },
     "lint": {
       "command": "eslint .",
       "dependencies": [
-        "../../libs/ui-shared:build",
+        "../../libs/ui-shared-pf6:build",
         "../../libs/keycloak-admin-client:build"
       ]
     },
