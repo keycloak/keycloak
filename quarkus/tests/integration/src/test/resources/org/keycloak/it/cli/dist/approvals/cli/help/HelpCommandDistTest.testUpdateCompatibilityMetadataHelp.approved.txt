@@ -36,6 +36,16 @@ Cache:
                      The maximum number of entries that can be stored in-memory by the
                        clientSessions cache. Available only when embedded Infinispan clusters
                        configured.
+--cache-embedded-cluster-name <name>
+                     Name of the embedded Infinispan cluster. All nodes that belong to the same
+                       Keycloak deployment must share the same value; nodes that belong to
+                       different deployments sharing the same database must each use a different
+                       value. Defaults to 'ISPN' if not set. WARNING: Using distinct cluster names
+                       without enabling the stateless feature disables cross-cluster cache
+                       invalidation, which leads to stale caches and incorrect behavior. Use only
+                       together with '--features=stateless'. Available only when Infinispan
+                       clustered embedded is enabled. Required when feature 'stateless' is set and
+                       embedded Infinispan is enabled.
 --cache-embedded-crl-max-count <max-count>
                      The maximum number of entries that can be stored in-memory by the crl cache.
 --cache-embedded-keys-max-count <max-count>
@@ -81,6 +91,10 @@ Cache:
                        only if it is different to cache-embedded-network-bind-port, for example
                        when this instance is behind a firewall Available only when Infinispan
                        clustered embedded is enabled.
+--cache-embedded-node-name <name>
+                     Name of this node in the embedded cluster. Used in log messages and management
+                       tools to identify this instance. If not set, a name is generated
+                       automatically. Available only when Infinispan clustered embedded is enabled.
 --cache-embedded-offline-client-sessions-max-count <max-count>
                      The maximum number of entries that can be stored in-memory by the
                        offlineClientSessions cache. Available only when embedded Infinispan

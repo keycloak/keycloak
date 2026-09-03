@@ -146,7 +146,7 @@ See <@links.operator id="customizing-keycloak" /> for details.
 [source,yaml]
 ----
   additionalOptions:
-    - name: spi-cache-embedded--default--cluster-name
+    - name: cache-embedded-cluster-name
       value: CLUSTER1 # <1>
 ----
 <1> Use a distinct name for each site (for example, `CLUSTER1` and `CLUSTER2`). No two sites may share the same name.
