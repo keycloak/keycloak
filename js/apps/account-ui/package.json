@@ -51,7 +51,7 @@
     "lightningcss": "^1.30.2",
     "vite": "^7.3.5",
     "vite-plugin-checker": "^0.12.0",
-    "vite-plugin-dts": "^4.5.4"
+    "vite-plugin-dts": "^5.0.3"
   },
   "wireit": {
     "dev": {
