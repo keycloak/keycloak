@@ -205,7 +205,9 @@ async function rewriteThemeProperties(themePropertiesPath) {
   let content = await readFile(themePropertiesPath, "utf8");
   content = content
     .replaceAll("vendor/patternfly-v5/", "vendor/patternfly-v6/")
-    .replaceAll("pf-v5-theme-dark", "pf-v6-theme-dark");
+    .replaceAll("pf-v5-theme-dark", "pf-v6-theme-dark")
+    .replaceAll("parent=keycloak.v2", "parent=keycloak.v3")
+    .replaceAll("parent=rh-sso.v2", "parent=keycloak.v3");
   await writeFile(themePropertiesPath, content, "utf8");
 }
 
