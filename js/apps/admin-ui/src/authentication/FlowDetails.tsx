@@ -94,6 +94,7 @@ export default function FlowDetails() {
     ({ flow, executions }) => {
       setFlow(flow);
       setExecutionList(new ExecutionList(executions));
+      setIsReordering(false);
     },
     [key],
   );
@@ -168,8 +169,10 @@ export default function FlowDetails() {
       }
       refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
+      return true;
     } catch (error) {
       addError("updateFlowError", error);
+      return false;
     }
   };
 
@@ -447,9 +450,11 @@ export default function FlowDetails() {
                       order.splice(dest.index, 0, removed);
                       const change = executionList.getChange(dragged, order);
                       setIsReordering(true);
-                      void executeChange(dragged, change).finally(() =>
-                        setIsReordering(false),
-                      );
+                      void executeChange(dragged, change).then((success) => {
+                        if (!success) {
+                          setIsReordering(false);
+                        }
+                      });
                       return true;
                     } else {
                       setLiveText(t("onDragCancel"));

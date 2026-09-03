@@ -41,7 +41,12 @@ export const LoadingOverlay = ({
       aria-busy={isLoading}
       data-testid={dataTestId}
     >
-      {children}
+      <div
+        className={style.overlayContent}
+        {...(isLoading ? { inert: "" } : {})}
+      >
+        {children}
+      </div>
       {isLoading && (
         <div className={style.overlaySkeleton} data-testid="loading-spinner">
           {skeleton ?? <TableLoadingSkeleton />}
