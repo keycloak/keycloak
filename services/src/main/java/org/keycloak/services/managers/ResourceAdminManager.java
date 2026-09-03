@@ -38,6 +38,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -233,9 +234,11 @@ public class ResourceAdminManager {
                         resource.getClientId(), clientSessionModel.getId(), managementUrl);
             }
 
-            int status = SimpleHttp.create(session).doPost(managementUrl)
-                    .param(OAuth2Constants.LOGOUT_TOKEN, token)
-                    .asStatus();
+            SimpleHttpRequest request = SimpleHttp.create(session).doPost(managementUrl);
+            if (token != null) {
+                request.param(OAuth2Constants.LOGOUT_TOKEN, token);
+            }
+            int status = request.asStatus();
             boolean success = status == 204 || status == 200;
             logger.debugf("Received response for backchannel-logout from client. " +
                           "clientId='%s' clientSessionId='%s' backchannelLogoutUrl='%s' status=%s success=%s",

@@ -1481,6 +1481,10 @@ public class SamlService extends AuthorizationEndpointBase {
                 if (soapResponse == null) {
                     throw new ProcessingException("Artifact resolution returned empty response");
                 }
+                if (soapResponse.getSOAPBody().hasFault()) {
+                    throw new ProcessingException("Artifact resolution returned SOAP fault: "
+                            + soapResponse.getSOAPBody().getFault().getFaultString());
+                }
 
                 Document soapBodyContents = Soap.extractSoapMessage(soapResponse);
                 SAMLDocumentHolder samlDoc = SAML2Request.getSAML2ObjectFromDocument(soapBodyContents);

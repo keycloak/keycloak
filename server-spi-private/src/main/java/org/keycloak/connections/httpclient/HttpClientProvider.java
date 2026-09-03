@@ -17,13 +17,13 @@
 
 package org.keycloak.connections.httpclient;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
 import org.keycloak.provider.Provider;
 
-import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -95,11 +95,27 @@ public interface HttpClientProvider extends Provider {
         if (headers != null) {
             headers.forEach(get::setHeader);
         }
-        HttpResponse response = getHttpClient().execute(get);
+        CloseableHttpResponse response = (CloseableHttpResponse) getHttpClient().execute(get);
+        int status = response.getStatusLine().getStatusCode();
+        if (status < 200 || status >= 300) {
+            response.close();
+            throw new IOException("HTTP " + status + " from " + uri);
+        }
         if (response.getEntity() == null) {
+            response.close();
             throw new IOException("No content returned from HTTP call");
         }
-        return response.getEntity().getContent();
+        InputStream content = response.getEntity().getContent();
+        return new FilterInputStream(content) {
+            @Override
+            public void close() throws IOException {
+                try {
+                    super.close();
+                } finally {
+                    response.close();
+                }
+            }
+        };
     }
 
     /**
