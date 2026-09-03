@@ -202,8 +202,6 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
             } else {
                 this.entity.removeDomain(domainEntity);
                 domainEntity.setIdentityProvider(null);
-                // TODO: when separate domain management allows M:N sharing, only remove the join row
-                //  and rely on orphan cleanup instead of deleting the DOMAIN row outright
                 em.remove(domainEntity);
             }
         }

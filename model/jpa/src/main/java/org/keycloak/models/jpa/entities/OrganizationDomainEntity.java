@@ -35,7 +35,7 @@ import jakarta.persistence.Table;
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
 @Entity
-@Table(name="DOMAIN")
+@Table(name="ORG_DOMAIN")
 @NamedQueries({
         @NamedQuery(name = "getDomainByRealmAndName", query = "select d from OrganizationDomainEntity d where d.realmId = :realmId and d.name = :name"),
         @NamedQuery(name = "deleteOrganizationDomainsByRealm", query = "delete from OrganizationDomainEntity d where d.realmId = :realmId")
@@ -59,6 +59,10 @@ public class OrganizationDomainEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "IDP_ID", referencedColumnName = "INTERNAL_ID")
     private IdentityProviderEntity identityProvider;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ORG_ID")
+    private OrganizationEntity organization;
 
     @Column(name = "AUTO_REDIRECT", nullable = false)
     private boolean autoRedirect;
@@ -101,6 +105,14 @@ public class OrganizationDomainEntity {
 
     public void setIdentityProvider(IdentityProviderEntity identityProvider) {
         this.identityProvider = identityProvider;
+    }
+
+    public OrganizationEntity getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(OrganizationEntity organization) {
+        this.organization = organization;
     }
 
     public boolean isAutoRedirect() {

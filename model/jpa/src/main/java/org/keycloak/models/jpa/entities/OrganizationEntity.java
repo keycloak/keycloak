@@ -28,9 +28,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
@@ -80,12 +77,7 @@ public class OrganizationEntity {
     @Column(name = "GROUP_ID")
     private String groupId;
 
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(
-            name = "ORG_DOMAIN",
-            joinColumns = @JoinColumn(name = "ORG_ID"),
-            inverseJoinColumns = @JoinColumn(name = "DOMAIN_ID")
-    )
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "organization", fetch = FetchType.LAZY)
     protected Set<OrganizationDomainEntity> domains = new HashSet<>();
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "organization", fetch = FetchType.LAZY)
@@ -170,10 +162,12 @@ public class OrganizationEntity {
 
     public void addDomain(OrganizationDomainEntity domainEntity) {
         this.domains.add(domainEntity);
+        domainEntity.setOrganization(this);
     }
 
     public void removeDomain(OrganizationDomainEntity domainEntity) {
         this.domains.remove(domainEntity);
+        domainEntity.setOrganization(null);
     }
 
     public Set<OrganizationIdentityProviderEntity> getIdentityProviderLinks() {

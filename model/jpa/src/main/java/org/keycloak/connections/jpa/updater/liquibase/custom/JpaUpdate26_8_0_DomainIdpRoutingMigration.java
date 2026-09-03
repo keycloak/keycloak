@@ -65,7 +65,6 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigration extends CustomKeycloakTas
     private void populateDomainIdpRouting() throws CustomChangeException {
         String ipcTable = database.correctObjectName("IDENTITY_PROVIDER_CONFIG", Table.class);
         String idpTable = database.correctObjectName("IDENTITY_PROVIDER", Table.class);
-        String domainTable = database.correctObjectName("DOMAIN", Table.class);
         String orgDomainTable = database.correctObjectName("ORG_DOMAIN", Table.class);
 
         try (PreparedStatement ps = connection.prepareStatement(
@@ -80,9 +79,9 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigration extends CustomKeycloakTas
                 boolean autoRedirect = isEmailMatchEnabled(idpInternalId);
 
                 if (!"ANY".equals(domainValue)) {
-                    // Case A: specific domain name — look up DOMAIN.ID scoped by IdP's realm
+                    // Case A: specific domain name — look up ORG_DOMAIN.ID scoped by IdP's realm
                     try (PreparedStatement domLookup = connection.prepareStatement(
-                            "SELECT dom.ID FROM " + getTableName(domainTable) + " dom" +
+                            "SELECT dom.ID FROM " + getTableName(orgDomainTable) + " dom" +
                                     " JOIN " + getTableName(idpTable) + " ip ON dom.REALM_ID = ip.REALM_ID" +
                                     " WHERE dom.NAME = ? AND ip.INTERNAL_ID = ?")) {
                         domLookup.setString(1, domainValue);
@@ -90,7 +89,7 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigration extends CustomKeycloakTas
                         try (ResultSet domRs = domLookup.executeQuery()) {
                             if (domRs.next()) {
                                 String domainId = domRs.getString(1);
-                                statements.add(new UpdateStatement(null, null, domainTable)
+                                statements.add(new UpdateStatement(null, null, orgDomainTable)
                                         .addNewColumnValue("IDP_ID", idpInternalId)
                                         .addNewColumnValue("AUTO_REDIRECT", autoRedirect)
                                         .setWhereClause("ID=?")
@@ -155,7 +154,6 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigration extends CustomKeycloakTas
     private void setIdpForOrgDomains(String idpInternalId, Set<String> excludedDomains, boolean autoRedirect) throws Exception {
         String idpTable = database.correctObjectName("IDENTITY_PROVIDER", Table.class);
         String orgDomainTable = database.correctObjectName("ORG_DOMAIN", Table.class);
-        String domainTable = database.correctObjectName("DOMAIN", Table.class);
 
         // Find orgs linked to this IdP — query IDENTITY_PROVIDER directly because
         // ORG_IDENTITY_PROVIDER inserts are deferred (not yet executed by Liquibase)
@@ -170,11 +168,10 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigration extends CustomKeycloakTas
                     Set<String> existingDomainNames = new HashSet<>();
                     Set<String> insertedDomains = new HashSet<>();
 
-                    // Get all domains for this org
+                    // Get all domains for this org (ORG_ID is directly on ORG_DOMAIN)
                     try (PreparedStatement domPs = connection.prepareStatement(
-                            "SELECT dom.ID, dom.NAME FROM " + getTableName(domainTable) + " dom" +
-                                    " JOIN " + getTableName(orgDomainTable) + " od ON od.DOMAIN_ID = dom.ID" +
-                                    " WHERE od.ORG_ID = ? AND dom.IDP_ID IS NULL")) {
+                            "SELECT d.ID, d.NAME FROM " + getTableName(orgDomainTable) +
+                                    " d WHERE d.ORG_ID = ? AND d.IDP_ID IS NULL")) {
                         domPs.setString(1, orgId);
                         try (ResultSet domRs = domPs.executeQuery()) {
                             while (domRs.next()) {
@@ -182,7 +179,7 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigration extends CustomKeycloakTas
                                 String domainName = domRs.getString(2);
                                 existingDomainNames.add(domainName);
                                 if (!excludedDomains.contains(domainName)) {
-                                    statements.add(new UpdateStatement(null, null, domainTable)
+                                    statements.add(new UpdateStatement(null, null, orgDomainTable)
                                             .addNewColumnValue("IDP_ID", idpInternalId)
                                             .addNewColumnValue("AUTO_REDIRECT", autoRedirect)
                                             .setWhereClause("ID=?")
@@ -192,56 +189,22 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigration extends CustomKeycloakTas
                         }
                     }
 
-                    // Create unrouted DOMAIN rows for excluded patterns not already present
+                    // Create unrouted ORG_DOMAIN rows for excluded patterns not already present
                     for (String excludedPattern : excludedDomains) {
                         if (existingDomainNames.contains(excludedPattern)) {
                             continue;
                         }
 
-                        String domainId = null;
-
-                        // Check if domain already exists in DOMAIN table for this realm
-                        try (PreparedStatement checkDom = connection.prepareStatement(
-                                "SELECT dom.ID FROM " + getTableName(domainTable) +
-                                        " dom WHERE dom.NAME = ? AND dom.REALM_ID = ?")) {
-                            checkDom.setString(1, excludedPattern);
-                            checkDom.setString(2, realmId);
-                            try (ResultSet checkRs = checkDom.executeQuery()) {
-                                if (checkRs.next()) {
-                                    domainId = checkRs.getString(1);
-                                }
-                            }
-                        }
-
-                        if (domainId == null && !insertedDomains.contains(excludedPattern)) {
-                            domainId = UUID.randomUUID().toString();
-                            statements.add(new InsertStatement(null, null, domainTable)
+                        if (!insertedDomains.contains(excludedPattern)) {
+                            String domainId = UUID.randomUUID().toString();
+                            statements.add(new InsertStatement(null, null, orgDomainTable)
                                     .addColumnValue("ID", domainId)
                                     .addColumnValue("NAME", excludedPattern)
                                     .addColumnValue("VERIFIED", false)
                                     .addColumnValue("REALM_ID", realmId)
+                                    .addColumnValue("ORG_ID", orgId)
                                     .addColumnValue("AUTO_REDIRECT", false));
                             insertedDomains.add(excludedPattern);
-                        }
-
-                        if (domainId != null) {
-                            // Check if already linked to this org
-                            boolean alreadyLinked = false;
-                            try (PreparedStatement checkLink = connection.prepareStatement(
-                                    "SELECT 1 FROM " + getTableName(orgDomainTable) +
-                                            " WHERE DOMAIN_ID = ? AND ORG_ID = ?")) {
-                                checkLink.setString(1, domainId);
-                                checkLink.setString(2, orgId);
-                                try (ResultSet linkRs = checkLink.executeQuery()) {
-                                    alreadyLinked = linkRs.next();
-                                }
-                            }
-
-                            if (!alreadyLinked) {
-                                statements.add(new InsertStatement(null, null, orgDomainTable)
-                                        .addColumnValue("DOMAIN_ID", domainId)
-                                        .addColumnValue("ORG_ID", orgId));
-                            }
                         }
                     }
                 }
