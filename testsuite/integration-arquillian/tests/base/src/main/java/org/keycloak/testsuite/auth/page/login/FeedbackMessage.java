@@ -45,7 +45,7 @@ public class FeedbackMessage {
       + INFO
       + ")");
 
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert']")
+    @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert']")
     private WebElement alertRoot;
 
     @FindBy(css = "span[id^='input-error']")

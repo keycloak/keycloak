@@ -20,7 +20,7 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
     "resources",
     environment.resourceVersion,
   );
-  const loginResourceUrl = `${resourceUrlRoot}/login/keycloak.v2`;
+  const loginResourceUrl = `${resourceUrlRoot}/login/keycloak.v3`;
 
   // Default login theme resources from local files
   const defaultBgImage = `${loginResourceUrl}/img/keycloak-bg-darken.svg`;
@@ -42,7 +42,7 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
       <style>{`
         .login-preview {
             ${Object.entries(cssVars)
-              .map(([key, value]) => `--pf-v5-global--${key}: ${value};`)
+              .map(([key, value]) => `--pf-t--global--${key}: ${value};`)
               .join("\n")}
 
           /* Keycloak login theme variables - override with local/uploaded images */
@@ -64,10 +64,10 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
           position-area: start center;
           margin-bottom: 3rem;
         }
-        .login-preview .pf-v5-c-login__main {
+        .login-preview .pf-v6-c-login__main {
           anchor-name: --logo;
         }
-        .login-preview .pf-v5-c-login__footer {
+        .login-preview .pf-v6-c-login__footer {
           display: none;
         }
       `}</style>
