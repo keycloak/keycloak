@@ -20,39 +20,37 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 import liquibase.exception.CustomChangeException;
-import liquibase.statement.core.InsertStatement;
+import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.core.Table;
 
-public class JpaUpdate26_8_0_PopulateOrgDomainJoinMigration extends CustomKeycloakTask {
+public class JpaUpdate26_8_0_PopulateOrgDomainRealmId extends CustomKeycloakTask {
 
     @Override
     protected void generateStatementsImpl() throws CustomChangeException {
-        String orgDomainOldTable = database.correctObjectName("ORG_DOMAIN_OLD", Table.class);
-        String orgTable = database.correctObjectName("ORG", Table.class);
-        String domainTable = database.correctObjectName("DOMAIN", Table.class);
         String orgDomainTable = database.correctObjectName("ORG_DOMAIN", Table.class);
+        String orgTable = database.correctObjectName("ORG", Table.class);
 
         try (PreparedStatement ps = connection.prepareStatement(
-                "SELECT dom.ID, od.ORG_ID FROM " + getTableName(orgDomainOldTable) +
-                        " od JOIN " + getTableName(orgTable) + " o ON od.ORG_ID = o.ID" +
-                        " JOIN " + getTableName(domainTable) + " dom ON dom.NAME = od.NAME AND dom.REALM_ID = o.REALM_ID");
+                "SELECT d.ID, o.REALM_ID FROM " + getTableName(orgDomainTable) +
+                        " d JOIN " + getTableName(orgTable) + " o ON d.ORG_ID = o.ID WHERE d.REALM_ID IS NULL");
              ResultSet rs = ps.executeQuery()) {
 
             int count = 0;
             while (rs.next()) {
-                statements.add(new InsertStatement(null, null, orgDomainTable)
-                        .addColumnValue("DOMAIN_ID", rs.getString(1))
-                        .addColumnValue("ORG_ID", rs.getString(2)));
+                statements.add(new UpdateStatement(null, null, orgDomainTable)
+                        .addNewColumnValue("REALM_ID", rs.getString(2))
+                        .setWhereClause("ID=?")
+                        .addWhereParameter(rs.getString(1)));
                 count++;
             }
-            confirmationMessage.append("Populated ORG_DOMAIN join table with ").append(count).append(" rows.");
+            confirmationMessage.append("Populated REALM_ID for ").append(count).append(" ORG_DOMAIN rows.");
         } catch (Exception e) {
-            throw new CustomChangeException(getTaskId() + ": Exception when populating ORG_DOMAIN join table", e);
+            throw new CustomChangeException(getTaskId() + ": Exception when populating ORG_DOMAIN.REALM_ID", e);
         }
     }
 
     @Override
     protected String getTaskId() {
-        return "Populate ORG_DOMAIN join table from ORG_DOMAIN_OLD data";
+        return "Populate ORG_DOMAIN.REALM_ID from ORG.REALM_ID";
     }
 }

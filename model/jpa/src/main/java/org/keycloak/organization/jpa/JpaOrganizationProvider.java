@@ -173,12 +173,6 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
             em.remove(entity);
             em.flush();
-
-            // ORG_DOMAIN join rows are cascade-deleted by the DB FK; clean up orphan DOMAIN rows
-            em.createQuery("DELETE FROM OrganizationDomainEntity d WHERE d.realmId = :realmId " +
-                            "AND d NOT IN (SELECT d2 FROM OrganizationEntity o JOIN o.domains d2)")
-                    .setParameter("realmId", getRealm().getId())
-                    .executeUpdate();
         } finally {
             session.getContext().setOrganization(null);
         }

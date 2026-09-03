@@ -159,98 +159,65 @@
         </modifySql>
     </changeSet>
 
-    <!-- Create the global DOMAIN table -->
-    <changeSet author="keycloak" id="26.8.0-create-domain-table">
+    <!-- Add REALM_ID column to ORG_DOMAIN (nullable first, populated next) -->
+    <changeSet author="keycloak" id="26.8.0-org-domain-add-realm-id">
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <not>
-                <tableExists tableName="DOMAIN"/>
+                <columnExists tableName="ORG_DOMAIN" columnName="REALM_ID"/>
             </not>
         </preConditions>
-        <createTable tableName="DOMAIN">
-            <column name="ID" type="VARCHAR(36)">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="NAME" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="VERIFIED" type="BOOLEAN" defaultValueBoolean="false">
-                <constraints nullable="false"/>
-            </column>
-            <column name="REALM_ID" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="IDP_ID" type="VARCHAR(36)"/>
-            <column name="AUTO_REDIRECT" type="BOOLEAN" defaultValueBoolean="false">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-        <addUniqueConstraint tableName="DOMAIN" columnNames="REALM_ID, NAME" constraintName="UK_DOMAIN_REALM_NAME"/>
-        <createIndex tableName="DOMAIN" indexName="IDX_DOMAIN_REALM">
+        <addColumn tableName="ORG_DOMAIN">
+            <column name="REALM_ID" type="VARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+
+    <!-- Populate REALM_ID from ORG table -->
+    <changeSet author="keycloak" id="26.8.0-org-domain-populate-realm-id">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <columnExists tableName="ORG_DOMAIN" columnName="REALM_ID"/>
+        </preConditions>
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_PopulateOrgDomainRealmId"/>
+    </changeSet>
+
+    <!-- Make REALM_ID NOT NULL + add unique constraint and index -->
+    <changeSet author="keycloak" id="26.8.0-org-domain-realm-id-not-null">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <columnExists tableName="ORG_DOMAIN" columnName="REALM_ID"/>
+        </preConditions>
+        <addNotNullConstraint tableName="ORG_DOMAIN" columnName="REALM_ID" columnDataType="VARCHAR(255)"/>
+        <addUniqueConstraint tableName="ORG_DOMAIN" columnNames="REALM_ID, NAME"
+                             constraintName="UK_ORG_DOMAIN_REALM_NAME"/>
+        <createIndex tableName="ORG_DOMAIN" indexName="IDX_ORG_DOMAIN_REALM">
             <column name="REALM_ID" type="VARCHAR(255)"/>
         </createIndex>
     </changeSet>
 
-    <!-- Populate DOMAIN from existing ORG_DOMAIN data -->
-    <changeSet author="keycloak" id="26.8.0-populate-domain-table">
-        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
-            <and>
-                <tableExists tableName="DOMAIN"/>
-                <tableExists tableName="ORG_DOMAIN"/>
-                <columnExists tableName="ORG_DOMAIN" columnName="ORG_ID"/>
-            </and>
-        </preConditions>
-        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_PopulateDomainTableMigration"/>
-    </changeSet>
-
-    <!-- Drop old ORG_DOMAIN index and rename table -->
-    <changeSet author="keycloak" id="26.8.0-rename-org-domain-old">
+    <!-- Add IDP_ID and AUTO_REDIRECT columns to ORG_DOMAIN -->
+    <changeSet author="keycloak" id="26.8.0-org-domain-add-idp-columns">
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <not>
-                <tableExists tableName="ORG_DOMAIN_OLD"/>
+                <columnExists tableName="ORG_DOMAIN" columnName="IDP_ID"/>
             </not>
         </preConditions>
-        <dropIndex tableName="ORG_DOMAIN" indexName="IDX_ORG_DOMAIN_ORG_ID"/>
-        <renameTable oldTableName="ORG_DOMAIN" newTableName="ORG_DOMAIN_OLD"/>
+        <addColumn tableName="ORG_DOMAIN">
+            <column name="IDP_ID" type="VARCHAR(36)"/>
+            <column name="AUTO_REDIRECT" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
     </changeSet>
 
-    <!-- Create new ORG_DOMAIN as a join table -->
-    <changeSet author="keycloak" id="26.8.0-create-org-domain-join-table">
+    <!-- Add FK on ORG_ID to ORG with CASCADE delete -->
+    <changeSet author="keycloak" id="26.8.0-org-domain-add-org-fk">
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <not>
-                <tableExists tableName="ORG_DOMAIN"/>
+                <foreignKeyConstraintExists foreignKeyName="FK_ORG_DOMAIN_ORG"/>
             </not>
         </preConditions>
-        <createTable tableName="ORG_DOMAIN">
-            <column name="DOMAIN_ID" type="VARCHAR(36)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="ORG_ID" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-        <addPrimaryKey tableName="ORG_DOMAIN" columnNames="DOMAIN_ID, ORG_ID" constraintName="PK_ORG_DOMAIN_JOIN"/>
-        <addForeignKeyConstraint baseTableName="ORG_DOMAIN" baseColumnNames="DOMAIN_ID"
-                                 constraintName="FK_ORG_DOMAIN_DOMAIN"
-                                 referencedTableName="DOMAIN" referencedColumnNames="ID"
-                                 onDelete="CASCADE"/>
         <addForeignKeyConstraint baseTableName="ORG_DOMAIN" baseColumnNames="ORG_ID"
                                  constraintName="FK_ORG_DOMAIN_ORG"
                                  referencedTableName="ORG" referencedColumnNames="ID"
                                  onDelete="CASCADE"/>
-        <createIndex tableName="ORG_DOMAIN" indexName="IDX_ORG_DOMAIN_ORG_ID">
-            <column name="ORG_ID" type="VARCHAR(255)"/>
-        </createIndex>
-        <createIndex tableName="ORG_DOMAIN" indexName="IDX_ORG_DOMAIN_DOMAIN_ID">
-            <column name="DOMAIN_ID" type="VARCHAR(36)"/>
-        </createIndex>
-    </changeSet>
-
-    <!-- Populate new ORG_DOMAIN join table from old data -->
-    <changeSet author="keycloak" id="26.8.0-populate-org-domain">
-        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
-            <tableExists tableName="ORG_DOMAIN_OLD"/>
-        </preConditions>
-        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_PopulateOrgDomainJoinMigration"/>
     </changeSet>
 
     <!-- Create ORG_IDENTITY_PROVIDER join table -->
@@ -290,18 +257,23 @@
         </createIndex>
     </changeSet>
 
-    <!-- Populate ORG_IDENTITY_PROVIDER + DOMAIN.IDP_ID -->
+    <!-- Populate ORG_IDENTITY_PROVIDER + ORG_DOMAIN.IDP_ID routing -->
     <changeSet author="keycloak" id="26.8.0-org-idp-and-domain-routing-migration">
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_DomainIdpRoutingMigration"/>
     </changeSet>
 
-    <!-- Add FK from DOMAIN.IDP_ID to IDENTITY_PROVIDER -->
-    <changeSet author="keycloak" id="26.8.0-add-domain-idp-fk">
-        <addForeignKeyConstraint baseTableName="DOMAIN" baseColumnNames="IDP_ID"
-                                 constraintName="FK_DOMAIN_IDP"
+    <!-- Add FK from ORG_DOMAIN.IDP_ID to IDENTITY_PROVIDER -->
+    <changeSet author="keycloak" id="26.8.0-org-domain-add-idp-fk">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="FK_ORG_DOMAIN_IDP"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="ORG_DOMAIN" baseColumnNames="IDP_ID"
+                                 constraintName="FK_ORG_DOMAIN_IDP"
                                  referencedTableName="IDENTITY_PROVIDER" referencedColumnNames="INTERNAL_ID"
                                  onDelete="SET NULL"/>
-        <createIndex tableName="DOMAIN" indexName="IDX_DOMAIN_IDP_ID">
+        <createIndex tableName="ORG_DOMAIN" indexName="IDX_ORG_DOMAIN_IDP_ID">
             <column name="IDP_ID" type="VARCHAR(36)"/>
         </createIndex>
     </changeSet>
@@ -320,14 +292,6 @@
             <column name="LINK_ONLY"/>
             <column name="HIDE_ON_LOGIN"/>
         </createIndex>
-    </changeSet>
-
-    <!-- Drop the old ORG_DOMAIN backup table -->
-    <changeSet author="keycloak" id="26.8.0-drop-org-domain-old">
-        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
-            <tableExists tableName="ORG_DOMAIN_OLD"/>
-        </preConditions>
-        <dropTable tableName="ORG_DOMAIN_OLD" cascadeConstraints="true"/>
     </changeSet>
 
 </databaseChangeLog>
