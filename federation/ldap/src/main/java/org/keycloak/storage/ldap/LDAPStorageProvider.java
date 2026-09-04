@@ -1301,13 +1301,25 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 .distinct()
                 .count();
         RealmModel realm = session.getContext().getRealm();
-        // 1 - get configured attributes from LDAP mappers and add them to the user profile (if they not already present)
-        List<String> attributes = realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
+        List<LDAPStorageMapper> ldapMappers = realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
                 .sorted(ldapMappersComparator.sortAsc())
-                .flatMap(mapperModel -> {
-                    LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
-                    return ldapMapper.getUserAttributes().stream();
-                }).toList();
+                .map(mapperManager::getMapper)
+                .toList();
+
+        // 1 - get configured attributes from LDAP mappers and add them to the user profile (if they not already present)
+        List<String> attributes = ldapMappers.stream()
+                .flatMap(ldapMapper -> ldapMapper.getUserAttributes().stream())
+                .toList();
+
+        // Attributes whose value is never actually written back to LDAP even while the provider itself is
+        // WRITABLE - an individual mapper can still be configured read-only, in which case an edit made through
+        // this profile would be silently discarded and overwritten again with the LDAP value on the next import.
+        // canBeFixedByUser() relies on Attributes.isReadOnly() to know this, so it must reflect that reality
+        // rather than only the User Profile permission configuration - see step 3 below.
+        Set<String> notWritableBackToLdap = ldapMappers.stream()
+                .flatMap(ldapMapper -> ldapMapper.getUserAttributes().stream()
+                        .filter(ldapMapper::isUserAttributeReadOnly))
+                .collect(Collectors.toSet());
 
         List<AttributeMetadata> metadatas = new ArrayList<>();
 
@@ -1360,6 +1372,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
         if (getEditMode() == EditMode.READ_ONLY) {
             Stream.concat(metadata.getAttributes().stream(), metadatas.stream())
                     .filter((m) -> !INTERNAL_ATTRIBUTES.contains(m.getName()))
+                    .forEach(attrMetadata -> attrMetadata.addWriteCondition(AttributeMetadata.ALWAYS_FALSE));
+        } else if (!notWritableBackToLdap.isEmpty()) {
+            // provider is WRITABLE overall, but some attributes are still individually read-only at the mapper level
+            Stream.concat(metadata.getAttributes().stream(), metadatas.stream())
+                    .filter((m) -> notWritableBackToLdap.contains(m.getName()))
                     .forEach(attrMetadata -> attrMetadata.addWriteCondition(AttributeMetadata.ALWAYS_FALSE));
         }
 
