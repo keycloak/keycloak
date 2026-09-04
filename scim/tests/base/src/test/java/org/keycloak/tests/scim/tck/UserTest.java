@@ -2871,6 +2871,30 @@ public class UserTest extends AbstractScimTest {
         }
     }
 
+    @Test
+    public void testManyToOneScimAttributeMapping() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
+        String scimAttribute = customSchema + ":mobileNumber";
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+
+        UPAttribute mobileAttr = new UPAttribute("mobile", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, scimAttribute));
+        mobileAttr.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(mobileAttr);
+
+        UPAttribute phoneAttr = new UPAttribute("phone", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, scimAttribute));
+        phoneAttr.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(phoneAttr);
+
+        try {
+            realm.admin().users().userProfile().update(upConfig);
+            fail("should fail because multiple user profile attributes cannot be mapped to the same SCIM attribute");
+        } catch (BadRequestException e) {
+            assertTrue(e.getResponse().getStatus() == 400);
+        }
+    }
+
     private void setupMultivaluedCustomAttributes(String customSchema) {
         UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
 
