@@ -177,6 +177,9 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
             //when accessing the config of the entity (entity.getConfig()) withing the toModel(entity)
             IdentityProviderModel model = toModel(entity);
 
+            em.createNamedQuery("clearDomainIdpRouting")
+                    .setParameter("idpId", entity.getInternalId())
+                    .executeUpdate();
             em.remove(entity);
             // flush so that constraint violations are flagged and converted into model exception now rather than at the end of the tx.
             em.flush();
