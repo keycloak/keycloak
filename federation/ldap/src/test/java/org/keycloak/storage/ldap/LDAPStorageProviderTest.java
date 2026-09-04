@@ -88,6 +88,32 @@ public class LDAPStorageProviderTest {
         Assertions.assertFalse(LDAPStorageProvider.canBeFixedByUser(profile, e));
     }
 
+    @Test
+    public void describeErrors_doesNotIncludeRawMessageParameters() {
+        // Mirrors what EmailValidator actually does: pass the submitted (invalid) value as a message parameter.
+        ValidationException e = validationExceptionFor(
+                new ValidationError("email", "email", "error-invalid-email", "someone@sensitive-domain.example"));
+
+        String description = LDAPStorageProvider.describeErrors(e);
+
+        Assertions.assertFalse(description.contains("someone@sensitive-domain.example"),
+                "The submitted value must not end up in the log message");
+        Assertions.assertTrue(description.contains("email") && description.contains("error-invalid-email"),
+                "The attribute name and message key should still be present for diagnostics");
+    }
+
+    @Test
+    public void describeErrors_multipleErrors_areAllIncluded() {
+        ValidationException e = validationExceptionFor(
+                new ValidationError("person-name-prohibited-characters", "firstName", "error-person-name-invalid-character"),
+                new ValidationError("username-prohibited-characters", "username", "error-username-invalid-character"));
+
+        String description = LDAPStorageProvider.describeErrors(e);
+
+        Assertions.assertTrue(description.contains("firstName") && description.contains("error-person-name-invalid-character"));
+        Assertions.assertTrue(description.contains("username") && description.contains("error-username-invalid-character"));
+    }
+
     private static ValidationException validationExceptionFor(ValidationError... errors) {
         ValidationException.ValidationExceptionBuilder builder = new ValidationException.ValidationExceptionBuilder();
         for (ValidationError error : errors) {
