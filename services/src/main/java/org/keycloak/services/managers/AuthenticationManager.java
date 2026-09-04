@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -88,6 +89,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.SingleUseObjectKeyModel;
 import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.DefaultRequiredActions;
@@ -1702,9 +1704,57 @@ public class AuthenticationManager {
                 accessToken.setRealmAccess(realmAccess);
                 accessToken.setResourceAccess(clientAccess);
                 return true;
+            } else if (accessToken.getSubject() != null) {
+                // Fallback for service accounts using client_credentials grant without a
+                // persistent user session. Only applies to the service account of the
+                // issuing client - other subjects (e.g. expired user sessions) must not
+                // regain roles through this path.
+                UserModel user = session.users().getUserById(realm, accessToken.getSubject());
+                if (user != null && user.getServiceAccountClientLink() != null
+                        && user.getServiceAccountClientLink().equals(client.getId())) {
+                    resolveServiceAccountRoles(session, accessToken, realm, client, user);
+                    return true;
+                }
             }
         }
         return false;
+    }
+
+    /**
+     * Resolve roles for a sessionless service account token, respecting client scope mappings.
+     * Uses the same scope resolution as token creation (including optional scopes from the
+     * original token request) to ensure consistent role visibility.
+     */
+    private static void resolveServiceAccountRoles(KeycloakSession session, AccessToken accessToken,
+                                                    RealmModel realm, ClientModel client, UserModel user) {
+        // Resolve scopes the same way as token creation: default scopes + optional scopes
+        // that were requested in the original client_credentials grant (stored in token's scope claim).
+        Stream<ClientScopeModel> clientScopes = TokenManager.getRequestedClientScopes(
+                session, accessToken.getScope(), client, user);
+        Set<RoleModel> allowedRoles = TokenManager.getAccess(user, client, clientScopes);
+
+        // Split into realm and client role buckets
+        AccessToken.Access realmAccess = new AccessToken.Access();
+        Map<String, AccessToken.Access> resourceAccess = new HashMap<>();
+
+        for (RoleModel role : allowedRoles) {
+            if (role.isClientRole()) {
+                ClientModel roleClient = realm.getClientById(role.getContainerId());
+                if (roleClient == null) {
+                    continue; // skip stale role mappings for removed clients
+                }
+                resourceAccess.computeIfAbsent(roleClient.getClientId(), k -> new AccessToken.Access()).addRole(role.getName());
+            } else {
+                realmAccess.addRole(role.getName());
+            }
+        }
+
+        if (realmAccess.getRoles() != null && !realmAccess.getRoles().isEmpty()) {
+            accessToken.setRealmAccess(realmAccess);
+        }
+        if (!resourceAccess.isEmpty()) {
+            accessToken.setResourceAccess(resourceAccess);
+        }
     }
 
     public enum AuthenticationStatus {
