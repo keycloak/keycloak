@@ -12,8 +12,12 @@
                          "main"
 }
 
-.pf-v6-c-login__main-header {
+.pf-v6-c-login__main {
     border-top: 4px solid var(--keycloak-card-top-color);
+}
+
+.pf-v6-c-login__main-header {
+    border-top: none;
 }
 
 /* Info section - top margin + bottom padding */
