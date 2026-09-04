@@ -1,4 +1,5 @@
 import { type Page, expect } from "@playwright/test";
+import { switchOff } from "../utils/form.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { waitForLoadingComplete } from "../utils/loading.ts";
 import { SERVER_URL } from "../utils/constants.ts";
@@ -80,7 +81,7 @@ export async function createJwtAuthorizationGrantProviderKey(
   await clickProviderCard(page, providerName);
   await page.getByTestId("config.issuer").fill(issuer);
   await expect(page.getByTestId("config.useJwksUrl")).toBeChecked();
-  await page.getByTestId("config.useJwksUrl").click();
+  await switchOff(page, page.getByTestId("config.useJwksUrl"));
   await expect(
     page.getByTestId("config.publicKeySignatureVerifierKeyId"),
   ).toBeVisible();
