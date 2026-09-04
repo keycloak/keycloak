@@ -29,6 +29,7 @@ import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -68,10 +69,13 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class OrganizationMemberResource {
+
+    private static final Logger logger = Logger.getLogger(OrganizationMemberResource.class);
 
     private final KeycloakSession session;
     private final RealmModel realm;
@@ -234,6 +238,53 @@ public class OrganizationMemberResource {
         UserModel member = getMember(memberId);
         auth.users().requireView(member);
         return toRepresentation(member, false);
+    }
+
+    @Path("{member-id}/membership-type")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Updates the membership type of the member with the specified id")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public Response updateMembershipType(@PathParam("member-id") String memberId, MembershipType membershipType) {
+        auth.orgs().requireManage(organization);
+        if (StringUtil.isBlank(memberId)) {
+            throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
+        }
+        if (membershipType == null) {
+            throw ErrorResponse.error("membershipType cannot be null", Status.BAD_REQUEST);
+        }
+
+        UserModel member = getMember(memberId);
+        auth.users().requireManage(member);
+
+        if (provider.updateMembershipType(organization, member, membershipType)) {
+            if (MembershipType.MANAGED.equals(membershipType)) {
+                logger.warnf("Changed membership type to MANAGED for user '%s' in organization '%s'. "
+                        + "Removing this member or deleting the organization will also remove the user from the realm.",
+                        member.getUsername(), organization.getName());
+            } else {
+                logger.warnf("Changed membership type to UNMANAGED for user '%s' in organization '%s'. "
+                        + "The user may lack local credentials if originally federated via an identity provider.",
+                        member.getUsername(), organization.getName());
+            }
+
+            adminEvent.operation(OperationType.UPDATE)
+                    .representation(toRepresentation(member, false))
+                    .resourcePath(session.getContext().getUri())
+                    .detail(UserModel.USERNAME, member.getUsername())
+                    .detail(UserModel.EMAIL, member.getEmail())
+                    .detail(MembershipType.NAME, membershipType.name())
+                    .success();
+            return Response.noContent().build();
+        }
+
+        throw ErrorResponse.error("Not a member of the organization", Status.BAD_REQUEST);
     }
 
     @Path("{member-id}")

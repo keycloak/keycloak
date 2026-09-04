@@ -195,6 +195,35 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         return addMember(organization, user, new MembershipMetadata(MembershipType.UNMANAGED));
     }
 
+    @Override
+    public boolean updateMembershipType(OrganizationModel organization, UserModel member, MembershipType membershipType) {
+        throwExceptionIfObjectIsNull(organization, "organization");
+        throwExceptionIfObjectIsNull(member, "member");
+        throwExceptionIfObjectIsNull(membershipType, "membershipType");
+
+        UserEntity userEntity = em.find(UserEntity.class, member.getId());
+        if (userEntity == null) {
+            return false;
+        }
+
+        GroupModel organizationGroup = getOrganizationGroup(organization);
+        try {
+            UserGroupMembershipEntity membership = em.createNamedQuery("userMemberOf", UserGroupMembershipEntity.class)
+                    .setParameter("user", userEntity)
+                    .setParameter("groupId", organizationGroup.getId())
+                    .getSingleResult();
+
+            if (membershipType.equals(membership.getMembershipType())) {
+                return true;
+            }
+
+            membership.setMembershipType(membershipType);
+            return true;
+        } catch (NoResultException e) {
+            return false;
+        }
+    }
+
     private boolean addMember(OrganizationModel organization, UserModel user, MembershipMetadata metadata) {
         throwExceptionIfObjectIsNull(organization, "Organization");
         throwExceptionIfObjectIsNull(user, "User");

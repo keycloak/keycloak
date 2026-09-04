@@ -37,6 +37,7 @@ import org.keycloak.models.cache.infinispan.RealmCacheSession;
 import org.keycloak.models.cache.infinispan.UserCacheSession;
 import org.keycloak.organization.InvitationManager;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.representations.idm.MembershipType;
 
 import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyOrgId;
 
@@ -197,6 +198,12 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     public boolean removeMember(OrganizationModel organization, UserModel member) {
         registerMemberInvalidation(organization, member);
         return getDelegate().removeMember(organization, member);
+    }
+
+    @Override
+    public boolean updateMembershipType(OrganizationModel organization, UserModel member, MembershipType membershipType) {
+        registerMemberInvalidation(organization, member);
+        return getDelegate().updateMembershipType(organization, member, membershipType);
     }
 
     @Override
