@@ -33,7 +33,6 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.forms.RegisterWithUserProfileTest;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
@@ -598,7 +597,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
     }
 
     protected UserRepresentation getUserByUsername(String username) {
-        return VerifyProfileTest.getUserByUsername(managedRealm.admin(), username);
+        return UserProfileUtil.getUserByUsername(managedRealm.admin(), username);
     }
 
     protected void updateUserByUsername(String username, String firstName, String lastName, String department) {

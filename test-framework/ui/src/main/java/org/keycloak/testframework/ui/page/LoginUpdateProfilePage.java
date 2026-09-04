@@ -123,6 +123,14 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
         return departmentInput.isEnabled();
     }
 
+    public boolean isUsernameEnabled() {
+        try {
+            return usernameInput.isEnabled();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
+    }
+
     public UpdateProfileErrors getInputErrors() {
         return errorsPage;
     }
