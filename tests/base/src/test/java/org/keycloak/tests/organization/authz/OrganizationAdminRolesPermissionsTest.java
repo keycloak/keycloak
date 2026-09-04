@@ -17,8 +17,6 @@
 
 package org.keycloak.tests.organization.authz;
 
-import java.util.HashMap;
-import java.util.Map;
 
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
@@ -969,9 +967,6 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             idpRep.setAlias("genericOrgBoundIdp");
             idpRep.setProviderId("oidc");
             idpRep.setOrganizationId(orgId);
-            Map<String, String> config = new HashMap<>();
-            config.put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, "genericidpbind.org");
-            idpRep.setConfig(config);
 
             try (Response response = viewOrgsManageIdpsResource.identityProviders().create(idpRep)) {
                 assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));

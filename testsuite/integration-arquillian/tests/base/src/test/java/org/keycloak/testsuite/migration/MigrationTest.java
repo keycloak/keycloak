@@ -95,4 +95,17 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo26_4_0();
         testMigrationTo26_7_0();
     }
+
+    @Test
+    @Migration(versionPrefix = "26.")
+    public void migration26_xTest() throws Exception{
+        testMigratedData(false);
+
+        // Always test offline-token login during migration test
+        testOfflineTokenLogin();
+        testExtremelyLongClientAttribute(migrationRealm);
+
+        testMigrationTo26_7_0();
+        testOrgDomainMigrationTo26_8_0();
+    }
 }
