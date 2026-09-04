@@ -46,8 +46,10 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.services.managers.RealmManager;
 
 /**
  * Manages default policies for all users.
@@ -356,8 +358,36 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         if (!canImpersonate()) {
             return false;
         }
-
+        if (hasHigherPrivilegesThanAdmin(user)) {
+            return false;
+        }
         return isImpersonatable(user, requester);
+    }
+
+    boolean hasHigherPrivilegesThanAdmin(UserModel target) {
+        if (root.isRealmAdmin()) {
+            return false;
+        }
+
+        ClientModel realmManagement = root.getRealmManagementClient();
+
+        for (String roleName : AdminRoles.ALL_ROLES) {
+            if (realmManagement != null) {
+                RoleModel clientRole = realmManagement.getRole(roleName);
+                if (clientRole != null && target.hasRole(clientRole) && !root.hasOneAdminRole(roleName)) {
+                    return true;
+                }
+            }
+
+            if (RealmManager.isAdministrationRealm(root.realm)) {
+                RoleModel realmRole = root.realm.getRole(roleName);
+                if (realmRole != null && target.hasRole(realmRole) && !root.admin().hasRole(realmRole)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private boolean canImpersonate(UserModel user) {
