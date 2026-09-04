@@ -48,6 +48,10 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.ValidationException;
 import org.keycloak.util.ldap.LDAPEmbeddedServer;
 
 import org.apache.directory.api.ldap.model.exception.LdapConfigurationException;
@@ -202,6 +206,38 @@ public class LDAPUserProfileValidationTest {
     }
 
     @Test
+    public void testExistingInvalidReadOnlyAttributeOnlyValidatedWhenOptedIn() {
+        final String username = "readonlybypassuser<em>";
+        managedRealm.updateWithCleanup(r -> r.editUsernameAllowed(false));
+
+        // Import with validation disabled: the invalid username is let through untouched, exactly as it would be
+        // for an LDAP user imported before this feature existed, or on a realm that never opts in.
+        setValidateUserProfile(false);
+        try {
+            runOnServer.run(addLdapUser(username, "Valid", "User", "readonly-bypass-user@example.org"));
+
+            List<UserRepresentation> found = managedRealm.admin().users().search(username, true);
+            Assertions.assertEquals(1, found.size(), "Sanity check: import must succeed while validation is disabled.");
+
+            // The username is now read-only (editUsernameAllowed=false) and invalid, but unchanged. Validating the
+            // profile again - e.g. as part of some unrelated profile update - must still forgive it via the legacy
+            // read-only bypass while VALIDATE_USER_PROFILE stays disabled, or the user would be stuck in an
+            // unfixable required-action loop with no relation to LDAP import at all.
+            Assertions.assertFalse(validateUserProfileThrows(username),
+                    "An invalid read-only value must still be forgiven when VALIDATE_USER_PROFILE is disabled.");
+
+            // Opting in afterward activates decorateUserProfile()'s override, so the very same already-invalid
+            // value now fails validation - proving the bypass really was in effect a moment ago, not just
+            // coincidentally passing.
+            setValidateUserProfile(true);
+            Assertions.assertTrue(validateUserProfileThrows(username),
+                    "Once opted in, the same read-only invalid value should no longer be forgiven.");
+        } finally {
+            setValidateUserProfile(true); // restore the class-wide default relied on by every other test
+        }
+    }
+
+    @Test
     public void testFullSyncCountsValidationFailureAsFailed() {
         final String username = "invalidsyncuser<b>";
         managedRealm.updateWithCleanup(r -> r.editUsernameAllowed(false));
@@ -333,5 +369,29 @@ public class LDAPUserProfileValidationTest {
             firstNameMapper.getConfig().putSingle(UserAttributeLDAPStorageMapper.READ_ONLY, String.valueOf(readOnly));
             realm.updateComponent(firstNameMapper);
         });
+    }
+
+    private void setValidateUserProfile(boolean enabled) {
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            ldapModel.getConfig().putSingle(LDAPConstants.VALIDATE_USER_PROFILE, String.valueOf(enabled));
+            realm.updateComponent(ldapModel);
+        });
+    }
+
+    private boolean validateUserProfileThrows(String username) {
+        return runOnServer.fetch(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
+            UserProfile profile = profileProvider.create(UserProfileContext.UPDATE_PROFILE, user);
+            try {
+                profile.validate();
+                return false;
+            } catch (ValidationException e) {
+                return true;
+            }
+        }, Boolean.class);
     }
 }
