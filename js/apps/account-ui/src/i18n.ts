@@ -13,6 +13,12 @@ export const keycloakLanguageDetector: LanguageDetectorModule = {
   type: "languageDetector",
 
   detect() {
+    const kcLocale = new URLSearchParams(window.location.search)
+      .get("kc_locale")
+      ?.trim();
+    if (kcLocale) {
+      return kcLocale;
+    }
     return environment.locale;
   },
 };
