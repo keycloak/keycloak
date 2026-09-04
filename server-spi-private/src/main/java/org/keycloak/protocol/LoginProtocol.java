@@ -117,6 +117,12 @@ public interface LoginProtocol extends Provider {
     Response sendError(ClientModel client, ClientData clientData, Error error);
 
     Response backchannelLogout(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession);
+
+    default Response backchannelLogout(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession,
+                                       boolean logoutAllUserSessions) {
+        return backchannelLogout(userSession, clientSession);
+    }
+
     Response frontchannelLogout(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession);
 
     /**
