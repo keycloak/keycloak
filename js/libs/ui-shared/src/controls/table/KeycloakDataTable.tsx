@@ -138,6 +138,15 @@ function DataTable<T>({
     [selectedRows, rows],
   );
 
+  const selectableRows = useMemo(
+    () =>
+      rows.filter(
+        (row) =>
+          "disableSelection" in row && !row.disableSelection && "data" in row,
+      ),
+    [rows],
+  );
+
   useEffect(() => {
     if (canSelectAll) {
       const selectAllCheckbox = document.getElementsByName("check-all").item(0);
@@ -145,11 +154,17 @@ function DataTable<T>({
       if (selectAllCheckbox) {
         const checkbox = selectAllCheckbox as HTMLInputElement;
         checkbox.indeterminate =
-          rowsSelectedOnPage.length < rows.length &&
+          rowsSelectedOnPage.length < selectableRows.length &&
           rowsSelectedOnPage.length > 0;
       }
     }
-  }, [selectedRows, canSelectAll, rows]);
+  }, [
+    selectedRows,
+    canSelectAll,
+    rows,
+    selectableRows.length,
+    rowsSelectedOnPage.length,
+  ]);
 
   const updateSelectedRows = (selected: T[]) => {
     setSelectedRows(selected);
@@ -167,7 +182,7 @@ function DataTable<T>({
         );
         updateSelectedRows(
           isSelected
-            ? [...selectedRows, ...rows.map((row) => row.data)]
+            ? [...selectedRows, ...selectableRows.map((row) => row.data)]
             : selectedRows.filter(
                 (v) => !rowsSelectedOnPageIds.includes(get(v, "id")),
               ),
@@ -204,7 +219,10 @@ function DataTable<T>({
                       onSelect: (_, isSelected) => {
                         updateState(-1, isSelected);
                       },
-                      isSelected: rowsSelectedOnPage.length === rows.length,
+                      isSelected:
+                        rowsSelectedOnPage.length === selectableRows.length &&
+                        rowsSelectedOnPage.length > 0,
+                      isDisabled: selectableRows.length === 0,
                     }
                   : undefined
               }

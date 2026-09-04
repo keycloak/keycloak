@@ -52,6 +52,22 @@ export async function removeGroup(page: Page, groupName: string) {
     .click();
 }
 
+export async function pickOrganization(page: Page, organizationName: string) {
+  await page.getByTestId("select-organization-button").click();
+  await page
+    .getByRole("row", { name: organizationName })
+    .getByRole("checkbox")
+    .click();
+  await page.getByTestId("add").click();
+}
+
+export async function removeOrganization(page: Page, organizationName: string) {
+  await page
+    .getByRole("row", { name: organizationName })
+    .getByRole("button")
+    .click();
+}
+
 export async function clickCreateNewPolicy(page: Page) {
   await page.getByTestId("select-createNewPolicy-button").click();
 }
