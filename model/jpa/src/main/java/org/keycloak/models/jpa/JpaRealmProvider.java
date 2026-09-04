@@ -61,6 +61,8 @@ import org.keycloak.models.GroupModel.GroupUpdatedEvent;
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
@@ -959,15 +961,46 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
         resource = toClientModel(realm, entity);
 
-        session.getKeycloakSessionFactory().publish(new ClientModel.ClientCreationEvent() {
+        // Defer event publication to after the transaction commits so that the
+        // client representation (attributes, redirect URIs, protocol mappers, etc.)
+        // is fully populated before any on:client-created workflow resource conditions
+        // are evaluated.  See #51594.
+        session.getTransactionManager().enlistAfterCompletion(new KeycloakTransaction() {
             @Override
-            public ClientModel getCreatedClient() {
-                return resource;
+            public void begin() {
             }
 
             @Override
-            public KeycloakSession getKeycloakSession() {
-                return session;
+            public void commit() {
+                session.getKeycloakSessionFactory().publish(new ClientModel.ClientCreationEvent() {
+                    @Override
+                    public ClientModel getCreatedClient() {
+                        return resource;
+                    }
+
+                    @Override
+                    public KeycloakSession getKeycloakSession() {
+                        return session;
+                    }
+                });
+            }
+
+            @Override
+            public void rollback() {
+            }
+
+            @Override
+            public void setRollbackOnly() {
+            }
+
+            @Override
+            public boolean getRollbackOnly() {
+                return false;
+            }
+
+            @Override
+            public boolean isActive() {
+                return true;
             }
         });
         return resource;
