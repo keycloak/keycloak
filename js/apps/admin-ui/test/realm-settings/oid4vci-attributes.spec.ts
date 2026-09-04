@@ -1,10 +1,8 @@
 import { expect, test } from "@playwright/test";
-import { generatePath } from "react-router-dom";
 import { toRealmSettings } from "../../src/realm-settings/routes/RealmSettings.tsx";
 import { createTestBed } from "../support/testbed.ts";
 import adminClient from "../utils/AdminClient.js";
-import { SERVER_URL, ROOT_PATH } from "../utils/constants.ts";
-import { login } from "../utils/login.js";
+import { login, navigateTo } from "../utils/login.js";
 import { changeTimeUnit, selectItem } from "../utils/form.ts";
 
 test("OID4VCI section is hidden in Tokens tab when verifiable credentials are disabled", async ({
@@ -119,13 +117,8 @@ test("should persist values after page refresh", async ({ page }) => {
   // Refresh the page
   await page.reload();
 
-  // Navigate back to realm settings using the same pattern as login
-  const url = new URL(
-    generatePath(ROOT_PATH, { realm: testBed.realm }),
-    SERVER_URL,
-  );
-  url.hash = toRealmSettings({ realm: testBed.realm }).pathname!;
-  await page.goto(url.toString());
+  // Navigate back to realm settings via browser routing.
+  await navigateTo(page, toRealmSettings({ realm: testBed.realm }));
 
   // The TimeSelector component converts values based on units, so we need to check the actual saved values
   const realmData = await adminClient.getRealm(testBed.realm);
