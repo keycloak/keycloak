@@ -84,7 +84,9 @@ export function normalizeConfig(
     properties.filter(isMultivaluedProperty).map((property) => property.name!),
   );
 
-  for (const [key, value] of Object.entries(config || {})) {
+  for (const property of properties) {
+    const key = property.name!;
+    const value = config?.[key];
     if (value === undefined || value === null) {
       continue;
     }
@@ -93,7 +95,8 @@ export function normalizeConfig(
       if (
         target === "string-map" &&
         multivaluedNames.has(key) &&
-        typeof value === "string"
+        typeof value === "string" &&
+        value.includes(MULTIVALUED_DELIMITER)
       ) {
         result[key] = value.split(MULTIVALUED_DELIMITER);
       } else {

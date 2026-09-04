@@ -6,7 +6,7 @@ package org.keycloak.services.ui.extend;
  * When implementing a {@link UiTabProvider}, you can specify how the form data
  * should be stored. The default is {@link #COMPONENT}, which stores data as a
  * Keycloak component. Other options allow storing data directly on existing
- * Keycloak entities like clients, users, groups, or identity providers.
+ * Keycloak entities like clients, users, or identity providers.
  */
 public enum StorageType {
 
