@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   getEntityId,
   interpolateEndpoint,
+  mergeEntityConfig,
   normalizeConfig,
   resolveTabParams,
 } from "./pageHandlerStorage";
@@ -162,6 +163,52 @@ describe("normalizeConfig", () => {
 
     expect(saved).toEqual({
       redirectUris: ["https://a.example", "https://b.example"],
+    });
+  });
+
+  it("round-trips IdentityProviderMultiList values for string-map targets", () => {
+    const property: ConfigPropertyRepresentation = {
+      name: "linkedIdps",
+      type: "IdentityProviderMultiList",
+    };
+    const loaded = normalizeConfig(
+      { linkedIdps: "google##github" },
+      [property],
+      "load",
+      "string-map",
+    );
+
+    expect(loaded).toEqual({ linkedIdps: ["google", "github"] });
+
+    const saved = normalizeConfig(loaded, [property], "save", "string-map");
+
+    expect(saved).toEqual({ linkedIdps: "google##github" });
+  });
+});
+
+describe("mergeEntityConfig", () => {
+  it("removes cleared declared properties from existing values", () => {
+    const result = mergeEntityConfig(
+      { host: "old.example.com", keep: "value" },
+      { host: undefined },
+      [scalarProperty],
+      "string-map",
+    );
+
+    expect(result).toEqual({ keep: "value" });
+  });
+
+  it("updates declared properties and leaves unrelated values intact", () => {
+    const result = mergeEntityConfig(
+      { host: "old.example.com", keep: "value" },
+      { host: ["new.example.com"] },
+      [scalarProperty],
+      "string-map",
+    );
+
+    expect(result).toEqual({
+      host: "new.example.com",
+      keep: "value",
     });
   });
 });

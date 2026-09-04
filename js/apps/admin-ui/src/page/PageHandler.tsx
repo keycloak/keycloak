@@ -22,6 +22,7 @@ import {
   getEntityId,
   interpolateEndpoint,
   isEntityStorageType,
+  mergeEntityConfig,
   normalizeConfig,
   resolveTabParams,
   type StorageType,
@@ -215,15 +216,12 @@ export const PageHandler = ({
               { id: entityId },
               {
                 ...client,
-                attributes: {
-                  ...client?.attributes,
-                  ...normalizeConfig(
-                    formData.config as Record<string, unknown>,
-                    page.properties,
-                    "save",
-                    "string-map",
-                  ),
-                },
+                attributes: mergeEntityConfig(
+                  client?.attributes as Record<string, unknown>,
+                  formData.config as Record<string, unknown>,
+                  page.properties,
+                  "string-map",
+                ) as typeof client.attributes,
               },
             );
           }
@@ -235,15 +233,12 @@ export const PageHandler = ({
               { id: entityId },
               {
                 ...user,
-                attributes: {
-                  ...user?.attributes,
-                  ...normalizeConfig(
-                    formData.config as Record<string, unknown>,
-                    page.properties,
-                    "save",
-                    "list-map",
-                  ),
-                },
+                attributes: mergeEntityConfig(
+                  user?.attributes as Record<string, unknown>,
+                  formData.config as Record<string, unknown>,
+                  page.properties,
+                  "list-map",
+                ) as typeof user.attributes,
               },
             );
           }
@@ -257,15 +252,12 @@ export const PageHandler = ({
               { alias: entityId },
               {
                 ...idp,
-                config: {
-                  ...idp?.config,
-                  ...normalizeConfig(
-                    formData.config as Record<string, unknown>,
-                    page.properties,
-                    "save",
-                    "string-map",
-                  ),
-                },
+                config: mergeEntityConfig(
+                  idp?.config as Record<string, unknown>,
+                  formData.config as Record<string, unknown>,
+                  page.properties,
+                  "string-map",
+                ) as typeof idp.config,
               },
             );
           }
