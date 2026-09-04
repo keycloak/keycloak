@@ -56,6 +56,7 @@ export const ContinueCancelModal = ({
         {...rest}
         isOpen={open}
         onClose={() => setOpen(false)}
+        aria-label={modalTitle}
       >
         <ModalHeader title={modalTitle} />
         <ModalBody>{children}</ModalBody>
