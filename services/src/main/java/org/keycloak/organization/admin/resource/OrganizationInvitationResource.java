@@ -52,6 +52,7 @@ import org.keycloak.models.OrganizationInvitationModel.Filter;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.InvitationManager;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -229,6 +230,12 @@ public class OrganizationInvitationResource {
         return OIDCLoginProtocolService.registrationsUrl(session.getContext().getUri().getBaseUriBuilder())
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OIDCResponseType.CODE)
                 .queryParam(Constants.CLIENT_ID, invitationTarget.clientId)
+                // the state makes the authorization response callback-shaped. Being generated here, it does not
+                // correlate with any request the client made, but clients do key off the presence of code and
+                // state to recognize a callback URL and strip the response parameters from it. Without it, those
+                // parameters are left behind in the browser URL and end up in the redirect URI of the next
+                // authorization request made from that page, which the server rejects for carrying them
+                .queryParam(OAuth2Constants.STATE, KeycloakModelUtils.generateId())
                 .queryParam(Constants.TOKEN, createToken(user, invitation, invitationTarget))
                 .buildFromMap(Map.of("realm", realm.getName(), "protocol", OIDCLoginProtocol.LOGIN_PROTOCOL)).toString();
     }
