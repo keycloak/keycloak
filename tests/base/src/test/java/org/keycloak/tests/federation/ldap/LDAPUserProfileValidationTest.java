@@ -36,6 +36,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestCleanup;
@@ -180,6 +182,26 @@ public class LDAPUserProfileValidationTest {
     }
 
     @Test
+    public void testImportUserWithReadOnlyMapperAttributeFailureCannotBeFixedByUser() {
+        final String username = "readonlymapperuser";
+        // Same "person-name-prohibited-characters" firstName failure as
+        // testImportUserWithEditableAttributeFailureGetsRequiredAction, but here firstName's mapper is individually
+        // configured read-only even though the provider itself is WRITABLE: an edit made through UPDATE_PROFILE
+        // would never actually reach LDAP and would just be overwritten again with the invalid value on the next
+        // import, so this must be a hard rejection rather than a soft-fixable required action.
+        setFirstNameMapperReadOnly(true);
+        try {
+            runOnServer.run(addLdapUser(username, "Invalid<b>Name", "ValidLastName", "readonly-mapper-user@example.org"));
+
+            List<UserRepresentation> found = managedRealm.admin().users().search(username, true);
+            Assertions.assertTrue(found.isEmpty(),
+                    "The user should have been rejected: firstName cannot really be fixed by the user since its mapper is read-only.");
+        } finally {
+            setFirstNameMapperReadOnly(false);
+        }
+    }
+
+    @Test
     public void testFullSyncCountsValidationFailureAsFailed() {
         final String username = "invalidsyncuser<b>";
         managedRealm.updateWithCleanup(r -> r.editUsernameAllowed(false));
@@ -295,5 +317,21 @@ public class LDAPUserProfileValidationTest {
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
             LDAPTestUtils.addLDAPUser(ldapProvider, realm, username, firstName, lastName, email, null, "4578");
         };
+    }
+
+    // The "first name" mapper (like every default mapper LDAPStorageProviderFactory#onCreate creates) is shared
+    // across test methods, so this is always reverted in a finally block to avoid leaking into whichever test runs
+    // next.
+    private void setFirstNameMapperReadOnly(boolean readOnly) {
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            ComponentModel firstNameMapper = realm.getComponentsStream(ldapModel.getId(), LDAPStorageMapper.class.getName())
+                    .filter(m -> "first name".equals(m.getName()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Expected a 'first name' LDAP mapper to already exist"));
+            firstNameMapper.getConfig().putSingle(UserAttributeLDAPStorageMapper.READ_ONLY, String.valueOf(readOnly));
+            realm.updateComponent(firstNameMapper);
+        });
     }
 }
