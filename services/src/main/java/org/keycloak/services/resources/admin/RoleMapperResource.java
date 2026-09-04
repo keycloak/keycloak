@@ -189,7 +189,9 @@ public class RoleMapperResource {
     public Stream<RoleRepresentation> getRealmRoleMappings() {
         viewPermission.require();
 
-        return roleMapper.getRealmRoleMappingsStream().map(ModelToRepresentation::toBriefRepresentation);
+        return roleMapper.getRealmRoleMappingsStream()
+                .filter(r -> auth.roles().canView(r))
+                .map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
@@ -231,6 +233,7 @@ public class RoleMapperResource {
         }
         return deepMappings.stream()
                 .filter(r -> RoleUtils.isRealmRole(r, realm))
+                .filter(r -> auth.roles().canView(r))
                 .map(toBriefRepresentation);
     }
 
