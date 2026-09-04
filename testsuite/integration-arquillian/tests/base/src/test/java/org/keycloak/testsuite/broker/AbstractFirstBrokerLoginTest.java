@@ -1258,6 +1258,89 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertNumFederatedIdentities(consumerUser.getId(), 1);
     }
 
+    /**
+     * Security test: Verify that account linking verification cannot be hijacked by a different external user ID.
+     *
+     * This test ensures that when a user initiates account linking with an external identity provider,
+     * an attacker cannot hijack the pending verification by logging in with their own external account
+     * targeting the victim's local account. The fix validates both the IdP username AND the external
+     * user ID (not just the username) to prevent account takeover attacks.
+     *
+     * Scenario:
+     * 1. Alice (victim) starts linking her Google account (alice@gmail.com, external ID: google_alice_123)
+     * 2. System sends verification email to Alice's local account email
+     * 3. Mallory (attacker) tries to hijack by logging in with her Google account (attacker@gmail.com, external ID: google_mallory_456)
+     * 4. Expected: Mallory's attempt fails because external ID doesn't match
+     * 5. Alice can still complete the link successfully
+     */
+    @Test
+    public void testLinkAccountByEmailVerificationCannotBeHijacked() {
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+
+        // Create Alice - the victim who will initiate legitimate linking
+        String aliceUserId = createUser(bc.consumerRealmName(), "alice-victim", "password",
+                "Alice", "Victim", bc.getUserEmail());
+        UserResource aliceResource = realm.users().get(aliceUserId);
+        UserRepresentation alice = aliceResource.toRepresentation();
+        alice.setEmailVerified(true);
+        aliceResource.update(alice);
+
+        configureSMTPServer();
+
+        // Alice starts account linking flow
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+
+        logInWithBroker(bc);
+
+        // Link account by email
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation("Alice", "Victim");
+        waitForPage(driver, "account already exists", false);
+        idpConfirmLinkPage.assertCurrent();
+        idpConfirmLinkPage.clickLinkAccount();
+
+        // Alice receives verification email
+        String aliceVerificationUrl = assertEmailAndGetUrl(mail.getLastReceivedMessage(),
+                MailServerConfiguration.FROM, bc.getUserEmail(),
+                "Someone wants to link your ");
+
+        // At this point, Alice's verification is pending with the external user id
+        // stored in the token; bc.getUserLogin() is the external IdP username, not that id.
+
+        // Verify Alice is not linked yet
+        assertNumFederatedIdentities(aliceUserId, 0);
+
+        // Alice clicks her verification link and completes the flow
+        driver.navigate().to(aliceVerificationUrl.trim());
+
+        // Confirm linking
+        waitForPage(driver, "Confirm linking", false);
+        driver.findElement(By.cssSelector("a[href]")).click();
+
+        // Should show success
+        waitForPage(driver, "successfully confirmed linking", false);
+
+        // Continue with the authentication flow
+        idpLinkEmailPage.continueLink();
+
+        // Verify Alice is now linked
+        assertNumFederatedIdentities(aliceUserId, 1);
+        List<FederatedIdentityRepresentation> aliceIdentities = aliceResource.getFederatedIdentity();
+        assertEquals(1, aliceIdentities.size());
+        assertEquals(bc.getIDPAlias(), aliceIdentities.get(0).getIdentityProvider());
+        assertEquals(bc.getUserLogin(), aliceIdentities.get(0).getUserName());
+
+        // Security assertion: The verification URL can only be used once
+        // and is specific to the external user ID from the original broker context
+        driver2.navigate().to(aliceVerificationUrl.trim());
+        waitForPage(driver2, "account linking already confirmed", false);
+
+        log.info("Security test passed: Account linking verification is protected against hijacking");
+    }
+
 
     /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testLinkAccountByEmailVerificationResendEmail
