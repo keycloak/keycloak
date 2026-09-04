@@ -1,23 +1,29 @@
-package org.keycloak.testsuite.broker;
+package org.keycloak.tests.broker.oidc;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
-import org.keycloak.models.IdentityProviderSyncMode;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.tests.broker.AbstractKcOidcBrokerTest;
 
-public class KcOidcBrokerPkceTest extends AbstractBrokerTest {
+@KeycloakIntegrationTest
+public class KcOidcBrokerPkceTest extends AbstractKcOidcBrokerTest {
 
-    @Override
-    protected BrokerConfiguration getBrokerConfiguration() {
-        return new KcOidcBrokerConfiguration() {
-            @Override public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
-                IdentityProviderRepresentation provider = super.setUpIdentityProvider(syncMode);
+    @InjectRealm(ref = "consumer", lifecycle = LifeCycle.METHOD,
+            config = PkceConsumerRealmConfig.class)
+    ManagedRealm consumerRealm;
 
-                provider.getConfig().put(OAuth2IdentityProviderConfig.PKCE_ENABLED, "true");
-                provider.getConfig().put(OAuth2IdentityProviderConfig.PKCE_METHOD, OAuth2Constants.PKCE_METHOD_S256);
-
-                return provider;
-            }
-        };
+    static class PkceConsumerRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return configureConsumerRealm(realm,
+                    createOidcIdentityProvider()
+                            .attribute(OAuth2IdentityProviderConfig.PKCE_ENABLED, "true")
+                            .attribute(OAuth2IdentityProviderConfig.PKCE_METHOD, OAuth2Constants.PKCE_METHOD_S256));
+        }
     }
 }

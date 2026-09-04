@@ -1,4 +1,4 @@
-package org.keycloak.tests.broker;
+package org.keycloak.tests.broker.oidc;
 
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -7,6 +7,7 @@ import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.tests.broker.AbstractKcOidcBrokerTest;
 
 @KeycloakIntegrationTest
 public class KcOidcBrokerClientSecretBasicAuthTest extends AbstractKcOidcBrokerTest {
