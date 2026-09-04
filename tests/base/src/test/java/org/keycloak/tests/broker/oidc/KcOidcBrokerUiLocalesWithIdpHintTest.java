@@ -1,92 +1,89 @@
-package org.keycloak.testsuite.broker;
+package org.keycloak.tests.broker.oidc;
 
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
-import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.models.IdentityProviderSyncMode;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-
-import org.junit.jupiter.api.Assertions;
-
-import static org.keycloak.OAuth2Constants.UI_LOCALES_PARAM;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
-import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.tests.broker.AbstractKcOidcBrokerTest;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class KcOidcBrokerUiLocalesWithIdpHintTest extends AbstractBrokerTest {
+@KeycloakIntegrationTest
+public class KcOidcBrokerUiLocalesWithIdpHintTest extends AbstractKcOidcBrokerTest {
 
     private static final Locale HUNGARIAN = Locale.forLanguageTag("hu");
 
-    @Override
-    protected BrokerConfiguration getBrokerConfiguration() {
-        return new KcOidcBrokerConfigurationWithUiLocalesEnabled();
-    }
+    @InjectRealm(ref = "provider", lifecycle = LifeCycle.METHOD,
+            config = I18nProviderRealmConfig.class)
+    ManagedRealm providerRealm;
 
-    private class KcOidcBrokerConfigurationWithUiLocalesEnabled extends KcOidcBrokerConfiguration {
-
-        @Override
-        public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
-            IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
-            Map<String, String> config = idp.getConfig();
-            applyDefaultConfiguration(config, syncMode);
-            config.put("uiLocales", "true");
-            return idp;
-        }
-    }
+    @InjectRealm(ref = "consumer", lifecycle = LifeCycle.METHOD,
+            config = I18nUiLocalesConsumerRealmConfig.class)
+    ManagedRealm consumerRealm;
 
     @Override
     protected void loginUser() {
-        oauth.client("broker-app");
-        oauth.realm(bc.consumerRealmName());
-        oauth.openLoginForm();
+        oauth.loginForm()
+                .uiLocales(HUNGARIAN.toLanguageTag())
+                .param("kc_idp_hint", IDP_OIDC_ALIAS)
+                .open();
 
-        driver.navigate().to(driver.getCurrentUrl() + "&ui_locales=hu&kc_idp_hint=kc-oidc-idp");
+        webDriver.waiting().until(d -> webDriver.getCurrentUrl().contains("/realms/" + PROVIDER_REALM + "/"));
+        assertThat(OAuth2Constants.UI_LOCALES_PARAM + "=" + HUNGARIAN.toLanguageTag() + " should be part of the url",
+                webDriver.getCurrentUrl(), containsString(OAuth2Constants.UI_LOCALES_PARAM + "=" + HUNGARIAN.toLanguageTag()));
+        // The provider login page must render in Hungarian ("Sign in to your account").
+        assertThat(webDriver.driver().getPageSource(), containsString("Jelentkezzen be a fiókjába"));
 
-        waitForPage(driver, "belépés ide", true); // sign in to
+        logInAsUserInIDPForFirstTime();
 
-        assertThat("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl(), containsString("/auth/realms/" + bc.providerRealmName() + "/"));
+        // The consumer first-broker-login review-profile page must also render in Hungarian
+        // ("Update Account Information"). It shows because the provider user has no last name,
+        // so the imported consumer user is incomplete and the review page is required.
+        webDriver.waiting().until(d -> webDriver.getCurrentUrl().contains("/realms/" + CONSUMER_REALM + "/"));
+        assertThat(webDriver.driver().getPageSource(), containsString("Fiók adatainak módosítása"));
 
-        assertThat(UI_LOCALES_PARAM + "=" + HUNGARIAN.toLanguageTag() + " should be part of the url",
-            driver.getCurrentUrl(), containsString(UI_LOCALES_PARAM + "=" + HUNGARIAN.toLanguageTag()));
-        assertThat("The provider realm should be in Hungarian because the ui_locales is passed",
-            driver.getPageSource(), containsString("Jelentkezzen be a fiókjába")); // Sign in to your account
+        updateAccountInformation();
+        assertUserCreatedInConsumerRealm();
+    }
 
-        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
-        waitForPage(driver, "fiók adatainak módosítása", false); // update account information
-
-        assertThat("The consumer realm should be in Hungarian even after the redirect from the IDP.",
-                driver.getPageSource(), containsString("Fiók adatainak módosítása"));// update account information
-
-        assertThat("We must be on correct realm right now",
-                driver.getCurrentUrl(), containsString("/auth/realms/" + bc.consumerRealmName() + "/"));
-
-        log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
-
-        UsersResource consumerUsers = adminClient.realm(bc.consumerRealmName()).users();
-
-        int userCount = consumerUsers.count();
-        Assertions.assertTrue(userCount > 0, "There must be at least one user");
-
-        List<UserRepresentation> users = consumerUsers.search("", 0, userCount);
-
-        boolean isUserFound = false;
-        for (UserRepresentation user : users) {
-            if (user.getUsername().equals(bc.getUserLogin()) && user.getEmail().equals(bc.getUserEmail())) {
-                isUserFound = true;
-                break;
-            }
+    static class I18nProviderRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            // Deliberately omit the last name so the imported consumer user is incomplete and the
+            // first-broker-login review-profile page is shown (mirroring the legacy test), letting us
+            // assert the consumer renders it in Hungarian.
+            UserBuilder user = UserBuilder.create(USER_LOGIN)
+                    .email(USER_EMAIL)
+                    .emailVerified(true)
+                    .password(USER_PASSWORD)
+                    .enabled(true)
+                    .firstName("First");
+            return realm.name(PROVIDER_REALM)
+                    .eventsListeners("jboss-logging")
+                    .users(user)
+                    .clients(createDefaultProviderClient())
+                    .internationalizationEnabled(true)
+                    .supportedLocales("en", "hu")
+                    .defaultLocale("en");
         }
+    }
 
-        Assertions.assertTrue(isUserFound,
-                "There must be user " + bc.getUserLogin() + " in realm " + bc.consumerRealmName());
+    static class I18nUiLocalesConsumerRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return configureConsumerRealm(realm,
+                    createOidcIdentityProvider()
+                            .attribute("uiLocales", "true"))
+                    .internationalizationEnabled(true)
+                    .supportedLocales("en", "hu")
+                    .defaultLocale("en");
+        }
     }
 }
