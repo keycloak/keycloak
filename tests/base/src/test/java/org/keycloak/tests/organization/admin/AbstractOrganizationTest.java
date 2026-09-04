@@ -17,7 +17,6 @@
 
 package org.keycloak.tests.organization.admin;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -29,6 +28,7 @@ import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OrganizationModel;
@@ -259,15 +259,17 @@ public abstract class AbstractOrganizationTest {
         idp.setEnabled(true);
         idp.setTrustEmail(true);
         String providerBaseUrl = providerRealm.getBaseUrl();
-        idp.setConfig(new HashMap<>(Map.of(
-                "clientId", CLIENT_ID,
-                "clientSecret", CLIENT_SECRET,
-                "authorizationUrl", providerBaseUrl + "/protocol/openid-connect/auth",
-                "tokenUrl", providerBaseUrl + "/protocol/openid-connect/token",
-                "userInfoUrl", providerBaseUrl + "/protocol/openid-connect/userinfo",
-                "defaultScope", "email profile",
-                "syncMode", "IMPORT"
-        )));
+        Map<String, String> config = idp.getConfig();
+        config.put("clientId", CLIENT_ID);
+        config.put("clientSecret", CLIENT_SECRET);
+        config.put("authorizationUrl", providerBaseUrl + "/protocol/openid-connect/auth");
+        config.put("tokenUrl", providerBaseUrl + "/protocol/openid-connect/token");
+        config.put("userInfoUrl", providerBaseUrl + "/protocol/openid-connect/userinfo");
+        config.put("defaultScope", "email profile");
+        config.put("syncMode", "IMPORT");
+        config.put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.TRUE.toString());
+        config.put(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.TRUE.toString());
+        config.put(OIDCIdentityProviderConfig.JWKS_URL, providerBaseUrl + "/protocol/openid-connect/certs");
         return idp;
     }
 
@@ -358,17 +360,19 @@ public abstract class AbstractOrganizationTest {
         idp.setTrustEmail(true);
 
         String providerBaseUrl = providerRealm.getBaseUrl();
-        idp.setConfig(Map.of(
-                "clientId", CLIENT_ID,
-                "clientSecret", CLIENT_SECRET,
-                "authorizationUrl", providerBaseUrl + "/protocol/openid-connect/auth",
-                "tokenUrl", providerBaseUrl + "/protocol/openid-connect/token",
-                "userInfoUrl", providerBaseUrl + "/protocol/openid-connect/userinfo",
-                "defaultScope", "email profile",
-                "syncMode", "IMPORT",
-                OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomain,
-                IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString()
-        ));
+        Map<String, String> config = idp.getConfig();
+        config.put("clientId", CLIENT_ID);
+        config.put("clientSecret", CLIENT_SECRET);
+        config.put("authorizationUrl", providerBaseUrl + "/protocol/openid-connect/auth");
+        config.put("tokenUrl", providerBaseUrl + "/protocol/openid-connect/token");
+        config.put("userInfoUrl", providerBaseUrl + "/protocol/openid-connect/userinfo");
+        config.put("defaultScope", "email profile");
+        config.put("syncMode", "IMPORT");
+        config.put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomain);
+        config.put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
+        config.put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.TRUE.toString());
+        config.put(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.TRUE.toString());
+        config.put(OIDCIdentityProviderConfig.JWKS_URL, providerBaseUrl + "/protocol/openid-connect/certs");
 
         consumerRealm.admin().identityProviders().create(idp).close();
         consumerRealm.cleanup().add(r -> {

@@ -20,7 +20,6 @@ package org.keycloak.tests.organization.member;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,6 +36,7 @@ import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
@@ -636,15 +636,17 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         idpRep.setProviderId("keycloak-oidc");
         idpRep.setEnabled(true);
         String providerBaseUrl = providerRealm.getBaseUrl();
-        idpRep.setConfig(new HashMap<>(Map.of(
-                "clientId", CLIENT_ID,
-                "clientSecret", CLIENT_SECRET,
-                "authorizationUrl", providerBaseUrl + "/protocol/openid-connect/auth",
-                "tokenUrl", providerBaseUrl + "/protocol/openid-connect/token",
-                "userInfoUrl", providerBaseUrl + "/protocol/openid-connect/userinfo",
-                "defaultScope", "email profile",
-                "syncMode", "IMPORT"
-        )));
+        Map<String, String> config = idpRep.getConfig();
+        config.put("clientId", CLIENT_ID);
+        config.put("clientSecret", CLIENT_SECRET);
+        config.put("authorizationUrl", providerBaseUrl + "/protocol/openid-connect/auth");
+        config.put("tokenUrl", providerBaseUrl + "/protocol/openid-connect/token");
+        config.put("userInfoUrl", providerBaseUrl + "/protocol/openid-connect/userinfo");
+        config.put("defaultScope", "email profile");
+        config.put("syncMode", "IMPORT");
+        config.put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.TRUE.toString());
+        config.put(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.TRUE.toString());
+        config.put(OIDCIdentityProviderConfig.JWKS_URL, providerBaseUrl + "/protocol/openid-connect/certs");
         try (Response response = realm.admin().identityProviders().create(idpRep)) {
             assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
             realm.cleanup().add(r -> r.identityProviders().get(idpAlias).remove());
