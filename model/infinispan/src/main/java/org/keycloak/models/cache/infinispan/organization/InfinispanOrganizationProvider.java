@@ -17,6 +17,7 @@
 package org.keycloak.models.cache.infinispan.organization;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -25,6 +26,7 @@ import java.util.stream.Stream;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderStorageProvider.FetchMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
@@ -35,9 +37,14 @@ import org.keycloak.models.cache.infinispan.CachedCount;
 import org.keycloak.models.cache.infinispan.CachedExists;
 import org.keycloak.models.cache.infinispan.RealmCacheSession;
 import org.keycloak.models.cache.infinispan.UserCacheSession;
+import org.keycloak.models.OrganizationDomainModel;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.organization.InvitationManager;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.representations.idm.MembershipType;
 
+import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyForLogin;
+import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyIdpAlias;
 import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyOrgId;
 
 public class InfinispanOrganizationProvider implements OrganizationProvider {
@@ -88,9 +95,15 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     @Override
     public boolean remove(OrganizationModel organization) {
+        // capture IdPs before deletion so we can invalidate their cache entries
+        java.util.List<IdentityProviderModel> idps = organization.getIdentityProviders().toList();
         registerOrganizationInvalidation(organization);
         registerCountInvalidation();
-        return getDelegate().remove(organization);
+        boolean removed = getDelegate().remove(organization);
+        if (removed) {
+            idps.forEach(this::registerIdentityProviderInvalidation);
+        }
+        return removed;
     }
 
     @Override
@@ -123,7 +136,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public OrganizationModel getByDomainName(String domainName) {
+    public Stream<OrganizationModel> getByDomainName(String domainName) {
         if (realmCache == null) {
             return getDelegate().getByDomainName(domainName);
         }
@@ -137,19 +150,21 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
         if (cached == null) {
             Long loaded = realmCache.getCache().getCurrentRevision(cacheKey);
-            OrganizationModel model = getDelegate().getByDomainName(domainName);
-            if (model == null) {
-                return null;
+            List<OrganizationModel> models = getDelegate().getByDomainName(domainName).toList();
+            if (models.isEmpty()) {
+                return Stream.empty();
             }
-            cached = new CachedOrganizationIds(loaded, cacheKey, getRealm(), Stream.ofNullable(model));
+            cached = new CachedOrganizationIds(loaded, cacheKey, getRealm(), models.stream());
             realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
-            model = getById(model.getId());
-            if (model instanceof OrganizationAdapter ma) {
-                ma.getCached().addDomainName(domainName);
+            for (OrganizationModel model : models) {
+                OrganizationModel resolved = getById(model.getId());
+                if (resolved instanceof OrganizationAdapter ma) {
+                    ma.getCached().addDomainName(domainName);
+                }
             }
         }
 
-        return cached.getOrgIds().stream().map(this::getById).filter(Objects::nonNull).findAny().orElse(null);
+        return cached.getOrgIds().stream().map(this::getById).filter(Objects::nonNull);
     }
 
     @Override
@@ -386,8 +401,33 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         boolean added = getDelegate().addIdentityProvider(organization, identityProvider);
         if (added) {
             registerOrganizationInvalidation(organization);
+            registerIdentityProviderInvalidation(identityProvider);
         }
         return added;
+    }
+
+    @Override
+    public boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                       boolean autoMembership, MembershipType membershipType) {
+        boolean added = getDelegate().addIdentityProvider(organization, identityProvider, autoMembership, membershipType);
+        if (added) {
+            registerOrganizationInvalidation(organization);
+            registerIdentityProviderInvalidation(identityProvider);
+        }
+        return added;
+    }
+
+    @Override
+    public OrganizationIdentityProviderLinkModel getIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider) {
+        return getDelegate().getIdentityProviderLink(organization, identityProvider);
+    }
+
+    @Override
+    public void updateIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                           boolean autoMembership, MembershipType membershipType) {
+        getDelegate().updateIdentityProviderLink(organization, identityProvider, autoMembership, membershipType);
+        registerOrganizationInvalidation(organization);
+        registerIdentityProviderInvalidation(identityProvider);
     }
 
     @Override
@@ -398,6 +438,50 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     @Override
     public boolean removeIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider) {
         boolean removed = getDelegate().removeIdentityProvider(organization, identityProvider);
+        if (removed) {
+            registerOrganizationInvalidation(organization);
+            registerIdentityProviderInvalidation(identityProvider);
+        }
+        return removed;
+    }
+
+    @Override
+    public OrganizationDomainModel createDomain(String name, boolean verified, String identityProviderAlias, boolean autoRedirect) {
+        return getDelegate().createDomain(name, verified, identityProviderAlias, autoRedirect);
+    }
+
+    @Override
+    public OrganizationDomainModel getDomainByName(String name) {
+        return getDelegate().getDomainByName(name);
+    }
+
+    @Override
+    public Stream<OrganizationDomainModel> getDomains(String search, Integer first, Integer max) {
+        return getDelegate().getDomains(search, first, max);
+    }
+
+    @Override
+    public void updateDomain(String name, boolean verified, String identityProviderAlias, boolean autoRedirect) {
+        getDelegate().updateDomain(name, verified, identityProviderAlias, autoRedirect);
+    }
+
+    @Override
+    public boolean removeDomain(String name) {
+        return getDelegate().removeDomain(name);
+    }
+
+    @Override
+    public boolean addDomainToOrganization(OrganizationModel organization, String domainName) {
+        boolean added = getDelegate().addDomainToOrganization(organization, domainName);
+        if (added) {
+            registerOrganizationInvalidation(organization);
+        }
+        return added;
+    }
+
+    @Override
+    public boolean removeDomainFromOrganization(OrganizationModel organization, String domainName) {
+        boolean removed = getDelegate().removeDomainFromOrganization(organization, domainName);
         if (removed) {
             registerOrganizationInvalidation(organization);
         }
@@ -462,6 +546,16 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
         if (adapter != null) {
             adapter.invalidate();
+        }
+    }
+
+    private void registerIdentityProviderInvalidation(IdentityProviderModel idp) {
+        if (realmCache != null) {
+            realmCache.registerInvalidation(idp.getInternalId());
+            realmCache.registerInvalidation(cacheKeyIdpAlias(getRealm(), idp.getAlias()));
+            for (FetchMode mode : FetchMode.values()) {
+                realmCache.registerInvalidation(cacheKeyForLogin(getRealm(), mode));
+            }
         }
     }
 

@@ -196,6 +196,9 @@ public interface OrganizationsResource {
     );
 
 
+    @Path("domains")
+    OrganizationDomainsResource domains();
+
     @Path("members")
     OrganizationsMembersResource members();
 }

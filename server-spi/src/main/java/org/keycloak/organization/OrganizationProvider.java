@@ -24,7 +24,9 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
@@ -66,12 +68,12 @@ public interface OrganizationProvider extends Provider {
     OrganizationModel getById(String id);
 
     /**
-     * Returns a {@link OrganizationModel} by its internet domain.
+     * Returns all {@link OrganizationModel}s linked to the given internet domain.
      *
      * @param domainName the organization's internet domain (e.g. redhat.com)
-     * @return the organization that is linked to the given internet domain
+     * @return a stream of organizations linked to the given internet domain
      */
-    OrganizationModel getByDomainName(String domainName);
+    Stream<OrganizationModel> getByDomainName(String domainName);
 
     /**
      * Returns all organizations in the realm.
@@ -326,13 +328,50 @@ public interface OrganizationProvider extends Provider {
     GroupModel getOrganizationGroup(OrganizationModel organization);
 
     /**
-     * Associate the given {@link IdentityProviderModel} with the given {@link OrganizationModel}.
+     * Associate the given {@link IdentityProviderModel} with the given {@link OrganizationModel}
+     * using default config (autoMembership=true, membershipType=UNMANAGED).
      *
      * @param organization the organization
      * @param identityProvider the identityProvider
      * @return {@code true} if the identityProvider was associated with the organization. Otherwise, returns {@code false}
      */
     boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider);
+
+    /**
+     * Associate the given {@link IdentityProviderModel} with the given {@link OrganizationModel}
+     * using the specified per-association config.
+     *
+     * @param organization the organization
+     * @param identityProvider the identityProvider
+     * @param autoMembership whether users authenticating via this IdP should be auto-added to the organization
+     * @param membershipType the membership type for auto-added members
+     * @return {@code true} if the identityProvider was associated with the organization. Otherwise, returns {@code false}
+     * @throws ModelValidationException if the config violates validation rules
+     */
+    boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                boolean autoMembership, MembershipType membershipType);
+
+    /**
+     * Returns the per-association config for the link between the given organization and identity provider.
+     *
+     * @param organization the organization
+     * @param identityProvider the identity provider
+     * @return the link config, or {@code null} if no link exists
+     */
+    OrganizationIdentityProviderLinkModel getIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider);
+
+    /**
+     * Updates the per-association config on an existing link between the organization and identity provider.
+     *
+     * @param organization the organization
+     * @param identityProvider the identity provider
+     * @param autoMembership whether users authenticating via this IdP should be auto-added to the organization
+     * @param membershipType the membership type for auto-added members
+     * @throws ModelValidationException if the config violates validation rules
+     * @throws ModelException if no link exists between the organization and identity provider
+     */
+    void updateIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                    boolean autoMembership, MembershipType membershipType);
 
     /**
      * @param organization the organization
@@ -348,6 +387,77 @@ public interface OrganizationProvider extends Provider {
      * @return {@code true} if the link was removed, {@code false} otherwise
      */
     boolean removeIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider);
+
+    /**
+     * Creates a new domain in the current realm.
+     *
+     * @param name the domain name
+     * @param verified whether the domain is verified
+     * @param identityProviderAlias the alias of the IdP for routing, or {@code null}
+     * @param autoRedirect whether to auto-redirect to the IdP
+     * @return the created domain model
+     * @throws ModelDuplicateException if a domain with the given name already exists in the realm
+     * @throws ModelValidationException if the domain name is invalid or the IdP doesn't exist
+     */
+    OrganizationDomainModel createDomain(String name, boolean verified, String identityProviderAlias, boolean autoRedirect);
+
+    /**
+     * Returns a domain by its name in the current realm.
+     *
+     * @param name the domain name
+     * @return the domain model, or {@code null} if not found
+     */
+    OrganizationDomainModel getDomainByName(String name);
+
+    /**
+     * Returns all domains in the current realm, optionally filtered by name.
+     *
+     * @param search optional search string to filter by domain name
+     * @param first pagination offset
+     * @param max maximum results
+     * @return stream of domain models
+     */
+    Stream<OrganizationDomainModel> getDomains(String search, Integer first, Integer max);
+
+    /**
+     * Updates a domain's properties.
+     *
+     * @param name the domain name
+     * @param verified whether the domain is verified
+     * @param identityProviderAlias the alias of the IdP for routing, or {@code null}
+     * @param autoRedirect whether to auto-redirect to the IdP
+     * @throws ModelException if the domain doesn't exist
+     * @throws ModelValidationException if the IdP doesn't exist in the realm
+     */
+    void updateDomain(String name, boolean verified, String identityProviderAlias, boolean autoRedirect);
+
+    /**
+     * Removes a domain from the realm. Fails if any organization claims this domain.
+     *
+     * @param name the domain name
+     * @return {@code true} if removed, {@code false} if the domain doesn't exist
+     * @throws ModelException if the domain is still claimed by an organization
+     */
+    boolean removeDomain(String name);
+
+    /**
+     * Claims an existing domain for the given organization.
+     *
+     * @param organization the organization
+     * @param domainName the domain name
+     * @return {@code true} if the domain was claimed, {@code false} if already claimed by this org
+     * @throws ModelException if the domain doesn't exist in the realm
+     */
+    boolean addDomainToOrganization(OrganizationModel organization, String domainName);
+
+    /**
+     * Unclaims a domain from the given organization. The domain itself is not deleted.
+     *
+     * @param organization the organization
+     * @param domainName the domain name
+     * @return {@code true} if the domain was unclaimed, {@code false} if not claimed by this org
+     */
+    boolean removeDomainFromOrganization(OrganizationModel organization, String domainName);
 
     /**
      * Indicates if the current realm supports organization.

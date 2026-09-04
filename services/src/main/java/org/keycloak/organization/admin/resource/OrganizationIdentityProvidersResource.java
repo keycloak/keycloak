@@ -24,6 +24,7 @@ import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -35,6 +36,8 @@ import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -42,6 +45,8 @@ import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.MembershipType;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
@@ -201,6 +206,46 @@ public class OrganizationIdentityProvidersResource {
     }
 
     @Path("{alias}")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Updates the per-association config for the identity provider linked to the organization",
+        description = "Updates the autoMembership and membershipType settings for the link between the organization " +
+                "and the identity provider with the given alias. If the provider is not linked to the organization, a NOT_FOUND error is returned")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public Response updateIdentityProviderLink(@PathParam("alias") String alias,
+            OrganizationIdentityProviderLinkRepresentation rep) {
+        auth.orgs().requireManage(organization);
+        auth.realm().requireManageIdentityProviders();
+        IdentityProviderModel broker = session.identityProviders().getByAlias(alias);
+
+        if (!isOrganizationBroker(broker)) {
+            throw ErrorResponse.error("Identity provider not associated with the organization", Status.NOT_FOUND);
+        }
+
+        try {
+            boolean autoMembership = rep.getAutoMembership() != null ? rep.getAutoMembership() : true;
+            MembershipType membershipType = rep.getMembershipType() != null
+                    ? MembershipType.valueOf(rep.getMembershipType()) : MembershipType.UNMANAGED;
+
+            organizationProvider.updateIdentityProviderLink(organization, broker, autoMembership, membershipType);
+
+            return Response.noContent().build();
+        } catch (ModelValidationException mve) {
+            throw ErrorResponse.error(mve.getMessage(), Status.BAD_REQUEST);
+        } catch (IllegalArgumentException iae) {
+            throw ErrorResponse.error("Invalid membership type: " + rep.getMembershipType(), Status.BAD_REQUEST);
+        } catch (ModelException me) {
+            throw ErrorResponse.error(me.getMessage(), Status.BAD_REQUEST);
+        }
+    }
+
+    @Path("{alias}")
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
@@ -230,10 +275,16 @@ public class OrganizationIdentityProvidersResource {
     }
 
     private IdentityProviderRepresentation toRepresentation(IdentityProviderModel idp) {
-        return StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(session, realm, idp));
+        IdentityProviderRepresentation rep = StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(session, realm, idp));
+        OrganizationIdentityProviderLinkModel link = organizationProvider.getIdentityProviderLink(organization, idp);
+        if (link != null) {
+            rep.setAutoMembership(link.isAutoMembership());
+            rep.setOrgMembershipType(link.getMembershipType().name());
+        }
+        return rep;
     }
 
     private boolean isOrganizationBroker(IdentityProviderModel broker) {
-        return broker != null && organization.getId().equals(broker.getOrganizationId());
+        return broker != null && broker.isLinkedToOrganization(organization.getId());
     }
 }

@@ -48,14 +48,18 @@ import org.keycloak.models.MembershipMetadata;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.OrganizationDomainModel;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.entities.GroupAttributeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
+import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
+import org.keycloak.models.jpa.entities.OrganizationIdentityProviderEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -70,14 +74,12 @@ import org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
 
-import static org.keycloak.models.OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE;
 import static org.keycloak.models.UserModel.EMAIL;
 import static org.keycloak.models.UserModel.FIRST_NAME;
 import static org.keycloak.models.UserModel.LAST_NAME;
 import static org.keycloak.models.UserModel.USERNAME;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.organization.utils.Organizations.isReadOnlyOrganizationMember;
-import static org.keycloak.organization.utils.Organizations.resolveByDomain;
 import static org.keycloak.organization.utils.Organizations.validateDomain;
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -172,6 +174,13 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             OrganizationModel.OrganizationRemovedEvent.fire(organization, session);
 
             em.remove(entity);
+            em.flush();
+
+            // ORG_DOMAIN join rows are cascade-deleted by the DB FK; clean up orphan DOMAIN rows
+            em.createQuery("DELETE FROM OrganizationDomainEntity d WHERE d.realmId = :realmId " +
+                            "AND d NOT IN (SELECT d2 FROM OrganizationEntity o JOIN o.domains d2)")
+                    .setParameter("realmId", getRealm().getId())
+                    .executeUpdate();
         } finally {
             session.getContext().setOrganization(null);
         }
@@ -236,9 +245,9 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public OrganizationModel getByDomainName(String domain) {
+    public Stream<OrganizationModel> getByDomainName(String domain) {
         if (domain == null) {
-            return null;
+            return Stream.empty();
         }
 
         String emailDomain = domain.toLowerCase();
@@ -255,31 +264,23 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         // Add exact match
         domainPatterns.add(emailDomain);
 
-        query.setParameter("names", domainPatterns);
-
-        try {
-            OrganizationEntity entity = query.getSingleResult();
-            return new OrganizationAdapter(session, realm, entity, this);
-        } catch (NoResultException ignore) {
-        }
+        // Also check for wildcard at the current level
+        domainPatterns.add("*." + emailDomain);
 
         // Strip subdomains to check for parent wildcard domains
         String[] parts = emailDomain.split("\\.");
 
-        // Also check for wildcard at the current level
-        domainPatterns.add("*." + emailDomain);
-
         for (int i = 1; i < parts.length - 1; i++) {
             String parentDomain = String.join(".", java.util.Arrays.copyOfRange(parts, i, parts.length));
-            // Check for both exact parent and wildcard parent
             domainPatterns.add(parentDomain);
             domainPatterns.add("*." + parentDomain);
         }
 
         query.setParameter("names", domainPatterns);
 
-        return resolveByDomain(query.getResultList().stream()
-                .map(entity -> getById(entity.getId())).filter(Objects::nonNull).toList(), emailDomain);
+        return query.getResultList().stream()
+                .map(entity -> getById(entity.getId()))
+                .filter(Objects::nonNull);
     }
     
     @Override
@@ -692,28 +693,74 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
     @Override
     public boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider) {
+        return addIdentityProvider(organization, identityProvider, true, MembershipType.UNMANAGED);
+    }
+
+    @Override
+    public boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                       boolean autoMembership, MembershipType membershipType) {
         throwExceptionIfObjectIsNull(organization, "Organization");
         throwExceptionIfObjectIsNull(identityProvider, "Identity provider");
 
         OrganizationEntity organizationEntity = getEntity(organization.getId());
 
-        // check the identity provider and the organization belongs to the same realm
         if (!checkOrgIdpAndRealm(organizationEntity, identityProvider)) {
             return false;
         }
 
-        String orgId = identityProvider.getOrganizationId();
-
-        if (organizationEntity.getId().equals(orgId)) {
+        boolean alreadyLinked = organizationEntity.getIdentityProviderLinks().stream()
+                .anyMatch(oip -> oip.getIdentityProviderId().equals(identityProvider.getInternalId()));
+        if (alreadyLinked) {
             return false;
-        } else if (orgId != null) {
-            throw new ModelValidationException("Identity provider already associated with a different organization");
         }
 
-        identityProvider.setOrganizationId(organizationEntity.getId());
-        session.identityProviders().update(identityProvider);
+        validateAssociationConfig(identityProvider, autoMembership, membershipType, null);
+
+        OrganizationIdentityProviderEntity link = new OrganizationIdentityProviderEntity();
+        link.setOrganization(organizationEntity);
+        link.setIdentityProviderId(identityProvider.getInternalId());
+        link.setAutoMembership(autoMembership);
+        link.setMembershipType(membershipType.name());
+        em.persist(link);
+        organizationEntity.getIdentityProviderLinks().add(link);
 
         return true;
+    }
+
+    @Override
+    public OrganizationIdentityProviderLinkModel getIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        throwExceptionIfObjectIsNull(identityProvider, "Identity provider");
+
+        OrganizationEntity organizationEntity = getEntity(organization.getId());
+
+        return organizationEntity.getIdentityProviderLinks().stream()
+                .filter(oip -> oip.getIdentityProviderId().equals(identityProvider.getInternalId()))
+                .findFirst()
+                .map(link -> new OrganizationIdentityProviderLinkModel(
+                        link.getIdentityProviderId(),
+                        link.isAutoMembership(),
+                        MembershipType.valueOf(link.getMembershipType())))
+                .orElse(null);
+    }
+
+    @Override
+    public void updateIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                           boolean autoMembership, MembershipType membershipType) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        throwExceptionIfObjectIsNull(identityProvider, "Identity provider");
+
+        OrganizationEntity organizationEntity = getEntity(organization.getId());
+
+        OrganizationIdentityProviderEntity link = organizationEntity.getIdentityProviderLinks().stream()
+                .filter(oip -> oip.getIdentityProviderId().equals(identityProvider.getInternalId()))
+                .findFirst()
+                .orElseThrow(() -> new ModelException("Identity provider is not associated with the organization"));
+
+        validateAssociationConfig(identityProvider, autoMembership, membershipType, link);
+
+        link.setAutoMembership(autoMembership);
+        link.setMembershipType(membershipType.name());
     }
 
     @Override
@@ -732,16 +779,44 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
         OrganizationEntity organizationEntity = getEntity(organization.getId());
 
-        if (!organizationEntity.getId().equals(identityProvider.getOrganizationId())) {
+        OrganizationIdentityProviderEntity link = organizationEntity.getIdentityProviderLinks().stream()
+                .filter(oip -> oip.getIdentityProviderId().equals(identityProvider.getInternalId()))
+                .findFirst()
+                .orElse(null);
+
+        if (link == null) {
             return false;
         }
 
-        // clear the organization id and any domain assigned to the IDP.
-        identityProvider.setOrganizationId(null);
-        identityProvider.getConfig().remove(ORGANIZATION_DOMAIN_ATTRIBUTE);
-        session.identityProviders().update(identityProvider);
+        organizationEntity.getIdentityProviderLinks().remove(link);
+
+        // clear domain routing for this org's domains that reference the removed IdP
+        organizationEntity.getDomains().stream()
+                .filter(d -> d.getIdentityProvider() != null
+                        && d.getIdentityProvider().getInternalId().equals(identityProvider.getInternalId()))
+                .forEach(d -> d.setIdentityProvider(null));
 
         return true;
+    }
+
+    private void validateAssociationConfig(IdentityProviderModel identityProvider, boolean autoMembership,
+                                           MembershipType membershipType, OrganizationIdentityProviderEntity currentLink) {
+        if (!autoMembership && MembershipType.MANAGED == membershipType) {
+            throw new ModelValidationException("Auto-membership must be enabled when membership type is MANAGED");
+        }
+
+        if (MembershipType.MANAGED == membershipType) {
+            List<OrganizationIdentityProviderEntity> managedLinks = em.createNamedQuery("findManagedLinkByIdp", OrganizationIdentityProviderEntity.class)
+                    .setParameter("idpId", identityProvider.getInternalId())
+                    .getResultList();
+
+            for (OrganizationIdentityProviderEntity existing : managedLinks) {
+                if (currentLink != null && existing.getOrganization().getId().equals(currentLink.getOrganization().getId())) {
+                    continue;
+                }
+                throw new ModelValidationException("Another organization already has MANAGED membership type for this identity provider");
+            }
+        }
     }
 
     @Override
@@ -871,6 +946,175 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         query.setParameter("realmId", getRealm().getId());
 
         return query.getSingleResult();
+    }
+
+    @Override
+    public OrganizationDomainModel createDomain(String name, boolean verified, String identityProviderAlias, boolean autoRedirect) {
+        validateDomain(name);
+        String normalizedName = name.trim().toLowerCase();
+        RealmModel realm = getRealm();
+
+        try {
+            em.createNamedQuery("getDomainByRealmAndName", OrganizationDomainEntity.class)
+                    .setParameter("realmId", realm.getId())
+                    .setParameter("name", normalizedName)
+                    .getSingleResult();
+            throw new ModelDuplicateException("A domain with name '" + normalizedName + "' already exists in the realm");
+        } catch (NoResultException expected) {
+        }
+
+        OrganizationDomainEntity entity = new OrganizationDomainEntity();
+        entity.setId(KeycloakModelUtils.generateId());
+        entity.setName(normalizedName);
+        entity.setVerified(verified);
+        entity.setRealmId(realm.getId());
+        entity.setIdentityProvider(resolveRealmIdentityProvider(identityProviderAlias));
+        entity.setAutoRedirect(autoRedirect);
+        em.persist(entity);
+
+        return toModel(entity);
+    }
+
+    @Override
+    public OrganizationDomainModel getDomainByName(String name) {
+        if (StringUtil.isBlank(name)) return null;
+        try {
+            OrganizationDomainEntity entity = em.createNamedQuery("getDomainByRealmAndName", OrganizationDomainEntity.class)
+                    .setParameter("realmId", getRealm().getId())
+                    .setParameter("name", name.trim().toLowerCase())
+                    .getSingleResult();
+            return toModel(entity);
+        } catch (NoResultException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public Stream<OrganizationDomainModel> getDomains(String search, Integer first, Integer max) {
+        String realmId = getRealm().getId();
+        TypedQuery<OrganizationDomainEntity> query;
+
+        if (StringUtil.isNotBlank(search)) {
+            query = em.createNamedQuery("searchDomainsByRealm", OrganizationDomainEntity.class)
+                    .setParameter("realmId", realmId)
+                    .setParameter("search", "%" + search.trim().toLowerCase() + "%");
+        } else {
+            query = em.createNamedQuery("getAllDomainsByRealm", OrganizationDomainEntity.class)
+                    .setParameter("realmId", realmId);
+        }
+
+        return closing(paginateQuery(query, first, max).getResultStream().map(this::toModel));
+    }
+
+    @Override
+    public void updateDomain(String name, boolean verified, String identityProviderAlias, boolean autoRedirect) {
+        if (StringUtil.isBlank(name)) {
+            throw new ModelValidationException("Domain name cannot be empty");
+        }
+
+        OrganizationDomainEntity entity;
+        try {
+            entity = em.createNamedQuery("getDomainByRealmAndName", OrganizationDomainEntity.class)
+                    .setParameter("realmId", getRealm().getId())
+                    .setParameter("name", name.trim().toLowerCase())
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            throw new ModelException("Domain '" + name + "' does not exist in the realm");
+        }
+
+        entity.setVerified(verified);
+        entity.setIdentityProvider(resolveRealmIdentityProvider(identityProviderAlias));
+        entity.setAutoRedirect(autoRedirect);
+    }
+
+    @Override
+    public boolean removeDomain(String name) {
+        if (StringUtil.isBlank(name)) return false;
+
+        OrganizationDomainEntity entity;
+        try {
+            entity = em.createNamedQuery("getDomainByRealmAndName", OrganizationDomainEntity.class)
+                    .setParameter("realmId", getRealm().getId())
+                    .setParameter("name", name.trim().toLowerCase())
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            return false;
+        }
+
+        long claimCount = em.createNamedQuery("countOrgClaimsForDomain", Long.class)
+                .setParameter("domainId", entity.getId())
+                .getSingleResult();
+
+        if (claimCount > 0) {
+            throw new ModelException("Domain '" + name + "' is still claimed by " + claimCount + " organization(s)");
+        }
+
+        entity.setIdentityProvider(null);
+        em.remove(entity);
+        return true;
+    }
+
+    @Override
+    public boolean addDomainToOrganization(OrganizationModel organization, String domainName) {
+        throwExceptionIfObjectIsNull(organization, "organization");
+        if (StringUtil.isBlank(domainName)) {
+            throw new ModelValidationException("Domain name cannot be empty");
+        }
+
+        String normalizedName = domainName.trim().toLowerCase();
+        OrganizationDomainEntity domainEntity;
+        try {
+            domainEntity = em.createNamedQuery("getDomainByRealmAndName", OrganizationDomainEntity.class)
+                    .setParameter("realmId", getRealm().getId())
+                    .setParameter("name", normalizedName)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            throw new ModelException("Domain '" + normalizedName + "' does not exist in the realm");
+        }
+
+        OrganizationEntity orgEntity = getEntity(organization.getId());
+        if (orgEntity.getDomains().contains(domainEntity)) {
+            return false;
+        }
+
+        orgEntity.addDomain(domainEntity);
+        return true;
+    }
+
+    @Override
+    public boolean removeDomainFromOrganization(OrganizationModel organization, String domainName) {
+        throwExceptionIfObjectIsNull(organization, "organization");
+        if (StringUtil.isBlank(domainName)) return false;
+
+        String normalizedName = domainName.trim().toLowerCase();
+        OrganizationEntity orgEntity = getEntity(organization.getId());
+
+        OrganizationDomainEntity toRemove = orgEntity.getDomains().stream()
+                .filter(d -> normalizedName.equals(d.getName()))
+                .findFirst()
+                .orElse(null);
+
+        if (toRemove == null) {
+            return false;
+        }
+
+        orgEntity.removeDomain(toRemove);
+        return true;
+    }
+
+    private IdentityProviderEntity resolveRealmIdentityProvider(String alias) {
+        if (alias == null) return null;
+        IdentityProviderModel idpModel = session.identityProviders().getByAlias(alias);
+        if (idpModel == null) {
+            throw new ModelValidationException("Identity provider with alias '" + alias + "' does not exist in the realm");
+        }
+        return em.getReference(IdentityProviderEntity.class, idpModel.getInternalId());
+    }
+
+    private OrganizationDomainModel toModel(OrganizationDomainEntity entity) {
+        IdentityProviderEntity idp = entity.getIdentityProvider();
+        String alias = idp != null ? idp.getAlias() : null;
+        return new OrganizationDomainModel(entity.getName(), entity.isVerified(), alias, entity.isAutoRedirect());
     }
 
     @Override
