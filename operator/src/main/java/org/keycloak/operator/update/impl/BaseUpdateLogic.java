@@ -157,6 +157,7 @@ abstract class BaseUpdateLogic implements UpdateLogic {
         return container.getEnv().stream()
                 .filter(envVar -> !envVar.getName().equals(KeycloakDeploymentDependentResource.POD_IP))
                 .filter(envVar -> !envVar.getName().equals(KeycloakDeploymentDependentResource.HOST_IP_SPI_OPTION))
+                .filter(envVar -> !envVar.getName().equals(KeycloakDeploymentDependentResource.CACHE_EMBEDDED_NODE_NAME))
                 .collect(Collectors.toMap(EnvVar::getName, Function.identity()));
     }
 
