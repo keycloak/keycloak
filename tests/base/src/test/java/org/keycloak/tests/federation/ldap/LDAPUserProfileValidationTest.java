@@ -249,6 +249,14 @@ public class LDAPUserProfileValidationTest {
                 ldapEmbeddedServer = server;
                 return port;
             } catch (LdapConfigurationException e) {
+                // init() already created a directory service (and its work files) before start() ever attempted
+                // to bind, so a server we're abandoning here - whether we're about to retry or about to rethrow -
+                // still needs to be stopped, or that gets leaked for the rest of the test run.
+                try {
+                    server.stop();
+                } catch (Exception cleanupException) {
+                    e.addSuppressed(cleanupException);
+                }
                 if (attempt >= MAX_LDAP_BIND_ATTEMPTS || !isBindConflict(e)) {
                     throw e;
                 }
