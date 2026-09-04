@@ -212,24 +212,29 @@ public class UserResource {
                 wasPermanentlyLockedOut = session.getProvider(BruteForceProtector.class).isPermanentlyLockedOut(session, realm, user);
             }
 
-            Map<String, List<String>> attributes = new HashMap<>(rep.getRawAttributes());
+            boolean validateProfile = hasProfileUpdate(rep, user) && !UserUpdateUtils.onlyRequiredActionsChanged(rep, user);
 
-            if (rep.getAttributes() == null) {
-                // include existing attributes in case no attributes are set so that validation takes into account the existing
-                // attributes associated with the user
-                for (Map.Entry<String, List<String>> entry : user.getAttributes().entrySet()) {
-                    attributes.putIfAbsent(entry.getKey(), entry.getValue());
+            if (validateProfile) {
+                Map<String, List<String>> attributes = new HashMap<>(rep.getRawAttributes());
+
+                if (rep.getAttributes() == null) {
+                    // include existing attributes in case no attributes are set so that validation takes into account the existing
+                    // attributes associated with the user
+                    for (Map.Entry<String, List<String>> entry : user.getAttributes().entrySet()) {
+                        attributes.putIfAbsent(entry.getKey(), entry.getValue());
+                    }
                 }
+
+                UserProfile profile = session.getProvider(UserProfileProvider.class).create(USER_API, attributes, user);
+
+                Response response = validateUserProfile(profile, session, auth.adminAuth());
+                if (response != null) {
+                    return response;
+                }
+                profile.update(rep.getAttributes() != null);
             }
 
-            UserProfile profile = session.getProvider(UserProfileProvider.class).create(USER_API, attributes, user);
-
-            Response response = validateUserProfile(profile, session, auth.adminAuth());
-            if (response != null) {
-                return response;
-            }
-            profile.update(rep.getAttributes() != null);
-            updateUserFromRep(profile, user, rep, session, true);
+            updateUserFromRep(null, user, rep, session, true);
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
 
             // we need to do it here as the attributes would be overwritten by what is in the rep
@@ -278,6 +283,27 @@ public class UserResource {
             throw ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
         }
     }
+
+    private boolean hasProfileUpdate(UserRepresentation rep, UserModel user) {
+        if (!Objects.equals(rep.getUsername(), user.getUsername())) {
+            return true;
+        }
+        if (!Objects.equals(rep.getFirstName(), user.getFirstName())) {
+            return true;
+        }
+        if (!Objects.equals(rep.getLastName(), user.getLastName())) {
+            return true;
+        }
+        if (!Objects.equals(rep.getEmail(), user.getEmail())) {
+            return true;
+        }
+        if (rep.getAttributes() != null) {
+            return !Objects.equals(rep.getAttributes(), user.getAttributes());
+        }
+        return false;
+    }
+
+    
 
     public static Response validateUserProfile(UserProfile profile, KeycloakSession session, AdminAuth adminAuth) {
         try {
