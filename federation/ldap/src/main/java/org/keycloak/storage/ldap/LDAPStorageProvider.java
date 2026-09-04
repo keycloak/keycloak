@@ -311,11 +311,13 @@ public class LDAPStorageProvider implements UserStorageProvider,
             String ldapUsername = LDAPUtils.getUsername(ldapUser, this.ldapIdentityStore.getConfig());
             UserModel localUser = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, ldapUsername);
             if (localUser == null) {
+                // null when the entry fails User Profile validation on import - filtered out below rather than
+                // left for a caller (e.g. group/role membership resolution) to trip over as a null element.
                 return importUserFromLDAP(session, realm, ldapUser);
             } else {
                 return proxy(realm, localUser, ldapUser, false);
             }
-        });
+        }).filter(Objects::nonNull);
     }
 
     public boolean synchronizeRegistrations() {
@@ -484,7 +486,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 .skip(firstResult)
                 .limit(maxResults)
                 // do no force the import and return the current existing user if available
-                .map(ldapUser -> importUserFromLDAP(session, realm, ldapUser, ImportType.NOT_FORCED_RETURN_EXISTING));
+                .map(ldapUser -> importUserFromLDAP(session, realm, ldapUser, ImportType.NOT_FORCED_RETURN_EXISTING))
+                // null when a brand-new entry fails User Profile validation on import - must not leak through as
+                // e.g. a null group/role member.
+                .filter(Objects::nonNull);
     }
 
     private Stream<LDAPObject> loadUsersByUniqueAttributeChunk(RealmModel realm, String uidName, Collection<String> uids) {
