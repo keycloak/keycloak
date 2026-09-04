@@ -28,6 +28,8 @@ import org.keycloak.testframework.conformance.runner.ConformanceResult;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 
+import static org.keycloak.tests.conformance.vp.VpConformanceRealmConfig.TEST_PLAN;
+
 /**
  * The verifier accepts a valid cross device SD-JWT VC presentation. The wallet uses the QR code link,
  * receives an empty JSON object from direct_post, and the browser finishes the login through the
@@ -47,7 +49,7 @@ public class VerifierCrossDeviceHappyFlowTest extends AbstractVpConformanceTest 
     @Override
     protected Stream<ConformanceModuleVariant> moduleVariants() {
         return discoverModuleVariants(
-                "oid4vp-1final-verifier-test-plan",
+                TEST_PLAN,
                 Map.of(
                         "vp_profile", "plain_vp",
                         "credential_format", "sd_jwt_vc",
