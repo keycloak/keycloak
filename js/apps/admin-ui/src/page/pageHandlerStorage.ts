@@ -3,7 +3,11 @@ import { matchPath } from "react-router-dom";
 
 const MULTIVALUED_DELIMITER = "##";
 
-const MULTIVALUED_TYPES = new Set(["MultivaluedString", "MultivaluedList"]);
+const MULTIVALUED_TYPES = new Set([
+  "MultivaluedString",
+  "MultivaluedList",
+  "IdentityProviderMultiList",
+]);
 
 export type StorageType =
   | "COMPONENT"
@@ -71,6 +75,46 @@ function isMultivaluedProperty(
   property: ConfigPropertyRepresentation,
 ): boolean {
   return !!property.type && MULTIVALUED_TYPES.has(property.type);
+}
+
+function isClearedValue(value: unknown): boolean {
+  if (value === undefined || value === null || value === "") {
+    return true;
+  }
+
+  return Array.isArray(value) && value.length === 0;
+}
+
+export function mergeEntityConfig(
+  existing: Record<string, unknown> | undefined,
+  config: Record<string, unknown> | undefined,
+  properties: ConfigPropertyRepresentation[],
+  target: ConfigMapTarget,
+): Record<string, unknown> {
+  const result: Record<string, unknown> = { ...(existing || {}) };
+
+  for (const property of properties) {
+    const key = property.name!;
+    const value = config?.[key];
+
+    if (isClearedValue(value)) {
+      delete result[key];
+      continue;
+    }
+
+    const normalized = normalizeConfig(
+      { [key]: value },
+      [property],
+      "save",
+      target,
+    );
+
+    if (key in normalized) {
+      result[key] = normalized[key];
+    }
+  }
+
+  return result;
 }
 
 export function normalizeConfig(
