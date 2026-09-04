@@ -3,6 +3,16 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Token endpoint error responses for client authentication failures now consistently use 401
+
+The token endpoint now returns `401 Unauthorized` with `invalid_client` for all client authentication failures, consistent with link:https://datatracker.ietf.org/doc/html/rfc6749#section-5.2[RFC 6749 Section 5.2].
+
+Previously, two cases returned `400 Bad Request` with `unauthorized_client` instead: when a client had no credentials configured, and when an unexpected error occurred during authentication. Both now return `401` with `invalid_client`.
+
+==== Migration
+
+If your application checks for a `400` status code or `unauthorized_client` error in these specific failure scenarios, update it to expect `401` and `invalid_client`.
+
 === Valid redirect URIs for clients do not accept wildcards for hostname anymore
 
 The wildcard comparison for valid redirect URIs does not affect the hostname anymore. Previously patterns like `$$https://example.com*$$` were accepted and lead to allow unintended domains like `$$https://example.com.other.domain.com$$`. Since this release, the hostname does not accept such type of wildcard and those patterns will be managed as if the wildcard is after the hostname `$$https://example.com/*$$`. The full wildcard for the hostname `$$https://*$$` is still accepted because its interpretation cannot be misunderstood.
