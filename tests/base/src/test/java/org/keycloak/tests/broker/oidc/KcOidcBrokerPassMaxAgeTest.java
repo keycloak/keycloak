@@ -1,146 +1,136 @@
-package org.keycloak.testsuite.broker;
+package org.keycloak.tests.broker.oidc;
 
-import java.util.Map;
-
-import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.testsuite.broker.oidc.TestKeycloakOidcIdentityProviderFactory;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.page.ErrorPage;
+import org.keycloak.tests.broker.AbstractKcOidcBrokerTest;
+import org.keycloak.tests.common.CustomProvidersServerConfig;
+import org.keycloak.tests.providers.broker.oidc.TestKeycloakOidcIdentityProviderFactory;
+import org.keycloak.testsuite.util.AccountHelper;
 
-import org.junit.Ignore;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+@KeycloakIntegrationTest(config = CustomProvidersServerConfig.class)
+public class KcOidcBrokerPassMaxAgeTest extends AbstractKcOidcBrokerTest {
 
-/**
- * Tests the propagation of the max_age parameter for brokered logins.
- *
- * see https://issues.redhat.com/browse/KEYCLOAK-18499
- */
-public class KcOidcBrokerPassMaxAgeTest extends AbstractBrokerTest {
+    @InjectRealm(ref = "consumer", lifecycle = LifeCycle.METHOD,
+            config = PassMaxAgeConsumerRealmConfig.class)
+    ManagedRealm consumerRealm;
 
-    @Override
-    protected BrokerConfiguration getBrokerConfiguration() {
-        return new KcOidcBrokerConfigurationWithPassMaxAge();
-    }
+    @InjectPage
+    ErrorPage errorPage;
 
-    private static class KcOidcBrokerConfigurationWithPassMaxAge extends KcOidcBrokerConfiguration {
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
 
-        @Override
-        public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
-            IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, TestKeycloakOidcIdentityProviderFactory.ID);
-
-            Map<String, String> config = idp.getConfig();
-            applyDefaultConfiguration(config, syncMode);
-            config.put(IdentityProviderModel.LOGIN_HINT, "false");
-            config.put(IdentityProviderModel.PASS_MAX_AGE, "true");
-            config.remove(OAuth2Constants.PROMPT);
-
-            return idp;
-        }
-    }
-
+    // The standard login flow doesn't apply cleanly to this config (no client-forwarded prompt, custom
+    // provider factory) - legacy disabled the same inherited test for this exact configuration and
+    // overrode the other with its own max_age-specific logic instead. Same shape here.
     @Override
     @Test
-    @Ignore
+    @Disabled("PassMaxAge config needs its own login flow; see testLoginWithExistingUser() below")
     public void testLogInAsUserInIDP() {
-        // super.testLogInAsUserInIDP();
     }
 
-    @Test
     @Override
-    public void loginWithExistingUser() {
-        // login as brokered user user, perform profile update on first broker login and logout user
-        loginUser();
-        testSingleLogout();
+    @Test
+    public void testLoginWithExistingUser() {
+        logInAsUserInIDP();
+        updateAccountInformation();
+        assertUserCreatedInConsumerRealm();
 
-        oauth.client("broker-app");
-        oauth.realm(bc.consumerRealmName());
         oauth.openLoginForm();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess(), "Should be logged in");
+        logoutFromConsumerRealm();
+        AccountHelper.logout(providerRealm.admin(), getUserLogin());
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
 
-        loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "sign in to", true);
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
-                "Driver should be on the provider realm page right now");
+        logInWithBroker();
 
-        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        loginPage.fillLogin(getUserLogin(), getUserPassword());
+        loginPage.submit();
 
         timeOffSet.set(2);
 
-        // trigger re-auth with max_age while we are still authenticated
-        String loginUrlWithMaxAge = getLoginUrl(getConsumerRoot(), bc.consumerRealmName(), "account") + "&max_age=1";
-        driver.navigate().to(loginUrlWithMaxAge);
+        oauth.loginForm().maxAge(1).open();
 
-        // we should now see the login page of the consumer
-        waitForPage(driver, "sign in to", true);
         loginPage.assertCurrent();
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/protocol/openid-connect/auth"),
+        Assertions.assertTrue(webDriver.getCurrentUrl().contains("/realms/" + CONSUMER_REALM + "/protocol/openid-connect/auth"),
                 "Driver should be on the consumer realm page right now");
 
-        loginPage.clickSocial(bc.getIDPAlias());
-        // we should see the login page of the provider, since the max_age was propagated
-        waitForPage(driver, "sign in to", true);
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+        logInWithBroker();
+
+        Assertions.assertTrue(webDriver.getCurrentUrl().contains("/realms/" + PROVIDER_REALM + "/"),
                 "Driver should be on the provider realm page right now");
         loginPage.assertCurrent();
 
-        // reauthenticate with password
-        loginPage.login(bc.getUserPassword());
-        waitForPage(driver, "account management", true);
-
-        testSingleLogout();
+        loginPage.fillPassword(getUserPassword());
+        loginPage.submit();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test
-    public void testEnforceReAuthenticationWhenMaxAgeIsSet() {
-        // login as brokered user user, perform profile update on first broker login and logout user
-        loginUser();
-        testSingleLogout();
+    void testEnforceReAuthenticationWhenMaxAgeIsSet() {
+        logInAsUserInIDP();
+        updateAccountInformation();
+        assertUserCreatedInConsumerRealm();
 
-        oauth.client("broker-app");
-        oauth.realm(bc.consumerRealmName());
         oauth.openLoginForm();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess(), "Should be logged in");
+        logoutFromConsumerRealm();
+        AccountHelper.logout(providerRealm.admin(), getUserLogin());
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
 
-        loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "sign in to", true);
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
-                "Driver should be on the provider realm page right now");
+        logInWithBroker();
 
-        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        loginPage.fillLogin(getUserLogin(), getUserPassword());
+        loginPage.submit();
 
-        IdentityProviderResource idpResource = realmsResouce().realm(bc.consumerRealmName()).identityProviders()
-                .get(bc.getIDPAlias());
-        IdentityProviderRepresentation idpRep = idpResource.toRepresentation();
-
+        IdentityProviderRepresentation idpRep = consumerRealm.admin()
+                .identityProviders().get(getIdpAlias()).toRepresentation();
         TestKeycloakOidcIdentityProviderFactory.setIgnoreMaxAgeParam(idpRep);
-
-        idpResource.update(idpRep);
+        consumerRealm.admin().identityProviders().get(getIdpAlias()).update(idpRep);
 
         timeOffSet.set(2);
 
-        // trigger re-auth with max_age while we are still authenticated
-        String loginUrlWithMaxAge = getLoginUrl(getConsumerRoot(), bc.consumerRealmName(), "account") + "&max_age=1";
-        driver.navigate().to(loginUrlWithMaxAge);
+        oauth.loginForm().maxAge(1).open();
 
-        // we should now see the login page of the consumer
-        waitForPage(driver, "sign in to", true);
         loginPage.assertCurrent();
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/protocol/openid-connect/auth"),
+        Assertions.assertTrue(webDriver.getCurrentUrl().contains("/realms/" + CONSUMER_REALM + "/protocol/openid-connect/auth"),
                 "Driver should be on the consumer realm page right now");
 
-        loginPage.clickSocial(bc.getIDPAlias());
-        // we should see the login page of the provider, since the max_age was propagated
-        waitForPage(driver, "sign in to", true);
-        loginPage.getError();
-        Assertions.assertEquals("Unexpected error when authenticating with identity provider",
-                loginPage.getInstruction());
+        logInWithBroker();
 
-        testSingleLogout();
+        errorPage.assertCurrent();
+        Assertions.assertEquals("Unexpected error when authenticating with identity provider",
+                errorPage.getError());
+    }
+
+    static class PassMaxAgeConsumerRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return configureConsumerRealm(realm,
+                    createOidcIdentityProvider()
+                            .providerId(TestKeycloakOidcIdentityProviderFactory.ID)
+                            .attribute(IdentityProviderModel.LOGIN_HINT, "false")
+                            .attribute(IdentityProviderModel.PASS_MAX_AGE, "true")
+                            // Legacy KcOidcBrokerConfigurationWithPassMaxAge removed the "prompt" attribute so the
+                            // broker does not force an interactive login; without this the provider always shows its
+                            // login page and the ignore-max-age error path is never exercised.
+                            .attribute("prompt", null));
+        }
     }
 }
