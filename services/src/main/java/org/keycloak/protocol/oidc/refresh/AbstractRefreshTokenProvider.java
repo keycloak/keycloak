@@ -34,6 +34,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.SessionLookup;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -66,10 +67,11 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
         ClientModel authorizedClient = ctx.grantContext().getClient();
         String scopeParameter = ctx.scopeParameter();
 
+        TokenReuseRollback tokenReuseRollback = null;
         if (realm.isRevokeRefreshToken()) {
             // If refresh tokens are revoked, we need to serialize all requests to avoid wrong conclusions.
             // This needs to be called before we load the user session from the database or the cache
-            createTemporaryExclusiveLockForTokenRefreshOperation(session, oldRefreshToken, tokenManager);
+            tokenReuseRollback = createTemporaryExclusiveLockAndEnlistTokenReuseRollback(session, oldRefreshToken, tokenManager);
         }
 
         event.session(oldRefreshToken.getSessionState())
@@ -134,7 +136,7 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token. Token client and authorized client don't match");
         }
 
-        validateTokenReuseForRefresh(session, realm, oldRefreshToken, validation, tokenManager);
+        validateTokenReuseForRefresh(session, realm, oldRefreshToken, validation, tokenManager, tokenReuseRollback);
 
         event.user(validation.userSession.getUser());
 
@@ -228,8 +230,9 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
         };
     }
 
-    private void createTemporaryExclusiveLockForTokenRefreshOperation(KeycloakSession session, RefreshToken refreshToken, TokenManager tokenManager) {
+    private TokenReuseRollback createTemporaryExclusiveLockAndEnlistTokenReuseRollback(KeycloakSession session, RefreshToken refreshToken, TokenManager tokenManager) {
         String lockId = "refreshLock:" + refreshToken.getSessionId() + ":" + tokenManager.getReuseIdKey(refreshToken);
+        TokenReuseRollback tokenReuseRollback = new TokenReuseRollback();
         Retry.executeWithBackoff((int iteration) -> {
             // This assumes that 60 seconds is the maximum time this operation will take
             if (!session.singleUseObjects().putIfAbsent(lockId, 60)) {
@@ -238,6 +241,8 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
 
             // Trigger the session provider, to ensure that it enlists first for enlistAfterCompletion
             session.sessions();
+
+            enlistTokenReuseRollback(session, tokenReuseRollback);
 
             KeycloakSessionFactory factory = session.getKeycloakSessionFactory();
             session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
@@ -252,6 +257,7 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
                 }
             });
         }, Duration.of(10, ChronoUnit.SECONDS), 10);
+        return tokenReuseRollback;
     }
 
     /**
@@ -265,14 +271,14 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
     }
 
     private void validateTokenReuseForRefresh(KeycloakSession session, RealmModel realm, RefreshToken refreshToken,
-                                              TokenManager.TokenValidation validation, TokenManager tokenManager) throws OAuthErrorException {
+                                              TokenManager.TokenValidation validation, TokenManager tokenManager,
+                                              TokenReuseRollback tokenReuseRollback) throws OAuthErrorException {
         if (realm.isRevokeRefreshToken()) {
             AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
             try {
                 tokenManager.validateTokenReuse(session, realm, refreshToken, clientSession, true);
                 String key = tokenManager.getReuseIdKey(refreshToken);
-                int currentCount = clientSession.getRefreshTokenUseCount(key);
-                clientSession.setRefreshTokenUseCount(key, currentCount + 1);
+                incrementTokenReuseCount(tokenReuseRollback, clientSession, key);
             } catch (OAuthErrorException oee) {
                 if (logger.isDebugEnabled()) {
                     logger.debugf("Failed validation of refresh token %s due it was used before. Realm: %s, client: %s, user: %s, user session: %s. Will detach client session from user session",
@@ -284,6 +290,52 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
                     if (cs != null) cs.detachFromUserSession();
                 });
                 throw oee;
+            }
+        }
+    }
+
+    private static void enlistTokenReuseRollback(KeycloakSession session, TokenReuseRollback tokenReuseRollback) {
+        KeycloakModelUtils.enlistAfterRollback(session, tokenReuseRollback::restore);
+    }
+
+    private static void incrementTokenReuseCount(TokenReuseRollback tokenReuseRollback,
+                                                 AuthenticatedClientSessionModel clientSession, String key) {
+        String countNote = AuthenticatedClientSessionModel.REFRESH_TOKEN_USE_PREFIX + key;
+        String previousCount = clientSession.getNote(countNote);
+        int currentCount = clientSession.getRefreshTokenUseCount(key);
+        tokenReuseRollback.capture(clientSession, countNote, previousCount);
+        clientSession.setRefreshTokenUseCount(key, currentCount + 1);
+    }
+
+    private static class TokenReuseRollback {
+
+        private AuthenticatedClientSessionModel clientSession;
+        private String countNote;
+        private String previousCount;
+
+        private void capture(AuthenticatedClientSessionModel clientSession, String countNote,
+                             String previousCount) {
+            if (this.clientSession == null) {
+                this.clientSession = clientSession;
+                this.countNote = countNote;
+                this.previousCount = previousCount;
+            }
+        }
+
+        private void restore(SessionLookup ctx) {
+            if (clientSession == null) {
+                return;
+            }
+
+            AuthenticatedClientSessionModel rollbackClientSession = ctx.findClientSession(clientSession);
+            if (rollbackClientSession == null) {
+                return;
+            }
+
+            if (previousCount == null) {
+                rollbackClientSession.removeNote(countNote);
+            } else {
+                rollbackClientSession.setNote(countNote, previousCount);
             }
         }
     }
