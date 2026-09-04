@@ -69,10 +69,14 @@ Async UI in the admin console exposes stable loading signals for E2E tests:
 - `aria-busy="true"` — set on `LoadingOverlay` containers during fetch (same window as the spinner).
 - `data-testid="table-ready"` — set on `KeycloakDataTable` when the current fetch has completed.
 
-Use `waitForLoadingComplete` before clicking table rows when a `KeycloakDataTable` is idle. After search/filter Enter or refresh, use `waitForLoadingCycle` so the helper tolerates a short delay before the spinner appears, then waits for `table-ready` (when present) and spinner absence.
+Use `waitForLoadingComplete` (spinner absence only) before clicking table rows. After search/filter Enter or refresh, use `waitForLoadingCycle` so the helper tolerates a short delay before the spinner appears, then waits for spinner absence. On pages that use `KeycloakDataTable`, use `waitForTableReady` when you need the `table-ready` signal in addition to spinner absence.
 
 ```ts
-import { waitForLoadingComplete, waitForLoadingCycle } from "./utils/loading.ts";
+import {
+  waitForLoadingComplete,
+  waitForLoadingCycle,
+  waitForTableReady,
+} from "./utils/loading.ts";
 
 await page.keyboard.press("Enter");
 await waitForLoadingCycle(page);

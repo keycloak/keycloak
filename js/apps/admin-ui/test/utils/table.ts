@@ -3,6 +3,8 @@ import { waitForLoadingComplete, waitForLoadingCycle } from "./loading.ts";
 
 // The realm list can load slowly while parallel workers create and delete realms.
 const TABLE_LOAD_TIMEOUT_MS = 15_000;
+const ROW_CLICK_ATTEMPTS = 8;
+const ROW_LINK_TIMEOUT_MS = 2_000;
 
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -15,8 +17,8 @@ async function clickLinkWhenAvailable(link: Locator): Promise<boolean> {
   }
 
   try {
-    await candidate.waitFor({ state: "visible", timeout: 500 });
-    await candidate.click({ timeout: 500 });
+    await candidate.waitFor({ state: "visible", timeout: ROW_LINK_TIMEOUT_MS });
+    await candidate.click({ timeout: ROW_LINK_TIMEOUT_MS });
     return true;
   } catch {
     return false;
@@ -53,7 +55,10 @@ export async function clickTableRowItem(page: Page, itemName: string) {
 
   const exactNameRegex = new RegExp(`^${escapeRegex(itemName)}$`, "i");
 
-  for (let attempt = 0; attempt < 6; attempt++) {
+  for (let attempt = 0; attempt < ROW_CLICK_ATTEMPTS; attempt++) {
+    if (attempt > 0) {
+      await waitForLoadingComplete(page);
+    }
     if (
       await clickLinkWhenAvailable(
         tableBody.getByRole("link", { name: itemName, exact: true }),
