@@ -1,11 +1,7 @@
-package org.keycloak.testsuite.broker;
+package org.keycloak.tests.broker.oidc;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
-import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -14,105 +10,110 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.IDToken;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ClientBuilder;
-import org.keycloak.testsuite.util.broker.OIDCIdentityProviderConfigRep;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.tests.broker.AbstractKcOidcBrokerTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
+@KeycloakIntegrationTest
+public class KcOidcBrokerNonceParameterTest extends AbstractKcOidcBrokerTest {
 
-    @Override
-    protected BrokerConfiguration getBrokerConfiguration() {
-        return new KcOidcBrokerConfiguration() {
-            @Override
-            public List<ClientRepresentation> createConsumerClients() {
-                List<ClientRepresentation> clients = new ArrayList<>(super.createConsumerClients());
-                
-                ClientRepresentation client = ClientBuilder.create().clientId("consumer-client")
-                        .publicClient()
-                        .redirectUris(getConsumerRoot() + "/auth/realms/master/app/auth/*")
-                        .publicClient().build();
+    @InjectRealm(ref = "consumer", lifecycle = LifeCycle.METHOD,
+            config = NonceConsumerRealmConfig.class)
+    ManagedRealm consumerRealm;
 
-                // add the federated ID token to the protocol ID token
-                ProtocolMapperRepresentation consumerSessionNoteToClaimMapper = new ProtocolMapperRepresentation();
-                consumerSessionNoteToClaimMapper.setName(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
-                consumerSessionNoteToClaimMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-                consumerSessionNoteToClaimMapper.setProtocolMapper(UserSessionNoteMapper.PROVIDER_ID);
-                consumerSessionNoteToClaimMapper.setConfig(Map.of(ProtocolMapperUtils.USER_SESSION_NOTE, OIDCIdentityProvider.FEDERATED_ID_TOKEN + ":" + BrokerTestConstants.IDP_OIDC_ALIAS,
-                        OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, OIDCIdentityProvider.FEDERATED_ID_TOKEN,
-                        OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, Boolean.TRUE.toString()));
-                client.setProtocolMappers(Arrays.asList(consumerSessionNoteToClaimMapper));
+    @Test
+    public void testNonceSet() {
+        disableUpdateProfileOnFirstLogin();
 
-                clients.add(client);
-
-                return clients;
-            }
-        };
-    }
-
-    @Override
-    protected void loginUser() {
-        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
-
-        oauth.realm(bc.consumerRealmName());
         oauth.client("consumer-client");
 
-        AuthorizationEndpointResponse authzResponse = doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword(), "123456");
-        Assertions.assertTrue(authzResponse.isSuccess());
-        String code = authzResponse.getCode();
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        AuthorizationEndpointResponse authzResponse = doLoginSocialWithNonce("123456");
+        assertTrue(authzResponse.isSuccess());
+        AccessTokenResponse response = oauth.doAccessTokenRequest(authzResponse.getCode());
         IDToken idToken = toIdToken(response.getIdToken());
-        
-        Assertions.assertEquals("123456", idToken.getNonce());
+
+        assertEquals("123456", idToken.getNonce());
         String federatedIdTokenString = (String) idToken.getOtherClaims().get(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
-        Assertions.assertNotNull(federatedIdTokenString);
+        assertNotNull(federatedIdTokenString);
         IDToken federatedIdToken = toIdToken(federatedIdTokenString);
-        Assertions.assertNotNull(federatedIdToken.getNonce());
+        assertNotNull(federatedIdToken.getNonce());
     }
-    
+
     @Test
     public void testNonceNotSet() {
-        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        disableUpdateProfileOnFirstLogin();
 
-        // do not send nonce at IDP provider level either
-        IdentityProviderResource idpRes = adminClient.realm(bc.consumerRealmName()).identityProviders().get(BrokerTestConstants.IDP_OIDC_ALIAS);
-        IdentityProviderRepresentation idpRep = idpRes.toRepresentation();
-        OIDCIdentityProviderConfigRep cfg = new OIDCIdentityProviderConfigRep(idpRep);
-        cfg.setDisableNonce(true);
-        idpRes.update(idpRep);
+        IdentityProviderRepresentation idpRep = consumerRealm.admin().identityProviders().get(IDP_OIDC_ALIAS).toRepresentation();
+        idpRep.getConfig().put("disableNonce", Boolean.TRUE.toString());
+        consumerRealm.admin().identityProviders().get(IDP_OIDC_ALIAS).update(idpRep);
 
-        oauth.realm(bc.consumerRealmName());
         oauth.client("consumer-client");
 
-        AuthorizationEndpointResponse authzResponse = doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword(), null);
-        Assertions.assertTrue(authzResponse.isSuccess());
-        String code = authzResponse.getCode();
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        AuthorizationEndpointResponse authzResponse = doLoginSocialWithNonce(null);
+        assertTrue(authzResponse.isSuccess());
+        AccessTokenResponse response = oauth.doAccessTokenRequest(authzResponse.getCode());
         IDToken idToken = toIdToken(response.getIdToken());
 
-        Assertions.assertNull(idToken.getNonce());
+        assertNull(idToken.getNonce());
         String federatedIdTokenString = (String) idToken.getOtherClaims().get(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
-        Assertions.assertNotNull(federatedIdTokenString);
+        assertNotNull(federatedIdTokenString);
         IDToken federatedIdToken = toIdToken(federatedIdTokenString);
-        Assertions.assertNull(federatedIdToken.getNonce());
+        assertNull(federatedIdToken.getNonce());
     }
 
-    protected IDToken toIdToken(String encoded) {
-        IDToken idToken;
+    private AuthorizationEndpointResponse doLoginSocialWithNonce(String nonce) {
+        oauth.loginForm().nonce(nonce).open();
+        loginPage.clickSocial(IDP_OIDC_ALIAS);
+        loginPage.fillLogin(getUserLogin(), getUserPassword());
+        loginPage.submit();
+        return oauth.parseLoginResponse();
+    }
 
+    private IDToken toIdToken(String encoded) {
         try {
-            idToken = new JWSInput(encoded).readJsonContent(IDToken.class);
+            return new JWSInput(encoded).readJsonContent(IDToken.class);
         } catch (JWSInputException cause) {
-            throw new RuntimeException("Failed to deserialize RPT", cause);
+            throw new RuntimeException("Failed to deserialize token", cause);
         }
-        return idToken;
+    }
+
+    static class NonceConsumerRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            ProtocolMapperRepresentation sessionNoteMapper = new ProtocolMapperRepresentation();
+            sessionNoteMapper.setName(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
+            sessionNoteMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            sessionNoteMapper.setProtocolMapper(UserSessionNoteMapper.PROVIDER_ID);
+            sessionNoteMapper.setConfig(Map.of(
+                    ProtocolMapperUtils.USER_SESSION_NOTE,
+                    OIDCIdentityProvider.FEDERATED_ID_TOKEN + ":" + IDP_OIDC_ALIAS,
+                    OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME,
+                    OIDCIdentityProvider.FEDERATED_ID_TOKEN,
+                    OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN,
+                    Boolean.TRUE.toString()));
+
+            return configureConsumerRealm(realm,
+                    createOidcIdentityProvider())
+                    .clients(ClientBuilder.create("consumer-client")
+                            .publicClient()
+                            .redirectUris("*")
+                            .protocolMappers(sessionNoteMapper));
+        }
     }
 }
