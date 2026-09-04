@@ -59,18 +59,16 @@ public class OpenshiftV4IdentityProviderTest {
         OpenshiftV4IdentityProviderConfig config = new OpenshiftV4IdentityProviderConfig(new IdentityProviderModel());
 
         //when
-        try {
+        IdentityBrokerException exception = Assert.assertThrows(IdentityBrokerException.class, () -> {
             new OpenshiftV4IdentityProvider(null, config) {
                 @Override
                 InputStream getOauthMetadataInputStream(KeycloakSession session, String baseUrl) {
                     throw new RuntimeException("Failed : HTTP error code : 500");
                 }
             };
-            Assert.fail();
-        } catch (IdentityBrokerException e) {
-            //then
-            //OK
-        }
+        });
+
+        Assert.assertNotNull("Error message should not be null", exception.getMessage());
     }
 
 }
