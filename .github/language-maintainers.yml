@@ -28,6 +28,11 @@ languages:
     maintainers:
       - herver1971
       - anthieni
+  fa:
+    name: Persian
+    maintainers:
+      - nasermirzaei89
+      - Soltinator
   fr:
     name: French
     maintainers:
