@@ -9,6 +9,10 @@ As part of ongoing secure-by-default improvements to impersonation, token lifecy
 
 Additionally, tokens issued from impersonation sessions now include the `act` (actor) claim (https://datatracker.ietf.org/doc/html/rfc8693#section-4.1[RFC 8693 Section 4.1]) in both access tokens and ID tokens. This allows downstream resource servers to identify the impersonator for audit purposes. The claim is always present and cannot be disabled.
 
+== Token Exchange Delegation for Clients (experimental)
+
+The experimental token exchange delegation feature now supports client-level delegation (`delegation:client:<client_id>` scope), allowing users to authorize a client application, such as an AI agent, to act on their behalf through OAuth consent. For more details, see the link:{securing_apps_token_exchange_link}#_client-delegation[Client delegation] section.
+
 = Administration
 
 == Client Secret Rotation (supported)
