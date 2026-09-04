@@ -142,7 +142,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         loginUsernamePage.fillLoginWithUsernameOnly("");
         loginUsernamePage.submit();
 
-        assertEquals("Invalid username.", loginUsernamePage.getUsernameInputError());
+        loginUsernamePage.waitForUsernameInputError("Invalid username.");
     }
 
     @Test
@@ -154,7 +154,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         loginUsernamePage.fillLoginWithUsernameOnly("a".repeat(Validation.MAX_USERNAME_LENGTH + 1));
         loginUsernamePage.submit();
 
-        assertEquals("Invalid username.", loginUsernamePage.getUsernameInputError());
+        loginUsernamePage.waitForUsernameInputError("Invalid username.");
     }
 
     @Test
