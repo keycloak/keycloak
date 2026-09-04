@@ -328,7 +328,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
     }
 
     private String getCredentialOfferUriUrl() {
-        return getCredentialOfferUriUrl(jwtTypeCredentialConfigurationIdName, true, "john", null);
+        return getCredentialOfferUriUrl(jwtTypeCredentialConfigurationIdName, true, "john", oauth.getClientId());
     }
 
     private String getCredentialOfferUriUrl(String configId, Boolean preAuthorized, String username, String clientId) {
@@ -336,9 +336,9 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         if (preAuthorized != null)
             res += "&pre_authorized=" + preAuthorized;
         if (clientId != null)
-            res += "&client_id=" + clientId;
+            res += "&target_client=" + clientId;
         if (username != null)
-            res += "&username=" + username;
+            res += "&target_user=" + username;
         return res;
     }
 
@@ -347,6 +347,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
                 .credentialOfferUriRequest(jwtTypeCredentialConfigurationIdName)
                 .preAuthorized(true)
                 .targetUser("john")
+                .targetClient(OID4VCI_CLIENT_ID)
                 .bearerToken(accessToken)
                 .header("Origin", VALID_CORS_URL)
                 .send();
