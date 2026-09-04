@@ -23,7 +23,7 @@ import java.sql.Statement;
 import liquibase.database.core.MySQLDatabase;
 import liquibase.exception.CustomChangeException;
 import liquibase.snapshot.SnapshotGeneratorFactory;
-import liquibase.statement.core.RawSqlStatement;
+import liquibase.statement.core.RawParameterizedSqlStatement;
 import liquibase.structure.core.Schema;
 import liquibase.structure.core.Table;
 
@@ -61,34 +61,34 @@ public class JpaUpdate26_5_0_OrgTablesSetDefaultCharsetAndCollation extends Cust
                 String orgTable = getTableName("ORG");
                 String orgInvTable = getTableName("ORG_INVITATION");
 
-                statements.add(new RawSqlStatement("SET FOREIGN_KEY_CHECKS=0"));
+                statements.add(new RawParameterizedSqlStatement("SET FOREIGN_KEY_CHECKS=0"));
 
                 if (tableExists("ORG_INVITATION")) {
                     // Fix ORG_INVITATION.ORGANIZATION_ID charset/collation
-                    statements.add(new RawSqlStatement(
+                    statements.add(new RawParameterizedSqlStatement(
                         "ALTER TABLE " + orgInvTable + " DROP FOREIGN KEY FK_ORG_INVITATION_ORG"
                     ));
 
-                    statements.add(new RawSqlStatement(
+                    statements.add(new RawParameterizedSqlStatement(
                         "ALTER TABLE " + orgInvTable +
                         " CONVERT TO CHARACTER SET " + charset + " COLLATE " + collation
                     ));
                 }
 
                 // Fix ORG.ID charset/collation
-                statements.add(new RawSqlStatement(
+                statements.add(new RawParameterizedSqlStatement(
                     "ALTER TABLE " + orgTable +
                     " MODIFY ID VARCHAR(255) CHARACTER SET " + charset + " COLLATE " + collation + " NOT NULL"
                 ));
 
                 if (tableExists("ORG_INVITATION")) {
-                    statements.add(new RawSqlStatement(
+                    statements.add(new RawParameterizedSqlStatement(
                         "ALTER TABLE " + orgInvTable +
                         " ADD CONSTRAINT FK_ORG_INVITATION_ORG FOREIGN KEY (ORGANIZATION_ID) REFERENCES " + orgTable + " (ID)"
                     ));
                 }
 
-                statements.add(new RawSqlStatement("SET FOREIGN_KEY_CHECKS=1"));
+                statements.add(new RawParameterizedSqlStatement("SET FOREIGN_KEY_CHECKS=1"));
             }
         } catch (SQLException e) {
             throw new CustomChangeException("Failed to read database default character set", e);
