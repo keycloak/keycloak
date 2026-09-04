@@ -44,6 +44,7 @@ import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.tests.common.CustomProvidersServerConfig;
 import org.keycloak.tests.providers.events.TestEventsListenerContextDetailsProviderFactory;
+import org.keycloak.tests.providers.events.TestEventsListenerDeferredProviderFactory;
 import org.keycloak.tests.suites.DatabaseTest;
 
 import org.apache.commons.lang3.StringUtils;
@@ -183,6 +184,33 @@ public class EventStoreProviderTest {
         Assertions.assertEquals(0, eventHelper.queryEvents(realm2.getId(), null, null, null, d01, d03, null, null, null).length);
         Assertions.assertEquals(0, eventHelper.queryEvents(realm1.getId(), null, null, null, d08, d10, null, null, null).length);
         Assertions.assertEquals(0, eventHelper.queryEvents(realm2.getId(), null, null, null, d08, d10, null, null, null).length);
+    }
+
+    @Test
+    public void testEventBuilderDeferredListenerKeepsEventType() {
+        realm1.updateWithCleanup(r -> r.eventsListeners(TestEventsListenerDeferredProviderFactory.ID));
+
+        runOnServer.run(session -> {
+            TestEventsListenerDeferredProviderFactory.TYPES_AT_DISPATCH.clear();
+            TestEventsListenerDeferredProviderFactory.TYPES_AT_COMMIT.clear();
+
+            RealmModel realm = session.getContext().getRealm();
+
+            EventBuilder event = new EventBuilder(realm, session)
+                    .session("session1")
+                    .user("user1")
+                    .client("client1");
+
+            event.event(EventType.FEDERATED_IDENTITY_LINK).success();
+            event.event(EventType.LOGIN).success();
+        });
+
+        runOnServer.run(session -> {
+            Assertions.assertEquals(List.of(EventType.FEDERATED_IDENTITY_LINK, EventType.LOGIN),
+                    TestEventsListenerDeferredProviderFactory.TYPES_AT_DISPATCH);
+            Assertions.assertEquals(List.of(EventType.FEDERATED_IDENTITY_LINK, EventType.LOGIN),
+                    TestEventsListenerDeferredProviderFactory.TYPES_AT_COMMIT);
+        });
     }
 
     @Test
