@@ -63,9 +63,23 @@ public interface UiTabProviderFactory<T> extends ComponentFactory<T, UiTabProvid
      * <p>
      * The endpoint should be implemented via
      * {@link org.keycloak.services.resources.admin.ext.AdminRealmResourceProvider}.
-     * The path is relative to {@code /admin/realms/{realm}/}.
+     * The path is relative to {@code /admin/realms/{realm}/} and may contain
+     * placeholders such as {@code {clientId}} that are replaced with values from
+     * the current route.
      * <p>
      * Example: {@code "my-extension/clients/{clientId}/settings"}
+     * <p>
+     * The Admin Console uses the following protocol for custom endpoints:
+     * <ul>
+     *   <li>{@code GET} — returns JSON used to populate the form. The response must
+     *       include a {@code config} object whose keys match the property names
+     *       declared by {@link #getConfigProperties()}.</li>
+     *   <li>{@code PUT} — receives JSON with the submitted form data plus the
+     *       resolved route parameters as top-level fields. The extension is
+     *       responsible for persisting the values and should return a successful
+     *       response (for example {@code 204 No Content}).</li>
+     * </ul>
+     * Non-successful responses are surfaced to the user as save errors.
      *
      * @return the endpoint path, or null if not using custom storage
      */
