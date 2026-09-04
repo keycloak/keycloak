@@ -1,6 +1,7 @@
 package org.keycloak.scim.model.user;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,9 +35,12 @@ import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.filter.ScimFilterParser.FilterContext;
 import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
+import org.keycloak.scim.protocol.ForbiddenException;
+import org.keycloak.scim.protocol.request.PatchRequest.PatchOperation;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
+import org.keycloak.scim.resource.spi.ScimPatchException;
 import org.keycloak.scim.resource.user.User;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.userprofile.UserProfile;
@@ -47,6 +51,7 @@ import org.keycloak.userprofile.ValidationException.Error;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
+import static org.keycloak.utils.StringUtil.isBlank;
 
 public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<UserModel, User> implements ScimAttributeJpaExpressionResolver {
 
@@ -62,39 +67,94 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     public User onCreate(User resource) {
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-        String userName = resource.getUserName();
+        RealmModel realm = session.getContext().getRealm();
+        String username = realm.isRegistrationEmailAsUsername() ? resource.getEmail() : resource.getUserName();
 
-        if (userName == null) {
-            throw new ModelValidationException("username is required");
+        if (username == null) {
+            throw new ModelValidationException(realm.isRegistrationEmailAsUsername() ? "email is required" : "username is required");
         }
 
-        UserProfile profile = provider.create(UserProfileContext.SCIM, Map.of(UserModel.USERNAME, userName));
+        UserProfile profile = provider.create(UserProfileContext.SCIM, Map.of(UserModel.USERNAME, username));
         UserModel model = profile.create(false);
+        UserModelAttributeRecorder recorder = new UserModelAttributeRecorder(model, new HashMap<>());
 
-        populate(model, resource);
-
-        try {
-            profile = provider.create(UserProfileContext.SCIM, model);
-            profile.validate();
-        } catch (ValidationException ve) {
-            throw handleValidationException(ve);
-        }
+        populate(recorder, resource);
+        persist(recorder);
 
         return createResourceTypeInstance(model, null, null);
     }
 
     @Override
-    protected User onUpdate(UserModel model, User resource) {
+    public User update(User resource) {
+        UserModel model = getModel(resource.getId());
+
+        if (model == null || !hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
+            throw new ForbiddenException();
+        }
+
+        UserModelAttributeRecorder recorder = createUserModelAttributeRecorder(model);
+
+        populate(recorder, resource);
+        persist(recorder);
+
+        return onUpdate(model, resource);
+    }
+
+    @Override
+    public void patch(User existing, List<PatchOperation> operations) {
+        Objects.requireNonNull(existing, "existing cannot be null");
+        Objects.requireNonNull(operations, "operations cannot be null");
+
+        if (operations.size() > MAX_PATCH_OPERATIONS) {
+            throw new ScimPatchException(
+                    "PATCH request exceeds maximum allowed number of %d operations".formatted(MAX_PATCH_OPERATIONS));
+        }
+
+        UserModel model = getModel(existing.getId());
+
+        if (model == null || !hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
+            throw new ForbiddenException();
+        }
+
+        UserModelAttributeRecorder recorder = createUserModelAttributeRecorder(model);
+
+        applyPatch(existing, recorder, operations);
+
+        String stagedUsername = recorder.getUsername();
+
+        if (isBlank(stagedUsername) && isUsernameReadOnly(recorder)) {
+            throw new ModelValidationException("userName is required");
+        }
+
+        persist(recorder);
+        onUpdate(model, existing);
+    }
+
+    private UserModelAttributeRecorder createUserModelAttributeRecorder(UserModel model) {
+        return new UserModelAttributeRecorder(model, new HashMap<>(model.getAttributes()));
+    }
+
+    private boolean isUsernameReadOnly(UserModelAttributeRecorder recorder) {
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+        UserProfile profile = provider.create(UserProfileContext.SCIM, recorder.getAttributes(), recorder.getDelegate());
+        return profile.getAttributes().isReadOnly(UserModel.USERNAME);
+    }
+
+    private void persist(UserModelAttributeRecorder recorder) {
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+        UserProfile profile = provider.create(UserProfileContext.SCIM, recorder.getAttributes(), recorder.getDelegate());
+
         try {
-            UserProfileProvider userProfileProvider = session.getProvider(UserProfileProvider.class);
-            UserProfile profile = userProfileProvider.create(UserProfileContext.SCIM, model);
-            profile.update();
+            profile.validate();
+            profile.update(true);
         } catch (ValidationException ve) {
             throw handleValidationException(ve);
         }
+    }
 
+    @Override
+    protected User onUpdate(UserModel model, User resource) {
         model.setLastModifiedTimestamp(Time.currentTimeMillis());
-
         return createResourceTypeInstance(model, null, null);
     }
 
