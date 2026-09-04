@@ -1,19 +1,19 @@
 import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
-	Button,
-	DataListAction,
-	DataListCell,
-	DataListItem,
-	DataListItemCells,
-	DataListItemRow,
-	Flex,
-	FlexItem,
-	Modal,
-	ModalBody,
-	ModalFooter,
-	ModalHeader,
-	ModalVariant,
-} from '@patternfly/react-core';
+  Button,
+  DataListAction,
+  DataListCell,
+  DataListItem,
+  DataListItemCells,
+  DataListItemRow,
+  Flex,
+  FlexItem,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalVariant,
+} from "@patternfly/react-core";
 import { ExternalLinkAltIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -47,9 +47,16 @@ const RevokeDialog = ({
 }: RevokeDialogProps) => {
   if (!isOpen) return null;
 
+  const modalTitle = t("revokeVerifiableCredentialTitle");
+
   return (
-    <Modal variant={ModalVariant.small} isOpen onClose={onClose}>
-      <ModalHeader title={t("revokeVerifiableCredentialTitle")} />
+    <Modal
+      variant={ModalVariant.small}
+      isOpen
+      onClose={onClose}
+      aria-label={modalTitle}
+    >
+      <ModalHeader title={modalTitle} />
       <ModalBody>
         {t("deleteCredentialConfirm", {
           credentialName,
