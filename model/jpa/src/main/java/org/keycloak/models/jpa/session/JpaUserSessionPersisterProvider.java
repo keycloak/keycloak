@@ -504,7 +504,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                 .getSingleResultOrNull();
 
         boolean locked = currentVersion != null && knownVersion == currentVersion;
-        logger.debugf("User session %s/%s/%s lock status: %b"+ userSessionId, clientId, offline, locked);
+        logger.debugf("User session %s/%s/%s lock status: %b", userSessionId, clientId, offline, locked);
         return locked;
     }
 
