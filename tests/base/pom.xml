@@ -167,6 +167,7 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-util-embedded-ldap</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
