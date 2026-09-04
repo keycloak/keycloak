@@ -1,155 +1,113 @@
-/*
- * Copyright 2019 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package org.keycloak.testsuite.broker;
+package org.keycloak.tests.broker.oidc;
 
 import java.util.List;
 
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.page.OAuthGrantPage;
+import org.keycloak.tests.broker.AbstractKcOidcBrokerTest;
 
-import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Migrated from old testsuite.  Previous version by Pedro Igor.
- *
- * @author Stan Silvert ssilvert@redhat.com (C) 2019 Red Hat Inc.
- * @author pedroigor
- */
-public class KcOidcBrokerIdpHintTest extends AbstractInitializedBaseBrokerTest {
+@KeycloakIntegrationTest
+public class KcOidcBrokerIdpHintTest extends AbstractKcOidcBrokerTest {
 
-    @Override
-    protected BrokerConfiguration getBrokerConfiguration() {
-        return new KcOidcBrokerConfiguration();
-    }
+    @InjectPage
+    OAuthGrantPage grantPage;
 
     @Test
     public void testSuccessfulRedirect() {
-        oauth.client("broker-app");
-        oauth.realm(bc.consumerRealmName());
-        oauth.openLoginForm();
-        waitForPage(driver, "sign in to", true);
-        String url = driver.getCurrentUrl() + "&kc_idp_hint=" + bc.getIDPAlias();
-        driver.navigate().to(url);
-        waitForPage(driver, "sign in to", true);
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+        oauth.loginForm()
+                .param("kc_idp_hint", IDP_OIDC_ALIAS)
+                .open();
+
+        webDriver.waiting().until(d -> webDriver.getCurrentUrl().contains("/realms/" + PROVIDER_REALM + "/"));
+        assertTrue(webDriver.getCurrentUrl().contains("/realms/" + PROVIDER_REALM + "/"),
                 "Driver should be on the provider realm page right now");
 
-        log.debug("Logging in");
-        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        loginPage.fillLogin(getUserLogin(), getUserPassword());
+        loginPage.submit();
 
-        updateAccountInformationPage.assertCurrent();
-        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
+        updateAccountInformation();
 
-        // authenticated and redirected to app
-        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
-        Assertions.assertTrue(driver.getCurrentUrl().contains(bc.consumerRealmName()));
+        assertTrue(oauth.parseLoginResponse().isSuccess());
+        assertTrue(webDriver.getCurrentUrl().contains(CONSUMER_REALM));
     }
 
-    // KEYCLOAK-5260
     @Test
     public void testSuccessfulRedirectToProviderAfterLoginPageShown() {
-        oauth.client("broker-app");
-        oauth.realm(bc.consumerRealmName());
         oauth.openLoginForm();
-        waitForPage(driver, "sign in to", true);
+        webDriver.waiting().until(d -> webDriver.getCurrentUrl().contains("/realms/" + CONSUMER_REALM + "/"));
 
-        String urlWithHint = driver.getCurrentUrl() + "&kc_idp_hint=" + bc.getIDPAlias();
-        driver.navigate().to(urlWithHint);
-        waitForPage(driver, "sign in to", true);
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+        String urlWithHint = webDriver.getCurrentUrl() + "&kc_idp_hint=" + IDP_OIDC_ALIAS;
+        webDriver.driver().navigate().to(urlWithHint);
+        webDriver.waiting().until(d -> webDriver.getCurrentUrl().contains("/realms/" + PROVIDER_REALM + "/"));
+        assertTrue(webDriver.getCurrentUrl().contains("/realms/" + PROVIDER_REALM + "/"),
                 "Driver should be on the provider realm page right now");
 
         // do the same thing a second time
-        driver.navigate().to(urlWithHint);
-        waitForPage(driver, "sign in to", true);
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+        webDriver.driver().navigate().to(urlWithHint);
+        webDriver.waiting().until(d -> webDriver.getCurrentUrl().contains("/realms/" + PROVIDER_REALM + "/"));
+        assertTrue(webDriver.getCurrentUrl().contains("/realms/" + PROVIDER_REALM + "/"),
                 "Driver should be on the provider realm page right now");
 
-        // redirect shouldn't happen
-        oauth.client("broker-app");
-        oauth.realm(bc.consumerRealmName());
+        // redirect shouldn't happen with a fresh login form (no hint)
         oauth.openLoginForm();
-
-        waitForPage(driver, "sign in to", true);
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+        webDriver.waiting().until(d -> webDriver.getCurrentUrl().contains("/realms/" + CONSUMER_REALM + "/"));
+        assertTrue(webDriver.getCurrentUrl().contains("/realms/" + CONSUMER_REALM + "/"),
                 "Driver should be on the consumer realm page");
     }
 
     @Test
     public void testInvalidIdentityProviderHint() {
-        oauth.client("broker-app");
-        oauth.realm(bc.consumerRealmName());
         oauth.openLoginForm();
-        waitForPage(driver, "sign in to", true);
-        String url = driver.getCurrentUrl() + "&kc_idp_hint=bogus-idp";
-        driver.navigate().to(url);
-        waitForPage(driver, "sign in to", true);
+        webDriver.waiting().until(d -> webDriver.getCurrentUrl().contains("/realms/" + CONSUMER_REALM + "/"));
 
-        // Still on consumer login page
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        String url = webDriver.getCurrentUrl() + "&kc_idp_hint=bogus-idp";
+        webDriver.driver().navigate().to(url);
+        webDriver.waiting().until(d -> webDriver.getCurrentUrl().contains("/realms/" + CONSUMER_REALM + "/"));
+
+        assertTrue(webDriver.getCurrentUrl().contains("/realms/" + CONSUMER_REALM + "/"));
     }
 
     @Test
     public void testIdpHintWithErrorResponseReturnsToLoginPage() {
-        // Configure broker client to require consent so we can test error scenario
-        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
-        List<ClientRepresentation> clients = providerRealm.clients().findByClientId(bc.getIDPClientIdInProviderRealm());
-        Assertions.assertEquals(1, clients.size());
+        List<ClientRepresentation> clients = providerRealm.admin().clients().findByClientId(CLIENT_ID);
+        assertEquals(1, clients.size());
         ClientRepresentation brokerClient = clients.get(0);
         brokerClient.setConsentRequired(true);
-        providerRealm.clients().get(brokerClient.getId()).update(brokerClient);
+        providerRealm.admin().clients().get(brokerClient.getId()).update(brokerClient);
 
         try {
-            oauth.client("broker-app");
-            oauth.realm(bc.consumerRealmName());
-            oauth.openLoginForm();
-            waitForPage(driver, "sign in to", true);
+            oauth.loginForm()
+                    .param("kc_idp_hint", IDP_OIDC_ALIAS)
+                    .open();
 
-            // Add kc_idp_hint parameter to redirect to IdP
-            String url = driver.getCurrentUrl() + "&kc_idp_hint=" + bc.getIDPAlias();
-            driver.navigate().to(url);
-
-            // Should be redirected to provider realm
-            waitForPage(driver, "sign in to", true);
-            Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+            webDriver.waiting().until(d -> webDriver.getCurrentUrl().contains("/realms/" + PROVIDER_REALM + "/"));
+            assertTrue(webDriver.getCurrentUrl().contains("/realms/" + PROVIDER_REALM + "/"),
                     "Driver should be on the provider realm page right now");
 
-            log.debug("Logging in");
-            loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+            loginPage.fillLogin(getUserLogin(), getUserPassword());
+            loginPage.submit();
 
-            // Deny user consent on the grant page
+            updateAccountInformationIfPresent();
+
             grantPage.assertCurrent();
             grantPage.cancel();
 
-            // Should return to consumer login page (not infinite loop back to IdP)
-            waitForPage(driver, "sign in to", true);
-            Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+            webDriver.waiting().until(d -> webDriver.getCurrentUrl().contains("/realms/" + CONSUMER_REALM + "/"));
+            assertTrue(webDriver.getCurrentUrl().contains("/realms/" + CONSUMER_REALM + "/"),
                     "Driver should be back on consumer login page after denial");
 
-            Assertions.assertTrue(driver.getPageSource().contains("Access denied"),
+            assertTrue(webDriver.driver().getPageSource().contains("Access denied"),
                     "Error message should be displayed");
         } finally {
-            // Restore consent setting
             brokerClient.setConsentRequired(false);
-            providerRealm.clients().get(brokerClient.getId()).update(brokerClient);
+            providerRealm.admin().clients().get(brokerClient.getId()).update(brokerClient);
         }
     }
-
 }

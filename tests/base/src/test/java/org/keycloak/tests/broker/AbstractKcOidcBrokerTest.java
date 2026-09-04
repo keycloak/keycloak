@@ -89,13 +89,18 @@ public abstract class AbstractKcOidcBrokerTest extends AbstractBrokerLoginTest {
         config.put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "true");
         getConsumerRealm().admin().identityProviders().get(getIdpAlias()).update(idp);
 
-        // Provider-side client (brokerapp) represents the consumer: its broker callback endpoints
+        // Provider-side client represents the consumer: its broker callback endpoints
         // (redirect/admin/backchannel-logout) must point at the consumer's actual base URL, mirroring the
-        // legacy KcOidcBrokerConfiguration and the SAML base's configureSamlBrokerEndpoints().
+        // legacy KcOidcBrokerConfiguration and the SAML base's configureSamlBrokerEndpoints(). Matched by
+        // its seeded placeholder redirect URI rather than by CLIENT_ID ("brokerapp"), since some tests
+        // (e.g. colon-alias client IDs) create the provider client under a different clientId.
         String consumerBaseUrl = getConsumerRealm().getBaseUrl();
-        String consumerBrokerEndpoint = consumerBaseUrl + "/broker/" + IDP_OIDC_ALIAS + "/endpoint";
+        String consumerBrokerEndpoint = consumerBaseUrl + "/broker/" + getIdpAlias() + "/endpoint";
+        String placeholderRedirectUri = "http://localhost:8080/broker/" + getIdpAlias() + "/endpoint/*";
         ClientsResource providerClients = getProviderRealm().admin().clients();
-        List<ClientRepresentation> found = providerClients.findByClientId(CLIENT_ID);
+        List<ClientRepresentation> found = providerClients.findAll().stream()
+                .filter(c -> c.getRedirectUris() != null && c.getRedirectUris().contains(placeholderRedirectUri))
+                .toList();
         if (!found.isEmpty()) {
             ClientRepresentation client = found.get(0);
             client.setRedirectUris(List.of(consumerBrokerEndpoint + "/*"));
@@ -111,7 +116,7 @@ public abstract class AbstractKcOidcBrokerTest extends AbstractBrokerLoginTest {
         }
     }
 
-    static IdentityProviderBuilder createOidcIdentityProvider() {
+    protected static IdentityProviderBuilder createOidcIdentityProvider() {
         return IdentityProviderBuilder.create()
                 .providerId(IDP_OIDC_PROVIDER_ID)
                 .alias(IDP_OIDC_ALIAS)
@@ -125,7 +130,7 @@ public abstract class AbstractKcOidcBrokerTest extends AbstractBrokerLoginTest {
                 .attribute("defaultScope", "email profile");
     }
 
-    static RealmBuilder configureConsumerRealm(RealmBuilder realm, IdentityProviderBuilder idpBuilder) {
+    protected static RealmBuilder configureConsumerRealm(RealmBuilder realm, IdentityProviderBuilder idpBuilder) {
         // The broker-app client is created by the injected OAuthClient (see BrokerAppClientConfig), so it is
         // not declared here.
         return realm.name(CONSUMER_REALM)

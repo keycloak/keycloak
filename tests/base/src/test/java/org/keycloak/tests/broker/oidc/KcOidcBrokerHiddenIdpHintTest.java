@@ -1,78 +1,63 @@
-/*
- * Copyright 2019 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package org.keycloak.testsuite.broker;
+package org.keycloak.tests.broker.oidc;
 
-import java.util.Map;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.tests.broker.AbstractKcOidcBrokerTest;
 
-import org.keycloak.models.IdentityProviderSyncMode;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
-import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+@KeycloakIntegrationTest
+public class KcOidcBrokerHiddenIdpHintTest extends AbstractKcOidcBrokerTest {
 
-/**
- * Migrated from old testsuite.  Previous version by Pedro Igor.
- *
- * @author Stan Silvert ssilvert@redhat.com (C) 2019 Red Hat Inc.
- * @author pedroigor
- */
-public class KcOidcBrokerHiddenIdpHintTest extends AbstractInitializedBaseBrokerTest {
+    @InjectRealm(ref = "consumer", lifecycle = LifeCycle.METHOD,
+            config = HiddenIdpConsumerRealmConfig.class)
+    ManagedRealm consumerRealm;
 
+    // The IDP is hidden from the login page, so the inherited base login tests (which click the social
+    // button to reach it) don't apply here - this class only exercises the hint-based redirect below.
     @Override
-    protected BrokerConfiguration getBrokerConfiguration() {
-        return new KcOidcHiddenBrokerConfiguration();
+    @Test
+    @Disabled("IdP is hidden on the login page; use kc_idp_hint instead of clicking the social button")
+    public void testLogInAsUserInIDP() {
     }
 
-    private class KcOidcHiddenBrokerConfiguration extends KcOidcBrokerConfiguration {
-
-        @Override
-        public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
-            IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
-
-            Map<String, String> config = idp.getConfig();
-            applyDefaultConfiguration(config, syncMode);
-            idp.setHideOnLogin(true);
-            return idp;
-        }
+    @Override
+    @Test
+    @Disabled("IdP is hidden on the login page; use kc_idp_hint instead of clicking the social button")
+    public void testLoginWithExistingUser() {
     }
 
     @Test
     public void testSuccessfulRedirectToProviderHiddenOnLoginPage() {
-        oauth.client("broker-app");
-        oauth.realm(bc.consumerRealmName());
-        oauth.openLoginForm();
+        oauth.loginForm()
+                .param("kc_idp_hint", IDP_OIDC_ALIAS)
+                .open();
 
-        waitForPage(driver, "sign in to", true);
-        String url = driver.getCurrentUrl() + "&kc_idp_hint=" + bc.getIDPAlias();
-        driver.navigate().to(url);
-        waitForPage(driver, "sign in to", true);
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+        webDriver.waiting().until(d -> webDriver.getCurrentUrl().contains("/realms/" + PROVIDER_REALM + "/"));
+        assertTrue(webDriver.getCurrentUrl().contains("/realms/" + PROVIDER_REALM + "/"),
                 "Driver should be on the provider realm page right now");
 
-        log.debug("Logging in");
-        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        loginPage.fillLogin(getUserLogin(), getUserPassword());
+        loginPage.submit();
 
-        // authenticated and redirected to app
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        updateAccountInformation();
+
+        assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
+    static class HiddenIdpConsumerRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return configureConsumerRealm(realm,
+                    createOidcIdentityProvider()
+                            .hideOnLoginPage());
+        }
+    }
 }
