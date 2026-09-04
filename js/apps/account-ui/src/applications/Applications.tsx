@@ -167,7 +167,8 @@ export const Applications = () => {
                 dataListCells={[
                   <DataListCell width={2} key={`client${application.clientId}`}>
                     {application.effectiveUrl && (
-                      <Button icon={<ExternalLinkAltIcon />}
+                      <Button
+                        icon={<ExternalLinkAltIcon />}
                         className="pf-v6-u-pl-0 title-case"
                         component="a"
                         variant="link"
@@ -177,7 +178,6 @@ export const Applications = () => {
                           t,
                           application.clientName || application.clientId,
                         )}{" "}
-                        
                       </Button>
                     )}
                     {!application.effectiveUrl && (

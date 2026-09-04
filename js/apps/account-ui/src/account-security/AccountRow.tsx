@@ -100,9 +100,12 @@ export const AccountRow = ({
           id="setPasswordAction"
         >
           {isLinked && (
-            <Button icon={<Icon size="sm">
-                <UnlinkIcon />
-              </Icon>}
+            <Button
+              icon={
+                <Icon size="sm">
+                  <UnlinkIcon />
+                </Icon>
+              }
               id={`${account.providerAlias}-idp-unlink`}
               variant="link"
               onClick={() => unLink(account)}
@@ -112,9 +115,12 @@ export const AccountRow = ({
             </Button>
           )}
           {!isLinked && (
-            <Button icon={<Icon size="sm">
-                <LinkIcon />
-              </Icon>}
+            <Button
+              icon={
+                <Icon size="sm">
+                  <LinkIcon />
+                </Icon>
+              }
               id={`${account.providerAlias}-idp-link`}
               variant="link"
               onClick={async () => {
