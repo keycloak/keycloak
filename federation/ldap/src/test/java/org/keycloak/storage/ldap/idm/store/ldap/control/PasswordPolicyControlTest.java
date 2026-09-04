@@ -31,9 +31,8 @@ public class PasswordPolicyControlTest {
 
     @Test
     public void testDecodeResponseValueWithWarningAndError() {
-        // SEQUENCE { warning timeBeforeExpiration(5), error changeAfterReset(2) }
-        // Note: we don't currently support warning, but at least make sure it doesn't break decoding.
-        PasswordPolicyControl control = new PasswordPolicyControl(new byte[] { 0x30, 0x07, (byte) 0x80, 0x02, 0x01, 0x05, (byte) 0x81, 0x01, 0x02 });
+        // SEQUENCE { warning [0] { timeBeforeExpiration(5) }, error changeAfterReset(2) }
+        PasswordPolicyControl control = new PasswordPolicyControl(new byte[] { 0x30, 0x08, (byte) 0xA0, 0x03, (byte) 0x80, 0x01, 0x05, (byte) 0x81, 0x01, 0x02 });
         Assert.assertTrue(control.changeAfterReset());
     }
 
@@ -97,5 +96,36 @@ public class PasswordPolicyControlTest {
         Assert.assertFalse(control.changeAfterReset());
     }
 
+    @Test
+    public void testDecodeWrappedWarningGraceDoesNotForgeError() {
+        // SEQUENCE { warning [0] { graceAuthNsRemaining(2) } } — grace value must not be misread as error changeAfterReset(2).
+        PasswordPolicyControl control = new PasswordPolicyControl(
+                new byte[] { 0x30, 0x05, (byte) 0xA0, 0x03, (byte) 0x81, 0x01, 0x02 });
+        Assert.assertFalse(control.changeAfterReset());
+    }
+
+    @Test
+    public void testDecodeWrappedWarningTimeBeforeExpiration() {
+        // SEQUENCE { warning [0] { timeBeforeExpiration(42) } }
+        PasswordPolicyControl control = new PasswordPolicyControl(
+                new byte[] { 0x30, 0x05, (byte) 0xA0, 0x03, (byte) 0x80, 0x01, 0x2A });
+        Assert.assertFalse(control.changeAfterReset());
+    }
+
+    @Test
+    public void testDecodeWrappedWarningDoesNotSuppressError() {
+        // SEQUENCE { warning [0] { graceAuthNsRemaining(5) }, error changeAfterReset(2) }
+        PasswordPolicyControl control = new PasswordPolicyControl(
+                new byte[] { 0x30, 0x08, (byte) 0xA0, 0x03, (byte) 0x81, 0x01, 0x05, (byte) 0x81, 0x01, 0x02 });
+        Assert.assertTrue(control.changeAfterReset());
+    }
+
+    @Test
+    public void testDecodeZeroLengthErrorElement() {
+        // Zero-length error [1] value — treated as a decode failure, no uncaught NumberFormatException.
+        PasswordPolicyControl control = new PasswordPolicyControl(
+                new byte[] { 0x30, 0x02, (byte) 0x81, 0x00 });
+        Assert.assertFalse(control.changeAfterReset());
+    }
 
  }
