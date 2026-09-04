@@ -36,6 +36,7 @@ public class BERDecoder {
 
     // Tag forms.
     public static final int TAG_FORM_PRIMITIVE = 0x00;
+    public static final int TAG_FORM_CONSTRUCTED = 0x20;
 
     private ByteBuffer encoded;
 
