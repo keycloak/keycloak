@@ -1,1 +1,3 @@
 org.keycloak.testframework.tests.providers.MyCustomRealmResourceProviderFactory
+org.keycloak.testframework.tests.providers.single.ProviderWithResourceProviderFactory
+org.keycloak.testframework.tests.providers.single.ProviderIsAlsoProviderFactory
