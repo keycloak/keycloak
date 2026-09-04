@@ -72,6 +72,10 @@ public class FolderThemeProvider implements ThemeProvider {
     public void close() {
     }
 
+    public File getThemesDir() {
+        return themesDir;
+    }
+
     private File getThemeDir(String name, Theme.Type type) {
         if (themesDir == null || !themesDir.isDirectory()) {
             return null;

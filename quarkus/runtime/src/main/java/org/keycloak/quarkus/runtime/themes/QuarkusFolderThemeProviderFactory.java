@@ -44,16 +44,14 @@ public class QuarkusFolderThemeProviderFactory implements ThemeProviderFactory {
     }
 
     /**
-     * Determines if the theme root directory we get
-     * from {@link Config} exists.
-     * If not, uses the default theme directory as a fallback.
+     * Returns the theme root directory derived from config or the default home-relative path.
+     * The directory does not need to exist yet — it will be created on first theme upload.
      *
      * @param rootDirFromConfig string value from {@link Config}
-     * @return Directory to use as theme root directory in {@link File} format, either from config or from default. Null if none is available.
-     * @throws RuntimeException when filesystem path is not accessible
+     * @return Directory to use as theme root directory, or null if no home dir is configured.
      */
     private File getThemeRootDirWithFallback(String rootDirFromConfig) {
         return Optional.ofNullable(rootDirFromConfig).or(Environment::getDefaultThemeRootDir).map(File::new)
-                .filter(File::exists).orElse(null);
+                .orElse(null);
     }
 }
