@@ -189,7 +189,13 @@ public class RoleMapperResource {
     public Stream<RoleRepresentation> getRealmRoleMappings() {
         viewPermission.require();
 
-        return roleMapper.getRealmRoleMappingsStream().map(ModelToRepresentation::toBriefRepresentation);
+        // canView() must be applied here for consistency with getRoleMappings().
+        // These two dedicated /realm endpoints were originally written without it,
+        // silently leaking realm role names to any caller who could view the mapper
+        // (user/group) even when FGAP denied view access to those roles.
+        return roleMapper.getRealmRoleMappingsStream()
+                .filter(r -> auth.roles().canView(r))
+                .map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
@@ -229,8 +235,10 @@ public class RoleMapperResource {
         } else {
             deepMappings = RoleUtils.getDeepRoleMappings(roleMapper);
         }
+        // Same canView() filter missing here as in getRealmRoleMappings() — see above.
         return deepMappings.stream()
                 .filter(r -> RoleUtils.isRealmRole(r, realm))
+                .filter(r -> auth.roles().canView(r))
                 .map(toBriefRepresentation);
     }
 
