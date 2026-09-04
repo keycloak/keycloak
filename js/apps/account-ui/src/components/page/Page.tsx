@@ -13,7 +13,7 @@ export const Page = ({
 }: PropsWithChildren<PageProps>) => {
   return (
     <>
-      <PageSection hasBodyWrapper={false} >
+      <PageSection hasBodyWrapper={false}>
         <Content>
           <Title headingLevel="h1" data-testid="page-heading">
             {title}
@@ -21,7 +21,7 @@ export const Page = ({
           <Content component="p">{description}</Content>
         </Content>
       </PageSection>
-      <PageSection hasBodyWrapper={false} >{children}</PageSection>
+      <PageSection hasBodyWrapper={false}>{children}</PageSection>
     </>
   );
 };
