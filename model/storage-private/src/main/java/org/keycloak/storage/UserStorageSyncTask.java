@@ -19,6 +19,11 @@ import org.keycloak.timer.TimerProvider.TimerTaskContext;
 
 import org.jboss.logging.Logger;
 
+import javax.naming.AuthenticationException;
+import javax.naming.CommunicationException;
+import javax.naming.ServiceUnavailableException;
+import static org.keycloak.common.util.Throwables.isCausedBy;
+
 final class UserStorageSyncTask implements ScheduledTask {
 
     private static final Logger logger = Logger.getLogger(UserStorageSyncTask.class);
@@ -71,7 +76,17 @@ final class UserStorageSyncTask implements ScheduledTask {
                 case CHANGED -> runIncrementalSync(session);
             };
         } catch (Throwable t) {
-            logger.errorf(t, "Error occurred during %s users-sync in realm %s and user provider %s",  syncMode, realmId, providerId);
+            String providerName = getStorageModel(session).getName();
+            // Check if this is a critical LDAP error
+            if (isCausedBy(t, AuthenticationException.class, CommunicationException.class, ServiceUnavailableException.class)) {
+                logger.errorf(t, "LDAP server is unavailable during %s users-sync in realm %s and user provider %s ",
+                        syncMode, realmId, providerName);
+                throw new StorageUnavailableException("LDAP server is unavailable for provider [" + providerName + "]", t);
+            }
+
+            // For non-critical errors, log and return empty result
+            logger.errorf(t, "Error occurred during %s users-sync in realm %s and user provider %s",
+                    syncMode, realmId, providerName);
         }
 
         return SynchronizationResult.empty();
