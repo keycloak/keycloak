@@ -17,6 +17,7 @@
 package org.keycloak.common.util;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -26,6 +27,7 @@ import java.util.Collection;
 public abstract class PathMatcher<P> {
 
     private static final char WILDCARD = '*';
+    private static final String SCHEME_AUTHORITY_SEPARATOR = "://";
 
     public P matches(final String targetUri) {
         final String normalizedUri = normalizeUri(targetUri);
@@ -272,21 +274,54 @@ public abstract class PathMatcher<P> {
             return null;
         }
 
-        // strip matrix params — prevents bypass via /api/admin;x=1 which Servlet/JAX-RS silently ignores when routing
-        StringBuilder sb = new StringBuilder(uri.length());
-        boolean inMatrix = false;
-        for (int i = 0; i < uri.length(); i++) {
-            char c = uri.charAt(i);
-            if (c == ';') {
-                inMatrix = true;
-            } else if (c == '/') {
-                inMatrix = false;
-                sb.append(c);
-            } else if (!inMatrix) {
-                sb.append(c);
+        // drop query/fragment first, before any URI parsing - a malformed query/fragment (which we discard
+        // unconditionally anyway) must not be able to poison the scheme/authority syntax probe below and fall
+        // through to treating the whole value - scheme included - as a plain path
+        String withoutQueryOrFragment = stripQueryAndFragment(uri);
+
+        // resources can be configured with a full absolute URI (e.g. "https://my.domain/example") rather than
+        // just a path. Detect and preserve the "scheme://authority" prefix verbatim, normalizing only the path
+        // that follows - otherwise the double-slash collapsing below would corrupt the "//" that separates the
+        // scheme from the authority. This is a syntax probe only: constructing a URI does not itself normalize
+        // anything (no dot-segment resolution, no slash collapsing, no decoding of raw components), it merely
+        // locates where the authority ends so the prefix can be sliced off by length.
+        String prefix = "";
+        String path = withoutQueryOrFragment;
+        // cheap pre-check - avoid constructing a URI (and the associated parsing cost) for the common case of a
+        // plain relative path, which can never have a scheme/authority prefix to preserve
+        if (withoutQueryOrFragment.contains(SCHEME_AUTHORITY_SEPARATOR)) {
+            try {
+                URI parsed = new URI(withoutQueryOrFragment.replace("{", "%7B").replace("}", "%7D"));
+                String scheme = parsed.getScheme();
+                if (scheme != null) {
+                    String authority = parsed.getRawAuthority();
+                    if (authority == null) {
+                        // a scheme was recognized - e.g. "https:///api/admin", where the empty authority between
+                        // the double slash and the next slash comes back as null rather than "" - so this was
+                        // meant to be an absolute URI. Reject it outright rather than falling back to treating
+                        // the raw, unmangled "scheme://" text as a plain path
+                        return null;
+                    }
+                    // clamp to length() - the brace-encoding above can inflate the parsed authority's length
+                    // relative to the original string (each '{'/'}' becomes 3 chars), so a hypothetical brace inside
+                    // the authority itself (unsupported - templates are always path-only) must not overrun it
+                    int prefixLength = Math.min(scheme.length() + SCHEME_AUTHORITY_SEPARATOR.length() + authority.length(), withoutQueryOrFragment.length());
+                    prefix = withoutQueryOrFragment.substring(0, prefixLength);
+                    path = withoutQueryOrFragment.substring(prefixLength);
+                }
+                // scheme == null: not actually an absolute URI - the "://" was just incidental text inside an
+                // ordinary relative path (e.g. "/api/redirect-to-https://example.com", which RFC 3986 permits
+                // unrestricted since a leading '/' can never be confused with a scheme) - fall through and treat
+                // the whole value as a plain path, as before
+            } catch (URISyntaxException e) {
+                // the pre-check found "://", so this was meant to be an absolute URI - reject it outright rather
+                // than falling back to treating the raw, unmangled "scheme://" text as a plain path
+                return null;
             }
         }
-        String result = sb.toString();
+
+        // strip matrix params — prevents bypass via /api/admin;x=1 which Servlet/JAX-RS silently ignores when routing
+        String result = stripMatrixParams(path);
 
         // collapse double slashes before URI parsing — //foo is interpreted as a URI authority, not a path
         while (result.contains("//")) {
@@ -309,17 +344,63 @@ public abstract class PathMatcher<P> {
             return null;
         }
 
-        // collapse double slashes again — decoding %2F introduces new slashes (e.g. /api/%2Fadmin → /api//admin)
+        // repeat cleanup on decoded result - %3B decodes to ; and %2F decodes to / (introducing new // when
+        // adjacent to existing slashes or after matrix param stripping removes content between two slashes)
+        result = stripMatrixParams(result);
         while (result.contains("//")) {
             result = result.replace("//", "/");
         }
 
-        // strip trailing slash — prevents bypass via /api/admin/ which routes to /api/admin on the server
+        // re-normalize after decoding to resolve any dot segments that were not visible
+        // to the first normalize() pass.
+        try {
+            result = new URI(null, null, result, null, null).normalize().getPath();
+            if (result == null) {
+                return null;
+            }
+        } catch (Exception e) {
+            return null;
+        }
+
+        // strip trailing slash - prevents bypass via /api/admin/ which routes to /api/admin on the server
         if (result.length() > 1 && result.endsWith("/")) {
             result = result.substring(0, result.length() - 1);
         }
 
-        return result;
+        return prefix + result;
+    }
+
+    // drop query/fragment entirely — the policy enforcer never sees them (getRequestURI() excludes the query),
+    // and resource identity for URI matching should not depend on request parameters. Doing this before matrix
+    // param stripping also prevents a ';' from swallowing a literal '?'/'#' that follows it on the same segment.
+    private static String stripQueryAndFragment(String path) {
+        int queryOrFragment = path.length();
+        int questionMark = path.indexOf('?');
+        if (questionMark != -1) {
+            queryOrFragment = questionMark;
+        }
+        int hash = path.indexOf('#');
+        if (hash != -1 && hash < queryOrFragment) {
+            queryOrFragment = hash;
+        }
+        return path.substring(0, queryOrFragment);
+    }
+
+    private static String stripMatrixParams(String uri) {
+        StringBuilder sb = new StringBuilder(uri.length());
+        boolean inMatrix = false;
+        for (int i = 0; i < uri.length(); i++) {
+            char c = uri.charAt(i);
+            if (c == ';') {
+                inMatrix = true;
+            } else if (c == '/') {
+                inMatrix = false;
+                sb.append(c);
+            } else if (!inMatrix) {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 }
 

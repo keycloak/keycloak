@@ -474,11 +474,18 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         // all mutated forms must also be denied — they must resolve to Admin Resource, not fall through to /*
         String[] mutatedUris = {
-                "/api/admin;x=1",       // matrix params — Servlet/JAX-RS silently strip these when routing
-                "/api/admin/",          // trailing slash — server routes this the same as /api/admin
-                "//api///admin",        // double slashes — collapse to /api/admin
-                "/api/foo/../admin",    // dot segments — resolves to /api/admin
-                "/api/%61dmin",         // percent-encoded unreserved char — %61 = 'a', equivalent per RFC 3986 §2.3
+                "/api/admin;x=1",       // matrix params - Servlet/JAX-RS silently strip these when routing
+                "/api/admin%3Bx=1",     // percent-encoded semicolon - form decoder decodes %3B to ; before PathMatcher
+                "/api/admin%3bx=1",     // percent-encoded semicolon (lowercase hex)
+                "/api/admin/",          // trailing slash - server routes this the same as /api/admin
+                "/api/admin%2F",        // percent-encoded trailing slash
+                "//api///admin",        // double slashes - collapse to /api/admin
+                "/api/foo/../admin",    // dot segments - resolves to /api/admin
+                "/api/foo/%2E%2E/admin", // percent-encoded dot traversal
+                "/api/%61dmin",         // percent-encoded unreserved char - %61 = 'a', equivalent per RFC 3986 §2.3
+                "/api/%2Fadmin",        // percent-encoded slash
+                "/api%2F%2Fadmin",      // percent-encoded double slash
+                "/api/foo%2F..%2Fadmin", // percent-encoded slash + dot traversal combined
                 "/api/admin;x=1/",     // combined: matrix params + trailing slash
         };
         for (String mutatedUri : mutatedUris) {
@@ -511,6 +518,79 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
                         && ((HttpResponseException) expected.getCause()).getStatusCode() == 400);
             }
         }
+    }
+
+    @Test
+    public void testDoubleEncodedUriDoesNotBypassResourceMatching() throws Exception {
+        ClientResource client = getClient(getRealm());
+        AuthorizationResource authorization = client.authorization();
+
+        // catch-all "/*" resource with a grant policy — the permissive fallback a broken match would leak into
+        ResourceRepresentation catchAll = addResource("Catch-All Resource DE", null, Collections.singleton("/*"), false, "ScopeA");
+        ResourcePermissionRepresentation catchAllPermission = new ResourcePermissionRepresentation();
+        catchAllPermission.setName("Catch-All Permission DE");
+        catchAllPermission.addResource(catchAll.getName());
+        catchAllPermission.addPolicy("Default Policy");
+        authorization.permissions().resource().create(catchAllPermission).close();
+
+        // restricted "/api/admin" resource with a deny policy
+        ResourceRepresentation adminResource = addResource("Admin Resource DE", null, Collections.singleton("/api/admin"), false, "ScopeA");
+        ResourcePermissionRepresentation adminPermission = new ResourcePermissionRepresentation();
+        adminPermission.setName("Admin Permission DE");
+        adminPermission.addResource(adminResource.getName());
+        adminPermission.addPolicy("Deny Policy");
+        authorization.permissions().resource().create(adminPermission).close();
+
+        AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
+        String token = accessTokenResponse.getToken();
+
+        // sanity check — the exact URI is denied
+        try {
+            authorizeDecision(token, true, new PermissionRequest("/api/admin", "ScopeA"));
+            fail("Should be denied for /api/admin");
+        } catch (AuthorizationDeniedException expected) {
+        }
+
+        // the form decoder decodes "%252Fadmin" exactly once, to the literal text "%2Fadmin" - it must not
+        // resolve to "/api/admin" (bypassing the deny policy) or produce an unresolved "//". It resolves to
+        // the wildcard catch-all resource instead and is granted there, like any other non-matching URI.
+        AuthorizationResponse response = authorizeDecision(token, true,
+                new PermissionRequest("/api/%252Fadmin", "ScopeA"));
+        assertTrue("Double-encoded slash should resolve to the catch-all resource and be granted, not denied or rejected",
+                (Boolean) response.getOtherClaims().getOrDefault("result", "false"));
+    }
+
+    @Test
+    public void testAbsoluteUriResourceMatching() throws Exception {
+        ClientResource client = getClient(getRealm());
+        AuthorizationResource authorization = client.authorization();
+
+        // template resource configured as a full absolute URI — scheme and authority must survive normalization
+        ResourceRepresentation templateResource = addResource("Absolute Template Resource", null,
+                Collections.singleton("https://my.domain/example/{module-name}"), false, "ScopeA");
+        ResourcePermissionRepresentation templatePermission = new ResourcePermissionRepresentation();
+        templatePermission.setName("Absolute Template Permission");
+        templatePermission.addResource(templateResource.getName());
+        templatePermission.addPolicy("Default Policy");
+        authorization.permissions().resource().create(templatePermission).close();
+
+        // wildcard resource configured as a full absolute URI
+        ResourceRepresentation wildcardResource = addResource("Absolute Wildcard Resource", null,
+                Collections.singleton("https://my.other.domain/example/*"), false, "ScopeA");
+        ResourcePermissionRepresentation wildcardPermission = new ResourcePermissionRepresentation();
+        wildcardPermission.setName("Absolute Wildcard Permission");
+        wildcardPermission.addResource(wildcardResource.getName());
+        wildcardPermission.addPolicy("Default Policy");
+        authorization.permissions().resource().create(wildcardPermission).close();
+
+        AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
+        String token = accessTokenResponse.getToken();
+
+        // must resolve to the configured absolute-URI resources, not fail with "resource not found"
+        assertTrue((Boolean) authorizeDecision(token, true,
+                new PermissionRequest("https://my.domain/example/one", "ScopeA")).getOtherClaims().getOrDefault("result", "false"));
+        assertTrue((Boolean) authorizeDecision(token, true,
+                new PermissionRequest("https://my.other.domain/example/one", "ScopeA")).getOtherClaims().getOrDefault("result", "false"));
     }
 
     @Test
