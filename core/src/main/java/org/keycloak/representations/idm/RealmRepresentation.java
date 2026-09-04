@@ -46,6 +46,7 @@ public class RealmRepresentation {
     protected String realm;
     protected String displayName;
     protected String displayNameHtml;
+    protected String displayNameShort;
     protected Integer notBefore;
     protected String defaultSignatureAlgorithm;
     protected Boolean revokeRefreshToken;
@@ -276,6 +277,14 @@ public class RealmRepresentation {
 
     public void setDisplayNameHtml(String displayNameHtml) {
         this.displayNameHtml = displayNameHtml;
+    }
+
+    public String getDisplayNameShort() {
+        return displayNameShort;
+    }
+
+    public void setDisplayNameShort(String displayNameShort) {
+        this.displayNameShort = displayNameShort;
     }
 
     public List<UserRepresentation> getUsers() {
