@@ -335,11 +335,13 @@ async function main() {
   await rewriteThemeProperties(path.join(stagedLoginDir, "theme.properties"));
   const residuals = await scanResiduals(stagedLoginDir);
   const failedStep = steps.find((step) => step.exitCode !== 0);
+  const hasUnresolvedResiduals =
+    options.failOnUnresolved && residuals.length > 0;
 
   let backupPath;
   let applied = false;
 
-  if (!failedStep && options.apply) {
+  if (!failedStep && options.apply && !hasUnresolvedResiduals) {
     await mkdir(options.backupDir, { recursive: true });
     backupPath = path.join(options.backupDir, `${themeName}-login-${runTimestamp}`);
     await cp(loginDir, backupPath, { recursive: true });

@@ -334,8 +334,10 @@ public class VerifyMessageProperties {
                 .replaceAll("resources-community", "resources")
                 .replaceAll("_[a-zA-Z-_]*\\.properties", "_en.properties");
         File englishFile = new File(englishFilePath);
-        if (!englishFile.isFile() && englishFilePath.contains("/theme/keycloak.v2/login/")) {
-            File remapped = new File(englishFilePath.replace("/theme/keycloak.v2/login/", "/theme/keycloak.v3/login/"));
+        String v2LoginPath = "theme" + File.separator + "keycloak.v2" + File.separator + "login" + File.separator;
+        String v3LoginPath = "theme" + File.separator + "keycloak.v3" + File.separator + "login" + File.separator;
+        if (!englishFile.isFile() && englishFilePath.contains(v2LoginPath)) {
+            File remapped = new File(englishFilePath.replace(v2LoginPath, v3LoginPath));
             if (remapped.isFile()) {
                 return remapped;
             }
