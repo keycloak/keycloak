@@ -20,6 +20,7 @@ import org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantConfig;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderType;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;
@@ -164,8 +165,8 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig imp
     }
 
     @Override
-    public void validate(RealmModel realm) {
-        super.validate(realm);
+    public void validate(KeycloakSession session, RealmModel realm) {
+        super.validate(session, realm);
         SslRequired sslRequired = realm.getSslRequired();
         checkUrl(sslRequired, getJwksUrl(), "jwks_url");
         checkUrl(sslRequired, getLogoutUrl(), "logout_url");
