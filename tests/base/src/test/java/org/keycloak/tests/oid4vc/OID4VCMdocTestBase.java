@@ -54,14 +54,16 @@ public abstract class OID4VCMdocTestBase extends OID4VCIssuerTestBase {
     public static class VCTestServerWithMdocEnabled implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_MDOC);
+            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_MDOC)
+                    .spiOption("keys", "java-keystore", "keystores-path", MdocTestSigningKey.keystoresBaseDir());
         }
     }
 
     public static class VCTestServerWithPreAuthCodeAndMdocEnabled implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER, Profile.Feature.OID4VC_VCI_PREAUTH_CODE, Profile.Feature.OID4VC_MDOC);
+            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER, Profile.Feature.OID4VC_VCI_PREAUTH_CODE, Profile.Feature.OID4VC_MDOC)
+                    .spiOption("keys", "java-keystore", "keystores-path", MdocTestSigningKey.keystoresBaseDir());
         }
     }
 
@@ -82,9 +84,9 @@ public abstract class OID4VCMdocTestBase extends OID4VCIssuerTestBase {
                 scopeName,
                 credentialConfigurationId,
                 List.of(
-                        ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.iso.18013.5.1"),
-                        ProtocolMapperUtils.getUserAttributeMapper("family_name", "lastName", "org.iso.18013.5.1"),
-                        ProtocolMapperUtils.getSubjectIdMapper("id", UserModel.USERNAME, "org.iso.18013.5.1")
+                        ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.example.credential"),
+                        ProtocolMapperUtils.getUserAttributeMapper("family_name", "lastName", "org.example.credential"),
+                        ProtocolMapperUtils.getSubjectIdMapper("id", UserModel.USERNAME, "org.example.credential")
                 ),
                 "ES256",
                 true
@@ -204,8 +206,8 @@ public abstract class OID4VCMdocTestBase extends OID4VCIssuerTestBase {
         assertFalse(encodedIssuerSigned.isBlank(), "mDoc credential response must contain a base64url payload");
 
         Map<String, Object> nameSpaces = getMdocNamespacesFromCredential(encodedIssuerSigned);
-        assertTrue(nameSpaces.containsKey("org.iso.18013.5.1"), "mDoc payload must include the configured namespace");
-        Map<?, ?> namespaceClaims = assertInstanceOf(Map.class, nameSpaces.get("org.iso.18013.5.1"));
+        assertTrue(nameSpaces.containsKey("org.example.credential"), "mDoc payload must include the configured namespace");
+        Map<?, ?> namespaceClaims = assertInstanceOf(Map.class, nameSpaces.get("org.example.credential"));
         assertTrue(namespaceClaims.containsKey("given_name"), "mDoc payload must contain the given_name claim");
         assertTrue(namespaceClaims.containsKey("id"), "mDoc payload must contain the id claim");
 
@@ -222,7 +224,7 @@ public abstract class OID4VCMdocTestBase extends OID4VCIssuerTestBase {
         assertInstanceOf(String.class, credential, "mDoc credential should be a string");
 
         Map<String, Object> nameSpaces = getMdocNamespacesFromCredential((String) credential);
-        assertTrue(nameSpaces.containsKey("org.iso.18013.5.1"));
+        assertTrue(nameSpaces.containsKey("org.example.credential"));
 
         Map<String, Object> mobileSecurityObject = getMdocMobileSecurityObjectFromCredential((String) credential);
         assertEquals(mdocTypeCredentialDocType, mobileSecurityObject.get("docType"));

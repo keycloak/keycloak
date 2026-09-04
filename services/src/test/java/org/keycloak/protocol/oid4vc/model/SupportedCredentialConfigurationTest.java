@@ -38,9 +38,9 @@ public class SupportedCredentialConfigurationTest {
     public void shouldDeriveDocTypeForMdoc() {
         SupportedCredentialConfiguration config = new SupportedCredentialConfiguration()
                 .setFormat(VCFormat.MSO_MDOC)
-                .setDocType("org.iso.18013.5.1.mDL");
+                .setDocType("org.example.credential.mdoc");
 
-        assertEquals("org.iso.18013.5.1.mDL", config.deriveType().getValue());
+        assertEquals("org.example.credential.mdoc", config.deriveType().getValue());
     }
 
     @Test

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.conformance.vci;
+package org.keycloak.tests.oid4vc;
 
 import java.io.OutputStream;
 import java.math.BigInteger;
@@ -33,128 +33,84 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.crypto.def.DefaultCryptoProvider;
-import org.keycloak.tests.conformance.ConformanceSigningKey;
-
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
-import org.bouncycastle.asn1.x509.CRLDistPoint;
-import org.bouncycastle.asn1.x509.DistributionPoint;
-import org.bouncycastle.asn1.x509.DistributionPointName;
-import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.GeneralNames;
-import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
-// Not using org.keycloak.common.util.CertificateUtils as its leaf certificates are CA capable, which strict
-// trust chain validation rejects for an issuer signing certificate. The certificates follow the ISO/IEC 18013
-// part 5 certificate profiles the suite validates against.
-final class VciTestSigningKey {
+// ES256 mdoc signing needs a CA issued certificate, and only the java keystore key provider can supply
+// an EC key with one. Its keystore must live in a realm folder under the configured keystores path option.
+final class MdocTestSigningKey {
 
-    static final String KEY_ALIAS = "oid4vci-conformance-signing";
+    static final String KEY_ALIAS = "mdoc-test-signing";
     static final String PASSWORD = "password";
 
+    private static final Path KEYSTORES_BASE_DIR;
     private static final String KEY_STORE_PATH;
-    private static final String CA_CERTIFICATE_PEM;
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    private static final KeyPurposeId MDOC_DS_KEY_PURPOSE =
-            KeyPurposeId.getInstance(new ASN1ObjectIdentifier("1.0.18013.5.1.2"));
-
-    private static final GeneralNames ISSUER_CONTACT = new GeneralNames(
-            new GeneralName(GeneralName.rfc822Name, "oid4vci-conformance@example.com"));
-
     static {
         try {
-            if (!CryptoIntegration.isInitialised()) {
-                CryptoIntegration.setProvider(new DefaultCryptoProvider());
-            }
-
             KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance("EC");
             keyGenerator.initialize(new ECGenParameterSpec("secp256r1"));
             KeyPair caKeyPair = keyGenerator.generateKeyPair();
             KeyPair leafKeyPair = keyGenerator.generateKeyPair();
 
-            X500Name caName = new X500Name("C=DE,CN=OID4VCI Conformance CA");
+            X500Name caName = new X500Name("CN=Mdoc Test CA");
             X509Certificate caCertificate = generateCaCertificate(caName, caKeyPair);
-            X509Certificate leafCertificate = generateLeafCertificate(caName, leafKeyPair, caKeyPair, caCertificate);
+            X509Certificate leafCertificate = generateLeafCertificate(caName, leafKeyPair, caKeyPair);
 
             KeyStore keyStore = KeyStore.getInstance("PKCS12");
             keyStore.load(null, null);
             keyStore.setKeyEntry(KEY_ALIAS, leafKeyPair.getPrivate(), PASSWORD.toCharArray(),
                     new Certificate[] { leafCertificate, caCertificate });
 
-            Path keyStorePath = Files.createTempFile(
-                    ConformanceSigningKey.realmKeystoreDir(VciConformanceRealmConfig.REALM),
-                    "keycloak-oid4vci-conformance-signing", ".p12");
+            KEYSTORES_BASE_DIR = Files.createTempDirectory("keycloak-mdoc-keystores");
+            KEYSTORES_BASE_DIR.toFile().deleteOnExit();
+            Path realmDir = Files.createDirectory(
+                    KEYSTORES_BASE_DIR.resolve(OID4VCIssuerTestBase.VCTestRealmConfig.TEST_REALM_NAME));
+            realmDir.toFile().deleteOnExit();
+            Path keyStorePath = Files.createTempFile(realmDir, "keycloak-mdoc-test-signing", ".p12");
             try (OutputStream output = Files.newOutputStream(keyStorePath)) {
                 keyStore.store(output, PASSWORD.toCharArray());
             }
             keyStorePath.toFile().deleteOnExit();
-
             KEY_STORE_PATH = keyStorePath.toString();
-            CA_CERTIFICATE_PEM = PemUtils.addCertificateBeginEnd(PemUtils.encodeCertificate(caCertificate));
         } catch (Exception e) {
-            throw new RuntimeException("Failed to create OID4VCI conformance signing key", e);
+            throw new RuntimeException("Failed to create mdoc test signing key", e);
         }
     }
 
-    private VciTestSigningKey() {
+    private MdocTestSigningKey() {
+    }
+
+    static String keystoresBaseDir() {
+        return KEYSTORES_BASE_DIR.toString();
     }
 
     static String keyStorePath() {
         return KEY_STORE_PATH;
     }
 
-    static String caCertificatePem() {
-        return CA_CERTIFICATE_PEM;
-    }
-
     private static X509Certificate generateCaCertificate(X500Name caName, KeyPair caKeyPair) throws Exception {
         X509v3CertificateBuilder builder = certificateBuilder(caName, caName, caKeyPair.getPublic());
-        JcaX509ExtensionUtils extensionUtils = new JcaX509ExtensionUtils();
         builder.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
         builder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign));
-        builder.addExtension(Extension.subjectKeyIdentifier, false,
-                extensionUtils.createSubjectKeyIdentifier(caKeyPair.getPublic()));
-        builder.addExtension(Extension.issuerAlternativeName, false, ISSUER_CONTACT);
-        builder.addExtension(Extension.cRLDistributionPoints, false, crlDistributionPoints());
         return sign(builder, caKeyPair);
     }
 
-    private static X509Certificate generateLeafCertificate(X500Name caName, KeyPair leafKeyPair, KeyPair caKeyPair,
-            X509Certificate caCertificate) throws Exception {
-        X500Name leafName = new X500Name("C=DE,CN=OID4VCI Conformance Issuer");
+    private static X509Certificate generateLeafCertificate(X500Name caName, KeyPair leafKeyPair, KeyPair caKeyPair)
+            throws Exception {
+        X500Name leafName = new X500Name("CN=Mdoc Test Signer");
         X509v3CertificateBuilder builder = certificateBuilder(caName, leafName, leafKeyPair.getPublic());
-        JcaX509ExtensionUtils extensionUtils = new JcaX509ExtensionUtils();
         builder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature));
-        builder.addExtension(Extension.extendedKeyUsage, true, new ExtendedKeyUsage(MDOC_DS_KEY_PURPOSE));
-        builder.addExtension(Extension.subjectKeyIdentifier, false,
-                extensionUtils.createSubjectKeyIdentifier(leafKeyPair.getPublic()));
-        builder.addExtension(Extension.authorityKeyIdentifier, false,
-                extensionUtils.createAuthorityKeyIdentifier(caCertificate));
-        builder.addExtension(Extension.issuerAlternativeName, false, ISSUER_CONTACT);
-        builder.addExtension(Extension.cRLDistributionPoints, false, crlDistributionPoints());
         return sign(builder, caKeyPair);
-    }
-
-    private static CRLDistPoint crlDistributionPoints() {
-        GeneralNames crlUri = new GeneralNames(new GeneralName(
-                GeneralName.uniformResourceIdentifier, "https://example.com/oid4vci-conformance.crl"));
-        return new CRLDistPoint(new DistributionPoint[] {
-                new DistributionPoint(new DistributionPointName(crlUri), null, null) });
     }
 
     private static X509v3CertificateBuilder certificateBuilder(X500Name issuer, X500Name subject, PublicKey publicKey) {

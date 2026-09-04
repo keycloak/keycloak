@@ -27,8 +27,8 @@ import static org.junit.Assert.assertThrows;
 
 public class MdocCredentialTest {
 
-    private static final String DOC_TYPE = "org.iso.18013.5.1.mDL";
-    private static final String NAMESPACE = "org.iso.18013.5.1";
+    private static final String DOC_TYPE = "org.example.credential.mdoc";
+    private static final String NAMESPACE = "org.example.credential";
 
     @Test
     public void shouldExposeNamespacedClaimsFromMapInput() {

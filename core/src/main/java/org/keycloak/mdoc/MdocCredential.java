@@ -16,6 +16,7 @@
  */
 package org.keycloak.mdoc;
 
+import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.JWK;
@@ -216,7 +218,19 @@ public class MdocCredential {
         if (certificateChain == null || certificateChain.isEmpty()) {
             throw new MdocException("mDoc signing key is missing certificate chain");
         }
-        return certificateChain;
+        // ISO/IEC 18013 part 5 requires a CA issued signing certificate and keeps the trust anchor out of x5chain
+        List<X509Certificate> chain = new ArrayList<>(certificateChain);
+        try {
+            if (CertificateUtils.isSelfSigned(chain.get(0))) {
+                throw new MdocException("mDoc signing certificate must not be self signed");
+            }
+            while (CertificateUtils.isSelfSigned(chain.get(chain.size() - 1))) {
+                chain.remove(chain.size() - 1);
+            }
+        } catch (GeneralSecurityException e) {
+            throw new MdocException("Could not verify whether the mDoc signing certificate is self signed", e);
+        }
+        return chain;
     }
 
     private static byte[] generateRandom() {

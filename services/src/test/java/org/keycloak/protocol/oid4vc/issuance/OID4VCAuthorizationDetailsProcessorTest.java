@@ -248,11 +248,11 @@ public class OID4VCAuthorizationDetailsProcessorTest {
         OID4VCAuthorizationDetail authDetail = createValidAuthorizationDetail();
 
         ClaimsDescription claim1 = new ClaimsDescription();
-        claim1.setPath(Arrays.asList("org.iso.18013.5.1", "given_name"));
+        claim1.setPath(Arrays.asList("org.example.credential", "given_name"));
         claim1.setMandatory(true);
 
         ClaimsDescription claim2 = new ClaimsDescription();
-        claim2.setPath(Arrays.asList("org.iso.18013.5.1", "address", "street"));
+        claim2.setPath(Arrays.asList("org.example.credential", "address", "street"));
         claim2.setMandatory(false);
 
         authDetail.setClaims(Arrays.asList(claim1, claim2));
@@ -263,11 +263,11 @@ public class OID4VCAuthorizationDetailsProcessorTest {
         assertEquals("Should have exactly two claims", 2, parsedAuthDetail.getClaims().size());
 
         ClaimsDescription firstClaim = parsedAuthDetail.getClaims().get(0);
-        assertEquals(Arrays.asList("org.iso.18013.5.1", "given_name"), firstClaim.getPath());
+        assertEquals(Arrays.asList("org.example.credential", "given_name"), firstClaim.getPath());
         assertTrue(firstClaim.isMandatory());
 
         ClaimsDescription secondClaim = parsedAuthDetail.getClaims().get(1);
-        assertEquals(Arrays.asList("org.iso.18013.5.1", "address", "street"), secondClaim.getPath());
+        assertEquals(Arrays.asList("org.example.credential", "address", "street"), secondClaim.getPath());
         assertFalse(secondClaim.isMandatory());
     }
 
