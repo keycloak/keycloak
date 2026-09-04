@@ -148,7 +148,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl(OAuthClient.APP_AUTH_ROOT).update();
             Response response = organization.members().inviteExistingUser(user.getId());
         ) {
-            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
 
             acceptInvitation(organization, user, "AUTH_RESPONSE");
         }
@@ -164,7 +164,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
                 OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl(OAuthClient.APP_AUTH_ROOT).update();
                 Response response = organization.members().inviteExistingUser(user.getId());
         ) {
-            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
 
             acceptInvitation(organization, user, "AUTH_RESPONSE");
 
@@ -200,7 +200,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl(OAuthClient.APP_AUTH_ROOT).update();
             Response response = organization.members().inviteUser(user.getEmail(), "Homer", "Simpson");
         ) {
-            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
 
             acceptInvitation(organization, user, "AUTH_RESPONSE");
         }
@@ -256,7 +256,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
                 .update();
             Response response = organization.members().inviteExistingUser(user.getId());
         ) {
-            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
 
             acceptInvitation(organization, user, "AUTH_RESPONSE");
         }
@@ -423,7 +423,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl(OAuthClient.APP_AUTH_ROOT).update();
             Response response = organization.members().inviteUser(email, firstName, lastName);
         ) {
-            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
 
             registerUser(organization, email);
 
@@ -524,7 +524,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
                 RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin()).setRegistrationAllowed(Boolean.TRUE).update();
                 Response response = organization.members().inviteUser(email, null, null)
             ) {
-            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
 
             registerUser(organization, email);
 
@@ -557,7 +557,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
                 managedRealm.admin().update(realmRep);
             });
 
-            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
 
             String link = getInvitationLinkFromEmail();
             driver.navigate().to(link);
@@ -739,7 +739,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
                 RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin()).setRegistrationAllowed(Boolean.TRUE).update();
                 Response response = organization.members().inviteUser(email, null, null)
             ) {
-            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
 
             // Get the invitation link from email
             String invitationLink = getInvitationLinkFromEmail();
@@ -776,7 +776,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
 
         try (Response response = organization.members().inviteExistingUser(user.getId())) {
-            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
 
             // Get the invitation link from email
             String invitationLink = getInvitationLinkFromEmail(user.getFirstName(), user.getLastName());
@@ -811,7 +811,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         String firstInvitationLink;
 
         try (Response response = organization.members().inviteExistingUser(user.getId())) {
-            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
             // Get the invitation link from email
             firstInvitationLink = getInvitationLinkFromEmail(user.getFirstName(), user.getLastName());
         }
@@ -822,7 +822,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         OrganizationInvitationRepresentation firstInvitation = invitations.get(0);
 
         try (Response response = organization.invitations().resend(firstInvitation.getId())) {
-            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
             // Get the invitation ID and delete it from the database
             invitations = organization.invitations().list();
             assertThat(invitations, Matchers.hasSize(1));
@@ -858,7 +858,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         assertThat(invitations, Matchers.hasSize(1));
         OrganizationInvitationRepresentation invitation = invitations.get(0);
         try (Response response = organization.invitations().resend(invitation.getId())) {
-            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
 
             // Try to use the first invitation link (should fail)
             driver.navigate().to(link);

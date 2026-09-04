@@ -65,6 +65,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.util.ResolveRelative;
@@ -212,7 +213,14 @@ public class OrganizationInvitationResource {
                 .resourcePath(session.getContext().getUri())
                 .success();
 
-        return Response.noContent().build();
+        URI location = AdminRoot.realmsUrl(session.getContext().getUri())
+                .path(realm.getName())
+                .path("organizations")
+                .path(organization.getId())
+                .path("invitations")
+                .path(invitation.getId())
+                .build();
+        return Response.created(location).build();
     }
 
     private int getActionTokenLifespan() {
@@ -408,7 +416,7 @@ public class OrganizationInvitationResource {
     @Path("/{id}/resend")
     @Operation(summary = "Resend an invitation")
     @APIResponses(value = {
-        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "201", description = "Created"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
