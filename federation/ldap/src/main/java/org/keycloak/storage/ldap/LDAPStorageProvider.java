@@ -745,14 +745,27 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 // disabled on the realm: there is nothing the user could do about that themselves.
                 user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
                 logger.warnf("LDAP Sync: Imported user '%s' has invalid attributes according to the User Profile. Added the UPDATE_PROFILE required action: %s",
-                        user.getUsername(), e.getErrors());
+                        user.getUsername(), describeErrors(e));
+                logger.debugf("Full User Profile validation errors for user '%s': %s", user.getUsername(), e.getErrors());
                 return true;
             }
 
             logger.warnf("LDAP Sync: Skipping user '%s'. Failed User Profile validation: %s",
-                    user.getUsername(), e.getErrors());
+                    user.getUsername(), describeErrors(e));
+            logger.debugf("Full User Profile validation errors for user '%s': %s", user.getUsername(), e.getErrors());
             return false;
         }
+    }
+
+    // Package-private (and static) so it can be unit tested directly.
+    // ValidationException.Error#toString() (and therefore e.getErrors() itself) includes each validator's raw
+    // message parameters, which for validators like EmailValidator is the actual attribute value the user
+    // submitted - not something that belongs in a server log at WARN level. Log only the attribute name and the
+    // message key here; the full detail (with values) is still available via debug logging when needed.
+    static String describeErrors(ValidationException e) {
+        return e.getErrors().stream()
+                .map(error -> (error.getAttribute() != null ? error.getAttribute() : "<none>") + "=" + error.getMessage())
+                .collect(Collectors.joining(", "));
     }
 
     // Package-private (and static, as it depends on nothing but its arguments) so it can be unit tested directly -
