@@ -1,58 +1,50 @@
-package org.keycloak.testsuite.broker;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+package org.keycloak.tests.broker.oidc;
 
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.tests.broker.AbstractKcOidcBrokerTest;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
-import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
+@KeycloakIntegrationTest
+public class KcOidcBrokerClientSecretJwtCustomSignAlgTest extends AbstractKcOidcBrokerTest {
 
-public class KcOidcBrokerClientSecretJwtCustomSignAlgTest extends AbstractBrokerTest {
+    // BCFIPS approved mode requires at least 112 bits (14 characters) for client-secret-jwt
+    private static final String CLIENT_SECRET_JWT = "atleast-14chars-password";
 
-    @Override
-    protected BrokerConfiguration getBrokerConfiguration() {
-        return new KcOidcBrokerConfigurationWithJWTAuthentication();
+    @InjectRealm(ref = "provider", lifecycle = LifeCycle.METHOD,
+            config = JwtSecretCustomAlgProviderRealmConfig.class)
+    ManagedRealm providerRealm;
+
+    @InjectRealm(ref = "consumer", lifecycle = LifeCycle.METHOD,
+            config = JwtSecretCustomAlgConsumerRealmConfig.class)
+    ManagedRealm consumerRealm;
+
+    static class JwtSecretCustomAlgProviderRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return configureProviderRealm(realm,
+                    createDefaultProviderClient()
+                            .secret(CLIENT_SECRET_JWT)
+                            .authenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID)
+                            .attribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, Algorithm.HS384));
+        }
     }
 
-    private class KcOidcBrokerConfigurationWithJWTAuthentication extends KcOidcBrokerConfiguration {
-
-        String clientSecret = UUID.randomUUID().toString();
-        String signAlg = Algorithm.HS384;
-        
+    static class JwtSecretCustomAlgConsumerRealmConfig implements RealmConfig {
         @Override
-        public List<ClientRepresentation> createProviderClients() {
-            List<ClientRepresentation> clientsRepList = super.createProviderClients();
-            log.info("Update provider clients to accept JWT authentication");
-            for (ClientRepresentation client : clientsRepList) {
-                if (client.getAttributes() == null) {
-                    client.setAttributes(new HashMap<String, String>());
-                }
-                client.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
-                client.setSecret(clientSecret);
-                client.getAttributes().put(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, signAlg);
-            }
-            return clientsRepList;
-        }
-
-        @Override
-        public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
-            IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
-            Map<String, String> config = idp.getConfig();
-            applyDefaultConfiguration(config, syncMode);
-            config.put("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_JWT);
-            config.put("clientSecret", clientSecret);
-            config.put("clientAssertionSigningAlg", signAlg);
-            return idp;
+        public RealmBuilder configure(RealmBuilder realm) {
+            return configureConsumerRealm(realm,
+                    createOidcIdentityProvider()
+                            .attribute("clientSecret", CLIENT_SECRET_JWT)
+                            .attribute("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_JWT)
+                            .attribute("clientAssertionSigningAlg", Algorithm.HS384));
         }
     }
 }
