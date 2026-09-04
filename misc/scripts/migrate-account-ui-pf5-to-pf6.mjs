@@ -160,7 +160,7 @@ async function scanResiduals(appDir) {
 
   for (const filePath of filePaths) {
     const ext = path.extname(filePath).toLowerCase();
-    if (![".css", ".scss", ".less", ".js", ".jsx", ".ts", ".tsx", ".md", ".json"].includes(ext)) {
+    if (![".css", ".scss", ".less", ".js", ".jsx", ".ts", ".tsx", ".md", ".json", ".ftl", ".properties"].includes(ext)) {
       continue;
     }
 
@@ -299,7 +299,7 @@ async function main() {
           "@patternfly/class-name-updater@latest",
           "--v6",
           "--extensions",
-          "css,scss,less,html,js,jsx,ts,tsx,md",
+          "css,scss,less,html,js,jsx,ts,tsx,md,ftl,properties",
           stagedAppDirRelative,
           "--fix",
         ],
@@ -310,11 +310,13 @@ async function main() {
 
   const residuals = await scanResiduals(stagedAppDir);
   const failedStep = steps.find((step) => step.exitCode !== 0);
+  const hasUnresolvedResiduals =
+    options.failOnUnresolved && residuals.length > 0;
 
   let backupPath;
   let applied = false;
 
-  if (!failedStep && options.apply) {
+  if (!failedStep && options.apply && !hasUnresolvedResiduals) {
     await mkdir(options.backupDir, { recursive: true });
     backupPath = path.join(options.backupDir, `account-ui-${runTimestamp}`);
     await cp(appDir, backupPath, { recursive: true });

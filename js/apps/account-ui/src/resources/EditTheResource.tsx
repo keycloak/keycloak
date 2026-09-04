@@ -4,13 +4,13 @@ import {
   useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
 import {
-	Button,
-	Form,
-	Modal,
-	ModalBody,
-	ModalFooter,
-	ModalHeader,
-} from '@patternfly/react-core';
+  Button,
+  Form,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+} from "@patternfly/react-core";
 import { Fragment, useEffect } from "react";
 import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -62,34 +62,36 @@ export const EditTheResource = ({
     }
   };
 
+  const modalTitle = t("editTheResource", { name: resource.name });
+
   return (
-    <Modal variant="medium" isOpen onClose={onClose}>
-      <ModalHeader title={t("editTheResource", { name: resource.name })} />
+    <Modal variant="medium" isOpen onClose={onClose} aria-label={modalTitle}>
+      <ModalHeader title={modalTitle} />
       <ModalBody>
-      <Form id="edit-form" onSubmit={handleSubmit(editShares)}>
-        <FormProvider {...form}>
-          {fields.map((p, index) => (
-            <Fragment key={p.id}>
-              <TextControl
-                name={`permissions.${index}.username`}
-                label={t("user")}
-                isDisabled
-              />
-              <SelectControl
-                id={`permissions-${p.id}`}
-                name={`permissions.${index}.scopes`}
-                label="permissions"
-                variant="typeaheadMulti"
-                controller={{ defaultValue: [] }}
-                options={resource.scopes.map(({ name, displayName }) => ({
-                  key: name,
-                  value: displayName || name,
-                }))}
-              />
-            </Fragment>
-          ))}
-        </FormProvider>
-      </Form>
+        <Form id="edit-form" onSubmit={handleSubmit(editShares)}>
+          <FormProvider {...form}>
+            {fields.map((p, index) => (
+              <Fragment key={p.id}>
+                <TextControl
+                  name={`permissions.${index}.username`}
+                  label={t("user")}
+                  isDisabled
+                />
+                <SelectControl
+                  id={`permissions-${p.id}`}
+                  name={`permissions.${index}.scopes`}
+                  label="permissions"
+                  variant="typeaheadMulti"
+                  controller={{ defaultValue: [] }}
+                  options={resource.scopes.map(({ name, displayName }) => ({
+                    key: name,
+                    value: displayName || name,
+                  }))}
+                />
+              </Fragment>
+            ))}
+          </FormProvider>
+        </Form>
       </ModalBody>
       <ModalFooter>
         <Button

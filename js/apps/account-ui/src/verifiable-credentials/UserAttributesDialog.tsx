@@ -28,11 +28,16 @@ export const UserAttributesDialog = ({
 }: UserAttributesDialogProps) => {
   const { t } = useTranslation();
 
+  const modalTitle = t("credentialUserAttributesFor", { credentialScopeName });
+
   return (
-    <Modal variant={ModalVariant.medium} isOpen onClose={onClose}>
-      <ModalHeader
-        title={t("credentialUserAttributesFor", { credentialScopeName })}
-      />
+    <Modal
+      variant={ModalVariant.medium}
+      isOpen
+      onClose={onClose}
+      aria-label={modalTitle}
+    >
+      <ModalHeader title={modalTitle} />
       <ModalBody>
         <Table
           aria-label={t("credentialUserAttributes")}
