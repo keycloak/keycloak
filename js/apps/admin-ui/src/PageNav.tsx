@@ -14,6 +14,7 @@ import { useRealm } from "./context/realm-context/RealmContext";
 import { useServerInfo } from "./context/server-info/ServerInfoProvider";
 import { Environment } from "./environment";
 import { toPage } from "./page/routes";
+import { normalizeNavRoutePath } from "./page-nav-utils";
 import { routes } from "./routes";
 import useIsFeatureEnabled, { Feature } from "./utils/useIsFeatureEnabled";
 
@@ -30,9 +31,9 @@ const LeftNav = ({ title, path, id }: LeftNavProps) => {
   const { hasAccess } = useAccess();
   const { realm } = useRealm();
   const encodedRealm = encodeURIComponent(realm);
+  const navPath = id || path;
   const route = routes.find(
-    (route) =>
-      route.path.replace(/\/:.+?(\?|(?:(?!\/).)*|$)/g, "") === (id || path),
+    (route) => normalizeNavRoutePath(route.path) === navPath,
   );
 
   const accessAllowed =
