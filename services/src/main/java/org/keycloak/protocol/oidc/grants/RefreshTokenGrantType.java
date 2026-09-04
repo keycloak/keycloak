@@ -91,7 +91,7 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
 
             TokenManager.AccessTokenResponseBuilder responseBuilder = refreshTokenProvider.refreshAccessToken(refreshTokenCtx);
 
-            checkAndBindMtlsHoKToken(responseBuilder, clientConfig.isUseRefreshToken());
+            checkAndBindMtlsHoKToken(responseBuilder, clientConfig.generateRefreshToken(responseBuilder.isOfflineToken()));
 
             session.clientPolicy().triggerOnEvent(new TokenRefreshResponseContext(formParams, responseBuilder));
 

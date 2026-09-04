@@ -214,7 +214,7 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
     }
 
     @Override
-    protected boolean useRefreshToken() {
+    protected boolean useRefreshToken(boolean offlineToken) {
         return false; // jwt auth grant never generates the refresh token
     }
 
