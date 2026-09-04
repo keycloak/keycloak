@@ -164,7 +164,12 @@ public class OTPPolicy implements Serializable {
      */
     public String getKeyURI(String rawIssuerName, String rawAccountName, String secret) {
 
-        String accountName = URLEncoder.encode(rawAccountName, UTF_8);
+        /*
+         * The label components are URI path segments, where '+' is a literal plus, not a space.
+         * URLEncoder produces the application/x-www-form-urlencoded form (space -> '+'), so - like
+         * the issuerName below - the account name must rewrite '+' back to '%20'.
+         */
+        String accountName = URLEncoder.encode(rawAccountName, UTF_8).replaceAll("\\+", "%20");
         /*
          * Replacing ':' in issuerName with a space because the ':' is not allowed in the issuer part of the label.
          * See: https://github.com/google/google-authenticator/wiki/Key-Uri-Format#label
