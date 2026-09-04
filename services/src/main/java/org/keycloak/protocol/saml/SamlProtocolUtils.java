@@ -183,7 +183,7 @@ public class SamlProtocolUtils {
     public static KeyLocator createKeyLocatorForClient(KeycloakSession session, SamlClient samlClient, KeyUse use) throws VerificationException {
         if (StringUtil.isNotBlank(samlClient.getMetadataDescriptorUrl()) && samlClient.isUseMetadataDescriptorUrl()) {
             // configured to use the metadata
-            String modelKey = PublicKeyStorageUtils.getClientModelCacheKey(samlClient.getClient().getRealm().getId(), samlClient.getClient().getClientId());
+            String modelKey = PublicKeyStorageUtils.getClientModelCacheKey(samlClient.getClient().getRealm().getId(), samlClient.getClient().getId());
             PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
             PublicKeyLoader keyLoader = new SamlMetadataPublicKeyLoader(session, samlClient.getMetadataDescriptorUrl(), false);
             return new SamlMetadataKeyLocator(modelKey, keyLoader, use, keyStorage);
