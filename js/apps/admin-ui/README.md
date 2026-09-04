@@ -61,6 +61,30 @@ The Playwright tests under `js/apps/admin-ui/test` accept these environment vari
 
 These test-only variables are different from server bootstrap variables such as `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD`.
 
+## Playwright loading conventions
+
+Async UI in the admin console exposes stable loading signals for E2E tests:
+
+- `data-testid="loading-spinner"` — present on the loading overlay while a section or table is fetching (`LoadingOverlay` skeleton).
+- `aria-busy="true"` — set on `LoadingOverlay` containers during fetch (same window as the spinner).
+- `data-testid="table-ready"` — set on `KeycloakDataTable` when the current fetch has completed.
+
+Use `waitForLoadingComplete` (spinner absence only) before clicking table rows. After search/filter Enter or refresh, use `waitForLoadingCycle` so the helper tolerates a short delay before the spinner appears, then waits for spinner absence. On pages that use `KeycloakDataTable`, use `waitForTableReady` when you need the `table-ready` signal in addition to spinner absence.
+
+```ts
+import {
+  waitForLoadingComplete,
+  waitForLoadingCycle,
+  waitForTableReady,
+} from "./utils/loading.ts";
+
+await page.keyboard.press("Enter");
+await waitForLoadingCycle(page);
+await page.locator("table tbody").getByRole("link", { name: itemName }).click();
+```
+
+Wait for spinner absence rather than polling `table tbody` visibility, because tables stay mounted during reload.
+
 ## Building
 
 To build a library instead of an app you need to add the `LIB=true` environment variable.

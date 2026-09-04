@@ -34,6 +34,7 @@ export const FormSubmitButton = ({
   return (
     <Button
       variant="primary"
+      aria-busy={formState.isSubmitting}
       isDisabled={
         !isSubmittable(formState, allowNonDirty, allowInvalid) || isDisabled
       }

@@ -1,5 +1,6 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { FormGroup, PageSection, Switch } from "@patternfly/react-core";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FormPanel, HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../admin-client";
@@ -29,11 +30,32 @@ export const RealmSettingsLoginTab = ({
   const { realm: realmName } = useRealm();
   const isFeatureEnabled = useIsFeatureEnabled();
   const passkeysVisible = isFeatureEnabled(Feature.Passkeys);
-  const updateSwitchValue = async (switches: SwitchType | SwitchType[]) => {
-    const name = Array.isArray(switches)
-      ? Object.keys(switches[0])[0]
-      : Object.keys(switches)[0];
+  const [savingFields, setSavingFields] = useState<Set<string>>(new Set());
+  const isSaving = savingFields.size > 0;
 
+  const setSaving = (field: string, saving: boolean) => {
+    setSavingFields((prev) => {
+      const next = new Set(prev);
+      if (saving) {
+        next.add(field);
+      } else {
+        next.delete(field);
+      }
+      return next;
+    });
+  };
+
+  const updateSwitchValue = async (
+    switches: SwitchType | SwitchType[],
+    fieldKey?: string,
+  ) => {
+    const name =
+      fieldKey ??
+      (Array.isArray(switches)
+        ? Object.keys(switches[0])[0]
+        : Object.keys(switches)[0]);
+
+    setSaving(name, true);
     try {
       await adminClient.realms.update(
         {
@@ -47,6 +69,8 @@ export const RealmSettingsLoginTab = ({
       refresh();
     } catch (error) {
       addError("enableSwitchError", error);
+    } finally {
+      setSaving(name, false);
     }
   };
 
@@ -59,7 +83,7 @@ export const RealmSettingsLoginTab = ({
         <FormAccess isHorizontal role="manage-realm">
           <FormGroup
             label={t("registrationAllowed")}
-            fieldId="kc-user-reg"
+            fieldId="kc-user-reg-switch"
             labelIcon={
               <HelpItem
                 helpText={t("userRegistrationHelpText")}
@@ -75,15 +99,20 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.registrationAllowed}
+              isDisabled={isSaving}
+              aria-busy={savingFields.has("registrationAllowed")}
               onChange={async (_event, value) => {
-                await updateSwitchValue({ registrationAllowed: value });
+                await updateSwitchValue(
+                  { registrationAllowed: value },
+                  "registrationAllowed",
+                );
               }}
               aria-label={t("registrationAllowed")}
             />
           </FormGroup>
           <FormGroup
             label={t("resetPasswordAllowed")}
-            fieldId="kc-forgot-pw"
+            fieldId="kc-forgot-pw-switch"
             labelIcon={
               <HelpItem
                 helpText={t("forgotPasswordHelpText")}
@@ -100,15 +129,20 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.resetPasswordAllowed}
+              isDisabled={isSaving}
+              aria-busy={savingFields.has("resetPasswordAllowed")}
               onChange={async (_event, value) => {
-                await updateSwitchValue({ resetPasswordAllowed: value });
+                await updateSwitchValue(
+                  { resetPasswordAllowed: value },
+                  "resetPasswordAllowed",
+                );
               }}
               aria-label={t("resetPasswordAllowed")}
             />
           </FormGroup>
           <FormGroup
             label={t("rememberMe")}
-            fieldId="kc-remember-me"
+            fieldId="kc-remember-me-switch"
             labelIcon={
               <HelpItem
                 helpText={t("rememberMeHelpText")}
@@ -124,8 +158,10 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.rememberMe}
+              isDisabled={isSaving}
+              aria-busy={savingFields.has("rememberMe")}
               onChange={async (_event, value) => {
-                await updateSwitchValue({ rememberMe: value });
+                await updateSwitchValue({ rememberMe: value }, "rememberMe");
               }}
               aria-label={t("rememberMe")}
             />
@@ -133,7 +169,7 @@ export const RealmSettingsLoginTab = ({
           {passkeysVisible && (
             <FormGroup
               label={t("webAuthnPolicyPasskeysEnabled")}
-              fieldId="kc-passkeys-enabled"
+              fieldId="kc-passkeys-enabled-switch"
               labelIcon={
                 <HelpItem
                   helpText={t("webAuthnPolicyPasskeysEnabledHelp")}
@@ -153,10 +189,17 @@ export const RealmSettingsLoginTab = ({
                 isChecked={
                   realm.webAuthnPolicyPasswordlessPasskeysEnabled ?? false
                 }
+                isDisabled={isSaving}
+                aria-busy={savingFields.has(
+                  "webAuthnPolicyPasswordlessPasskeysEnabled",
+                )}
                 onChange={async (_event, value) => {
-                  await updateSwitchValue({
-                    webAuthnPolicyPasswordlessPasskeysEnabled: value,
-                  });
+                  await updateSwitchValue(
+                    {
+                      webAuthnPolicyPasswordlessPasskeysEnabled: value,
+                    },
+                    "webAuthnPolicyPasswordlessPasskeysEnabled",
+                  );
                 }}
                 aria-label={t("webAuthnPolicyPasskeysEnabled")}
               />{" "}
@@ -178,7 +221,7 @@ export const RealmSettingsLoginTab = ({
         <FormAccess isHorizontal role="manage-realm">
           <FormGroup
             label={t("registrationEmailAsUsername")}
-            fieldId="kc-email-as-username"
+            fieldId="kc-email-as-username-switch"
             labelIcon={
               <HelpItem
                 helpText={t("emailAsUsernameHelpText")}
@@ -194,22 +237,27 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.registrationEmailAsUsername}
+              isDisabled={isSaving}
+              aria-busy={savingFields.has("registrationEmailAsUsername")}
               onChange={async (_event, value) => {
-                await updateSwitchValue([
-                  {
-                    registrationEmailAsUsername: value,
-                  },
-                  {
-                    duplicateEmailsAllowed: false,
-                  },
-                ]);
+                await updateSwitchValue(
+                  [
+                    {
+                      registrationEmailAsUsername: value,
+                    },
+                    {
+                      duplicateEmailsAllowed: false,
+                    },
+                  ],
+                  "registrationEmailAsUsername",
+                );
               }}
               aria-label={t("registrationEmailAsUsername")}
             />
           </FormGroup>
           <FormGroup
             label={t("loginWithEmailAllowed")}
-            fieldId="kc-login-with-email"
+            fieldId="kc-login-with-email-switch"
             labelIcon={
               <HelpItem
                 helpText={t("loginWithEmailHelpText")}
@@ -225,20 +273,25 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.loginWithEmailAllowed}
+              isDisabled={isSaving}
+              aria-busy={savingFields.has("loginWithEmailAllowed")}
               onChange={async (_event, value) => {
-                await updateSwitchValue([
-                  {
-                    loginWithEmailAllowed: value,
-                  },
-                  { duplicateEmailsAllowed: false },
-                ]);
+                await updateSwitchValue(
+                  [
+                    {
+                      loginWithEmailAllowed: value,
+                    },
+                    { duplicateEmailsAllowed: false },
+                  ],
+                  "loginWithEmailAllowed",
+                );
               }}
               aria-label={t("loginWithEmailAllowed")}
             />
           </FormGroup>
           <FormGroup
             label={t("duplicateEmailsAllowed")}
-            fieldId="kc-duplicate-emails"
+            fieldId="kc-duplicate-emails-switch"
             labelIcon={
               <HelpItem
                 helpText={t("duplicateEmailsHelpText")}
@@ -254,19 +307,25 @@ export const RealmSettingsLoginTab = ({
               labelOff={t("off")}
               isChecked={realm.duplicateEmailsAllowed}
               onChange={async (_event, value) => {
-                await updateSwitchValue({
-                  duplicateEmailsAllowed: value,
-                });
+                await updateSwitchValue(
+                  {
+                    duplicateEmailsAllowed: value,
+                  },
+                  "duplicateEmailsAllowed",
+                );
               }}
               isDisabled={
-                realm.loginWithEmailAllowed || realm.registrationEmailAsUsername
+                isSaving ||
+                realm.loginWithEmailAllowed ||
+                realm.registrationEmailAsUsername
               }
+              aria-busy={savingFields.has("duplicateEmailsAllowed")}
               aria-label={t("duplicateEmailsAllowed")}
             />
           </FormGroup>
           <FormGroup
             label={t("verifyEmail")}
-            fieldId="kc-verify-email"
+            fieldId="kc-verify-email-switch"
             labelIcon={
               <HelpItem
                 helpText={t("verifyEmailHelpText")}
@@ -283,8 +342,10 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.verifyEmail}
+              isDisabled={isSaving}
+              aria-busy={savingFields.has("verifyEmail")}
               onChange={async (_event, value) => {
-                await updateSwitchValue({ verifyEmail: value });
+                await updateSwitchValue({ verifyEmail: value }, "verifyEmail");
               }}
               aria-label={t("verifyEmail")}
             />
@@ -298,7 +359,7 @@ export const RealmSettingsLoginTab = ({
         <FormAccess isHorizontal role="manage-realm">
           <FormGroup
             label={t("editUsernameAllowed")}
-            fieldId="kc-edit-username"
+            fieldId="kc-edit-username-switch"
             labelIcon={
               <HelpItem
                 helpText={t("editUsernameHelp")}
@@ -314,8 +375,13 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.editUsernameAllowed}
+              isDisabled={isSaving}
+              aria-busy={savingFields.has("editUsernameAllowed")}
               onChange={async (_event, value) => {
-                await updateSwitchValue({ editUsernameAllowed: value });
+                await updateSwitchValue(
+                  { editUsernameAllowed: value },
+                  "editUsernameAllowed",
+                );
               }}
               aria-label={t("editUsernameAllowed")}
             />
