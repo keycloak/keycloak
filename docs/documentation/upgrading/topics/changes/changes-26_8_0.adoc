@@ -38,6 +38,19 @@ Revalidating certificates can be problematic in certain installations (for examp
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
+=== Login failures now stored in the database by default
+
+Login failure data for brute force detection is now stored in the database by default, instead of only in the embedded Infinispan `loginFailures` cache. This ensures that temporarily locked-out users remain locked out across cluster restarts, and reduces memory consumption from accumulated login failure entries.
+
+This change is controlled by the new `login-failures` versioned feature. The previous in-memory behavior (`login-failures:v1`) is deprecated. To restore it, set `--features=login-failures:v1`. Note that `login-failures:v1` is incompatible with the `stateless` feature.
+
+Deployments using the `multi-site` or `clusterless` features continue to store login failure data in the external Infinispan cluster, regardless of the `login-failures` feature version.
+
+As a trade-off, users may observe increased database connection usage and higher CPU usage on the database.
+
+The option `spi-brute-force-protector-default-brute-force-detector-allow-concurrent-requests` is deprecated and has no effect with `login-failures:v2`.
+Instead, concurrent logins for the same user are executed serially for each node.
+
 === Clusterless feature will be removed
 
 The experimental `clusterless` feature will be removed in a future release. The `stateless` feature is the successor for running {project_name} without depending on an external Infinispan cluster. While `clusterless` offloads all session data to an external Infinispan cluster, `stateless` stores session data in the database and uses the embedded Infinispan only as a cache.
@@ -165,6 +178,27 @@ When {project_name} generates self-signed certificates (for example, during SAML
 
 If you have tooling that inspects the CN of {project_name}-generated certificates and expects it to match a value longer than 64 characters, be aware that the CN may now be shorter.
 
+=== Transaction isolation level changed to READ COMMITTED for MySQL and MariaDB in stateless mode
+
+When the `stateless` feature is enabled, {project_name} now sets the transaction isolation level to `READ COMMITTED` for MySQL and MariaDB.
+This prevents deadlocks that occur under concurrent logins.
+If binary logging is enabled with `binlog_format = STATEMENT`, this change will cause write operations to fail.
+{project_name} logs an error at startup when it detects this incompatible setting.
+
+See the link:https://www.keycloak.org/server/db#mysql-mariadb-transaction-isolation-level-in-stateless-mode[Transaction isolation level in stateless mode] section in the database configuration guide for details on `binlog_format` requirements.
+
+Changing the default transaction isolation level for all modes is being considered for a future release.
+
+[#mariadb-galera-cluster-considerations]
+=== MariaDB Galera Cluster considerations
+
+WARNING: MariaDB Galera Cluster is not a supported database configuration for {project_name}. The guidance in this section is provided on a best-effort basis. Before reporting bugs, reproduce them with a supported database configuration first.
+
+On a multi-writer Galera setup, concurrent writes to the same row on different nodes can trigger certification failures, and asynchronous replication can cause stale reads.
+{project_name} logs an error at startup when it detects Galera with `wsrep_sync_wait = 0`.
+
+See the link:https://www.keycloak.org/server/db#mariadb-galera-cluster-considerations[MariaDB Galera Cluster] section in the database configuration guide for recommended settings and limitations.
+
 === Asynchronous commit on MS SQL Server and Oracle databases
 
 The asynchronous commit optimization, previously available only on PostgreSQL, now also supports MS SQL Server and Oracle databases.
@@ -280,6 +314,10 @@ To avoid the deprecation warning at startup, set those SPI options to `false`.
 === Disabling persistent user sessions (volatile sessions) is deprecated
 
 Disabling the `persistent-user-sessions` feature (volatile sessions) is deprecated and will be removed in a future release. Persistent user sessions will become the only supported mode. If you have explicitly disabled persistent user sessions with `--features-disabled=persistent-user-sessions`, remove this option before upgrading to a future release.
+
+=== In-memory login failures (`login-failures:v1`) is deprecated
+
+The previous default of storing login failure data only in the in-memory Infinispan cache (`login-failures:v1`) is deprecated and will be removed in a future release. Login failures are now stored in the database by default (`login-failures:v2`). If you have explicitly enabled `login-failures:v1`, plan to remove this option before upgrading to a future release.
 
 === Organization invitation link no longer exposed in API responses
 

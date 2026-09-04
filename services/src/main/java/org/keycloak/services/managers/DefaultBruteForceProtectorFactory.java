@@ -19,8 +19,11 @@ package org.keycloak.services.managers;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -32,12 +35,13 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
  */
 public class DefaultBruteForceProtectorFactory implements BruteForceProtectorFactory {
     DefaultBruteForceProtector protector;
+    private final ConcurrentMap<String, DefaultLockingBruteForceProtector.UserLock> userLocks = new ConcurrentHashMap<>();
 
     private boolean allowConcurrentRequests;
 
     @Override
     public BruteForceProtector create(KeycloakSession session) {
-        return protector;
+        return protector != null ? protector : new DefaultLockingBruteForceProtector(session.getKeycloakSessionFactory(), session, userLocks);
     }
 
     @Override
@@ -48,7 +52,9 @@ public class DefaultBruteForceProtectorFactory implements BruteForceProtectorFac
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        protector = allowConcurrentRequests ? new DefaultBruteForceProtector(factory) : new DefaultBlockingBruteForceProtector(factory);
+        if (Profile.isFeatureEnabled(Profile.Feature.LOGIN_FAILURES_V1)) {
+            protector = allowConcurrentRequests ? new DefaultBruteForceProtector(factory) : new DefaultBlockingBruteForceProtector(factory);
+        }
     }
 
     @Override
@@ -67,7 +73,7 @@ public class DefaultBruteForceProtectorFactory implements BruteForceProtectorFac
                 .property()
                 .name("allowConcurrentRequests")
                 .type("boolean")
-                .helpText("If concurrent logins are allowed by the brute force protection.")
+                .helpText("If concurrent logins are allowed by the brute force protection. This is deprecated and only active for login-failures:v1. login-failures:v2 will execute concurrent logins serially on each Keycloak instance instead of returning an error.")
                 .defaultValue(false)
                 .add()
                 .build();

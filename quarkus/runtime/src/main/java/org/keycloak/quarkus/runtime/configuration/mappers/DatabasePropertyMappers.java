@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.DurationConverter;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.CachingOptions.Stack;
@@ -284,6 +285,10 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "false")
                         .to(MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
                         .isEnabled(DatabasePropertyMappers::isMssqlSendStringParametersAsUnicode)
+                        .build(),
+                fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "read-committed")
+                        .to("quarkus.datasource.jdbc.transaction-isolation-level")
+                        .isEnabled(DatabasePropertyMappers::isReadCommittedIsolationRequired)
                         .build()
         ));
         return result;
@@ -360,6 +365,22 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
 
         return !dbUrl.contains("sendStringParametersAsUnicode") &&
                 !dbUrlProperties.contains("sendStringParametersAsUnicode");
+    }
+
+    /**
+     * MySQL and MariaDB default to REPEATABLE READ transaction isolation, which acquires gap locks on
+     * {@code INSERT ... ON DUPLICATE KEY UPDATE} statements. When the stateless feature is enabled,
+     * concurrent login requests execute such upserts on authentication session and login failure tables,
+     * causing deadlocks under load. Switching to READ COMMITTED eliminates gap locks and resolves
+     * these deadlocks. This matches the isolation level PostgreSQL, Oracle, and SQL Server use by default.
+     */
+    public static boolean isReadCommittedIsolationRequired() {
+        String db = Configuration.getConfigValue(DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElse(null);
+        if (vendor != Database.Vendor.MYSQL && vendor != Database.Vendor.MARIADB && vendor != Database.Vendor.TIDB) {
+            return false;
+        }
+        return Profile.isFeatureEnabled(Profile.Feature.STATELESS);
     }
 
     private static ValueMapper getConnectTimeout(Collection<Database.Vendor> validForVendors, String timeoutProperty) {

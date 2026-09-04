@@ -258,6 +258,11 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     .forEach(holder.getNamedConfigurationBuilders()::remove);
         }
 
+        // remove login-failure cache if V2 is active
+        if (Profile.isFeatureEnabled(Profile.Feature.LOGIN_FAILURES_V2)) {
+            holder.getNamedConfigurationBuilders().remove(LOGIN_FAILURE_CACHE_NAME);
+        }
+
         StringBuilderWriter sw = new StringBuilderWriter();
         ParserRegistry parser = new ParserRegistry();
         try (ConfigurationWriter w = ConfigurationWriter.to(sw).prettyPrint(true).build()) {

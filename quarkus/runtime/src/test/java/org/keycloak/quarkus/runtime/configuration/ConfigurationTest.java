@@ -46,7 +46,6 @@ import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 import org.h2.Driver;
-import org.hibernate.dialect.H2Dialect;
 import org.hibernate.dialect.MariaDBDialect;
 import org.hibernate.dialect.PostgreSQLDialect;
 import org.junit.Assert;
@@ -295,14 +294,14 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testDatabaseDefaults() {
         ConfigArgsConfigSource.setCliArgs("--db=dev-file");
         SmallRyeConfig config = createConfig();
-        assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
+        assertEquals("org.keycloak.connections.jpa.dialect.KeycloakH2Dialect", config.getConfigValue("kc.db-dialect").getValue());
         assertEquals(Driver.class.getName(), config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
 
         assertEquals("jdbc:h2:file:" + Environment.getHomeDir().orElseThrow() + "/data/h2/keycloakdb;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=dev-mem");
         config = createConfig();
-        assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
+        assertEquals("org.keycloak.connections.jpa.dialect.KeycloakH2Dialect", config.getConfigValue("kc.db-dialect").getValue());
         assertEquals("jdbc:h2:mem:keycloakdb;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertEquals("h2", config.getConfigValue("quarkus.datasource.db-kind").getValue());
 
@@ -358,7 +357,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testDefaultDbPortGetApplied() {
         ConfigArgsConfigSource.setCliArgs("--db=mssql", "--db-url-host=myhost", "--db-url-database=kcdb", "--db-url-port=1234", "--db-url-properties=?foo=bar");
         SmallRyeConfig config = createConfig();
-        assertEquals("org.hibernate.dialect.SQLServerDialect",
+        assertEquals("org.keycloak.connections.jpa.dialect.KeycloakSQLServerDialect",
                 config.getConfigValue("kc.db-dialect").getValue());
         assertEquals("jdbc:sqlserver://myhost:1234;databaseName=kcdb?foo=bar", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertEquals("mssql", config.getConfigValue("quarkus.datasource.db-kind").getValue());
@@ -380,12 +379,12 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         System.setProperty("kc.db-url-path", "test-dir");
         System.setProperty("kc.transaction-xa-enabled", "true");
         SmallRyeConfig config = createConfigFromCliArguments("--db=dev-file");
-        assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
+        assertEquals("org.keycloak.connections.jpa.dialect.KeycloakH2Dialect", config.getConfigValue("kc.db-dialect").getValue());
         assertEquals("jdbc:h2:file:test-dir/data/h2/keycloakdb;;test=test;test1=test1;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertEquals("xa", config.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
 
         config = createConfigFromCliArguments("");
-        assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
+        assertEquals("org.keycloak.connections.jpa.dialect.KeycloakH2Dialect", config.getConfigValue("kc.db-dialect").getValue());
         assertEquals("jdbc:h2:file:test-dir/data/h2/keycloakdb;;test=test;test1=test1;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         System.setProperty("kc.db-url-properties", "?test=test&test1=test1");
