@@ -46,6 +46,13 @@ export async function goToAttributeGroupsTab(page: Page) {
   await page.getByTestId("attributesGroupTab").click();
 }
 
+export async function clickCreateUser(page: Page) {
+  await page
+    .getByTestId("no-users-found-empty-action")
+    .or(page.getByTestId("add-user"))
+    .click({ timeout: 15_000 });
+}
+
 export async function switchOffIfOn(page: Page, selector: string) {
   if (await page.isChecked(selector)) {
     await page.locator(selector).click({ force: true });
