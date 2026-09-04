@@ -3,6 +3,7 @@ import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import { Environment } from "../../environment-types";
 import { usePreviewBackground } from "./BackgroundContext";
 import { LoginForm, LoginPage } from "@patternfly/react-core";
+import { pf5VarsToPf5Css, pf5VarsToPf6Css } from "./pf5ToPf6Tokens";
 
 type LoginPreviewWindowProps = {
   cssVars: Record<string, string>;
@@ -15,7 +16,7 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
 
   // Resources
   const resourceUrlRoot = `/resources/${environment.resourceVersion}`;
-  const loginResourceUrl = `${resourceUrlRoot}/login/keycloak.v2`;
+  const loginResourceUrl = `${resourceUrlRoot}/login/keycloak.v3`;
 
   // Default login theme resources from local files
   const defaultBgImage = `${loginResourceUrl}/img/keycloak-bg-darken.svg`;
@@ -29,6 +30,12 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
   const logoWidth = cssVars["logoWidth"];
   const logoHeight = cssVars["logoHeight"];
 
+  const themeCssVars = Object.fromEntries(
+    Object.entries(cssVars).filter(
+      ([key]) => key !== "logoWidth" && key !== "logoHeight",
+    ),
+  );
+
   const stylesThemeCssUrl = `${loginResourceUrl}/css/styles.css`;
 
   return (
@@ -36,9 +43,8 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
       <link rel="stylesheet" href={stylesThemeCssUrl} />
       <style>{`
         .login-preview {
-            ${Object.entries(cssVars)
-              .map(([key, value]) => `--pf-v5-global--${key}: ${value};`)
-              .join("\n")}
+            ${pf5VarsToPf5Css(themeCssVars)}
+            ${pf5VarsToPf6Css(themeCssVars)}
 
           /* Keycloak login theme variables - override with local/uploaded images */
           --keycloak-logo-url: url('${logoUrl}');
@@ -59,10 +65,10 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
           position-area: start center;
           margin-bottom: 3rem;
         }
-        .login-preview .pf-v5-c-login__main {
+        .login-preview .pf-v6-c-login__main {
           anchor-name: --logo;
         }
-        .login-preview .pf-v5-c-login__footer {
+        .login-preview .pf-v6-c-login__footer {
           display: none;
         }
       `}</style>

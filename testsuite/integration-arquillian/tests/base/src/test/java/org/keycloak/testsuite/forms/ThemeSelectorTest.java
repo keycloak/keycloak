@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ThemeSelectorTest extends AbstractTestRealmKeycloakTest {
 
-    private static final String SYSTEM_DEFAULT_LOGIN_THEME = ThemeSelectorProvider.DEFAULT_V2;
+    private static final String SYSTEM_DEFAULT_LOGIN_THEME = ThemeSelectorProvider.DEFAULT_V3;
 
     @Page
     protected LoginPage loginPage;
@@ -52,8 +52,8 @@ public class ThemeSelectorTest extends AbstractTestRealmKeycloakTest {
         // for the purpose of the test does not matter which profile is used (product or community)
         if(driver.getPageSource().contains("/login/keycloak/css/login.css") || driver.getPageSource().contains("/login/rh-sso/css/login.css")) {
             return "keycloak";
-        } else if (driver.getPageSource().contains("/login/keycloak.v2/css/styles.css") || driver.getPageSource().contains("/login/rh-sso/css/styles.css")) {
-            return "keycloak.v2";
+        } else if (driver.getPageSource().contains("/login/keycloak.v3/css/styles.css")) {
+            return "keycloak.v3";
         } else {
             return "base";
         }
