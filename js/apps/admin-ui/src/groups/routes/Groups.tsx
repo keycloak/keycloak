@@ -27,16 +27,6 @@ export const OrgGroupsRoute: AppRouteObject = {
   },
 };
 
-export const GroupsWithIdRoute: AppRouteObject = {
-  ...GroupsRoute,
-  path: "/:realm/groups/:id",
-};
-
-export const OrgGroupsWithIdRoute: AppRouteObject = {
-  ...OrgGroupsRoute,
-  path: "/:realm/organizations/:orgId/groups/:id",
-};
-
 export const toGroups = (params: GroupsParams): Partial<Path> => {
   const path = params.orgId ? OrgGroupsRoute.path : GroupsRoute.path;
 
