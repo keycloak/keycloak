@@ -1303,11 +1303,19 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 // lastName): its value is established here from LDAP data rather than entered by the user through
                 // this profile, so a validation error on it must never be silently forgiven just because the
                 // value happens to be unchanged - see AttributeMetadata#isReadOnlyBypassAllowed.
-                metadata.getAttribute(attrName).stream().findFirst().ifPresent(existing -> {
+                AttributeMetadata existing = metadata.getAttribute(attrName).stream().findFirst().orElse(null);
+                if (existing != null) {
                     AttributeMetadata override = existing.clone();
                     override.addReadOnlyBypassCondition(AttributeMetadata.ALWAYS_FALSE);
                     metadatas.add(override);
-                });
+                } else {
+                    // createAttributeMetadata() returning null above means it found this attribute already present
+                    // on the base profile - so this should never happen. If it ever does, the read-only bypass
+                    // override is silently skipped and this attribute is left in the default (permissive) state,
+                    // so make that loud rather than quietly doing nothing.
+                    logger.warnf("LDAP mapper attribute '%s' was expected to already have base user profile metadata for provider '%s', but none was found. Read-only bypass override was not applied.",
+                            attrName, getModel().getName());
+                }
             }
         }
 
