@@ -112,7 +112,7 @@ public class OrganizationFederationTest extends AbstractOrganizationTest {
     public void testGetByMember() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel orga = orgProvider.getByDomainName("orga.org").findFirst().orElse(null);
+            OrganizationModel orga = orgProvider.getByDomainName("orga.org");
             RealmModel realm = session.getContext().getRealm();
             UserModel member = session.users().getUserByUsername(realm, "thor");
             orgProvider.addMember(orga, member);

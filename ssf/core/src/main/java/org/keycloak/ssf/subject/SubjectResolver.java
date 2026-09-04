@@ -139,7 +139,7 @@ public class SubjectResolver {
         // then fall back to alias
         if (tenantSubject instanceof EmailSubjectId email) {
             String domainOrAlias = email.getEmail();
-            var org = orgProvider.getByDomainName(domainOrAlias).findFirst().orElse(null);
+            var org = orgProvider.getByDomainName(domainOrAlias);
             if (org != null) {
                 return new SubjectResolution.Organization(org);
             }

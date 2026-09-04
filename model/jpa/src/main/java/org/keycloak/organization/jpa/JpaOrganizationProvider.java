@@ -77,6 +77,7 @@ import static org.keycloak.models.UserModel.LAST_NAME;
 import static org.keycloak.models.UserModel.USERNAME;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.organization.utils.Organizations.isReadOnlyOrganizationMember;
+import static org.keycloak.organization.utils.Organizations.resolveByDomain;
 import static org.keycloak.organization.utils.Organizations.validateDomain;
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -236,9 +237,9 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public Stream<OrganizationModel> getByDomainName(String domain) {
+    public OrganizationModel getByDomainName(String domain) {
         if (domain == null) {
-            return Stream.empty();
+            return null;
         }
 
         String emailDomain = domain.toLowerCase();
@@ -255,23 +256,31 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         // Add exact match
         domainPatterns.add(emailDomain);
 
-        // Also check for wildcard at the current level
-        domainPatterns.add("*." + emailDomain);
+        query.setParameter("names", domainPatterns);
+
+        try {
+            OrganizationEntity entity = query.getSingleResult();
+            return new OrganizationAdapter(session, realm, entity, this);
+        } catch (NoResultException ignore) {
+        }
 
         // Strip subdomains to check for parent wildcard domains
         String[] parts = emailDomain.split("\\.");
 
+        // Also check for wildcard at the current level
+        domainPatterns.add("*." + emailDomain);
+
         for (int i = 1; i < parts.length - 1; i++) {
             String parentDomain = String.join(".", java.util.Arrays.copyOfRange(parts, i, parts.length));
+            // Check for both exact parent and wildcard parent
             domainPatterns.add(parentDomain);
             domainPatterns.add("*." + parentDomain);
         }
 
         query.setParameter("names", domainPatterns);
 
-        return query.getResultList().stream()
-                .map(entity -> getById(entity.getId()))
-                .filter(Objects::nonNull);
+        return resolveByDomain(query.getResultList().stream()
+                .map(entity -> getById(entity.getId())).filter(Objects::nonNull).toList(), emailDomain);
     }
     
     @Override

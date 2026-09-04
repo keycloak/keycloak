@@ -488,28 +488,13 @@ public class OrganizationTest extends AbstractOrganizationTest {
         }
         expectedNewOrgBrDomain.setName("acme.com");
 
-        // adding a domain whose IdP alias is not linked to this org must fail
+        // create another org in the same realm and attempt to set the same internet domain during update - should not be possible.
         OrganizationRepresentation anotherOrg = createOrganization("another-org");
-        OrganizationDomainRepresentation domainWithForeignIdp = new OrganizationDomainRepresentation();
-        domainWithForeignIdp.setName(expectedNewOrgDomain.getName());
-        domainWithForeignIdp.setVerified(expectedNewOrgDomain.isVerified());
-        domainWithForeignIdp.setIdentityProviderAlias(expectedNewOrgDomain.getIdentityProviderAlias());
-        anotherOrg.addDomain(domainWithForeignIdp);
+        anotherOrg.addDomain(expectedNewOrgDomain);
         organization = realm.admin().organizations().get(anotherOrg.getId());
         try (Response response = organization.update(anotherOrg)) {
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         }
-
-        // same domain without the foreign IdP alias should succeed (M:N domain sharing)
-        anotherOrg = realm.admin().organizations().get(anotherOrg.getId()).toRepresentation();
-        OrganizationDomainRepresentation sharedDomain = new OrganizationDomainRepresentation();
-        sharedDomain.setName(expectedNewOrgDomain.getName());
-        anotherOrg.addDomain(sharedDomain);
-        try (Response response = organization.update(anotherOrg)) {
-            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
-        }
-        OrganizationRepresentation updatedAnotherOrg = organization.toRepresentation();
-        assertNotNull(updatedAnotherOrg.getDomain(expectedNewOrgDomain.getName()));
 
         // create another org in a different realm with the same internet domain - should be allowed.
         createOrganization(secondRealm, "testorg", "acme.com");
@@ -865,27 +850,22 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
-    public void testDomainSharedAcrossOrgs() {
+    public void testDomainConflictExactDuplicate() {
+        // Org A owns "example.com"; Org B must not be able to claim the same domain.
         createOrganization("org-a", "example.com");
 
-        // adding the same domain to another org via update should succeed
         OrganizationRepresentation orgB = createOrganization("org-b");
-        OrganizationDomainRepresentation sharedDomain = new OrganizationDomainRepresentation();
-        sharedDomain.setName("example.com");
-        orgB.addDomain(sharedDomain);
+        OrganizationDomainRepresentation duplicateDomain = new OrganizationDomainRepresentation();
+        duplicateDomain.setName("example.com");
+        orgB.addDomain(duplicateDomain);
 
         try (Response response = realm.admin().organizations().get(orgB.getId()).update(orgB)) {
-            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         }
-        assertNotNull(realm.admin().organizations().get(orgB.getId()).toRepresentation().getDomain("example.com"));
 
-        // creating a new org with the same domain should also succeed
         OrganizationRepresentation orgC = createRepresentation("org-c", "example.com");
         try (Response response = realm.admin().organizations().create(orgC)) {
-            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
-            String orgCId = ApiUtil.getCreatedId(response);
-            assertNotNull(realm.admin().organizations().get(orgCId).toRepresentation().getDomain("example.com"));
-            realm.admin().organizations().get(orgCId).delete().close();
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         }
     }
 
@@ -970,16 +950,16 @@ public class OrganizationTest extends AbstractOrganizationTest {
             assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
         }
 
-        // adding a domain already owned by another org should succeed (M:N sharing)
         OrganizationRepresentation orgE = createOrganization("org-e");
         orgE.addDomain(new OrganizationDomainRepresentation("sub.example.com"));
         try (Response response = realm.admin().organizations().get(orgE.getId()).update(orgE)) {
-            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         }
     }
 
     @Test
-    public void testWildcardDomainSharedAcrossOrgs() {
+    public void testDomainConflictDuplicateWildcard() {
+        // Org A owns "*.example.com". Org B must not also claim "*.example.com".
         OrganizationRepresentation orgA = createOrganization("org-a", "acme.org");
         OrganizationDomainRepresentation wildcardDomain = new OrganizationDomainRepresentation();
         wildcardDomain.setName("*.example.com");
@@ -988,16 +968,14 @@ public class OrganizationTest extends AbstractOrganizationTest {
             assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
         }
 
-        // adding the same wildcard domain to another org should succeed
         OrganizationRepresentation orgB = createOrganization("org-b");
-        OrganizationDomainRepresentation sharedWildcard = new OrganizationDomainRepresentation();
-        sharedWildcard.setName("*.example.com");
-        orgB.addDomain(sharedWildcard);
+        OrganizationDomainRepresentation duplicateWildcard = new OrganizationDomainRepresentation();
+        duplicateWildcard.setName("*.example.com");
+        orgB.addDomain(duplicateWildcard);
 
         try (Response response = realm.admin().organizations().get(orgB.getId()).update(orgB)) {
-            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         }
-        assertNotNull(realm.admin().organizations().get(orgB.getId()).toRepresentation().getDomain("*.example.com"));
     }
 
     @Test
@@ -1040,7 +1018,8 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
-    public void testDomainSharingOnCreate() {
+    public void testDomainConflictWildcardOnCreate() {
+        // Org A owns "*.example.com". Creating Org B with "sub.example.com" must fail.
         OrganizationRepresentation orgA = createOrganization("org-a", "acme.org");
         OrganizationDomainRepresentation wildcardDomain = new OrganizationDomainRepresentation();
         wildcardDomain.setName("*.example.com");
@@ -1049,22 +1028,22 @@ public class OrganizationTest extends AbstractOrganizationTest {
             assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
         }
 
-        // creating org with subdomain of an existing wildcard should succeed
+        // Creating org with subdomain of the wildcard should fail
         OrganizationRepresentation orgB = createRepresentation("org-b", "sub.example.com");
         try (Response response = realm.admin().organizations().create(orgB)) {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
         }
 
-        // creating org with the exact base domain should succeed
+        // Creating org with the exact base domain should also fail
         OrganizationRepresentation orgC = createRepresentation("org-c", "example.com");
         try (Response response = realm.admin().organizations().create(orgC)) {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
         }
 
-        // creating org with the same wildcard should succeed (M:N sharing)
+        // Creating org with the same wildcard should fail
         OrganizationRepresentation orgD = createRepresentation("org-d", "*.example.com");
         try (Response response = realm.admin().organizations().create(orgD)) {
-            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         }
     }
 
@@ -1138,6 +1117,42 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
         // Delete Org A
         try (Response response = realm.admin().organizations().get(orgA.getId()).delete()) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        // Now Org B should be able to claim "example.com"
+        orgB = realm.admin().organizations().get(orgB.getId()).toRepresentation();
+        exactDomain = new OrganizationDomainRepresentation();
+        exactDomain.setName("example.com");
+        orgB.addDomain(exactDomain);
+        try (Response response = realm.admin().organizations().get(orgB.getId()).update(orgB)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        OrganizationRepresentation updatedB = realm.admin().organizations().get(orgB.getId()).toRepresentation();
+        assertNotNull(updatedB.getDomain("example.com"));
+    }
+
+    @Test
+    public void testDomainConflictAfterRemovingDomain() {
+        // Org A owns "example.com". After removing that domain, Org B should be able to claim it.
+        OrganizationRepresentation orgA = createOrganization("org-a", "example.com");
+        OrganizationRepresentation orgB = createOrganization("org-b");
+
+        // Org B cannot claim "example.com" while Org A has it
+        OrganizationDomainRepresentation exactDomain = new OrganizationDomainRepresentation();
+        exactDomain.setName("example.com");
+        orgB.addDomain(exactDomain);
+        try (Response response = realm.admin().organizations().get(orgB.getId()).update(orgB)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        // Remove "example.com" from Org A
+        orgA = realm.admin().organizations().get(orgA.getId()).toRepresentation();
+        OrganizationDomainRepresentation domainToRemove = orgA.getDomain("example.com");
+        assertNotNull(domainToRemove);
+        orgA.removeDomain(domainToRemove);
+        try (Response response = realm.admin().organizations().get(orgA.getId()).update(orgA)) {
             assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
         }
 

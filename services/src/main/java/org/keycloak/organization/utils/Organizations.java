@@ -395,7 +395,8 @@ public class Organizations {
         if (organizations.isEmpty()) {
             // no membership, any org that matches the domain
             return resolveByDomain(ofNullable(emailDomain)
-                    .map(d -> provider.getByDomainName(d).toList())
+                    .map(provider::getByDomainName)
+                    .map(List::of)
                     .orElse(List.of()), emailDomain);
         }
 
