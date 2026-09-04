@@ -56,6 +56,7 @@ import org.keycloak.models.jpa.entities.GroupAttributeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
+import org.keycloak.models.jpa.entities.OrganizationIdentityProviderEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -70,14 +71,12 @@ import org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
 
-import static org.keycloak.models.OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE;
 import static org.keycloak.models.UserModel.EMAIL;
 import static org.keycloak.models.UserModel.FIRST_NAME;
 import static org.keycloak.models.UserModel.LAST_NAME;
 import static org.keycloak.models.UserModel.USERNAME;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.organization.utils.Organizations.isReadOnlyOrganizationMember;
-import static org.keycloak.organization.utils.Organizations.resolveByDomain;
 import static org.keycloak.organization.utils.Organizations.validateDomain;
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -172,6 +171,13 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             OrganizationModel.OrganizationRemovedEvent.fire(organization, session);
 
             em.remove(entity);
+            em.flush();
+
+            // ORG_DOMAIN join rows are cascade-deleted by the DB FK; clean up orphan DOMAIN rows
+            em.createQuery("DELETE FROM OrganizationDomainEntity d WHERE d.realmId = :realmId " +
+                            "AND d NOT IN (SELECT d2 FROM OrganizationEntity o JOIN o.domains d2)")
+                    .setParameter("realmId", getRealm().getId())
+                    .executeUpdate();
         } finally {
             session.getContext().setOrganization(null);
         }
@@ -236,9 +242,9 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public OrganizationModel getByDomainName(String domain) {
+    public Stream<OrganizationModel> getByDomainName(String domain) {
         if (domain == null) {
-            return null;
+            return Stream.empty();
         }
 
         String emailDomain = domain.toLowerCase();
@@ -255,31 +261,23 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         // Add exact match
         domainPatterns.add(emailDomain);
 
-        query.setParameter("names", domainPatterns);
-
-        try {
-            OrganizationEntity entity = query.getSingleResult();
-            return new OrganizationAdapter(session, realm, entity, this);
-        } catch (NoResultException ignore) {
-        }
+        // Also check for wildcard at the current level
+        domainPatterns.add("*." + emailDomain);
 
         // Strip subdomains to check for parent wildcard domains
         String[] parts = emailDomain.split("\\.");
 
-        // Also check for wildcard at the current level
-        domainPatterns.add("*." + emailDomain);
-
         for (int i = 1; i < parts.length - 1; i++) {
             String parentDomain = String.join(".", java.util.Arrays.copyOfRange(parts, i, parts.length));
-            // Check for both exact parent and wildcard parent
             domainPatterns.add(parentDomain);
             domainPatterns.add("*." + parentDomain);
         }
 
         query.setParameter("names", domainPatterns);
 
-        return resolveByDomain(query.getResultList().stream()
-                .map(entity -> getById(entity.getId())).filter(Objects::nonNull).toList(), emailDomain);
+        return query.getResultList().stream()
+                .map(entity -> getById(entity.getId()))
+                .filter(Objects::nonNull);
     }
     
     @Override
@@ -702,16 +700,19 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             return false;
         }
 
-        String orgId = identityProvider.getOrganizationId();
-
-        if (organizationEntity.getId().equals(orgId)) {
+        boolean alreadyLinked = organizationEntity.getIdentityProviderLinks().stream()
+                .anyMatch(oip -> oip.getIdentityProviderId().equals(identityProvider.getInternalId()));
+        if (alreadyLinked) {
             return false;
-        } else if (orgId != null) {
-            throw new ModelValidationException("Identity provider already associated with a different organization");
         }
 
-        identityProvider.setOrganizationId(organizationEntity.getId());
-        session.identityProviders().update(identityProvider);
+        OrganizationIdentityProviderEntity link = new OrganizationIdentityProviderEntity();
+        link.setOrganization(organizationEntity);
+        link.setIdentityProviderId(identityProvider.getInternalId());
+        link.setAutoMembership(true);
+        link.setMembershipType("UNMANAGED");
+        em.persist(link);
+        organizationEntity.getIdentityProviderLinks().add(link);
 
         return true;
     }
@@ -732,14 +733,22 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
         OrganizationEntity organizationEntity = getEntity(organization.getId());
 
-        if (!organizationEntity.getId().equals(identityProvider.getOrganizationId())) {
+        OrganizationIdentityProviderEntity link = organizationEntity.getIdentityProviderLinks().stream()
+                .filter(oip -> oip.getIdentityProviderId().equals(identityProvider.getInternalId()))
+                .findFirst()
+                .orElse(null);
+
+        if (link == null) {
             return false;
         }
 
-        // clear the organization id and any domain assigned to the IDP.
-        identityProvider.setOrganizationId(null);
-        identityProvider.getConfig().remove(ORGANIZATION_DOMAIN_ATTRIBUTE);
-        session.identityProviders().update(identityProvider);
+        organizationEntity.getIdentityProviderLinks().remove(link);
+
+        // clear domain routing for this org's domains that reference the removed IdP
+        organizationEntity.getDomains().stream()
+                .filter(d -> d.getIdentityProvider() != null
+                        && d.getIdentityProvider().getInternalId().equals(identityProvider.getInternalId()))
+                .forEach(d -> d.setIdentityProvider(null));
 
         return true;
     }

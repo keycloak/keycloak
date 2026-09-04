@@ -66,12 +66,12 @@ public interface OrganizationProvider extends Provider {
     OrganizationModel getById(String id);
 
     /**
-     * Returns a {@link OrganizationModel} by its internet domain.
+     * Returns all {@link OrganizationModel}s linked to the given internet domain.
      *
      * @param domainName the organization's internet domain (e.g. redhat.com)
-     * @return the organization that is linked to the given internet domain
+     * @return a stream of organizations linked to the given internet domain
      */
-    OrganizationModel getByDomainName(String domainName);
+    Stream<OrganizationModel> getByDomainName(String domainName);
 
     /**
      * Returns all organizations in the realm.

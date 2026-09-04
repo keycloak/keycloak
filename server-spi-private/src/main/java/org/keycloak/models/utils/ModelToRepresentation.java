@@ -1010,7 +1010,7 @@ public class ModelToRepresentation {
         }
 
         if (!export) {
-            providerRep.setOrganizationId(identityProviderModel.getOrganizationId());
+            providerRep.setOrganizationIds(identityProviderModel.getOrganizationIds());
         }
 
         List<IdentityProviderType> identityProviderTypes = IdentityProviderTypeUtil.listTypesFromFactory(session, identityProviderModel.getProviderId());
@@ -1525,6 +1525,8 @@ public class ModelToRepresentation {
         OrganizationDomainRepresentation representation = new OrganizationDomainRepresentation();
         representation.setName(model.getName());
         representation.setVerified(model.isVerified());
+        representation.setIdentityProviderAlias(model.getIdentityProviderAlias());
+        representation.setAutoRedirect(model.isAutoRedirect());
         return representation;
     }
 

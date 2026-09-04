@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.authentication.authenticators.broker.IdpConfirmLinkAuthenticatorFactory;
@@ -74,6 +75,8 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
@@ -1483,5 +1486,122 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             assertThat(client.getAttributes().get(SamlConfigAttributes.SAML_ENCRYPTION_DIGEST_METHOD), is(XMLCipher.SHA1));
             assertThat(client.getAttributes().get(SamlConfigAttributes.SAML_ENCRYPTION_MASK_GENERATION_FUNTION), nullValue());
         }
+    }
+
+    protected void testOrgDomainMigrationTo26_8_0() {
+        // M1: specific domain, no exclusions
+        testOrgDomainM1(migrationRealm);
+        // M2: ANY, no exclusions
+        testOrgDomainM2(migrationRealm);
+        // M3: ANY + exclusion that already exists as org domain
+        testOrgDomainM3(migrationRealm);
+        // M4: ANY + exclusion that does NOT exist as org domain (created by migration)
+        testOrgDomainM4(migrationRealm);
+        // M5: ANY + multiple exclusions, mixed
+        testOrgDomainM5(migrationRealm);
+        // Verify old config cleaned up for all IdPs
+        testOrgIdpConfigCleaned(migrationRealm);
+    }
+
+    private void testOrgDomainM1(RealmResource realm) {
+        OrganizationResource org = findOrgByName(realm, "M1 Acme");
+        OrganizationRepresentation orgRep = org.toRepresentation();
+
+        OrganizationDomainRepresentation domain = orgRep.getDomain("acme.com");
+        assertNotNull(domain, "Domain acme.com not found in M1 Acme");
+        assertEquals("m1-acme-idp", domain.getIdentityProviderAlias());
+        assertTrue(domain.isAutoRedirect());
+
+        List<IdentityProviderRepresentation> orgIdps = org.identityProviders().getIdentityProviders();
+        assertThat(orgIdps, hasSize(1));
+        assertEquals("m1-acme-idp", orgIdps.get(0).getAlias());
+    }
+
+    private void testOrgDomainM2(RealmResource realm) {
+        OrganizationResource org = findOrgByName(realm, "M2 Acme");
+        OrganizationRepresentation orgRep = org.toRepresentation();
+
+        OrganizationDomainRepresentation domain1 = orgRep.getDomain("acme-m2.com");
+        assertNotNull(domain1, "Domain acme-m2.com not found in M2 Acme");
+        assertEquals("m2-acme-idp", domain1.getIdentityProviderAlias());
+        assertTrue(domain1.isAutoRedirect());
+
+        OrganizationDomainRepresentation domain2 = orgRep.getDomain("*.acme-m2.org");
+        assertNotNull(domain2, "Domain *.acme-m2.org not found in M2 Acme");
+        assertEquals("m2-acme-idp", domain2.getIdentityProviderAlias());
+        assertTrue(domain2.isAutoRedirect());
+
+        List<IdentityProviderRepresentation> orgIdps = org.identityProviders().getIdentityProviders();
+        assertThat(orgIdps, hasSize(1));
+        assertEquals("m2-acme-idp", orgIdps.get(0).getAlias());
+    }
+
+    private void testOrgDomainM3(RealmResource realm) {
+        OrganizationResource org = findOrgByName(realm, "M3 Acme");
+        OrganizationRepresentation orgRep = org.toRepresentation();
+
+        OrganizationDomainRepresentation wildcardDomain = orgRep.getDomain("*.example-m3.com");
+        assertNotNull(wildcardDomain, "Domain *.example-m3.com not found in M3 Acme");
+        assertEquals("m3-acme-idp", wildcardDomain.getIdentityProviderAlias());
+        assertTrue(wildcardDomain.isAutoRedirect());
+
+        OrganizationDomainRepresentation excludedDomain = orgRep.getDomain("internal.example-m3.com");
+        assertNotNull(excludedDomain, "Domain internal.example-m3.com not found in M3 Acme");
+        assertNull(excludedDomain.getIdentityProviderAlias());
+        assertFalse(excludedDomain.isAutoRedirect());
+    }
+
+    private void testOrgDomainM4(RealmResource realm) {
+        OrganizationResource org = findOrgByName(realm, "M4 Acme");
+        OrganizationRepresentation orgRep = org.toRepresentation();
+
+        OrganizationDomainRepresentation wildcardDomain = orgRep.getDomain("*.example-m4.com");
+        assertNotNull(wildcardDomain, "Domain *.example-m4.com not found in M4 Acme");
+        assertEquals("m4-acme-idp", wildcardDomain.getIdentityProviderAlias());
+        assertTrue(wildcardDomain.isAutoRedirect());
+
+        // This domain was created by the migration from the exclusion pattern
+        OrganizationDomainRepresentation excludedDomain = orgRep.getDomain("*.internal.example-m4.com");
+        assertNotNull(excludedDomain, "Domain *.internal.example-m4.com should have been created by migration");
+        assertNull(excludedDomain.getIdentityProviderAlias());
+        assertFalse(excludedDomain.isAutoRedirect());
+    }
+
+    private void testOrgDomainM5(RealmResource realm) {
+        OrganizationResource org = findOrgByName(realm, "M5 Acme");
+        OrganizationRepresentation orgRep = org.toRepresentation();
+
+        OrganizationDomainRepresentation wildcardDomain = orgRep.getDomain("*.example-m5.com");
+        assertNotNull(wildcardDomain, "Domain *.example-m5.com not found in M5 Acme");
+        assertEquals("m5-acme-idp", wildcardDomain.getIdentityProviderAlias());
+        assertTrue(wildcardDomain.isAutoRedirect());
+
+        // Existing org domain in exclusion list — kept unrouted
+        OrganizationDomainRepresentation partnerDomain = orgRep.getDomain("partner-m5.io");
+        assertNotNull(partnerDomain, "Domain partner-m5.io not found in M5 Acme");
+        assertNull(partnerDomain.getIdentityProviderAlias());
+        assertFalse(partnerDomain.isAutoRedirect());
+
+        // New domain created by migration from exclusion pattern
+        OrganizationDomainRepresentation stagingDomain = orgRep.getDomain("*.staging.example-m5.com");
+        assertNotNull(stagingDomain, "Domain *.staging.example-m5.com should have been created by migration");
+        assertNull(stagingDomain.getIdentityProviderAlias());
+        assertFalse(stagingDomain.isAutoRedirect());
+    }
+
+    private void testOrgIdpConfigCleaned(RealmResource realm) {
+        for (String alias : List.of("m1-acme-idp", "m2-acme-idp", "m3-acme-idp", "m4-acme-idp", "m5-acme-idp")) {
+            IdentityProviderRepresentation idp = realm.identityProviders().get(alias).toRepresentation();
+            Map<String, String> config = idp.getConfig();
+            assertNull(config.get("kc.org.domain"), alias + " should not have kc.org.domain after migration");
+            assertNull(config.get("kc.org.excluded.domains"), alias + " should not have kc.org.excluded.domains after migration");
+            assertNull(config.get("kc.org.broker.redirect.mode.email-matches"), alias + " should not have kc.org.broker.redirect.mode.email-matches after migration");
+        }
+    }
+
+    private OrganizationResource findOrgByName(RealmResource realm, String name) {
+        List<OrganizationRepresentation> orgs = realm.organizations().search(name, true, 0, 1);
+        assertThat("Organization '" + name + "' not found", orgs, hasSize(1));
+        return realm.organizations().get(orgs.get(0).getId());
     }
 }

@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import jakarta.ws.rs.ForbiddenException;
@@ -130,7 +131,7 @@ public class Organizations {
     }
 
     public static void stripOrganizationId(IdentityProviderRepresentation representation) {
-        representation.setOrganizationId(null);
+        representation.setOrganizationIds(Set.of());
         if (representation.getConfig() != null) {
             representation.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
         }
@@ -394,8 +395,7 @@ public class Organizations {
         if (organizations.isEmpty()) {
             // no membership, any org that matches the domain
             return resolveByDomain(ofNullable(emailDomain)
-                    .map(provider::getByDomainName)
-                    .map(List::of)
+                    .map(d -> provider.getByDomainName(d).toList())
                     .orElse(List.of()), emailDomain);
         }
 
@@ -442,6 +442,7 @@ public class Organizations {
 
     public static OrganizationModel resolveByDomain(List<OrganizationModel> organizations, String domain) {
         int bestParts = -1;
+        boolean bestIsExact = false;
         OrganizationModel organization = null;
 
         for (OrganizationModel model : organizations) {
@@ -457,9 +458,12 @@ public class Organizations {
             }
 
             int mostSpecificParts = getDomainPartsSize(bestMatch.getName());
+            boolean isExact = !bestMatch.getName().startsWith(WILDCARD_PREFIX);
 
-            if (mostSpecificParts > bestParts) {
+            if (mostSpecificParts > bestParts
+                    || (mostSpecificParts == bestParts && isExact && !bestIsExact)) {
                 bestParts = mostSpecificParts;
+                bestIsExact = isExact;
                 organization = model;
             }
         }
