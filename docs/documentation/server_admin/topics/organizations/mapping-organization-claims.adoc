@@ -13,6 +13,7 @@ As a result, the token will contain a claim as follows:
 "organization": {
   "testcorp": {
     "id": "42c3e46f-2477-44d7-a85b-d3b43f6b31fa",
+    "name": "Organization Name",
     "attr1": [
       "value1"
     ]
@@ -25,7 +26,7 @@ to authorize access to protected resources based on the organization where the u
 
 The `organization` scope is a built-in optional client scope at the realm.  Therefore, this scope is added to any client created in the realm by default. It also defines the `Organization Membership` mapper that controls how the organization membership information is mapped to the tokens.
 
-NOTE: By default, the organization id and attributes are not included in the organization claim. To include them, edit the mapper and enable the *Add organization id* and *Add organization attributes* options, respectively.
+NOTE: By default, the organization id, name and attributes are not included in the organization claim. To include them, edit the mapper and enable the *Add organization id*, *Add organization name* and *Add organization attributes* options, respectively.
 
 .Including attributes in the organization claim
 image:images/organizations-add-org-attrs-in-claim.png[alt="Including attributes in the organization claim"]

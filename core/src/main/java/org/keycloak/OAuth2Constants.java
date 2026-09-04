@@ -105,6 +105,7 @@ public interface OAuth2Constants {
 
     String ORGANIZATION = "organization";
     String ORGANIZATION_ID = "id";
+    String ORGANIZATION_NAME = "name";
 
     String UI_LOCALES_PARAM = "ui_locales";
 
