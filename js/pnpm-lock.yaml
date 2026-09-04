@@ -78,8 +78,8 @@ importers:
 
   apps/account-ui:
     dependencies:
-      '@keycloak/keycloak-ui-shared-pf6':
-        specifier: workspace:*
+      '@keycloak/keycloak-ui-shared':
+        specifier: workspace:@keycloak/keycloak-ui-shared-pf6@*
         version: link:../../libs/ui-shared-pf6
       '@patternfly/patternfly':
         specifier: ^6.6.1

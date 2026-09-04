@@ -1,14 +1,16 @@
 import {
-	Label, LabelGroup, Button,
-	MenuToggle,
-	MenuToggleStatus,
-	Select,
-	SelectList,
-	SelectOption,
-	TextInputGroup,
-	TextInputGroupMain,
-	TextInputGroupUtilities
-} from '@patternfly/react-core';
+  Label,
+  LabelGroup,
+  Button,
+  MenuToggle,
+  MenuToggleStatus,
+  Select,
+  SelectList,
+  SelectOption,
+  TextInputGroup,
+  TextInputGroupMain,
+  TextInputGroupUtilities,
+} from "@patternfly/react-core";
 
 import { TimesIcon } from "@patternfly/react-icons";
 import { get } from "lodash-es";
@@ -114,6 +116,10 @@ export const TypeaheadSelectControl = <
       case "Enter": {
         event.preventDefault();
 
+        if (!focusedItem) {
+          break;
+        }
+
         if (!isTypeaheadMulti) {
           setFilterValue(getValue(focusedItem));
         } else {
@@ -130,7 +136,6 @@ export const TypeaheadSelectControl = <
       case "Tab":
       case "Escape": {
         setOpen(false);
-        field.onChange(undefined);
         break;
       }
       case "Backspace": {
@@ -242,7 +247,8 @@ export const TypeaheadSelectControl = <
                         <LabelGroup aria-label="Current selections">
                           {field.value.map(
                             (selection: string, index: number) => (
-                              <Label variant="outline"
+                              <Label
+                                variant="outline"
                                 key={index}
                                 onClose={(ev) => {
                                   ev.stopPropagation();
@@ -267,7 +273,8 @@ export const TypeaheadSelectControl = <
                   </TextInputGroupMain>
                   <TextInputGroupUtilities>
                     {(!!filterValue || field.value) && (
-                      <Button icon={<TimesIcon aria-hidden />}
+                      <Button
+                        icon={<TimesIcon aria-hidden />}
                         variant="plain"
                         onClick={() => {
                           setFilterValue("");
@@ -275,7 +282,7 @@ export const TypeaheadSelectControl = <
                           textInputRef.current?.focus();
                         }}
                         aria-label="Clear input value"
-                       />
+                      />
                     )}
                   </TextInputGroupUtilities>
                 </TextInputGroup>

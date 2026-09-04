@@ -25,7 +25,7 @@
     "test": "wireit"
   },
   "dependencies": {
-    "@keycloak/keycloak-ui-shared": "workspace:@keycloak/keycloak-ui-shared",
+    "@keycloak/keycloak-ui-shared": "workspace:@keycloak/keycloak-ui-shared-pf6@*",
     "@patternfly/patternfly": "^6.6.1",
     "@patternfly/react-core": "^6.6.1",
     "@patternfly/react-icons": "^6.6.1",
