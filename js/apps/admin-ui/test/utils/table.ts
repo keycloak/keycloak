@@ -102,9 +102,8 @@ export async function clickRowKebabItem(
   // Retry: the kebab dropdown can fail to stay open due to rendering races under CI load.
   await expect(async () => {
     await kebab.click();
-    await expect(menuItem).toBeVisible();
+    await menuItem.click({ timeout: 2_000 });
   }).toPass({ timeout: 10_000 });
-  await menuItem.click();
 }
 
 export async function assertRowExists(
