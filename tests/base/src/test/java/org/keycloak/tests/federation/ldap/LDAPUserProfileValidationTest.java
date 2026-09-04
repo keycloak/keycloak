@@ -50,7 +50,6 @@ import org.keycloak.util.ldap.LDAPEmbeddedServer;
 
 import org.apache.directory.api.ldap.model.exception.LdapConfigurationException;
 import org.jboss.logging.Logger;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
