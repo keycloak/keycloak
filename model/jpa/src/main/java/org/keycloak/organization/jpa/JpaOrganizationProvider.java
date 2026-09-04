@@ -757,7 +757,10 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         organizationEntity.getDomains().stream()
                 .filter(d -> d.getIdentityProvider() != null
                         && d.getIdentityProvider().getInternalId().equals(identityProvider.getInternalId()))
-                .forEach(d -> d.setIdentityProvider(null));
+                .forEach(d -> {
+                    d.setIdentityProvider(null);
+                    d.setAutoRedirect(false);
+                });
 
         return true;
     }

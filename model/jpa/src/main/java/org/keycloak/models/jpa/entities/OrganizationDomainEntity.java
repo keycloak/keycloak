@@ -38,7 +38,8 @@ import jakarta.persistence.Table;
 @Table(name="ORG_DOMAIN")
 @NamedQueries({
         @NamedQuery(name = "getDomainByRealmAndName", query = "select d from OrganizationDomainEntity d where d.realmId = :realmId and d.name = :name"),
-        @NamedQuery(name = "deleteOrganizationDomainsByRealm", query = "delete from OrganizationDomainEntity d where d.realmId = :realmId")
+        @NamedQuery(name = "deleteOrganizationDomainsByRealm", query = "delete from OrganizationDomainEntity d where d.realmId = :realmId"),
+        @NamedQuery(name = "clearDomainIdpRouting", query = "update OrganizationDomainEntity d set d.identityProvider = null, d.autoRedirect = false where d.identityProvider.id = :idpId")
 })
 public class OrganizationDomainEntity {
 
