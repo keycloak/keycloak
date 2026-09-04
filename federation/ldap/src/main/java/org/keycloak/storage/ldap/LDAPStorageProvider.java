@@ -1301,14 +1301,23 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 .distinct()
                 .count();
         RealmModel realm = session.getContext().getRealm();
+        // Gates every behavior change below that only exists to support LDAP import User Profile validation
+        // (see #isUserProfileValid) - without it, none of that validation ever runs, so none of its side effects
+        // on this realm's User Profile metadata should be visible either.
+        boolean validateUserProfile = Boolean.parseBoolean(model.getConfig().getFirst(LDAPConstants.VALIDATE_USER_PROFILE));
         List<LDAPStorageMapper> ldapMappers = realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
                 .sorted(ldapMappersComparator.sortAsc())
                 .map(mapperManager::getMapper)
                 .toList();
 
         // 1 - get configured attributes from LDAP mappers and add them to the user profile (if they not already present)
+        // Multiple mappers can target the same model attribute (e.g. the built-in AD writable setup maps both
+        // "username" and "username-cn" to UserModel.USERNAME) - deduplicate, or the same attribute name would be
+        // added to metadatas more than once, and DefaultAttributes#getUserStorageProviderMetadata would fail
+        // collecting them into a map with a "duplicate key" exception.
         List<String> attributes = ldapMappers.stream()
                 .flatMap(ldapMapper -> ldapMapper.getUserAttributes().stream())
+                .distinct()
                 .toList();
 
         // Attributes whose value is never actually written back to LDAP even while the provider itself is
@@ -1340,7 +1349,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                     // in - would start failing validation on every profile update, trapping the user in an
                     // unfixable required-action loop unrelated to LDAP import. Not adding an override here leaves
                     // the base profile's original, permissive bypass behavior in place.
-                    if (Boolean.parseBoolean(model.getConfig().getFirst(LDAPConstants.VALIDATE_USER_PROFILE))) {
+                    if (validateUserProfile) {
                         AttributeMetadata override = existing.clone();
                         override.addReadOnlyBypassCondition(AttributeMetadata.ALWAYS_FALSE);
                         metadatas.add(override);
@@ -1380,8 +1389,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
             Stream.concat(metadata.getAttributes().stream(), metadatas.stream())
                     .filter((m) -> !INTERNAL_ATTRIBUTES.contains(m.getName()))
                     .forEach(attrMetadata -> attrMetadata.addWriteCondition(AttributeMetadata.ALWAYS_FALSE));
-        } else if (!notWritableBackToLdap.isEmpty()) {
-            // provider is WRITABLE overall, but some attributes are still individually read-only at the mapper level
+        } else if (validateUserProfile && !notWritableBackToLdap.isEmpty()) {
+            // provider is WRITABLE overall, but some attributes are still individually read-only at the mapper
+            // level - only enforced when opted in, or this would silently block admin/account console edits to
+            // these attributes on every WRITABLE provider with such a mapper, whether or not the realm ever asked
+            // for LDAP import validation.
             Stream.concat(metadata.getAttributes().stream(), metadatas.stream())
                     .filter((m) -> notWritableBackToLdap.contains(m.getName()))
                     .forEach(attrMetadata -> attrMetadata.addWriteCondition(AttributeMetadata.ALWAYS_FALSE));
