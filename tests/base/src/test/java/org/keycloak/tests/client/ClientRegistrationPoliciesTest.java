@@ -534,7 +534,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         // Check authenticated registration is permitted
         ClientRepresentation registeredClient = reg.create(clientRep);
         String clientUuid = registeredClient.getId();
-        managedRealm.cleanup().add(r -> r.clients().delete(clientUuid));
+        managedRealm.cleanup().add(r -> r.clients().get(clientUuid).remove());
         Assertions.assertNotNull(registeredClient.getRegistrationAccessToken());
 
         // Check "anonymous" registration still fails
@@ -575,7 +575,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         ClientRepresentation registeredClient = reg.create(clientRep);
         String clientUuid = registeredClient.getId();
-        managedRealm.cleanup().add(r -> r.clients().delete(clientUuid));
+        managedRealm.cleanup().add(r -> r.clients().get(clientUuid).remove());
         reg.auth(Auth.token(registeredClient));
 
         // Add some disallowed protocolMapper
@@ -603,7 +603,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
         Response adminClientCreationResponse = managedRealm.admin().clients().create(clientRep);
         String clientUuid = ApiUtil.getCreatedId(adminClientCreationResponse);
-        managedRealm.cleanup().add(r -> r.clients().delete(clientUuid));
+        managedRealm.cleanup().add(r -> r.clients().get(clientUuid).remove());
         adminClientCreationResponse.close();
 
         ClientResource clientResource = managedRealm.admin().clients().get(clientUuid);
@@ -623,7 +623,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
         Response adminClientCreationResponse = managedRealm.admin().clients().create(clientRep);
         String clientUuid = ApiUtil.getCreatedId(adminClientCreationResponse);
-        managedRealm.cleanup().add(r -> r.clients().delete(clientUuid));
+        managedRealm.cleanup().add(r -> r.clients().get(clientUuid).remove());
         adminClientCreationResponse.close();
 
         ClientResource clientResource = managedRealm.admin().clients().get(clientUuid);
@@ -645,7 +645,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
         Response adminClientCreationResponse = managedRealm.admin().clients().create(clientRep);
         String clientUuid = ApiUtil.getCreatedId(adminClientCreationResponse);
-        managedRealm.cleanup().add(r -> r.clients().delete(clientUuid));
+        managedRealm.cleanup().add(r -> r.clients().get(clientUuid).remove());
         adminClientCreationResponse.close();
 
         ClientResource clientResource = managedRealm.admin().clients().get(clientUuid);
@@ -667,7 +667,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
         Response adminClientCreationResponse = managedRealm.admin().clients().create(clientRep);
         String clientUuid = ApiUtil.getCreatedId(adminClientCreationResponse);
-        managedRealm.cleanup().add(r -> r.clients().delete(clientUuid));
+        managedRealm.cleanup().add(r -> r.clients().get(clientUuid).remove());
         adminClientCreationResponse.close();
 
         ClientResource clientResource = managedRealm.admin().clients().get(clientUuid);
@@ -687,7 +687,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         ClientRepresentation clientRep = createRep(clientId);
         ClientRepresentation registeredClient = reg.create(clientRep);
         String clientUuid = registeredClient.getId();
-        managedRealm.cleanup().add(r -> r.clients().delete(clientUuid));
+        managedRealm.cleanup().add(r -> r.clients().get(clientUuid).remove());
 
         Assertions.assertNull(registeredClient.getProtocolMappers());
     }
@@ -709,7 +709,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         clientRep.setProtocolMappers(Collections.singletonList(createHardcodedMapperRep()));
         ClientRepresentation registeredClient = reg.create(clientRep);
         String clientUuid = registeredClient.getId();
-        managedRealm.cleanup().add(r -> r.clients().delete(clientUuid));
+        managedRealm.cleanup().add(r -> r.clients().get(clientUuid).remove());
 
         Assertions.assertEquals(1, registeredClient.getProtocolMappers().size());
         ProtocolMapperRepresentation hardcodedMapper = registeredClient.getProtocolMappers().get(0);
