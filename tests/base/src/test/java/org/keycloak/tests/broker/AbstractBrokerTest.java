@@ -196,34 +196,6 @@ public abstract class AbstractBrokerTest {
         AccountHelper.logout(getConsumerRealm().admin(), getUserLogin());
     }
 
-    // Turns off the first-broker-login review-profile step for flows that want to test something else
-    // without the review-profile page interrupting the redirect back to the consumer. Disabling the flow
-    // execution alone isn't enough: the new-testsuite consumer realm enables the VERIFY_PROFILE required
-    // action by default, which would still intercept the incomplete imported user (the provider user has
-    // no first/last name on purpose), so that is disabled too, mirroring the legacy suite (which never
-    // enabled VERIFY_PROFILE at all).
-    protected void disableUpdateProfileOnFirstLogin() {
-        var flows = getConsumerRealm().admin().flows();
-        for (AuthenticationExecutionInfoRepresentation execution :
-                flows.getExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW)) {
-            if (IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID.equals(execution.getProviderId())) {
-                execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE.name());
-                flows.updateExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW, execution);
-            } else if (execution.getAlias() != null
-                    && execution.getAlias().equals(DefaultAuthenticationFlows.IDP_REVIEW_PROFILE_CONFIG_ALIAS)) {
-                AuthenticatorConfigRepresentation config = flows.getAuthenticatorConfig(execution.getAuthenticationConfig());
-                config.getConfig().put("update.profile.on.first.login", IdentityProviderRepresentation.UPFLM_OFF);
-                flows.updateAuthenticatorConfig(config.getId(), config);
-            }
-        }
-        for (RequiredActionProviderRepresentation action : getConsumerRealm().admin().flows().getRequiredActions()) {
-            if (UserModel.RequiredAction.VERIFY_PROFILE.name().equals(action.getAlias())) {
-                action.setEnabled(false);
-                getConsumerRealm().admin().flows().updateRequiredAction(action.getAlias(), action);
-            }
-        }
-    }
-
     protected void assertNumFederatedIdentities(String username, int expected) {
         ManagedRealm consumerRealm = getConsumerRealm();
         List<UserRepresentation> users = consumerRealm.admin().users().search(username, true);
