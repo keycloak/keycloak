@@ -14,20 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.migration;
+package org.keycloak.tests.migration;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.annotations.TestSetup;
+import org.keycloak.testframework.realm.ManagedRealm;
 
-import org.keycloak.common.Profile;
-import org.keycloak.exportimport.util.ImportUtils;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.utils.io.IOUtil;
-import org.keycloak.util.JsonSerialization;
-
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests that we can import json file from previous version.  MigrationTest only tests DB.
@@ -35,36 +29,32 @@ import org.junit.Test;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@KeycloakIntegrationTest
 public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrationTest {
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        Map<String, RealmRepresentation> reps = null;
-        try {
-            reps = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, IOUtil.class.getResourceAsStream("/migration-test/migration-realm-2.5.5.Final.json"));
-            masterRep = reps.remove("master");
+    @InjectRealm(ref = "migration", fromJson = "migration-realm-2.5.5.Final-Migration.json")
+    ManagedRealm migrationManagedRealm;
 
-            //the realm with special characters in its id is intended for db migration test, not json file test
-            reps.remove("test ' and ; and -- and \"");
+    @InjectRealm(ref = "migration2", fromJson = "migration-realm-2.5.5.Final-Migration2.json")
+    ManagedRealm migration2ManagedRealm;
 
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        for (RealmRepresentation rep : reps.values()) {
-            testRealms.add(rep);
-        }
+    @InjectRealm(ref = "master", attachTo = "master")
+    ManagedRealm masterManagedRealm;
 
 
+    @TestSetup
+    public void setupDependencies() {
+        oauthClient = createOAuthClient();
     }
 
     @Test
-    public void migration2_5_5Test() throws Exception {
+    void migration2_5_5Test() {
         checkRealmsImported();
         testMigrationTo3_x();
-        testMigrationTo4_x(ProfileAssume.isFeatureEnabled(Profile.Feature.AUTHORIZATION), false);
+        testMigrationTo4_x(true);
         testMigrationTo5_x();
         testMigrationTo6_x();
-        testMigrationTo7_x(ProfileAssume.isFeatureEnabled(Profile.Feature.AUTHORIZATION));
+        testMigrationTo7_x(true);
         testMigrationTo8_x();
         testMigrationTo9_x();
         testMigrationTo12_x(false);
@@ -73,7 +63,7 @@ public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrat
         testMigrationTo21_x();
         testMigrationTo22_x();
         testMigrationTo23_x(false);
-        testMigrationTo24_x(false);
+        testMigrationTo24_x();
         testMigrationTo25_0_0();
         testMigrationTo26_0_0(false);
         testMigrationTo26_3_0();

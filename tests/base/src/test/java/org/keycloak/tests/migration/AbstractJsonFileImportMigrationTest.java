@@ -14,37 +14,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.migration;
+package org.keycloak.tests.migration;
 
-import org.keycloak.representations.idm.RealmRepresentation;
-
-import org.junit.Before;
-
-import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.TestSetup;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-/**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
- */
 public abstract class AbstractJsonFileImportMigrationTest extends AbstractMigrationTest {
-    protected RealmRepresentation masterRep;
-    protected String masterTestClientId;
 
-    @Before
-    public void beforeMigrationTest() {
+    @InjectAdminClient
+    Keycloak adminClient;
+
+    @TestSetup
+    public void setupRealmResources() {
         migrationRealm = adminClient.realms().realm(MIGRATION);
         migrationRealm2 = adminClient.realms().realm(MIGRATION2);
-        masterRealm = adminClient.realms().realm(MASTER);
+        masterRealm = adminClient.realms().realm("master");
     }
 
     /**
      * The method will throw javax.ws.rs.NotFoundException in case the realm is not successfully imported
      */
-    protected void checkRealmsImported() {
+    void checkRealmsImported() {
         assertThat(migrationRealm.toRepresentation().getRealm(), is(equalTo("Migration")));
         assertThat(migrationRealm2.toRepresentation().getRealm(), is(equalTo("Migration2")));
     }
