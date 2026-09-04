@@ -1,7 +1,6 @@
-package org.keycloak.testsuite.cli.admin;
+package org.keycloak.tests.cli.admin;
 
 import java.io.ByteArrayInputStream;
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -12,17 +11,17 @@ import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.IdentityProviderBuilder;
-import org.keycloak.testsuite.cli.KcAdmExec;
-import org.keycloak.testsuite.updaters.IdentityProviderCreator;
-import org.keycloak.testsuite.util.TempFileResource;
+import org.keycloak.tests.cli.KcAdmExec;
+import org.keycloak.tests.cli.TempFileResource;
 import org.keycloak.util.JsonSerialization;
 
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.cli.KcAdmExec.CMD;
-import static org.keycloak.testsuite.cli.KcAdmExec.execute;
+import static org.keycloak.tests.cli.KcAdmExec.CMD;
+import static org.keycloak.tests.cli.KcAdmExec.execute;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -31,10 +30,11 @@ import static org.hamcrest.Matchers.is;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public class KcAdmUpdateTest extends AbstractAdmCliTest {
+@KeycloakIntegrationTest
+class KcAdmUpdateTest extends AbstractAdmCliTest {
 
     @Test
-    public void testUpdateIDPWithoutInternalId() throws IOException {
+    void testUpdateIDPWithoutInternalId() throws IOException {
 
         final String realm = "test";
         final RealmResource realmResource = adminClient.realm(realm);
@@ -53,25 +53,26 @@ public class KcAdmUpdateTest extends AbstractAdmCliTest {
                 .attribute(SAMLIdentityProviderConfig.ARTIFACT_BINDING_RESPONSE, "false")
                 .build();
 
-        try (Closeable ipc = new IdentityProviderCreator(realmResource, identityProvider)) {
-            initCustomConfigFile();
-            try (TempFileResource configFile = new TempFileResource(FileConfigHandler.getConfigFile())) {
-                loginAsUser(configFile.getFile(), serverUrl, realm, "user1", "userpass");
+        realmResource.identityProviders().create(identityProvider).close();
+        this.realm.cleanup().add(r -> r.identityProviders().get("idpAlias").remove());
 
-                KcAdmExec exe = execute("get identity-provider/instances/idpAlias -r " + realm + " --config " + configFile.getFile());
-                assertExitCodeAndStdErrSize(exe, 0, 0);
+        initCustomConfigFile();
+        try (TempFileResource configFile = new TempFileResource(FileConfigHandler.getConfigFile())) {
+            loginAsUser(configFile.getFile(), serverUrl, realm, "user1", "userpass");
 
-                final File idpJson = new File("target/test-classes/cli/idp-keycloak-9167.json");
-                exe = execute("update identity-provider/instances/idpAlias -r " + realm + " -f " + idpJson.getAbsolutePath() + " --config " + configFile.getFile());
-                assertExitCodeAndStdErrSize(exe, 0, 0);
-            }
+            KcAdmExec exe = execute("get identity-provider/instances/idpAlias -r " + realm + " --config " + configFile.getFile());
+            assertExitCodeAndStdErrSize(exe, 0, 0);
 
-            assertThat(realmResource.identityProviders().get("idpAlias").toRepresentation().getDisplayName(), is(equalTo("SAML_UPDATED")));
+            final File idpJson = resourceFile("org/keycloak/tests/cli/idp-keycloak-9167.json");
+            exe = execute("update identity-provider/instances/idpAlias -r " + realm + " -f " + idpJson.getAbsolutePath() + " --config " + configFile.getFile());
+            assertExitCodeAndStdErrSize(exe, 0, 0);
         }
+
+        assertThat(realmResource.identityProviders().get("idpAlias").toRepresentation().getDisplayName(), is(equalTo("SAML_UPDATED")));
     }
 
     @Test
-    public void testUpdateThoroughly() throws IOException {
+    void testUpdateThoroughly() throws IOException {
 
         initCustomConfigFile();
 

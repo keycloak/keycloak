@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.cli.admin;
+package org.keycloak.tests.cli.admin;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,22 +8,24 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.testsuite.cli.KcAdmExec;
-import org.keycloak.testsuite.util.TempFileResource;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.cli.KcAdmExec;
+import org.keycloak.tests.cli.TempFileResource;
 import org.keycloak.util.JsonSerialization;
 
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.cli.KcAdmExec.execute;
+import static org.keycloak.tests.cli.KcAdmExec.execute;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
+@KeycloakIntegrationTest
 public class KcAdmCreateTest extends AbstractAdmCliTest {
 
     @Test
-    public void testCreateWithRealmOverride() throws IOException {
+    void testCreateWithRealmOverride() throws IOException {
 
         FileConfigHandler handler = initCustomConfigFile();
 
@@ -42,7 +44,7 @@ public class KcAdmCreateTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testCreateIDPWithoutSyncMode() throws IOException {
+    void testCreateIDPWithoutSyncMode() throws IOException {
         final String realm = "test";
         final RealmResource realmResource = adminClient.realm(realm);
 
@@ -50,7 +52,7 @@ public class KcAdmCreateTest extends AbstractAdmCliTest {
         try (TempFileResource configFile = new TempFileResource(handler.getConfigFile())) {
             loginAsUser(configFile.getFile(), serverUrl, realm, "user1", "userpass");
 
-            final File idpJson = new File("target/test-classes/cli/idp-keycloak-without-sync-mode.json");
+            final File idpJson = resourceFile("org/keycloak/tests/cli/idp-keycloak-without-sync-mode.json");
             KcAdmExec exe = execute("create identity-provider/instances/ -r " + realm + " -f " + idpJson.getAbsolutePath() + " --config " + configFile.getFile());
             assertExitCodeAndStdErrSize(exe, 0, 1);
         }
@@ -60,7 +62,7 @@ public class KcAdmCreateTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testCreateThoroughly() throws IOException {
+    void testCreateThoroughly() throws IOException {
 
         FileConfigHandler handler = initCustomConfigFile();
 

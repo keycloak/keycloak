@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.cli.registration;
+package org.keycloak.tests.cli.registration;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -11,27 +11,26 @@ import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.client.cli.config.RealmConfigData;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.testsuite.cli.KcRegExec;
-import org.keycloak.testsuite.util.KeystoreUtils;
-import org.keycloak.testsuite.util.TempFileResource;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.cli.KcRegExec;
+import org.keycloak.tests.cli.TempFileResource;
 import org.keycloak.util.JsonSerialization;
 
-import org.junit.Assume;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.client.cli.util.OsUtil.EOL;
 import static org.keycloak.client.registration.cli.KcRegMain.CMD;
-import static org.keycloak.testsuite.cli.KcRegExec.execute;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
+import static org.keycloak.tests.cli.KcRegExec.execute;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
+@KeycloakIntegrationTest
 public class KcRegTest extends AbstractRegCliTest {
 
     @Test
-    public void testNoArgs() {
+    void testNoArgs() {
         /*
          *  Test (sub)commands without any arguments
          */
@@ -120,7 +119,7 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testHelpGlobalOption() {
+    void testHelpGlobalOption() {
         /*
          *  Test --help for all commands
          */
@@ -183,7 +182,7 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testBadCommand() {
+    void testBadCommand() {
         /*
          *  Test most basic execution with non-existent command
          */
@@ -194,7 +193,7 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testBadOptionInPlaceOfCommand() {
+    void testBadOptionInPlaceOfCommand() {
         /*
          *  Test most basic execution with non-existent option
          */
@@ -205,7 +204,7 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testBadOption() {
+    void testBadOption() {
         /*
          *  Test sub-command execution with non-existent option
          */
@@ -218,7 +217,7 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testCredentialsServerAndRealmWithDefaultConfig() {
+    void testCredentialsServerAndRealmWithDefaultConfig() {
         /*
          *  Test without --server specified
          */
@@ -228,7 +227,7 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testCredentialsNoServerWithDefaultConfig() {
+    void testCredentialsNoServerWithDefaultConfig() {
         /*
          *  Test without --server specified
          */
@@ -240,7 +239,7 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testCredentialsNoRealmWithDefaultConfig() {
+    void testCredentialsNoRealmWithDefaultConfig() {
         /*
          *  Test without --server specified
          */
@@ -252,7 +251,7 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testCredentialsWithNoConfig() {
+    void testCredentialsWithNoConfig() {
         /*
          *  Test with --no-config specified which is not supported
          */
@@ -264,7 +263,7 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testUserLoginWithDefaultConfig() {
+    void testUserLoginWithDefaultConfig() {
         /*
          *  Test most basic user login, using the default admin-cli as a client
          */
@@ -275,7 +274,7 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testUserLoginWithDefaultConfigInteractive() throws IOException {
+    void testUserLoginWithDefaultConfigInteractive() throws IOException {
         /*
          *  Test user login with interaction - provide user password after prompted for it
          */
@@ -319,7 +318,7 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testClientLoginWithDefaultConfigInteractive() throws IOException {
+    void testClientLoginWithDefaultConfigInteractive() throws IOException {
         /*
          *  Test client login with interaction - login using service account, and provide a client secret after prompted for it
          */
@@ -364,7 +363,7 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testUserLoginWithCustomConfig() {
+    void testUserLoginWithCustomConfig() {
         /*
          *  Test user login using a custom config file
          */
@@ -401,7 +400,7 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testCustomConfigLoginCreateDelete() throws IOException {
+    void testCustomConfigLoginCreateDelete() throws IOException {
         /*
          *  Test user login, create, delete session using a custom config file
          */
@@ -456,7 +455,7 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testCRUDWithOnTheFlyUserAuth() throws IOException {
+    void testCRUDWithOnTheFlyUserAuth() throws IOException {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
          *  Login is performed by each operation again, and again using username, and password.
@@ -466,7 +465,7 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testCRUDWithOnTheFlyUserAuthWithClientSecret() throws IOException {
+    void testCRUDWithOnTheFlyUserAuthWithClientSecret() throws IOException {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
          *  Login is performed by each operation again, and again using username, password, and client secret.
@@ -504,14 +503,14 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient_JKSKeystore() throws IOException {
-        KeystoreUtils.assumeKeystoreTypeSupported(KeystoreUtil.KeystoreFormat.JKS);
+    void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient_JKSKeystore() throws IOException {
+        assumeKeystoreTypeSupported(KeystoreUtil.KeystoreFormat.JKS);
         testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(KeystoreUtil.KeystoreFormat.JKS.getPrimaryExtension());
     }
 
     @Test
-    public void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient_PKCS12Keystore() throws IOException {
-        KeystoreUtils.assumeKeystoreTypeSupported(KeystoreUtil.KeystoreFormat.PKCS12);
+    void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient_PKCS12Keystore() throws IOException {
+        assumeKeystoreTypeSupported(KeystoreUtil.KeystoreFormat.PKCS12);
         testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(KeystoreUtil.KeystoreFormat.PKCS12.getPrimaryExtension());
     }
 
@@ -520,7 +519,7 @@ public class KcRegTest extends AbstractRegCliTest {
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
          *  Login is performed by each operation again, and again using username, password, and client JWT signature.
          */
-        File keystore = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcreg/reg-cli-keystore." + keystoreFileExtension);
+        File keystore = resourceFile("org/keycloak/tests/cli/kcreg/reg-cli-keystore." + keystoreFileExtension);
         Assertions.assertTrue(keystore.isFile(), "reg-cli-keystore." + keystoreFileExtension + " exists");
 
         // try client without direct grants enabled
@@ -562,7 +561,7 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testCRUDWithOnTheFlyServiceAccountWithClientSecret() throws IOException {
+    void testCRUDWithOnTheFlyServiceAccountWithClientSecret() throws IOException {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
          *  Login is performed by each operation again, and again using only client secret - service account is used.
@@ -572,12 +571,12 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testCRUDWithOnTheFlyServiceAccountWithSignedJwtClient() throws IOException {
+    void testCRUDWithOnTheFlyServiceAccountWithSignedJwtClient() throws IOException {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
          *  Login is performed by each operation again, and again using only client JWT signature - service account is used.
          */
-        File keystore = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcreg/reg-cli-keystore.p12");
+        File keystore = resourceFile("org/keycloak/tests/cli/kcreg/reg-cli-keystore.p12");
         Assertions.assertTrue(keystore.isFile(), "reg-cli-keystore.p12 exists");
 
         testCRUDWithOnTheFlyAuth(serverUrl,
@@ -586,7 +585,7 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testCreateDeleteWithInitialAndRegistrationTokensWithUnsecureOption() throws IOException {
+    void testCreateDeleteWithInitialAndRegistrationTokensWithUnsecureOption() throws IOException {
         /*
          *  Test create using initial client token, and subsequent delete using registration access token.
          *  A config file is used to save registration access token for newly created client.
@@ -595,7 +594,7 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testCreateDeleteWithInitialAndRegistrationTokensWithUnsecureOptionNoConfig() throws IOException {
+    void testCreateDeleteWithInitialAndRegistrationTokensWithUnsecureOptionNoConfig() throws IOException {
         /*
          *  Test create using initial client token, and subsequent delete using registration access token.
          *  No config file is used so registration access token for newly created client is not saved to config.
@@ -604,8 +603,6 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     private void testCreateDeleteWithInitialAndRegistrationTokensWithUnsecureOption(boolean useConfig) throws IOException {
-        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
-
         // prepare for loading a config file
         // only used when useConfig is true
         FileConfigHandler handler = initCustomConfigFile();
@@ -617,7 +614,7 @@ public class KcRegTest extends AbstractRegCliTest {
             final String realm = "master";
 
             KcRegExec exe = execute("create " + (useConfig ? ("--config '" + configFile.getAbsolutePath()) + "'" : "--no-config")
-                    + " --insecure --server " + oauth.AUTH_SERVER_ROOT + " --realm " + realm + " -s clientId=test-client2 -o -t " + token);
+                    + " --insecure --server " + keycloakUrls.getBase() + " --realm " + realm + " -s clientId=test-client2 -o -t " + token);
 
             Assertions.assertEquals(0, exe.exitCode(), "exitCode == 0");
 
@@ -631,27 +628,27 @@ public class KcRegTest extends AbstractRegCliTest {
             if (useConfig) {
                 ConfigData config = handler.loadConfig();
                 Assertions.assertEquals(client.getRegistrationAccessToken(),
-                        config.ensureRealmConfigData(oauth.AUTH_SERVER_ROOT, realm).getClients().get("test-client2"),
+                        config.ensureRealmConfigData(keycloakUrls.getBase(), realm).getClients().get("test-client2"),
                         "Registration Access Token in config file");
             } else {
                 Assertions.assertFalse(configFile.isFile(), "There should be no config file");
             }
 
             exe = execute("delete test-client2 " + (useConfig ? ("--config '" + configFile.getAbsolutePath()) + "'" : "--no-config")
-                    + " --insecure --server " + oauth.AUTH_SERVER_ROOT + " --realm " + realm + " -t " + client.getRegistrationAccessToken());
+                    + " --insecure --server " + keycloakUrls.getBase() + " --realm " + realm + " -t " + client.getRegistrationAccessToken());
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 2);
         }
     }
 
     @Test
-    public void testCreateWithAllowedHostsWithoutAuthenticationNoConfig() throws IOException {
+    void testCreateWithAllowedHostsWithoutAuthenticationNoConfig() throws IOException {
 
         testCreateWithAllowedHostsWithoutAuthentication("test", false);
     }
 
     @Test
-    public void testCreateWithAllowedHostsWithoutAuthentication() throws IOException {
+    void testCreateWithAllowedHostsWithoutAuthentication() throws IOException {
 
         testCreateWithAllowedHostsWithoutAuthentication("test", true);
     }

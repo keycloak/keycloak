@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.cli.admin;
+package org.keycloak.tests.cli.admin;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -7,16 +7,17 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.keycloak.client.cli.config.FileConfigHandler;
-import org.keycloak.testsuite.cli.KcAdmExec;
-import org.keycloak.testsuite.util.TempFileResource;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.cli.KcAdmExec;
+import org.keycloak.tests.cli.TempFileResource;
+import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.cli.KcAdmExec.execute;
+import static org.keycloak.tests.cli.KcAdmExec.execute;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -26,12 +27,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
+@KeycloakIntegrationTest
 public class KcAdmSessionTest extends AbstractAdmCliTest {
 
     static TypeReference<List<ObjectNode>> LIST_OF_JSON = new TypeReference<List<ObjectNode>>() {};
 
     @Test
-    public void test() throws IOException {
+    void test() throws IOException {
+
+        realm.cleanup().add(r -> removeRealmIfExists("demorealm"));
 
         initCustomConfigFile();
 
@@ -82,14 +86,14 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
             exe = execute("get-roles --config '" + configFile.getName() + "'");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
-            List<ObjectNode> roles = loadJson(exe.stdout(), LIST_OF_JSON);
+            List<ObjectNode> roles = JsonSerialization.readValue(exe.stdout(), LIST_OF_JSON);
             assertThat("expected three realm roles available", roles.size(), equalTo(3));
 
             // create realm role
             exe = execute("create roles --config '" + configFile.getName() + "' -s name=testrole -s 'description=Test role' -o");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
-            ObjectNode role = loadJson(exe.stdout(), ObjectNode.class);
+            ObjectNode role = JsonSerialization.readValue(exe.stdout(), ObjectNode.class);
             Assertions.assertEquals("testrole", role.get("name").asText());
             String roleId = role.get("id").asText();
 
@@ -97,7 +101,7 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
             exe = execute("get-roles --config '" + configFile.getName() + "'");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
-            roles = loadJson(exe.stdout(), LIST_OF_JSON);
+            roles = JsonSerialization.readValue(exe.stdout(), LIST_OF_JSON);
             assertThat("expected four realm roles available", roles.size(), equalTo(4));
 
             // create client
@@ -117,7 +121,7 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
             exe = execute("get-roles --config '" + configFile.getName() + "' --cclientid testclient");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
-            roles = loadJson(exe.stdout(), LIST_OF_JSON);
+            roles = JsonSerialization.readValue(exe.stdout(), LIST_OF_JSON);
             assertThat("expected one role", roles.size(), equalTo(1));
             Assertions.assertEquals("clientrole", roles.get(0).get("name").asText());
 
@@ -131,7 +135,7 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
             exe = execute("get-roles --config '" + configFile.getName() + "' --uusername testuser --all");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
-            ObjectNode node = loadJson(exe.stdout(), ObjectNode.class);
+            ObjectNode node = JsonSerialization.readValue(exe.stdout(), ObjectNode.class);
             Assertions.assertNotNull(node.get("realmMappings"));
 
             List<String> realmMappings = StreamSupport.stream(node.get("realmMappings").spliterator(), false)
@@ -164,7 +168,7 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
             exe = execute("get-roles --config '" + configFile.getName() + "' --uusername testuser --all");
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
-            node = loadJson(exe.stdout(), ObjectNode.class);
+            node = JsonSerialization.readValue(exe.stdout(), ObjectNode.class);
             Assertions.assertNotNull(node.get("realmMappings"));
 
             realmMappings = StreamSupport.stream(node.get("realmMappings").spliterator(), false)
@@ -209,7 +213,9 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testCompositeRoleCreationWithHigherVolumeOfRoles() throws Exception {
+    void testCompositeRoleCreationWithHigherVolumeOfRoles() throws Exception {
+
+        realm.cleanup().add(r -> removeRealmIfExists("HigherVolumeRolesRealm"));
 
         initCustomConfigFile();
         try (TempFileResource configFile = new TempFileResource(FileConfigHandler.getConfigFile())) {

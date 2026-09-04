@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.cli.registration;
+package org.keycloak.tests.cli.registration;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -24,31 +23,36 @@ import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.clientregistration.policy.impl.TrustedHostClientRegistrationPolicyFactory;
+import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.cli.AbstractCliTest;
-import org.keycloak.testsuite.cli.KcRegExec;
+import org.keycloak.tests.cli.AbstractCliTest;
+import org.keycloak.tests.cli.KcRegExec;
 import org.keycloak.util.JsonSerialization;
 
-import org.junit.Before;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 
-import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.cli.KcRegExec.WORK_DIR;
-import static org.keycloak.testsuite.cli.KcRegExec.execute;
+import static org.keycloak.tests.cli.KcRegExec.WORK_DIR;
+import static org.keycloak.tests.cli.KcRegExec.execute;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public abstract class AbstractRegCliTest extends AbstractCliTest {
 
-    @Before
+    @InjectRealm(fromJson = "/org/keycloak/tests/cli/testrealm.json", config = RegCliRealmConfig.class)
+    ManagedRealm realm;
+
+    @BeforeEach
     public void deleteDefaultConfig() {
         getDefaultConfigFilePath().delete();
     }
@@ -61,87 +65,14 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         return new File(System.getProperty("user.home") + "/.keycloak/kcreg.config");
     }
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        testRealms.add(realmRepresentation);
-
-        // create admin user account with permissions to manage clients
-        UserRepresentation admin = UserBuilder.create()
-                .username("user1")
-                .password("userpass")
-                .enabled(true)
-                .build();
-        HashMap<String, List<String>> clientRoles = new HashMap<>();
-        clientRoles.put("realm-management", Arrays.asList("manage-clients"));
-        admin.setClientRoles(clientRoles);
-        realmRepresentation.getUsers().add(admin);
-
-
-
-        // create client with service account to use Signed JWT credentials with
-        ClientRepresentation regClient = ClientBuilder.create()
-                .clientId("reg-cli-jwt")
-                .attribute(JWTClientAuthenticator.CERTIFICATE_ATTR, "MIICnTCCAYUCBgFXUhpRTTANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdyZWctY2xpMB4XDTE2MDkyMjEzMzIxOFoXDTI2MDkyMjEzMzM1OFowEjEQMA4GA1UEAwwHcmVnLWNsaTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMHZn/0Bk1M9oKcTHxzn2cGvBWwO1m6OVLQ8LSVwNIf4ixfGkVIkhI5iEGYND+uD8ame54ZPClTVxMra3JldClLIG+L+ymnbT2vKIhEsVvCROs9PnYxbFALt1dXneLIio2uzF+d7/zQWlmeaWfNunSJT1aHNJDkGgDeUuQa25b0IMqsFjsN8Dg4ATkA97r3wKn4Tp3SE7sTM/B2pmra4atNxGeShVrgihqUiQ/PwDiDGwry64AsexkZnQsCR3bJWBAVUiHef3JWzTfWWN5bfCBG6Mnq1xw7YN+YpV1nR3CGmcKJuLe6aTe7Ps8hYejYiQA7Mp7ZQsoImsVFV5HDOlb0CAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAZl8XvLfKXTPYvq/QyHOg7EDlAdlV3HkmHP9SBAV4BccmHmorMkm5I6I21UA5mfju+0nhbEd0bm0kvJFxIfNU6lJyyVvQx3Gns37KYUOzIV/ocWZuOTBLp5tfIBYbBwfE/s1J4PhpA/3WhBY9JKiLvdJfxECGIgaLs2M0UsylW/7o04+18Od8j/m7crQc7fpe5gJB5m/+hxUDowIjG5CumffX9OHYGDvHBpaUl7QNSGgjP8Bn9ogmIMUBJ7XSYUcohKuk2Cnj6p+GlLuqHbOISUXLVjf0DxhCu6diVxvacKbgAZmyCIO1tGL/UVRxg9GOYdCiC9vHfPuZ8US+ZB0P9g==")
-                .authenticatorType(JWTClientAuthenticator.PROVIDER_ID)
-                .serviceAccountsEnabled()
-                .build();
-
-        realmRepresentation.getClients().add(regClient);
-
-        // create service account for client reg-cli with permissions to manage clients
-        addServiceAccount(realmRepresentation, "reg-cli-jwt");
-
-
-
-        // create client to use with user account - enable direct grants
-        regClient = ClientBuilder.create()
-                .clientId("reg-cli-jwt-direct")
-                .attribute(JWTClientAuthenticator.CERTIFICATE_ATTR, "MIICnTCCAYUCBgFXUhpRTTANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdyZWctY2xpMB4XDTE2MDkyMjEzMzIxOFoXDTI2MDkyMjEzMzM1OFowEjEQMA4GA1UEAwwHcmVnLWNsaTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMHZn/0Bk1M9oKcTHxzn2cGvBWwO1m6OVLQ8LSVwNIf4ixfGkVIkhI5iEGYND+uD8ame54ZPClTVxMra3JldClLIG+L+ymnbT2vKIhEsVvCROs9PnYxbFALt1dXneLIio2uzF+d7/zQWlmeaWfNunSJT1aHNJDkGgDeUuQa25b0IMqsFjsN8Dg4ATkA97r3wKn4Tp3SE7sTM/B2pmra4atNxGeShVrgihqUiQ/PwDiDGwry64AsexkZnQsCR3bJWBAVUiHef3JWzTfWWN5bfCBG6Mnq1xw7YN+YpV1nR3CGmcKJuLe6aTe7Ps8hYejYiQA7Mp7ZQsoImsVFV5HDOlb0CAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAZl8XvLfKXTPYvq/QyHOg7EDlAdlV3HkmHP9SBAV4BccmHmorMkm5I6I21UA5mfju+0nhbEd0bm0kvJFxIfNU6lJyyVvQx3Gns37KYUOzIV/ocWZuOTBLp5tfIBYbBwfE/s1J4PhpA/3WhBY9JKiLvdJfxECGIgaLs2M0UsylW/7o04+18Od8j/m7crQc7fpe5gJB5m/+hxUDowIjG5CumffX9OHYGDvHBpaUl7QNSGgjP8Bn9ogmIMUBJ7XSYUcohKuk2Cnj6p+GlLuqHbOISUXLVjf0DxhCu6diVxvacKbgAZmyCIO1tGL/UVRxg9GOYdCiC9vHfPuZ8US+ZB0P9g==")
-                .authenticatorType(JWTClientAuthenticator.PROVIDER_ID)
-                .directAccessGrantsEnabled()
-                .build();
-
-        realmRepresentation.getClients().add(regClient);
-
-
-
-
-        // create client with service account to use client secret with
-        regClient = ClientBuilder.create()
-                .clientId("reg-cli-secret")
-                .secret("password")
-                .authenticatorType(ClientIdAndSecretAuthenticator.PROVIDER_ID)
-                .serviceAccountsEnabled()
-                .build();
-
-        realmRepresentation.getClients().add(regClient);
-
-        // create service account for client reg-cli with permissions to manage clients
-        addServiceAccount(realmRepresentation, "reg-cli-secret");
-
-
-
-
-        // create client to use with user account - enable direct grants
-        regClient = ClientBuilder.create()
-                .clientId("reg-cli-secret-direct")
-                .secret("password")
-                .authenticatorType(ClientIdAndSecretAuthenticator.PROVIDER_ID)
-                .directAccessGrantsEnabled()
-                .build();
-
-        realmRepresentation.getClients().add(regClient);
-    }
-
-    void loginAsUser(File configFile, String server, String realm, String user, String password) {
+    static void loginAsUser(File configFile, String server, String realm, String user, String password) {
         KcRegExec exe = execute("config credentials --server " + server + " --realm " + realm +
                 " --user " + user + " --password " + password + " --config " + configFile.getAbsolutePath());
 
         assertExitCodeAndStreamSizes(exe, 0, 0, 1);
     }
 
-    void assertFieldsEqualWithExclusions(ConfigData config1, ConfigData config2, String ... excluded) {
+    static void assertFieldsEqualWithExclusions(ConfigData config1, ConfigData config2, String ... excluded) {
 
         HashSet<String> exclusions = new HashSet<>(Arrays.asList(excluded));
 
@@ -196,11 +127,11 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         }
     }
 
-    void assertFieldsEqualWithExclusions(RealmConfigData data1, RealmConfigData data2, String ... excluded) {
+    static void assertFieldsEqualWithExclusions(RealmConfigData data1, RealmConfigData data2, String ... excluded) {
         assertFieldsEqualWithExclusions(null, null, data1, data2, excluded);
     }
 
-    void assertFieldsEqualWithExclusions(String server, String realm, RealmConfigData data1, RealmConfigData data2, String ... excluded) {
+    static void assertFieldsEqualWithExclusions(String server, String realm, RealmConfigData data1, RealmConfigData data2, String ... excluded) {
 
         HashSet<String> exclusions = new HashSet<>(Arrays.asList(excluded));
 
@@ -287,24 +218,7 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         }
     }
 
-    void addServiceAccount(RealmRepresentation realm, String clientId) {
-
-        UserRepresentation account = UserBuilder.create()
-                .username("service-account-" + clientId)
-                .enabled(true)
-                .serviceAccountId(clientId)
-                .build();
-
-        HashMap<String, List<String>> clientRoles = new HashMap<>();
-        clientRoles.put("realm-management", Arrays.asList("manage-clients"));
-
-        account.setClientRoles(clientRoles);
-
-        realm.getUsers().add(account);
-    }
-
-
-    void waitFor(long millis) {
+    static void waitFor(long millis) {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
@@ -313,7 +227,7 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
     }
 
 
-    FileConfigHandler initCustomConfigFile() {
+    static FileConfigHandler initCustomConfigFile() {
         String filename = UUID.randomUUID().toString() + ".config";
         File cfgFile = new File(WORK_DIR + "/" + filename);
         FileConfigHandler handler = new FileConfigHandler();
@@ -321,11 +235,11 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         return handler;
     }
 
-    File initTempFile(String extension) throws IOException {
+    static File initTempFile(String extension) throws IOException {
         return initTempFile(extension, null);
     }
 
-    File initTempFile(String extension, String content) throws IOException {
+    static File initTempFile(String extension, String content) throws IOException {
         String filename = UUID.randomUUID().toString() + extension;
         File file = new File(WORK_DIR + "/" + filename);
         if (content != null) {
@@ -372,7 +286,7 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         realmResource.components().component(trustedHostRep.getId()).update(trustedHostRep);
     }
 
-    void testCRUDWithOnTheFlyAuth(String serverUrl, String credentials, String extraOptions, String loginMessage) throws IOException {
+    static void testCRUDWithOnTheFlyAuth(String serverUrl, String credentials, String extraOptions, String loginMessage) throws IOException {
 
         File configFile = getDefaultConfigFilePath();
         long lastModified = configFile.exists() ? configFile.lastModified() : 0;
@@ -469,7 +383,6 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
 
 
 
-
         exe = execute("delete test-client --no-config --server " + serverUrl + " --realm test " + credentials + " " + extraOptions);
 
         assertExitCodeAndStreamSizes(exe, 0, 0, 1);
@@ -490,4 +403,74 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
         Assertions.assertEquals(lastModified, lastModified2, "config file not modified");
     }
+
+    // Disable the VERIFY_PROFILE required action so user1, which has no e-mail, can complete direct-grant login
+    // (e.g. KcRegTest#testCRUDWithOnTheFlyUserAuth); the default user profile would otherwise require it be completed first.
+    static RequiredActionProviderRepresentation disabledVerifyProfile() {
+        RequiredActionProviderRepresentation verifyProfile = new RequiredActionProviderRepresentation();
+        verifyProfile.setAlias("VERIFY_PROFILE");
+        verifyProfile.setName("Verify Profile");
+        verifyProfile.setProviderId("VERIFY_PROFILE");
+        verifyProfile.setEnabled(false);
+        verifyProfile.setDefaultAction(false);
+        verifyProfile.setPriority(100);
+        return verifyProfile;
+    }
+
+    static class RegCliRealmConfig implements RealmConfig {
+
+        // certificate used by the signed JWT client credentials (reg-cli)
+        private static final String CERTIFICATE = "MIICnTCCAYUCBgFXUhpRTTANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdyZWctY2xpMB4XDTE2MDkyMjEzMzIxOFoXDTI2MDkyMjEzMzM1OFowEjEQMA4GA1UEAwwHcmVnLWNsaTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMHZn/0Bk1M9oKcTHxzn2cGvBWwO1m6OVLQ8LSVwNIf4ixfGkVIkhI5iEGYND+uD8ame54ZPClTVxMra3JldClLIG+L+ymnbT2vKIhEsVvCROs9PnYxbFALt1dXneLIio2uzF+d7/zQWlmeaWfNunSJT1aHNJDkGgDeUuQa25b0IMqsFjsN8Dg4ATkA97r3wKn4Tp3SE7sTM/B2pmra4atNxGeShVrgihqUiQ/PwDiDGwry64AsexkZnQsCR3bJWBAVUiHef3JWzTfWWN5bfCBG6Mnq1xw7YN+YpV1nR3CGmcKJuLe6aTe7Ps8hYejYiQA7Mp7ZQsoImsVFV5HDOlb0CAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAZl8XvLfKXTPYvq/QyHOg7EDlAdlV3HkmHP9SBAV4BccmHmorMkm5I6I21UA5mfju+0nhbEd0bm0kvJFxIfNU6lJyyVvQx3Gns37KYUOzIV/ocWZuOTBLp5tfIBYbBwfE/s1J4PhpA/3WhBY9JKiLvdJfxECGIgaLs2M0UsylW/7o04+18Od8j/m7crQc7fpe5gJB5m/+hxUDowIjG5CumffX9OHYGDvHBpaUl7QNSGgjP8Bn9ogmIMUBJ7XSYUcohKuk2Cnj6p+GlLuqHbOISUXLVjf0DxhCu6diVxvacKbgAZmyCIO1tGL/UVRxg9GOYdCiC9vHfPuZ8US+ZB0P9g==";
+
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return realm
+                    .requiredActions(disabledVerifyProfile())
+                    // create admin user account with permissions to manage clients
+                    .users(
+                            UserBuilder.create()
+                                    .username("user1")
+                                    .password("userpass")
+                                    .enabled(true)
+                                    .clientRoles("realm-management", "manage-clients"),
+                            // create service account for client reg-cli-jwt with permissions to manage clients
+                            serviceAccount("reg-cli-jwt"),
+                            // create service account for client reg-cli-secret with permissions to manage clients
+                            serviceAccount("reg-cli-secret"))
+                    .clients(
+                            // create client with service account to use Signed JWT credentials with
+                            ClientBuilder.create()
+                                    .clientId("reg-cli-jwt")
+                                    .attribute(JWTClientAuthenticator.CERTIFICATE_ATTR, CERTIFICATE)
+                                    .authenticatorType(JWTClientAuthenticator.PROVIDER_ID)
+                                    .serviceAccountsEnabled(),
+                            // create client to use with user account - enable direct grants
+                            ClientBuilder.create()
+                                    .clientId("reg-cli-jwt-direct")
+                                    .attribute(JWTClientAuthenticator.CERTIFICATE_ATTR, CERTIFICATE)
+                                    .authenticatorType(JWTClientAuthenticator.PROVIDER_ID)
+                                    .directAccessGrantsEnabled(),
+                            // create client with service account to use client secret with
+                            ClientBuilder.create()
+                                    .clientId("reg-cli-secret")
+                                    .secret("password")
+                                    .authenticatorType(ClientIdAndSecretAuthenticator.PROVIDER_ID)
+                                    .serviceAccountsEnabled(),
+                            // create client to use with user account - enable direct grants
+                            ClientBuilder.create()
+                                    .clientId("reg-cli-secret-direct")
+                                    .secret("password")
+                                    .authenticatorType(ClientIdAndSecretAuthenticator.PROVIDER_ID)
+                                    .directAccessGrantsEnabled());
+        }
+
+        private static UserBuilder serviceAccount(String clientId) {
+            return UserBuilder.create()
+                    .username("service-account-" + clientId)
+                    .enabled(true)
+                    .serviceAccountId(clientId)
+                    .clientRoles("realm-management", "manage-clients");
+        }
+    }
+
 }

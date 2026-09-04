@@ -1,11 +1,11 @@
-package org.keycloak.testsuite.cli.exec;
+package org.keycloak.tests.cli.exec;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
 
-import static org.keycloak.testsuite.cli.exec.AbstractExec.copyStream;
+import static org.keycloak.tests.cli.exec.AbstractExec.copyStream;
 
 class StreamReaderThread extends Thread {
 

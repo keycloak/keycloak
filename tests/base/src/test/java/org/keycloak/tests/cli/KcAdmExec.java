@@ -1,19 +1,18 @@
-package org.keycloak.testsuite.cli;
+package org.keycloak.tests.cli;
 
 import java.io.InputStream;
 import java.util.List;
 
-import org.keycloak.common.crypto.FipsMode;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.cli.exec.AbstractExec;
-import org.keycloak.testsuite.cli.exec.AbstractExecBuilder;
+import org.keycloak.tests.cli.exec.AbstractExec;
+import org.keycloak.tests.cli.exec.AbstractExecBuilder;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public class KcAdmExec extends AbstractExec {
 
-    public static final String WORK_DIR = System.getProperty("user.dir") + "/target/containers/keycloak-client-tools";
+    public static final String WORK_DIR = System.getProperty(CLI_TOOLS_DIR_PROPERTY,
+            System.getProperty("user.dir") + "/target/containers/keycloak-client-tools");
 
     public static final String CMD = OS_ARCH.isWindows() ? "kcadm.bat" : "kcadm.sh";
 
@@ -44,7 +43,7 @@ public class KcAdmExec extends AbstractExec {
     public List<String> stderrLines() {
         List<String> lines = super.stderrLines();
         // remove the two lines with the BC provider info if FIPS
-        return AuthServerTestEnricher.AUTH_SERVER_FIPS_MODE == FipsMode.DISABLED || lines.size() < 2
+        return !isFips() || lines.size() < 2
             ? lines
             : lines.subList(2, lines.size());
     }

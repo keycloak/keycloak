@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.cli.admin;
+package org.keycloak.tests.cli.admin;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -11,25 +11,34 @@ import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.client.cli.config.RealmConfigData;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.testsuite.cli.KcAdmExec;
-import org.keycloak.testsuite.util.KeystoreUtils;
-import org.keycloak.testsuite.util.TempFileResource;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.tests.cli.KcAdmExec;
+import org.keycloak.tests.cli.TempFileResource;
 import org.keycloak.util.JsonSerialization;
 
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
 import static org.keycloak.client.cli.util.OsUtil.EOL;
-import static org.keycloak.testsuite.cli.KcAdmExec.execute;
+import static org.keycloak.tests.cli.KcAdmExec.execute;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
+@KeycloakIntegrationTest
 public class KcAdmTest extends AbstractAdmCliTest {
 
+    // uses a dedicated clientId so it does not clash with clients already present in testrealm.json (e.g. test-app)
+    @InjectOAuthClient(config = CliOAuthClientConfig.class)
+    OAuthClient oauth;
+
     @Test
-    public void testBadCommand() {
+    void testBadCommand() {
         /*
          *  Test most basic execution with non-existent command
          */
@@ -41,7 +50,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
 
 
     @Test
-    public void testNoArgs() {
+    void testNoArgs() {
         /*
          *  Test (sub)commands without any arguments
          */
@@ -139,7 +148,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testHelpGlobalOption() {
+    void testHelpGlobalOption() {
         /*
          *  Test --help for all commands
          */
@@ -197,7 +206,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testBadOptionInPlaceOfCommand() {
+    void testBadOptionInPlaceOfCommand() {
         /*
          *  Test most basic execution with non-existent option
          */
@@ -208,7 +217,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testBadOption() {
+    void testBadOption() {
         /*
          *  Test sub-command execution with non-existent option
          */
@@ -227,7 +236,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testBadOverlappingOption() {
+    void testBadOverlappingOption() {
         KcAdmExec exe = KcAdmExec.execute("config credentials --server http://localhost:8080 --realm master --username admin --password admin");
 
         assertExitCodeAndStreamSizes(exe, 2, 0, 3);
@@ -235,7 +244,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testCredentialsServerAndRealmWithDefaultConfig() {
+    void testCredentialsServerAndRealmWithDefaultConfig() {
         /*
          *  Test without --server specified
          */
@@ -245,7 +254,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testCredentialsNoServerWithDefaultConfig() {
+    void testCredentialsNoServerWithDefaultConfig() {
         /*
          *  Test without --server specified
          */
@@ -257,7 +266,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testCredentialsNoRealmWithDefaultConfig() {
+    void testCredentialsNoRealmWithDefaultConfig() {
         /*
          *  Test without --server specified
          */
@@ -269,7 +278,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testCredentialsWithNoConfig() {
+    void testCredentialsWithNoConfig() {
         /*
          *  Test with --no-config specified which is not supported
          */
@@ -281,7 +290,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testUserLoginWithDefaultConfig() {
+    void testUserLoginWithDefaultConfig() {
         /*
          *  Test most basic user login, using the default admin-cli as a client
          */
@@ -292,7 +301,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testUserLoginWithAngleBrackets() {
+    void testUserLoginWithAngleBrackets() {
         KcAdmExec exe = KcAdmExec.execute("config credentials --server " + serverUrl + " --realm test --user 'special>>character' --password '<password>'");
 
         assertExitCodeAndStreamSizes(exe, 0, 0, 1);
@@ -300,7 +309,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testUserLoginWithDefaultConfigInteractive() throws IOException {
+    void testUserLoginWithDefaultConfigInteractive() throws IOException {
         /*
          *  Test user login with interaction - provide user password after prompted for it
          */
@@ -344,7 +353,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testClientLoginWithDefaultConfigInteractive() throws IOException {
+    void testClientLoginWithDefaultConfigInteractive() throws IOException {
         /*
          *  Test client login with interaction - login using service account, and provide a client secret after prompted for it
          */
@@ -389,7 +398,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testUserLoginWithCustomConfig() {
+    void testUserLoginWithCustomConfig() {
         /*
          *  Test user login using a custom config file
          */
@@ -425,7 +434,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testCustomConfigLoginCreateDelete() throws IOException {
+    void testCustomConfigLoginCreateDelete() throws IOException {
         /*
          *  Test user login, create, delete session using a custom config file
          */
@@ -471,7 +480,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testCRUDWithOnTheFlyUserAuth() throws IOException {
+    void testCRUDWithOnTheFlyUserAuth() throws IOException {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
          *  Login is performed by each operation again, and again using username, and password.
@@ -481,7 +490,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testCRUDWithOnTheFlyUserAuthWithClientSecret() throws IOException {
+    void testCRUDWithOnTheFlyUserAuthWithClientSecret() throws IOException {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
          *  Login is performed by each operation again, and again using username, password, and client secret.
@@ -519,14 +528,14 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient_JKSKeystore() throws IOException {
-        KeystoreUtils.assumeKeystoreTypeSupported(KeystoreUtil.KeystoreFormat.JKS);
+    void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient_JKSKeystore() throws IOException {
+        assumeKeystoreTypeSupported(KeystoreUtil.KeystoreFormat.JKS);
         testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(KeystoreUtil.KeystoreFormat.JKS.getPrimaryExtension());
     }
 
     @Test
-    public void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient_PKCS12Keystore() throws IOException {
-        KeystoreUtils.assumeKeystoreTypeSupported(KeystoreUtil.KeystoreFormat.PKCS12);
+    void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient_PKCS12Keystore() throws IOException {
+        assumeKeystoreTypeSupported(KeystoreUtil.KeystoreFormat.PKCS12);
         testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(KeystoreUtil.KeystoreFormat.PKCS12.getPrimaryExtension());
     }
 
@@ -535,7 +544,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
          *  Login is performed by each operation again, and again using username, password, and client JWT signature.
          */
-        File keystore = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcadm/admin-cli-keystore." + keystoreFileExtension);
+        File keystore = resourceFile("org/keycloak/tests/cli/kcadm/admin-cli-keystore." + keystoreFileExtension);
         Assertions.assertTrue(keystore.isFile(), "admin-cli-keystore." + keystoreFileExtension + " must exist, but it does not exists");
 
         // try client without direct grants enabled
@@ -577,7 +586,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testCRUDWithOnTheFlyServiceAccountWithClientSecret() throws IOException {
+    void testCRUDWithOnTheFlyServiceAccountWithClientSecret() throws IOException {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
          *  Login is performed by each operation again, and again using only client secret - service account is used.
@@ -587,12 +596,12 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testCRUDWithOnTheFlyServiceAccountWithSignedJwtClient() throws IOException {
+    void testCRUDWithOnTheFlyServiceAccountWithSignedJwtClient() throws IOException {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
          *  Login is performed by each operation again, and again using only client JWT signature - service account is used.
          */
-        File keystore = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcadm/admin-cli-keystore.p12");
+        File keystore = resourceFile("org/keycloak/tests/cli/kcadm/admin-cli-keystore.p12");
         Assertions.assertTrue(keystore.isFile(), "admin-cli-keystore.p12 exists");
 
         testCRUDWithOnTheFlyAuth(serverUrl,
@@ -601,7 +610,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testCRUDWithToken() throws Exception {
+    void testCRUDWithToken() throws Exception {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
          *  Login is performed by each operation again, and again using username, password, and client secret.
@@ -617,7 +626,8 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testGetUserNameExact() {
+    void testGetUserNameExact() {
+        realm.cleanup().add(r -> removeRealmIfExists("demorealm"));
         KcAdmExec.execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
         KcAdmExec.execute("create realms -s realm=demorealm -s enabled=true");
         KcAdmExec.execute("create users -r demorealm -s username=testuser");
@@ -632,7 +642,8 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testGetGroupNameExact() {
+    void testGetGroupNameExact() {
+        realm.cleanup().add(r -> removeRealmIfExists("demorealm"));
         KcAdmExec.execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
         KcAdmExec.execute("create realms -s realm=demorealm -s enabled=true");
         KcAdmExec.execute("create role -r demorealm -s name=testrole");
@@ -650,7 +661,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testCsvFormat() {
+    void testCsvFormat() {
         execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
         KcAdmExec exec = execute("get realms/master --format csv");
         assertExitCodeAndStreamSizes(exec, 0, 1, 0);
@@ -658,7 +669,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testCsvFormatWithMissingFields() {
+    void testCsvFormatWithMissingFields() {
         execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
         KcAdmExec exec = execute("get realms/master --format csv --fields foo");
         // nothing valid was selected, should be blank
@@ -667,7 +678,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testCompressedCsv() {
+    void testCompressedCsv() {
         execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
         KcAdmExec exec = execute("get realms/master --format csv --compressed");
         // should contain an error message
@@ -675,7 +686,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testEnvPasswordWithRegularCommand() {
+    void testEnvPasswordWithRegularCommand() {
         execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
         KcAdmExec exec = KcAdmExec.newBuilder()
                 .argsLine("get users --format csv")
@@ -686,7 +697,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
-    public void testStatusOptionForConfigCred() {
+    void testStatusOptionForConfigCred() {
         execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
         KcAdmExec exec = execute("config credentials --status");
         assertExitCodeAndStreamSizes(exec, 0, 1, 0);
@@ -696,6 +707,14 @@ public class KcAdmTest extends AbstractAdmCliTest {
         assertExitCodeAndStreamSizes(exec, 0, 1, 0);
         Assertions.assertTrue(exec.stdoutString().startsWith("Logged in (server: " + serverUrl + ", realm: master, expired: false, timeToExpiry:"));
         Assertions.assertTrue(exec.stdoutString().endsWith("from now)\n"));
+    }
+
+    static class CliOAuthClientConfig implements ClientConfig {
+
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return client.clientId("kcadm-cli-oauth-client");
+        }
     }
 
 }

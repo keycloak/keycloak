@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.cli.exec;
+package org.keycloak.tests.cli.exec;
 
 import java.io.IOException;
 import java.io.InputStream;
