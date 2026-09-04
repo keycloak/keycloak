@@ -1,26 +1,30 @@
-/*
- * Copyright 2023 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package org.keycloak.testsuite.broker;
+package org.keycloak.tests.broker.oidc;
 
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jwe.JWEConstants;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.broker.AbstractKcOidcEcdhEsJweBrokerTest;
 
-public class KcOidcBrokerJWEEcdhEsA128KwP256A128CbcHs256Test extends AbstractKcOidcBrokerJWEEcdhEsTest {
-    public KcOidcBrokerJWEEcdhEsA128KwP256A128CbcHs256Test() {
-        super("P-256", JWEConstants.ECDH_ES_A128KW, JWEConstants.A128CBC_HS256, Algorithm.ES256);
+@KeycloakIntegrationTest
+public class KcOidcBrokerJWEEcdhEsA128KwP256A128CbcHs256Test extends AbstractKcOidcEcdhEsJweBrokerTest {
+
+    @Override
+    protected String getCurve() {
+        return "P-256";
+    }
+
+    @Override
+    protected String getEncAlg() {
+        return JWEConstants.ECDH_ES_A128KW;
+    }
+
+    @Override
+    protected String getEncEnc() {
+        return JWEConstants.A128CBC_HS256;
+    }
+
+    @Override
+    protected String getSigAlg() {
+        return Algorithm.ES256;
     }
 }

@@ -1,26 +1,30 @@
-/*
-KcOidcBrokerJWEEcdhEsA256KwP521A256GcmTest.java * Copyright 2023 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package org.keycloak.testsuite.broker;
+package org.keycloak.tests.broker.oidc;
 
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jwe.JWEConstants;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.broker.AbstractKcOidcEcdhEsJweBrokerTest;
 
-public class KcOidcBrokerJWEEcdhEsA256KwP521A256CbcHs512Test extends AbstractKcOidcBrokerJWEEcdhEsTest {
-    public KcOidcBrokerJWEEcdhEsA256KwP521A256CbcHs512Test() {
-        super("P-521", JWEConstants.ECDH_ES_A256KW, JWEConstants.A256CBC_HS512, Algorithm.ES512);
+@KeycloakIntegrationTest
+public class KcOidcBrokerJWEEcdhEsA256KwP521A256CbcHs512Test extends AbstractKcOidcEcdhEsJweBrokerTest {
+
+    @Override
+    protected String getCurve() {
+        return "P-521";
+    }
+
+    @Override
+    protected String getEncAlg() {
+        return JWEConstants.ECDH_ES_A256KW;
+    }
+
+    @Override
+    protected String getEncEnc() {
+        return JWEConstants.A256CBC_HS512;
+    }
+
+    @Override
+    protected String getSigAlg() {
+        return Algorithm.ES512;
     }
 }
