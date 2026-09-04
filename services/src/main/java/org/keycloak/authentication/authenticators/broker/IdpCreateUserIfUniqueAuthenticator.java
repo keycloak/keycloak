@@ -33,6 +33,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
@@ -148,16 +149,38 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
     // Could be overriden to detect duplication based on other criterias (firstName, lastName, ...)
     protected ExistingUserInfo checkExistingUser(AuthenticationFlowContext context, String username, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
 
-        if (brokerContext.getEmail() != null && !context.getRealm().isDuplicateEmailsAllowed()) {
-            UserModel existingUser = context.getSession().users().getUserByEmail(context.getRealm(), brokerContext.getEmail());
+        RealmModel realm = context.getRealm();
+        UserProvider users = context.getSession().users();
+        String email = brokerContext.getEmail();
+
+        if (email != null && !realm.isDuplicateEmailsAllowed()) {
+            UserModel existingUser = users.getUserByEmail(realm, email);
             if (existingUser != null) {
                 return new ExistingUserInfo(existingUser.getId(), UserModel.EMAIL, existingUser.getEmail());
             }
+
+            // When login with email is allowed an e-mail address also identifies a user at login time, so a brokered
+            // e-mail that matches the username of an existing account has to be treated as a duplication as well.
+            // Otherwise the new account would shadow the existing one and lock it out of every username based login.
+            if (realm.isLoginWithEmailAllowed()) {
+                existingUser = users.getUserByUsername(realm, email);
+                if (existingUser != null) {
+                    return new ExistingUserInfo(existingUser.getId(), UserModel.USERNAME, existingUser.getUsername());
+                }
+            }
         }
 
-        UserModel existingUser = context.getSession().users().getUserByUsername(context.getRealm(), username);
+        UserModel existingUser = users.getUserByUsername(realm, username);
         if (existingUser != null) {
             return new ExistingUserInfo(existingUser.getId(), UserModel.USERNAME, existingUser.getUsername());
+        }
+
+        // Same reasoning as above, for a brokered username that matches the e-mail of an existing account
+        if (realm.isLoginWithEmailAllowed() && username.indexOf('@') > 0) {
+            existingUser = users.getUserByEmail(realm, username);
+            if (existingUser != null) {
+                return new ExistingUserInfo(existingUser.getId(), UserModel.EMAIL, existingUser.getEmail());
+            }
         }
 
         return null;

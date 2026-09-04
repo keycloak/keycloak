@@ -111,6 +111,42 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
 
     /**
+     * A brokered e-mail address that matches the username of an existing account has to be detected as a duplication.
+     *
+     * Without that check a second account is created for the brokered identity and, because login with e-mail resolves
+     * the e-mail address before the username, that account shadows the existing one and locks it out of every username
+     * based login.
+     */
+    @Test
+    public void testErrorExistingUserWithUsernameMatchingBrokeredEmail() {
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        RealmRepresentation consumerRealmRep = consumerRealm.toRepresentation();
+        consumerRealmRep.setLoginWithEmailAllowed(true);
+        consumerRealm.update(consumerRealmRep);
+
+        // The username of the existing account looks like an e-mail address, but its e-mail attribute is a different
+        // address. A plain e-mail against e-mail comparison therefore does not detect the collision.
+        String existingUser = createUser(USER_EMAIL, "some-other-address@localhost.com");
+
+        oauth.client("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
+        logInWithBroker(bc);
+
+        waitForPage(driver, "account already exists", false);
+        assertTrue(idpConfirmLinkPage.isCurrent());
+        assertEquals("User with username " + USER_EMAIL + " already exists. How do you want to continue?",
+                idpConfirmLinkPage.getMessage());
+
+        // The brokered identity must not have been given an account of its own
+        assertTrue(consumerRealm.users().searchByUsername(bc.getUserLogin(), true).isEmpty());
+        assertNumFederatedIdentities(existingUser, 0);
+    }
+
+
+    /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testLinkAccountByReauthenticationWithPassword
      */
     @Test
