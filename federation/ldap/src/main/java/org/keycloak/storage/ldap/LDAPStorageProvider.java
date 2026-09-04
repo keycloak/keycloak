@@ -1335,9 +1335,16 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 // value happens to be unchanged - see AttributeMetadata#isReadOnlyBypassAllowed.
                 AttributeMetadata existing = metadata.getAttribute(attrName).stream().findFirst().orElse(null);
                 if (existing != null) {
-                    AttributeMetadata override = existing.clone();
-                    override.addReadOnlyBypassCondition(AttributeMetadata.ALWAYS_FALSE);
-                    metadatas.add(override);
+                    // Only defeat the bypass when opted into LDAP import validation. Otherwise an existing invalid
+                    // read-only value - e.g. imported before this feature existed, or on a realm that never opted
+                    // in - would start failing validation on every profile update, trapping the user in an
+                    // unfixable required-action loop unrelated to LDAP import. Not adding an override here leaves
+                    // the base profile's original, permissive bypass behavior in place.
+                    if (Boolean.parseBoolean(model.getConfig().getFirst(LDAPConstants.VALIDATE_USER_PROFILE))) {
+                        AttributeMetadata override = existing.clone();
+                        override.addReadOnlyBypassCondition(AttributeMetadata.ALWAYS_FALSE);
+                        metadatas.add(override);
+                    }
                 } else {
                     // createAttributeMetadata() returning null above means it found this attribute already present
                     // on the base profile - so this should never happen. If it ever does, the read-only bypass
