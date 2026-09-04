@@ -84,6 +84,7 @@ public class OTPCredentialModel extends CredentialModel {
             otpCredentialModel.setId(credentialModel.getId());
             otpCredentialModel.setSecretData(credentialModel.getSecretData());
             otpCredentialModel.setCredentialData(credentialModel.getCredentialData());
+            otpCredentialModel.setPriority(credentialModel.getPriority());
             return otpCredentialModel;
         } catch (IOException e) {
             throw new RuntimeException(e);
