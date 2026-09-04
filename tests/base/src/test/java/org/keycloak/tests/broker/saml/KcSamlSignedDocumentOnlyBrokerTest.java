@@ -21,7 +21,10 @@ public class KcSamlSignedDocumentOnlyBrokerTest extends AbstractKcSamlBrokerTest
         String providerSigningCert = activeRs256SigCert(providerRealm);
         String consumerSigningCert = activeRs256SigCert(consumerRealm);
 
-        String samlClientId = "http://localhost:8080/realms/" + CONSUMER_REALM;
+        // AbstractKcSamlBrokerTest.configureSamlBrokerEndpoints() (superclass @BeforeEach, runs before
+        // this one) already renamed the provider client from the seeded placeholder entity id to the
+        // consumer's actual base URL, so that's the id to look up here, not the placeholder.
+        String samlClientId = consumerRealm.getBaseUrl();
         ClientRepresentation client = providerRealm.admin().clients().findByClientId(samlClientId).get(0);
         client.getAttributes().put(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "false");
         client.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "true");
