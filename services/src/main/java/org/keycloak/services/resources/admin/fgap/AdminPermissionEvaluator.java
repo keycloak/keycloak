@@ -35,6 +35,8 @@ public interface AdminPermissionEvaluator {
     ClientPermissionEvaluator clients();
     GroupPermissionEvaluator groups();
 
+    boolean isRealmAdmin();
+
     /**
      * Useful as a function pointer, i.e. RoleMapperResource is reused bewteen GroupResource and UserResource to manage role mappings.
      * We don't know what type of resource we're managing here (user or group), so we don't know how to query the policy engine to determine

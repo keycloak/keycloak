@@ -279,6 +279,82 @@ public class ImpersonationTest {
         ApiUtil.findClientByClientId(masterRealm.admin(), "service-account-cl").remove();
     }
 
+    @Test
+    public void testImpersonateRealmAdminDeniedForLowerPrivilegeUser() {
+        String realmAdminId = managedRealm.admin().users().search("realm-admin", true).get(0).getId();
+        try (Keycloak client = createAdminClient(managedRealm.getName(), "myclient", "impersonator")) {
+            client.realms().realm(managedRealm.getName()).users().get(realmAdminId).impersonate();
+            Assertions.fail("Impersonation of higher-privileged user should be denied");
+        } catch (ClientErrorException e) {
+            MatcherAssert.assertThat(e.getMessage(), containsString("403 Forbidden"));
+        }
+    }
+
+    @Test
+    public void testImpersonateByEqualPrivilegeAdmin() {
+        testSuccessfulImpersonation("realm-admin", managedRealm.getName());
+    }
+
+    @Test
+    public void testImpersonateMasterAdminDeniedForLowerPrivilegeUser() {
+        String impersonatorId;
+        try (Response response = masterRealm.admin().users().create(UserConfigBuilder.create().username("master-escalation-impersonator").build())) {
+            impersonatorId = ApiUtil.getCreatedId(response);
+        }
+        masterRealm.cleanup().add(r -> r.users().delete(impersonatorId).close());
+
+        UserResource impersonatorUser = masterRealm.admin().users().get(impersonatorId);
+        impersonatorUser.resetPassword(CredentialBuilder.create().password("password").build());
+
+        ClientResource masterRealmClient = ApiUtil.findClientByClientId(masterRealm.admin(), "master-realm");
+        List<RoleRepresentation> roles = new LinkedList<>();
+        roles.add(ApiUtil.findClientRoleByName(masterRealmClient, AdminRoles.IMPERSONATION).toRepresentation());
+        roles.add(ApiUtil.findClientRoleByName(masterRealmClient, AdminRoles.VIEW_USERS).toRepresentation());
+        impersonatorUser.roles().clientLevel(masterRealmClient.toRepresentation().getId()).add(roles);
+
+        String adminId = masterRealm.admin().users().search("admin", true).get(0).getId();
+        try (Keycloak client = createAdminClient(Config.getAdminRealm(), Constants.ADMIN_CLI_CLIENT_ID, "master-escalation-impersonator")) {
+            client.realm(Config.getAdminRealm()).users().get(adminId).impersonate();
+            Assertions.fail("Impersonation of master admin should be denied");
+        } catch (ClientErrorException e) {
+            MatcherAssert.assertThat(e.getMessage(), containsString("403 Forbidden"));
+        }
+    }
+
+    @Test
+    public void testCrossRealmImpersonateRealmAdminDeniedForLowerPrivilegeUser() {
+        String impersonatorId;
+        try (Response response = masterRealm.admin().users().create(UserConfigBuilder.create().username("master-cross-realm-impersonator").build())) {
+            impersonatorId = ApiUtil.getCreatedId(response);
+        }
+        masterRealm.cleanup().add(r -> r.users().delete(impersonatorId).close());
+
+        UserResource impersonatorUser = masterRealm.admin().users().get(impersonatorId);
+        impersonatorUser.resetPassword(CredentialBuilder.create().password("password").build());
+
+        ClientResource testRealmClient = ApiUtil.findClientByClientId(masterRealm.admin(), managedRealm.getName() + "-realm");
+        List<RoleRepresentation> roles = new LinkedList<>();
+        roles.add(ApiUtil.findClientRoleByName(testRealmClient, AdminRoles.IMPERSONATION).toRepresentation());
+        roles.add(ApiUtil.findClientRoleByName(testRealmClient, AdminRoles.VIEW_USERS).toRepresentation());
+        impersonatorUser.roles().clientLevel(testRealmClient.toRepresentation().getId()).add(roles);
+
+        String realmAdminId = managedRealm.admin().users().search("realm-admin", true).get(0).getId();
+        try (Keycloak client = createAdminClient(Config.getAdminRealm(), Constants.ADMIN_CLI_CLIENT_ID, "master-cross-realm-impersonator")) {
+            client.realm(managedRealm.getName()).users().get(realmAdminId).impersonate();
+            Assertions.fail("Cross-realm impersonation of higher-privileged user should be denied");
+        } catch (ClientErrorException e) {
+            MatcherAssert.assertThat(e.getMessage(), containsString("403 Forbidden"));
+        }
+    }
+
+    @Test
+    public void testCrossRealmImpersonateRealmAdminByMasterAdmin() {
+        String realmAdminId = managedRealm.admin().users().search("realm-admin", true).get(0).getId();
+        try (Keycloak client = login("admin", Config.getAdminRealm())) {
+            impersonate(client, "admin", Config.getAdminRealm(), realmAdminId);
+        }
+    }
+
     // Return the SSO cookie from the impersonated session
     private Set<Cookie> testSuccessfulImpersonation(String admin, String adminRealm) {
         // Login adminClient
@@ -289,11 +365,15 @@ public class ImpersonationTest {
     }
 
     private Set<Cookie> impersonate(Keycloak adminClient, String admin, String adminRealm) {
+        return impersonate(adminClient, admin, adminRealm, managedUser.getId());
+    }
+
+    private Set<Cookie> impersonate(Keycloak adminClient, String admin, String adminRealm, String userId) {
         BasicCookieStore cookieStore = new BasicCookieStore();
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build()) {
 
             HttpUriRequest req = RequestBuilder.post()
-                    .setUri(keycloakUrls.getBase() + "/admin/realms/test/users/" + managedUser.getId() + "/impersonation")
+                    .setUri(keycloakUrls.getBase() + "/admin/realms/" + managedRealm.getName() + "/users/" + userId + "/impersonation")
                     .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + adminClient.tokenManager().getAccessTokenString())
                     .build();
 
@@ -306,13 +386,12 @@ public class ImpersonationTest {
             EventRepresentation event = events.poll();
             Assertions.assertEquals(event.getType(), EventType.IMPERSONATE.toString());
             MatcherAssert.assertThat(event.getSessionId(), EventMatchers.isUUID());
-            Assertions.assertEquals(event.getUserId(), managedUser.getId());
+            Assertions.assertEquals(event.getUserId(), userId);
             Assertions.assertTrue(event.getDetails().values().stream().anyMatch(f -> f.equals(admin)));
             Assertions.assertTrue(event.getDetails().values().stream().anyMatch(f -> f.equals(adminRealm)));
 
             String testRealm = managedRealm.getName();
             // Fetch user session notes
-            final String userId = managedUser.getId();
             final UserSessionNotesHolder notesHolder = runOnServer.fetch(session -> {
                 final RealmModel realm = session.realms().getRealmByName(testRealm);
                 final UserModel user = session.users().getUserById(realm, userId);
@@ -418,7 +497,7 @@ public class ImpersonationTest {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build()) {
 
             HttpUriRequest req = RequestBuilder.post()
-                    .setUri(keycloakUrls.getBase() + "/admin/realms/test/users/" + managedUser.getId() + "/impersonation")
+                    .setUri(keycloakUrls.getBase() + "/admin/realms/" + managedRealm.getName() + "/users/" + managedUser.getId() + "/impersonation")
                     .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + adminClient.tokenManager().getAccessTokenString())
                     .build();
 
