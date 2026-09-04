@@ -1,51 +1,46 @@
-package org.keycloak.testsuite.broker;
-
-import java.util.List;
-import java.util.Map;
+package org.keycloak.tests.broker.oidc;
 
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
-import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.tests.broker.AbstractKcOidcBrokerTest;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
-import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
+@KeycloakIntegrationTest
+public class KcOidcBrokerClientSecretJwtTest extends AbstractKcOidcBrokerTest {
 
-public class KcOidcBrokerClientSecretJwtTest extends AbstractBrokerTest {
+    // BCFIPS approved mode requires at least 112 bits (14 characters) for client-secret-jwt
+    private static final String CLIENT_SECRET_JWT = "atleast-14chars-password";
 
-    // BCFIPS approved mode requires at least 112 bits (14 characters) long SecretKey for "client-secret-jwt" authentication
-    private static final String CLIENT_SECRET = "atleast-14chars-password";
+    @InjectRealm(ref = "provider", lifecycle = LifeCycle.METHOD,
+            config = JwtSecretProviderRealmConfig.class)
+    ManagedRealm providerRealm;
 
-    @Override
-    protected BrokerConfiguration getBrokerConfiguration() {
-        return new KcOidcBrokerConfigurationWithJWTAuthentication();
+    @InjectRealm(ref = "consumer", lifecycle = LifeCycle.METHOD,
+            config = JwtSecretConsumerRealmConfig.class)
+    ManagedRealm consumerRealm;
+
+    static class JwtSecretProviderRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return configureProviderRealm(realm,
+                    createDefaultProviderClient()
+                            .secret(CLIENT_SECRET_JWT)
+                            .authenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID));
+        }
     }
 
-    private class KcOidcBrokerConfigurationWithJWTAuthentication extends KcOidcBrokerConfiguration {
-
+    static class JwtSecretConsumerRealmConfig implements RealmConfig {
         @Override
-        public List<ClientRepresentation> createProviderClients() {
-            List<ClientRepresentation> clientsRepList = super.createProviderClients();
-            log.info("Update provider clients to accept JWT authentication");
-            for (ClientRepresentation client: clientsRepList) {
-                client.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
-                client.setSecret(CLIENT_SECRET);
-            }
-            return clientsRepList;
+        public RealmBuilder configure(RealmBuilder realm) {
+            return configureConsumerRealm(realm,
+                    createOidcIdentityProvider()
+                            .attribute("clientSecret", CLIENT_SECRET_JWT)
+                            .attribute("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_JWT));
         }
-
-        @Override
-        public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
-            IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
-            Map<String, String> config = idp.getConfig();
-            applyDefaultConfiguration(config, syncMode);
-            config.put("clientSecret", CLIENT_SECRET);
-            config.put("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_JWT);
-            return idp;
-        }
-        
-
     }
 }
