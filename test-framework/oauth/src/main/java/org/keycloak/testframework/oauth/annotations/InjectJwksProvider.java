@@ -7,14 +7,8 @@ import java.lang.annotation.Target;
 
 import org.keycloak.testframework.injection.LifeCycle;
 
-/**
- *
- * @author rmartinc
- */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface InjectSectorIdentifierRedirectUrisProvider {
+public @interface InjectJwksProvider {
     LifeCycle lifecycle() default LifeCycle.GLOBAL;
-
-    String[] value() default {};
 }
