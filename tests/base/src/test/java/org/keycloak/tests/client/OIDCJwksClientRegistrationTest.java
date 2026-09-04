@@ -85,7 +85,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
     public void before() throws Exception {
         super.before();
 
-        ClientInitialAccessPresentation token = adminClient.realm(REALM_NAME).clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
+        ClientInitialAccessPresentation token = managedRealm.admin().clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
         reg.auth(Auth.token(token));
     }
 

@@ -80,7 +80,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         oauth.getDriver().navigate().to(managedRealm.getBaseUrl());
         oauth.getDriver().manage().deleteAllCookies();
 
-        ClientInitialAccessPresentation token = adminClient.realm(REALM_NAME).clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
+        ClientInitialAccessPresentation token = managedRealm.admin().clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
         reg.auth(Auth.token(token));
     }
 

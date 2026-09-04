@@ -52,15 +52,6 @@ public class AdminApiUtil {
 
     private static final Logger log = Logger.getLogger(AdminApiUtil.class);
 
-    public static ClientResource findClientResourceByClientId(RealmResource realm, String clientId) {
-        for (ClientRepresentation c : realm.clients().findAll()) {
-            if (c.getClientId().equals(clientId)) {
-                return realm.clients().get(c.getId());
-            }
-        }
-        return null;
-    }
-
     public static ClientResource findClientResourceById(RealmResource realm, String id) {
         for (ClientRepresentation c : realm.clients().findAll()) {
             if (c.getId().equals(id)) {

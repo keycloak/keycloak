@@ -118,10 +118,6 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         return response;
     }
 
-    private void assertOidcFail(ClientRegOp operation, OIDCClientRepresentation client, int expectedStatusCode) {
-        assertOidcFail(operation, client, expectedStatusCode, null);
-    }
-
     private void assertOidcFail(ClientRegOp operation, OIDCClientRepresentation client, int expectedStatusCode, String expectedErrorContains) {
         try {
             switch (operation) {
@@ -537,6 +533,8 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         // Check authenticated registration is permitted
         ClientRepresentation registeredClient = reg.create(clientRep);
+        String clientUuid = registeredClient.getId();
+        managedRealm.cleanup().add(r -> r.clients().delete(clientUuid));
         Assertions.assertNotNull(registeredClient.getRegistrationAccessToken());
 
         // Check "anonymous" registration still fails
@@ -546,7 +544,6 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         assertFail(ClientRegOp.CREATE, clientRep, 403, "ProtocolMapper type not allowed");
 
         // Revert policy change
-        AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), clientId).remove();
         protocolMapperPolicyRep.getConfig().get(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES).remove(HardcodedRole.PROVIDER_ID);
         managedRealm.admin().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
     }
@@ -577,6 +574,8 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         clientRep.setProtocolMappers(Collections.singletonList(protocolMapper));
 
         ClientRepresentation registeredClient = reg.create(clientRep);
+        String clientUuid = registeredClient.getId();
+        managedRealm.cleanup().add(r -> r.clients().delete(clientUuid));
         reg.auth(Auth.token(registeredClient));
 
         // Add some disallowed protocolMapper
@@ -592,9 +591,6 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         // Check I can update client now
         reg.update(registeredClient);
-
-        // Revert client
-        AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), clientId).remove();
     }
 
     @Test
@@ -606,17 +602,15 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         // Create the client with a client registration disallowed protocolMapper
         clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
         Response adminClientCreationResponse = managedRealm.admin().clients().create(clientRep);
-        String clientTechnicalId = ApiUtil.getCreatedId(adminClientCreationResponse);
+        String clientUuid = ApiUtil.getCreatedId(adminClientCreationResponse);
+        managedRealm.cleanup().add(r -> r.clients().delete(clientUuid));
         adminClientCreationResponse.close();
 
-        ClientResource clientResource = managedRealm.admin().clients().get(clientTechnicalId);
+        ClientResource clientResource = managedRealm.admin().clients().get(clientUuid);
 
         reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
         // Check the client can be updated with a representation keeping the disallowed protocolMapper
         reg.update(clientResource.toRepresentation());
-
-        // Revert client
-        AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), clientId).remove();
     }
 
     @Test
@@ -628,19 +622,17 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         // Create the client with a client registration disallowed protocolMapper
         clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
         Response adminClientCreationResponse = managedRealm.admin().clients().create(clientRep);
-        String clientTechnicalId = ApiUtil.getCreatedId(adminClientCreationResponse);
+        String clientUuid = ApiUtil.getCreatedId(adminClientCreationResponse);
+        managedRealm.cleanup().add(r -> r.clients().delete(clientUuid));
         adminClientCreationResponse.close();
 
-        ClientResource clientResource = managedRealm.admin().clients().get(clientTechnicalId);
+        ClientResource clientResource = managedRealm.admin().clients().get(clientUuid);
 
         reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
 
         ClientRepresentation representation = clientResource.toRepresentation();
         representation.getProtocolMappers().add(createHardcodedMapperRep());
         assertFail(ClientRegOp.UPDATE, representation, 403, "Missing id for mapper named 'Hardcoded foo role'");
-
-        // Revert client
-        AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), clientId).remove();
     }
 
     @Test
@@ -652,19 +644,17 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         // Create the client with a client registration disallowed protocolMapper
         clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
         Response adminClientCreationResponse = managedRealm.admin().clients().create(clientRep);
-        String clientTechnicalId = ApiUtil.getCreatedId(adminClientCreationResponse);
+        String clientUuid = ApiUtil.getCreatedId(adminClientCreationResponse);
+        managedRealm.cleanup().add(r -> r.clients().delete(clientUuid));
         adminClientCreationResponse.close();
 
-        ClientResource clientResource = managedRealm.admin().clients().get(clientTechnicalId);
+        ClientResource clientResource = managedRealm.admin().clients().get(clientUuid);
 
         reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
         // Check the client can be updated with a representation keeping the disallowed protocolMapper
         ClientRepresentation representation = clientResource.toRepresentation();
         representation.getProtocolMappers().forEach(mapper -> mapper.getConfig().put("foo", "bar"));
         assertFail(ClientRegOp.UPDATE, representation, 403, "ProtocolMapper type not allowed");
-
-        // Revert client
-        AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), clientId).remove();
     }
 
     @Test
@@ -676,18 +666,16 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         // Create the client with a client registration disallowed protocolMapper
         clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
         Response adminClientCreationResponse = managedRealm.admin().clients().create(clientRep);
-        String clientTechnicalId = ApiUtil.getCreatedId(adminClientCreationResponse);
+        String clientUuid = ApiUtil.getCreatedId(adminClientCreationResponse);
+        managedRealm.cleanup().add(r -> r.clients().delete(clientUuid));
         adminClientCreationResponse.close();
 
-        ClientResource clientResource = managedRealm.admin().clients().get(clientTechnicalId);
+        ClientResource clientResource = managedRealm.admin().clients().get(clientUuid);
 
         reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
         ClientRepresentation representation = clientResource.toRepresentation();
         representation.getProtocolMappers().forEach(mapper -> mapper.setId(UUID.randomUUID().toString()));
         assertFail(ClientRegOp.UPDATE, representation, 403, "No existing mapper model found for id");
-
-        // Revert client
-        AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), clientId).remove();
     }
 
     @Test
@@ -698,11 +686,10 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         // Register client and assert it doesn't have builtin protocol mappers
         ClientRepresentation clientRep = createRep(clientId);
         ClientRepresentation registeredClient = reg.create(clientRep);
+        String clientUuid = registeredClient.getId();
+        managedRealm.cleanup().add(r -> r.clients().delete(clientUuid));
 
         Assertions.assertNull(registeredClient.getProtocolMappers());
-
-        // Revert
-        AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), clientId).remove();
     }
 
 
@@ -721,12 +708,13 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         ClientRepresentation clientRep = createRep(clientId);
         clientRep.setProtocolMappers(Collections.singletonList(createHardcodedMapperRep()));
         ClientRepresentation registeredClient = reg.create(clientRep);
+        String clientUuid = registeredClient.getId();
+        managedRealm.cleanup().add(r -> r.clients().delete(clientUuid));
 
         Assertions.assertEquals(1, registeredClient.getProtocolMappers().size());
         ProtocolMapperRepresentation hardcodedMapper = registeredClient.getProtocolMappers().get(0);
 
         // Revert
-        AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), clientId).remove();
         protocolMapperPolicyRep.getConfig().get(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES).remove(HardcodedRole.PROVIDER_ID);
         managedRealm.admin().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
     }
