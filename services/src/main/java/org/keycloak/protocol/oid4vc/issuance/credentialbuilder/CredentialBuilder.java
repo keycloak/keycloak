@@ -17,11 +17,15 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
+import java.util.List;
+
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.Provider;
+
+import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_JWK;
 
 public interface CredentialBuilder extends Provider {
 
@@ -33,6 +37,13 @@ public interface CredentialBuilder extends Provider {
      * Returns the credential format supported by the builder.
      */
     String getSupportedFormat();
+
+    /**
+     * Returns list of supported binding methods for this credential format
+     */
+    default List<String> getSupportedBindingMethods() {
+        return List.of(CRYPTOGRAPHIC_BINDING_METHOD_JWK);
+    }
 
     /**
      * Builds a verifiable credential of a specific format from the basis of

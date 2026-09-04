@@ -38,6 +38,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
+import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -50,6 +51,9 @@ import org.junit.Assert;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY;
+import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_JWK;
+import static org.keycloak.OID4VCConstants.FORMAT_SD_JWT_VC;
 import static org.keycloak.VCFormat.JWT_VC;
 import static org.keycloak.VCFormat.SD_JWT_VC;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
@@ -228,6 +232,100 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
         }
     }
 
+    /**
+     * Issue #52421 - Case 1: binding_required=true but binding methods is null/blank should be rejected.
+     */
+    @Test
+    public void testBindingRequiredWithNullBindingMethodsRejected() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("issue-52421-null-binding-methods");
+        scope.setBindingRequired(true);
+        // leave vc.cryptographic_binding_methods_supported absent (null)
+        // leave vc.binding_required_proof_types absent (null)
+
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains(VC_CRYPTOGRAPHIC_BINDING_METHODS));
+    }
+
+    /**
+     * Issue #52421 - Case 2: binding_required=true but binding methods contains only invalid values should be rejected.
+     */
+    @Test
+    public void testBindingRequiredWithInvalidBindingMethodsRejected() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("issue-52421-invalid-binding-methods");
+        scope.setBindingRequired(true);
+        scope.setCryptographicBindingMethods("incorrect-value");
+        // leave vc.binding_required_proof_types absent so we catch the binding method error first
+
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains(VC_CRYPTOGRAPHIC_BINDING_METHODS));
+    }
+
+    /**
+     * Issue #52421 - Case 3: binding_required=true, invalid binding method for the proof type
+     */
+    @Test
+    public void testBindingRequiredWithValidProofTypeButInvalidBindingMethodRejected() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("issue-52421-null-proof-types");
+        scope.setFormat(FORMAT_SD_JWT_VC);
+        scope.setBindingRequired(true);
+        scope.setCryptographicBindingMethods(CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY); // This binding method is supported just for the "mdoc" format, but not for "sd-jwt"
+        scope.setRequiredProofTypes(ProofType.JWT);
+
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains(VC_CRYPTOGRAPHIC_BINDING_METHODS));
+    }
+
+    /**
+     * Issue #52421 - Case 4: binding_required=true, valid binding method, but proof types contains only invalid values should be rejected.
+     */
+    @Test
+    public void testBindingRequiredWithInvalidProofTypesRejected() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("issue-52421-invalid-proof-types");
+        scope.setBindingRequired(true);
+        scope.setCryptographicBindingMethods(CRYPTOGRAPHIC_BINDING_METHOD_JWK);
+        scope.setRequiredProofTypes("incorrect-value");
+
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains("vc.binding_required_proof_types"));
+    }
+
+    /**
+     * Issue #52421 - Valid case: binding_required=true with valid binding methods and proof types should succeed.
+     */
+    @Test
+    public void testBindingRequiredWithValidConfigAccepted() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("issue-52421-valid-binding");
+        scope.setBindingRequired(true);
+        scope.setCryptographicBindingMethods(CRYPTOGRAPHIC_BINDING_METHOD_JWK);
+        scope.setRequiredProofTypes(ProofType.JWT);
+
+        ClientScopesResource clientScopes = testRealm.admin().clientScopes();
+        String scopeId = null;
+        try (Response response = clientScopes.create(scope)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus(),
+                    "Should accept scope when binding_required=true with valid binding methods and proof types");
+            scopeId = ApiUtil.getCreatedId(response);
+        } finally {
+            if (scopeId != null) {
+                clientScopes.get(scopeId).remove();
+            }
+        }
+    }
+
+    /**
+     * Issue #52421 - binding_required=false , but cryptographic-binding-methods and proofTypes provided. Should be still rejected
+     */
+    @Test
+    public void testBindingNotRequiredInvalidBindingMethodsAndProofType() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("issue-52421-no-binding");
+        scope.setBindingRequired(false);
+        scope.setCryptographicBindingMethods("incorrect-value");
+        scope.setRequiredProofTypes("incorrect-value");
+
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains(VC_CRYPTOGRAPHIC_BINDING_METHODS));
+    }
+
     private String createCredentialScope(ClientScopesResource clientScopes, String name,
                                          String credentialConfigurationId) {
         CredentialScopeRepresentation scope = new CredentialScopeRepresentation(name);
@@ -235,6 +333,16 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
         try (Response response = clientScopes.create(scope)) {
             assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
             return ApiUtil.getCreatedId(response);
+        }
+    }
+
+    // Assert that creation of clientScope fails. Return the error message returned by the server
+    private String assertClientScopeCreateFailure(CredentialScopeRepresentation scope) {
+        ClientScopesResource clientScopes = testRealm.admin().clientScopes();
+        try (Response response = clientScopes.create(scope)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus(),
+                    "Should reject scope when binding_required=true and cryptographic_binding_methods_supported is absent");
+            return response.readEntity(String.class);
         }
     }
 
@@ -321,7 +429,7 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
                 assertEquals(VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT, attrs.remove(VC_BUILD_CONFIG_HASH_ALGORITHM));
                 assertEquals(String.valueOf(VC_EXPIRY_IN_SECONDS_DEFAULT), attrs.remove(VC_EXPIRY_IN_SECONDS));
                 assertEquals(CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT, attrs.remove(VC_CRYPTOGRAPHIC_BINDING_METHODS));
-                assertEquals("jwt,attestation", attrs.remove(VC_BINDING_REQUIRED_PROOF_TYPES));
+                assertEquals("attestation,jwt", attrs.remove(VC_BINDING_REQUIRED_PROOF_TYPES));
                 assertEquals("oid4vc_natural_person", attrs.remove(VC_SUPPORTED_TYPES));
                 assertEquals("oid4vc_natural_person", attrs.remove(VC_CONTEXTS));
                 assertEquals("oid4vc_natural_person", attrs.remove(VCT));
@@ -450,15 +558,9 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
         ClientScopesResource clientScopes = testRealm.admin().clientScopes();
 
         // When/Then: creating the scope should fail
-        try (Response response = clientScopes.create(scope)) {
-            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus(),
-                    "Should reject client scope when refresh interval exceeds lifetime");
-
-            // Verify error message mentions the problem
-            String body = response.readEntity(String.class);
-            assertTrue(body.contains("refresh interval") && body.contains("exceed"),
-                    "Error message should explain the validation failure");
-        }
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains("refresh interval") && error.contains("exceed"),
+                "Error message should explain the validation failure");
     }
 
     /**

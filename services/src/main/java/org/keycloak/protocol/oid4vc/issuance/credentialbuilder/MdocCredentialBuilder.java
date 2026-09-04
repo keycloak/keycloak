@@ -19,6 +19,7 @@ package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.keycloak.VCFormat;
@@ -29,11 +30,18 @@ import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.utils.StringUtil;
 
+import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY;
+
 public class MdocCredentialBuilder implements CredentialBuilder {
 
     @Override
     public String getSupportedFormat() {
         return VCFormat.MSO_MDOC;
+    }
+
+    @Override
+    public List<String> getSupportedBindingMethods() {
+        return List.of(CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY);
     }
 
     @Override
