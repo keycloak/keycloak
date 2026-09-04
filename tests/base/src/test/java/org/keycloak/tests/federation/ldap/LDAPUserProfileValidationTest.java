@@ -49,7 +49,6 @@ import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.util.ldap.LDAPEmbeddedServer;
 
 import org.apache.directory.api.ldap.model.exception.LdapConfigurationException;
-import org.jboss.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -60,8 +59,6 @@ import org.junit.jupiter.api.Test;
  */
 @KeycloakIntegrationTest
 public class LDAPUserProfileValidationTest {
-
-    private static final Logger logger = Logger.getLogger(LDAPUserProfileValidationTest.class);
 
     @InjectRealm
     ManagedRealm managedRealm;
@@ -107,28 +104,40 @@ public class LDAPUserProfileValidationTest {
     }
 
     @TestCleanup
-    public void stopLdapServer() {
+    public void stopLdapServer() throws Exception {
         // Explicitly remove the LDAP component rather than relying solely on realm teardown to cascade-delete it:
         // this class doesn't request a GLOBAL-lifecycle realm today, but if that ever changed the realm (and this
         // component with it) would outlive the class and leak into whatever test runs next.
+        //
+        // Both steps below are attempted unconditionally - one failing must not stop the embedded server from
+        // still being asked to shut down (or vice versa) - but any failure is still rethrown afterward so cleanup
+        // problems show up as a visible test failure rather than being silently swallowed.
+        Exception failure = null;
+
         if (ldapModelId != null) {
             try {
                 managedRealm.admin().components().component(ldapModelId).remove();
             } catch (Exception e) {
-                logger.warn("Failed to remove the LDAP component during cleanup", e);
+                failure = e;
             }
+            ldapModelId = null;
         }
 
-        // Never let a failure here escape: Registry#afterAll() invokes @TestCleanup methods directly, with no
-        // try/catch of its own, and only proceeds to tear down the (CLASS-lifecycle) realm - which is what
-        // actually deletes the LDAP component above in the common case - once every @TestCleanup has returned.
-        // An exception here would skip that realm teardown entirely, not just this method's own work.
         if (ldapEmbeddedServer != null) {
             try {
                 ldapEmbeddedServer.stop();
             } catch (Exception e) {
-                logger.warn("Failed to stop the embedded LDAP server during cleanup", e);
+                if (failure != null) {
+                    failure.addSuppressed(e);
+                } else {
+                    failure = e;
+                }
             }
+            ldapEmbeddedServer = null;
+        }
+
+        if (failure != null) {
+            throw failure;
         }
     }
 
