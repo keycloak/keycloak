@@ -3,19 +3,21 @@ import {
   useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
 import {
-	Label, LabelGroup, Button,
-	Dropdown,
-	DropdownItem,
-	DropdownList,
-	MenuToggle,
-	OverflowMenu,
-	OverflowMenuContent,
-	OverflowMenuControl,
-	OverflowMenuDropdownItem,
-	OverflowMenuGroup,
-	OverflowMenuItem,
-	Spinner
-} from '@patternfly/react-core';
+  Label,
+  LabelGroup,
+  Button,
+  Dropdown,
+  DropdownItem,
+  DropdownList,
+  MenuToggle,
+  OverflowMenu,
+  OverflowMenuContent,
+  OverflowMenuControl,
+  OverflowMenuDropdownItem,
+  OverflowMenuGroup,
+  OverflowMenuItem,
+  Spinner,
+} from "@patternfly/react-core";
 
 import {
   EditAltIcon,
@@ -232,7 +234,7 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
                   {resource.scopes.length > 0 && (
                     <LabelGroup categoryName={t("permissions")}>
                       {resource.scopes.map((scope) => (
-                        <Label variant="outline" key={scope.name} >
+                        <Label variant="outline" key={scope.name}>
                           {scope.displayName || scope.name}
                         </Label>
                       ))}
@@ -245,14 +247,15 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
                     <OverflowMenuContent>
                       <OverflowMenuGroup groupType="button">
                         <OverflowMenuItem>
-                          <Button icon={<ShareAltIcon />}
+                          <Button
+                            icon={<ShareAltIcon />}
                             data-testid={`share-${resource.name}`}
                             variant="link"
                             onClick={() =>
                               toggleOpen(resource._id, "shareDialogOpen", true)
                             }
                           >
-                             {t("share")}
+                            {t("share")}
                           </Button>
                         </OverflowMenuItem>
                         <OverflowMenuItem>
