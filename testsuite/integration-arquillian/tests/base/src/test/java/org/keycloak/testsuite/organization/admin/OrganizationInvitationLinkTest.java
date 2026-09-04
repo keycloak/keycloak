@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -49,6 +50,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
+import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
@@ -136,6 +138,30 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         assertThat(PENDING, equalTo(invitation.getStatus()));
 
         acceptInvitation(organization, user);
+    }
+
+    @Test
+    public void testOrganizationAvailableToThemeWhenConfirmingMembership() throws IOException, MessagingException {
+        UserRepresentation user = createUser("invited", "invited@myemail.com");
+
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = managedRealm.admin().organizations().get(orgRep.getId());
+
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin())
+                .updateWith(realm -> realm.setLoginTheme("organization")).update()) {
+            organization.members().inviteExistingUser(user.getId()).close();
+
+            driver.navigate().to(getInvitationLinkFromEmail(user.getFirstName(), user.getLastName()));
+
+            // the invitee is not a member yet, but the organization they were invited to is still resolved
+            assertThat(driver.getPageSource(), containsString("Sign-in to " + organizationName + " organization"));
+            assertThat(driver.getPageSource(), not(containsString("User is member of " + organizationName)));
+
+            for (Entry<String, List<String>> attribute : orgRep.getAttributes().entrySet()) {
+                assertThat(driver.getPageSource(),
+                        containsString("The " + attribute.getKey() + " is " + String.join(", ", attribute.getValue())));
+            }
+        }
     }
 
     @Test
