@@ -94,11 +94,17 @@ export async function clickRowKebabItem(
   itemName: string,
   action: string,
 ) {
-  await page
+  const kebab = page
     .getByRole("row", { name: itemName })
-    .getByLabel("Kebab toggle")
-    .click();
-  await page.getByRole("menuitem", { name: action }).click();
+    .getByLabel("Kebab toggle");
+  const menuItem = page.getByRole("menuitem", { name: action });
+
+  // Retry: the kebab dropdown can fail to stay open due to rendering races under CI load.
+  await expect(async () => {
+    await kebab.click();
+    await expect(menuItem).toBeVisible();
+  }).toPass({ timeout: 10_000 });
+  await menuItem.click();
 }
 
 export async function assertRowExists(
