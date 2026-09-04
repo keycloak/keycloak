@@ -21,6 +21,7 @@ import org.keycloak.forms.login.MessageType;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.ModelConcurrentModificationException;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
@@ -83,7 +84,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             error.setError(getErrorCode(throwable));
             if (throwable instanceof ModelValidationException || throwable.getCause() instanceof ModelException) {
                 error.setErrorDescription(throwable.getMessage());
-            } if (throwable instanceof ModelDuplicateException) {
+            } if (throwable instanceof ModelDuplicateException || throwable instanceof ModelConcurrentModificationException) {
                 error.setErrorDescription(throwable.getMessage());
             } else if (throwable instanceof JsonProcessingException || throwable.getCause() instanceof JsonProcessingException) {
                 error.setErrorDescription("Cannot parse the JSON");
@@ -126,6 +127,10 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             return Response.Status.BAD_REQUEST;
         }
 
+        if (throwable instanceof ModelConcurrentModificationException) {
+            return Response.Status.CONFLICT;
+        }
+
         if (throwable instanceof ModelIllegalStateException) {
             return Response.Status.INTERNAL_SERVER_ERROR;
         }
@@ -144,7 +149,8 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             return OAuthErrorException.INVALID_REQUEST;
         }
 
-        if (cause instanceof ModelDuplicateException || throwable instanceof ModelDuplicateException) {
+        if (cause instanceof ModelDuplicateException || throwable instanceof ModelDuplicateException
+                || throwable instanceof ModelConcurrentModificationException) {
             return "conflict";
         }
 
