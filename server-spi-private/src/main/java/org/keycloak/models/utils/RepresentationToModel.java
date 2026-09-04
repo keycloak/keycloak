@@ -147,7 +147,6 @@ import org.jboss.logging.Logger;
 import static java.util.Optional.ofNullable;
 
 import static org.keycloak.models.Constants.DEFAULT_PROTOCOL;
-import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
 import static org.keycloak.protocol.saml.util.ArtifactBindingUtils.computeArtifactBindingIdentifierString;
 
 public class RepresentationToModel {
@@ -1897,13 +1896,10 @@ public class RepresentationToModel {
                 throw new IllegalArgumentException("Organization associated with broker does not exist");
             }
 
-            String domain = representation.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
-
-            if (StringUtil.isBlank(domain)) {
-                representation.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
-            } else if (!ANY_DOMAIN.equals(domain) && org.getDomains().map(OrganizationDomainModel::getName).noneMatch(domain::equals)) {
-                throw new IllegalArgumentException("Domain does not match any domain from the organization");
-            }
+            // strip old domain config entries that are no longer used
+            representation.getConfig().remove(MigrationUtils.ORGANIZATION_DOMAIN_ATTRIBUTE);
+            representation.getConfig().remove(MigrationUtils.ORGANIZATION_EXCLUDED_DOMAIN_ATTRIBUTE);
+            representation.getConfig().remove(MigrationUtils.ORGANIZATION_REDIRECT_MODE_ATTRIBUTE);
 
             // make sure the link to an organization does not change
             representation.setOrganizationId(orgId);
@@ -1930,7 +1926,7 @@ public class RepresentationToModel {
     }
 
     public static OrganizationDomainModel toModel(OrganizationDomainRepresentation domainRepresentation) {
-        return new OrganizationDomainModel(domainRepresentation.getName(), domainRepresentation.isVerified());
+        return new OrganizationDomainModel(domainRepresentation.getName(), domainRepresentation.isVerified(), domainRepresentation.getIdentityProviderAlias(), domainRepresentation.isAutoRedirect());
     }
 
     public static IssuedVerifiableCredentialModel toModel(IssuedVerifiableCredentialRepresentation representation, String verifiableCredentialId) {

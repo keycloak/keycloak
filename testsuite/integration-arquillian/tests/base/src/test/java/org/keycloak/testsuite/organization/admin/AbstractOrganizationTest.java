@@ -28,8 +28,6 @@ import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.models.OrganizationModel;
-import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -150,14 +148,23 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             id = ApiUtil.getCreatedId(response);
         }
 
-        if (orgDomains != null && orgDomains.length > 0) {
-            // set the idp domain to the first domain used to create the org.
-            broker.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomains[0]);
-            broker.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
-        }
         testRealm.identityProviders().create(broker).close();
         testCleanup.addCleanup(testRealm.identityProviders().get(broker.getAlias())::remove);
         testRealm.organizations().get(id).identityProviders().addIdentityProvider(broker.getAlias()).close();
+
+        if (orgDomains != null && orgDomains.length > 0) {
+            org = testRealm.organizations().get(id).toRepresentation();
+            String brokerAlias = broker.getAlias();
+            org.getDomains().stream()
+                    .filter(d -> d.getName().equals(orgDomains[0]))
+                    .findFirst()
+                    .ifPresent(d -> {
+                        d.setIdentityProviderAlias(brokerAlias);
+                        d.setAutoRedirect(true);
+                    });
+            testRealm.organizations().get(id).update(org).close();
+        }
+
         org = testRealm.organizations().get(id).toRepresentation();
         testCleanup.addCleanup(() -> testRealm.organizations().get(id).delete().close());
 
