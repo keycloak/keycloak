@@ -309,7 +309,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     authenticator.setTokenString(token);
 
                     // Prepare the issue endpoint with no credential builders.
-                    OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator, Map.of());
+                    OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
                     Proofs proofs = jwtProofs(credentialIssuerId, cNonce);
 
                     CredentialRequest credentialRequest = new CredentialRequest()
@@ -1440,7 +1440,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             try {
                 BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
                 authenticator.setTokenString(token);
-                OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator, Map.of());
+                OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
                 Proofs proofs = jwtProofs(credentialIssuerId, cNonce);
 
                 CredentialRequest credentialRequest = new CredentialRequest()

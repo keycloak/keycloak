@@ -53,7 +53,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
-import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderFactory;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
@@ -477,14 +476,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         }
 
         // Find the CredentialBuilder for this format using the factory pattern
-        CredentialBuilder credentialBuilder = keycloakSession.getKeycloakSessionFactory()
-                .getProviderFactoriesStream(CredentialBuilder.class)
-                .map(factory -> (CredentialBuilderFactory) factory)
-                .filter(factory -> format.equals(factory.getSupportedFormat()))
-                .findFirst()
-                .map(factory -> factory.create(keycloakSession, null))
-                .orElse(null);
-
+        CredentialBuilder credentialBuilder = keycloakSession.getProvider(CredentialBuilder.class, format);
         if (credentialBuilder == null) {
             LOGGER.debugf("No CredentialBuilder found for format: %s", format);
             return;

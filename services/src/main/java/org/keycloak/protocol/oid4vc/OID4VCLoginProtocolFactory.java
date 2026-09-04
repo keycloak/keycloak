@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
 
@@ -48,11 +49,12 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCSubjectIdMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCUserAttributeMapper;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
-import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -151,7 +153,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 	}
 
     @Override
-    public void createDefaultClientScopes(RealmModel newRealm, boolean addScopesToExistingClients) {
+    public void createDefaultClientScopes(KeycloakSession session, RealmModel newRealm, boolean addScopesToExistingClients) {
         LOGGER.debugf("Create default scopes for realm %s", newRealm.getName());
 
         List<String> formats = new ArrayList<>(Arrays.asList(VCFormat.SUPPORTED_FORMATS));
@@ -176,9 +178,10 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
                 }
 
                 ClientScopeRepresentation clientScopeRep = ModelToRepresentation.toRepresentation(clientScope);
+                Set<String> allowedProofTypes = session.listProviderIds(ProofValidator.class);
                 clientScopeRep.setAttributes(new HashMap<>(Map.of(
                         VC_BINDING_REQUIRED, "true",
-                        VC_BINDING_REQUIRED_PROOF_TYPES, ProofType.JWT + "," + ProofType.ATTESTATION
+                        VC_BINDING_REQUIRED_PROOF_TYPES, String.join(",", allowedProofTypes)
                 )));
                 if (isMdoc) {
                     clientScopeRep.getAttributes().put(VCT, NATURAL_PERSON_MDOC_NAMESPACE);
@@ -285,6 +288,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
         validateOID4VCIRefreshInterval(clientScope);
         validateCredentialConfigurationId(session, clientScope);
+        validateBindingConfiguration(session, clientScope);
     }
 
     @Override
@@ -434,5 +438,71 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
                             refreshInterval, expiry),
                     Response.Status.BAD_REQUEST);
         }
+    }
+
+    /**
+     * Validate "Cryptographic binding methods supported" and proof-types
+     *
+     * @param session Keycloak session
+     * @param clientScope the client scope representation to validate
+     * @throws ErrorResponseException if binding is required and not provided OR the binding or proof-type configuration is invalid
+     */
+    private void validateBindingConfiguration(KeycloakSession session,  ClientScopeRepresentation clientScope) throws ErrorResponseException {
+        if (clientScope.getAttributes() == null) {
+            return;
+        }
+
+        boolean bindingRequired = Boolean.parseBoolean(clientScope.getAttributes().get(VC_BINDING_REQUIRED));
+        String format = clientScope.getAttributes().getOrDefault(VC_FORMAT, CredentialScopeModel.VC_FORMAT_DEFAULT);
+
+        CredentialBuilder credentialBuilder = session.getProvider(CredentialBuilder.class, format);
+        if (credentialBuilder != null) {
+            List<String> allowedBindingMethods = credentialBuilder.getSupportedBindingMethods();
+
+            String bindingMethodsAttr = clientScope.getAttributes().get(VC_CRYPTOGRAPHIC_BINDING_METHODS);
+            if (bindingRequired || !StringUtil.isBlank(bindingMethodsAttr)) {
+                List<String> effectiveBindingMethods = parseCommaSeparated(bindingMethodsAttr).stream()
+                        .filter(allowedBindingMethods::contains)
+                        .toList();
+
+                if (effectiveBindingMethods.isEmpty()) {
+                    throw ErrorResponse.error(
+                            String.format("When vc.binding_required is true, vc.cryptographic_binding_methods_supported must " +
+                                            "contain at least one valid value. Supported values for format '%s': %s",
+                                    format, allowedBindingMethods),
+                            Response.Status.BAD_REQUEST);
+                }
+            }
+        } else {
+            // Skip the binding for unsupported formats as such client scope cannot be used in runtime to build any credentials. Might happen in some corner case scenarios (EG. when realm with MDOC credential scope is imported when OID4VC_MDOC feature is disabled)
+            LOGGER.warnf("Not able to obtain credential builder for the format '%s' of credential scope '%s'. Skip validation of binding methods",  format, clientScope.getName());
+        }
+
+        Set<String> allowedProofTypes = session.listProviderIds(ProofValidator.class);
+
+        String proofTypesAttr = clientScope.getAttributes().get(VC_BINDING_REQUIRED_PROOF_TYPES);
+        if (bindingRequired || !StringUtil.isBlank(proofTypesAttr)) {
+            List<String> effectiveProofTypes = parseCommaSeparated(proofTypesAttr).stream()
+                    .filter(allowedProofTypes::contains)
+                    .toList();
+
+            if (effectiveProofTypes.isEmpty()) {
+                throw ErrorResponse.error(
+                        String.format("When vc.binding_required is true, vc.binding_required_proof_types must " +
+                                        "contain at least one valid value. Supported values: %s",
+                                allowedProofTypes),
+                        Response.Status.BAD_REQUEST);
+            }
+        }
+    }
+
+    private static List<String> parseCommaSeparated(String value) {
+        if (StringUtil.isBlank(value)) {
+            return List.of();
+        }
+        return Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
     }
 }
