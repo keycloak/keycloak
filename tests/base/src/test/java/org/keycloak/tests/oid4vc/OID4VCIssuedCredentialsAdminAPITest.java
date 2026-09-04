@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
+import static org.keycloak.tests.oid4vc.OID4VCAuthorizationDetailsUtil.getAuthorizationDetailsFromAccessToken;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.jwtProofs;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -56,8 +57,8 @@ public class OID4VCIssuedCredentialsAdminAPITest extends OID4VCIssuerEndpointTes
         String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
         AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
 
-        String token = tokenResponse.getAccessToken();
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
+        String accessToken = tokenResponse.getAccessToken();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = getAuthorizationDetailsFromAccessToken(accessToken);
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
         String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
@@ -65,7 +66,7 @@ public class OID4VCIssuedCredentialsAdminAPITest extends OID4VCIssuerEndpointTes
 
         CredentialResponse credentialResponseVO = oauth.oid4vc()
                 .credentialRequest()
-                .bearerToken(token)
+                .bearerToken(accessToken)
                 .credentialIdentifier(credentialIdentifier)
                 .proofs(proofs)
                 .send()
@@ -102,7 +103,7 @@ public class OID4VCIssuedCredentialsAdminAPITest extends OID4VCIssuerEndpointTes
 
         CredentialResponse credentialResponseVO2 = oauth.oid4vc()
                 .credentialRequest()
-                .bearerToken(token)
+                .bearerToken(accessToken)
                 .credentialIdentifier(credentialIdentifier)
                 .proofs(proofs2)
                 .send()

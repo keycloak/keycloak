@@ -4,9 +4,11 @@ import {
   ActionGroup,
   Alert,
   Button,
+  Divider,
   FormHelperText,
   HelperText,
   HelperTextItem,
+  Title,
 } from "@patternfly/react-core";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
@@ -20,6 +22,8 @@ import {
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
 
+import { TimeSelectorControl } from "../../components/time-selector/TimeSelectorControl";
+import { toHumanFormat } from "../../components/time-selector/TimeSelector";
 import { useAdminClient } from "../../admin-client";
 import { getProtocolName } from "../../clients/utils";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
@@ -42,12 +46,30 @@ import { removeEmptyOid4vcAttributes } from "./oid4vciAttributes";
 const OID4VC_PROTOCOL = "oid4vc";
 const VC_FORMAT_JWT_VC = "jwt_vc_json";
 const VC_FORMAT_SD_JWT = "dc+sd-jwt";
+const VC_FORMAT_MSO_MDOC = "mso_mdoc";
 const VC_FORMAT_JWT_VC_TYP = "vc+jwt";
 const VC_FORMAT_SD_JWT_TYP = "dc+sd-jwt";
+const VC_EXPIRY_DEFAULT_SECONDS = 31536000; // 1 year (matches VC_EXPIRY_IN_SECONDS_DEFAULT)
+const VC_REFRESH_INTERVAL_DEFAULT_SECONDS = 604800; // 7 days (matches VC_REFRESH_INTERVAL_IN_SECONDS_DEFAULT)
+const VC_FORMAT_OPTIONS = [
+  {
+    key: VC_FORMAT_SD_JWT,
+    value: `SD-JWT VC (${VC_FORMAT_SD_JWT})`,
+  },
+  {
+    key: VC_FORMAT_JWT_VC,
+    value: `JWT VC (${VC_FORMAT_JWT_VC})`,
+  },
+  {
+    key: VC_FORMAT_MSO_MDOC,
+    value: `ISO mDoc (${VC_FORMAT_MSO_MDOC})`,
+  },
+] as const;
 
 // Allowed values for OID4VCI cryptographic binding methods and proof types.
 // Keep these in sync with server-side support in CredentialScopeModel / ProofType.
-const ALLOWED_CRYPTO_BINDING_METHODS = ["jwk"] as const;
+const ALLOWED_CRYPTO_BINDING_METHODS_JSON = ["jwk"] as const;
+const ALLOWED_CRYPTO_BINDING_METHODS_MDOC = ["cose_key"] as const;
 const ALLOWED_PROOF_TYPES = ["jwt", "attestation"] as const;
 
 // Validation function for comma-separated lists
@@ -72,10 +94,10 @@ type ScopeFormProps = {
 };
 
 export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { adminClient } = useAdminClient();
   const form = useForm<ClientScopeDefaultOptionalType>({ mode: "onChange" });
-  const { control, handleSubmit, setValue, formState } = form;
+  const { control, handleSubmit, setValue, trigger, formState } = form;
   const { isDirty, isValid } = formState;
   const { realm, realmRepresentation } = useRealm();
 
@@ -184,12 +206,18 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     control,
     name: "protocol",
   });
+  const vcFormatFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.vc.format",
+    );
+  const cryptoBindingMethodsFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.vc.cryptographic_binding_methods_supported",
+    );
 
   const selectedFormat = useWatch({
     control,
-    name: convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-      "attributes.vc.format",
-    ),
+    name: vcFormatFieldName,
     defaultValue: clientScope?.attributes?.["vc.format"] ?? VC_FORMAT_SD_JWT,
   });
   const selectedTokenJwsType = useWatch({
@@ -206,7 +234,60 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const isOid4vcEnabled =
     isFeatureEnabled(Feature.OpenId4VCI) &&
     realmRepresentation.verifiableCredentialsEnabled;
+  const isMdocEnabled = isFeatureEnabled(Feature.OpenId4VCIMdoc);
+  const allowedCryptoBindingMethods: readonly string[] =
+    selectedFormat === VC_FORMAT_MSO_MDOC
+      ? ALLOWED_CRYPTO_BINDING_METHODS_MDOC
+      : ALLOWED_CRYPTO_BINDING_METHODS_JSON;
+  const allowedCryptoBindingMethodsText =
+    allowedCryptoBindingMethods.join(", ");
+  const credentialBuilderProviders = useMemo(
+    () => serverInfo.providers?.["credentialBuilder"]?.providers ?? {},
+    [serverInfo.providers],
+  );
+  const vcFormatOptions = useMemo(() => {
+    const availableProviderFormats = Object.keys(credentialBuilderProviders);
+    const fallbackFormats = [
+      VC_FORMAT_SD_JWT,
+      VC_FORMAT_JWT_VC,
+      ...(isMdocEnabled ? [VC_FORMAT_MSO_MDOC] : []),
+    ];
+    const availableFormats =
+      availableProviderFormats.length > 0
+        ? availableProviderFormats
+        : fallbackFormats;
+
+    return VC_FORMAT_OPTIONS.filter((option) =>
+      availableFormats.includes(option.key),
+    );
+  }, [credentialBuilderProviders, isMdocEnabled]);
   const isNotSaml = selectedProtocol != "saml";
+
+  const computeRefreshIntervalDefault = () => {
+    const expiryAttr = clientScope?.attributes?.["vc.expiry_in_seconds"];
+    const lifetimeFromAttr =
+      typeof expiryAttr === "string" && expiryAttr !== ""
+        ? parseInt(expiryAttr, 10)
+        : undefined;
+
+    const lifetimeFieldName = convertAttributeNameToForm(
+      "attributes.vc.expiry_in_seconds",
+    );
+    const lifetimeValue = form.getValues(lifetimeFieldName);
+    const lifetimeFromForm =
+      typeof lifetimeValue === "number"
+        ? lifetimeValue
+        : typeof lifetimeValue === "string" && lifetimeValue !== ""
+          ? parseInt(lifetimeValue, 10)
+          : undefined;
+
+    const lifetime =
+      (Number.isFinite(lifetimeFromAttr) ? lifetimeFromAttr : undefined) ??
+      (Number.isFinite(lifetimeFromForm) ? lifetimeFromForm : undefined) ??
+      VC_EXPIRY_DEFAULT_SECONDS;
+
+    return Math.min(VC_REFRESH_INTERVAL_DEFAULT_SECONDS, lifetime);
+  };
   const recommendedTokenJwsType =
     selectedFormat === VC_FORMAT_SD_JWT
       ? VC_FORMAT_SD_JWT_TYP
@@ -226,6 +307,21 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     defaultValue: clientScope?.attributes?.["vc.binding_required"] ?? "false",
   });
 
+  const keyAttestationRequired = useWatch({
+    control,
+    name: convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.vc.key_attestations_required",
+    ),
+    defaultValue:
+      clientScope?.attributes?.["vc.key_attestations_required"] ?? "false",
+  });
+
+  useEffect(() => {
+    if (bindingRequired === "true") {
+      void trigger(cryptoBindingMethodsFieldName);
+    }
+  }, [bindingRequired, cryptoBindingMethodsFieldName, selectedFormat, trigger]);
+
   const isSigningKeySelected = useWatch({
     control,
     name: convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
@@ -234,7 +330,11 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     defaultValue: clientScope?.attributes?.["vc.signing_key_id"] ?? "",
   });
 
-  const scopeTypeNames = serverInfo.parameterizedScopeTypes || [];
+  const parameterizedScopeTypeInfos = serverInfo.parameterizedScopeTypes || [];
+  const scopeTypeNames = parameterizedScopeTypeInfos.map((t) => t.name);
+  const scopeTypeDefaults = Object.fromEntries(
+    parameterizedScopeTypeInfos.map((t) => [t.name, t.repeatable]),
+  );
 
   useEffect(() => {
     convertToFormValues(clientScope ?? {}, setValue);
@@ -276,6 +376,16 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       "attributes.parameterized.scope.regexp",
     );
 
+  const repeatableFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.parameterized.scope.repeatable",
+    );
+
+  const allowUserDataAccessFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.parameterized.scope.allow.user.data",
+    );
+
   useEffect(() => {
     if (parameterizedScope === "true" && isCustomType) {
       const current = (form.getValues(regexpFieldName) as string) || "";
@@ -285,12 +395,21 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     }
   }, [parameterType, parameterizedScope]);
 
-  /* Form-level validation handles correctness; here we only prune known optional
+  useEffect(() => {
+    if (parameterizedScope === "true" && parameterType) {
+      const defaultRepeatable = scopeTypeDefaults[parameterType] ?? true;
+      setValue(repeatableFieldName, String(defaultRepeatable));
+    }
+  }, [parameterType]);
+
+  /* Form-level validation handles correctness; here we only normalize known optional
        OID4VC fields when empty. If new attributes are added, extend
        OID4VC_ATTRIBUTE_KEYS (and related validation) so they participate in cleanup. */
   const onSubmit = (values: ClientScopeDefaultOptionalType) => {
     const isOid4vc = values.protocol === OID4VC_PROTOCOL;
-    const cleaned = isOid4vc ? removeEmptyOid4vcAttributes(values) : values;
+    const cleaned = isOid4vc
+      ? removeEmptyOid4vcAttributes(values, clientScope !== undefined)
+      : values;
     save(cleaned);
   };
 
@@ -334,6 +453,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             />
             {parameterizedScope === "true" && (
               <>
+                <Title headingLevel="h2" size="lg">
+                  {t("parameterizedScopeSettings")}
+                </Title>
                 <SelectControl
                   id="kc-parameter-type"
                   name={parameterTypeFieldName}
@@ -362,6 +484,25 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                     }}
                   />
                 )}
+                <DefaultSwitchControl
+                  name={repeatableFieldName}
+                  defaultValue={String(
+                    scopeTypeDefaults[parameterType] ?? true,
+                  )}
+                  label={t("repeatableScope")}
+                  labelIcon={t("repeatableScopeHelp")}
+                  stringify
+                />
+                {parameterType === "username" && (
+                  <DefaultSwitchControl
+                    name={allowUserDataAccessFieldName}
+                    defaultValue="false"
+                    label={t("allowUserDataAccess")}
+                    labelIcon={t("allowUserDataAccessHelp")}
+                    stringify
+                  />
+                )}
+                <Divider className="pf-v5-u-mb-sm" />
               </>
             )}
           </>
@@ -499,36 +640,71 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               label={t("issuerDid")}
               labelIcon={t("issuerDidHelp")}
             />
-            <TextControl
+            <TimeSelectorControl
               name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
                 "attributes.vc.expiry_in_seconds",
               )}
               label={t("credentialLifetime")}
               labelIcon={t("credentialLifetimeHelp")}
-              type="number"
+              units={["second", "minute", "hour", "day"]}
               min={1}
-              defaultValue={
-                clientScope?.attributes?.["vc.expiry_in_seconds"] ?? "31536000"
-              }
+              controller={{
+                defaultValue: VC_EXPIRY_DEFAULT_SECONDS,
+                rules: { min: 1 },
+              }}
+            />
+            <TimeSelectorControl
+              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                "attributes.vc.refresh_interval_in_seconds",
+              )}
+              label={t("credentialRefreshInterval")}
+              labelIcon={t("credentialRefreshIntervalHelp")}
+              units={["second", "minute", "hour", "day"]}
+              min={1}
+              controller={{
+                defaultValue: computeRefreshIntervalDefault(),
+                rules: {
+                  min: 1,
+                  validate: {
+                    notGreaterThanLifetime: (value) => {
+                      if (value === "" || value == null) {
+                        return true;
+                      }
+                      // Use beerified field name to read from form
+                      const lifetimeFieldName =
+                        convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                          "attributes.vc.expiry_in_seconds",
+                        );
+                      const lifetimeStr =
+                        form.getValues(lifetimeFieldName) ||
+                        String(VC_EXPIRY_DEFAULT_SECONDS);
+
+                      const lifetime = parseInt(String(lifetimeStr), 10);
+                      const interval =
+                        typeof value === "number" ? value : parseInt(value, 10);
+
+                      if (isNaN(interval) || isNaN(lifetime)) {
+                        return true;
+                      }
+                      return (
+                        interval <= lifetime ||
+                        t("refreshIntervalCannotExceedLifetime", {
+                          interval: toHumanFormat(interval, i18n.language),
+                          lifetime: toHumanFormat(lifetime, i18n.language),
+                        })
+                      );
+                    },
+                  },
+                },
+              }}
             />
             <SelectControl
               id="kc-vc-format"
-              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                "attributes.vc.format",
-              )}
+              name={vcFormatFieldName}
               label={t("supportedFormats")}
               labelIcon={t("supportedFormatsHelp")}
               controller={{ defaultValue: VC_FORMAT_SD_JWT }}
-              options={[
-                {
-                  key: VC_FORMAT_SD_JWT,
-                  value: `SD-JWT VC (${VC_FORMAT_SD_JWT})`,
-                },
-                {
-                  key: VC_FORMAT_JWT_VC,
-                  value: `JWT VC (${VC_FORMAT_JWT_VC})`,
-                },
-              ]}
+              options={vcFormatOptions}
             />
             <TextControl
               name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
@@ -619,9 +795,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             {bindingRequired === "true" && (
               <>
                 <TextControl
-                  name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                    "attributes.vc.cryptographic_binding_methods_supported",
-                  )}
+                  name={cryptoBindingMethodsFieldName}
                   label={t("cryptographicBindingMethodsSupported")}
                   labelIcon={t("cryptographicBindingMethodsSupportedHelp")}
                   rules={{
@@ -638,15 +812,14 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                       const entries = value.split(",");
                       const invalid = entries.filter(
                         (entry) =>
-                          !ALLOWED_CRYPTO_BINDING_METHODS.includes(
-                            entry.trim() as (typeof ALLOWED_CRYPTO_BINDING_METHODS)[number],
-                          ),
+                          !allowedCryptoBindingMethods.includes(entry.trim()),
                       );
                       if (invalid.length > 0) {
                         return t(
                           "cryptographicBindingMethodsSupportedInvalid",
                           {
                             invalid: invalid.join(","),
+                            allowed: allowedCryptoBindingMethodsText,
                           },
                         );
                       }
@@ -689,6 +862,38 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                     },
                   }}
                 />
+                <DefaultSwitchControl
+                  name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                    "attributes.vc.key_attestations_required",
+                  )}
+                  defaultValue={
+                    clientScope?.attributes?.["vc.key_attestations_required"] ??
+                    "false"
+                  }
+                  label={t("keyAttestationsRequired")}
+                  labelIcon={t("keyAttestationsRequiredHelp")}
+                  stringify
+                />
+                {keyAttestationRequired === "true" && (
+                  <>
+                    <TextControl
+                      name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                        "attributes.vc.key_attestations_required.key_storage",
+                      )}
+                      label={t("keyAttestationKeyStorage")}
+                      labelIcon={t("keyAttestationKeyStorageHelp")}
+                      rules={{ validate: validateCommaSeparatedList }}
+                    />
+                    <TextControl
+                      name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                        "attributes.vc.key_attestations_required.user_authentication",
+                      )}
+                      label={t("keyAttestationUserAuthentication")}
+                      labelIcon={t("keyAttestationUserAuthenticationHelp")}
+                      rules={{ validate: validateCommaSeparatedList }}
+                    />
+                  </>
+                )}
               </>
             )}
             <TextAreaControl
@@ -724,31 +929,32 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                 }}
               />
             )}
+            {(selectedFormat === VC_FORMAT_SD_JWT ||
+              selectedFormat === VC_FORMAT_MSO_MDOC) && (
+              <TextControl
+                name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                  "attributes.vc.verifiable_credential_type",
+                )}
+                label={t("verifiableCredentialType")}
+                labelIcon={t("verifiableCredentialTypeHelp")}
+              />
+            )}
             {selectedFormat === VC_FORMAT_SD_JWT && (
-              <>
-                <TextControl
-                  name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                    "attributes.vc.verifiable_credential_type",
-                  )}
-                  label={t("verifiableCredentialType")}
-                  labelIcon={t("verifiableCredentialTypeHelp")}
-                />
-                <TextControl
-                  name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                    "attributes.vc.credential_build_config.sd_jwt.visible_claims",
-                  )}
-                  label={t("visibleClaims")}
-                  labelIcon={t("visibleClaimsHelp")}
-                  defaultValue={
-                    clientScope?.attributes?.[
-                      "vc.credential_build_config.sd_jwt.visible_claims"
-                    ] ?? "id,iat,nbf,exp,jti"
-                  }
-                  rules={{
-                    validate: validateCommaSeparatedList,
-                  }}
-                />
-              </>
+              <TextControl
+                name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                  "attributes.vc.credential_build_config.sd_jwt.visible_claims",
+                )}
+                label={t("visibleClaims")}
+                labelIcon={t("visibleClaimsHelp")}
+                defaultValue={
+                  clientScope?.attributes?.[
+                    "vc.credential_build_config.sd_jwt.visible_claims"
+                  ] ?? "id,iat,nbf,exp,jti"
+                }
+                rules={{
+                  validate: validateCommaSeparatedList,
+                }}
+              />
             )}
           </>
         )}

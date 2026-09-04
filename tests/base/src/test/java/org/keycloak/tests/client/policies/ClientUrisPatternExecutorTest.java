@@ -84,6 +84,7 @@ public class ClientUrisPatternExecutorTest extends AbstractClientPoliciesTest {
         testFieldByAdmin("jwksUri", OIDCLoginProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(OIDCConfigAttributes.JWKS_URL, val));
         testFieldByAdmin("requestUris", OIDCLoginProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(OIDCConfigAttributes.REQUEST_URIS, val));
         testFieldByAdmin("backchannelLogoutUrl", OIDCLoginProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, val));
+        testFieldByAdmin("frontChannelLogoutUrl", OIDCLoginProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, val));
         testFieldByAdmin("postLogoutRedirectUris", OIDCLoginProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, val));
         testFieldByAdmin("cibaClientNotificationEndpoint", OIDCLoginProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT, val));
         testFieldByAdmin(OIDCConfigAttributes.LOGO_URI, OIDCLoginProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(OIDCConfigAttributes.LOGO_URI, val));
@@ -131,6 +132,7 @@ public class ClientUrisPatternExecutorTest extends AbstractClientPoliciesTest {
         testFieldDynamically(reg, "logoUri", OIDCClientRepresentation::setLogoUri);
         testFieldDynamically(reg, "policyUri", OIDCClientRepresentation::setPolicyUri);
         testFieldDynamically(reg, "backchannelLogoutUrl", OIDCClientRepresentation::setBackchannelLogoutUri);
+        testFieldDynamically(reg, "frontChannelLogoutUrl", OIDCClientRepresentation::setFrontChannelLogoutUri);
 
         //test sectorIdentifierUri
         String sectorIdentifierUriPattern = "^http://localhost.*/sector-identifier-redirect-uris$";

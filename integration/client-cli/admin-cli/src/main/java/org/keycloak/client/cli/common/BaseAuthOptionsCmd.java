@@ -122,6 +122,7 @@ public abstract class BaseAuthOptionsCmd extends BaseGlobalOptionsCmd {
         alias = parent.alias;
         trustStore = parent.trustStore;
         trustPass = parent.trustPass;
+        insecure = parent.insecure;
         externalToken = parent.externalToken;
     }
 

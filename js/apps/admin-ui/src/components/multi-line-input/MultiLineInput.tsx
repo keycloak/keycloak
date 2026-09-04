@@ -99,7 +99,9 @@ export const MultiLineInput = ({
     register(name, {
       validate: (value) =>
         isRequired &&
-        (stringify ? value : toStringValue(value || [])).length === 0
+        (stringify ? stringToMultiline(value) : value || []).filter(
+          (s: string) => s.trim(),
+        ).length === 0
           ? t("required")
           : undefined,
     });

@@ -51,15 +51,8 @@ public class OAuth2DeviceVerificationPage extends LanguageComboboxAwarePage {
     }
 
     @Override
-    public boolean isCurrent() {
-        if (driver.getTitle().startsWith("Sign in to ")) {
-            try {
-                driver.findElement(By.id(DEVICE_USER_CODE));
-                return true;
-            } catch (Throwable t) {
-            }
-        }
-        return false;
+    public String getExpectedPageId() {
+        return "login-login-oauth2-device-verify-user-code";
     }
 
     public void assertApprovedPage() {

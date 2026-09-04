@@ -6,8 +6,10 @@ import java.util.List;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.scheduled.ClearExpiredAdminEvents;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -16,6 +18,10 @@ import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Assertions;
@@ -38,6 +44,12 @@ public class AdminEventsTest {
 
     @InjectAdminClient
     private Keycloak adminClient;
+
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @Test
     public void testAdminEventOnUserCreateAndDelete() {
@@ -123,6 +135,26 @@ public class AdminEventsTest {
             userIds.add(userId);
         }
         return userIds;
+    }
+
+    @Test
+    public void testExpireAdminEvents() {
+        this.realm.updateWithCleanup(r -> r
+                .adminEventsEnabled(true)
+                .adminEventsExpiration(1));
+
+        // create at least one event
+        realm.addUser(UserBuilder.create("expire_admin_event"));
+
+        List<AdminEventRepresentation> storedAdminEvents = realm.admin().getAdminEvents();
+        Assertions.assertFalse(storedAdminEvents.isEmpty(), "Expected at least one admin event in the store");
+
+        timeOffSet.set(10);
+
+        runOnServer.run(session -> new ClearExpiredAdminEvents().run(session));
+
+        List<AdminEventRepresentation> remainingAdminEvents = realm.admin().getAdminEvents();
+        Assertions.assertTrue(remainingAdminEvents.isEmpty(), "Expected all admin events to be expired and removed");
     }
 
 }

@@ -35,6 +35,7 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.ssf.SsfException;
+import org.keycloak.ssf.event.SsfEvent;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.subject.ComplexSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
@@ -61,6 +62,7 @@ import org.keycloak.ssf.transmitter.outbox.SsfOutboxKinds;
 import org.keycloak.ssf.transmitter.stream.DuplicateStreamConfigException;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfigInputRepresentation;
+import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationRequest;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
@@ -303,12 +305,19 @@ public class SsfAdminResource {
             @Parameter(description = "OAuth client_id of the receiver")
             @PathParam("clientId") String clientId) {
 
-        auth.realm().requireViewRealm();
-
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
+
+        // Client-level view check rather than a realm-wide view-realm gate:
+        // the stream is scoped to this receiver client, so reading it must
+        // require authorization over that client — matching the other admin
+        // SSF endpoints (create/update use requireManage, checkSubject uses
+        // requireView). A realm-level check would let an admin without
+        // permission over this client read its stream, including the
+        // receiver's push delivery credential.
+        auth.clients().requireView(client);
 
         StreamConfig streamConfig = streamStore().getStreamForClient(client);
         if (streamConfig == null) {
@@ -394,7 +403,7 @@ public class SsfAdminResource {
         }
         rep.setStatusReason(streamConfig.getStatusReason());
         rep.setAudience(streamConfig.getAudience());
-        rep.setDelivery(streamConfig.getDelivery());
+        rep.setDelivery(redactDeliverySecret(streamConfig.getDelivery()));
         rep.setEventsSupported(toEventAliases(transmitter, streamConfig.getEventsSupported()));
         rep.setEventsRequested(toEventAliases(transmitter, streamConfig.getEventsRequested()));
         rep.setEventsDelivered(toEventAliases(transmitter, streamConfig.getEventsDelivered()));
@@ -411,6 +420,29 @@ public class SsfAdminResource {
             }
         }
         return rep;
+    }
+
+    /**
+     * Returns a copy of the delivery config with the push
+     * {@code authorization_header} stripped, so the receiver-supplied
+     * delivery credential is never echoed back in an admin response.
+     *
+     * <p>The header is a live credential for the receiver's delivery
+     * endpoint and may be a vault-resolved secret (the store resolves
+     * {@code ${vault.x}} references at read time, see
+     * {@link ClientStreamStore}). It is therefore write-only — accepted on
+     * create/update but redacted from every response — mirroring how client
+     * secrets are handled elsewhere. We copy rather than mutate so the
+     * stored {@link StreamConfig} instance keeps the value for actual
+     * delivery.
+     */
+    protected StreamDeliveryConfig redactDeliverySecret(StreamDeliveryConfig delivery) {
+        if (delivery == null) {
+            return null;
+        }
+        StreamDeliveryConfig redacted = new StreamDeliveryConfig(delivery);
+        redacted.setAuthorizationHeader(null);
+        return redacted;
     }
 
     /**
@@ -919,7 +951,12 @@ public class SsfAdminResource {
      * {@code default_subjects} / {@code ssf.notify.<clientId>}
      * configuration. The dispatch outcome (dispatched vs. drop reason)
      * is reported in the response so emitter integrations can debug
-     * their wiring without enabling verbose logging.
+     * their wiring without enabling verbose logging. Complex subjects
+     * that name both a user and a tenant are additionally required to
+     * be internally consistent — the user must be a member of the
+     * tenant organization — so a subscribed tenant subject member cannot carry
+     * an unrelated, unsubscribed user subject past the subject filter
+     * (keycloak/keycloak#50812).
      *
      * <p>Console-only convenience: callers with {@code manage-clients}
      * on the receiver bypass the {@code allowEmitEvents} opt-in and
@@ -1100,33 +1137,44 @@ public class SsfAdminResource {
         // Each 4xx case uses the status's wire value as the error code
         // so callers can distinguish categories (unknown_event_type,
         // subject_not_found, ...) from the wire response without having
-        // to parse a free-form description.
+        // to parse a free-form description. Any structured params the
+        // emitter attached (e.g. the failing complex-subject member)
+        // are forwarded verbatim so the admin UI can parameterize a
+        // translated message without parsing error_description.
         String emitMessage = emitResult.message();
         String emitErrorCode = emitResult.status().wireValue();
+        Map<String, String> emitParams = emitResult.params();
         switch (emitResult.status()) {
             case INVALID_REQUEST:
                 return invalidRequest(emitErrorCode, emitMessage,
-                        "Event payload could not be deserialized for the given eventType");
+                        "Event payload could not be deserialized for the given eventType", emitParams);
             case INVALID_EVENT_DATA:
-                return invalidRequest(emitErrorCode, emitMessage, "Invalid event data");
+                return invalidRequest(emitErrorCode, emitMessage, "Invalid event data", emitParams);
             case UNKNOWN_EVENT_TYPE:
-                return invalidRequest(emitErrorCode, emitMessage, "Unknown eventType");
+                return invalidRequest(emitErrorCode, emitMessage, "Unknown eventType", emitParams);
             case EVENT_TYPE_NOT_EMITTABLE:
                 return invalidRequest(emitErrorCode, emitMessage,
-                        "Requested event type not emittable");
+                        "Requested event type not emittable", emitParams);
             case SUBJECT_NOT_FOUND:
                 return invalidRequest(emitErrorCode, emitMessage,
-                        "Subject referenced by the request does not exist");
+                        "Subject referenced by the request does not exist", emitParams);
+            case SUBJECT_MISMATCH:
+                return invalidRequest(emitErrorCode, emitMessage,
+                        "User subject is not a member of the tenant organization", emitParams);
             case STREAM_NOT_FOUND:
                 // Defensive — the early stream check above usually catches
                 // this before emit() runs, but emit() can also return it
                 // (e.g. on a stream that was deleted between check and emit).
                 return invalidRequest(emitErrorCode, emitMessage,
-                        "No SSF stream registered for client");
+                        "No SSF stream registered for client", emitParams);
+            case RECEIVER_DISABLED:
+                // Receiver is configured but its client is disabled
+                return invalidRequest(emitErrorCode, emitMessage,
+                        "Receiver client is disabled", emitParams);
             case NO_DELIVERY_CONFIG:
                 // Stream exists but is not deliverable
                 return invalidRequest(emitErrorCode, emitMessage,
-                        "Stream has no delivery configuration");
+                        "Stream has no delivery configuration", emitParams);
             case DISPATCHED:
             case DROPPED_UNSUBSCRIBED:
             case DROPPED_FILTERED:
@@ -1144,12 +1192,6 @@ public class SsfAdminResource {
         // event log mirrors what the operator did, not what the dispatcher
         // chose to do downstream — the latter is captured in the result
         // `status` carried in the representation.
-        //
-        // Representation is a slim summary (event type, subject reference,
-        // result status + jti). We deliberately do NOT include the verbatim
-        // event body from the request, which can be arbitrarily large and
-        // may carry payload-specific PII; admins who need that detail can
-        // still grep the SSF metric / outbox row by jti.
         Map<String, Object> auditRep = createEmitEventAuditRepresentation(request, emitResult);
         UserModel user = auth.adminAuth().getUser();
         adminEvent.operation(OperationType.ACTION)
@@ -1165,6 +1207,19 @@ public class SsfAdminResource {
                 emitResult.message())).build();
     }
 
+    /**
+     * Creates an audit representation of the event emitted. By default we deliberately do NOT include the verbatim event body
+     * from the request, which can be arbitrarily large and may carry payload-specific PII; admins who need that detail can still grep the SSF metric / outbox row by jti.
+     *
+     * Subclasses may add bounded, non-sensitive metadata, but must not persist caller-supplied event payloads or other free-form values.
+     *
+     * @param request the request containing event emission details such as event type,
+     *                subject type, and subject value.
+     * @param emitResult the result of the emission, containing the status and
+     *                   optionally a unique identifier (jti).
+     * @return a map representing the audit metadata of the emitted event. Keys include
+     *         "eventType", "subjectType", "subjectValue", "status", and optionally "jti".
+     */
     protected Map<String, Object> createEmitEventAuditRepresentation(SsfEmitEventRequest request, EmitEventResult emitResult) {
         Map<String, Object> auditRep = new LinkedHashMap<>();
         auditRep.put("eventType", request.getEventType());
@@ -1178,10 +1233,24 @@ public class SsfAdminResource {
         if (emitResult.jti() != null) {
             auditRep.put("jti", emitResult.jti());
         }
-        if (request.getEvent() != null) {
-            auditRep.put("eventData", request.getEvent());
+        if (emitResult.event() != null) {
+            // ssfEvent is already validated here
+            Map<String, Object> adminFields = createAdminDetails(emitResult.event());
+            if (adminFields != null && !adminFields.isEmpty()) {
+                auditRep.put("eventData", adminFields);
+            }
         }
         return auditRep;
+    }
+
+    /**
+     * Creates a map containing administrative details for the provided SsfEvent.
+     *
+     * @param ssfEvent the event object from which administrative details are created
+     * @return a map with key-value pairs representing administrative details of the event
+     */
+    protected Map<String, Object> createAdminDetails(SsfEvent ssfEvent) {
+        return ssfEvent.createAdminDetails();
     }
 
     /**
@@ -1716,7 +1785,7 @@ public class SsfAdminResource {
      * shape), looks up the concrete class through
      * {@link SubjectIds#getSubjectIdType} and deserialises into it.
      * When there's no {@code format} key (legacy SSE CAEP, where the
-     * facets are sibling keys under {@code subject} without an outer
+     * subject members are sibling keys under {@code subject} without an outer
      * marker), falls back to {@link ComplexSubjectId}.
      */
     protected SubjectId toTypedSubjectId(Map<String, Object> subjectMap) {
@@ -1747,7 +1816,7 @@ public class SsfAdminResource {
      *         as-is with its {@code format} discriminator.</li>
      *     <li><b>Legacy SSE CAEP</b> — no top-level {@code sub_id}; the
      *         subject lives under {@code events.<type>.subject} with
-     *         complex-subject facets (user / session / tenant / …) as
+     *         complex-subject members (user / session / tenant / …) as
      *         sibling keys and no outer {@code format}. Returned as-is
      *         from there.</li>
      * </ul>

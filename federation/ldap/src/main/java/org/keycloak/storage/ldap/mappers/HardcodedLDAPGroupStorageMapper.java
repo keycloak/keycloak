@@ -104,7 +104,7 @@ public class HardcodedLDAPGroupStorageMapper extends AbstractLDAPStorageMapper {
         String groupName = mapperModel.getConfig().getFirst(HardcodedLDAPGroupStorageMapper.GROUP);
         GroupModel group = KeycloakModelUtils.findGroupByPath(getSession(), realm, groupName);
         if (group == null) {
-            logger.warnf("Hardcoded group '%s' configured in mapper '%s' is not available anymore");
+            logger.warnf("Hardcoded group '%s' configured in mapper '%s' is not available anymore", groupName, mapperModel.getName());
         }
         return group;
     }

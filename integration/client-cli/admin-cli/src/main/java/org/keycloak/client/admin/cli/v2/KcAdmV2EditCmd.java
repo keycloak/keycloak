@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.keycloak.client.admin.cli.KcAdmMain;
+import org.keycloak.client.admin.cli.commands.AbstractTargetAuthOptionsCmd;
 import org.keycloak.client.admin.cli.v2.KcAdmV2CommandDescriptor.CommandDescriptor;
 import org.keycloak.client.cli.common.Globals;
 import org.keycloak.client.cli.config.ConfigData;
@@ -13,7 +14,6 @@ import org.keycloak.client.cli.util.OutputUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import picocli.CommandLine;
-import picocli.CommandLine.Command;
 
 import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
 import static org.keycloak.client.admin.cli.KcAdmMain.V2_FLAG;
@@ -22,7 +22,6 @@ import static org.keycloak.client.cli.util.HttpUtil.APPLICATION_JSON;
 import static org.keycloak.client.cli.util.IoUtil.readFully;
 import static org.keycloak.client.cli.util.OsUtil.OS_ARCH;
 
-@Command
 final class KcAdmV2EditCmd extends KcAdmV2RequestExecutor {
 
     private static final String ENV_KC_CLI_EDITOR = "KC_CLI_EDITOR";
@@ -36,8 +35,8 @@ final class KcAdmV2EditCmd extends KcAdmV2RequestExecutor {
     private final String getMethod;
     private final String putMethod;
 
-    KcAdmV2EditCmd(CommandDescriptor getDescriptor, CommandDescriptor putDescriptor) {
-        super(getDescriptor, null);
+    KcAdmV2EditCmd(AbstractTargetAuthOptionsCmd root, CommandDescriptor getDescriptor, CommandDescriptor putDescriptor) {
+        super(root, getDescriptor, null);
         this.resourceName = getDescriptor.getResourceName();
         this.getMethod = getDescriptor.getHttpMethod().toLowerCase();
         this.putMethod = putDescriptor.getHttpMethod().toLowerCase();
@@ -50,6 +49,7 @@ final class KcAdmV2EditCmd extends KcAdmV2RequestExecutor {
             return;
         }
 
+        initFromParent(root);
         PrintWriter out = spec.commandLine().getOut();
         PrintWriter err = spec.commandLine().getErr();
 

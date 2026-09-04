@@ -17,6 +17,8 @@
 
 package org.keycloak.services.managers;
 
+import java.util.Set;
+
 import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.common.ClientConnection;
@@ -32,9 +34,9 @@ import org.keycloak.provider.Provider;
 public interface BruteForceProtector extends Provider {
     String DISABLED_BY_PERMANENT_LOCKOUT = "permanentLockout";
 
-    void failedLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo, String authenticationCategory);
+    void failedLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo, Set<String> authenticationCategory);
 
-    void successfulLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo, String authenticationCategory);
+    void successfulLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo, Set<String> authenticationCategories);
 
     boolean isTemporarilyDisabled(KeycloakSession session, RealmModel realm, UserModel user);
 

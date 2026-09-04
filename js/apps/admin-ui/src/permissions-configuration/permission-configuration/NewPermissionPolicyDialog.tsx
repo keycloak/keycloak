@@ -191,6 +191,7 @@ export const NewPermissionPolicyDialog = ({
           <TextControl
             name="name"
             label={t("name")}
+            labelIcon={t("policyNameHelpText")}
             rules={{ required: t("required") }}
           />
           <TextControl name="description" label={t("description")} />

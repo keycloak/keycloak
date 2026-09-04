@@ -19,10 +19,10 @@ import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { emptyFormatter } from "../util";
 import useFormatDate from "../utils/useFormatDate";
-import { CreateVerifiableCredentialModal } from "./CreateVerifiableCredentialModal";
-import { UserAttributesDialog } from "./UserAttributesDialog";
-import { IssuedCredentialsDetailCell } from "./IssuedCredentialsDetailCell";
-import { UserVerifiableCredentialOfferDialog } from "./UserVerifiableCredentialOfferDialog";
+import { CreateVerifiableCredentialModal } from "./verifiable-credentials/CreateVerifiableCredentialModal";
+import { UserAttributesDialog } from "./verifiable-credentials/UserAttributesDialog";
+import { IssuedCredentialsDetailCell } from "./verifiable-credentials/IssuedCredentialsDetailCell";
+import { UserVerifiableCredentialOfferDialog } from "./verifiable-credentials/UserVerifiableCredentialOfferDialog";
 
 type UserVerifiableCredentialsProps = {
   user: UserRepresentation;

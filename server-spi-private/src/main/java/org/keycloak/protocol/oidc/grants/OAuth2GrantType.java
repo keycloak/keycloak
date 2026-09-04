@@ -39,6 +39,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.cors.Cors;
 
 /**
@@ -71,6 +72,13 @@ public interface OAuth2GrantType extends Provider {
      * @return set of strings with the "token" parameters supported by this grant type
      */
     Set<String> getTokenParameterNames();
+
+    /**
+     * Pre-process client policies for the given grant
+     */
+    default void preProcess(KeycloakSession session, MultivaluedMap<String, String> formParams) throws ClientPolicyException {
+        // do nothing
+    }
 
     /**
      * Processes grant request.

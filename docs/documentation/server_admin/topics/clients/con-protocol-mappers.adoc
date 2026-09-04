@@ -90,6 +90,11 @@ Information that cannot be removed from a lightweight access token::
 Using a lightweight access token in {project_name}::
   By applying `use-lightweight-access-token` executor of <<_client_policies, client policies>> to a client, the client can receive a lightweight access token instead of an access token. The lightweight access token contains a claim controlled by a protocol mapper where its setting `Add to lightweight access token`(default OFF) is turned ON. Also, by turning ON its setting `Add to token introspection` of the protocol mapper, the client can obtain the claim by sending the access token to {project_name}'s token introspection endpoint.
 
+Converting a lightweight access token to a regular access token::
+  To obtain a full access token from a lightweight access token, use link:{securing_apps_token_exchange_link}[Token Exchange]. The client holding a lightweight access token can exchange it for a regular access token that contains all standard claims. This is useful when you need to call APIs that require full access tokens or when you need access to claims that are not included in the lightweight token.
++
+IMPORTANT: For token exchange to work with lightweight access tokens, you must configure the audience mappers on the client that issues the lightweight token with the `Add to lightweight access token` setting turned ON. The token exchange requires the target client to be in the `aud` (audience) claim of the lightweight token.
+
 Introspection endpoint::
   In some cases, it might be useful to trigger the token introspection endpoint with the HTTP header `Accept: application/jwt` instead of `Accept: application/json`, which can be useful especially for lightweight access tokens. See the details of *Token Introspection endpoint* in the link:{securing_apps_link}[securing apps] section.
 
@@ -97,6 +102,6 @@ UserInfo endpoint restriction::
   The UserInfo endpoint rejects lightweight access tokens by default, not for direct use with UserInfo. If you need user information from a lightweight access token, use one of these alternatives:
 +
 * Call the token introspection endpoint instead of UserInfo - the introspection endpoint is designed for lightweight tokens and returns the full claims
-* Exchange the lightweight access token for a full access token using link:{securing_apps_token_exchange_link}[Token Exchange], then call UserInfo with the full token
+* Exchange the lightweight access token for a full access token using link:{securing_apps_token_exchange_link}[Token Exchange] (see *Converting a lightweight access token to a regular access token* above), then call UserInfo with the full token
 +
 If you must use lightweight tokens with the UserInfo endpoint during migration, you can enable a backwards compatibility option in *OpenID Connect Compatibility Modes* by enabling *Allow UserInfo with lightweight access token* on the client that issues the lightweight tokens.

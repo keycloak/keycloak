@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -38,7 +39,7 @@ public final class QuarkusHttpResponse implements HttpResponse {
     private Set<NewCookie> newCookies;
 
     public QuarkusHttpResponse(ResteasyReactiveRequestContext requestContext) {
-        this.requestContext = requestContext;
+        this.requestContext = Objects.requireNonNull(requestContext);
     }
 
     @Override

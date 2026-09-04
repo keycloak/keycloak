@@ -72,12 +72,12 @@ public abstract class AbstractParEndpoint {
             cors.checkAllowedOrigins(session, client);
 
             if (client == null) {
-                throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not allowed.", Response.Status.FORBIDDEN);
+                throw errorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not allowed.", Response.Status.FORBIDDEN);
             }
         } catch (ForbiddenException e) {
             throw e;
         } catch (Exception e) {
-            throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Authentication failed.", Response.Status.UNAUTHORIZED);
+            throw errorResponseException(OAuthErrorException.INVALID_REQUEST, "Authentication failed.", Response.Status.UNAUTHORIZED);
         }
     }
 
@@ -93,7 +93,7 @@ public abstract class AbstractParEndpoint {
         return hash;
     }
 
-    protected CorsErrorResponseException throwErrorResponseException(String error, String detail, Response.Status status) {
+    protected CorsErrorResponseException errorResponseException(String error, String detail, Response.Status status) {
         this.event.detail("detail", detail).error(error);
         return new CorsErrorResponseException(cors, error, detail, status);
     }

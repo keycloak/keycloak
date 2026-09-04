@@ -225,7 +225,7 @@ public class RealmAttributesTest extends AbstractRealmTest {
 
             // two-factor policy has no resident key requirement by default
             assertEquals("not specified", rep.getWebAuthnPolicyResidentKey());
-            // passwordless policy requires a discoverable key by default
+            // passwordless policy requires a discoverable credential by default
             assertEquals("required", rep.getWebAuthnPolicyPasswordlessResidentKey());
         } finally {
             adminClient.realms().realm("attributes").remove();

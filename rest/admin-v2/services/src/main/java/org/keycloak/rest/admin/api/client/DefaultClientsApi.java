@@ -22,16 +22,19 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.client.ClientService;
 import org.keycloak.services.client.ClientService.ClientProjectionOptions;
+import org.keycloak.services.client.ClientService.ClientSortAndSliceOptions;
 import org.keycloak.services.client.DefaultClientService;
 import org.keycloak.services.client.query.ClientQueryException;
+import org.keycloak.services.client.scim.ClientResourceTypeProvider;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 public class DefaultClientsApi implements ClientsApi {
-    
+
     private final KeycloakSession session;
     private final AdminPermissionEvaluator permissions;
     private final RealmModel realm;
-    private final ClientService clientService;
+    private final DefaultClientService clientService;
+    private final ClientResourceTypeProvider typeProvider;
 
     public DefaultClientsApi(@Nonnull KeycloakSession session,
                              @Nonnull RealmModel realm,
@@ -39,16 +42,18 @@ public class DefaultClientsApi implements ClientsApi {
         this.session = session;
         this.realm = realm;
         this.permissions = permissions;
-        this.clientService = new DefaultClientService(session, realm, permissions);
+        this.typeProvider = new ClientResourceTypeProvider(session);
+        this.clientService = new DefaultClientService(session, realm, permissions, typeProvider);
     }
-    
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Override
     public Stream<BaseClientRepresentation> getClients(ListOptions params) {
         try {
             var searchOptions = params.getQuery() != null ? new ClientService.ClientSearchOptions(params.getQuery()) : null;
-            return clientService.getClients(realm, new ClientProjectionOptions(params.getFields()), searchOptions, null);
+            return clientService.getClients(realm, new ClientProjectionOptions(params.getFields()), searchOptions,
+                    ClientSortAndSliceOptions.fromQuery(params));
         } catch (ClientQueryException e) {
             throw new BadRequestException(e.getMessage());
         }
@@ -63,8 +68,10 @@ public class DefaultClientsApi implements ClientsApi {
     }
 
     /**
-     * When the path {@code clientId} does not resolve, return 403 if the caller cannot list clients
-     * (anti client-ID phishing), matching {@code ClientsResource#getClient} for Admin API v1.
+     * When the path {@code clientId} does not resolve, return 403 if the caller
+     * cannot list clients
+     * (anti client-ID phishing), matching {@code ClientsResource#getClient} for
+     * Admin API v1.
      */
     private void enforceAntiPhishingIfClientMissing(String clientId) {
         if (realm.getClientByClientId(clientId) == null && !permissions.clients().canList()) {
@@ -76,7 +83,7 @@ public class DefaultClientsApi implements ClientsApi {
     @Override
     public ClientApi client(@PathParam("id") String clientId) {
         enforceAntiPhishingIfClientMissing(clientId);
-        return new DefaultClientApi(session, realm, clientId, permissions);
+        return new DefaultClientApi(session, realm, clientId, clientService, typeProvider);
     }
 
 }

@@ -300,7 +300,7 @@ Default: `10s`.
 
 === Asynchronous commits
 
-Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use PostgreSQL's async commit feature.
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use PostgreSQL's async commit feature (`synchronous_commit = off`).
 Logouts will still force a synchronous commit.
 
 You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
@@ -422,6 +422,46 @@ DBCC USEROPTIONS;
 ----
 
 In the output, look for the row where the option is `isolation level`. The value should be `read committed snapshot` after the `ALTER DATABASE` command has been applied.
+
+=== Asynchronous commits
+
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events can use MS SQL Server's delayed durability feature.
+Logouts will still force a durable commit.
+
+To enable this optimization, set the database to allow delayed durability:
+
+[source,sql]
+----
+ALTER DATABASE <your-database-name> SET DELAYED_DURABILITY = ALLOWED;
+----
+
+{project_name} will then automatically use `COMMIT TRAN WITH (DELAYED_DURABILITY = ON)` for eligible transactions.
+
+NOTE: This optimization is not available when using XA datasources (`+--transaction-xa-enabled=true+`).
+
+You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
+
+== Preparing for Oracle Database
+
+=== Asynchronous commits
+
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use Oracle's asynchronous redo log write (`COMMIT WRITE BATCH NOWAIT`).
+Logouts will still force a synchronous commit.
+
+NOTE: This optimization is not available when using XA datasources (`+--transaction-xa-enabled=true+`).
+
+You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
+
+=== Oracle OCI (thick) driver
+
+{project_name} sets a socket read timeout on every acquired database connection to prevent long hanging threads.
+The Oracle OCI (thick) driver (`jdbc:oracle:oci:` and `jdbc:oracle:oci8:` URL schemes) does not support this JDBC feature (`Connection.setNetworkTimeout()`).
+{project_name} detects OCI connections and skips the socket timeout configuration automatically.
+
+Timeouts for OCI connections are governed by `sqlnet.ora` and TNS descriptor parameters such as `CONNECT_TIMEOUT`, `TRANSPORT_CONNECT_TIMEOUT`, and `EXPIRE_TIME`.
+Consult the Oracle documentation for details.
+
+The standard Oracle Thin driver (`jdbc:oracle:thin:`) supports `setNetworkTimeout()` and is not affected by this limitation.
 
 == Using Database Vendors with XA transaction support
 {project_name} uses non-XA transactions and the appropriate database drivers by default.
@@ -708,7 +748,7 @@ In the example above, the `org.your.extension.UserEntity` JPA entity will be man
 ==== 2. Required properties
 
 Once you have set up your `persistence.xml`, the minimal configuration on the {project_name} side is the setup of the DB kind/vendor for the specified datasource.
-You need to specify the build time option `db-kind-<name>`, where the `<name>` is the name of your datasource and must be the **same** as specified in the `persistence.xml` file.
+You need to specify the build time option `db-kind-<datasource>`, where the `<datasource>` is the name of your datasource and must be the **same** as specified in the `persistence.xml` file.
 
 Therefore, you can enable the additional datasource `user-store` as follows (`postgres` as an example):
 
@@ -761,6 +801,11 @@ WARNING: Use Quarkus properties **without quotation** for the datasource name, a
 Therefore, use `quarkus.datasource.user-store.db-kind=h2`, instead of `quarkus.datasource."user-store".db-kind=h2` to prevent any issues.
 
 <@opts.printRelevantOptions includedOptions="db db-* transaction-xa-enabled transaction-default-timeout transaction-setup-timeout" excludedOptions="db-*-<datasource>">
+
+=== Health checks
+
+Additional datasources are included by default in the readiness health check endpoint. If the additional datasource is not critical to your usage, you may exclude it from
+the health check with `db-health-exclude-<datasource>` set to `true`.
 
 === Additional datasources options
 <@opts.includeOptions includedOptions="*-<datasource>"/>

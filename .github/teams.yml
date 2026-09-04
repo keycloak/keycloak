@@ -10,6 +10,8 @@ team/continuous-delivery:
   - area/ci
   - area/testsuite
 
+team/core-clients:
+
 team/core-protocols:
   - area/adapter/fuse
   - area/adapter/java-cli

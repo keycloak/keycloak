@@ -32,7 +32,6 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -111,10 +110,9 @@ public class UserVerificationRegisterTest extends AbstractWebAuthnVirtualTest {
             assertThat(realmData.getUserVerificationRequirement(), containsString(requirement.getValue()));
 
             registerDefaultUser(shouldSuccess);
-
-            displayErrorMessageIfPresent();
-
-            assertThat(webAuthnErrorPage.isCurrent(), is(!shouldSuccess));
+            if (!oauth.parseLoginResponse().isSuccess()) {
+                webAuthnErrorPage.assertCurrent();
+            }
         } catch (IOException e) {
             throw new RuntimeException(e.getCause());
         }

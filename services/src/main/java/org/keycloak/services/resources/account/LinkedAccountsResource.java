@@ -53,6 +53,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.utils.Organizations;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCProviderConfig;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.account.AccountLinkUriRepresentation;
 import org.keycloak.representations.account.LinkedAccountRepresentation;
@@ -143,20 +146,24 @@ public class LinkedAccountsResource {
                     .sorted(), firstResult, maxResults)
                     .toList();
         } else {
-            // we want all enabled, realm-level identity providers available (i.e. not already linked) for the user to link their accounts to.
-            String fedAliasesToExclude = session.users().getFederatedIdentitiesStream(realm, user).map(FederatedIdentityModel::getIdentityProvider)
-                    .collect(Collectors.joining(","));
+            if (Organizations.resolveHomeBroker(session, user).isEmpty()) {
+                // we want all enabled, realm-level identity providers available (i.e. not already linked) for the user to link their accounts to.
+                String fedAliasesToExclude = session.users().getFederatedIdentitiesStream(realm, user).map(FederatedIdentityModel::getIdentityProvider)
+                        .collect(Collectors.joining(","));
 
-            Map<String, String> searchOptions = Map.of(
-                    IdentityProviderModel.ENABLED, "true",
-                    IdentityProviderModel.ORGANIZATION_ID, "",
-                    IdentityProviderModel.SEARCH, search == null ? "" : search,
-                    IdentityProviderModel.ALIAS_NOT_IN, fedAliasesToExclude,
-					IdentityProviderModel.SHOW_IN_ACCOUNT_CONSOLE, IdentityProviderShowInAccountConsole.ALWAYS.name());
+                Map<String, String> searchOptions = Map.of(
+                        IdentityProviderModel.ENABLED, "true",
+                        IdentityProviderModel.ORGANIZATION_ID, "",
+                        IdentityProviderModel.SEARCH, search == null ? "" : search,
+                        IdentityProviderModel.ALIAS_NOT_IN, fedAliasesToExclude,
+                        IdentityProviderModel.SHOW_IN_ACCOUNT_CONSOLE, IdentityProviderShowInAccountConsole.ALWAYS.name());
 
-            linkedAccounts = session.identityProviders().getAllStream(IdentityProviderQuery.userAuthentication().with(searchOptions), firstResult, maxResults)
-                    .map(idp -> this.toLinkedAccount(idp, null, null))
-                    .toList();
+                linkedAccounts = session.identityProviders().getAllStream(IdentityProviderQuery.userAuthentication().with(searchOptions), firstResult, maxResults)
+                        .map(idp -> this.toLinkedAccount(idp, null, null))
+                        .toList();
+            } else {
+                linkedAccounts = List.of();
+            }
         }
         return Cors.builder().auth().checkAllowedOrigins(auth.getToken()).add(Response.ok(linkedAccounts));
     }
@@ -255,6 +262,13 @@ public class LinkedAccountsResource {
     public Response buildLinkedAccountURI(@PathParam("providerAlias") String providerAlias,
                                      @QueryParam("redirectUri") String redirectUri) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
+
+        OIDCLoginProtocol loginProtocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+        OIDCProviderConfig oidcConfig = loginProtocol.getConfig();
+        if (!oidcConfig.isAllowClientInitiatedAccountLinking()) {
+            throw ErrorResponse.error("Legacy client-initiated account linking is disabled. Use AIA with kc_action=idp_link instead.", Response.Status.NOT_FOUND);
+        }
+
         logger.warnf("Using deprecated endpoint of Account REST service for linking user '%s' in the realm '%s' to identity provider '%s'. It is recommended to use application initiated actions (AIA) for linking identity provider with the user.",
                 user.getUsername(),
                 realm.getName(),
@@ -266,6 +280,9 @@ public class LinkedAccountsResource {
         String errorMessage = checkCommonPreconditions(providerAlias);
         if (errorMessage != null) {
             throw ErrorResponse.error(errorMessage, Response.Status.BAD_REQUEST);
+        }
+        if (!Organizations.resolveHomeBroker(session, user).isEmpty()) {
+            throw ErrorResponse.error(translateErrorMessage(Messages.FEDERATED_IDENTITY_BOUND_ORGANIZATION), Response.Status.BAD_REQUEST);
         }
         if (auth.getSession() == null) {
             throw ErrorResponse.error(Messages.SESSION_NOT_ACTIVE, Response.Status.BAD_REQUEST);

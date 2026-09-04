@@ -121,11 +121,19 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
 
     @Override
     protected void initRequest() {
-        parameter(OAuth2Constants.RESPONSE_TYPE, client.config().getResponseType());
-        parameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM, client.config().getResponseMode());
-        parameter(OAuth2Constants.CLIENT_ID, client.config().getClientId());
-        parameter(OAuth2Constants.REDIRECT_URI, client.config().getRedirectUri());
-        if (!params.containsKey(OAuth2Constants.SCOPE)) {
+        if (client.config().getResponseType() != null) {
+            parameter(OAuth2Constants.RESPONSE_TYPE, client.config().getResponseType());
+        }
+        if (client.config().getResponseMode() != null) {
+            parameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM, client.config().getResponseMode());
+        }
+        if (client.config().getClientId() != null) {
+            parameter(OAuth2Constants.CLIENT_ID, client.config().getClientId());
+        }
+        if (client.config().getRedirectUri() != null) {
+            parameter(OAuth2Constants.REDIRECT_URI, client.config().getRedirectUri());
+        }
+        if (!params.containsKey(OAuth2Constants.SCOPE) && client.config().getScope() != null) {
             parameter(OAuth2Constants.SCOPE, client.config().getScope());
         }
     }

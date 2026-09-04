@@ -40,15 +40,10 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.common.util.Time;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
@@ -62,23 +57,18 @@ import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
-import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.userprofile.config.UPAttribute;
-import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.managers.AppAuthManager;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.validate.validators.PatternValidator;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
@@ -86,10 +76,7 @@ import org.jboss.logging.Logger;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VC;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_URI_CODE_SCOPE;
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
-import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
-import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 import static org.keycloak.util.JsonSerialization.valueAsPrettyString;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -199,21 +186,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
     }
 
     protected ComponentRepresentation getUserProfileProvider() {
-        // Add the User DID attribute, with the same logic as in DeclarativeUserProfileProviderFactory
         UPConfig profileConfig = UPConfigUtils.parseSystemDefaultConfig();
-
-        if (profileConfig.getAttribute(UserModel.DID) == null) {
-            UPAttribute attr = new UPAttribute(UserModel.DID);
-            attr.setDisplayName("${did}");
-            attr.setPermissions(new UPAttributePermissions(Set.of(ROLE_ADMIN, ROLE_USER), Set.of(ROLE_ADMIN, ROLE_USER)));
-            attr.setValidations(Map.of(
-                    PatternValidator.ID, Map.of(
-                            "pattern", "^did:.+:.+$",
-                            "error-message", "Value must start with 'did:scheme:'"
-                    )
-            ));
-            profileConfig.addOrReplaceAttribute(attr);
-        }
 
         ComponentRepresentation componentRepresentation = new ComponentRepresentation();
         componentRepresentation.setId(UUID.randomUUID().toString());
@@ -472,29 +445,5 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
                 TIME_PROVIDER,
                 30
         );
-    }
-
-    static OAuth2CodeEntry prepareSessionCode(
-            KeycloakSession session,
-            AppAuthManager.BearerTokenAuthenticator authenticator,
-            String note) {
-
-        AuthenticationManager.AuthResult authResult = authenticator.authenticate();
-        UserSessionModel userSessionModel = authResult.session();
-        AuthenticatedClientSessionModel authenticatedClientSessionModel =
-                userSessionModel.getAuthenticatedClientSessionByClient(authResult.client().getId());
-
-        OAuth2Code oauth2Code = new OAuth2Code(
-                SecretGenerator.getInstance().randomString(),
-                Time.currentTime() + 6000,
-                SecretGenerator.getInstance().randomString(),
-                CREDENTIAL_OFFER_URI_CODE_SCOPE,
-                authenticatedClientSessionModel.getUserSession().getId()
-        );
-
-        String nonce = OAuth2CodeParser.persistCode(session, authenticatedClientSessionModel, oauth2Code);
-        authenticatedClientSessionModel.setNote(nonce, note);
-
-        return new OID4VCIssuerEndpointTest.OAuth2CodeEntry(nonce, oauth2Code);
     }
 }

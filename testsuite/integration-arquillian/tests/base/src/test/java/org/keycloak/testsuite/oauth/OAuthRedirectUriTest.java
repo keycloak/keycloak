@@ -21,6 +21,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.List;
+import java.util.Objects;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Encode;
@@ -179,7 +180,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
     public void testNoParam() throws IOException {
         oauth.redirectUri(null);
         oauth.openLoginForm();
-        Assertions.assertTrue(errorPage.isCurrent());
+        errorPage.assertCurrent();
         Assertions.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
     }
 
@@ -187,7 +188,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
     public void testRelativeUri() throws IOException {
         oauth.redirectUri("/foo/../bar");
         oauth.openLoginForm();
-        Assertions.assertTrue(errorPage.isCurrent());
+        errorPage.assertCurrent();
         Assertions.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
     }
 
@@ -195,7 +196,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
     public void testFileUri() throws IOException {
         oauth.redirectUri("file://test");
         oauth.openLoginForm();
-        Assertions.assertTrue(errorPage.isCurrent());
+        errorPage.assertCurrent();
         Assertions.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
     }
 
@@ -205,7 +206,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         try {
             oauth.redirectUri(null);
             oauth.openLoginForm();
-            Assertions.assertTrue(errorPage.isCurrent());
+            errorPage.assertCurrent();
             Assertions.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
         } finally {
             ClientManager.realm(adminClient.realm("test")).clientId("test-app").removeRedirectUris("http://localhost:8180/app2");
@@ -220,7 +221,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
             oauth.redirectUri(null);
             oauth.openLoginForm();
 
-            Assertions.assertTrue(errorPage.isCurrent());
+            errorPage.assertCurrent();
             assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
         } finally {
             ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris("http://localhost:8180/auth/realms/master/app/auth/*");
@@ -235,7 +236,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
             oauth.redirectUri(null);
             oauth.openLoginForm();
 
-            Assertions.assertTrue(errorPage.isCurrent());
+            errorPage.assertCurrent();
             assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
         } finally {
             ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris("http://localhost:8180/auth/realms/master/app/auth/*");
@@ -259,7 +260,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         oauth.redirectUri("http://localhost:8180/app2");
         oauth.openLoginForm();
 
-        Assertions.assertTrue(errorPage.isCurrent());
+        errorPage.assertCurrent();
         assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
     }
 
@@ -478,6 +479,85 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         Assertions.assertEquals(400, tokenResponse.getStatusCode(), "Expected 400, but got something else");
     }
 
+    @Test
+    public void testRedirectUriWithForbiddenCodeParameter() {
+        oauth.redirectUri(APP_ROOT + "/auth?code=attacker_injected");
+        oauth.openLoginForm();
+
+        errorPage.assertCurrent();
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithForbiddenStateParameter() {
+        oauth.redirectUri(APP_ROOT + "/auth?state=attacker_state");
+        oauth.openLoginForm();
+
+        errorPage.assertCurrent();
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithForbiddenSessionStateParameter() {
+        oauth.redirectUri(APP_ROOT + "/auth?session_state=attacker_state");
+        oauth.openLoginForm();
+
+        errorPage.assertCurrent();
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithForbiddenIssParameter() {
+        oauth.redirectUri(APP_ROOT + "/auth?iss=https://evil.com");
+        oauth.openLoginForm();
+
+        errorPage.assertCurrent();
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithMixedLegitimateAndForbiddenParameters() {
+        oauth.redirectUri(APP_ROOT + "/auth?custom=value&code=evil&other=data");
+        oauth.openLoginForm();
+
+        errorPage.assertCurrent();
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithUrlEncodedForbiddenParameter() {
+        // c%6Fde = "code" URL-encoded
+        oauth.redirectUri(APP_ROOT + "/auth?c%6Fde=evil");
+        oauth.openLoginForm();
+
+        errorPage.assertCurrent();
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithMixedCaseForbiddenParameter() {
+        oauth.redirectUri(APP_ROOT + "/auth?CODE=evil");
+        oauth.openLoginForm();
+
+        errorPage.assertCurrent();
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithLegitimateCustomParameters() throws IOException {
+        oauth.redirectUri(APP_ROOT + "/auth?custom_param=value&return_to=/home");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+
+        Assertions.assertNotNull(response.getCode());
+        URL url = new URL(Objects.requireNonNull(driver.getCurrentUrl()));
+        Assertions.assertTrue(url.toString().startsWith(APP_ROOT));
+        Assertions.assertTrue(url.getQuery().contains("custom_param=value"));
+        Assertions.assertTrue(url.getQuery().contains("return_to=/home"));
+        Assertions.assertTrue(url.getQuery().contains("code="));
+        Assertions.assertTrue(url.getQuery().contains("state="));
+    }
+
+
     private void checkRedirectUri(String redirectUri, boolean expectValid) throws IOException {
         checkRedirectUri(redirectUri, expectValid, false);
     }
@@ -490,13 +570,12 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
 
         if (!expectValid) {
             oauth.openLoginForm();
-            Assertions.assertTrue(errorPage.isCurrent());
+            errorPage.assertCurrent();
             Assertions.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
         } else {
             if (!checkCodeToToken) {
                 oauth.openLoginForm();
-                Assertions.assertTrue(loginPage.isCurrent());
-                Assertions.assertFalse(errorPage.isCurrent());
+                loginPage.assertCurrent();
             } else {
                 oauth.doLogin("test-user@localhost", "password");
 

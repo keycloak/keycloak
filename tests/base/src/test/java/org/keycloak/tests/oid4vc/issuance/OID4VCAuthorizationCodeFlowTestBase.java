@@ -1,6 +1,5 @@
 package org.keycloak.tests.oid4vc.issuance;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -68,11 +67,8 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
     /** Returns the credential scope configured for this test's format. */
     protected abstract CredentialScopeRepresentation getCredentialScope();
 
-    /**
-     * Returns the claim name (last segment of the path) used when building mandatory-claim
-     * authorization details for this format.
-     */
-    protected abstract String getExpectedClaimPath();
+    /** Returns the claim path used when building mandatory-claim authorization details for this format. */
+    protected abstract List<Object> getExpectedClaimPath();
 
     /** Returns the name of the firstName protocol mapper in the credential scope. */
     protected abstract String getFirstNameProtocolMapperName();
@@ -257,6 +253,35 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         assertSuccessfulCredentialResponse(credResponse);
     }
 
+    /**
+     * Replaying the same proof JWT in a second credential request must fail because the
+     * proof c_nonce is consumed after the first successful request.
+     */
+    @Test
+    public void testCredentialRequestRejectsReplayedProofCNonce() throws Exception {
+
+        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
+        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
+        String credentialIdentifier = assertTokenResponse(tokenResponse);
+        Proofs proofs = newJwtProofs();
+
+        Oid4vcCredentialResponse firstResponse = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
+                .proofs(proofs)
+                .bearerToken(tokenResponse.getAccessToken())
+                .send();
+        assertSuccessfulCredentialResponse(firstResponse);
+
+        Oid4vcCredentialResponse replayResponse = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
+                .proofs(proofs)
+                .bearerToken(tokenResponse.getAccessToken())
+                .send();
+
+        assertEquals(400, replayResponse.getStatusCode());
+        assertEquals(ErrorType.INVALID_NONCE.getValue(), replayResponse.getError());
+    }
+
     /** After refreshing the token the new access-token must still be usable for a credential request. */
     @Test
     public void testCompleteFlowWithClaimsValidationAuthorizationCode_refreshToken() throws Exception {
@@ -431,6 +456,10 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
             // Now remove lastName — credential request should fail (mandatory via auth details)
             userState.userRep.setLastName(null);
             userState.user.update(userState.userRep);
+
+            UserRepresentation userRep = testRealm.admin().users().search(TEST_USER).get(0);
+            var lastName = userRep.getLastName();
+            assertNull(lastName, "User last name should be null, not: " + lastName);
 
             Oid4vcCredentialResponse resp = oauth.oid4vc().credentialRequest()
                     .credentialIdentifier(credentialIdentifier)
@@ -910,13 +939,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
      */
     protected List<ClaimsDescription> mandatoryLastNameClaims() {
         ClaimsDescription claim = new ClaimsDescription();
-        List<Object> claimPath;
-        if ("sd_jwt_vc".equals(getCredentialFormat())) {
-            claimPath = Collections.singletonList(getExpectedClaimPath());
-        } else {
-            claimPath = Arrays.asList("credentialSubject", getExpectedClaimPath());
-        }
-        claim.setPath(claimPath);
+        claim.setPath(getExpectedClaimPath());
         claim.setMandatory(true);
         return List.of(claim);
     }
@@ -1008,6 +1031,11 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         UserRepresentation userRep = testRealm.admin().users().search(TEST_USER).get(0);
         UserResource userResource = testRealm.admin().users().get(userRep.getId());
         userRep = userResource.toRepresentation();
+        // Ensure attributes is non-null so that subsequent updates (e.g. setLastName(null))
+        // skip the putIfAbsent merge in UserResource.updateUser and actually clear the field.
+        if (userRep.getAttributes() == null) {
+            userRep.setAttributes(Collections.emptyMap());
+        }
         return new UserState(userResource, userRep,
                 userRep.getFirstName(),
                 userRep.getLastName(),

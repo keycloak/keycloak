@@ -2,6 +2,7 @@
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/options.adoc" as opts>
 <#import "/templates/links.adoc" as links>
+<#import "/templates/features.adoc" as features>
 
 <@tmpl.guide
 title="Configuring distributed caches"
@@ -88,35 +89,6 @@ to any node without losing their authentication state. However, production-ready
 to the node where their sessions were initially created. By doing that, you are going to avoid unnecessary state transfer between nodes and improve
 CPU, memory, and network utilization.
 
-.User sessions
-Once the user is authenticated, a user session is created. The user session tracks your active users and their state so that they can seamlessly
-authenticate to any application without being asked for their credentials again. For each application, the user authenticates with a client session, so that the server can track the applications the user is authenticated with and their state on a per-application basis.
-
-User and client sessions are automatically destroyed whenever the user performs a logout, the client performs a token revocation, or due to reaching their expiration time.
-
-The session data are stored in the database by default and loaded on-demand to the following caches:
-
-* `sessions`
-* `clientSessions`
-
-By relying on a distributable cache, cached user and client sessions are available to any node in the cluster so that users can be redirected
-to any node without the need to load session data from the database. However, production-ready deployments should always consider session affinity and favor redirecting users
-to the node where their sessions were initially created. By doing that, you are going to avoid unnecessary state transfer between nodes and improve
-CPU, memory, and network utilization.
-
-These in-memory caches for user sessions and client sessions are limited to, by default, 10000 entries per node which reduces the overall memory usage of {project_name} for larger installations.
-The internal caches will run with only a single owner for each cache entry.
-
-.Offline user sessions
-As an OpenID Connect Provider, the server is capable of authenticating users and issuing offline tokens. When issuing an offline token after successful authentication, the server creates an offline user session and offline client session.
-
-The following caches are used to store offline sessions:
-
-* offlineSessions
-* offlineClientSessions
-
-Like the user and client sessions caches, the offline user and client session caches are limited to 10000 entries per node by default. Items which are evicted from the memory will be loaded on-demand from the database when needed.
-
 .Password brute force detection
 The `loginFailures` distributed cache is used to track data about failed login attempts.
 This cache is needed for the Brute Force Protection feature to work in a multi-node {project_name} setup.
@@ -127,31 +99,47 @@ The `actionTokens` distributed cache is used to track metadata about action toke
 
 TIP: You can see the applied Infinispan configuration in the logs by configuring `--log-level=info,org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory:debug`.
 
-=== Volatile user sessions
+=== User session caching (deprecated)
 
-By default, regular user sessions are stored in the database and loaded on-demand to the cache.
-It is possible to configure {project_name} to store regular user sessions in the cache only and minimize calls to the database.
+WARNING: Caching of persistent user and offline sessions is deprecated since {project_name} 26.8 and will be removed in a future release.
 
-Since all the sessions in this setup are stored in-memory, there are two side effects related to this:
+A user session tracks an authenticated user across one or more applications (client sessions). Offline sessions are long-lived sessions backed by offline tokens.
+User sessions, client sessions, offline user sessions, and offline client sessions are stored in the database. The embedded Infinispan caches (`sessions`, `clientSessions`, `offlineSessions`, `offlineClientSessions`) exist but are not populated by default.
 
-* Losing sessions when all {project_name} nodes restart.
-* Increased memory consumption.
+To temporarily re-enable session caching (for example, to reduce database load at the cost of increased memory usage and the risk of data loss on restart), set:
 
-When using volatile user sessions, the cache is the source of truth for user and client sessions.
-{project_name} automatically adjusts the number of entries that can be stored in memory, and increases the number of copies to prevent data loss.
-
-Follow these steps to enable this setup:
-
-1. Disable `persistent-user-sessions` feature using the following command:
-+
+[source]
 ----
-bin/kc.sh start --features-disabled=persistent-user-sessions ...
+spi-user-sessions--infinispan--use-caches=true
 ----
 
-[NOTE]
-====
-Disabling `persistent-user-sessions` is not possible when `multi-site` feature is enabled.
-====
+When enabled:
+
+* Sessions are loaded on-demand from the database into the embedded caches.
+* Cached sessions are available to any node in the cluster without a database round-trip.
+* In-memory caches are limited to 10000 entries per node by default (configurable via `--cache-embedded-sessions-max-count` etc.).
+* Cache entries use a single owner per entry.
+
+This option will be removed in a future release. Remove it from your configuration before upgrading to that release.
+
+=== Volatile user sessions (deprecated)
+
+WARNING: Volatile user sessions are deprecated since {project_name} 26.8 and will be removed in a future release. Persistent user sessions will become the only supported mode.
+If you have `--features-disabled=persistent-user-sessions` in your configuration, remove it to use the default persistent sessions mode.
+
+By default, regular user sessions are stored in the database.
+It is possible to configure {project_name} to store regular user sessions in-memory only by disabling the `persistent-user-sessions` feature.
+This means all user sessions are lost when all {project_name} nodes are restarted, and memory consumption increases as the number of active sessions grows.
+
+=== Stateless instances
+
+<@features.techpreview feature="stateless"/>
+
+When the feature `stateless` is enabled, {project_name} does not cache user entity data, and login failures, authentication sessions, and action tokens are persisted to the database. While realm and authorization data are still cached, session-related state is persisted and the database becomes the source of truth. The `work` cache is still used to invalidate realm and authorization data within the cluster.
+
+If you are running multiple independent {project_name} clusters against the same database, cache invalidation between clusters is performed via a database table (outbox). For that, each cluster needs to have a unique name specified via `+--cache-embedded-cluster-name+`.
+
+This is the foundation for the multi-cluster (v2) setup that is covered in more detail in the high-availability guide at <@links.ha id="multi-cluster-v2-introduction" />.
 
 === Configuring cache maximum size
 
@@ -162,7 +150,7 @@ apply the upper bound to. For example, to apply an upper-bound of `1000` to the 
 `--cache-embedded-offline-sessions-max-count=1000`. An upper bound can not be defined on the following caches:
 `actionToken`, `authenticationSessions`, `loginFailures`, `work`.
 
-Setting a maximum cache size for `sessions`, `clientSessions` is not supported when volatile sessions are enabled.
+Setting a maximum cache size for `sessions`, `clientSessions` is not supported when the deprecated volatile sessions mode is used.
 
 === Specify your own cache configuration file
 
@@ -209,26 +197,26 @@ If the {jdgserver_name} server has authentication enabled, {project_name} will f
 
 The following options allow you to identify the cluster and its nodes:
 
-Cluster name (experimental)::
+Cluster name::
 Defines the name of the cluster.
 Only nodes with the same cluster name can discover each other and form a cluster.
 Because {project_name} uses the database for node discovery via `jdbc-ping` by default, clusters that share the same database but should remain separate will merge unless they have distinct cluster names.
 The default cluster name is `ISPN`.
 +
-Use the SPI option `+spi-cache-embedded--default--cluster-name+` (or environment variable `+KC_SPI_CACHE_EMBEDDED__DEFAULT__CLUSTER_NAME+`).
+Use `+--cache-embedded-cluster-name+` (or environment variable `+KC_CACHE_EMBEDDED_CLUSTER_NAME+`).
 +
-For example: `+--spi-cache-embedded--default--cluster-name=my-cluster+`
+For example: `+--cache-embedded-cluster-name=my-cluster+`
 +
-WARNING: As invalidation of caches between clusters with distinct names will not work, this will lead to stale caches and incorrect behavior. Do not use in production environments. Use only together with the experimental `cacheless` feature.
+WARNING: As invalidation of caches between clusters with distinct names will not work, this will lead to stale caches and incorrect behavior. Use only together with the `stateless` feature.
 
 Node name::
 Sets a human-readable name for the current node, used in log messages and management tools.
 By default, a random name is generated on each start, which makes it difficult to correlate metrics and logs across restarts.
 Set this option to assign a stable name, which is especially useful for observability tools such as Grafana dashboards and log aggregation.
 +
-Use the SPI option `+spi-cache-embedded--default--node-name+` (or environment variable `+KC_SPI_CACHE_EMBEDDED__DEFAULT__NODE_NAME+`).
+Use `+--cache-embedded-node-name+` (or environment variable `+KC_CACHE_EMBEDDED_NODE_NAME+`).
 +
-For example: `+--spi-cache-embedded--default--node-name=node-1+`
+For example: `+--cache-embedded-node-name=node-1+`
 
 [[cache-topology]]
 == Topology aware data distribution

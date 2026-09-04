@@ -95,7 +95,9 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
      * Comma-separated aliases of trust-material identity providers that expose the trusted attester keys.
      */
     public static final String OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS = "attester_trust_idps";
-    public static final String OAUTH_CLIENT_ATTESTATION_DEFAULT_TRUST_IDP_ALIAS = "abca-attester-default-trust";
+
+    /** The token confirmation type */
+    public static final String ABCA_JKT_TYPE = "Client-Attestation";
 
     @Override
     public String getId() {

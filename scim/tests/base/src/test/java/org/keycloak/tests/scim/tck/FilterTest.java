@@ -23,10 +23,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.scim.filter.FilterUtils.MAX_FILTER_DEPTH;
+import static org.keycloak.scim.filter.FilterUtils.MAX_FILTER_LENGTH;
 import static org.keycloak.scim.resource.Scim.ENTERPRISE_USER_SCHEMA;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -427,6 +430,38 @@ public class FilterTest extends AbstractScimTest {
         assertThat(ce.getError().getScimType(), is("invalidFilter"));
     }
 
+    @Test
+    public void testFilterExceedingMaxLength() {
+        String longFilter = "userName eq \"" + "a".repeat(MAX_FILTER_LENGTH) + "\"";
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().getAll(longFilter));
+        assertThat(ce.getError(), is(not(nullValue())));
+        assertThat(ce.getError().getScimType(), is("invalidFilter"));
+        assertThat(ce.getError().getDetail(), containsString("maximum allowed length"));
+
+        // POST .search should also reject oversized filters
+        ce = assertThrows(ScimClientException.class,
+                () -> client.users().search(longFilter));
+        assertThat(ce.getError(), is(not(nullValue())));
+        assertThat(ce.getError().getScimType(), is("invalidFilter"));
+    }
+
+    @Test
+    public void testFilterExceedingMaxDepth() {
+        String deepFilter = "(".repeat(MAX_FILTER_DEPTH + 1) + "userName eq \"a\"" + ")".repeat(MAX_FILTER_DEPTH + 1);
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().getAll(deepFilter));
+        assertThat(ce.getError(), is(not(nullValue())));
+        assertThat(ce.getError().getScimType(), is("invalidFilter"));
+        assertThat(ce.getError().getDetail(), containsString("maximum allowed nesting depth"));
+
+        // POST .search should also reject deeply nested filters
+        ce = assertThrows(ScimClientException.class,
+                () -> client.users().search(deepFilter));
+        assertThat(ce.getError(), is(not(nullValue())));
+        assertThat(ce.getError().getScimType(), is("invalidFilter"));
+    }
+
     // Tests with rich user objects
 
     @Test
@@ -452,6 +487,53 @@ public class FilterTest extends AbstractScimTest {
     }
 
     @Test
+    public void testFilterCaseInsensitiveByName() {
+        User bob = createUser("bob", "Robert", "Johnson", "bob@keycloak.org", true);
+        createUser("alice", "Alice", "Smith", "alice@keycloak.org", true);
+
+        String filter = ResourceFilter.filter().eq("name.givenName", "ROBERT").build();
+        ListResponse<User> response = client.users().getAll(filter);
+        assertSingleResult(response, bob.getUserName());
+
+        filter = ResourceFilter.filter().eq("name.familyName", "johnson").build();
+        response = client.users().getAll(filter);
+        assertSingleResult(response, bob.getUserName());
+    }
+
+    @Test
+    public void testFilterCaseInsensitiveByEnterpriseAttributes() {
+        addEnterpriseUserUserProfileAttributes();
+
+        User user1 = createEnterpriseUser("user1", "Engineering", "E1234", "Bruce Wayne");
+        createEnterpriseUser("user2", "QE", "E7763", "Lucius Fox");
+
+        String filter = ResourceFilter.filter().eq(ENTERPRISE_USER_SCHEMA + ":department", "engineering").build();
+        ListResponse<User> response = client.users().getAll(filter);
+        assertSingleResult(response, user1.getUserName());
+
+        filter = ResourceFilter.filter().sw(ENTERPRISE_USER_SCHEMA + ":costCenter", "amer").build();
+        response = client.users().getAll(filter);
+        assertThat(response.getTotalResults(), is(2));
+    }
+
+    @Test
+    public void testFilterExternalIdRemainsCaseExact() {
+        addOrReplaceUPAttribute("externalId");
+
+        User user = new User();
+        user.setUserName("bob");
+        user.setExternalId("EXT-Bob-01");
+        user = client.users().create(user);
+        userIdsToRemove.add(user.getId());
+
+        String filter = ResourceFilter.filter().eq("externalId", "ext-bob-01").build();
+        assertNoResults(client.users().getAll(filter));
+
+        filter = ResourceFilter.filter().eq("externalId", "EXT-Bob-01").build();
+        assertSingleResult(client.users().getAll(filter), user.getUserName());
+    }
+
+    @Test
     public void testFilterByEmail() {
         User bob = createUser("bob", "Robert", "Johnson", "bob@keycloak.org", true);
         User alice = createUser("alice", "Alice", "Smith", "alice@keycloak.org", true);
@@ -467,6 +549,11 @@ public class FilterTest extends AbstractScimTest {
         filter = ResourceFilter.filter().co("emails", "keycloak").build();
         response = client.users().getAll(filter);
         assertThat(response.getTotalResults(), is(2));
+
+        // using a mixed case email
+        filter = ResourceFilter.filter().eq("emails.value", "ALICE@KEYCLOAK.org").build();
+        response = client.users().getAll(filter);
+        assertSingleResult(response, alice.getUserName());
     }
 
     @Test
@@ -544,6 +631,27 @@ public class FilterTest extends AbstractScimTest {
         response = client.users().getAll(filter);
         assertThat(response, is(not(nullValue())));
         assertThat(response.getTotalResults(), is(2));
+    }
+
+    @Test
+    public void testNestedValuePathDoesNotDropOuterAttributePath() {
+        createUser("bob", "Robert", "Anderson", "bob@keycloak.org", true);
+
+        // emails.name.familyName is not a valid attribute path, so the filter must not match anything;
+        // it must not be evaluated as if it were name[familyName eq "Anderson"]
+        String filter = "emails[name[familyName eq \"Anderson\"]]";
+        ListResponse<User> response = client.users().getAll(filter);
+        assertNoResults(response);
+    }
+
+    @Test
+    public void testNestedValuePathRestoresOuterAttributePath() {
+        User bob = createUser("bob", "Robert", "Anderson", "bob@keycloak.org", true);
+
+        // after the inner value path completes, familyName must still resolve to name.familyName
+        String filter = "name[bogus[value eq \"x\"] or familyName eq \"Anderson\"]";
+        ListResponse<User> response = client.users().getAll(filter);
+        assertSingleResult(response, bob.getUserName());
     }
 
     @Test

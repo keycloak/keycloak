@@ -20,10 +20,7 @@ package org.keycloak.social.facebook;
 import java.io.IOException;
 
 import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response;
 
-import org.keycloak.OAuth2Constants;
-import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -32,9 +29,7 @@ import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.saml.common.util.StringUtil;
-import org.keycloak.services.ErrorResponseException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -141,20 +136,6 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider<Fac
 		return user;
 	}
 
-    @Override
-    protected BrokeredIdentityContext exchangeExternalTokenV2Impl(TokenExchangeContext tokenExchangeContext) {
-        String subjectToken = tokenExchangeContext.getFormParams().getFirst(OAuth2Constants.SUBJECT_TOKEN);
-        if (subjectToken == null) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "token not set", Response.Status.BAD_REQUEST);
-        }
-        try {
-            verifyToken(subjectToken);
-            return doGetFederatedIdentity(subjectToken);
-        }
-        catch (Exception e) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, e.getMessage(), Response.Status.BAD_REQUEST);
-        }
-    }
 
     @Override
 	protected String getDefaultScopes() {

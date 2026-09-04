@@ -11,6 +11,7 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -55,11 +56,11 @@ public class AuthorizationDetailsProcessorManager {
         return allAuthzDetails;
     }
 
-    public List<AuthorizationDetailsJSONRepresentation> validateAuthorizationDetail(String authorizationDetailsParam) {
-        return processAuthorizationDetailsInternal(authorizationDetailsParam, AuthorizationDetailsProcessor::validateAuthorizationDetail);
+    public void validateAuthorizationDetail(String authorizationDetailsParam) {
+        processAuthorizationDetailsInternal(authorizationDetailsParam, AuthorizationDetailsProcessor::validateAuthorizationDetail);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public void afterAuthorizationDetailsProcessed(UserSessionModel userSession,
                                                    ClientSessionContext clientSessionCtx,
                                                    List<AuthorizationDetailsJSONRepresentation> authorizationDetailsResponse) throws InvalidAuthorizationDetailsException {
@@ -67,6 +68,24 @@ public class AuthorizationDetailsProcessorManager {
         for (AuthorizationDetailsJSONRepresentation authzDetailResponse : authorizationDetailsResponse) {
             AuthorizationDetailsProcessor processor = findProcessorForAuthorizationDetails(processors, authzDetailResponse);
             processor.afterAuthorizationDetailsProcessed(userSession, clientSessionCtx, authzDetailResponse.asSubtype(processor.getSupportedResponseJavaType()));
+        }
+    }
+
+    /**
+     * Sanitize authorization details before they are sent as part of the Token Response
+     * https://github.com/keycloak/keycloak/issues/50079
+     */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public void sanitizeBeforeSendingTokenResponse(AccessTokenResponse tokenResponse) {
+        if (tokenResponse.getAuthorizationDetails() != null) {
+            List<AuthorizationDetailsJSONRepresentation> outAuthzDetails = new ArrayList<>();
+            Map<String, AuthorizationDetailsProcessor<?>> processors = getAuthorizationDetailsProcessorMap();
+            for (AuthorizationDetailsJSONRepresentation authzDetail : tokenResponse.getAuthorizationDetails()) {
+                AuthorizationDetailsProcessor processor = findProcessorForAuthorizationDetails(processors, authzDetail);
+                AuthorizationDetailsJSONRepresentation subAuthzDetail = authzDetail.asSubtype(processor.getSupportedResponseJavaType());
+                outAuthzDetails.add(processor.sanitizeBeforeSendingTokenResponse(subAuthzDetail));
+            }
+            tokenResponse.setAuthorizationDetails(outAuthzDetails);
         }
     }
 

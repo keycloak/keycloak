@@ -62,6 +62,9 @@ public class RegisterPage extends AbstractLoginPage {
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
+    @FindBy(linkText = "« Back to Login")
+    private WebElement backToLoginLink;
+
     public RegisterPage(ManagedWebDriver driver) {
         super(driver);
     }
@@ -186,5 +189,9 @@ public class RegisterPage extends AbstractLoginPage {
     @Override
     public String getExpectedPageId() {
         return "login-register";
+    }
+
+    public void clickBackToLogin() {
+        backToLoginLink.click();
     }
 }

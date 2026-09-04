@@ -237,6 +237,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             commands.add("--spi-cache-embedded-default-site-name=test");
         }
 
+
         if (!suiteContext.get().isAuthServerMigrationEnabled()) {
             commands.add("--bootstrap-admin-username=" + AuthRealm.ADMIN);
             commands.add("--bootstrap-admin-password=" + AuthRealm.ADMIN);

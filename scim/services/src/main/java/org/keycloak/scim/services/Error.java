@@ -16,6 +16,8 @@ import org.keycloak.models.ModelValidationException;
 import org.keycloak.scim.filter.ScimFilterException;
 import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.response.ErrorResponse;
+import org.keycloak.scim.resource.spi.ScimMutabilityException;
+import org.keycloak.scim.resource.spi.ScimPatchException;
 import org.keycloak.theme.Theme;
 
 import org.jboss.logging.Logger;
@@ -25,6 +27,8 @@ class Error {
     private static final Logger logger = Logger.getLogger(Error.class);
 
     static Response toResponse(KeycloakSession session, Exception e) {
+        session.getTransactionManager().setRollbackOnly();
+
         if (e instanceof ModelValidationException mve) {
             String language = session.getContext().getRequestHeaders().getHeaderString(HttpHeaders.ACCEPT_LANGUAGE);
             Properties messages = getMessageBundle(session, language);
@@ -32,12 +36,15 @@ class Error {
                     .replace("{{", "{").replace("}}", "}")
                     .replace("'", "");
             String message = MessageFormat.format(format, mve.getParameters());
-            session.getTransactionManager().setRollbackOnly();
             return invalidSyntax(message);
         } else if (e instanceof ModelDuplicateException) {
             return errorResponse(Status.CONFLICT, "uniqueness", "A resource with the same unique attribute already exists");
         } else if (e instanceof ScimFilterException) {
             return badRequest("invalidFilter", e.getMessage());
+        } else if (e instanceof ScimMutabilityException) {
+            return badRequest("mutability", e.getMessage());
+        } else if (e instanceof ScimPatchException) {
+            return badRequest("tooMany", e.getMessage());
         } else if (e instanceof ForbiddenException) {
             logger.debug("SCIM request denied: caller does not have the required permissions");
             return forbidden();

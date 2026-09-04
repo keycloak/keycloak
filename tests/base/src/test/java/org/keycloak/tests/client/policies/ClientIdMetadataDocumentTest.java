@@ -18,6 +18,7 @@ import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataD
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactoryProviderConfig;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
@@ -25,6 +26,14 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
+import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
+import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.RejectImplicitGrantExecutor;
+import org.keycloak.services.clientpolicy.executor.RejectImplicitGrantExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutor;
+import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutor;
+import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -50,6 +59,7 @@ import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.tests.oauth.AbstractJWTAuthorizationGrantTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
 import org.keycloak.util.JsonSerialization;
 
@@ -297,6 +307,153 @@ public class ClientIdMetadataDocumentTest {
 
         // delete the persisted client
         logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientPolicyAutoConfigurationAppliedOnCimdCreation() throws Exception {
+        // register CIMD profiles/policies
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setRestrictSameDomain(true);
+
+        // Also register auto-configure executors for all clients
+        RejectImplicitGrantExecutor.Configuration rejectImplicitConfig = new RejectImplicitGrantExecutor.Configuration();
+        rejectImplicitConfig.setAutoConfigure(true);
+        RejectResourceOwnerPasswordCredentialsGrantExecutor.Configuration rejectRopcConfig = new RejectResourceOwnerPasswordCredentialsGrantExecutor.Configuration();
+        rejectRopcConfig.setAutoConfigure(true);
+        PKCEEnforcerExecutor.Configuration pkceConfig = new PKCEEnforcerExecutor.Configuration();
+        pkceConfig.setAutoConfigure(true);
+
+        realm.updateWithCleanup(r -> {
+            r.resetClientProfiles()
+                    .clientProfile(ClientProfileBuilder.create()
+                    .name("cimd-profile")
+                    .description("CIMD executor profile")
+                    .executor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID, executorConfig)
+                    .build())
+                    .clientProfile(ClientProfileBuilder.create()
+                    .name("auto-configure-profile")
+                    .description("Auto-configure executors profile")
+                    .executor(RejectImplicitGrantExecutorFactory.PROVIDER_ID, rejectImplicitConfig)
+                    .executor(RejectResourceOwnerPasswordCredentialsGrantExecutorFactory.PROVIDER_ID, rejectRopcConfig)
+                    .executor(PKCEEnforcerExecutorFactory.PROVIDER_ID, pkceConfig)
+                    .build());
+            r.resetClientPolicies()
+                    .clientPolicy(ClientPolicyBuilder.create()
+                    .name("cimd-policy")
+                    .description("CIMD policy")
+                    .condition(ClientIdUriSchemeConditionFactory.PROVIDER_ID, conditionConfig)
+                    .profile("cimd-profile")
+                    .build())
+                    .clientPolicy(ClientPolicyBuilder.create()
+                    .name("auto-configure-policy")
+                    .description("Auto-configure policy for all clients")
+                    .condition(AnyClientConditionFactory.PROVIDER_ID, null)
+                    .profile("auto-configure-profile")
+                    .build());
+            return r;
+        });
+
+        // set Client Metadata for a public client
+        setCimdPublicClient();
+
+        // send an authorization request with PKCE (required by PKCEEnforcer)
+        PkceGenerator pkce = PkceGenerator.s256();
+        oauth.client(CLIENT_ID);
+        oauth.redirectUri(REDIRECT_URI);
+        oauth.loginForm().codeChallenge(pkce).open();
+        oauth.fillLoginForm(user.getUsername(), user.getPassword());
+
+        grantPage.assertCurrent();
+        grantPage.accept();
+
+        String code = oauth.parseLoginResponse().getCode();
+        Assertions.assertNotNull(code);
+
+        // get an access token with PKCE verifier
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).codeVerifier(pkce.getCodeVerifier()).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // check the persisted client settings - auto-configuration should have been applied
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(clientRepresentation.isPublicClient());
+        // Verify auto-configuration was applied during CIMD client creation
+        Assertions.assertFalse(clientRepresentation.isImplicitFlowEnabled(), "Implicit flow should be disabled by RejectImplicitGrantExecutor auto-configuration");
+        Assertions.assertFalse(clientRepresentation.isDirectAccessGrantsEnabled(), "Direct access grants should be disabled by RejectResourceOwnerPasswordCredentialsGrantExecutor auto-configuration");
+        Assertions.assertEquals("S256", clientRepresentation.getAttributes().get("pkce.code.challenge.method"), "PKCE should be configured by PKCEEnforcerExecutor auto-configuration");
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testSecureRedirectUrisEnforcerOnCimdCreate() throws Exception {
+        // register CIMD policy and SecureRedirectUrisEnforcer policy
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+
+        // SecureRedirectUrisEnforcer that does NOT allow http scheme
+        SecureRedirectUrisEnforcerExecutor.Configuration redirectUrisConfig = new SecureRedirectUrisEnforcerExecutor.Configuration();
+        redirectUrisConfig.setAllowHttpScheme(false);
+        redirectUrisConfig.setAllowIPv4LoopbackAddress(true);
+
+        updateCimdAndSecureRedirectUrisPolicy(conditionConfig, executorConfig, redirectUrisConfig);
+
+        // set Client Metadata for a public client with http redirect URI (should be rejected)
+        setCimdPublicClient();
+        cimd.getRepresentation().setRedirectUris(List.of("http://localhost:8500/callback"));
+
+        // The SecureRedirectUrisEnforcer should reject the http redirect URI during CIMD creation
+        oauth.client(CLIENT_ID);
+        oauth.redirectUri("http://localhost:8500/callback");
+        oauth.openLoginForm();
+        errorPage.assertCurrent();
+        Assertions.assertEquals(SecureRedirectUrisEnforcerExecutor.ERR_LOOPBACK, errorPage.getError());
+    }
+
+    @Test
+    public void testSecureRedirectUrisEnforcerOnCimdUpdate() throws Exception {
+        // register CIMD policy and SecureRedirectUrisEnforcer policy
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+
+        // SecureRedirectUrisEnforcer that allows http scheme initially
+        SecureRedirectUrisEnforcerExecutor.Configuration redirectUrisConfig = new SecureRedirectUrisEnforcerExecutor.Configuration();
+        redirectUrisConfig.setAllowHttpScheme(true);
+        redirectUrisConfig.setAllowIPv4LoopbackAddress(true);
+
+        updateCimdAndSecureRedirectUrisPolicy(conditionConfig, executorConfig, redirectUrisConfig);
+
+        // set Client Metadata for a public client with http redirect URI (allowed initially)
+        setCimdPublicClient();
+
+        // CIMD creation should succeed with http redirect URI since allowHttpScheme=true
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(clientRepresentation.isPublicClient());
+
+        // logout
+        logout(tokenResponse.getIdToken());
+
+        // Now tighten the policy to disallow http scheme
+        redirectUrisConfig.setAllowHttpScheme(false);
+        updateCimdAndSecureRedirectUrisPolicy(conditionConfig, executorConfig, redirectUrisConfig);
+
+        // Move the time ahead so that the client metadata cache expires
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        // The CIMD update should now reject the http redirect URI
+        oauth.client(CLIENT_ID);
+        oauth.redirectUri(REDIRECT_URI);
+        oauth.openLoginForm();
+        errorPage.assertCurrent();
+        Assertions.assertEquals(SecureRedirectUrisEnforcerExecutor.ERR_LOOPBACK, errorPage.getError());
+
+        // cleanup
+        deleteClientByAdmin(clientRepresentation.getId());
     }
 
     @Test
@@ -823,6 +980,13 @@ public class ClientIdMetadataDocumentTest {
         assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_REQUIRED_PROPERTIES);
     }
 
+    @Test
+    public void testWellKnownNoneInTokenEndpointAuthMethods() {
+        OIDCConfigurationRepresentation oidcConfig = oauth.doWellKnownRequest();
+        Assertions.assertTrue(oidcConfig.getClientIdMetadataDocumentSupported());
+        Assertions.assertTrue(oidcConfig.getTokenEndpointAuthMethodsSupported().contains("none"));
+    }
+
     private String loginUserAndGetCode(boolean isGrantRequred) {
         oauth.client(CLIENT_ID);
         oauth.redirectUri(REDIRECT_URI);
@@ -864,6 +1028,58 @@ public class ClientIdMetadataDocumentTest {
         oauth.openLoginForm();
         errorPage.assertCurrent();
         Assertions.assertEquals(errorMessage, errorPage.getError());
+    }
+
+    private ClientIdUriSchemeCondition.Configuration createDefaultConditionConfig() {
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        return conditionConfig;
+    }
+
+    private ClientIdMetadataDocumentExecutor.Configuration createDefaultExecutorConfig() {
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        executorConfig.setAllowHttpScheme(true);
+        return executorConfig;
+    }
+
+    private void setCimdPublicClient() {
+        cimd.getRepresentation().setTokenEndpointAuthMethod(null);
+        cimd.getRepresentation().setJwksUri(null);
+    }
+
+    private void updateCimdAndSecureRedirectUrisPolicy(
+            ClientIdUriSchemeCondition.Configuration conditionConfig,
+            ClientIdMetadataDocumentExecutor.Configuration executorConfig,
+            SecureRedirectUrisEnforcerExecutor.Configuration redirectUrisConfig) {
+        realm.updateWithCleanup(r -> {
+            r.resetClientProfiles()
+                    .clientProfile(ClientProfileBuilder.create()
+                    .name("cimd-profile")
+                    .description("CIMD executor profile")
+                    .executor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID, executorConfig)
+                    .build())
+                    .clientProfile(ClientProfileBuilder.create()
+                    .name("redirect-uris-profile")
+                    .description("SecureRedirectUris profile")
+                    .executor(SecureRedirectUrisEnforcerExecutorFactory.PROVIDER_ID, redirectUrisConfig)
+                    .build());
+            r.resetClientPolicies()
+                    .clientPolicy(ClientPolicyBuilder.create()
+                    .name("cimd-policy")
+                    .description("CIMD policy")
+                    .condition(ClientIdUriSchemeConditionFactory.PROVIDER_ID, conditionConfig)
+                    .profile("cimd-profile")
+                    .build())
+                    .clientPolicy(ClientPolicyBuilder.create()
+                    .name("redirect-uris-policy")
+                    .description("SecureRedirectUris policy for all clients")
+                    .condition(AnyClientConditionFactory.PROVIDER_ID, null)
+                    .profile("redirect-uris-profile")
+                    .build());
+            return r;
+        });
     }
 
     private void updatePolicy(ClientIdUriSchemeCondition.Configuration conditionConfig,

@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.endpoints;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 
 import jakarta.ws.rs.Consumes;
@@ -69,6 +70,7 @@ import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.protocol.oidc.OIDCLoginProtocol.logMessageForDeprecatedExcludeIssuerSwitch;
 import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.PAR_DPOP_PROOF_JKT;
 
 /**
@@ -223,7 +225,11 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         // Add support for Initiating User Registration via OpenID Connect 1.0 via prompt=create
         // see: https://openid.net/specs/openid-connect-prompt-create-1_0.html#section-4.1
-        if (OIDCLoginProtocol.PROMPT_VALUE_CREATE.equals(params.getFirst(OAuth2Constants.PROMPT))) {
+        String promptValue = Optional
+                .ofNullable(params.getFirst(OAuth2Constants.PROMPT))
+                .orElseGet(() -> session.getContext().getAuthenticationSession().getClientNote(OAuth2Constants.PROMPT));
+
+        if (OIDCLoginProtocol.PROMPT_VALUE_CREATE.equals(promptValue)) {
             if (!Organizations.isRegistrationAllowed(session, realm)) {
                 throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.REGISTRATION_NOT_ALLOWED);
             }
@@ -329,6 +335,8 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
         if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
             errorResponseBuilder.addParam(OAuth2Constants.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+        } else {
+            logMessageForDeprecatedExcludeIssuerSwitch();
         }
 
         return errorResponseBuilder.build();
@@ -396,16 +404,22 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
     }
 
-    private Response buildAuthorizationCodeAuthorizationResponse(String requestUriParam) {
+    private Response buildAuthorizationCodeAuthorizationResponse(String requestUri) {
         this.event.event(EventType.LOGIN);
         authenticationSession.setAuthNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
+        authenticationSession.setAuthNote(Constants.AUTHORIZATION_REQUEST_URI, requestUri);
 
-        // redirect if it is a PAR request because authentication can need a refresh (kerberos) and the single object is consumed now
-        final boolean redirectToAuthenticationIfParRequest = requestUriParam != null
-                && RequestUriType.PAR == AuthorizationEndpointRequestParserProcessor.getRequestUriType(requestUriParam);
+        RequestUriType requestUriType = Optional.ofNullable(requestUri)
+                .map(AuthorizationEndpointRequestParserProcessor::getRequestUriType)
+                .orElse(null);
 
-        return handleBrowserAuthenticationRequest(authenticationSession, new OIDCLoginProtocol(session, realm, session.getContext().getUri(), headers, event),
-                TokenUtil.hasPrompt(request.getPrompt(), OIDCLoginProtocol.PROMPT_VALUE_NONE), redirectToAuthenticationIfParRequest);
+        // Redirect if it is a PAR request because authentication may need a refresh (kerberos) and the single object is consumed now
+        boolean redirectToAuthFlow = requestUriType == RequestUriType.PAR;
+
+        OIDCLoginProtocol loginProtocol = new OIDCLoginProtocol(session, realm, session.getContext().getUri(), headers, event);
+        boolean isPassive = TokenUtil.hasPrompt(request.getPrompt(), OIDCLoginProtocol.PROMPT_VALUE_NONE);
+        Response response = handleBrowserAuthenticationRequest(authenticationSession, loginProtocol, isPassive, redirectToAuthFlow);
+        return response;
     }
 
     private Response buildRegister() {

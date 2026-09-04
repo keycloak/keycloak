@@ -39,6 +39,7 @@ jobs:
         - js-ci.yml
         - operator-ci.yml
         - codeql-analysis.yml
+        - conformance.yml
 
     steps:
       - name: Run workflow

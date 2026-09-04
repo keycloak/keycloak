@@ -62,10 +62,10 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
     @ParameterizedTest
     @ValueSource(strings = {"conditional", "optional"})
-    public void webauthnLoginWithDiscoverableKey(String mediation) {
+    public void webauthnLoginWithDiscoverableCredential(String mediation) {
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
 
-        // set passwordless policy for discoverable keys
+        // set passwordless policy for discoverable credentials
         {
             managedRealm.updateWithCleanup(r -> r.webAuthnPolicyPasswordlessRpEntityName("localhost")
                     .webAuthnPolicyPasswordlessResidentKey(null)
@@ -83,7 +83,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
             logout();
             events.clear();
 
-            // the user should be automatically logged in using the discoverable key
+            // the user should be automatically logged in using the discoverable credential
             oAuthClient.openLoginForm();
 
             Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
@@ -102,7 +102,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
     }
 
     @Test
-    public void passwordLoginWithNonDiscoverableKey() {
+    public void passwordLoginWithNonDiscoverableCredential() {
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
 
         // set passwordless policy not specified, key will not be discoverable
@@ -130,8 +130,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
             // invalid login first
             loginPage.fillLogin(USERNAME, "invalid-password");
             loginPage.submit();
-            loginPage.assertCurrent();
-            MatcherAssert.assertThat(loginPage.getUsernameInputError(), Matchers.is("Invalid username or password."));
+            loginPage.waitForUsernameInputError("Invalid username or password.");
             Assertions.assertTrue(loginPage.getPasswordInputError().isEmpty());
             EventAssertion.assertError(events.poll())
                     .type(EventType.LOGIN_ERROR)
@@ -162,7 +161,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
         // use a default resident key which is not shown in conditional UI
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY.getOptions());
 
-        // set passwordless policy for discoverable keys
+        // set passwordless policy for discoverable credentials
         {
             managedRealm.updateWithCleanup(r -> r.webAuthnPolicyPasswordlessRpEntityName("localhost")
                     .webAuthnPolicyPasswordlessResidentKey(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
@@ -236,7 +235,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
         // use a default resident key which is not shown in conditional UI
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY.getOptions());
 
-        // set passwordless policy for discoverable keys
+        // set passwordless policy for discoverable credentials
         {
             managedRealm.updateWithCleanup(r -> r.webAuthnPolicyPasswordlessRpEntityName("localhost")
                     .webAuthnPolicyPasswordlessResidentKey(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
@@ -302,7 +301,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
     // Test user re-authentication with password when passkeys feature enabled, but passkeys is not enabled for the realm. Passkeys should not be shown during re-authentication
     @Test
     public void reauthenticationOfUserWithoutPasskey() {
-        // set passwordless policy for discoverable keys
+        // set passwordless policy for discoverable credentials
         {
             managedRealm.updateWithCleanup(r -> r.webAuthnPolicyPasswordlessPasskeysEnabled(Boolean.FALSE));
 
@@ -355,7 +354,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
         // use a default resident key which is not shown in conditional UI
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY.getOptions());
 
-        // set passwordless policy for discoverable keys
+        // set passwordless policy for discoverable credentials
         {
             managedRealm.updateWithCleanup(r -> r.webAuthnPolicyPasswordlessRpEntityName("localhost")
                     .webAuthnPolicyPasswordlessResidentKey(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
@@ -450,7 +449,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
         // use a default resident key which is not shown in conditional UI
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY.getOptions());
 
-        // set passwordless policy for discoverable keys and enable remember me
+        // set passwordless policy for discoverable credentials and enable remember me
         {
             managedRealm.updateWithCleanup(r -> r.webAuthnPolicyPasswordlessRpEntityName("localhost")
                     .webAuthnPolicyPasswordlessResidentKey(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)

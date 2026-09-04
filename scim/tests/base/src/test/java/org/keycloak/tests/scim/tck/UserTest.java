@@ -7,15 +7,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.GroupResource;
+import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
@@ -35,6 +44,7 @@ import org.keycloak.scim.resource.user.EnterpriseUser.Manager;
 import org.keycloak.scim.resource.user.GroupMembership;
 import org.keycloak.scim.resource.user.Name;
 import org.keycloak.scim.resource.user.User;
+import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
@@ -42,9 +52,14 @@ import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.userprofile.UserProfileConstants;
 import org.keycloak.userprofile.config.UPConfigUtils;
+import org.keycloak.validate.validators.LengthValidator;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.http.client.HttpClient;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -56,14 +71,17 @@ import static org.keycloak.scim.model.user.UserExtensionModelSchema.KEYCLOAK_USE
 import static org.keycloak.scim.resource.Scim.ENTERPRISE_USER_SCHEMA;
 import static org.keycloak.scim.resource.Scim.USER_RESOURCE_TYPE;
 import static org.keycloak.scim.resource.Scim.getCoreSchema;
+import static org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider.MAX_PATCH_OPERATIONS;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -73,12 +91,18 @@ public class UserTest extends AbstractScimTest {
     @InjectScimClient(clientId = "noaccess-scim-client", clientSecret = "secret", attachTo = "noaccess-scim-client")
     ScimClient noAccessClient;
 
+    @InjectHttpClient
+    HttpClient httpClient;
+
     @BeforeEach
     public void onBefore() {
         UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        upConfig.setUnmanagedAttributePolicy(null);
         upConfig.getAttribute(UserModel.FIRST_NAME).setRequired(null);
         upConfig.getAttribute(UserModel.LAST_NAME).setRequired(null);
         upConfig.getAttribute(UserModel.EMAIL).setRequired(null);
+        upConfig.getAttribute(UserModel.USERNAME).setRequired(null);
+        upConfig.getAttribute(UserModel.USERNAME).setPermissions(null);
         Iterator<UPAttribute> iterator = upConfig.getAttributes().iterator();
         while (iterator.hasNext()) {
             UPAttribute attribute = iterator.next();
@@ -88,6 +112,10 @@ public class UserTest extends AbstractScimTest {
             iterator.remove();
         }
         realm.admin().users().userProfile().update(upConfig);
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        realmRep.setRegistrationEmailAsUsername(false);
+        realmRep.setEditUsernameAllowed(false);
+        realm.admin().update(realmRep);
         adminEvents.clear();
     }
 
@@ -122,8 +150,12 @@ public class UserTest extends AbstractScimTest {
     @Test
     public void testCreateWithExternalId() {
         UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
-        configuration.addOrReplaceAttribute(new UPAttribute("myExternalId", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "externalId")));
+        UPAttribute externalIdAttr = new UPAttribute("myExternalId", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "externalId"));
+        externalIdAttr.setPermissions(new UPAttributePermissions(
+                Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER),
+                Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER)));
+        configuration.addOrReplaceAttribute(externalIdAttr);
         realm.admin().users().userProfile().update(configuration);
 
         User expected = new User();
@@ -139,12 +171,18 @@ public class UserTest extends AbstractScimTest {
     @Test
     public void testCreateWithFullNameAttributes() {
         UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
-        configuration.addOrReplaceAttribute(new UPAttribute("middleName", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.middleName")));
-        configuration.addOrReplaceAttribute(new UPAttribute("honorificPrefix", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.honorificPrefix")));
-        configuration.addOrReplaceAttribute(new UPAttribute("honorificSuffix", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.honorificSuffix")));
+        UPAttributePermissions scimPermissions = new UPAttributePermissions(
+                Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER),
+                Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER));
+        for (String[] attr : new String[][] {
+                {"middleName", "name.middleName"},
+                {"honorificPrefix", "name.honorificPrefix"},
+                {"honorificSuffix", "name.honorificSuffix"}
+        }) {
+            UPAttribute upAttr = new UPAttribute(attr[0], Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, attr[1]));
+            upAttr.setPermissions(scimPermissions);
+            configuration.addOrReplaceAttribute(upAttr);
+        }
         realm.admin().users().userProfile().update(configuration);
 
         User expected = new User();
@@ -166,6 +204,104 @@ public class UserTest extends AbstractScimTest {
         assertEquals(name.getHonorificPrefix(), actualName.getHonorificPrefix());
         assertEquals(name.getHonorificSuffix(), actualName.getHonorificSuffix());
         assertEquals("Mr. John M Doe Jr.", actualName.getFormatted());
+    }
+
+    @Test
+    public void testCreateWithRequiredCoreSchemaAttribute() {
+        // Regression test for #52207: required core-schema attributes must be validated on create
+        UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
+        UPAttribute upAttr = new UPAttribute("middleName", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.middleName"));
+        upAttr.setRequired(new UPAttributeRequired());
+        UPAttributePermissions scimPermissions = new UPAttributePermissions(
+                Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER),
+                Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER));
+        upAttr.setPermissions(scimPermissions);
+        configuration.addOrReplaceAttribute(upAttr);
+        realm.admin().users().userProfile().update(configuration);
+
+        // Attempt to create without providing the required core-schema attribute
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        Name name = new Name();
+        name.setGivenName("John");
+        name.setFamilyName("Doe");
+        // Intentionally omit: name.setMiddleName(...)
+        user.setName(name);
+
+        try {
+            client.users().create(user);
+            fail("should fail because middleName is required");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertNotNull(error.getDetail());
+        }
+
+        // Create with the required core-schema attribute provided
+        User expected = new User();
+        expected.setUserName(KeycloakModelUtils.generateId());
+        Name nameWithMiddle = new Name();
+        nameWithMiddle.setGivenName("John");
+        nameWithMiddle.setFamilyName("Doe");
+        nameWithMiddle.setMiddleName("M");
+        expected.setName(nameWithMiddle);
+
+        User actual = client.users().create(expected);
+
+        actual = client.users().get(actual.getId());
+        assertRootAttributes(actual, expected);
+        Name actualName = actual.getName();
+        assertNotNull(actualName);
+        assertEquals(nameWithMiddle.getMiddleName(), actualName.getMiddleName());
+
+        // PATCH: Attempt to remove the required core-schema attribute
+        try {
+            client.users().patch(actual.getId(), PatchRequest.create()
+                    .remove("name.middleName")
+                    .build());
+            fail("PATCH remove should fail because middleName is required");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+        }
+
+        // PATCH: Replace the required core-schema attribute with a new value
+        client.users().patch(actual.getId(), PatchRequest.create()
+                .replace("name.middleName", "Updated")
+                .build());
+        actual = client.users().get(actual.getId());
+        assertEquals("Updated", actual.getName().getMiddleName());
+
+        // PUT: Attempt to update without providing the required core-schema attribute
+        actual.getName().setMiddleName("");
+        client.users().update(actual);
+        actual = client.users().get(actual.getId());
+        assertEquals("Updated", actual.getName().getMiddleName());
+
+        // PUT: Update with the required core-schema attribute provided
+        User toUpdate = client.users().get(actual.getId());
+        toUpdate.getName().setMiddleName("Final");
+        User updated = client.users().update(toUpdate);
+        assertEquals("Final", updated.getName().getMiddleName());
+    }
+
+    @Test
+    public void testCreateWithRegularNameFormatted() {
+        User expected = new User();
+        expected.setUserName(KeycloakModelUtils.generateId());
+        Name name = new Name();
+        name.setGivenName("John");
+        name.setFamilyName("Doe");
+        expected.setName(name);
+
+        User actual = client.users().create(expected);
+        actual = client.users().get(actual.getId());
+
+        assertRootAttributes(actual, expected);
+        assertNotNull(actual.getName());
+        assertEquals("John Doe", actual.getName().getFormatted());
     }
 
     @Test
@@ -241,6 +377,46 @@ public class UserTest extends AbstractScimTest {
         String id = client.users().create(expected).getId();
         User actual = client.users().get(id);
         assertRootAttributes(actual, expected);
+    }
+
+    @Test
+    public void testGetByIdServiceAccount() {
+        String clientId = "service-account-target-" + KeycloakModelUtils.generateId();
+        ClientRepresentation targetClient = ClientBuilder.create()
+                .clientId(clientId)
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        try (Response response = realm.admin().clients().create(targetClient)) {
+            targetClient.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.clients().get(targetClient.getId()).remove());
+
+        UserRepresentation serviceAccount = realm.admin().clients().get(targetClient.getId()).getServiceAccountUser();
+        User actual = client.users().get(serviceAccount.getId());
+
+        assertNull(actual);
+    }
+
+    @Test
+    public void testQueryByIdServiceAccount() {
+        String clientId = "service-account-target-" + KeycloakModelUtils.generateId();
+        ClientRepresentation targetClient = ClientBuilder.create()
+                .clientId(clientId)
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        try (Response response = realm.admin().clients().create(targetClient)) {
+            targetClient.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.clients().get(targetClient.getId()).remove());
+
+        UserRepresentation serviceAccount = realm.admin().clients().get(targetClient.getId()).getServiceAccountUser();
+        ListResponse<User> response = client.users().getAll(ResourceFilter.filter().eq("id", serviceAccount.getId()).build());
+
+        assertEquals(0, response.getTotalResults());
     }
 
     @Test
@@ -343,6 +519,128 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testAttributeNotWrittenOnUpdateIfNoPermissionSet() {
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        UPAttribute nickNameAttr = new UPAttribute("nickName", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "nickName"));
+        upConfig.addOrReplaceAttribute(nickNameAttr);
+        realm.admin().users().userProfile().update(upConfig);
+
+        User created = client.users().create(createUser());
+        assertNotNull(created.getId());
+        assertNull(created.getNickName());
+
+        created.setNickName("SomeValue");
+        User updated = client.users().update(created);
+        assertNull(updated.getNickName());
+        UserRepresentation userRep = realm.admin().users().get(created.getId()).toRepresentation();
+        assertNull(userRep.getAttributes() != null ? userRep.getAttributes().get("nickName") : null);
+
+        upConfig = realm.admin().users().userProfile().getConfiguration();
+        upConfig.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ADMIN_EDIT);
+        realm.admin().users().userProfile().update(upConfig);
+        created.setNickName("OtherValue");
+        updated = client.users().update(created);
+        assertNull(updated.getNickName());
+        userRep = realm.admin().users().get(created.getId()).toRepresentation();
+        assertNull(userRep.getAttributes() != null ? userRep.getAttributes().get("nickName") : null);
+    }
+
+    @Test
+    public void testAttributeNotWrittenOnCreateIfNoPermissionSet() {
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        UPAttribute nickNameAttr = new UPAttribute("nickName", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "nickName"));
+        upConfig.addOrReplaceAttribute(nickNameAttr);
+        realm.admin().users().userProfile().update(upConfig);
+
+        User user = createUser();
+        user.setNickName("Allie");
+
+        User created = client.users().create(user);
+        assertNotNull(created.getId());
+        // Read-only attribute sent in request must be ignored and not populated into the model
+        assertNull(created.getNickName());
+        UserRepresentation userRep = realm.admin().users().get(created.getId()).toRepresentation();
+        assertNull(userRep.getAttributes() != null ? userRep.getAttributes().get("nickName") : null);
+    }
+
+    @Test
+    public void testEnforceUserProfileValidatorsOnCreateAndUpdate() {
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        UPAttribute nickNameAttr = new UPAttribute("nickName", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "nickName"));
+        nickNameAttr.setPermissions(new UPAttributePermissions(Set.of(), Set.of(UserProfileConstants.ROLE_ADMIN)));
+        nickNameAttr.addValidation(LengthValidator.ID, Map.of(LengthValidator.KEY_MIN, "10", LengthValidator.KEY_MAX, "20"));
+        upConfig.addOrReplaceAttribute(nickNameAttr);
+        realm.admin().users().userProfile().update(upConfig);
+
+        User user = createUser();
+        user.setNickName("Allie"); // 5 characters, violates min length 10
+
+        try {
+            client.users().create(user);
+            fail("should fail because nickName length validator is violated on create");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), error.getStatusInt());
+        }
+
+        user.setNickName("AllieLongerName"); // 15 characters, valid length
+        User created = client.users().create(user);
+        assertNotNull(created.getId());
+
+        created.setNickName("Short"); // 5 characters, violates min length 10
+        try {
+            client.users().update(created);
+            fail("should fail because nickName length validator is violated on update");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), error.getStatusInt());
+        }
+
+        created.setNickName("ValidNickName"); // 13 chars — valid
+        User updated = client.users().update(created);
+        assertEquals("ValidNickName", updated.getNickName());
+    }
+
+    @Test
+    public void testValidatorConfiguredOnNoPermissionAttributeDoesNotLeakInvalidValueIntoModel() {
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        UPAttribute nickNameAttr = new UPAttribute("nickName", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "nickName"));
+        nickNameAttr.addValidation(LengthValidator.ID, Map.of(LengthValidator.KEY_MIN, "10", LengthValidator.KEY_MAX, "20"));
+        upConfig.addOrReplaceAttribute(nickNameAttr);
+        realm.admin().users().userProfile().update(upConfig);
+
+        User user = createUser();
+        user.setNickName("Allie");
+
+        User created = client.users().create(user);
+        assertNotNull(created.getId());
+        assertNull(created.getNickName());
+        UserRepresentation userRep = realm.admin().users().get(created.getId()).toRepresentation();
+        assertNull(userRep.getAttributes() != null ? userRep.getAttributes().get("nickName") : null);
+    }
+
+    @Test
+    public void testValidatorConfiguredOnNoPermissionAttributeDoesNotLeakInvalidValueIntoModelOnUpdate() {
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        UPAttribute nickNameAttr = new UPAttribute("nickName", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "nickName"));
+        nickNameAttr.addValidation(LengthValidator.ID, Map.of(LengthValidator.KEY_MIN, "10", LengthValidator.KEY_MAX, "20"));
+        upConfig.addOrReplaceAttribute(nickNameAttr);
+        realm.admin().users().userProfile().update(upConfig);
+
+        User created = client.users().create(createUser());
+        assertNotNull(created.getId());
+        assertNull(created.getNickName());
+
+        created.setNickName("Allie"); // 5 chars — violates the min=10 validator
+        User updated = client.users().update(created);
+        assertNull(updated.getNickName());
+        UserRepresentation userRep = realm.admin().users().get(created.getId()).toRepresentation();
+        assertNull(userRep.getAttributes() != null ? userRep.getAttributes().get("nickName") : null);
+    }
+
+    @Test
     public void testDelete() {
         User expected = createUser();
         String id = client.users().create(expected).getId();
@@ -375,13 +673,7 @@ public class UserTest extends AbstractScimTest {
 
     @Test
     public void testNoManagePermission() {
-        realm.admin().clients().create(ClientBuilder
-                .create()
-                .clientId("noaccess-scim-client")
-                .secret("secret")
-                .serviceAccountsEnabled(true)
-                .enabled(true)
-                .build()).close();
+        createScimClient("noaccess-scim-client");
 
         try {
             noAccessClient.users().create(createUser());
@@ -552,6 +844,29 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testPatchWithNullSchemas() throws Exception {
+        User expected = client.users().create(createUser());
+
+        SimpleHttp http = SimpleHttp.create(httpClient);
+        AccessTokenResponse tokenResponse = http.doPost(keycloakUrls.getToken(realm.getName()))
+                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
+                .param(OAuth2Constants.CLIENT_ID, "scim-client")
+                .param(OAuth2Constants.CLIENT_SECRET, "secret")
+                .asJson(AccessTokenResponse.class);
+
+        String url = keycloakUrls.getBase() + "/realms/" + realm.getName() + "/scim/v2/Users/" + expected.getId();
+        try (SimpleHttpResponse response = http.doPatch(url)
+                .header("Authorization", "Bearer " + tokenResponse.getToken())
+                .header("Content-Type", "application/scim+json")
+                .entity(new StringEntity(
+                        "{\"schemas\": null, \"Operations\": [{\"op\": \"replace\", \"path\": \"active\", \"value\": false}]}",
+                        ContentType.create("application/scim+json")))
+                .asResponse()) {
+            assertEquals(400, response.getStatus());
+        }
+    }
+
+    @Test
     public void testPatchReplace() {
         User expected = client.users().create(createUser());
         addOrReplaceUPAttribute("name.middleName");
@@ -719,6 +1034,648 @@ public class UserTest extends AbstractScimTest {
         assertNotNull(actual.getEnterpriseUser());
         assertNull(actual.getEnterpriseUser().getEmployeeNumber());
         assertEquals("5678", actual.getEnterpriseUser().getCostCenter());
+    }
+
+    @Test
+    public void testPatchExceedingMaxOperations() {
+        User expected = client.users().create(createUser());
+        PatchRequest.Builder builder = PatchRequest.create();
+        for (int i = 0; i <= MAX_PATCH_OPERATIONS; i++) {
+            builder.add("displayName", "name-" + i);
+        }
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), builder.build()));
+        assertNotNull(ce.getError());
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), ce.getError().getStatusInt());
+        assertEquals("tooMany", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains("maximum allowed number"));
+    }
+
+    @Test
+    public void testPatchNonExistentUserError() {
+        ScimClientException sce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(KeycloakModelUtils.generateId(), PatchRequest.create()
+                        .replace("displayName", "whatever")
+                        .build()));
+        assertEquals(404, sce.getError().getStatusInt(),
+                "Expected a 4xx response for patch on non-existent user, got " + sce.getError().getStatusInt());
+    }
+
+    @Test
+    public void testPatchImmutableMetaCreated() {
+        User user = client.users().create(createUser());
+        adminEvents.clear();
+
+        try {
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .replace("meta.created", "2020-01-01T00:00:00Z")
+                    .build());
+            fail("should fail because meta.created is immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+        }
+    }
+
+    @Test
+    public void testEnforceUserProfileValidatorsOnPatch() {
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        UPAttribute nickNameAttr = new UPAttribute("nickName", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "nickName"));
+        nickNameAttr.setPermissions(new UPAttributePermissions(Set.of(), Set.of(UserProfileConstants.ROLE_ADMIN)));
+        nickNameAttr.addValidation(LengthValidator.ID, Map.of(LengthValidator.KEY_MIN, "10", LengthValidator.KEY_MAX, "20"));
+        upConfig.addOrReplaceAttribute(nickNameAttr);
+        realm.admin().users().userProfile().update(upConfig);
+
+        User user = client.users().create(createUser());
+
+        try {
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .add("nickName", "Allie") // 5 chars — violates min length of 10
+                    .build());
+            fail("PATCH add should fail because nickName length validator is violated");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+
+        try {
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .replace("nickName", "Short") // 5 chars — violates min length of 10
+                    .build());
+            fail("PATCH replace should fail because nickName length validator is violated");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+
+        client.users().patch(user.getId(), PatchRequest.create()
+                .replace("nickName", "ValidNickName") // 13 chars — valid
+                .build());
+        assertEquals("ValidNickName", client.users().get(user.getId()).getNickName());
+    }
+
+    @Test
+    public void testAttributeNotWrittenOnPatchIfNoPermissionSet() {
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        UPAttribute nickNameAttr = new UPAttribute("nickName", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "nickName"));
+        // No permissions — attribute is read-only for all callers
+        upConfig.addOrReplaceAttribute(nickNameAttr);
+        realm.admin().users().userProfile().update(upConfig);
+
+        User user = client.users().create(createUser());
+        assertNull(user.getNickName());
+
+        client.users().patch(user.getId(), PatchRequest.create()
+                .add("nickName", "SomeValue")
+                .build());
+        assertNull(client.users().get(user.getId()).getNickName());
+
+        client.users().patch(user.getId(), PatchRequest.create()
+                .replace("nickName", "AnotherValue")
+                .build());
+        assertNull(client.users().get(user.getId()).getNickName());
+    }
+
+    @Test
+    public void testRequiredAttributeNotRemovableViaPatch() {
+        // userName is writable only when editUsernameAllowed is enabled; otherwise the read-only
+        // attribute is silently preserved by the framework and the required validator never fires.
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        realmRep.setEditUsernameAllowed(true);
+        realm.admin().update(realmRep);
+
+        try {
+            client.users().patch(client.users().create(createUser()).getId(), PatchRequest.create()
+                    .remove("userName")
+                    .build());
+            fail("PATCH remove should fail because userName is required");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        UPAttribute employeeNumberAttr = new UPAttribute("employeeNumber",
+                Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ":employeeNumber"));
+        employeeNumberAttr.setPermissions(new UPAttributePermissions(Set.of(), Set.of(UserProfileConstants.ROLE_ADMIN)));
+        employeeNumberAttr.setRequired(new UPAttributeRequired());
+        upConfig.addOrReplaceAttribute(employeeNumberAttr);
+        realm.admin().users().userProfile().update(upConfig);
+
+        try {
+            User user = client.users().create(createUser());
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .remove(ENTERPRISE_USER_SCHEMA + ":employeeNumber")
+                    .build());
+            fail("PATCH remove should fail because employeeNumber is required");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+
+        User rep = createUser();
+        rep.setEnterpriseUser(new EnterpriseUser());
+        rep.getEnterpriseUser().setEmployeeNumber("E54321");
+        User user = client.users().create(rep);
+        client.users().patch(user.getId(), PatchRequest.create()
+                .add(ENTERPRISE_USER_SCHEMA + ":employeeNumber", "E12345")
+                .build());
+        assertEquals("E12345", client.users().get(user.getId()).getEnterpriseUser().getEmployeeNumber());
+
+        try {
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .remove(ENTERPRISE_USER_SCHEMA + ":employeeNumber")
+                    .build());
+            fail("PATCH remove should fail because employeeNumber is required");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testCannotUpdateUsernameWhenEditDisabled() {
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        realmRep.setEditUsernameAllowed(false);
+        realm.admin().update(realmRep);
+
+        User user = client.users().create(createUser());
+
+        user.setUserName("newusername");
+        try {
+            client.users().update(user);
+            fail("PUT update should fail because editUsernameAllowed is false");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+
+        try {
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .replace("userName", "anotheruser")
+                    .build());
+            fail("PATCH replace should fail because editUsernameAllowed is false");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testCanUpdateUsernameWhenEditEnabled() {
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        realmRep.setEditUsernameAllowed(true);
+        realm.admin().update(realmRep);
+
+        User user = client.users().create(createUser());
+
+        String newUserName = KeycloakModelUtils.generateId();
+        user.setUserName(newUserName);
+        User updated = client.users().update(user);
+        assertEquals(newUserName, updated.getUserName());
+
+        String anotherUserName = KeycloakModelUtils.generateId();
+        client.users().patch(user.getId(), PatchRequest.create()
+                .replace("userName", anotherUserName)
+                .build());
+        assertEquals(anotherUserName, client.users().get(user.getId()).getUserName());
+    }
+
+    @Test
+    public void testCannotUpdateUsernameWhenEditPermissionExcludesAdmin() {
+        // editUsernameAllowed is enabled at the realm level, but the username User Profile edit
+        // permissions exclude admins. Since SCIM is an admin context, the username must stay
+        // read-only and any change must be rejected regardless of the realm switch (see #52223).
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        realmRep.setEditUsernameAllowed(true);
+        realm.admin().update(realmRep);
+
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        upConfig.getAttribute(UserModel.USERNAME).setPermissions(
+                new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER), Set.of(UPConfigUtils.ROLE_USER)));
+        realm.admin().users().userProfile().update(upConfig);
+
+        User user = client.users().create(createUser());
+
+        user.setUserName("newusername");
+        try {
+            client.users().update(user);
+            fail("PUT update should fail because the username edit permission excludes admins");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+
+        try {
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .replace("userName", "anotheruser")
+                    .build());
+            fail("PATCH replace should fail because the username edit permission excludes admins");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+
+        try {
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .remove("userName")
+                    .build());
+            fail("PATCH remove should fail because the username edit permission excludes admins");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testRegistrationEmailAsUsernameEnabled() {
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        realmRep.setRegistrationEmailAsUsername(true);
+        realm.admin().update(realmRep);
+
+        String testEmail = KeycloakModelUtils.generateId() + "@example.com";
+
+        User user = new User();
+        user.setEmail(testEmail);
+        User created = client.users().create(user);
+
+        assertNotNull(created.getId());
+        // When registrationEmailAsUsername is enabled, the userName should be set to email
+        assertEquals(testEmail, created.getUserName());
+        assertEquals(testEmail, created.getEmail());
+
+        User retrieved = client.users().get(created.getId());
+        assertEquals(testEmail, retrieved.getUserName());
+        assertEquals(testEmail, retrieved.getEmail());
+    }
+
+    @Test
+    public void testRegistrationEmailAsUsernameDisabled() {
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        realmRep.setRegistrationEmailAsUsername(false);
+        realm.admin().update(realmRep);
+
+        String testEmail = KeycloakModelUtils.generateId() + "@example.com";
+
+        User user = createUser();
+        user.setEmail(testEmail);
+        User created = client.users().create(user);
+
+        assertNotNull(created.getId());
+        // When registrationEmailAsUsername is disabled, userName is independent of email
+        assertNotEquals(testEmail, created.getUserName());
+        assertEquals(testEmail, created.getEmail());
+
+        User retrieved = client.users().get(created.getId());
+        assertEquals(created.getUserName(), retrieved.getUserName());
+        assertEquals(testEmail, retrieved.getEmail());
+    }
+
+    @Test
+    public void testEmailUpdatableWhenEmailAsUsernameEnabled() {
+        // emailAsUsername=true, editUsername=false (onBefore default): mirrors the Admin API, where an
+        // admin can change the email and the derived userName follows it, regardless of editUsernameAllowed.
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        realmRep.setRegistrationEmailAsUsername(true);
+        realm.admin().update(realmRep);
+
+        String originalEmail = KeycloakModelUtils.generateId() + "@example.com";
+        String patchEmail = KeycloakModelUtils.generateId() + "@example.com";
+        String putEmail = KeycloakModelUtils.generateId() + "@example.com";
+
+        User user = new User();
+        user.setEmail(originalEmail);
+        User created = client.users().create(user);
+        assertEquals(originalEmail, created.getUserName());
+        assertEquals(originalEmail, created.getEmail());
+
+        // PATCH: email change succeeds and the derived userName follows the new email
+        client.users().patch(created.getId(), PatchRequest.create()
+                .replace("emails", "{\"value\": \"" + patchEmail + "\", \"type\": \"work\", \"primary\": true}")
+                .build());
+
+        User patched = client.users().get(created.getId());
+        assertEquals(patchEmail, patched.getEmail());
+        assertEquals(patchEmail, patched.getUserName());
+
+        // PUT: same behavior
+        patched.setEmail(putEmail);
+        User updated = client.users().update(patched);
+        assertEquals(putEmail, updated.getEmail());
+        assertEquals(putEmail, updated.getUserName());
+    }
+
+    @Test
+    public void testEmailUpdatableWhenEmailAsUsernameAndEditUsernameEnabled() {
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        realmRep.setRegistrationEmailAsUsername(true);
+        realmRep.setEditUsernameAllowed(true);
+        realm.admin().update(realmRep);
+
+        String originalEmail = KeycloakModelUtils.generateId() + "@example.com";
+
+        User user = new User();
+        user.setEmail(originalEmail);
+        User created = client.users().create(user);
+        assertEquals(originalEmail, created.getUserName());
+        assertEquals(originalEmail, created.getEmail());
+
+        // PUT: email is writable when editing the username is allowed, and userName follows the new email
+        String putEmail = KeycloakModelUtils.generateId() + "@example.com";
+        created.setEmail(putEmail);
+        User updated = client.users().update(created);
+        assertEquals(putEmail, updated.getEmail());
+        assertEquals(putEmail, updated.getUserName());
+
+        // PATCH: same behavior when replacing the email
+        String patchEmail = KeycloakModelUtils.generateId() + "@example.com";
+        client.users().patch(created.getId(), PatchRequest.create()
+                .replace("emails", "{\"value\": \"" + patchEmail + "\", \"type\": \"work\", \"primary\": true}")
+                .build());
+
+        User retrieved = client.users().get(created.getId());
+        assertEquals(patchEmail, retrieved.getEmail());
+        assertEquals(patchEmail, retrieved.getUserName());
+    }
+
+    @Test
+    public void testPatchUsernameAndEmailWhenEditUsernameDisabled() {
+        // emailAsUsername=false, editUsername=false (onBefore defaults): userName is read-only
+        User created = client.users().create(createUser());
+
+        String newUsername = KeycloakModelUtils.generateId();
+        String newEmail = KeycloakModelUtils.generateId() + "@example.com";
+
+        try {
+            client.users().patch(created.getId(), PatchRequest.create()
+                    .replace("userName", newUsername)
+                    .replace("emails", "{\"value\": \"" + newEmail + "\", \"type\": \"work\", \"primary\": true}")
+                    .build());
+            fail("PATCH should fail: userName is read only when editing the username is not allowed");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testPatchRemoveUsernameWhenEditUsernameDisabled() {
+        // emailAsUsername=false, editUsername=false (onBefore defaults): userName is required and read-only
+        // PATCH remove should fail because userName cannot be removed when editing is disabled
+        User created = client.users().create(createUser());
+
+        try {
+            client.users().patch(created.getId(), PatchRequest.create()
+                    .remove("userName")
+                    .build());
+            fail("PATCH remove should fail: userName is required and cannot be removed when editing the username is not allowed");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testPatchRemoveUsernameWhenEmailAsUsernameAndEditUsernameDisabled() {
+        // emailAsUsername=true, editUsername=false: userName is derived from email, so it's also read-only
+        // PATCH remove should fail because userName cannot be removed when email-as-username is enabled
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        realmRep.setRegistrationEmailAsUsername(true);
+        realm.admin().update(realmRep);
+
+        String originalEmail = KeycloakModelUtils.generateId() + "@example.com";
+        User user = new User();
+        user.setEmail(originalEmail);
+        User created = client.users().create(user);
+
+        try {
+            client.users().patch(created.getId(), PatchRequest.create()
+                    .remove("userName")
+                    .build());
+            fail("PATCH remove should fail: userName is required and derived from email when email-as-username is enabled");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testPatchAddFirstNameWhenEditUsernameDisabled() {
+        // Verify that other attributes can still be modified when editUsernameAllowed=false
+        // editUsernameAllowed=false (onBefore default) should only restrict username, not other attributes
+        User created = client.users().create(createUser());
+        String newFirstName = "NewFirstName";
+
+        client.users().patch(created.getId(), PatchRequest.create()
+                .add("name", "{\"givenName\": \"" + newFirstName + "\"}")
+                .build());
+
+        User retrieved = client.users().get(created.getId());
+        assertEquals(newFirstName, retrieved.getFirstName());
+    }
+
+    @Test
+    public void testPatchReplaceUsernameWithBlankValueWhenEditUsernameDisabled() {
+        // Replacing username with blank/empty value should fail like removal
+        // editUsernameAllowed=false (onBefore default)
+        User created = client.users().create(createUser());
+
+        try {
+            client.users().patch(created.getId(), PatchRequest.create()
+                    .replace("userName", "")
+                    .build());
+            fail("PATCH replace with blank username should fail when editing is disabled");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testPatchRemoveEmailWhenEmailAsUsernameAndEditUsernameDisabled() {
+        // When registrationEmailAsUsername=true, email derives the username
+        // Removing email should fail because it would also remove the derived username
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        realmRep.setRegistrationEmailAsUsername(true);
+        realm.admin().update(realmRep);
+
+        String originalEmail = KeycloakModelUtils.generateId() + "@example.com";
+        User user = new User();
+        user.setEmail(originalEmail);
+        User created = client.users().create(user);
+
+        try {
+            client.users().patch(created.getId(), PatchRequest.create()
+                    .remove("emails")
+                    .build());
+            fail("PATCH remove should fail: email is required when email-as-username is enabled");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testPatchMultipleOperationsWithForbiddenRemovalWhenEditUsernameDisabled() {
+        // When a PATCH includes multiple operations and one is forbidden (remove username),
+        // the entire PATCH should fail
+        User created = client.users().create(createUser());
+        String newFirstName = "NewFirstName";
+
+        try {
+            client.users().patch(created.getId(), PatchRequest.create()
+                    .remove("userName")
+                    .add("name", "{\"givenName\": \"" + newFirstName + "\"}")
+                    .build());
+            fail("PATCH should fail because userName removal is forbidden, even though firstName modification is allowed");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testPatchRemoveReadOnlyExtensionSchemaAttributeWhenEditUsernameDisabled() {
+        // Issue #52208: Verify that removal validation works for extension schema attributes, not just core userName
+        // Add a read-only extension attribute and verify PATCH remove fails
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        UPAttribute departmentAttr = new UPAttribute("department",
+                Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ":department"));
+        // Set as read-only for admin context (SCIM is admin context)
+        departmentAttr.setPermissions(new UPAttributePermissions(Set.of(), Set.of(UserProfileConstants.ROLE_ADMIN)));
+        departmentAttr.setRequired(new UPAttributeRequired());
+        upConfig.addOrReplaceAttribute(departmentAttr);
+        realm.admin().users().userProfile().update(upConfig);
+
+        User user = createUser();
+        user.setEnterpriseUser(new EnterpriseUser());
+        user.getEnterpriseUser().setDepartment("Engineering");
+        User created = client.users().create(user);
+
+        try {
+            client.users().patch(created.getId(), PatchRequest.create()
+                    .remove(ENTERPRISE_USER_SCHEMA + ":department")
+                    .build());
+            fail("PATCH remove should fail: read-only extension schema attribute cannot be removed");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testPatchUsernameAndEmailWhenEditUsernameEnabled() {
+        // emailAsUsername=false, editUsername=true: userName and email are independent and both editable
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        realmRep.setEditUsernameAllowed(true);
+        realm.admin().update(realmRep);
+
+        User created = client.users().create(createUser());
+
+        String newUsername = KeycloakModelUtils.generateId();
+        String newEmail = KeycloakModelUtils.generateId() + "@example.com";
+
+        client.users().patch(created.getId(), PatchRequest.create()
+                .replace("userName", newUsername)
+                .replace("emails", "{\"value\": \"" + newEmail + "\", \"type\": \"work\", \"primary\": true}")
+                .build());
+
+        User retrieved = client.users().get(created.getId());
+        assertNotEquals(retrieved.getUserName(), retrieved.getEmail());
+        assertEquals(newUsername, retrieved.getUserName());
+        assertEquals(newEmail, retrieved.getEmail());
+    }
+
+    @Test
+    public void testPatchUsernameAndEmailWhenEmailAsUsernameAndEditUsernameDisabled() {
+        // emailAsUsername=true, editUsername=false: mirrors the Admin API, where the email change
+        // succeeds and the derived userName follows it. The supplied userName is ignored.
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        realmRep.setRegistrationEmailAsUsername(true);
+        realm.admin().update(realmRep);
+
+        String originalEmail = KeycloakModelUtils.generateId() + "@example.com";
+        User user = new User();
+        user.setEmail(originalEmail);
+        User created = client.users().create(user);
+
+        String newEmail = KeycloakModelUtils.generateId() + "@example.com";
+
+        client.users().patch(created.getId(), PatchRequest.create()
+                .replace("userName", newEmail)
+                .replace("emails", "{\"value\": \"" + newEmail + "\", \"type\": \"work\", \"primary\": true}")
+                .build());
+
+        User retrieved = client.users().get(created.getId());
+        assertEquals(newEmail, retrieved.getUserName());
+        assertEquals(newEmail, retrieved.getEmail());
+    }
+
+    @Test
+    public void testPatchUsernameAndEmailWhenEmailAsUsernameAndEditUsernameEnabled() {
+        // emailAsUsername=true, editUsername=true: userName must follow the email
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        realmRep.setRegistrationEmailAsUsername(true);
+        realmRep.setEditUsernameAllowed(true);
+        realm.admin().update(realmRep);
+
+        String originalEmail = KeycloakModelUtils.generateId() + "@example.com";
+        User user = new User();
+        user.setEmail(originalEmail);
+        User created = client.users().create(user);
+
+        // userName matching the new email is allowed and the userName follows the email
+        String newEmail = KeycloakModelUtils.generateId() + "@example.com";
+        client.users().patch(created.getId(), PatchRequest.create()
+                .replace("userName", newEmail)
+                .replace("emails", "{\"value\": \"" + newEmail + "\", \"type\": \"work\", \"primary\": true}")
+                .build());
+
+        User retrieved = client.users().get(created.getId());
+        assertEquals(newEmail, retrieved.getUserName());
+        assertEquals(newEmail, retrieved.getEmail());
+
+        // userName conflicting with the new email is ignored: the derived userName follows the email
+        String conflictingUsername = KeycloakModelUtils.generateId() + "@example.com";
+        String anotherEmail = KeycloakModelUtils.generateId() + "@example.com";
+        client.users().patch(created.getId(), PatchRequest.create()
+                .replace("userName", conflictingUsername)
+                .replace("emails", "{\"value\": \"" + anotherEmail + "\", \"type\": \"work\", \"primary\": true}")
+                .build());
+
+        retrieved = client.users().get(created.getId());
+        assertEquals(anotherEmail, retrieved.getUserName());
+        assertEquals(anotherEmail, retrieved.getEmail());
+    }
+
+    @Test
+    public void testCreationWithEmailAsUsernameAndUsernameEditDisabled() {
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        realmRep.setRegistrationEmailAsUsername(true);
+        realmRep.setEditUsernameAllowed(false);
+        realm.admin().update(realmRep);
+
+        String newEmail = KeycloakModelUtils.generateId() + "@example.com";
+
+        User user = new User();
+        user.setEmail(newEmail);
+        // Email should be writable on creation even though it will be read-only on existing users
+        // (email is derived to userName when emailAsUsername=true and editUsernameAllowed=false)
+        User created = client.users().create(user);
+
+        assertNotNull(created.getId());
+        assertEquals(newEmail, created.getUserName());
+        assertEquals(newEmail, created.getEmail());
+    }
+
+    @Test
+    public void testCreationWithEmailWhenEditUsernameDisabledButEmailAsUsernameDisabled() {
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        realmRep.setRegistrationEmailAsUsername(false);
+        realmRep.setEditUsernameAllowed(false);
+        realm.admin().update(realmRep);
+
+        String testEmail = KeycloakModelUtils.generateId() + "@example.com";
+
+        User user = createUser();
+        user.setEmail(testEmail);
+        User created = client.users().create(user);
+
+        assertNotNull(created.getId());
+        assertNotEquals(testEmail, created.getUserName());
+        assertEquals(testEmail, created.getEmail());
+
+        // Email can be updated (it's not derived from username)
+        String updatedEmail = KeycloakModelUtils.generateId() + "@example.com";
+        created.setEmail(updatedEmail);
+        User updated = client.users().update(created);
+        assertEquals(updatedEmail, updated.getEmail());
+        assertEquals(created.getUserName(), updated.getUserName()); // userName unchanged
     }
 
     @Test
@@ -1157,7 +2114,7 @@ public class UserTest extends AbstractScimTest {
         // adds a user profile attribute
         UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
         UPAttribute upAttribute = new UPAttribute("keycloak.team", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, KEYCLOAK_USER_SCHEMA + ".memberOf"));
-        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER), Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER)));
         upConfig.addOrReplaceAttribute(upAttribute);
         realm.admin().users().userProfile().update(upConfig);
         existing = realm.admin().users().get(existing.getId()).toRepresentation();
@@ -1166,7 +2123,7 @@ public class UserTest extends AbstractScimTest {
 
         String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
         upAttribute = new UPAttribute("keycloak.area", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ".myattribute"));
-        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER), Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER)));
         upConfig.addOrReplaceAttribute(upAttribute);
         realm.admin().users().userProfile().update(upConfig);
         existing = realm.admin().users().get(existing.getId()).toRepresentation();
@@ -1220,6 +2177,63 @@ public class UserTest extends AbstractScimTest {
         } finally {
             client.users().delete(user.getId());
         }
+    }
+
+    @Test
+    public void testOrganizationGroupsNotExposedOnUser() {
+        realm.updateWithCleanup(realm -> realm.organizationsEnabled(true));
+
+        OrganizationRepresentation orgRep = new OrganizationRepresentation();
+        String orgName = KeycloakModelUtils.generateId();
+        orgRep.setName(orgName);
+        orgRep.setAlias(orgName);
+        orgRep.addDomain(new OrganizationDomainRepresentation(orgName + ".org"));
+        try (Response response = realm.admin().organizations().create(orgRep)) {
+            orgRep.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.organizations().get(orgRep.getId()).delete().close());
+
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+
+        GroupRepresentation orgGroup = new GroupRepresentation();
+        orgGroup.setName(KeycloakModelUtils.generateId());
+        try (Response response = orgResource.groups().addTopLevelGroup(orgGroup)) {
+            orgGroup.setId(ApiUtil.getCreatedId(response));
+        }
+
+        GroupRepresentation realmGroup = createGroup(KeycloakModelUtils.generateId());
+
+        User user = createUser();
+        user.addGroup(realmGroup.getId());
+        User expected = client.users().create(user);
+
+        // organization membership is itself a membership in the organization's internal group
+        try (Response response = orgResource.members().addMember(expected.getId())) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+        }
+        orgResource.groups().group(orgGroup.getId()).addMember(expected.getId());
+
+        User actual = client.users().get(expected.getId(), List.of("groups"));
+        List<GroupMembership> groups = actual.getGroups();
+
+        assertNotNull(groups);
+        assertTrue(groups.stream().anyMatch(g -> realmGroup.getId().equals(g.getValue())));
+        assertTrue(groups.stream().noneMatch(g -> orgGroup.getId().equals(g.getValue())));
+        // neither the organization group nor the organization's internal group are exposed
+        assertEquals(1, groups.size());
+
+        // filtering by organization group should not return any users
+        String orgGroupFilter = ResourceFilter.filter().eq("groups.value", orgGroup.getId()).build();
+        ListResponse<User> orgGroupResponse = client.users().getAll(orgGroupFilter);
+        assertNotNull(orgGroupResponse);
+        assertEquals(0, orgGroupResponse.getTotalResults());
+
+        // filtering by realm group should return the user
+        String realmGroupFilter = ResourceFilter.filter().eq("groups.value", realmGroup.getId()).build();
+        ListResponse<User> realmGroupResponse = client.users().getAll(realmGroupFilter);
+        assertNotNull(realmGroupResponse);
+        assertEquals(1, realmGroupResponse.getTotalResults());
+        assertEquals(expected.getId(), realmGroupResponse.getResources().get(0).getId());
     }
 
     private static void assertGroup(List<GroupMembership> groups, GroupRepresentation group, String type) {
@@ -1402,6 +2416,228 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testCreateWithoutUserNameFails() {
+        User user = new User();
+
+        try {
+            client.users().create(user);
+            fail("should fail because userName is required");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertNotNull(error.getDetail());
+            assertTrue(error.getDetail().contains("username is required"));
+        }
+    }
+
+    @Test
+    public void testCreateWithoutEmailFailsWhenEmailAsUsername() {
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        realmRep.setRegistrationEmailAsUsername(true);
+        realm.admin().update(realmRep);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+
+        try {
+            client.users().create(user);
+            fail("should fail because email is required when registrationEmailAsUsername is enabled");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertNotNull(error.getDetail());
+            assertTrue(error.getDetail().contains("email is required"));
+        }
+    }
+
+    @Test
+    public void testPatchAndUpdateRespectEditPermissions() {
+        String attributeName = "scim.protectedAttribute";
+        String scimAttributePath = KEYCLOAK_USER_SCHEMA + ":protectedAttribute";
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        UPAttribute upAttribute = new UPAttribute(attributeName, Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, scimAttributePath));
+        upAttribute.setPermissions(
+                new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of()));
+        upConfig.addOrReplaceAttribute(upAttribute);
+        realm.admin().users().userProfile().update(upConfig);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        try {
+            user = client.users().create(user);
+
+            // PATCH replace should not be able to write a view-only attribute
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .replace(scimAttributePath, "scim-patch")
+                    .build());
+            Map<String, List<String>> attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertTrue(attributes == null || !attributes.containsKey(attributeName));
+
+            // PATCH add should not be able to write a view-only attribute
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .add(scimAttributePath, "scim-add")
+                    .build());
+            attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertTrue(attributes == null || !attributes.containsKey(attributeName));
+
+            // temporarily allow admin edits so we can set the attribute value
+            upAttribute.setPermissions(
+                    new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+            upConfig.addOrReplaceAttribute(upAttribute);
+            realm.admin().users().userProfile().update(upConfig);
+            UserRepresentation rep = realm.admin().users().get(user.getId()).toRepresentation();
+            rep.singleAttribute(attributeName, "admin-set-value");
+            realm.admin().users().get(user.getId()).update(rep);
+            // restore view-only permissions
+            upAttribute.setPermissions(
+                    new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of()));
+            upConfig.addOrReplaceAttribute(upAttribute);
+            realm.admin().users().userProfile().update(upConfig);
+            attributes = realm.admin().users().get(user.getId()).toRepresentation().getAttributes();
+            assertNotNull(attributes);
+            assertEquals(List.of("admin-set-value"), attributes.get(attributeName));
+
+            // PATCH remove should not be able to remove a view-only attribute
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .remove(scimAttributePath)
+                    .build());
+            attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertNotNull(attributes);
+            assertEquals(List.of("admin-set-value"), attributes.get(attributeName));
+
+            // PUT should not be able to write a view-only attribute
+            user.addSchema(KEYCLOAK_USER_SCHEMA);
+            user.setExtensions(new HashMap<>());
+            Map<Object, Object> extensionValues = new HashMap<>();
+            extensionValues.put("protectedAttribute", "scim-update");
+            user.getExtensions().put(KEYCLOAK_USER_SCHEMA, extensionValues);
+            User updated = client.users().update(user.getId(), user);
+            attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertNotNull(attributes);
+            assertEquals(List.of("admin-set-value"), attributes.get(attributeName));
+
+            // verify the SCIM response reflects the actual stored value, not the sent value
+            Map<String, Object> responseExtensions = updated.getExtensions();
+            if (responseExtensions != null && responseExtensions.containsKey(KEYCLOAK_USER_SCHEMA)) {
+                Map<String, Object> schemaValues = (Map<String, Object>) responseExtensions.get(KEYCLOAK_USER_SCHEMA);
+                assertNotEquals("scim-update", schemaValues.get("protectedAttribute"),
+                        "PUT response should not echo back the value that was not persisted");
+            }
+        } finally {
+            if (user.getId() != null) {
+                client.users().delete(user.getId());
+            }
+        }
+    }
+
+    @Test
+    public void testPatchAndUpdateRespectEditPermissionsMultivalued() {
+        String attributeName = "scim.protectedMultiAttribute";
+        String scimAttributePath = KEYCLOAK_USER_SCHEMA + ":protectedMultiAttribute";
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        UPAttribute upAttribute = new UPAttribute(attributeName, Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, scimAttributePath));
+        upAttribute.setMultivalued(true);
+        upAttribute.setPermissions(
+                new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of()));
+        upConfig.addOrReplaceAttribute(upAttribute);
+        realm.admin().users().userProfile().update(upConfig);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        try {
+            user = client.users().create(user);
+
+            // PATCH replace should not be able to write a view-only attribute (using JSON array)
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .replace(scimAttributePath, "[\"scim-patch\"]")
+                    .build());
+            Map<String, List<String>> attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertTrue(attributes == null || !attributes.containsKey(attributeName));
+
+            // PATCH add should not be able to write a view-only attribute (using JSON array)
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .add(scimAttributePath, "[\"scim-add\"]")
+                    .build());
+            attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertTrue(attributes == null || !attributes.containsKey(attributeName));
+
+            // temporarily allow admin edits so we can set the attribute values
+            upAttribute.setPermissions(
+                    new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+            upConfig.addOrReplaceAttribute(upAttribute);
+            realm.admin().users().userProfile().update(upConfig);
+
+            UserRepresentation rep = realm.admin().users().get(user.getId()).toRepresentation();
+            if (rep.getAttributes() == null) {
+                rep.setAttributes(new HashMap<>());
+            }
+            // Set multiple values
+            rep.getAttributes().put(attributeName, List.of("admin-set-value-1", "admin-set-value-2"));
+            realm.admin().users().get(user.getId()).update(rep);
+
+            // restore view-only permissions
+            upAttribute.setPermissions(
+                    new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of()));
+            upConfig.addOrReplaceAttribute(upAttribute);
+            realm.admin().users().userProfile().update(upConfig);
+
+            attributes = realm.admin().users().get(user.getId()).toRepresentation().getAttributes();
+            assertNotNull(attributes);
+            assertEquals(List.of("admin-set-value-1", "admin-set-value-2"), attributes.get(attributeName));
+
+            // PATCH remove should not be able to remove a view-only attribute
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .remove(scimAttributePath)
+                    .build());
+            attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertNotNull(attributes);
+            assertEquals(List.of("admin-set-value-1", "admin-set-value-2"), attributes.get(attributeName));
+
+            // PUT should not be able to write a view-only attribute
+            user.addSchema(KEYCLOAK_USER_SCHEMA);
+            user.setExtensions(new HashMap<>());
+            Map<Object, Object> extensionValues = new HashMap<>();
+            // Provide a list for the multivalued extension update attempt
+            extensionValues.put("protectedMultiAttribute", List.of("scim-update"));
+            user.getExtensions().put(KEYCLOAK_USER_SCHEMA, extensionValues);
+
+            User updated = client.users().update(user.getId(), user);
+            attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertNotNull(attributes);
+            assertEquals(List.of("admin-set-value-1", "admin-set-value-2"), attributes.get(attributeName));
+
+            // verify the SCIM response reflects the actual stored values, not the sent values
+            Map<String, Object> responseExtensions = updated.getExtensions();
+            if (responseExtensions != null && responseExtensions.containsKey(KEYCLOAK_USER_SCHEMA)) {
+                Map<String, Object> schemaValues = (Map<String, Object>) responseExtensions.get(KEYCLOAK_USER_SCHEMA);
+                Object returnedValue = schemaValues.get("protectedMultiAttribute");
+                if (returnedValue instanceof List<?> scimList) {
+                    assertFalse(scimList.contains("scim-update"),
+                            "PUT response should not echo back the value that was not persisted");
+                    assertTrue(scimList.containsAll(List.of("admin-set-value-1", "admin-set-value-2")),
+                            "PUT response should reflect the persisted read-only values");
+                }
+            }
+        } finally {
+            if (user.getId() != null) {
+                client.users().delete(user.getId());
+            }
+        }
+    }
+
+    @Test
     public void testCreateDuplicate() {
         User user = new User();
         user.setUserName(KeycloakModelUtils.generateId());
@@ -1417,5 +2653,239 @@ public class UserTest extends AbstractScimTest {
             assertEquals("uniqueness", error.getScimType());
             assertNotNull(error.getDetail());
         }
+    }
+
+    @Test
+    public void testGetMultivaluedCustomAttributesWithAndWithoutValueSubAttribute() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+        setupMultivaluedCustomAttributes(customSchema);
+
+        UserRepresentation existing = UserBuilder.create()
+                .username(KeycloakModelUtils.generateId())
+                .email(KeycloakModelUtils.generateId() + "@keycloak.org")
+                .firstName("f")
+                .lastName("l")
+                .enabled(true)
+                .build();
+        Map<String, List<String>> attributes = new HashMap<>();
+        List<String> expectedAssuranceValues = List.of(
+                "https://refeds.org/assurance/ID/unique",
+                "https://refeds.org/assurance/IAP/low",
+                "https://aarc-project.eu/policy/authn-assurance/assam");
+        List<String> expectedAffiliationValues = List.of("member", "faculty");
+        attributes.put("assurance", expectedAssuranceValues);
+        attributes.put("affiliation", expectedAffiliationValues);
+        existing.setAttributes(attributes);
+        try (Response response = realm.admin().users().create(existing)) {
+            String id = ApiUtil.getCreatedId(response);
+            existing.setId(id);
+        }
+
+        User user = client.users().get(existing.getId());
+        Object extension = ofNullable(user.getExtensions()).orElse(Map.of()).get(customSchema);
+        assertInstanceOf(Map.class, extension);
+        assertTrue(user.getSchemas().contains(customSchema));
+
+        Object assurance = ((Map<?, ?>) extension).get("assurance");
+        assertInstanceOf(List.class, assurance);
+        assertEquals(expectedAssuranceValues.size(), ((List<?>) assurance).size());
+        for (int i = 0; i < expectedAssuranceValues.size(); i++) {
+            Object valueNode = ((List<?>) assurance).get(i);
+            assertInstanceOf(Map.class, valueNode);
+            assertEquals(expectedAssuranceValues.get(i), ((Map<?, ?>) valueNode).get("value"));
+        }
+
+        Object affiliation = ((Map<?, ?>) extension).get("affiliation");
+        assertInstanceOf(List.class, affiliation);
+        assertEquals(expectedAffiliationValues, affiliation);
+    }
+
+    @Test
+    public void testCreateAndPutMultivaluedCustomAttributes() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+        setupMultivaluedCustomAttributes(customSchema);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        user.addSchema(customSchema);
+
+        Map<String, Object> customSchemaValues = new HashMap<>();
+        customSchemaValues.put("assurance", List.of(
+                Map.of("value", "https://refeds.org/assurance/ID/unique"),
+                Map.of("value", "https://refeds.org/assurance/IAP/low")
+        ));
+        customSchemaValues.put("affiliation", List.of("member", "faculty"));
+
+        user.setExtensions(new HashMap<>());
+        user.getExtensions().put(customSchema, customSchemaValues);
+
+        user = client.users().create(user);
+        User actual = client.users().get(user.getId());
+
+        Map<?, ?> extension = (Map<?, ?>) actual.getExtensions().get(customSchema);
+        List<?> assurance = (List<?>) extension.get("assurance");
+        assertEquals(2, assurance.size());
+        List<String> expectedAssuranceValues = List.of("https://refeds.org/assurance/ID/unique", "https://refeds.org/assurance/IAP/low");
+        List<String> actualAssuranceValues = assurance.stream().map(valueNode -> assertInstanceOf(Map.class, valueNode)).map(map -> (String) map.get("value")).toList();
+        assertTrue(actualAssuranceValues.containsAll(expectedAssuranceValues));
+
+        List<?> affiliation = (List<?>) extension.get("affiliation");
+        assertEquals(2, affiliation.size());
+        assertTrue(affiliation.containsAll(List.of("member", "faculty")));
+
+        customSchemaValues.put("assurance", List.of(Map.of("value", "https://refeds.org/assurance/IAP/low-updated")));
+        customSchemaValues.put("affiliation", List.of("staff"));
+        actual.getExtensions().put(customSchema, customSchemaValues);
+
+        actual = client.users().update(actual);
+
+        extension = (Map<?, ?>) actual.getExtensions().get(customSchema);
+        assurance = (List<?>) extension.get("assurance");
+        assertEquals(1, assurance.size());
+        assertEquals("https://refeds.org/assurance/IAP/low-updated", ((Map<?, ?>) assurance.get(0)).get("value"));
+
+        affiliation = (List<?>) extension.get("affiliation");
+        assertEquals(1, affiliation.size());
+        assertEquals("staff", affiliation.get(0));
+    }
+
+    @Test
+    public void testPatchMultivaluedCustomAttributes() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+        setupMultivaluedCustomAttributes(customSchema);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        user = client.users().create(user);
+
+        client.users().patch(user.getId(), PatchRequest.create()
+                .add(customSchema + ":assurance", "[{\"value\": \"https://refeds.org/assurance/ID/unique\"}]")
+                .add(customSchema + ":affiliation", "[\"member\"]")
+                .build());
+
+        User actual = client.users().get(user.getId());
+        Map<?, ?> extension = (Map<?, ?>) actual.getExtensions().get(customSchema);
+        List<?> assurance = (List<?>) extension.get("assurance");
+        assertEquals(1, assurance.size());
+        assertEquals("https://refeds.org/assurance/ID/unique", ((Map<?, ?>) assurance.get(0)).get("value"));
+
+        List<?> affiliation = (List<?>) extension.get("affiliation");
+        assertEquals(1, affiliation.size());
+        assertEquals("member", affiliation.get(0));
+
+        client.users().patch(user.getId(), PatchRequest.create()
+                .replace(customSchema + ":assurance", "[{\"value\": \"https://refeds.org/assurance/IAP/low\"}, {\"value\": \"https://refeds.org/assurance/IAP/low-updated\"}]")
+                .replace(customSchema + ":affiliation", "[\"faculty\", \"staff\"]")
+                .build());
+
+        actual = client.users().get(user.getId());
+        extension = (Map<?, ?>) actual.getExtensions().get(customSchema);
+        assurance = (List<?>) extension.get("assurance");
+        assertEquals(2, assurance.size());
+        List<String> expectedAssuranceValues = List.of("https://refeds.org/assurance/IAP/low", "https://refeds.org/assurance/IAP/low-updated");
+        List<String> actualAssuranceValues = assurance.stream().map(valueNode -> assertInstanceOf(Map.class, valueNode)).map(map -> (String) map.get("value")).toList();
+        assertTrue(actualAssuranceValues.containsAll(expectedAssuranceValues));
+
+        affiliation = (List<?>) extension.get("affiliation");
+        assertEquals(2, affiliation.size());
+        assertTrue(affiliation.containsAll(List.of("faculty", "staff")));
+
+        client.users().patch(user.getId(), PatchRequest.create()
+                .remove(customSchema + ":assurance")
+                .remove(customSchema + ":affiliation")
+                .build());
+
+        actual = client.users().get(user.getId());
+        assertNull(actual.getExtensions());
+    }
+
+    @Test
+    public void testFilterMultivaluedCustomAttributes() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+        setupMultivaluedCustomAttributes(customSchema);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        user.addSchema(customSchema);
+        user.setExtensions(new HashMap<>());
+
+        Map<String, Object> customSchemaValues = new HashMap<>();
+        customSchemaValues.put("assurance", List.of(
+                Map.of("value", "https://refeds.org/assurance/ID/unique"),
+                Map.of("value", "https://refeds.org/assurance/IAP/low")
+        ));
+        customSchemaValues.put("affiliation", List.of("member", "faculty"));
+        user.getExtensions().put(customSchema, customSchemaValues);
+
+        user = client.users().create(user);
+
+        // filter on multivalued .value complex attribute — match one of the values
+        ListResponse<User> result = client.users().search(
+                ResourceFilter.filter().eq(customSchema + ":assurance.value", "https://refeds.org/assurance/ID/unique").build());
+        assertEquals(1, result.getTotalResults());
+        assertEquals(user.getId(), result.getResources().get(0).getId());
+
+        // filter on multivalued .value complex attribute — match the other value
+        result = client.users().search(
+                ResourceFilter.filter().eq(customSchema + ":assurance.value", "https://refeds.org/assurance/IAP/low").build());
+        assertEquals(1, result.getTotalResults());
+
+        // filter on multivalued .value complex attribute — no match
+        result = client.users().search(
+                ResourceFilter.filter().eq(customSchema + ":assurance.value", "non-existent").build());
+        assertEquals(0, result.getTotalResults());
+
+        // filter on multivalued flat attribute — match one of the values
+        result = client.users().search(
+                ResourceFilter.filter().eq(customSchema + ":affiliation", "member").build());
+        assertEquals(1, result.getTotalResults());
+        assertEquals(user.getId(), result.getResources().get(0).getId());
+
+        // filter on multivalued flat attribute — no match
+        result = client.users().search(
+                ResourceFilter.filter().eq(customSchema + ":affiliation", "non-existent").build());
+        assertEquals(0, result.getTotalResults());
+    }
+
+    @Test
+    public void testIncompatibleMultivaluedSiblingMapping() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+
+        UPAttribute valueAttr = new UPAttribute("assurance", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ":assurance.value"));
+        valueAttr.setMultivalued(true);
+        valueAttr.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(valueAttr);
+
+        UPAttribute siblingAttr = new UPAttribute("assuranceType", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ":assurance.type"));
+        siblingAttr.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(siblingAttr);
+
+        try {
+            realm.admin().users().userProfile().update(upConfig);
+            fail("should fail because multivalued '.value' cannot be combined with sibling sub-attributes");
+        } catch (BadRequestException e) {
+            assertTrue(e.getResponse().getStatus() == 400);
+        }
+    }
+
+    private void setupMultivaluedCustomAttributes(String customSchema) {
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+
+        UPAttribute assuranceAttribute = new UPAttribute("assurance", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ":assurance.value"));
+        assuranceAttribute.setMultivalued(true);
+        assuranceAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(assuranceAttribute);
+
+        UPAttribute affiliationAttribute = new UPAttribute("affiliation", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ":affiliation"));
+        affiliationAttribute.setMultivalued(true);
+        affiliationAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(affiliationAttribute);
+
+        realm.admin().users().userProfile().update(upConfig);
     }
 }

@@ -178,6 +178,28 @@ The `OFFLINE_CLIENT_SESSION` table now contains two additional indexes `IDX_OFFL
 If the table contains more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
 See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
 
+=== New `REALM_ID` column in the `OFFLINE_CLIENT_SESSION` table
+
+A new `REALM_ID` column has been added to the `OFFLINE_CLIENT_SESSION` table.
+During the automatic schema migration, {project_name} populates this column by copying the `REALM_ID` value from the corresponding row in the `OFFLINE_USER_SESSION` table, matching on `USER_SESSION_ID` and `OFFLINE_FLAG`.
+
+This migration can take a significant amount of time depending on the number of rows in the table and the available system resources.
+From our tests with PostgreSQL, a table with 10 million rows takes approximately 1320 seconds to update, processing approximately 7500 rows per second.
+
+We recommend increasing the transaction timeout to accommodate larger tables.
+See link:{upgradingguide_link}#_migrate_db[Migration timeout configuration] for details on how to configure a longer timeout.
+
+Alternatively, users can perform the migration manually.
+See link:{upgradingguide_link}#_migrate_db[Manual relational database migration] for details on how to apply the database changes manually.
+
+[WARNING]
+====
+This migration requires downtime.
+Do not run {project_name} 26.6 alongside older versions during or after this migration.
+Older versions do not populate the new `REALM_ID` column, which prevents {project_name} 26.6 from finding the data.
+In the worst case, if the data is not found, {project_name} may attempt to insert a row with the same primary key, causing constraint violations.
+====
+
 === `UserSessionProvider` API changes
 
 The internal `UserSessionProvider` interface received new methods for efficient streaming of user sessions, in both speed and memory.
@@ -311,4 +333,14 @@ To better capture the maturity of Operator CRDs for the `Keycloak` and `Keycloak
 The previous `v2alpha1` version for these resources is deprecated but still served. You can keep using it, but we recommend upgrading to `v2beta1` at your earliest convenience.
 There are currently no differences in the schema between the two versions,
 so you will just need to update the relevant `apiVersion` references.
+
+[WARNING]
+====
+If you are running multiple operator instances in different namespaces on the same cluster and using OLM, installing or upgrading to the 26.6 operator will prevent older operator versions (such as 26.4) from being installed or upgraded.
+Existing 26.4 operator installations will remain unaffected and will keep reconciling existing {project_name} 26.4 deployments.
+This is because CRDs are cluster-scoped and the introduction of the `v2beta1` version in the CRD will cause OLM to block any operator whose CRD does not include this version.
+If you have multiple operator instances, upgrade all of them to 26.6.
+Upgrading the operator does not require upgrading your Keycloak images at the same time — the 26.6 operator can manage instances running older images.
+See the <<truststore-initialization-moved-to-the-server, Truststore initialization moved to the server>> section for a configuration change that may be needed when running older images with the 26.6 operator.
+====
 

@@ -14,6 +14,11 @@ public class BooleanScopeType implements ParameterizedScopeTypeProvider {
     }
 
     @Override
+    public boolean isRepeatable() {
+        return false;
+    }
+
+    @Override
     public void validateParameter(@Nonnull ClientScopeModel scope, @Nonnull String parameter) throws InvalidScopeParameterException {
         if (!"true".equalsIgnoreCase(parameter) && !"false".equalsIgnoreCase(parameter)) {
             throw new InvalidScopeParameterException(String.format("'%s' is not a valid boolean, expected 'true' or 'false'", parameter));

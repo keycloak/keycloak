@@ -38,7 +38,6 @@ import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.Strategy;
-import org.keycloak.exportimport.dir.DirExportProvider;
 import org.keycloak.exportimport.dir.DirExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.exportimport.util.ImportUtils;
@@ -65,7 +64,6 @@ import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
 import org.keycloak.testframework.remote.providers.runonserver.FetchOnServerWrapper;
-import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.utils.Assert;
@@ -157,7 +155,7 @@ public class ExportImportTest {
     public void testDirFullExportImport() throws Throwable {
         runOnServerMaster.run(ExportImportHelper.setProvider(DirExportProviderFactory.PROVIDER_ID));
         String targetDirPath = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","")+ File.separator + "dirExport";
-        DirExportProvider.recursiveDeleteDir(new File(targetDirPath));
+        FileUtils.deleteQuietly(new File(targetDirPath));
         runOnServerMaster.run(ExportImportHelper.setDir(targetDirPath));
         runOnServerMaster.run(ExportImportHelper.setUsersPerFile(ExportImportConfig.DEFAULT_USERS_PER_FILE));
 
@@ -174,7 +172,7 @@ public class ExportImportTest {
     public void testDirRealmExportImport() throws Throwable {
         runOnServerMaster.run(ExportImportHelper.setProvider(DirExportProviderFactory.PROVIDER_ID));
         String targetDirPath = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","") + File.separator + "dirRealmExport";
-        DirExportProvider.recursiveDeleteDir(new File(targetDirPath));
+        FileUtils.deleteQuietly(new File(targetDirPath));
         runOnServerMaster.run(ExportImportHelper.setDir(targetDirPath));
         runOnServerMaster.run(ExportImportHelper.setUsersPerFile(5));
 
@@ -316,7 +314,7 @@ public class ExportImportTest {
         String targetDirPath = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","") + File.separator + "dirRealmExport";
         File dest = new File(targetDirPath);
         try {
-            DirExportProvider.recursiveDeleteDir(dest);
+            FileUtils.deleteQuietly(dest);
             runOnServerMaster.run(ExportImportHelper.setDir(targetDirPath));
 
             runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_EXPORT));
@@ -347,7 +345,7 @@ public class ExportImportTest {
                 Assertions.fail("Error with realm importing twice. Details: " + e.getMessage());
             }
         } finally {
-            DirExportProvider.recursiveDeleteDir(dest);
+            FileUtils.deleteQuietly(dest);
         }
     }
 
@@ -360,7 +358,7 @@ public class ExportImportTest {
         String targetDirPath = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","") + File.separator + "dirRealmExport";
         File dest = new File(targetDirPath);
         try {
-            DirExportProvider.recursiveDeleteDir(dest);
+            FileUtils.deleteQuietly(dest);
             runOnServerMaster.run(ExportImportHelper.setDir(targetDirPath));
 
             runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_EXPORT));
@@ -383,12 +381,12 @@ public class ExportImportTest {
 
             runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
 
-            RunOnServerException e = Assertions.assertThrows(RunOnServerException.class, () -> {
+            IllegalStateException e = Assertions.assertThrows(IllegalStateException.class, () -> {
                 runOnServerMaster.run(ExportImportHelper.runImport());
             });
             assertThat(e.getMessage(), Matchers.containsString("File name / realm name mismatch."));
         } finally {
-            DirExportProvider.recursiveDeleteDir(dest);
+            FileUtils.deleteQuietly(dest);
         }
     }
 

@@ -238,8 +238,8 @@ public class FAPI2DPoPTest extends AbstractFAPI2Test {
                 .nonce(nonce)
                 .send();
 
-        assertEquals(401, pResp.getStatusCode());
-        assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, pResp.getError());
+        assertEquals(400, pResp.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, pResp.getError());
 
         // an additional parameter in an authorization request that does not exist in a PAR request - should fail
         pResp = oauth

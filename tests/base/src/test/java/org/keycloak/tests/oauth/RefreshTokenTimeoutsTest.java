@@ -76,7 +76,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Test for the scenarios related to refresh-token and involving userSession and clientSession timeouts (idle-timeout, max session timeout etc).
  */
 @KeycloakIntegrationTest
-@DatabaseTest
 public class RefreshTokenTimeoutsTest {
 
     @InjectOAuthClient
@@ -113,6 +112,7 @@ public class RefreshTokenTimeoutsTest {
     }
 
     @Test
+    @DatabaseTest
     public void testUserSessionRefreshAndIdle() {
         oauth.doLogin("test-user@localhost", "password");
 
@@ -198,6 +198,7 @@ public class RefreshTokenTimeoutsTest {
     }
 
     @Test
+    @DatabaseTest
     public void testUserSessionRefreshAndIdleRememberMe() {
         realm.updateWithCleanup(r -> r
                 .setRememberMe(true)
@@ -317,6 +318,7 @@ public class RefreshTokenTimeoutsTest {
     }
 
     @Test
+    @DatabaseTest
     public void refreshTokenUserClientMaxLifespanSmallerThanSession() {
         realm.updateWithCleanup(r ->
                 r.ssoSessionMaxLifespan(3600)
@@ -565,6 +567,7 @@ public class RefreshTokenTimeoutsTest {
      * KEYCLOAK-1267
      */
     @Test
+    @DatabaseTest
     public void refreshTokenUserSessionMaxLifespanWithRememberMe() {
         realm.updateWithCleanup(r -> r
                 .setRememberMe(true)

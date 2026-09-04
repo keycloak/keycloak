@@ -20,16 +20,15 @@ package org.keycloak.quarkus.deployment;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -161,6 +160,7 @@ import io.quarkus.vertx.http.deployment.HttpRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.ManagementInterfaceFilterBuildItem;
 import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
+import io.quarkus.vertx.http.deployment.VertxWebRouterBuildItem;
 import io.quarkus.vertx.http.runtime.security.SecurityHandlerPriorities;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.health.Readiness;
@@ -171,7 +171,6 @@ import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
 import org.hibernate.jpa.boot.spi.PersistenceXmlParser;
 import org.infinispan.protostream.SerializationContextInitializer;
 import org.jboss.jandex.AnnotationInstance;
-import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.AnnotationTransformation;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
@@ -269,9 +268,9 @@ class KeycloakProcessor {
     @Produce(ProfileBuildItem.class)
     void configureProfile(KeycloakRecorder recorder) {
         Profile profile = getCurrentOrCreateFeatureProfile();
-
+        Profile.getInstance().logUnsupportedFeatures();
         // record the features so that they are not calculated again at runtime
-        recorder.configureProfile(profile.getName(), profile.getFeatures());
+        recorder.configureProfile(profile.getName(), profile.getFeatures(), profile.getEnablements());
     }
 
     @Record(ExecutionTime.STATIC_INIT)
@@ -291,24 +290,20 @@ class KeycloakProcessor {
                 );
     }
 
-    @Record(ExecutionTime.STATIC_INIT)
+    @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep
     @Consume(ConfigBuildItem.class)
-    void filterAllRequests(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder) {
-        var filter = recorder.getRejectNonNormalizedPathFilter();
-        if (filter != null) {
-            filters.produce(new FilterBuildItem(filter, SecurityHandlerPriorities.CORS + 1));
-        }
+    void filterAllRequests(VertxWebRouterBuildItem vertxWebRouterBuildItem, KeycloakRecorder recorder) {
+        recorder.rejectNonNormalizedPathFilter(vertxWebRouterBuildItem.getHttpRouter());
+
+        recorder.misdirectedRequestFilter(vertxWebRouterBuildItem.getHttpRouter());
     }
 
-    @Record(ExecutionTime.STATIC_INIT)
+    @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep(onlyIf = IsManagementEnabled.class)
     @Consume(ConfigBuildItem.class)
-    void filterAllManagementRequests(BuildProducer<ManagementInterfaceFilterBuildItem> filters, KeycloakRecorder recorder) {
-        var filter = recorder.getRejectNonNormalizedPathFilter();
-        if (filter != null) {
-            filters.produce(new ManagementInterfaceFilterBuildItem(filter, SecurityHandlerPriorities.CORS + 1));
-        }
+    void filterAllManagementRequests(VertxWebRouterBuildItem vertxWebRouterBuildItem, BuildProducer<ManagementInterfaceFilterBuildItem> filters, KeycloakRecorder recorder) {
+        recorder.rejectNonNormalizedPathFilter(vertxWebRouterBuildItem.getManagementRouter());
     }
 
     @BuildStep(onlyIfNot = IsKeycloakDevMode.class)
@@ -338,14 +333,6 @@ class KeycloakProcessor {
                 .route(relativePath)
                 .handler(recorder.getManagementHandler())
                 .build());
-    }
-
-    @Record(ExecutionTime.STATIC_INIT)
-    @BuildStep
-    @Consume(ConfigBuildItem.class)
-    @Consume(CryptoProviderInitBuildItem.class) // ensures the Providers are loaded prior to handle the keystore #49359
-    void configureTruststore(KeycloakRecorder recorder) {
-        recorder.configureTruststore();
     }
 
     /**
@@ -522,41 +509,38 @@ class KeycloakProcessor {
             List<PersistenceXmlDescriptorBuildItem> descriptors,
             List<JdbcDataSourceBuildItem> jdbcDataSources,
             BuildProducer<AdditionalJpaModelBuildItem> additionalJpaModel,
-            CombinedIndexBuildItem indexBuildItem,
             BuildProducer<HibernateOrmIntegrationRuntimeConfiguredBuildItem> runtimeConfigured,
             KeycloakRecorder recorder) {
-        ParsedPersistenceXmlDescriptor defaultUnitDescriptor = null;
-        List<String> userManagedEntities = new ArrayList<>();
+        boolean defaultUnitFound = false;
 
         for (PersistenceXmlDescriptorBuildItem item : descriptors) {
-            ParsedPersistenceXmlDescriptor descriptor = (ParsedPersistenceXmlDescriptor) item.getDescriptor();
+            if (!(item.getDescriptor() instanceof ParsedPersistenceXmlDescriptor descriptor)) {
+                continue;
+            }
 
             if (DEFAULT_PERSISTENCE_UNIT.equals(descriptor.getName())) {
-                defaultUnitDescriptor = descriptor;
-                configureDefaultPersistenceUnitProperties(defaultUnitDescriptor, config, getDefaultDataSource(jdbcDataSources));
-                runtimeConfigured.produce(new HibernateOrmIntegrationRuntimeConfiguredBuildItem("keycloak", defaultUnitDescriptor.getName())
+                defaultUnitFound = true;
+                configureDefaultPersistenceUnitProperties(descriptor, config, getDefaultDataSource(jdbcDataSources));
+                runtimeConfigured.produce(new HibernateOrmIntegrationRuntimeConfiguredBuildItem("keycloak", descriptor.getName())
                         .setInitListener(recorder.createDefaultUnitListener()));
             } else {
                 String datasourceName = getDatasourceNameFromPersistenceXml(descriptor);
                 configurePersistenceUnitProperties(datasourceName, descriptor);
-                // register a listener for customizing the unit configuration at runtime
                 runtimeConfigured.produce(new HibernateOrmIntegrationRuntimeConfiguredBuildItem("keycloak", descriptor.getName())
                         .setInitListener(recorder.createUserDefinedUnitListener(datasourceName)));
-                userManagedEntities.addAll(descriptor.getManagedClassNames());
             }
         }
 
-        if (defaultUnitDescriptor == null) {
+        if (!defaultUnitFound) {
             throw new RuntimeException("No default persistence unit found.");
         }
-
-        configureDefaultPersistenceUnitEntities(defaultUnitDescriptor, indexBuildItem, userManagedEntities);
     }
 
     @BuildStep
     @Consume(CheckJdbcBuildStep.class)
     @Consume(CheckMultipleDatasourcesBuildStep.class)
-    void produceDefaultPersistenceUnit(BuildProducer<PersistenceXmlDescriptorBuildItem> producer) {
+    void produceDefaultPersistenceUnit(CombinedIndexBuildItem indexBuildItem,
+            BuildProducer<PersistenceXmlDescriptorBuildItem> producer) {
         PersistenceXmlParser parser = PersistenceXmlParser.create();
         PersistenceUnitDescriptor descriptor = parser.parse(Collections.singletonList(parser.getClassLoaderService().locateResource("default-persistence.xml")))
                 .values()
@@ -564,7 +548,37 @@ class KeycloakProcessor {
                 .findAny()
                 .orElseThrow(() -> new NoSuchElementException("Cannot find the file 'default-persistence.xml'"));
 
+        Set<String> userManagedEntities = collectUserManagedEntities(parser);
+
+        if (descriptor instanceof ParsedPersistenceXmlDescriptor parsedDescriptor) {
+            IndexView index = indexBuildItem.getIndex();
+            Collection<AnnotationInstance> annotations = index.getAnnotations(DotName.createSimple(Entity.class.getName()));
+            List<String> additionalEntities = new ArrayList<>();
+            for (AnnotationInstance annotation : annotations) {
+                String targetName = annotation.target().asClass().name().toString();
+                if (!userManagedEntities.contains(targetName)
+                        && (!targetName.startsWith("org.keycloak") || targetName.startsWith("org.keycloak.testsuite"))) {
+                    additionalEntities.add(targetName);
+                }
+            }
+            if (!additionalEntities.isEmpty()) {
+                parsedDescriptor.addClasses(additionalEntities);
+            }
+        }
+
         producer.produce(new PersistenceXmlDescriptorBuildItem(descriptor));
+    }
+
+    // Parsed independently because this step produces PersistenceXmlDescriptorBuildItem
+    // and therefore cannot consume List<PersistenceXmlDescriptorBuildItem> (circular dependency).
+    private static Set<String> collectUserManagedEntities(PersistenceXmlParser parser) {
+        Set<String> result = new HashSet<>();
+        for (URL url : parser.getClassLoaderService().locateResources("META-INF/persistence.xml")) {
+            for (PersistenceUnitDescriptor pu : PersistenceXmlParser.create().parse(Collections.singletonList(url)).values()) {
+                result.addAll(pu.getManagedClassNames());
+            }
+        }
+        return result;
     }
 
     static void configurePersistenceUnitProperties(String datasourceName, ParsedPersistenceXmlDescriptor descriptor) {
@@ -637,22 +651,6 @@ class KeycloakProcessor {
 
         getOptionalKcValue(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES.getKey())
                 .ifPresent(v -> unitProperties.put(AvailableSettings.LOG_SLOW_QUERY, v));
-    }
-
-    private void configureDefaultPersistenceUnitEntities(ParsedPersistenceXmlDescriptor descriptor, CombinedIndexBuildItem indexBuildItem,
-            List<String> userManagedEntities) {
-        IndexView index = indexBuildItem.getIndex();
-        Collection<AnnotationInstance> annotations = index.getAnnotations(DotName.createSimple(Entity.class.getName()));
-
-        for (AnnotationInstance annotation : annotations) {
-            AnnotationTarget target = annotation.target();
-            String targetName = target.asClass().name().toString();
-
-            if (!userManagedEntities.contains(targetName)
-                    && (!targetName.startsWith("org.keycloak") || targetName.startsWith("org.keycloak.testsuite"))) {
-                descriptor.addClasses(targetName);
-            }
-        }
     }
 
     /**
@@ -880,7 +878,7 @@ class KeycloakProcessor {
                     AdminRoot.class.getName())), false));
         }
 
-        if (!MultiSiteUtils.isMultiSiteEnabled()) {
+        if (!MultiSiteUtils.isMultiSiteEnabled() && !Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
             buildTimeConditionBuildItemBuildProducer.produce(new BuildTimeConditionBuildItem(index.getIndex().getClassByName(DotName.createSimple(
                     LoadBalancerResource.class.getName())), false));
         }
@@ -910,7 +908,13 @@ class KeycloakProcessor {
     @Produce(CryptoProviderInitBuildItem.class)
     @BuildStep
     @Record(ExecutionTime.STATIC_INIT)
-    void setCryptoProvider(KeycloakRecorder recorder) {
+    void initCrypto(KeycloakRecorder recorder) {
+        FipsMode fipsMode = getFipsMode();
+        recorder.setCryptoProvider(fipsMode);
+        recorder.configureTruststore(fipsMode);
+    }
+
+    private FipsMode getFipsMode() {
         FipsMode fipsMode = getOptionalValue(NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey())
                 .map(FipsMode::valueOfOption)
                 .orElse(FipsMode.DISABLED);
@@ -920,8 +924,7 @@ class KeycloakProcessor {
         } else if (fipsMode.isFipsEnabled() && !Profile.isFeatureEnabled(Profile.Feature.FIPS)) {
             throw new RuntimeException("FIPS mode cannot be enabled without enabling the FIPS feature --features=fips");
         }
-
-        recorder.setCryptoProvider(fipsMode);
+        return fipsMode;
     }
 
     @BuildStep(onlyIf = IsDevelopment.class)
@@ -1039,15 +1042,9 @@ class KeycloakProcessor {
 
             configureScriptDescriptor(descriptor, fileName -> {
                 // descriptor is at META-INF/
-                Path basePath = Path.of(url.getPath()).getParent().getParent();
-
-                String path = basePath.resolve(fileName).toString();
-                if (!path.startsWith(url.getProtocol())) {
-                    path = url.getProtocol() + ":" + path;
-                }
                 try {
-                    return new URI(path).toURL().openStream();
-                } catch (IOException | URISyntaxException e) {
+                    return new URL(url, "../" + fileName).openStream();
+                } catch (IOException e) {
                     throw new RuntimeException("Failed to read script file from: " + fileName);
                 }
             });
