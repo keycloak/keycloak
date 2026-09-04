@@ -9,8 +9,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.keycloak.common.util.DurationConverter;
 import org.keycloak.config.CachingOptions;
@@ -22,6 +26,7 @@ import org.keycloak.config.TransactionOptions;
 import org.keycloak.config.WildcardOptionsUtil;
 import org.keycloak.config.database.Database;
 import org.keycloak.config.database.Database.Vendor;
+import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -49,9 +54,12 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.getOption
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers.Datasources.appendDatasourceMappers;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
+import static org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
 
 public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     private static final Option<String> SYNTHETIC_RUNTIME_DB_OPTION = DB.toBuilder().synthetic().buildTime(false).build();
+    private static final Option<String> SYNTHETIC_RUNTIME_DB_OPTION_NO_DEFAULT =
+            DB.toBuilder().synthetic().buildTime(false).defaultValue(Optional.empty()).build();
     public static final String PG_TARGET_SERVER_TYPE = "quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType";
     public static final String PG_LOG_SERVER_ERROR_DETAIL = "quarkus.datasource.jdbc.additional-jdbc-properties.logServerErrorDetail";
     public static final String MSSQL_SEND_STRING_PARAMETER_AS_UNICODE = "quarkus.datasource.jdbc.additional-jdbc-properties.sendStringParametersAsUnicode";
@@ -286,7 +294,51 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .isEnabled(DatabasePropertyMappers::isMssqlSendStringParametersAsUnicode)
                         .build()
         ));
+
+        result.addAll(List.of(
+                fromOption(DatabaseOptions.DB_DIALECT)
+                        .mapFrom(DatabaseOptions.DB_DIALECT)
+                        .to("quarkus.hibernate-orm.dialect")
+                        .build(),
+                fromOption(SYNTHETIC_RUNTIME_DB_OPTION_NO_DEFAULT)
+                        .mapFrom(DatabaseOptions.DB_SQL_JPA_DEBUG,
+                                (name, value, context) -> Boolean.parseBoolean(value) ? Boolean.TRUE.toString() : null)
+                        .to("quarkus.hibernate-orm.unsupported-properties.\"hibernate.use_sql_comments\"")
+                        .build(),
+                fromOption(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES)
+                        .mapFrom(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES)
+                        .to("quarkus.hibernate-orm.log.queries-slower-than-ms")
+                        .build()
+        ));
+
+        result.addAll(namedQueryMappers());
+
         return result;
+    }
+
+    private static List<PropertyMapper<?>> namedQueryMappers() {
+        Set<String> queryKeys = new TreeSet<>();
+
+        var kindToNamedQueries = Database.getDatabaseAliases().stream()
+                .map(Database::getDatabaseKind)
+                .flatMap(Optional::stream)
+                .distinct()
+                .collect(Collectors.toMap(Function.identity(), JpaUtils::loadSpecificNamedQueries));
+
+        kindToNamedQueries.values().forEach((namedQueries) -> queryKeys.addAll(namedQueries.stringPropertyNames()));
+
+        List<PropertyMapper<?>> mappers = new ArrayList<>();
+        for (String queryKey : queryKeys) {
+            mappers.add(fromOption(SYNTHETIC_RUNTIME_DB_OPTION_NO_DEFAULT)
+                    .mapFrom(DB, (name, db, context) -> db == null ? null
+                            : Database.getDatabaseKind(db)
+                                    .map(kindToNamedQueries::get)
+                                    .map(named -> named.getProperty(queryKey))
+                                    .orElse(null))
+                    .to("quarkus.hibernate-orm.unsupported-properties.\"" + QUERY_PROPERTY_PREFIX + queryKey + "\"")
+                    .build());
+        }
+        return mappers;
     }
 
     @Override

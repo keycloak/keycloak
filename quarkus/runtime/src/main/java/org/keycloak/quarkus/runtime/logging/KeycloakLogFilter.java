@@ -18,7 +18,9 @@
 package org.keycloak.quarkus.runtime.logging;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Filter;
@@ -31,6 +33,7 @@ import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory;
 
 import io.quarkus.bootstrap.logging.InitialConfigurator;
 import io.quarkus.logging.LoggingFilter;
@@ -51,6 +54,10 @@ public abstract class KeycloakLogFilter implements Filter {
     // avoid logging ISPN000312 for sessions, offlineSessions, clientSessions and offlineClientSessions caches only.
     private static final Pattern ISPN000312_PATTERN = Pattern.compile(
             "^\\[Context=(" + String.join("|", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME) + ")] ISPN000312: .*");
+
+    // unsupported properties Keycloak sets
+    private static final Set<String> KEYCLOAK_DEFAULT_UNSUPPORTED_PROPERTIES = Set.of(
+            "hibernate.order_inserts", "hibernate.query.startup_check", "hibernate.jdbc.log.errors", "hibernate.use_sql_comments");
 
     // Use this thread pool to asynchronously log from virtual threads, which could otherwise be pinned and lead to deadlocks.
     // A single thread ensures that all log entries appear in the correct order.
@@ -104,11 +111,47 @@ public abstract class KeycloakLogFilter implements Filter {
             }
         }
 
+        // Suppress the Hibernate ORM "unsupported properties" WARN(s) that FastBootHibernatePersistenceProvider emits
+        // for the default persistence unit; see isDefaultPersistenceUnitUnsupportedPropertiesWarning.
+        if (isDefaultPersistenceUnitUnsupportedPropertiesWarning(record)) {
+            return false;
+        }
+
         if (executor != null && ThreadCreator.isVirtual(Thread.currentThread())) {
             executor.submit(new RecordLogger(ExtLogRecord.wrap(record), this));
             return false;
         }
 
+        return true;
+    }
+
+    static boolean isDefaultPersistenceUnitUnsupportedPropertiesWarning(LogRecord record) {
+        if (!Objects.equals(record.getLevel(), Level.WARNING)
+                || !"io.quarkus.hibernate.orm.runtime.FastBootHibernatePersistenceProvider".equals(record.getLoggerName())) {
+            return false;
+        }
+        String message = record.getMessage();
+        if (message == null || !message.startsWith("Persistence-unit [") || !message.contains("unsupported properties")) {
+            return false;
+        }
+        Object[] parameters = record.getParameters();
+        if (parameters == null || parameters.length < 2 || !"<default>".equals(String.valueOf(parameters[0]))) {
+            return false;
+        }
+        return isOnlyKeycloakContributed(parameters[1]);
+    }
+
+    private static boolean isOnlyKeycloakContributed(Object keys) {
+        if (!(keys instanceof Collection<?> collection) || collection.isEmpty()) {
+            return false;
+        }
+        for (Object key : collection) {
+            String name = String.valueOf(key);
+            if (!KEYCLOAK_DEFAULT_UNSUPPORTED_PROPERTIES.contains(name)
+                    && !name.startsWith(QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX)) {
+                return false;
+            }
+        }
         return true;
     }
 
