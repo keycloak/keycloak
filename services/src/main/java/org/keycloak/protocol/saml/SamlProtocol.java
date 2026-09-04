@@ -69,6 +69,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.RealmExpiration;
 import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.ProtocolMapper;
@@ -501,7 +502,7 @@ public class SamlProtocol implements LoginProtocol {
                 .issuer(responseIssuer)
                 .assertionExpiration(assertionLifespan <= 0? realm.getAccessCodeLifespan() : assertionLifespan)
                 .subjectExpiration(assertionLifespan <= 0? realm.getAccessTokenLifespan() : assertionLifespan)
-                .sessionExpiration(realm.getSsoSessionMaxLifespan())
+                .sessionExpiration(RealmExpiration.fromRealm(realm).getLifespan(userSession.isRememberMe()))
                 .requestIssuer(clientSession.getClient().getClientId())
                 .authMethod(JBossSAMLURIConstants.AC_UNSPECIFIED.get());
 
