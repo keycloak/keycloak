@@ -112,8 +112,11 @@ public class CredentialHelper {
 
     /**
      * Create RecoveryCodes credential either in userStorage or local storage (Keycloak DB)
+     *
+     * @return the credential created in the local storage, or {@code null} when it was created in the userStorage
+     * and hence there is no Keycloak credential ID available
      */
-    public static void createRecoveryCodesCredential(KeycloakSession session, RealmModel realm, UserModel user, RecoveryAuthnCodesCredentialModel credentialModel, List<String> generatedCodes) {
+    public static CredentialModel createRecoveryCodesCredential(KeycloakSession session, RealmModel realm, UserModel user, RecoveryAuthnCodesCredentialModel credentialModel, List<String> generatedCodes) {
         var recoveryCodeCredentialProvider = session.getProvider(CredentialProvider.class, "keycloak-recovery-authn-codes");
         String recoveryCodesJson;
         try {
@@ -126,8 +129,9 @@ public class CredentialHelper {
         boolean userStorageCreated = user.credentialManager().updateCredential(recoveryCodesCredential);
         if (userStorageCreated) {
             logger.debugf("Created RecoveryCodes credential for user '%s' in the user storage", user.getUsername());
+            return null;
         } else {
-            recoveryCodeCredentialProvider.createCredential(realm, user, credentialModel);
+            return recoveryCodeCredentialProvider.createCredential(realm, user, credentialModel);
         }
     }
 
