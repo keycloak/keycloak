@@ -719,7 +719,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         NOT_FORCED_RETURN_EXISTING  // the import is not forced and existing user is returned
     };
 
-    private boolean isUserProfileValid(RealmModel realm, UserModel user, LDAPObject ldapUser) {
+    private boolean isUserProfileValid(UserModel user) {
         // Opt-in: only validate against the User Profile if the provider is configured to do so
         boolean validateProfile = Boolean.parseBoolean(model.getConfig().getFirst(LDAPConstants.VALIDATE_USER_PROFILE));
 
@@ -808,7 +808,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
             // point would leave it partially updated with invalid data instead of actually preventing anything.
             // Likewise, when import is disabled, imported is the live LDAP-backed adapter used for lookup/auth,
             // so returning null here would break non-import flows rather than rejecting a local user creation.
-            if (model.isImportEnabled() && existingLocalUser == null && !isUserProfileValid(realm, imported, ldapUser)) {
+            if (model.isImportEnabled() && existingLocalUser == null && !isUserProfileValid(imported)) {
                 userProvider.removeUser(realm, imported);
                 return null;
             }
