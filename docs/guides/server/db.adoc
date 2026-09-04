@@ -662,10 +662,10 @@ To setup the JPA migrationStrategy (manual/update/validate) you should setup JPA
 .Setting the `migration-strategy` for the `quarkus` provider of the `connections-jpa` SPI
 <@kc.start parameters="--spi-connections-jpa--quarkus--migration-strategy=manual"/>
 
-If you want to get a SQL file for DB initialization, too, you have to add this additional SPI initializeEmpty (true/false):
+With the manual strategy, an empty database also results in a SQL file for the DB initialization. If you instead want an empty database to be initialized automatically while keeping manual migrations for upgrades, set the additional SPI option initializeEmpty to "true":
 
 .Setting the `initialize-empty` for the `quarkus` provider of the `connections-jpa` SPI
-<@kc.start parameters="--spi-connections-jpa--quarkus--initialize-empty=false"/>
+<@kc.start parameters="--spi-connections-jpa--quarkus--initialize-empty=true"/>
 
 In the same way the migrationExport to point to a specific file and location:
 
