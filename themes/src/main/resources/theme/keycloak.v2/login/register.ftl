@@ -1,5 +1,6 @@
 <#import "template.ftl" as layout>
 <#import "field.ftl" as field>
+<#import "buttons.ftl" as buttons>
 <#import "user-profile-commons.ftl" as userProfileCommons>
 <#import "register-commons.ftl" as registerCommons>
 <#import "password-validation.ftl" as validator>
@@ -40,16 +41,14 @@
                         document.getElementById("kc-register-form").requestSubmit();
                     }
                 </script>
-                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <button class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!} g-recaptcha"
-                            data-sitekey="${recaptchaSiteKey}" data-callback="onSubmitRecaptcha" data-action="${recaptchaAction}" type="submit" id="kc-submit">
-                        ${msg("doRegister")}
-                    </button>
-                </div>
+                <@buttons.actionGroup>
+                    <@buttons.button id="kc-submit" label="doRegister" extraClass=["g-recaptcha"]
+                        specialAttributes={"data-sitekey": recaptchaSiteKey, "data-callback": "onSubmitRecaptcha", "data-action": recaptchaAction} />
+                </@buttons.actionGroup>
             <#else>
-                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doRegister")}"/>
-                </div>
+                <@buttons.actionGroup>
+                    <@buttons.button id="kc-register" label="doRegister" />
+                </@buttons.actionGroup>
             </#if>
 
             <div class="${properties.kcFormGroupClass!} pf-v5-c-login__main-footer-band">
