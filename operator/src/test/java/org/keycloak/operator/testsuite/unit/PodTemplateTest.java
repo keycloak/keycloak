@@ -536,6 +536,7 @@ public class PodTemplateTest {
         assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.POD_IP));
         assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.CACHE_EMBEDDED_NODE_NAME)
                 && envVar.getValueFrom() != null
+                && envVar.getValueFrom().getFieldRef() != null
                 && "metadata.name".equals(envVar.getValueFrom().getFieldRef().getFieldPath()));
 
         var readiness = container.getReadinessProbe().getHttpGet();
