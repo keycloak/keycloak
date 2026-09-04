@@ -213,8 +213,10 @@ public class VerifyMessageProperties {
         PropertyResourceBundle bundle = getPropertyResourceBundle();
 
         PropertyResourceBundle bundleEnglish;
-        String englishFile = file.getAbsolutePath().replaceAll("resources-community", "resources")
-                .replaceAll("_[a-zA-Z-_]*\\.properties", "_en.properties");
+        File englishFile = resolveEnglishReferenceFile(file);
+        if (!englishFile.isFile()) {
+            throw new RuntimeException("unable to read file " + englishFile);
+        }
         try (FileInputStream fis = new FileInputStream(englishFile)) {
             bundleEnglish = new PropertyResourceBundle(fis);
         } catch (IOException e) {
@@ -325,6 +327,20 @@ public class VerifyMessageProperties {
             }
         }
         return value;
+    }
+
+    static File resolveEnglishReferenceFile(File translationFile) {
+        String englishFilePath = translationFile.getAbsolutePath()
+                .replaceAll("resources-community", "resources")
+                .replaceAll("_[a-zA-Z-_]*\\.properties", "_en.properties");
+        File englishFile = new File(englishFilePath);
+        if (!englishFile.isFile() && englishFilePath.contains("/theme/keycloak.v2/login/")) {
+            File remapped = new File(englishFilePath.replace("/theme/keycloak.v2/login/", "/theme/keycloak.v3/login/"));
+            if (remapped.isFile()) {
+                return remapped;
+            }
+        }
+        return englishFile;
     }
 
     private static String getEnglishValue(String key, PropertyResourceBundle bundleEnglish) {
