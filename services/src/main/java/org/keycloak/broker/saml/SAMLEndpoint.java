@@ -19,7 +19,9 @@ package org.keycloak.broker.saml;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.security.MessageDigest;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
@@ -82,6 +84,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
@@ -671,23 +674,59 @@ public class SAMLEndpoint {
                     identity.setToken(samlResponse);
                 }
 
-                ConditionsValidator.Builder cvb = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator)
-                        .clockSkewInMillis(1000 * config.getAllowedClockSkew());
+                ConditionsValidator validator;
                 try {
+                    ConditionsValidator.Builder cvb = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator)
+                            .clockSkewInMillis(1000 * config.getAllowedClockSkew());
                     String issuerURL = getEntityId(session.getContext().getUri(), realm);
                     cvb.addAllowedAudience(URI.create(issuerURL));
                     // getDestination has been validated to match request URL already so it matches SAML endpoint
                     if (responseType.getDestination() != null) {
                         cvb.addAllowedAudience(URI.create(responseType.getDestination()));
                     }
+                    validator = cvb.build();
                 } catch (IllegalArgumentException ex) {
                     // warning has been already emitted in DeploymentBuilder
+                    validator = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator)
+                            .clockSkewInMillis(1000 * config.getAllowedClockSkew())
+                            .build();
                 }
-                if (! cvb.build().isValid()) {
+
+                // Validate expiration
+                if (! validator.isValid()) {
                     logger.error("Assertion expired.");
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SAML_RESPONSE);
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.EXPIRED_CODE);
+                }
+
+                // CVE-2026-18967: Prevent OneTimeUse assertion replay attacks
+                if (validator.isOneTimeUse()) {
+                    // Reject OneTimeUse assertions without a finite validity window.
+                    // Without NotOnOrAfter the assertion is valid indefinitely per SAML spec,
+                    // so we cannot provide meaningful replay protection.
+                    if (! validator.hasNotOnOrAfter()) {
+                        logger.warnf("Assertion contains OneTimeUse but no NotOnOrAfter condition (cannot enforce replay protection). AssertionId=%s, realm=%s, idp=%s",
+                                assertion.getID(), realm.getName(), config.getAlias());
+                        event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                        event.error(Errors.INVALID_SAML_RESPONSE);
+                        return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST,
+                                Messages.IDENTITY_PROVIDER_INVALID_RESPONSE);
+                    }
+                    SingleUseObjectProvider singleUseObjects = session.singleUseObjects();
+                    // Calculate lifespan: use notOnOrAfter minus current time, with a reasonable maximum
+                    long maxIdleSeconds = calculateOneTimeUseMaxIdleSeconds(assertion.getConditions());
+                    // Derive a namespaced, fixed-length key to avoid DB length limits and cross-realm collisions
+                    String singleUseKey = buildSingleUseKey(assertion.getID());
+                    // Atomically check-and-insert: returns true only if the assertion ID was not already present
+                    if (! singleUseObjects.putIfAbsent(singleUseKey, maxIdleSeconds)) {
+                        logger.warnf("Assertion contains OneTimeUse but was already used (potential replay attack). AssertionId=%s, realm=%s, idp=%s",
+                                assertion.getID(), realm.getName(), config.getAlias());
+                        event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                        event.error(Errors.INVALID_SAML_RESPONSE);
+                        return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST,
+                                Messages.IDENTITY_PROVIDER_INVALID_RESPONSE);
+                    }
                 }
 
                 AuthnStatementType authn = null;
@@ -1102,5 +1141,50 @@ public class SAMLEndpoint {
         }
 
         return true;
+    }
+
+    /**
+     * Calculates the maximum idle time (in seconds) for a OneTimeUse assertion ID.
+     * Uses the assertion's notOnOrAfter time if available, otherwise uses a longer default
+     * to cover the entire acceptance window when NotOnOrAfter is absent.
+     * Includes configured clock skew to match ConditionsValidator's acceptance window.
+     */
+    private long calculateOneTimeUseMaxIdleSeconds(org.keycloak.dom.saml.v2.assertion.ConditionsType conditions) {
+        if (conditions != null && conditions.getNotOnOrAfter() != null) {
+            long maxIdle = conditions.getNotOnOrAfter().toGregorianCalendar().getTimeInMillis() / 1000 - System.currentTimeMillis() / 1000;
+            // Add configured clock skew and one second to cover timestamp truncation.
+            maxIdle += config.getAllowedClockSkew() + 1;
+            // Use the calculated value if positive, otherwise use the default
+            if (maxIdle > 0) {
+                return maxIdle;
+            }
+        }
+        // If NotOnOrAfter is absent, use a longer default to cover the entire acceptance window.
+        // Without NotOnOrAfter the assertion is considered valid indefinitely, so use 24 hours
+        // as a practical upper bound for replay protection.
+        return 86400;
+    }
+
+    /**
+     * Builds a namespaced, fixed-length key for single-use assertion tracking.
+     * Combines realm name, IdP alias, and a SHA-256 hash of the assertion ID to:
+     * 1. Prevent database column length violations (key is always 64 hex chars)
+     * 2. Prevent cross-realm/cross-IdP assertion ID collisions
+     */
+    private String buildSingleUseKey(String assertionId) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            String input = realm.getName() + ":" + config.getAlias() + ":" + assertionId;
+            byte[] hash = md.digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(hash.length * 2);
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (java.security.NoSuchAlgorithmException e) {
+            // SHA-256 is guaranteed to be available in all JVMs; this should never happen
+            logger.errorv("SHA-256 algorithm not available, falling back to assertion ID: {0}", assertionId);
+            return assertionId;
+        }
     }
 }
