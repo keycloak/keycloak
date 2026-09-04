@@ -28,7 +28,11 @@ export const ErrorPage = (props: ErrorPageProps) => {
 
   return (
     <Page>
-      <Modal variant={ModalVariant.small} isOpen>
+      <Modal
+        variant={ModalVariant.small}
+        isOpen
+        aria-label={t("somethingWentWrong")}
+      >
         <ModalHeader
           title={t("somethingWentWrong")}
           titleIconVariant="danger"
@@ -40,7 +44,9 @@ export const ErrorPage = (props: ErrorPageProps) => {
             ) : networkErrorMessage && i18n.exists(networkErrorMessage) ? (
               <Content component="p">{t(networkErrorMessage)}</Content>
             ) : (
-              <Content component="p">{t("somethingWentWrongDescription")}</Content>
+              <Content component="p">
+                {t("somethingWentWrongDescription")}
+              </Content>
             )}
           </Content>
         </ModalBody>

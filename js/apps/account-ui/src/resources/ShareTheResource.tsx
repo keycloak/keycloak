@@ -4,18 +4,20 @@ import {
   useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
 import {
-	Label, LabelGroup, Button,
-	Form,
-	FormGroup,
-	InputGroup,
-	InputGroupItem,
-	Modal,
-	ModalBody,
-	ModalFooter,
-	ModalHeader,
-	TextInput,
-	ValidatedOptions
-} from '@patternfly/react-core';
+  Label,
+  LabelGroup,
+  Button,
+  Form,
+  FormGroup,
+  InputGroup,
+  InputGroupItem,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  TextInput,
+  ValidatedOptions,
+} from "@patternfly/react-core";
 import { useEffect } from "react";
 import {
   FormProvider,
@@ -120,82 +122,93 @@ export const ShareTheResource = ({
     return hasUsers && !alreadyShared;
   };
 
+  const modalTitle = t("shareTheResource", { name: resource.name });
+
   return (
-    <Modal variant="medium" isOpen={open} onClose={onClose}>
-      <ModalHeader title={t("shareTheResource", { name: resource.name })} />
+    <Modal
+      variant="medium"
+      isOpen={open}
+      onClose={onClose}
+      aria-label={modalTitle}
+    >
+      <ModalHeader title={modalTitle} />
       <ModalBody>
-      <Form id="share-form" onSubmit={handleSubmit(addShare)}>
-        <FormGroup
-          label={t("shareUser")}
-          type="string"
-          fieldId="users"
-          isRequired
-        >
-          <InputGroup>
-            <InputGroupItem>
-              <TextInput
-                id="users"
-                data-testid="users"
-                placeholder={t("usernamePlaceholder")}
-                validated={
-                  errors.usernames
-                    ? ValidatedOptions.error
-                    : ValidatedOptions.default
-                }
-                {...register(`usernames.${fields.length - 1}.value`, {
-                  validate: validateUser,
-                })}
-              />
-            </InputGroupItem>
-            <InputGroupItem>
-              <Button
-                key="add-user"
-                variant="primary"
-                data-testid="add"
-                onClick={() => append({ value: "" })}
-                isDisabled={isDisabled}
-              >
-                {t("add")}
-              </Button>
-            </InputGroupItem>
-          </InputGroup>
-          {fields.length > 1 && (
-            <LabelGroup categoryName={t("shareWith") + " "}>
-              {fields.map(
-                (field, index) =>
-                  index !== fields.length - 1 && (
-                    <Label variant="outline" key={field.id} onClose={() => remove(index)}>
-                      {field.value}
-                    </Label>
-                  ),
-              )}
-            </LabelGroup>
-          )}
-          {errors.usernames && (
-            <FormErrorText message={errors.usernames.message!} />
-          )}
-        </FormGroup>
-        <FormProvider {...form}>
+        <Form id="share-form" onSubmit={handleSubmit(addShare)}>
           <FormGroup
-            label=""
-            fieldId="permissions-selected"
-            data-testid="permissions"
+            label={t("shareUser")}
+            type="string"
+            fieldId="users"
+            isRequired
           >
-            <SelectControl
-              name="permissions"
-              variant="typeaheadMulti"
-              controller={{ defaultValue: [] }}
-              options={resource.scopes.map(({ name, displayName }) => ({
-                key: name,
-                value: displayName || name,
-              }))}
-            />
+            <InputGroup>
+              <InputGroupItem>
+                <TextInput
+                  id="users"
+                  data-testid="users"
+                  placeholder={t("usernamePlaceholder")}
+                  validated={
+                    errors.usernames
+                      ? ValidatedOptions.error
+                      : ValidatedOptions.default
+                  }
+                  {...register(`usernames.${fields.length - 1}.value`, {
+                    validate: validateUser,
+                  })}
+                />
+              </InputGroupItem>
+              <InputGroupItem>
+                <Button
+                  key="add-user"
+                  variant="primary"
+                  data-testid="add"
+                  onClick={() => append({ value: "" })}
+                  isDisabled={isDisabled}
+                >
+                  {t("add")}
+                </Button>
+              </InputGroupItem>
+            </InputGroup>
+            {fields.length > 1 && (
+              <LabelGroup categoryName={t("shareWith") + " "}>
+                {fields.map(
+                  (field, index) =>
+                    index !== fields.length - 1 && (
+                      <Label
+                        variant="outline"
+                        key={field.id}
+                        onClose={() => remove(index)}
+                      >
+                        {field.value}
+                      </Label>
+                    ),
+                )}
+              </LabelGroup>
+            )}
+            {errors.usernames && (
+              <FormErrorText message={errors.usernames.message!} />
+            )}
           </FormGroup>
-        </FormProvider>
-        <FormGroup>
-          <SharedWith permissions={permissions} />
-        </FormGroup>
-      </Form>
+          <FormProvider {...form}>
+            <FormGroup
+              label=""
+              fieldId="permissions-selected"
+              data-testid="permissions"
+            >
+              <SelectControl
+                name="permissions"
+                variant="typeaheadMulti"
+                controller={{ defaultValue: [] }}
+                options={resource.scopes.map(({ name, displayName }) => ({
+                  key: name,
+                  value: displayName || name,
+                }))}
+              />
+            </FormGroup>
+          </FormProvider>
+          <FormGroup>
+            <SharedWith permissions={permissions} />
+          </FormGroup>
+        </Form>
       </ModalBody>
       <ModalFooter>
         <Button
