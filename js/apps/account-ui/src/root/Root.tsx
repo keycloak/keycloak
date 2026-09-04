@@ -72,7 +72,7 @@ export const Root = () => {
             new URL(context.environment.baseUrl).pathname,
           ),
           element: (
-            <Page header={<Header />} sidebar={<PageNav />} isManagedSidebar>
+            <Page masthead={<Header />} sidebar={<PageNav />} isManagedSidebar>
               <Suspense fallback={<Spinner />}>
                 <Outlet />
               </Suspense>

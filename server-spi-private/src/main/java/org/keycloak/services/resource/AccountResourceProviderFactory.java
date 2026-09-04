@@ -12,6 +12,6 @@ public interface AccountResourceProviderFactory extends ProviderFactory<AccountR
 
     @Override
     default boolean isSupported(Config.Scope config) {
-        return Profile.isAnyVersionOfFeatureEnabled(Profile.Feature.ACCOUNT_V3);
+        return Profile.isAnyVersionOfFeatureEnabled(Profile.Feature.ACCOUNT_V4);
     }
 }

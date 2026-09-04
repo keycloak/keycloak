@@ -3,7 +3,7 @@ import { unversionedName } from "./useIsFeatureEnabled";
 
 describe("unversionedName", () => {
   it("strips version suffix from feature names", () => {
-    expect(unversionedName("ACCOUNT_V3")).toBe("ACCOUNT");
+    expect(unversionedName("ACCOUNT_V4")).toBe("ACCOUNT");
     expect(unversionedName("ADMIN_FINE_GRAINED_AUTHZ_V2")).toBe(
       "ADMIN_FINE_GRAINED_AUTHZ",
     );
