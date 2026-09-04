@@ -212,12 +212,15 @@ export const PageHandler = ({
             const client = await adminClient.clients.findOne({
               id: entityId,
             });
+            if (!client) {
+              throw new Error(`Client not found: ${entityId}`);
+            }
             await adminClient.clients.update(
               { id: entityId },
               {
                 ...client,
                 attributes: mergeEntityConfig(
-                  client?.attributes as Record<string, unknown>,
+                  client.attributes as Record<string, unknown>,
                   formData.config as Record<string, unknown>,
                   page.properties,
                   "string-map",
@@ -229,12 +232,15 @@ export const PageHandler = ({
         case "USER":
           if (entityId) {
             const user = await adminClient.users.findOne({ id: entityId });
+            if (!user) {
+              throw new Error(`User not found: ${entityId}`);
+            }
             await adminClient.users.update(
               { id: entityId },
               {
                 ...user,
                 attributes: mergeEntityConfig(
-                  user?.attributes as Record<string, unknown>,
+                  user.attributes as Record<string, unknown>,
                   formData.config as Record<string, unknown>,
                   page.properties,
                   "list-map",
@@ -248,12 +254,15 @@ export const PageHandler = ({
             const idp = await adminClient.identityProviders.findOne({
               alias: entityId,
             });
+            if (!idp) {
+              throw new Error(`Identity provider not found: ${entityId}`);
+            }
             await adminClient.identityProviders.update(
               { alias: entityId },
               {
                 ...idp,
                 config: mergeEntityConfig(
-                  idp?.config as Record<string, unknown>,
+                  idp.config as Record<string, unknown>,
                   formData.config as Record<string, unknown>,
                   page.properties,
                   "string-map",
