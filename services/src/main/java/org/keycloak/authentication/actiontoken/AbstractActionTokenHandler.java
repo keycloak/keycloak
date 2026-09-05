@@ -106,6 +106,11 @@ public abstract class AbstractActionTokenHandler<T extends JsonWebToken> impleme
         return true;
     }
 
+    @Override
+    public boolean checkIsUserValid(T token, ActionTokenContext<T> tokenContext) {
+        return true;
+    }
+
     protected TokenVerifier.Predicate<DefaultActionToken> verifyEmail(ActionTokenContext<? extends DefaultActionToken> context) {
         return TokenUtils.checkThat(
             t -> t.getEmail() == null || t.getEmail().equals(context.getAuthenticationSession().getAuthenticatedUser().getEmail()),
