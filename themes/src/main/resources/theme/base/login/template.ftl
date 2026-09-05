@@ -1,4 +1,5 @@
 <#import "footer.ftl" as loginFooter>
+<#import "header.ftl" as loginHeader>
 <#import "theme-resources.ftl" as themeResourceTags>
 <#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
 <!DOCTYPE html>
@@ -105,6 +106,7 @@
              class="${properties.kcHeaderWrapperClass!}">${kcSanitize(msg("loginTitleHtml",(realm.displayNameHtml!'')))?no_esc}</div>
     </div>
     <div class="${properties.kcFormCardClass!}">
+        <@loginHeader.content/>
         <header class="${properties.kcFormHeaderClass!}">
             <#if realm.internationalizationEnabled  && locale.supported?size gt 1>
                 <div class="${properties.kcLocaleMainClass!}" id="kc-locale">
