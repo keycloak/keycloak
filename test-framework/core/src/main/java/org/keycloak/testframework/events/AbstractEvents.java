@@ -115,7 +115,7 @@ public abstract class AbstractEvents<R> {
     }
 
     void testStarted() {
-        // Discard events from the previous test's cleanup to avoid them leaking into this test's poll() window
+        // Discard events from cleanup and @BeforeEach setup to avoid them leaking into this test's poll() window
         skipAll();
         timeOffset = getCurrentTimeOffset();
     }

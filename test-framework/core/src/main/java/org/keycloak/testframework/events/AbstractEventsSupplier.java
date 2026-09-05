@@ -38,8 +38,15 @@ public abstract class AbstractEventsSupplier<E extends AbstractEvents, A extends
         return true;
     }
 
+    // Called twice: before @BeforeEach to exclude cleanup events from the previous test,
+    // and after @BeforeEach to exclude events generated during setup from the test's poll() window.
     @Override
     public void onBeforeEach(InstanceContext<E, A> instanceContext) {
+        instanceContext.getValue().testStarted();
+    }
+
+    @Override
+    public void onBeforeTestExecution(InstanceContext<E, A> instanceContext) {
         instanceContext.getValue().testStarted();
     }
 

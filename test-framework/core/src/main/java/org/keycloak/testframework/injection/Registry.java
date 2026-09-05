@@ -417,6 +417,12 @@ public class Registry implements AutoCloseable {
         }
     }
 
+    public void beforeTestExecution() {
+        for (InstanceContext i : deployedInstances) {
+            i.getSupplier().onBeforeTestExecution(i);
+        }
+    }
+
     private TestFrameworkExecutor getExecutor(Method testMethod) {
         return extensions.getTestFrameworkExecutors().stream().filter(TestFrameworkExecutorPredicates.shouldExecute(testMethod)).findFirst().orElse(null);
     }
