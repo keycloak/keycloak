@@ -170,8 +170,8 @@ public class AttributeMetadata {
      * Adds a condition restricting whether an unchanged value is allowed to bypass validation errors while the
      * attribute is read-only. See {@link #readOnlyBypassAllowed} for the rationale.
      */
-    public AttributeMetadata addReadOnlyBypassCondition(Predicate<AttributeContext> readOnlyBypassAllowed) {
-        this.readOnlyBypassAllowed.add(readOnlyBypassAllowed);
+    public AttributeMetadata addReadOnlyBypassCondition(Predicate<AttributeContext> condition) {
+        this.readOnlyBypassAllowed.add(condition);
         return this;
     }
 
