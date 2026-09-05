@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 
 import org.keycloak.common.util.TriConsumer;
 import org.keycloak.models.Model;
-import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -17,7 +16,7 @@ import com.fasterxml.jackson.databind.JsonNode;
  *
  * @see Attribute
  */
-public class AttributeMapper<M extends Model, R extends ResourceTypeRepresentation> {
+public class AttributeMapper<M extends Model, R> {
 
     private Attribute<M, R> attribute;
     private final TriConsumer<M, String, ?> modelSetter;
@@ -39,6 +38,13 @@ public class AttributeMapper<M extends Model, R extends ResourceTypeRepresentati
     public void setValue(R representation, Object value) {
         if (representationSetter != null) {
             ((TriConsumer<Attribute<M, R>, R, Object>) representationSetter).accept(attribute, representation, value);
+        }
+    }
+
+    public void setModelAttribute(M model, Object value) {
+        if (modelSetter != null) {
+            String name = attribute.getModelAttributeName();
+            ((TriConsumer<M, String, Object>) modelSetter).accept(model, name, value);
         }
     }
 
@@ -77,12 +83,17 @@ public class AttributeMapper<M extends Model, R extends ResourceTypeRepresentati
             Class<?> complexType = attribute.getComplexType();
 
             if (complexType == null) {
+                if (value == null || value.isNull()) {
+                    modelSetter.accept(model, name, null);
+                    return;
+                }
+
                 Set<String> values;
 
                 if (value.isArray()) {
-                    values =  value.valueStream().map(JsonNode::asText).collect(Collectors.toSet());
+                    values = value.valueStream().map(AttributeMapper::asMultivaluedString).collect(Collectors.toSet());
                 } else {
-                    values = Set.of(value.asText());
+                    values = Set.of(asMultivaluedString(value));
                 }
 
                 modelSetter.accept(model, name, values);
@@ -122,5 +133,12 @@ public class AttributeMapper<M extends Model, R extends ResourceTypeRepresentati
 
     void setAttribute(Attribute<M, R> attribute) {
         this.attribute = attribute;
+    }
+
+    private static String asMultivaluedString(JsonNode node) {
+        if (node.isObject() && node.has("value")) {
+            return node.get("value").asText();
+        }
+        return node.asText();
     }
 }

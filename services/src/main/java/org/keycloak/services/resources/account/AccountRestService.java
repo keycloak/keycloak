@@ -49,6 +49,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.http.HttpRequest;
@@ -70,6 +71,7 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.Auth;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.resources.ResourcesService;
@@ -379,12 +381,63 @@ public class AccountRestService {
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             String msg = String.format("No client with clientId: %s found.", clientId);
-            event.error(msg);
+            event.detail(Details.REASON, msg);
+            event.error(Errors.CLIENT_NOT_FOUND);
             throw ErrorResponse.error(msg, Response.Status.NOT_FOUND);
         }
 
         UserConsentManager.revokeConsentToClient(session, client, user);
         event.detail(Details.REVOKED_CLIENT, client.getClientId()).success();
+
+        return Response.noContent().build();
+    }
+
+    /**
+     * Ends all active online and offline sessions of the user for the client with the given client id.
+     * The client sessions are detached from the user sessions, and the client is notified
+     * via backchannel logout when supported. A user session that no longer has any client
+     * sessions afterward is removed.
+     *
+     * @param clientId client id to end the sessions for
+     * @return returns 204 if the sessions were ended
+     */
+    @Path("/applications/{clientId}/sessions")
+    @DELETE
+    @NoCache
+    public Response revokeApplicationSessions(final @PathParam("clientId") String clientId) {
+        checkAccountApiEnabled();
+        auth.require(AccountRoles.MANAGE_ACCOUNT);
+
+        event.event(EventType.LOGOUT);
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            // Return 204 instead of 404 to prevent client enumeration via this endpoint.
+            String msg = String.format("No client with clientId: %s found.", clientId);
+            event.detail(Details.REASON, msg);
+            event.error(Errors.CLIENT_NOT_FOUND);
+            return Response.noContent().build();
+        }
+
+        Stream.concat(session.sessions().getUserSessionsStream(realm, user), session.sessions().getOfflineUserSessionsStream(realm, user))
+                .filter(userSession -> userSession.getAuthenticatedClientSessionByClient(client.getId()) != null)
+                .toList() // collect to avoid concurrent modification.
+                .forEach(userSession -> {
+                    AuthenticationManager.backchannelLogoutUserSessionFromClient(session, realm, userSession, client,
+                            session.getContext().getUri(), headers);
+                    if (userSession.getAuthenticatedClientSessions().isEmpty()) {
+                        // The last client session was ended, remove the now empty user session as well.
+                        if (userSession.isOffline()) {
+                            session.sessions().removeOfflineUserSession(realm, userSession);
+                        } else {
+                            session.sessions().removeUserSession(realm, userSession);
+                        }
+                    }
+                    event.clone()
+                            .event(EventType.LOGOUT)
+                            .detail(Details.REVOKED_CLIENT, client.getClientId())
+                            .session(userSession)
+                            .success();
+                });
 
         return Response.noContent().build();
     }
@@ -438,7 +491,8 @@ public class AccountRestService {
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             String msg = String.format("No client with clientId: %s found.", clientId);
-            event.error(msg);
+            event.detail(Details.REASON, msg);
+            event.error(Errors.CLIENT_NOT_FOUND);
             throw ErrorResponse.error(msg, Response.Status.NOT_FOUND);
         }
 
@@ -483,12 +537,14 @@ public class AccountRestService {
             ClientScopeModel scopeModel = availableGrants.get(scopeRepresentation.getId());
             if (scopeModel == null) {
                 String msg = String.format("Scope id %s does not exist for client %s.", scopeRepresentation, consent.getClient().getName());
-                event.error(msg);
+                event.detail(Details.REASON, msg);
+                event.error(Errors.INVALID_SCOPE);
                 throw new IllegalArgumentException(msg);
             }
             if (ClientScopeModel.isParameterizedScope(scopeModel)) {
                 String msg = String.format("Cannot create Scope id %s for client %s because is parameterized.", scopeRepresentation, consent.getClient().getName());
-                event.error(msg);
+                event.detail(Details.REASON, msg);
+                event.error(Errors.INVALID_SCOPE);
                 throw new IllegalArgumentException(msg);
             }
             consent.addGrantedClientScope(scopeModel, null);

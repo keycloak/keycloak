@@ -185,9 +185,9 @@ public class LoginPageTest {
     public void testIdentityProviderCapitalization(){
         oauth.openLoginForm();
         // contains even name of sub-item - svg element in this case
-        assertThat(loginPage.findSocialButton("github").getText(), is("GitHub"));
-        assertThat(loginPage.findSocialButton("mysaml").getText(), is("mysaml"));
-        assertThat(loginPage.findSocialButton("myoidc").getText(), is("MyOIDC"));
+        assertThat(loginPage.findSocialButton("github").getText(), is("Sign in with GitHub"));
+        assertThat(loginPage.findSocialButton("mysaml").getText(), is("Sign in with mysaml"));
+        assertThat(loginPage.findSocialButton("myoidc").getText(), is("Sign in with MyOIDC"));
     }
 
 
@@ -351,9 +351,7 @@ public class LoginPageTest {
 
         oauth.openLoginForm();
         oauth.fillLoginForm("basic-user", "invalid-password");
-        loginPage.assertCurrent();
-
-        assertThat(loginPage.getUsernameInputError(), is("Invalid username or password."));
+        loginPage.waitForUsernameInputError("Invalid username or password.");
         loginPage.fillLogin("basic-user", "password");
         loginPage.submit();
 

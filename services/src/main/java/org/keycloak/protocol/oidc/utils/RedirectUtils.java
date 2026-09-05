@@ -49,7 +49,7 @@ public class RedirectUtils {
 
     public static final Set<String> LOOPBACK_INTERFACES = new HashSet<>(Arrays.asList("localhost", "127.0.0.1", "[::1]"));
 
-    private static final Set<String> FORBIDDEN_OIDC_PARAMS = Set.of(
+    static final Set<String> FORBIDDEN_OIDC_PARAMS = Set.of(
                                                                      OAuth2Constants.CODE,
                                                                      OAuth2Constants.ID_TOKEN,
                                                                      OAuth2Constants.ACCESS_TOKEN,
@@ -92,6 +92,10 @@ public class RedirectUtils {
     }
 
     public static String verifyRedirectUri(KeycloakSession session, String rootUrl, String redirectUri, Set<String> validRedirects, boolean requireRedirectUri) {
+        return verifyRedirectUri(session, rootUrl, redirectUri, validRedirects, requireRedirectUri, FORBIDDEN_OIDC_PARAMS);
+    }
+
+    public static String verifyRedirectUri(KeycloakSession session, String rootUrl, String redirectUri, Set<String> validRedirects, boolean requireRedirectUri, Set<String> forbiddenParams) {
         KeycloakUriInfo uriInfo = session.getContext().getUri();
         RealmModel realm = session.getContext().getRealm();
 
@@ -115,7 +119,7 @@ public class RedirectUtils {
             }
 
             // Check for HTTP Parameter Pollution - forbidden OIDC response parameters in redirect URI
-            if (containsForbiddenOidcParameters(originalRedirect)){
+            if (containsForbiddenOidcParameters(originalRedirect, forbiddenParams)) {
                 return null;
             }
 
@@ -159,19 +163,32 @@ public class RedirectUtils {
         }
     }
 
-    private static boolean containsForbiddenOidcParameters(URI originalRedirect) {
+    private static boolean containsForbiddenOidcParameters(URI originalRedirect, Set<String> forbiddenParams) {
+        if (forbiddenParams == null || forbiddenParams.isEmpty()) {
+            return false;
+        }
+        //Check query string
         String query = originalRedirect.getRawQuery();
-        if (query != null && !query.isEmpty()) {
-            MultivaluedHashMap<String, String> params =UriUtils.decodeQueryString(query);
-            for (String paramName : params.keySet()) {
-                if (FORBIDDEN_OIDC_PARAMS.contains(paramName.toLowerCase(Locale.ROOT))) {
-                    logger.warnf("Redirect URI rejected: contains forbidden OIDC parameter '%s' in query string: scheme=%s, host=%s, path=%s",
-                            paramName,
-                            originalRedirect.getScheme(),
-                            originalRedirect.getHost(),
-                            originalRedirect.getPath());
-                    return true;
-                }
+        if (hasForbiddenParams(query, forbiddenParams, "query", originalRedirect)) {
+            return true;
+        }
+
+        // Check fragment (response_mode=fragment puts OIDC params here)
+        String fragment = originalRedirect.getRawFragment();
+        return hasForbiddenParams(fragment, forbiddenParams, "fragment", originalRedirect);
+    }
+
+    private static boolean hasForbiddenParams(String paramString, Set<String> forbiddenParams, String component, URI originalRedirect) {
+        if (paramString == null || paramString.isEmpty()) {
+            return false;
+        }
+        MultivaluedHashMap<String, String> params = UriUtils.decodeQueryString(paramString);
+        for (String paramName : params.keySet()) {
+            if (forbiddenParams.stream().map(param -> param.toLowerCase(Locale.ROOT))
+                    .anyMatch(paramName.toLowerCase(Locale.ROOT)::equals)) {
+                logger.warnf("Redirect URI rejected: contains forbidden OIDC parameter '%s' in %s: scheme=%s, host=%s, path=%s",
+                        paramName, component, originalRedirect.getScheme(), originalRedirect.getHost(), originalRedirect.getPath());
+                return true;
             }
         }
         return false;

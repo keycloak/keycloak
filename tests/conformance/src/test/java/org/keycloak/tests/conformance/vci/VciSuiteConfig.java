@@ -20,8 +20,8 @@ package org.keycloak.tests.conformance.vci;
 import java.net.URI;
 import java.util.List;
 
-import org.keycloak.tests.conformance.runner.BrowserFlow;
-import org.keycloak.tests.conformance.runner.BrowserInteraction;
+import org.keycloak.testframework.conformance.runner.BrowserFlow;
+import org.keycloak.testframework.conformance.runner.BrowserInteraction;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -40,12 +40,12 @@ record VciSuiteConfig(
         Client client2,
         List<BrowserFlow> browser) {
 
-    static VciSuiteConfig create(URI keycloakBaseUri, JsonNode attesterJwks, String trustAnchorPem,
-            BrowserInteraction browserInteraction) {
+    static VciSuiteConfig create(URI keycloakBaseUri, String credentialConfigurationId, JsonNode attesterJwks,
+            String trustAnchorPem, BrowserInteraction browserInteraction) {
         return new VciSuiteConfig(
                 "keycloak",
                 new Vci(keycloakBaseUri + "/realms/" + VciConformanceRealmConfig.REALM,
-                        VciConformanceRealmConfig.CREDENTIAL_CONFIGURATION_ID,
+                        credentialConfigurationId,
                         "https://example.com/client-attester",
                         attesterJwks,
                         attesterJwks),

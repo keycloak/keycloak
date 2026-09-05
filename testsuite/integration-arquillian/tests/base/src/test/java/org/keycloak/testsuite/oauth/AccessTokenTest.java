@@ -217,6 +217,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         });
 
         oauth.doLogin("test-user@localhost", "password");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         runOnServerMaster.run(session -> {
             Statistics stats = statistics(session);
@@ -230,7 +231,10 @@ public class AccessTokenTest extends AbstractKeycloakTest {
                 assertEquals(0, stats.getEntityStatistics("org.keycloak.models.jpa.session.PersistentUserSessionEntity").getFetchCount());
                 // authentication session
                 assertEquals(1, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getLoadCount());
-                assertEquals(0, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getUpdateCount());
+                // AuthenticationProcessor.setTimestamp() updates the root auth session's timestamp to extend its lifetime.
+                // If a second boundary is crossed during the login flow, Hibernate detects the changed timestamp
+                // and issues an UPDATE; otherwise the value is unchanged and no UPDATE occurs.
+                assertThat(stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getUpdateCount(), lessThanOrEqualTo(1L));
                 assertEquals(1, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getInsertCount());
                 assertEquals(1, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getDeleteCount());
                 assertEquals(0, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getFetchCount());

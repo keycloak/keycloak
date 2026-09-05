@@ -93,19 +93,20 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         createUser("consumer");
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
         waitForPage(driver, "update account information", false);
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
                 "We must be on correct realm right now");
         log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation("consumer", "consumer-user@redhat.com", "FirstName", "LastName");
 
         waitForPage(driver, "account already exists", false);
-        assertTrue(idpConfirmLinkPage.isCurrent());
+        idpConfirmLinkPage.assertCurrent();
         assertEquals("User with username consumer already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
     }
 
@@ -119,12 +120,13 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         String existingUser = createUser("consumer");
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
         waitForPage(driver, "account already exists", false);
-        assertTrue(idpConfirmLinkPage.isCurrent());
+        idpConfirmLinkPage.assertCurrent();
         assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickLinkAccount();
 
@@ -136,14 +138,10 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         } catch (NoSuchElementException expected) {
         }
 
-        try {
-            this.loginPage.clickRegister();
-            Assertions.fail("Not expected to see register link");
-        } catch (NoSuchElementException expected) {
-        }
+        assertFalse(this.loginPage.isRegisterLinkPresent(), "Not expected to see register link");
 
         loginPage.login("password");
-        Assertions.assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         assertNumFederatedIdentities(existingUser, 1);
     }
@@ -158,12 +156,13 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         String anotherUser = createUser("foobar", "foo@bar.baz");
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
         waitForPage(driver, "account already exists", false);
-        assertTrue(idpConfirmLinkPage.isCurrent());
+        idpConfirmLinkPage.assertCurrent();
         assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickLinkAccount();
 
@@ -175,14 +174,10 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         } catch (NoSuchElementException expected) {
         }
 
-        try {
-            this.loginPage.clickRegister();
-            Assertions.fail("Not expected to see register link");
-        } catch (NoSuchElementException expected) {
-        }
+        assertFalse(this.loginPage.isRegisterLinkPresent(), "Not expected to see register link");
 
         loginPage.login("foobar", "password");
-        Assertions.assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         assertNumFederatedIdentities(existingUser, 0);
         assertNumFederatedIdentities(anotherUser, 1);
@@ -198,7 +193,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         String existingUser = createUser("consumer");
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
@@ -210,14 +206,10 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         } catch (NoSuchElementException expected) {
         }
 
-        try {
-            this.loginPage.clickRegister();
-            Assertions.fail("Not expected to see register link");
-        } catch (NoSuchElementException expected) {
-        }
+        assertFalse(this.loginPage.isRegisterLinkPresent(), "Not expected to see register link");
 
         loginPage.login("consumer", "password");
-        Assertions.assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         assertNumFederatedIdentities(existingUser, 1);
     }
@@ -232,7 +224,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
             String existingUser = createUser("consumer");
 
             oauth.client("broker-app");
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
 
             logInWithBroker(bc);
 
@@ -244,24 +237,16 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
             } catch (NoSuchElementException expected) {
             }
 
-            try {
-                this.loginPage.clickRegister();
-                Assertions.fail("Not expected to see register link");
-            } catch (NoSuchElementException expected) {
-            }
+            assertFalse(this.loginPage.isRegisterLinkPresent(), "Not expected to see register link");
 
             loginPage.login("consumer", "wrongpassword");
-            Assertions.assertTrue(loginPage.isCurrent(bc.consumerRealmName()));
+            loginPage.assertCurrent();
 
             assertNumFederatedIdentities(existingUser, 0);
 
             assertEquals("Invalid username or password.", loginPage.getInputError());
 
-            try {
-                this.loginPage.clickRegister();
-                Assertions.fail("Not expected to see register link");
-            } catch (NoSuchElementException expected) {
-            }
+            assertFalse(this.loginPage.isRegisterLinkPresent(), "Not expected to see register link");
         } finally {
             revertRegistrationAllowedModification.run();
         }
@@ -276,12 +261,13 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         String existingUser = createUser("consumer");
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
         waitForPage(driver, "account already exists", false);
-        assertTrue(idpConfirmLinkPage.isCurrent());
+        idpConfirmLinkPage.assertCurrent();
         assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickLinkAccount();
 
@@ -293,11 +279,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         } catch (NoSuchElementException expected) {
         }
 
-        try {
-            this.loginPage.clickRegister();
-            Assertions.fail("Not expected to see register link");
-        } catch (NoSuchElementException expected) {
-        }
+        assertFalse(this.loginPage.isRegisterLinkPresent(), "Not expected to see register link");
 
         loginPage.resetPassword();
         loginPasswordResetPage.assertCurrent();
@@ -314,7 +296,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         String existingUser = createUser("consumer");
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
@@ -326,11 +309,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         } catch (NoSuchElementException expected) {
         }
 
-        try {
-            this.loginPage.clickRegister();
-            Assertions.fail("Not expected to see register link");
-        } catch (NoSuchElementException expected) {
-        }
+        assertFalse(this.loginPage.isRegisterLinkPresent(), "Not expected to see register link");
 
         loginPage.resetPassword();
         loginPasswordResetPage.assertCurrent();
@@ -354,7 +333,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         providerUser.update(userResource);
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -405,7 +385,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         // Use correct password now
         loginPage.login("password");
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         assertNumFederatedIdentities(userId, 1);
     }
 
@@ -428,7 +408,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         providerUser.update(userResource);
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -451,7 +432,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         // Use correct password now
         loginPage.login(bc.getUserLogin(), "password");
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         assertNumFederatedIdentities(userId, 1);
         userResource = providerUser.toRepresentation();
         assertEquals("changed@kc.org", userResource.getEmail());
@@ -482,7 +463,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         providerUser.update(userResource);
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
@@ -507,7 +489,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         this.passwordUpdatePage.assertCurrent();
         this.passwordUpdatePage.changePassword("password", "password");
 
-        Assertions.assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         assertNumFederatedIdentities(existingUser, 1);
     }
 
@@ -534,7 +516,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         String existingUser = createUser("consumer");
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
@@ -546,11 +529,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         } catch (NoSuchElementException expected) {
         }
 
-        try {
-            this.loginPage.clickRegister();
-            Assertions.fail("Not expected to see register link");
-        } catch (NoSuchElementException expected) {
-        }
+        assertFalse(this.loginPage.isRegisterLinkPresent(), "Not expected to see register link");
 
         configureSMTPServer();
 
@@ -569,7 +548,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         this.passwordUpdatePage.assertCurrent();
         this.passwordUpdatePage.changePassword("password", "password");
 
-        Assertions.assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         assertNumFederatedIdentities(existingUser, 1);
     }
 
@@ -598,7 +577,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         providerUser.update(userResource);
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
@@ -659,12 +639,13 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
         waitForPage(driver, "account already exists", false);
-        assertTrue(idpConfirmLinkPage.isCurrent());
+        idpConfirmLinkPage.assertCurrent();
     }
 
 
@@ -678,11 +659,12 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
                 "We must be on correct realm right now");
 
@@ -702,11 +684,12 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateExecutions(AbstractBrokerTest::enableRequirePassword);
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
                 "We must be on correct realm right now");
 
@@ -716,7 +699,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         waitForPage(driver, "update password", false);
         updatePasswordPage.updatePasswords("password", "password");
 
-        Assertions.assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
@@ -734,30 +717,31 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         userResource.update(consumerUser);
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
         waitForPage(driver, "update account information", false);
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
 
         waitForPage(driver, "account already exists", false);
-        assertTrue(idpConfirmLinkPage.isCurrent());
+        idpConfirmLinkPage.assertCurrent();
         assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickReviewProfile();
 
         waitForPage(driver, "update account information", false);
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("consumer", "test@localhost.com", "FirstName", "LastName");
 
         waitForPage(driver, "account already exists", false);
-        assertTrue(idpConfirmLinkPage.isCurrent());
+        idpConfirmLinkPage.assertCurrent();
         assertEquals("User with username consumer already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickReviewProfile();
 
         waitForPage(driver, "update account information", false);
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("test", "test@localhost.com", "FirstName", "LastName");
 
         UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(adminClient.realm(bc.consumerRealmName()), "test");
@@ -793,7 +777,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         response.close();
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
@@ -819,11 +804,12 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         realm.update(realmRep);
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
                 "We must be on correct realm right now");
 
@@ -852,12 +838,13 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         //test
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
         waitForPage(driver, "update account information", false);
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
                 "We must be on correct realm right now");
 
@@ -873,6 +860,17 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         log.info("navigating to url from email: " + url);
         driver.navigate().to(url);
+
+
+        verifyEmailPage.assertCurrent();
+        assertFalse(realm.users().get(linkedUserId).toRepresentation().isEmailVerified());
+
+        assertEquals(2, mail.getReceivedMessages().length);
+        String verificationUrl = assertEmailAndGetUrl(mail.getLastReceivedMessage(), MailServerConfiguration.FROM, USER_EMAIL,
+                "verify your email address");
+
+        log.info("navigating to url from email: " + verificationUrl);
+        driver.navigate().to(verificationUrl.trim());
 
         //test if user is logged in
         assertTrue(driver.getCurrentUrl().startsWith(getConsumerRoot() + "/auth/realms/master/app/"));
@@ -897,12 +895,13 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         //test
         oauth.config().client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
         waitForPage(driver, "update account information", false);
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
                 "We must be on correct realm right now");
 
@@ -918,7 +917,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
 
         loginPage.login("password");
-        Assertions.assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         assertNumFederatedIdentities(linkedUserId, 1);
     }
@@ -941,7 +940,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         //test
         oauth.config().client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
@@ -956,7 +956,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
 
         loginPage.login("password");
-        Assertions.assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         assertNumFederatedIdentities(linkedUserId, 1);
     }
@@ -982,7 +982,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         configureSMTPServer();
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
@@ -1015,7 +1016,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         createUser(bc.providerRealmName(), "no-email", "password", "FirstName", "LastName", null);
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -1050,7 +1052,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         identityProviderResource.update(idpRep);
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
@@ -1086,7 +1089,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         configureSMTPServer();
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
@@ -1123,36 +1127,47 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         configureSMTPServer();
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
         //link account by email
         waitForPage(driver, "update account information", false);
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
         waitForPage(driver, "account already exists", false);
-        assertTrue(idpConfirmLinkPage.isCurrent());
+        idpConfirmLinkPage.assertCurrent();
         assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickLinkAccount();
 
         String url = assertEmailAndGetUrl(mail.getLastReceivedMessage(), MailServerConfiguration.FROM, USER_EMAIL,
                 "Someone wants to link your ");
         driver.navigate().to(url);
+
+        //confirm the account linking does not verify the email, the verify email required action follows
+        verifyEmailPage.assertCurrent();
+        assertFalse(adminClient.realm(bc.consumerRealmName()).users().get(consumerUser.getId()).toRepresentation().isEmailVerified());
+
+        assertEquals(2, mail.getReceivedMessages().length);
+        String verificationUrl = assertEmailAndGetUrl(mail.getLastReceivedMessage(), MailServerConfiguration.FROM, USER_EMAIL,
+                "verify your email address");
+        driver.navigate().to(verificationUrl.trim());
+
         //test if user is logged in
         assertTrue(driver.getCurrentUrl().startsWith(getConsumerRoot() + "/auth/realms/master/app/"));
         //test if the user has verified email
         assertTrue(adminClient.realm(bc.consumerRealmName()).users().get(consumerUser.getId()).toRepresentation().isEmailVerified());
 
         driver.navigate().to(url);
-        waitForPage(driver, "your email address has been verified already.", false);
+        waitForPage(driver, "account linking already confirmed", false);
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), "consumer");
 
         driver.navigate().to(url);
-        waitForPage(driver, "your email address has been verified already.", false);
+        waitForPage(driver, "account linking already confirmed", false);
 
         driver2.navigate().to(url);
-        waitForPage(driver, "your email address has been verified already.", false);
+        waitForPage(driver, "account linking already confirmed", false);
     }
 
     @Test
@@ -1168,16 +1183,17 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         configureSMTPServer();
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
         //link account by email
         waitForPage(driver, "update account information", false);
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
         waitForPage(driver, "account already exists", false);
-        assertTrue(idpConfirmLinkPage.isCurrent());
+        idpConfirmLinkPage.assertCurrent();
         assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickLinkAccount();
         idpLinkEmailPage.assertCurrent();
@@ -1190,7 +1206,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertThat(driver2.findElement(By.id("kc-page-title")).getText(), startsWith("Confirm linking the account"));
         assertThat(driver2.findElement(By.className("instruction")).getText(), startsWith("If you link the account, you will also be able to login using account"));
         driver2.findElement(By.linkText("» Click here to proceed")).click();
-        assertThat(driver2.findElement(By.className("instruction")).getText(), startsWith("You successfully verified your email."));
+        assertThat(driver2.findElement(By.className("instruction")).getText(), startsWith("You successfully confirmed linking your account"));
 
         idpLinkEmailPage.continueLink();
 
@@ -1218,7 +1234,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         // begin login with idp
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInWithBroker(bc);
 
         // update account profile
@@ -1257,16 +1274,17 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         configureSMTPServer();
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
         //link account by email
         waitForPage(driver, "update account information", false);
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
         waitForPage(driver, "account already exists", false);
-        assertTrue(idpConfirmLinkPage.isCurrent());
+        idpConfirmLinkPage.assertCurrent();
         assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickLinkAccount();
 
@@ -1293,7 +1311,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         waitForPage(driver, "update account information", false);
 
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
                 "We must be on correct realm right now");
 
@@ -1320,7 +1338,21 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         MatcherAssert.assertThat(link, Matchers.containsString("client_id=broker-app"));
         proceedLink.click();
 
-        assertThat(driver2.getPageSource(), Matchers.containsString("You successfully verified your email. Please go back to your original browser and continue there with the login."));
+        assertThat(driver2.getPageSource(), Matchers.containsString("Please go back to your original browser and continue there with the login."));
+
+        //confirm the account linking does not verify the email
+        assertFalse(consumerRealm.users().get(linkedUserId).toRepresentation().isEmailVerified());
+
+        idpLinkEmailPage.continueLink();
+        verifyEmailPage.assertCurrent();
+
+        assertEquals(2, mail.getReceivedMessages().length);
+        String verificationUrl = assertEmailAndGetUrl(mail.getLastReceivedMessage(), MailServerConfiguration.FROM, USER_EMAIL,
+                "verify your email address");
+        driver.navigate().to(verificationUrl.trim());
+
+        //test if user is logged in and redirected to the client used for the login, which is preserved
+        assertTrue(driver.getCurrentUrl().startsWith(getConsumerRoot() + "/auth/realms/" + bc.consumerRealmName() + "/app"));
 
         //test if the user has verified email
         assertTrue(consumerRealm.users().get(linkedUserId).toRepresentation().isEmailVerified());
@@ -1333,7 +1365,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         createUser(bc.providerRealmName(), "no-first-name", "password", null, "LastName", "no-first-name@localhost.com");
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -1385,7 +1418,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         createUser(bc.providerRealmName(), "no-first-name", "password", null, "LastName", "no-first-name@localhost.com");
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -1416,29 +1450,29 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
                 .details(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name");
 
         EventAssertion.assertSuccess(getFirstConsumerEvent()).type(EventType.UPDATE_EMAIL)
-            .clientId("broker-app")
-            .userId(null)
-            .sessionId(null)
-            .details(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name())
-            .details(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
-            .details(Details.PREVIOUS_EMAIL, "no-first-name@localhost.com")
-            .details(Details.UPDATED_EMAIL, "new-email@localhost.com");
+                .clientId("broker-app")
+                .userId(null)
+                .sessionId(null)
+                .details(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name())
+                .details(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
+                .details(Details.PREVIOUS_EMAIL, "no-first-name@localhost.com")
+                .details(Details.UPDATED_EMAIL, "new-email@localhost.com");
 
         EventAssertion.assertSuccess(getFirstConsumerEvent()).type(EventType.UPDATE_PROFILE).clientId("broker-app")
                 .userId(null)
                 .details(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name());
 
         EventAssertion.assertSuccess(events.poll()).type(EventType.REGISTER).clientId("broker-app")
-            .hasUserId()
-            .sessionId(null)
-            .details(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
-            .details(Details.REGISTER_METHOD, "broker");
+                .hasUserId()
+                .sessionId(null)
+                .details(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
+                .details(Details.REGISTER_METHOD, "broker");
 
         EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).clientId("broker-app")
-            .hasUserId()
-            .hasSessionId()
-            .details(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
-            .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias());
+                .hasUserId()
+                .hasSessionId()
+                .details(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
+                .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias());
     }
 
     protected EventRepresentation getFirstConsumerEvent() {
@@ -1460,7 +1494,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         createUser(bc.providerRealmName(), "no-first-name", "password", null, "LastName", "no-first-name@localhost.com");
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -1486,7 +1521,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         createUser(bc.providerRealmName(), "no-last-name", "password", "FirstName", null, "no-last-name@localhost.com");
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -1512,7 +1548,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         createUser(bc.providerRealmName(), "no-email", "password", "FirstName", "LastName", null);
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -1542,7 +1579,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         createUser(bc.providerRealmName(), "all-info-set", "password", "FirstName", "LastName", "all-info-set@localhost.com");
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -1568,7 +1606,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
@@ -1589,7 +1628,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         testingClient.server(bc.consumerRealmName()).run(configureAutoLinkFlow(bc.getIDPAlias()));
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 

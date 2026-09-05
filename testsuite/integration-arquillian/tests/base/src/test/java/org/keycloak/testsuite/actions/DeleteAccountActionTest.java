@@ -122,7 +122,7 @@ public class DeleteAccountActionTest extends AbstractTestRealmKeycloakTest {
 
     loginPage.login("test-user@localhost", "password");
 
-    Assertions.assertTrue(errorPage.isCurrent());
+    errorPage.assertCurrent();
 
     Assertions.assertEquals(errorPage.getError(), "You do not have enough permissions to delete your own account, contact admin.");
   }

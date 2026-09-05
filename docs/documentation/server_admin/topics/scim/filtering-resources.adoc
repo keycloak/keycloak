@@ -169,7 +169,6 @@ Combine group membership filters with logical operators:
 ----
 (groups.value eq "{groupIdA}") and (groups.value eq "{groupIdB}")
 (groups.value eq "{groupIdA}") or (groups.value eq "{groupIdB}")
-groups.value ne "{groupId}"
 ----
 
 Similarly, you can filter groups by member:
@@ -180,6 +179,13 @@ curl "http://localhost:8080/realms/myrealm/scim/v2/Groups?filter=members.value+e
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Accept: application/scim+json"
 ----
+
+NOTE: When fine-grained admin permissions (FGAP) are enabled, only the `eq` operator is supported for
+`groups.value` and `members.value` filter paths. The server verifies that the caller has `view` permission
+on the specific group or user being matched. Other operators (`ne`, `pr`, `co`, `sw`, `gt`, etc.) cannot be
+safely authorized because they can match rows the caller is not permitted to see, so they silently return
+empty results for these paths. This restriction does not apply to any other filter attributes, and does not
+apply when FGAP is disabled.
 
 NOTE: When an LDAP user federation provider is configured with a group mapper in `LDAP_ONLY` mode, group
 membership filters (`groups.value` and `members.value`) may return empty results. This happens because

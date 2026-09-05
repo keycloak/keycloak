@@ -207,6 +207,44 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testInviteExistingUserWithEmailCustomClient() throws IOException, MessagingException {
+        UserRepresentation user = createUser("invitedWithMatchingEmailCustomClientOnly", "invitedWithMatchingEmailCustomClientOnly@myemail.com");
+
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+
+        try (
+            ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "broker-app")
+                .setBaseUrl(OAuthClient.APP_AUTH_ROOT)
+                .update();
+            Response response = organization.members().inviteUser(user.getEmail(), "Homer", "Simpson", "broker-app")
+        ) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            acceptInvitation(organization, user, "AUTH_RESPONSE");
+        }
+    }
+
+    @Test
+    public void testInviteExistingUserCustomClientIgnoresOrgRedirectUrl() throws IOException, MessagingException {
+        UserRepresentation user = createUser("invitedCustomClientOrgRedirect", "invitedCustomClientOrgRedirect@myemail.com");
+
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+
+        try (
+            OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl("https://www.keycloak.org").update();
+            ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "broker-app")
+                .setBaseUrl(OAuthClient.APP_AUTH_ROOT)
+                .update();
+            Response response = organization.members().inviteUser(user.getEmail(), "Homer", "Simpson", "broker-app")
+        ) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            // the org redirect URL is ignored for a custom client; the user lands on the client base URL instead
+            acceptInvitation(organization, user, "AUTH_RESPONSE");
+        }
+    }
+
+    @Test
     public void testInviteWithAccountClientCustomBaseUrl() throws IOException, MessagingException {
         UserRepresentation user = createUser("invited", "invited@myemail.com");
 
@@ -320,7 +358,8 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         realm.setRegistrationAllowed(true);
         managedRealm.admin().update(realm);
         oauth.client("broker-app");
-        loginPage.open(realm.getRealm());
+        oauth.realm(realm.getRealm());
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
         String registerUrl = UriBuilder.fromUri(driver.getCurrentUrl())
@@ -348,6 +387,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         managedRealm.admin().update(realm);
         getCleanup().addCleanup(() -> {
             realm.setRegistrationFlow(DefaultAuthenticationFlows.REGISTRATION_FLOW);
+            managedRealm.admin().update(realm);
         });
 
         String email = "inviteduser@email";
@@ -401,6 +441,81 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testInviteNewUserRegistrationCustomClient() throws IOException, MessagingException {
+        String email = "invitedcustomclientonly@email";
+        String firstName = "Homer";
+        String lastName = "Simpson";
+
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+
+        try (
+            ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "broker-app")
+                .setBaseUrl(OAuthClient.APP_AUTH_ROOT)
+                .update();
+            Response response = organization.members().inviteUser(email, firstName, lastName, "broker-app")
+        ) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            URI link = URI.create(getInvitationLinkFromEmail());
+            NameValuePair clientIdParam = URLEncodedUtils.parse(link, StandardCharsets.UTF_8).stream()
+                    .filter((np) -> Constants.CLIENT_ID.equals(np.getName()))
+                    .findAny().orElse(null);
+
+            assertThat(clientIdParam, notNullValue());
+            assertThat(clientIdParam.getValue(), equalTo("broker-app"));
+
+            registerUser(organization, email);
+
+            List<UserRepresentation> users = managedRealm.admin().users().searchByEmail(email, true);
+            assertThat(users, not(empty()));
+            MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
+            Assertions.assertNotNull(member);
+            assertThat(member.getMembershipType(), equalTo(MembershipType.MANAGED));
+            getCleanup().addCleanup(() -> managedRealm.admin().users().get(users.get(0).getId()).remove());
+
+            assertThat(driver.getTitle(), containsString("AUTH_RESPONSE"));
+        }
+    }
+
+    @Test
+    public void testResendInvitationPreservesCustomClientId() throws IOException, MessagingException {
+        String email = "invitedresendclient@email";
+        String firstName = "Homer";
+        String lastName = "Simpson";
+
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+
+        try (
+            ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "broker-app")
+                .setBaseUrl(OAuthClient.APP_AUTH_ROOT)
+                .update();
+            Response response = organization.members().inviteUser(email, firstName, lastName, "broker-app")
+        ) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            URI firstLink = URI.create(getInvitationLinkFromEmail());
+            NameValuePair firstClientIdParam = URLEncodedUtils.parse(firstLink, StandardCharsets.UTF_8).stream()
+                    .filter((np) -> Constants.CLIENT_ID.equals(np.getName()))
+                    .findAny().orElse(null);
+            assertThat(firstClientIdParam, notNullValue());
+            assertThat(firstClientIdParam.getValue(), equalTo("broker-app"));
+
+            List<OrganizationInvitationRepresentation> invitations = organization.invitations().list();
+            assertThat(invitations, Matchers.hasSize(1));
+            try (Response resendResponse = organization.invitations().resend(invitations.get(0).getId())) {
+                assertThat(resendResponse.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+            }
+
+            URI resendLink = URI.create(getInvitationLinkFromEmail());
+            NameValuePair resendClientIdParam = URLEncodedUtils.parse(resendLink, StandardCharsets.UTF_8).stream()
+                    .filter((np) -> Constants.CLIENT_ID.equals(np.getName()))
+                    .findAny().orElse(null);
+            assertThat(resendClientIdParam, notNullValue());
+            assertThat(resendClientIdParam.getValue(), equalTo("broker-app"));
+        }
+    }
+
+    @Test
     public void testRegistrationEnabledWhenInvitingNewUser() throws Exception {
         String email = "inviteduser@email";
 
@@ -447,7 +562,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             String link = getInvitationLinkFromEmail();
             driver.navigate().to(link);
             Assertions.assertFalse(organization.members().list(-1, -1).stream().anyMatch(actual -> email.equals(actual.getEmail())));
-            registerPage.assertCurrent(organizationName);
+            registerPage.assertCurrent();
             registerPage.openLanguage("Portuguese");
             Assertions.assertTrue(driver.getPageSource().contains("Campos obrigatórios"));
             registerPage.register("firstName", "lastName", email,
@@ -547,7 +662,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         String link = getInvitationLinkFromEmail();
         driver.navigate().to(link);
         Assertions.assertFalse(organization.members().list(-1, -1).stream().anyMatch(actual -> email.equals(actual.getEmail())));
-        registerPage.assertCurrent(organizationName);
+        registerPage.assertCurrent();
         assertThat(registerPage.getEmail(), equalTo(expectedEmail));
         registerPage.register("firstName", "lastName", email,
                 "invitedUser", "password", "password", null, false, null);
@@ -585,7 +700,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         // Disable the organization after the invitation was sent
         try (OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setEnabled(false).update()) {
             driver.navigate().to(link);
-            assertThat(infoPage.isCurrent(), is(true));
+            infoPage.assertCurrent();
             assertThat(infoPage.getInfo(), containsString("The organization is not available at this time and cannot accept new members."));
 
             // User should not be added to organization
@@ -645,7 +760,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
             // Now try to use the invitation link (should fail)
             driver.navigate().to(invitationLink);
-            assertThat(infoPage.isCurrent(), is(true));
+            infoPage.assertCurrent();
             assertThat(infoPage.getInfo(), containsString("The link you clicked is no longer valid. It may have expired or already been used."));
             
             // User should not be created or added to organization
@@ -680,7 +795,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             driver.navigate().to(invitationLink);
             
             // Should show an error page saying invitation is no longer valid
-            assertThat(infoPage.isCurrent(), is(true));
+            infoPage.assertCurrent();
             assertThat(infoPage.getInfo(), containsString("The link you clicked is no longer valid. It may have expired or already been used."));
             
             // User should not be added to organization
@@ -716,7 +831,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
             // Now try to re-use the first invitation link (should fail)
             driver.navigate().to(firstInvitationLink);
-            assertThat(infoPage.isCurrent(), is(true));
+            infoPage.assertCurrent();
             assertThat(infoPage.getInfo(), containsString("The link you clicked is no longer valid. It may have expired or already been used."));
 
             // User should not be added to organization

@@ -91,7 +91,7 @@ public class Profile {
 
         TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW, 1, true, null, null),
         TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
-        TOKEN_EXCHANGE_DELEGATION("Token Exchange Delegation", Type.EXPERIMENTAL, Feature.PARAMETERIZED_SCOPES),
+        TOKEN_EXCHANGE_DELEGATION("Token Exchange Delegation", Type.EXPERIMENTAL, Feature.PARAMETERIZED_SCOPES, Feature.TOKEN_EXCHANGE_STANDARD_V2),
 
         JWT_AUTHORIZATION_GRANT("JWT Profile for Oauth 2.0 Authorization Grant", Type.DEFAULT),
 
@@ -103,7 +103,7 @@ public class Profile {
 
         PAR("OAuth 2.0 Pushed Authorization Requests (PAR)", Type.DEFAULT),
 
-        CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.PREVIEW),
+        CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.DEFAULT),
 
         STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
         STEP_UP_AUTHENTICATION_SAML("Step-up Authentication Saml", Type.DEFAULT, Feature.STEP_UP_AUTHENTICATION),
@@ -145,6 +145,7 @@ public class Profile {
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
         OID4VC_VCI_PREAUTH_CODE("Support for credential offers with `pre-authorized_code` grant.", Type.EXPERIMENTAL, OID4VC_VCI),
         OID4VC_VCI_REST_CREDENTIAL_OFFER("Support for the REST endpoint to create credential offers.", Type.EXPERIMENTAL, OID4VC_VCI),
+        OID4VC_MDOC("Support for OID4VC `mso_mdoc` credential type.", Type.EXPERIMENTAL), // Dependent on either VCI or VP, does nothing if neither is active
         OID4VC_VP("Support for the OID4VP protocol as part of OID4VC.", Type.EXPERIMENTAL),
 
         OPENTELEMETRY("OpenTelemetry support", Type.DEFAULT),
@@ -159,6 +160,7 @@ public class Profile {
         PASSKEYS_CONDITIONAL_UI_AUTHENTICATOR("Passkeys conditional UI authenticator", Type.DEPRECATED, FeatureUpdatePolicy.ROLLING_NO_UPGRADE, Feature.PASSKEYS),
 
         USER_EVENT_METRICS("Collect metrics based on user events", Type.DEFAULT),
+        LDAP_METRICS("Collect metrics based on LDAP interactions", Type.EXPERIMENTAL),
 
         IPA_TUURA_FEDERATION("IPA-Tuura user federation provider", Type.EXPERIMENTAL),
 
@@ -175,7 +177,7 @@ public class Profile {
 
         SSF("Shared Signals Framework", Type.EXPERIMENTAL),
 
-        HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.PREVIEW),
+        HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.DEFAULT),
 
         OPENAPI("OpenAPI specification served at runtime", Type.EXPERIMENTAL, CLIENT_ADMIN_API_V2),
 

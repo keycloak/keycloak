@@ -207,6 +207,14 @@ Read more about it in the link:https://www.keycloak.org/server/db#multiple-datas
 
 = Configuring and Running
 
+== Generated system truststore uses BCFKS in strict FIPS mode
+
+When {project_name} creates the generated system truststore from `conf/truststores` or `--truststore-paths`, it now selects a store type supported by the active crypto provider.
+Default and non-strict FIPS deployments continue to generate a PKCS12 truststore when supported.
+Strict FIPS deployments now generate a BCFKS truststore so the generated truststore can be loaded by the BCFIPS provider in approved mode.
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
 == Enhanced reverse proxy guides with blueprints for HAProxy and Traefik
 // https://github.com/keycloak/keycloak/issues/48002
 

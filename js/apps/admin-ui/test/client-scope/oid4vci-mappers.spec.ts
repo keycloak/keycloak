@@ -2,7 +2,11 @@ import { type Page, expect, test } from "@playwright/test";
 import { createTestBed } from "../support/testbed.ts";
 import { goToClientScopes } from "../utils/sidebar.ts";
 import { clickSaveButton, selectItem } from "../utils/form.ts";
-import { clickTableRowItem, clickTableToolbarItem } from "../utils/table.ts";
+import {
+  clickTableRowItem,
+  clickTableToolbarItem,
+  searchItem,
+} from "../utils/table.ts";
 import { login } from "../utils/login.ts";
 import { toClientScopes } from "../../src/client-scopes/routes/ClientScopes.tsx";
 import { assertNotificationMessage } from "../utils/masthead.ts";
@@ -120,7 +124,7 @@ test.describe("OID4VCI Protocol Mapper Configuration", () => {
     await saveMapperAndAssertSuccess(page);
 
     await page.getByTestId("nav-item-client-scopes").click();
-    await page.getByPlaceholder("Search for client scope").fill(scopeName);
+    await searchItem(page, "Search for client scope", scopeName);
     await clickTableRowItem(page, scopeName);
     await goToMappersTab(page);
     await clickTableRowItem(page, mapperName);

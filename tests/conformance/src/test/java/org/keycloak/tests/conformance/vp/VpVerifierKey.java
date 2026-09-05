@@ -23,8 +23,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 final class VpVerifierKey {
 
+    // The request-signing certificate is intentionally not restricted to a specific EKU.
     private static final ConformanceSigningKey KEY = ConformanceSigningKey.generate(
-            VpConformanceRealmConfig.REALM, "vp_verifier_key", "OID4VP Conformance Verifier");
+            VpConformanceRealmConfig.REALM, "vp_verifier_key", "OID4VP Conformance Verifier", null);
 
     private VpVerifierKey() {
     }

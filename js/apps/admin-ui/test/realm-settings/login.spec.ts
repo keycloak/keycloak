@@ -1,14 +1,14 @@
 import { type Page, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
-import { assertSwitchIsChecked, switchToggle } from "../utils/form.ts";
+import { assertSwitchIsChecked } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import {
   goToClientScopes,
   goToRealm,
   goToRealmSettings,
 } from "../utils/sidebar.ts";
-import { goToLoginTab } from "./login.ts";
+import { goToLoginTab, toggleLoginSettingAndExpectSuccess } from "./login.ts";
 
 test.describe.serial("Realm settings tabs tests", () => {
   const realmName = `realm-settings_${uuid()}`;
@@ -28,7 +28,7 @@ test.describe.serial("Realm settings tabs tests", () => {
     realmSwitch: string,
     expectedValue: boolean,
   ) => {
-    await switchToggle(page, `[data-testid="${realmSwitch}"]`);
+    await toggleLoginSettingAndExpectSuccess(page, realmSwitch);
 
     await goToClientScopes(page);
     await goToRealmSettings(page);

@@ -18,15 +18,18 @@
 package org.keycloak.broker.oid4vp;
 
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.utils.StringUtil;
 
 public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
 
     public static final String DCQL_QUERY = "dcqlQuery";
     public static final String TRUSTED_ISSUER_JWKS = "trustedIssuerJwks";
+    public static final String TRUST_MATERIAL_IDPS = "trustMaterialIdps";
     public static final String PRINCIPAL_ATTRIBUTE = "principalAttribute";
     public static final String WALLET_SCHEME = "walletScheme";
     public static final String SIGNING_KEY_ID = "signingKeyId";
+    public static final String RESPONSE_MODE = "responseMode";
 
     public static final String DEFAULT_WALLET_SCHEME = "openid4vp://";
 
@@ -54,6 +57,14 @@ public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
         getConfig().put(TRUSTED_ISSUER_JWKS, trustedIssuerJwks);
     }
 
+    public String getTrustMaterialIdps() {
+        return getConfig().get(TRUST_MATERIAL_IDPS);
+    }
+
+    public void setTrustMaterialIdps(String trustMaterialIdps) {
+        getConfig().put(TRUST_MATERIAL_IDPS, trustMaterialIdps);
+    }
+
     public String getPrincipalAttribute() {
         return getConfig().get(PRINCIPAL_ATTRIBUTE);
     }
@@ -68,6 +79,32 @@ public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
 
     public void setSigningKeyId(String signingKeyId) {
         getConfig().put(SIGNING_KEY_ID, signingKeyId);
+    }
+
+    public ResponseMode getResponseMode() {
+        String value = getConfig().get(RESPONSE_MODE);
+        return StringUtil.isBlank(value) ? ResponseMode.DIRECT_POST : ResponseMode.from(value);
+    }
+
+    public void setResponseMode(ResponseMode responseMode) {
+        getConfig().put(RESPONSE_MODE, responseMode.value());
+    }
+
+    public boolean isEncryptedResponse() {
+        return getResponseMode() == ResponseMode.DIRECT_POST_JWT;
+    }
+
+    @Override
+    public void validate(RealmModel realm) {
+        super.validate(realm);
+        String responseMode = getConfig().get(RESPONSE_MODE);
+        if (StringUtil.isNotBlank(responseMode)) {
+            ResponseMode.from(responseMode);
+        }
+        if (StringUtil.isBlank(getTrustedIssuerJwks()) && StringUtil.isBlank(getTrustMaterialIdps())) {
+            throw new IllegalArgumentException(
+                    "Either a trusted issuer JWKS or trust material identity provider aliases are required");
+        }
     }
 
     public String getWalletScheme() {

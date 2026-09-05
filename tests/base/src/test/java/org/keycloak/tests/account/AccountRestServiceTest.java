@@ -89,6 +89,7 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.UserProfileContext;
 
@@ -1282,6 +1283,214 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
+    public void revokeApplicationSessions() throws Exception {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+
+        // Create a session for "in-use-client" via direct grant
+        oauth.client("in-use-client", "secret1");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("manage-account-access", "password");
+        Assertions.assertNull(tokenResponse.getErrorDescription());
+
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-account-access", "password").getAccessToken();
+
+        // skip the two direct access grant logins
+        events.skip(2);
+
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "manage-account-access");
+        Assertions.assertEquals(2, user.getUserSessions().size());
+
+        // Verify the client is "in use"
+        List<ClientRepresentation> applications = simpleHttp
+                .doGet(getAccountUrl("applications"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asJson(new TypeReference<List<ClientRepresentation>>() {
+                });
+        Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
+        Assertions.assertTrue(apps.get("in-use-client").isInUse());
+
+        // End the application sessions
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/in-use-client/sessions"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
+
+        // A logout event is fired for the session of "in-use-client"
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .clientId("account")
+                .userId(user.toRepresentation().getId())
+                .sessionId(tokenResponse.getSessionState())
+                .details(Details.REVOKED_CLIENT, "in-use-client");
+        Assertions.assertNull(events.poll());
+
+        // The user session of "in-use-client" had no other client sessions and was removed as well
+        List<UserSessionRepresentation> userSessions = user.getUserSessions();
+        Assertions.assertEquals(1, userSessions.size());
+        Assertions.assertNotEquals(tokenResponse.getSessionState(), userSessions.get(0).getId());
+
+        // Verify the client is no longer "in use"
+        applications = simpleHttp
+                .doGet(getAccountUrl("applications"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asJson(new TypeReference<List<ClientRepresentation>>() {
+                });
+        apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
+        Assertions.assertFalse(apps.containsKey("in-use-client") && apps.get("in-use-client").isInUse());
+    }
+
+    @Test
+    public void revokeApplicationSessionsForNotExistingClient() throws IOException {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-account-access", "password").getAccessToken();
+        // Returns 204 instead of 404 to prevent client enumeration via this endpoint.
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/not-existing/sessions"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
+    }
+
+    @Test
+    public void revokeApplicationSessionsWithoutPermission() throws IOException {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("view-account-access", "password").getAccessToken();
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/in-use-client/sessions"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(403, response.getStatus());
+        }
+    }
+
+    @Test
+    public void revokeApplicationSessionsIdempotent() throws IOException {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-account-access", "password").getAccessToken();
+
+        // Delete sessions when there are none -- should still return 204
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/in-use-client/sessions"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
+
+        // Call again -- still 204
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/in-use-client/sessions"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
+    }
+
+    @Test
+    public void revokeApplicationSessionsOffline() throws Exception {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+
+        // Create an offline session for "offline-client"
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+        AccessTokenResponse offlineTokenResponse = oauth.doPasswordGrantRequest("manage-account-access", "password");
+        Assertions.assertNull(offlineTokenResponse.getErrorDescription());
+        String offlineRefreshToken = offlineTokenResponse.getRefreshToken();
+
+        // Get an account token via direct grant
+        oauth.scope(null);
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-account-access", "password").getAccessToken();
+
+        // skip the offline_access login and the direct access grant login
+        events.skip(2);
+
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "manage-account-access");
+
+        // The application is listed as having offline access
+        Map<String, ClientRepresentation> apps = getApplications(token);
+        Assertions.assertTrue(apps.get("offline-client").isOfflineAccess());
+
+        // End the application sessions
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/offline-client/sessions"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
+
+        // A logout event is fired for the offline session of "offline-client"
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .clientId("account")
+                .userId(user.toRepresentation().getId())
+                .sessionId(offlineTokenResponse.getSessionState())
+                .details(Details.REVOKED_CLIENT, "offline-client");
+        Assertions.assertNull(events.poll());
+
+        // The offline token can no longer be refreshed
+        oauth.client("offline-client", "secret1");
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(offlineRefreshToken);
+        Assertions.assertEquals("invalid_grant", refreshResponse.getError());
+
+        // The now empty offline user session was removed, so the application no longer reports offline access
+        apps = getApplications(token);
+        Assertions.assertFalse(apps.containsKey("offline-client") && apps.get("offline-client").isOfflineAccess());
+    }
+
+    @Test
+    public void revokeApplicationSessionsOnlineAndOffline() throws Exception {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+
+        // Create an online session for "offline-client"
+        oauth.scope(null);
+        oauth.client("offline-client", "secret1");
+        AccessTokenResponse onlineTokenResponse = oauth.doPasswordGrantRequest("manage-account-access", "password");
+        Assertions.assertNull(onlineTokenResponse.getErrorDescription());
+        String onlineRefreshToken = onlineTokenResponse.getRefreshToken();
+
+        // Create an offline session for the same client
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        AccessTokenResponse offlineTokenResponse = oauth.doPasswordGrantRequest("manage-account-access", "password");
+        Assertions.assertNull(offlineTokenResponse.getErrorDescription());
+        String offlineRefreshToken = offlineTokenResponse.getRefreshToken();
+
+        // Get an account token via direct grant
+        oauth.scope(null);
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-account-access", "password").getAccessToken();
+
+        // skip the online login, the offline_access login and the direct access grant login
+        events.skip(3);
+
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "manage-account-access");
+
+        // End the application sessions
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/offline-client/sessions"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
+
+        // A logout event is fired for both the online and the offline session
+        assertLogoutEventsForSessions(user, Set.of(onlineTokenResponse.getSessionState(), offlineTokenResponse.getSessionState()));
+
+        // Neither the online nor the offline token can be refreshed afterwards
+        oauth.client("offline-client", "secret1");
+        Assertions.assertEquals("invalid_grant", oauth.doRefreshTokenRequest(onlineRefreshToken).getError());
+        Assertions.assertEquals("invalid_grant", oauth.doRefreshTokenRequest(offlineRefreshToken).getError());
+    }
+
+    @Test
     public void listApplicationsThirdPartyWithoutConsentText() throws Exception {
         listApplicationsThirdParty("acr", false);
     }
@@ -1361,6 +1570,16 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "always-display-client", "direct-grant"));
 
         assertClientRep(apps.get("root-url-client"), null, null, false, true, false, "http://localhost:8180/foo/bar", "/baz");
+    }
+
+    private Map<String, ClientRepresentation> getApplications(String token) throws IOException {
+        List<ClientRepresentation> applications = simpleHttp
+                .doGet(getAccountUrl("applications"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asJson(new TypeReference<List<ClientRepresentation>>() {
+                });
+        return applications.stream().collect(Collectors.toMap(ClientRepresentation::getClientId, x -> x));
     }
 
     private void assertClientRep(ClientRepresentation clientRep, String name, String description, boolean userConsentRequired, boolean inUse, boolean offlineAccess, String rootUrl, String baseUrl) {
@@ -1771,6 +1990,58 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .asResponse()) {
             Assertions.assertEquals(204, response.getStatus());
         }
+    }
+
+    @Test
+    public void revokeConsentDoesNotCauseRevokeGrantErrorOnSubsequentTokenRevocation() throws IOException {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+
+        String manageConsentToken = oauth.client("direct-grant", "password")
+                .doPasswordGrantRequest("manage-consent-access", "password")
+                .getAccessToken();
+        String appId = "in-use-client";
+
+        List<ClientScopeRepresentation> scopes = managedRealm.admin().clientScopes().findAll().subList(0, 1);
+        ConsentRepresentation requestedConsent = createRequestedConsent(scopes);
+
+        simpleHttp.doPost(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(manageConsentToken)
+                .asResponse()
+                .close();
+
+        // Obtain a live session + refresh token for in-use-client.
+        AccessTokenResponse tokenResponse = oauth.client(appId, "secret1")
+                .doPasswordGrantRequest("manage-consent-access", "password");
+
+        Assertions.assertNull(tokenResponse.getErrorDescription(),
+                "Password grant should succeed: " + tokenResponse.getErrorDescription());
+        String refreshToken = tokenResponse.getRefreshToken();
+        Assertions.assertNotNull(refreshToken, "Refresh token must be present");
+
+        events.skip(3);
+
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/" + appId +"/consent"))
+                .header("Accept", "application/json")
+                .auth(manageConsentToken)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
+
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.REVOKE_GRANT)
+                .clientId("account")
+                .details(Details.REVOKED_CLIENT, appId);
+
+        TokenRevocationResponse revokeResponse = oauth.client(appId, "secret1").doTokenRevoke(refreshToken);
+        Assertions.assertTrue(revokeResponse.isSuccess(), "RFC 7009 revocation must return 200 even for a stale token");
+
+        EventRepresentation errorEvent = events.poll();
+        Assertions.assertNull(errorEvent,
+                "No REVOKE_GRANT_ERROR should be emitted after revoking a token whose session was already destroyed by consent revocation, got: "
+                        + (errorEvent != null ? errorEvent.getType() + " / " + errorEvent.getError() : "null"));
     }
 
     @Test

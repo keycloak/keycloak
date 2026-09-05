@@ -139,7 +139,7 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
                 String httpsTrustStoreType = config.root().get(HttpOptions.HTTPS_TRUST_STORE_TYPE.getKey());
                 final String truststoreType = KeystoreUtil.getTruststoreType(httpsTrustStoreType, httpsTrustStoreFile, KeyStore.getDefaultType());
                 if (KeystoreUtil.TruststoreFormat.PEM.name().equalsIgnoreCase(truststoreType)) {
-                    httpsTruststore = TruststoreBuilder.createPkcs12KeyStore();
+                    httpsTruststore = TruststoreBuilder.createGeneratedTrustStore();
                     TruststoreBuilder.mergePemFile(httpsTruststore, httpsTrustStoreFile, true);
                 } else {
                     httpsTruststore = KeystoreUtil.loadKeyStore(httpsTrustStoreFile, httpsTrustStorePassword, httpsTrustStoreType);

@@ -32,6 +32,7 @@ import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -140,6 +141,16 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
         if (entity != null) {
             em.remove(entity);
         }
+    }
+
+    @Override
+    public void removeRootAuthenticationSessionsByAuthenticatedUser(RealmModel realm, UserModel user, String rootAuthenticationSessionIdToKeep) {
+        getEntityManager()
+                .createNamedQuery("deleteRootAuthSessionsByUser")
+                .setParameter("realmId", realm.getId())
+                .setParameter("userId", user.getId())
+                .setParameter("rootSessionIdToKeep", rootAuthenticationSessionIdToKeep)
+                .executeUpdate();
     }
 
     @Override

@@ -19,10 +19,13 @@ package org.keycloak.quarkus.runtime;
 
 import java.io.File;
 import java.lang.annotation.Annotation;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,20 +39,28 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.common.util.KeystoreUtil.TruststoreFormat;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
+import org.keycloak.config.HostnameV2Options;
 import org.keycloak.config.HttpAccessLogOptions;
 import org.keycloak.config.HttpOptions;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.OpenApiOptions;
+import org.keycloak.config.Option;
+import org.keycloak.config.ProxyOptions;
 import org.keycloak.config.TruststoreOptions;
+import org.keycloak.headers.SecurityHeadersUtils;
 import org.keycloak.marshalling.Marshalling;
+import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.services.MisdirectedFilter;
 import org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -64,7 +75,11 @@ import io.quarkus.arc.InstanceHandle;
 import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
+import io.quarkus.vertx.http.runtime.security.SecurityHandlerPriorities;
 import io.vertx.core.Handler;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpServerResponse;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import liquibase.Scope;
 import liquibase.servicelocator.ServiceLocator;
@@ -95,7 +110,20 @@ public class KeycloakRecorder {
 
     // default handler for redirecting to specific path
     public Handler<RoutingContext> getRedirectHandler(String redirectPath) {
-        return routingContext -> routingContext.redirect(redirectPath);
+        return routingContext -> {
+            HttpServerResponse response = routingContext.response();
+            for (BrowserSecurityHeaders header : BrowserSecurityHeaders.REDIRECT_HEADERS) {
+                addDefaultSecurityHeader(response, header);
+            }
+
+            response.setStatusCode(302);
+            response.putHeader(HttpHeaders.LOCATION, redirectPath);
+            response.end();
+        };
+    }
+
+    private static void addDefaultSecurityHeader(HttpServerResponse response, BrowserSecurityHeaders header) {
+        SecurityHeadersUtils.addDefaultHeaderIfAbsent(header, response.headers()::contains, (headerName, value) -> response.putHeader(headerName, value));
     }
 
     private static final List<ManagementInterfaceItem> MANAGEMENT_INTERFACE_ENDPOINTS = List.of(
@@ -126,11 +154,35 @@ public class KeycloakRecorder {
         }
     }
 
-    public Handler<RoutingContext> getRejectNonNormalizedPathFilter() {
-        return !Configuration.isTrue(HttpOptions.HTTP_ACCEPT_NON_NORMALIZED_PATHS) ? new RejectNonNormalizedPathFilter() : null;
+    public void rejectNonNormalizedPathFilter(RuntimeValue<Router> runtimeValue) {
+        if (Configuration.isTrue(HttpOptions.HTTP_ACCEPT_NON_NORMALIZED_PATHS)) {
+            return;
+        }
+        runtimeValue.getValue().route().order(-1 * (SecurityHandlerPriorities.CORS + 1)).handler(new RejectNonNormalizedPathFilter());
+    }
+    
+    public void misdirectedRequestFilter(RuntimeValue<Router> runtimeValue) {
+        // not checking for http/2 enablement - it is enabled by default and not exposed as a supported configuration option
+        if (!HttpPropertyMappers.isHttpsEnabled() || Configuration.getConfigValue(ProxyOptions.PROXY_HEADERS).getValue() != null) {
+            return;
+        }
+        
+        Set<String> allowedHosts = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        extractHost(HostnameV2Options.HOSTNAME, allowedHosts);
+        extractHost(HostnameV2Options.HOSTNAME_ADMIN, allowedHosts);
+        runtimeValue.getValue().route().order(-1 * (SecurityHandlerPriorities.CORS + 2)).handler(new MisdirectedFilter(allowedHosts));
+    }
+    
+    private static void extractHost(Option<String> option, Set<String> allowedHosts) {
+        String hostnameOrUrl = Configuration.getConfigValue(option).getValue();
+        if (hostnameOrUrl != null) {
+            allowedHosts.add((hostnameOrUrl.startsWith("http://") || hostnameOrUrl.startsWith("https://"))
+                    ? URI.create(hostnameOrUrl).getHost()
+                    : hostnameOrUrl);
+        }
     }
 
-    public void configureTruststore() {
+    public void configureTruststore(FipsMode fipsMode) {
         List<String> truststores = new ArrayList<>();
         Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_PATHS.getKey())
                 .ifPresent(s -> Stream.of(s.split(",")).forEach(truststores::add));
@@ -151,7 +203,9 @@ public class KeycloakRecorder {
             return; // nothing to configure, we'll just use the system default
         }
 
-        TruststoreBuilder.setSystemTruststore(truststores.toArray(String[]::new), true, dataDir.orElseThrow());
+        TruststoreFormat truststoreType = fipsMode == FipsMode.STRICT ? TruststoreFormat.BCFKS : null;
+
+        TruststoreBuilder.setSystemTruststore(truststores.toArray(String[]::new), true, dataDir.orElseThrow(), truststoreType);
     }
 
     public void configureLiquibase(Map<String, List<String>> services) {

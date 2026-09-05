@@ -23,6 +23,8 @@ import java.util.UUID;
 
 import org.keycloak.broker.oid4vp.OID4VPIdentityProviderConfig;
 import org.keycloak.broker.oid4vp.OID4VPIdentityProviderFactory;
+import org.keycloak.broker.trust.DefaultTrustIdentityProviderConfig;
+import org.keycloak.broker.trust.DefaultTrustIdentityProviderFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
@@ -32,19 +34,20 @@ import org.keycloak.keys.JavaKeystoreKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.testframework.conformance.OpenIdConformanceSuite;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.conformance.ConformanceSigningKey;
-import org.keycloak.tests.conformance.containers.OpenIdConformanceSuite;
 
 public class VpConformanceRealmConfig implements RealmConfig {
 
     public static final String REALM = "oid4vp-verifier";
     public static final String CLIENT_ID = "wallet-mock";
     public static final String IDP_ALIAS = "oid4vp";
+    public static final String TRUST_IDP_ALIAS = "conformance-issuer-trust";
 
     // The suite presents a PID SD-JWT VC and discloses given_name and family_name. given_name is the
     // principal because the presented credential carries no stable subject claim.
@@ -67,7 +70,7 @@ public class VpConformanceRealmConfig implements RealmConfig {
         return realm.name(REALM)
                 .clients(ClientBuilder.create(CLIENT_ID).publicClient().redirectUris("*"))
                 .update(rep -> {
-                    rep.setIdentityProviders(List.of(identityProvider()));
+                    rep.setIdentityProviders(List.of(issuerTrustIdentityProvider(), identityProvider()));
                     MultivaluedHashMap<String, ComponentExportRepresentation> components = new MultivaluedHashMap<>();
                     components.add(KeyProvider.class.getName(), verifierSigningKeyProvider());
                     rep.setComponents(components);
@@ -80,11 +83,30 @@ public class VpConformanceRealmConfig implements RealmConfig {
         idp.setProviderId(OID4VPIdentityProviderFactory.PROVIDER_ID);
         idp.setEnabled(true);
         idp.setFirstBrokerLoginFlowAlias("first broker login");
-        idp.setConfig(Map.of(
-                OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS, VpVerifierKey.publicJwks().toString(),
-                OID4VPIdentityProviderConfig.DCQL_QUERY, DCQL_QUERY,
-                OID4VPIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "given_name"));
+        idp.setConfig(idpConfig());
         return idp;
+    }
+
+    // Overridable so the encrypted direct_post.jwt variant can enable response encryption.
+    protected Map<String, String> idpConfig() {
+        return Map.of(
+                OID4VPIdentityProviderConfig.TRUST_MATERIAL_IDPS, TRUST_IDP_ALIAS,
+                OID4VPIdentityProviderConfig.DCQL_QUERY, DCQL_QUERY,
+                OID4VPIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "given_name");
+    }
+
+    // Trusts the presented credential's x5c certificate chain against the conformance CA through the
+    // trust material delegation, exercising the HAIP mandated chain validation instead of an inline
+    // JWKS on the verifier.
+    private IdentityProviderRepresentation issuerTrustIdentityProvider() {
+        IdentityProviderRepresentation trust = new IdentityProviderRepresentation();
+        trust.setAlias(TRUST_IDP_ALIAS);
+        trust.setProviderId(DefaultTrustIdentityProviderFactory.PROVIDER_ID);
+        trust.setEnabled(true);
+        trust.setConfig(Map.of(
+                DefaultTrustIdentityProviderConfig.USE_X509, "true",
+                DefaultTrustIdentityProviderConfig.TRUSTED_CERTIFICATES, VpVerifierKey.caCertificatePem()));
+        return trust;
     }
 
     // The verifier's request-signing key, holding the CA-issued certificate the suite trusts.

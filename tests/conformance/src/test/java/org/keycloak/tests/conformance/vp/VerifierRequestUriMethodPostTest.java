@@ -22,9 +22,11 @@ import java.util.stream.Stream;
 
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.conformance.runner.BrowserInteraction;
+import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
+import org.keycloak.testframework.conformance.runner.ConformanceResult;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
 
 import org.junit.jupiter.api.Disabled;
 
@@ -51,6 +53,7 @@ public class VerifierRequestUriMethodPostTest extends AbstractVpConformanceTest 
                         "client_id_prefix", "x509_hash",
                         "request_method", "request_uri_signed",
                         "response_mode", "direct_post"),
-                "oid4vp-1final-verifier-request-uri-method-post");
+                "oid4vp-1final-verifier-request-uri-method-post",
+                ConformanceResult.REVIEW, BrowserInteraction.NONE);
     }
 }

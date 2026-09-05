@@ -112,11 +112,9 @@ public class GroupTest extends AbstractScimTest {
 
         expected = client.groups().get(expected.getId());
         expected.setDisplayName("Updated " + expected.getDisplayName());
-        expected.setExternalId(KeycloakModelUtils.generateId());
         adminEvents.clear();
         client.groups().patch(expected.getId(), PatchRequest.create()
                 .replace("displayName", expected.getDisplayName())
-                .replace("externalId", expected.getExternalId())
                 .build());
 
         AdminEventAssertion.assertSuccess(adminEvents.poll())
@@ -126,7 +124,133 @@ public class GroupTest extends AbstractScimTest {
 
         Group actual = client.groups().get(expected.getId());
         assertEquals(expected.getDisplayName(), actual.getDisplayName());
-        assertEquals(expected.getExternalId(), actual.getExternalId());
+    }
+
+    @Test
+    public void testPatchImmutableAttribute() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group.setExternalId(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        String originalExternalId = group.getExternalId();
+        adminEvents.clear();
+
+        // PATCH replace on immutable externalId should fail
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .replace("externalId", "new-value")
+                    .build());
+            fail("should fail because externalId is immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+            assertTrue(error.getDetail().contains("externalId"));
+        }
+
+        // PATCH add on immutable externalId should fail
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .add("externalId", "new-value")
+                    .build());
+            fail("should fail because externalId is immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+        }
+
+        // PATCH remove on immutable externalId should fail
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .remove("externalId")
+                    .build());
+            fail("should fail because externalId is immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+        }
+
+        // verify externalId was not changed
+        Group actual = client.groups().get(group.getId());
+        assertEquals(originalExternalId, actual.getExternalId());
+    }
+
+    @Test
+    public void testPatchInitializeImmutableAttribute() {
+        // create a group without externalId
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        assertNull(group.getExternalId());
+        adminEvents.clear();
+
+        // PATCH add on unset immutable externalId should succeed (RFC 7644 §3.5.2)
+        String externalId = KeycloakModelUtils.generateId();
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .add("externalId", externalId)
+                .build());
+        Group actual = client.groups().get(group.getId());
+        assertEquals(externalId, actual.getExternalId());
+
+        // subsequent PATCH on the now-set externalId should fail
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .add("externalId", "another-value")
+                    .build());
+            fail("should fail because externalId is already set and immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+        }
+
+        // verify externalId was not changed
+        actual = client.groups().get(group.getId());
+        assertEquals(externalId, actual.getExternalId());
+    }
+
+    @Test
+    public void testPatchReplaceInitializeImmutableAttribute() {
+        // create a group without externalId
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        assertNull(group.getExternalId());
+        adminEvents.clear();
+
+        // PATCH replace on unset immutable externalId should succeed (RFC 7644 §3.5.2)
+        String externalId = KeycloakModelUtils.generateId();
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .replace("externalId", externalId)
+                .build());
+        Group actual = client.groups().get(group.getId());
+        assertEquals(externalId, actual.getExternalId());
+    }
+
+    @Test
+    public void testPatchImmutableMetaCreated() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        adminEvents.clear();
+
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .replace("meta.created", "2020-01-01T00:00:00Z")
+                    .build());
+            fail("should fail because meta.created is immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+        }
     }
 
     @Test

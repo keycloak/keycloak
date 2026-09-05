@@ -8,7 +8,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.Model;
 import org.keycloak.models.ModelException;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.scim.model.config.ServiceProviderConfigResourceTypeProvider;
@@ -20,6 +19,7 @@ import org.keycloak.scim.resource.schema.ModelSchema;
 import org.keycloak.scim.resource.schema.Schema;
 import org.keycloak.scim.resource.schema.Schema.Attribute;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
+import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.scim.resource.Scim.hasDiscoveryEndpointPermission;
 
@@ -71,12 +71,8 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                 continue;
             }
 
-            String parentName = attribute.getParentName();
-
-            if (!modelSchema.isCore()) {
-                // extensions attributes should be set in a top-level attribute with the schema name as the name
-                parentName = attribute.getSchema();
-            }
+            // extensions attributes should be set in a top-level attribute with the schema name as the name
+            String parentName = modelSchema.isCore() ? attribute.getParentName() : attribute.getSchema();
 
             if (parentName != null && !parentName.equals(name)) {
                 // This is a sub-attribute — strip the parent prefix to get the relative path
@@ -87,15 +83,22 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     String topName = relativeName.substring(0, relativeName.indexOf('.'));
                     String subName = relativeName.substring(relativeName.indexOf('.') + 1);
 
-                    Attribute parent = topLevelAttributes.computeIfAbsent(topName, k -> {
+                    String cacheKey = modelSchema.isCore() ? topName : parentName + ":" + topName;
+
+                    Attribute parent = topLevelAttributes.computeIfAbsent(cacheKey, k -> {
                         Attribute p = new Attribute();
-                        p.setName(k);
+                        p.setName(topName);
                         p.setType("complex");
-                        p.setMultiValued(false);
+                        p.setMultiValued(attribute.isMultivalued());
                         p.setMutability("readWrite");
                         p.setCaseExact(false);
                         p.setRequired(false);
                         p.setUniqueness("none");
+
+                        if (!modelSchema.isCore()) {
+                            addToExtensionSchema(parentName, p);
+                        }
+
                         return p;
                     });
 
@@ -144,8 +147,12 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     }
                     subAttributes.add(subAttr);
                 } else {
-                    // Extension schema simple sub-attribute (e.g., "enterpriseUser.employeeNumber" → "employeeNumber")
-                    topLevelAttributes.computeIfAbsent(relativeName, createExtensionAttribute(modelSchema, parentName, attribute));
+                    String cacheKey = parentName + ":" + relativeName;
+                    topLevelAttributes.computeIfAbsent(cacheKey, k -> {
+                        Attribute attr = createTopLevelAttribute(attribute, relativeName);
+                        addToExtensionSchema(parentName, attr);
+                        return attr;
+                    });
                 }
             } else {
                 // Top-level attribute — only add if not already created as a parent
@@ -162,26 +169,14 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
         }
     }
 
-    private Function<String, Attribute> createExtensionAttribute(ModelSchema<?, ?> modelSchema, String schemaName, org.keycloak.scim.resource.schema.attribute.Attribute<?, ?> attribute) {
-        return k -> {
-            Attribute attr = createTopLevelAttribute(attribute, k);
-
-            if (modelSchema.isCore()) {
-                return attr;
-            }
-
-            schemas.computeIfAbsent(schemaName, n -> {
-                Schema schema = new Schema();
-
-                schema.setName(n);
-                schema.setId(n);
-                schema.setAttributes(new ArrayList<>());
-
-                return schema;
-            }).getAttributes().add(attr);
-
-            return attr;
-        };
+    private void addToExtensionSchema(String schemaName, Attribute attr) {
+        schemas.computeIfAbsent(schemaName, n -> {
+            Schema schema = new Schema();
+            schema.setName(n);
+            schema.setId(n);
+            schema.setAttributes(new ArrayList<>());
+            return schema;
+        }).getAttributes().add(attr);
     }
 
     private Attribute createTopLevelAttribute(org.keycloak.scim.resource.schema.attribute.Attribute<?, ?> attribute, String name) {
@@ -210,7 +205,7 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
 
     @Override
     public Stream<Schema> getAll(SearchRequest searchRequest) {
-        if (hasDiscoveryEndpointPermission(session)) {
+        if (hasDiscoveryEndpointPermission(session) && (searchRequest == null || StringUtil.isBlank(searchRequest.getFilter()))) {
             // Per RFC 7644 Section 4, /Schemas is a discovery endpoint that SHALL return all schemas.
             // Filtering, sorting, and pagination are not supported for discovery endpoints.
             // The searchRequest parameter is ignored.
@@ -221,8 +216,8 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
     }
 
     @Override
-    public Long count(SearchRequest searchRequest) {
-        return getAll(null).count();
+    public Long count(SearchRequest searchRequest, int resourceSize) {
+        return (long) resourceSize;
     }
 
     @Override
@@ -243,11 +238,6 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
     @Override
     public String getSchema() {
         return Scim.SCHEMA_CORE_SCHEMA;
-    }
-
-    @Override
-    public <M extends Model> List<ModelSchema<M, Schema>> getSchemas() {
-        return List.of();
     }
 
     @Override

@@ -27,6 +27,7 @@ import org.keycloak.Config;
 import org.keycloak.authentication.jpa.JpaAuthenticationSessionProviderFactory;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -140,8 +141,16 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             // to be removed in KC 27
             log.warn("The option spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override is deprecated and will be removed in a future release");
         }
-        // Do not use caches for sessions if explicitly disabled or if embedded caches are not used
-        useCaches = config.getBoolean(CONFIG_USE_CACHES, !Profile.isFeatureEnabled(Profile.Feature.STATELESS)) && InfinispanUtils.isEmbeddedInfinispan();
+        // Deprecated since 26.8: disabling persistent user sessions (volatile sessions) is deprecated.
+        if (!MultiSiteUtils.isPersistentSessionsEnabled()) {
+            log.warn("Disabling the persistent-user-sessions feature is deprecated since Keycloak 26.8 and will not be supported in a future release. Persistent user sessions will become the only supported mode.");
+        }
+        // Deprecated since 26.8: caching of persistent user sessions is disabled by default and will be removed in a future release.
+        boolean defaultUseCaches = !MultiSiteUtils.isPersistentSessionsEnabled();
+        useCaches = config.getBoolean(CONFIG_USE_CACHES, defaultUseCaches) && InfinispanUtils.isEmbeddedInfinispan() && !Profile.isFeatureEnabled(Profile.Feature.STATELESS);
+        if (useCaches && MultiSiteUtils.isPersistentSessionsEnabled()) {
+            log.warn("Caching of persistent user sessions is deprecated since Keycloak 26.8 and will be removed in a future release. Remove the spi-user-sessions--infinispan--use-caches option to disable caching.");
+        }
         expirationPeriodSeconds = getExpirationPeriodSeconds(config);
     }
 
@@ -204,11 +213,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             // The expired events for offline sessions will be triggered by JpaUserSessionPersisterProvider
             sessionCacheHolder.cache().addListener(expirationListener);
         }
-        // we need the expiration task running because of offline sessions
-        try (var session = factory.create()) {
-            expirationTask = ExpirationTaskFactory.create(session, expirationPeriodSeconds);
-        }
-        expirationTask.start();
+        startExpirationTask(factory);
         if (factory.getProviderFactory(AuthenticationSessionProvider.class) instanceof JpaAuthenticationSessionProviderFactory) {
             // Based on our internal knowledge on the JpaAuthenticationSessionProviderFactory, we can now assume that
             // all actions on the authentication sessions are done with pessimistic locking in place. With this knowledge,
@@ -218,6 +223,20 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             // behavior to avoid reflection and internal knowledge.
             pessimisticLockingAuthenticationSession = true;
         }
+    }
+
+    /**
+     * Start the expiration task for offline sessions.
+     * Skipped in non-server mode (export, import) as session expiration is not needed for one-time commands.
+     */
+    private void startExpirationTask(KeycloakSessionFactory factory) {
+        if (Environment.isNonServerMode()) {
+            return;
+        }
+        try (var session = factory.create()) {
+            expirationTask = ExpirationTaskFactory.create(session, expirationPeriodSeconds);
+        }
+        expirationTask.start();
     }
 
     public void initializePersisterLastSessionRefreshStore(final KeycloakSessionFactory sessionFactory) {
@@ -355,7 +374,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         builder.property()
                 .name(CONFIG_USE_CACHES)
                 .type("boolean")
-                .helpText("Enable or disable caches. Enabled by default unless the external feature to use only external remote caches is used or " + Profile.Feature.STATELESS.getUnversionedKey() + " is enabled")
+                .helpText("Enable or disable caching of persistent user sessions. Disabled by default since Keycloak 26.8. When enabled, sessions are cached in the embedded Infinispan to reduce database load, but this is deprecated and will be removed in a future release. Caching is always disabled when the " + Profile.Feature.STATELESS.getUnversionedKey() + " feature is enabled or when using remote Infinispan.")
                 .add();
 
         builder.property()

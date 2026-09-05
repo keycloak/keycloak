@@ -130,8 +130,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
             // invalid login first
             loginPage.fillLogin(USERNAME, "invalid-password");
             loginPage.submit();
-            loginPage.assertCurrent();
-            MatcherAssert.assertThat(loginPage.getUsernameInputError(), Matchers.is("Invalid username or password."));
+            loginPage.waitForUsernameInputError("Invalid username or password.");
             Assertions.assertTrue(loginPage.getPasswordInputError().isEmpty());
             EventAssertion.assertError(events.poll())
                     .type(EventType.LOGIN_ERROR)

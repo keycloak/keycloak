@@ -26,7 +26,7 @@ public class KcOidcBrokerNoLoginHintTest extends AbstractBrokerTest {
     }
 
     private class KcOidcBrokerConfigurationWithNoLoginHint extends KcOidcBrokerConfiguration {
-        
+
         @Override
         public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
             IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
@@ -41,8 +41,9 @@ public class KcOidcBrokerNoLoginHintTest extends AbstractBrokerTest {
     @Override
     protected void loginUser() {
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
-        
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+
         driver.navigate().to(driver.getCurrentUrl() + "&login_hint=" + USER_EMAIL);
 
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -55,7 +56,7 @@ public class KcOidcBrokerNoLoginHintTest extends AbstractBrokerTest {
 
         Assertions.assertTrue(StringUtils.isBlank(loginPage.getUsername()),
                 "User identifiant should not be fullfilled");
-        
+
         log.debug("Logging in");
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 

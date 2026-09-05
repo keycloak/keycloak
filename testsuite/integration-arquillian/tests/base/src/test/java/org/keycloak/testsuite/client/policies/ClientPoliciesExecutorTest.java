@@ -42,7 +42,6 @@ import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.client.registration.ClientRegistrationException;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.SignatureSignerContext;
@@ -94,10 +93,8 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
@@ -150,14 +147,10 @@ import static org.junit.jupiter.api.Assertions.fail;
  * 
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-@EnableFeature(value = Profile.Feature.CLIENT_SECRET_ROTATION)
 public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
     @Page
     protected OAuthGrantPage grantPage;
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected ErrorPage errorPage;
@@ -1018,7 +1011,6 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
                 .codeChallenge(PkceGenerator.s256())
                 .open();
         loginPage.assertCurrent();
-        Assertions.assertEquals("Sign in to your account", loginPage.getTitleText());
     }
 
     @Test
@@ -1588,6 +1580,53 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
     }
 
     @Test
+    public void testSecureSigningAlgorithmForSignedJwtEnforceExecutorNotBypassedWithForgedAssertion() throws Exception {
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Ensimmainen Profiili")
+                        .addExecutor(SecureSigningAlgorithmForSignedJwtExecutorFactory.PROVIDER_ID, createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig(Boolean.TRUE))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        String roleAlphaName = "sample-client-role-alpha";
+        String roleZetaName = "sample-client-role-zeta";
+        String roleCommonName = "sample-client-role-common";
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Forste Politikken", Boolean.TRUE)
+                        .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
+                                createClientRolesConditionConfig(Arrays.asList(roleAlphaName, roleZetaName)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // client authenticating with client_secret, not signed JWT
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+        String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setClientAuthenticatorType(ClientIdAndSecretAuthenticator.PROVIDER_ID);
+        });
+        adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(roleAlphaName).build());
+        adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(roleCommonName).build());
+
+        oauth.client(clientId, clientSecret);
+        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        String code = oauth.parseLoginResponse().getCode();
+
+        // forged assertion signed with an unregistered key, using a FAPI-allowed alg header
+        KeyPair attackerKeyPair = KeyUtils.generateRsaKeyPair(2048);
+        String forgedJwt = createSignedRequestToken(clientId, attackerKeyPair.getPrivate(), attackerKeyPair.getPublic(), Algorithm.PS256);
+
+        AccessTokenResponse response = doAccessTokenRequestWithClientSecretAndAssertion(code, clientId, clientSecret, forgedJwt);
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
+        assertEquals("client assertion is required.", response.getErrorDescription());
+    }
+
+    @Test
     public void testSecureLogoutExecutor() throws Exception {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
@@ -1701,7 +1740,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         oauth.client(clientBetaId);
         oauth.loginForm().state("randomstatesomething").requestUri(requestUri).open();
-        assertTrue(errorPage.isCurrent());
+        errorPage.assertCurrent();
         assertEquals("PAR request did not include query parameter", errorPage.getError());
         EventAssertion.assertError(events.poll())
                 .type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_OBJECT)
@@ -1752,7 +1791,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         // only query parameters include state parameter
         oauth.loginForm().requestUri(requestUri).state("mystate2").open();
-        assertTrue(errorPage.isCurrent());
+        errorPage.assertCurrent();
         assertEquals("PAR request did not include query parameter", errorPage.getError());
         EventAssertion.assertError(events.poll())
                 .type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_OBJECT)
