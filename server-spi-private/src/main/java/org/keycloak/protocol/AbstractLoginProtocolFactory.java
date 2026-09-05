@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 import org.keycloak.Config;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderEvent;
@@ -58,7 +59,7 @@ public abstract class AbstractLoginProtocolFactory implements LoginProtocolFacto
 
 
     @Override
-    public void createDefaultClientScopes(RealmModel newRealm, boolean addScopesToExistingClients) {
+    public void createDefaultClientScopes(KeycloakSession session, RealmModel newRealm, boolean addScopesToExistingClients) {
         createDefaultClientScopesImpl(newRealm);
 
         // Create default client scopes for realm built-in clients too

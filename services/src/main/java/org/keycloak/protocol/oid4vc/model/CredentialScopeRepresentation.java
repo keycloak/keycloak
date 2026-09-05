@@ -15,6 +15,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import static org.keycloak.models.ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VCT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_HASH_ALGORITHM;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS;
@@ -243,6 +244,17 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
 
     public CredentialScopeRepresentation setCryptographicBindingMethods(List<String> cryptographicBindingMethods) {
         return setAttribute(VC_CRYPTOGRAPHIC_BINDING_METHODS, String.join(",", cryptographicBindingMethods));
+    }
+
+    public List<String> getRequiredProofTypes() {
+        return Optional.ofNullable(getAttribute(VC_BINDING_REQUIRED_PROOF_TYPES))
+                .map(s -> s.split(","))
+                .map(Arrays::asList)
+                .orElse(Collections.emptyList());
+    }
+
+    public CredentialScopeRepresentation setRequiredProofTypes(String proofTypes) {
+        return setAttribute(VC_BINDING_REQUIRED_PROOF_TYPES, proofTypes);
     }
 
     public List<String> getBuildConfigSdJwtVisibleClaims() {
