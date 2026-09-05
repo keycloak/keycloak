@@ -16,9 +16,14 @@
  */
 package org.keycloak.representations.idm;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * @author Pedro Igor
@@ -58,7 +63,7 @@ public class IdentityProviderRepresentation {
     protected Boolean hideOnLogin;
     protected String firstBrokerLoginFlowAlias;
     protected String postBrokerLoginFlowAlias;
-    protected String organizationId;
+    protected Set<String> organizationIds;
     protected Map<String, String> config = new HashMap<>();
     protected List<String> types; // Null by default for the compatibility with older versions of Keycloak server (26.4 and older)
 
@@ -206,12 +211,26 @@ public class IdentityProviderRepresentation {
         this.displayName = displayName;
     }
 
-    public String getOrganizationId() {
-        return this.organizationId;
+    public Set<String> getOrganizationIds() {
+        return this.organizationIds;
     }
 
+    public void setOrganizationIds(Set<String> organizationIds) {
+        this.organizationIds = organizationIds;
+    }
+
+    @JsonIgnore
+    public String getOrganizationId() {
+        return organizationIds != null && !organizationIds.isEmpty() ? organizationIds.iterator().next() : null;
+    }
+
+    @JsonIgnore
     public void setOrganizationId(String organizationId) {
-        this.organizationId = organizationId;
+        if (organizationId != null) {
+            this.organizationIds = new LinkedHashSet<>(Collections.singleton(organizationId));
+        } else {
+            this.organizationIds = null;
+        }
     }
 
     public List<String> getTypes() {

@@ -234,6 +234,6 @@ public class OrganizationIdentityProvidersResource {
     }
 
     private boolean isOrganizationBroker(IdentityProviderModel broker) {
-        return broker != null && organization.getId().equals(broker.getOrganizationId());
+        return broker != null && broker.isLinkedToOrganization(organization.getId());
     }
 }

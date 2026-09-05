@@ -40,6 +40,10 @@ import org.keycloak.models.utils.KeycloakModelUtils;
  */
 public class MigrationUtils {
 
+    public static final String ORGANIZATION_DOMAIN_ATTRIBUTE = "kc.org.domain";
+    public static final String ORGANIZATION_EXCLUDED_DOMAIN_ATTRIBUTE = "kc.org.excluded.domains";
+    public static final String ORGANIZATION_REDIRECT_MODE_ATTRIBUTE = "kc.org.broker.redirect.mode.email-matches";
+
     public static void addAdminRole(RealmModel realm, String roleName) {
         ClientModel client = realm.getMasterAdminClient();
         if (client != null && client.getRole(roleName) == null) {

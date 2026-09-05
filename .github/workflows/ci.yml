@@ -1085,7 +1085,7 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        old-version: [24.0.4]
+        old-version: [24.0.4, 26.6.0]
         database: [postgres, mysql, oracle, mssql, mariadb]
       fail-fast: false
     steps:
@@ -1107,6 +1107,7 @@ jobs:
           -Dmigration.import.file.name=migration-realm-${{ matrix.old-version }}.json \
           -Dauth.server.ssl.required=false \
           -Dauth.server.db.host=localhost \
+          -Djdbc.driver.tmp.dir=target/unpacked/keycloak-${{ matrix.old-version }}/providers \
           "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" \
           -f testsuite/integration-arquillian/pom.xml 2>&1 | misc/log/trimmer.sh
 
@@ -1125,7 +1126,7 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        old-version: [24.0.4]
+        old-version: [24.0.4, 26.6.0]
         database: [mssql]
       fail-fast: false
     steps:

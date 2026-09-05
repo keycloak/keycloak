@@ -208,10 +208,6 @@ export const IdentityProviders = () => {
                 ),
               },
               {
-                name: "config['kc.org.domain']",
-                displayKey: "domain",
-              },
-              {
                 name: "providerId",
                 displayKey: "providerDetails",
               },

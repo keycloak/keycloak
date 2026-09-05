@@ -123,21 +123,21 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
         // use the predicate from the superclass combined with the organization filter.
         return super.federatedProviderPredicate().and(idp -> {
             if (onlyRealmBrokers) {
-                return idp.getOrganizationId() == null;
+                return !idp.hasOrganization();
             } else if (onlyOrganizationBrokers) {
                 return isPublicOrganizationBroker(idp);
             } else {
-                return idp.getOrganizationId() == null || isPublicOrganizationBroker(idp);
+                return !idp.hasOrganization() || isPublicOrganizationBroker(idp);
             }
         });
     }
 
     private boolean isPublicOrganizationBroker(IdentityProviderModel idp) {
 
-        if (idp.getOrganizationId() == null) {
+        if (!idp.hasOrganization()) {
             return false;
         }
-        if (organization != null && !Objects.equals(organization.getId(),idp.getOrganizationId())) {
+        if (organization != null && !idp.isLinkedToOrganization(organization.getId())) {
             return false;
         }
         return Booleans.isFalse(idp.isHideOnLogin());
@@ -159,7 +159,7 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
     }
 
     private boolean isShownWhenLinkedElsewhere(IdentityProviderModel idp) {
-        if (idp.getOrganizationId() == null) {
+        if (!idp.hasOrganization()) {
             return false;
         }
 
@@ -167,7 +167,7 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
             return false;
         }
 
-        if (organization != null && !Objects.equals(organization.getId(), idp.getOrganizationId())) {
+        if (organization != null && !idp.isLinkedToOrganization(organization.getId())) {
             return false;
         }
 
