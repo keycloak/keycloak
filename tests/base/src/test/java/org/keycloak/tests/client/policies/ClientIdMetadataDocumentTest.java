@@ -8,6 +8,8 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.condition.ClientIdUriSchemeCondition;
@@ -26,6 +28,10 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceGroupsCondition;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceGroupsConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesCondition;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesConditionFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.RejectImplicitGrantExecutor;
@@ -57,6 +63,7 @@ import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.tests.oauth.AbstractJWTAuthorizationGrantTest;
+import org.keycloak.tests.utils.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
@@ -383,6 +390,124 @@ public class ClientIdMetadataDocumentTest {
         Assertions.assertEquals("S256", clientRepresentation.getAttributes().get("pkce.code.challenge.method"), "PKCE should be configured by PKCEEnforcerExecutor auto-configuration");
 
         // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testCimdSucceedsWithClientUpdaterSourceGroupsPolicyPresent() throws Exception {
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        ClientUpdaterSourceGroupsCondition.Configuration groupsConfig =
+                ClientPoliciesUtil.createClientUpdateSourceGroupsConditionConfig(List.of("topGroup"));
+        PKCEEnforcerExecutor.Configuration pkceConfig = new PKCEEnforcerExecutor.Configuration();
+
+        updateCimdAndUpdaterSourcePolicy(conditionConfig, executorConfig,
+                ClientUpdaterSourceGroupsConditionFactory.PROVIDER_ID, groupsConfig, pkceConfig);
+
+        setCimdPublicClient();
+
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(clientRepresentation.isPublicClient());
+        Assertions.assertNull(clientRepresentation.getAttributes().get("pkce.code.challenge.method"),
+                "Groups policy should not apply during CIMD registration");
+
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testCimdSucceedsWithClientUpdaterSourceRolesPolicyPresent() throws Exception {
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        ClientUpdaterSourceRolesCondition.Configuration rolesConfig =
+                ClientPoliciesUtil.createClientUpdateSourceRolesConditionConfig(
+                        List.of(Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.CREATE_CLIENT));
+        PKCEEnforcerExecutor.Configuration pkceConfig = new PKCEEnforcerExecutor.Configuration();
+
+        updateCimdAndUpdaterSourcePolicy(conditionConfig, executorConfig,
+                ClientUpdaterSourceRolesConditionFactory.PROVIDER_ID, rolesConfig, pkceConfig);
+
+        setCimdPublicClient();
+
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(clientRepresentation.isPublicClient());
+        Assertions.assertNull(clientRepresentation.getAttributes().get("pkce.code.challenge.method"),
+                "Roles policy should not apply during CIMD registration");
+
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testCimdUpdateSucceedsWithClientUpdaterSourceGroupsPolicyPresent() throws Exception {
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        ClientUpdaterSourceGroupsCondition.Configuration groupsConfig =
+                ClientPoliciesUtil.createClientUpdateSourceGroupsConditionConfig(List.of("topGroup"));
+        PKCEEnforcerExecutor.Configuration pkceConfig = new PKCEEnforcerExecutor.Configuration();
+
+        updateCimdAndUpdaterSourcePolicy(conditionConfig, executorConfig,
+                ClientUpdaterSourceGroupsConditionFactory.PROVIDER_ID, groupsConfig, pkceConfig);
+
+        setCimdPublicClient();
+
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        logout(tokenResponse.getIdToken());
+
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        code = loginUserAndGetCode(true);
+        tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        ClientRepresentation updatedClientRepresentation = findByClientIdByAdmin();
+        Assertions.assertNull(updatedClientRepresentation.getAttributes().get("pkce.code.challenge.method"),
+                "Groups policy should not apply during CIMD update");
+
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testCimdUpdateSucceedsWithClientUpdaterSourceRolesPolicyPresent() throws Exception {
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        ClientUpdaterSourceRolesCondition.Configuration rolesConfig =
+                ClientPoliciesUtil.createClientUpdateSourceRolesConditionConfig(
+                        List.of(Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.CREATE_CLIENT));
+        PKCEEnforcerExecutor.Configuration pkceConfig = new PKCEEnforcerExecutor.Configuration();
+
+        updateCimdAndUpdaterSourcePolicy(conditionConfig, executorConfig,
+                ClientUpdaterSourceRolesConditionFactory.PROVIDER_ID, rolesConfig, pkceConfig);
+
+        setCimdPublicClient();
+
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        logout(tokenResponse.getIdToken());
+
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        code = loginUserAndGetCode(true);
+        tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        ClientRepresentation updatedClientRepresentation = findByClientIdByAdmin();
+        Assertions.assertNull(updatedClientRepresentation.getAttributes().get("pkce.code.challenge.method"),
+                "Roles policy should not apply during CIMD update");
+
         logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
     }
 
@@ -1077,6 +1202,41 @@ public class ClientIdMetadataDocumentTest {
                     .description("SecureRedirectUris policy for all clients")
                     .condition(AnyClientConditionFactory.PROVIDER_ID, null)
                     .profile("redirect-uris-profile")
+                    .build());
+            return r;
+        });
+    }
+
+    private void updateCimdAndUpdaterSourcePolicy(
+            ClientIdUriSchemeCondition.Configuration conditionConfig,
+            ClientIdMetadataDocumentExecutor.Configuration executorConfig,
+            String updaterSourceConditionProviderId,
+            ClientPolicyConditionConfigurationRepresentation updaterSourceConditionConfig,
+            PKCEEnforcerExecutor.Configuration updaterSourceExecutorConfig) {
+        realm.updateWithCleanup(r -> {
+            r.resetClientProfiles()
+                    .clientProfile(ClientProfileBuilder.create()
+                    .name("cimd-profile")
+                    .description("CIMD executor profile")
+                    .executor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID, executorConfig)
+                    .build())
+                    .clientProfile(ClientProfileBuilder.create()
+                    .name("updater-source-profile")
+                    .description("Updater source profile")
+                    .executor(PKCEEnforcerExecutorFactory.PROVIDER_ID, updaterSourceExecutorConfig)
+                    .build());
+            r.resetClientPolicies()
+                    .clientPolicy(ClientPolicyBuilder.create()
+                    .name("cimd-policy")
+                    .description("CIMD policy")
+                    .condition(ClientIdUriSchemeConditionFactory.PROVIDER_ID, conditionConfig)
+                    .profile("cimd-profile")
+                    .build())
+                    .clientPolicy(ClientPolicyBuilder.create()
+                    .name("updater-source-policy")
+                    .description("Updater source policy")
+                    .condition(updaterSourceConditionProviderId, updaterSourceConditionConfig)
+                    .profile("updater-source-profile")
                     .build());
             return r;
         });

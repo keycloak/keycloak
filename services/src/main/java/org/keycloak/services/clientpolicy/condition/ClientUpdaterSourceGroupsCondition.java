@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.keycloak.OAuthErrorException;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
@@ -87,7 +86,7 @@ public class ClientUpdaterSourceGroupsCondition extends AbstractClientPolicyCond
             } else if (context instanceof DynamicClientRegisterContext || context instanceof DynamicClientRegisteredContext) {
                 return getVoteForGroupsMatched(((ClientCRUDContext)context).getToken());
             } else {
-                throw new ClientPolicyException(OAuthErrorException.SERVER_ERROR, "unexpected context type.");
+                return ClientPolicyVote.NO;
             }
         case UPDATE:
         case UPDATED:
@@ -96,7 +95,7 @@ public class ClientUpdaterSourceGroupsCondition extends AbstractClientPolicyCond
             } else if (context instanceof DynamicClientUpdateContext || context instanceof DynamicClientUpdatedContext) {
                 return getVoteForGroupsMatched(((ClientCRUDContext)context).getToken());
             } else {
-                throw new ClientPolicyException(OAuthErrorException.SERVER_ERROR, "unexpected context type.");
+                return ClientPolicyVote.NO;
             }
         default:
             return ClientPolicyVote.ABSTAIN;
