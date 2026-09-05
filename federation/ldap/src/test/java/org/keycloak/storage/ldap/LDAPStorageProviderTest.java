@@ -88,6 +88,16 @@ public class LDAPStorageProviderTest {
         Assertions.assertFalse(LDAPStorageProvider.canBeFixedByUser(profile, e));
     }
 
+    // allMatch() on an empty stream is vacuously true - without an explicit guard, an exception somehow
+    // constructed with no errors would be wrongly treated as user-fixable rather than as having nothing to fix.
+    @Test
+    public void canBeFixedByUser_noErrors_returnsFalse() {
+        UserProfile profile = profileWithReadOnlyAttributes();
+        ValidationException e = validationExceptionFor();
+
+        Assertions.assertFalse(LDAPStorageProvider.canBeFixedByUser(profile, e));
+    }
+
     @Test
     public void describeErrors_doesNotIncludeRawMessageParameters() {
         // Mirrors what EmailValidator actually does: pass the submitted (invalid) value as a message parameter.

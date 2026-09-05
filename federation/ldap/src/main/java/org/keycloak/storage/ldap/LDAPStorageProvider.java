@@ -778,7 +778,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
     // none of the built-in User Profile validators do.
     static boolean canBeFixedByUser(UserProfile profile, ValidationException e) {
         Attributes attributes = profile.getAttributes();
-        return e.getErrors().stream()
+        List<ValidationException.Error> errors = e.getErrors();
+        // allMatch() is vacuously true on an empty list - guard against that explicitly so an exception with no
+        // errors (were one ever constructed that way) is never mistaken for a user-fixable one.
+        return !errors.isEmpty() && errors.stream()
             .allMatch(error -> error.getAttribute() != null && !attributes.isReadOnly(error.getAttribute()));
     }
 
