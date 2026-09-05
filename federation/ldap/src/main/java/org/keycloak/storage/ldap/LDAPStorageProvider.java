@@ -99,9 +99,14 @@ import org.keycloak.storage.user.UserQueryMethodsProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.userprofile.AttributeMetadata;
+import org.keycloak.userprofile.Attributes;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.UserProfileUtil;
+import org.keycloak.userprofile.ValidationException;
 import org.keycloak.utils.StreamsUtil;
 import org.keycloak.utils.StringUtil;
 
@@ -306,11 +311,13 @@ public class LDAPStorageProvider implements UserStorageProvider,
             String ldapUsername = LDAPUtils.getUsername(ldapUser, this.ldapIdentityStore.getConfig());
             UserModel localUser = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, ldapUsername);
             if (localUser == null) {
+                // null when the entry fails User Profile validation on import - filtered out below rather than
+                // left for a caller (e.g. group/role membership resolution) to trip over as a null element.
                 return importUserFromLDAP(session, realm, ldapUser);
             } else {
                 return proxy(realm, localUser, ldapUser, false);
             }
-        });
+        }).filter(Objects::nonNull);
     }
 
     public boolean synchronizeRegistrations() {
@@ -479,7 +486,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 .skip(firstResult)
                 .limit(maxResults)
                 // do no force the import and return the current existing user if available
-                .map(ldapUser -> importUserFromLDAP(session, realm, ldapUser, ImportType.NOT_FORCED_RETURN_EXISTING));
+                .map(ldapUser -> importUserFromLDAP(session, realm, ldapUser, ImportType.NOT_FORCED_RETURN_EXISTING))
+                // null when a brand-new entry fails User Profile validation on import - must not leak through as
+                // e.g. a null group/role member.
+                .filter(Objects::nonNull);
     }
 
     private Stream<LDAPObject> loadUsersByUniqueAttributeChunk(RealmModel realm, String uidName, Collection<String> uids) {
@@ -714,6 +724,69 @@ public class LDAPStorageProvider implements UserStorageProvider,
         NOT_FORCED_RETURN_EXISTING  // the import is not forced and existing user is returned
     };
 
+    private boolean isUserProfileValid(UserModel user) {
+        // Opt-in: only validate against the User Profile if the provider is configured to do so
+        boolean validateProfile = Boolean.parseBoolean(model.getConfig().getFirst(LDAPConstants.VALIDATE_USER_PROFILE));
+
+        if (!validateProfile) {
+            return true;
+        }
+
+        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
+        if (profileProvider == null) {
+            logger.warnf("LDAP Sync: User Profile validation was requested for user '%s', but UserProfileProvider is unavailable. Validation will be skipped for LDAP provider '%s'.",
+                    user.getUsername(), model.getId());
+            return true;
+        }
+
+        UserProfile profile = profileProvider.create(UserProfileContext.UPDATE_PROFILE, user);
+
+        try {
+            profile.validate();
+            return true;
+        } catch (ValidationException e) {
+            if (canBeFixedByUser(profile, e)) {
+                // Every attribute that failed validation is one the user can edit themselves through their own
+                // profile - so rather than rejecting the import outright, let it through and make them fix it
+                // before they can use the account. This does not apply to e.g. username when editing it is
+                // disabled on the realm: there is nothing the user could do about that themselves.
+                user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
+                logger.warnf("LDAP Sync: Imported user '%s' has invalid attributes according to the User Profile. Added the UPDATE_PROFILE required action: %s",
+                        user.getUsername(), describeErrors(e));
+                logger.debugf("Full User Profile validation errors for user '%s': %s", user.getUsername(), e.getErrors());
+                return true;
+            }
+
+            logger.warnf("LDAP Sync: Skipping user '%s'. Failed User Profile validation: %s",
+                    user.getUsername(), describeErrors(e));
+            logger.debugf("Full User Profile validation errors for user '%s': %s", user.getUsername(), e.getErrors());
+            return false;
+        }
+    }
+
+    // Package-private (and static) so it can be unit tested directly.
+    // ValidationException.Error#toString() (and therefore e.getErrors() itself) includes each validator's raw
+    // message parameters, which for validators like EmailValidator is the actual attribute value the user
+    // submitted - not something that belongs in a server log at WARN level. Log only the attribute name and the
+    // message key here; the full detail (with values) is still available via debug logging when needed.
+    static String describeErrors(ValidationException e) {
+        return e.getErrors().stream()
+                .map(error -> (error.getAttribute() != null ? error.getAttribute() : "<none>") + "=" + error.getMessage())
+                .collect(Collectors.joining(", "));
+    }
+
+    // Package-private (and static, as it depends on nothing but its arguments) so it can be unit tested directly -
+    // exercising it end-to-end would need a validator that reports an error with no associated attribute, which
+    // none of the built-in User Profile validators do.
+    static boolean canBeFixedByUser(UserProfile profile, ValidationException e) {
+        Attributes attributes = profile.getAttributes();
+        List<ValidationException.Error> errors = e.getErrors();
+        // allMatch() is vacuously true on an empty list - guard against that explicitly so an exception with no
+        // errors (were one ever constructed that way) is never mistaken for a user-fixable one.
+        return !errors.isEmpty() && errors.stream()
+            .allMatch(error -> error.getAttribute() != null && !attributes.isReadOnly(error.getAttribute()));
+    }
+
     protected UserModel importUserFromLDAP(KeycloakSession session, RealmModel realm, LDAPObject ldapUser, ImportType importType) {
         String ldapUsername = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
         LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
@@ -751,6 +824,17 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 imported = adapter;
             }
             doImportUser(realm, imported, ldapUser);
+
+            // Only validate brand-new local users created in import mode. If existingLocalUser is set,
+            // doImportUser() above just applied the new LDAP values (e.g. a renamed username) directly onto
+            // that already-persisted user - there is no clean way to undo that here, so rejecting at this
+            // point would leave it partially updated with invalid data instead of actually preventing anything.
+            // Likewise, when import is disabled, imported is the live LDAP-backed adapter used for lookup/auth,
+            // so returning null here would break non-import flows rather than rejecting a local user creation.
+            if (model.isImportEnabled() && existingLocalUser == null && !isUserProfileValid(imported)) {
+                userProvider.removeUser(realm, imported);
+                return null;
+            }
         } catch (ModelDuplicateException e) {
             logger.warnf(e, "Duplicated user importing from LDAP. LDAP Entry DN: [%s], LDAP_ID: [%s]", ldapUser.getDn(), ldapUser.getUuid());
             if (importType != ImportType.FORCED && existingLocalUser == null) {
@@ -1222,13 +1306,34 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 .distinct()
                 .count();
         RealmModel realm = session.getContext().getRealm();
-        // 1 - get configured attributes from LDAP mappers and add them to the user profile (if they not already present)
-        List<String> attributes = realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
+        // Gates every behavior change below that only exists to support LDAP import User Profile validation
+        // (see #isUserProfileValid) - without it, none of that validation ever runs, so none of its side effects
+        // on this realm's User Profile metadata should be visible either.
+        boolean validateUserProfile = Boolean.parseBoolean(model.getConfig().getFirst(LDAPConstants.VALIDATE_USER_PROFILE));
+        List<LDAPStorageMapper> ldapMappers = realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
                 .sorted(ldapMappersComparator.sortAsc())
-                .flatMap(mapperModel -> {
-                    LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
-                    return ldapMapper.getUserAttributes().stream();
-                }).toList();
+                .map(mapperManager::getMapper)
+                .toList();
+
+        // 1 - get configured attributes from LDAP mappers and add them to the user profile (if they not already present)
+        // Multiple mappers can target the same model attribute (e.g. the built-in AD writable setup maps both
+        // "username" and "username-cn" to UserModel.USERNAME) - deduplicate, or the same attribute name would be
+        // added to metadatas more than once, and DefaultAttributes#getUserStorageProviderMetadata would fail
+        // collecting them into a map with a "duplicate key" exception.
+        List<String> attributes = ldapMappers.stream()
+                .flatMap(ldapMapper -> ldapMapper.getUserAttributes().stream())
+                .distinct()
+                .toList();
+
+        // Attributes whose value is never actually written back to LDAP even while the provider itself is
+        // WRITABLE - an individual mapper can still be configured read-only, in which case an edit made through
+        // this profile would be silently discarded and overwritten again with the LDAP value on the next import.
+        // canBeFixedByUser() relies on Attributes.isReadOnly() to know this, so it must reflect that reality
+        // rather than only the User Profile permission configuration - see step 3 below.
+        Set<String> notWritableBackToLdap = ldapMappers.stream()
+                .flatMap(ldapMapper -> ldapMapper.getUserAttributes().stream()
+                        .filter(ldapMapper::isUserAttributeReadOnly))
+                .collect(Collectors.toSet());
 
         List<AttributeMetadata> metadatas = new ArrayList<>();
 
@@ -1237,6 +1342,31 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
             if (attributeMetadata != null) {
                 metadatas.add(attributeMetadata);
+            } else {
+                // The attribute already has metadata on the base profile (e.g. username, email, firstName,
+                // lastName): its value is established here from LDAP data rather than entered by the user through
+                // this profile, so a validation error on it must never be silently forgiven just because the
+                // value happens to be unchanged - see AttributeMetadata#isReadOnlyBypassAllowed.
+                AttributeMetadata existing = metadata.getAttribute(attrName).stream().findFirst().orElse(null);
+                if (existing != null) {
+                    // Only defeat the bypass when opted into LDAP import validation. Otherwise an existing invalid
+                    // read-only value - e.g. imported before this feature existed, or on a realm that never opted
+                    // in - would start failing validation on every profile update, trapping the user in an
+                    // unfixable required-action loop unrelated to LDAP import. Not adding an override here leaves
+                    // the base profile's original, permissive bypass behavior in place.
+                    if (validateUserProfile) {
+                        AttributeMetadata override = existing.clone();
+                        override.addReadOnlyBypassCondition(AttributeMetadata.ALWAYS_FALSE);
+                        metadatas.add(override);
+                    }
+                } else {
+                    // createAttributeMetadata() returning null above means it found this attribute already present
+                    // on the base profile - so this should never happen. If it ever does, the read-only bypass
+                    // override is silently skipped and this attribute is left in the default (permissive) state,
+                    // so make that loud rather than quietly doing nothing.
+                    logger.warnf("LDAP mapper attribute '%s' was expected to already have base user profile metadata for provider '%s', but none was found. Read-only bypass override was not applied.",
+                            attrName, getModel().getName());
+                }
             }
         }
 
@@ -1263,6 +1393,14 @@ public class LDAPStorageProvider implements UserStorageProvider,
         if (getEditMode() == EditMode.READ_ONLY) {
             Stream.concat(metadata.getAttributes().stream(), metadatas.stream())
                     .filter((m) -> !INTERNAL_ATTRIBUTES.contains(m.getName()))
+                    .forEach(attrMetadata -> attrMetadata.addWriteCondition(AttributeMetadata.ALWAYS_FALSE));
+        } else if (validateUserProfile && !notWritableBackToLdap.isEmpty()) {
+            // provider is WRITABLE overall, but some attributes are still individually read-only at the mapper
+            // level - only enforced when opted in, or this would silently block admin/account console edits to
+            // these attributes on every WRITABLE provider with such a mapper, whether or not the realm ever asked
+            // for LDAP import validation.
+            Stream.concat(metadata.getAttributes().stream(), metadatas.stream())
+                    .filter((m) -> notWritableBackToLdap.contains(m.getName()))
                     .forEach(attrMetadata -> attrMetadata.addWriteCondition(AttributeMetadata.ALWAYS_FALSE));
         }
 

@@ -178,6 +178,11 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("false")
                 .add()
+                .property().name(LDAPConstants.VALIDATE_USER_PROFILE)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("false")
+                .helpText("Validate imported LDAP users against the User Profile configuration during sync/import.")
+                .add()
                 .property().name(LDAPConstants.TRUST_EMAIL)
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("false")
@@ -713,8 +718,15 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                         if (!userModelOptional.isPresent() && currentUserLocal == null) {
                             // Add new user to Keycloak
                             exists.value = false;
-                            ldapFedProvider.importUserFromLDAP(session, currentRealm, ldapUser);
-                            syncResult.increaseAdded();
+                            UserModel importedUser = ldapFedProvider.importUserFromLDAP(session, currentRealm, ldapUser);
+                            if (importedUser != null) {
+                                syncResult.increaseAdded();
+                            } else {
+                                // e.g. rejected by User Profile validation - the administrator needs to know this
+                                // user wasn't actually imported, not just see it counted as added
+                                logger.warnf("User '%s' was not imported from LDAP. See previous log messages for the reason.", username);
+                                syncResult.increaseFailed();
+                            }
 
                         } else {
                             UserModel currentUser = userModelOptional.isPresent() ? userModelOptional.get() : currentUserLocal;
