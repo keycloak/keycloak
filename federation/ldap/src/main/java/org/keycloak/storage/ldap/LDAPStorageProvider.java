@@ -734,6 +734,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
         UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
         if (profileProvider == null) {
+            logger.warnf("LDAP Sync: User Profile validation was requested for user '%s', but UserProfileProvider is unavailable. Validation will be skipped for LDAP provider '%s'.",
+                    user.getUsername(), model.getId());
             return true;
         }
 
