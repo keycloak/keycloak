@@ -575,7 +575,10 @@ public final class CacheConfigurator {
             case AUTHENTICATION_SESSIONS_CACHE_NAME:
             case LOGIN_FAILURE_CACHE_NAME:
                 if (clustered) {
-                    builder.clustering().cacheMode(CacheMode.DIST_SYNC);
+                    // 3s is 6x the worst-case G1GC pause for in-memory caches, and fits within the
+                    // 10s retry budget in AbstractRefreshTokenProvider with room for 2-3 retries
+                    // (Infinispan default of 15s exceeds the retry budget, preventing any recovery).
+                    builder.clustering().cacheMode(CacheMode.DIST_SYNC).remoteTimeout(3, TimeUnit.SECONDS);
                 }
                 builder.encoding().mediaType(MediaType.APPLICATION_OBJECT_TYPE);
                 return builder;
