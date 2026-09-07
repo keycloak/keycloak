@@ -19,8 +19,8 @@ package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.keycloak.VCFormat;
 import org.keycloak.mdoc.MdocValidityInfo;
@@ -40,8 +40,8 @@ public class MdocCredentialBuilder implements CredentialBuilder {
     }
 
     @Override
-    public List<String> getSupportedBindingMethods() {
-        return List.of(CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY);
+    public Set<String> getSupportedBindingMethods() {
+        return Set.of(CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY);
     }
 
     @Override

@@ -457,15 +457,13 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
         CredentialBuilder credentialBuilder = session.getProvider(CredentialBuilder.class, format);
         if (credentialBuilder != null) {
-            List<String> allowedBindingMethods = credentialBuilder.getSupportedBindingMethods();
+            Set<String> allowedBindingMethods = credentialBuilder.getSupportedBindingMethods();
 
             String bindingMethodsAttr = clientScope.getAttributes().get(VC_CRYPTOGRAPHIC_BINDING_METHODS);
             if (bindingRequired || !StringUtil.isBlank(bindingMethodsAttr)) {
-                List<String> effectiveBindingMethods = parseCommaSeparated(bindingMethodsAttr).stream()
-                        .filter(allowedBindingMethods::contains)
-                        .toList();
+                List<String> effectiveBindingMethods = parseCommaSeparated(bindingMethodsAttr);
 
-                if (effectiveBindingMethods.isEmpty()) {
+                if (effectiveBindingMethods.isEmpty() || !allowedBindingMethods.containsAll(effectiveBindingMethods)) {
                     throw ErrorResponse.error(
                             String.format("When vc.binding_required is true, vc.cryptographic_binding_methods_supported must " +
                                             "contain at least one valid value. Supported values for format '%s': %s",
@@ -482,11 +480,9 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
         String proofTypesAttr = clientScope.getAttributes().get(VC_BINDING_REQUIRED_PROOF_TYPES);
         if (bindingRequired || !StringUtil.isBlank(proofTypesAttr)) {
-            List<String> effectiveProofTypes = parseCommaSeparated(proofTypesAttr).stream()
-                    .filter(allowedProofTypes::contains)
-                    .toList();
+            List<String> effectiveProofTypes = parseCommaSeparated(proofTypesAttr);
 
-            if (effectiveProofTypes.isEmpty()) {
+            if (effectiveProofTypes.isEmpty() || !allowedProofTypes.containsAll(effectiveProofTypes)) {
                 throw ErrorResponse.error(
                         String.format("When vc.binding_required is true, vc.binding_required_proof_types must " +
                                         "contain at least one valid value. Supported values: %s",

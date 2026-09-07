@@ -276,17 +276,17 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
     }
 
     /**
-     * Issue #52421 - Case 4: binding_required=true, valid binding method, but proof types contains only invalid values should be rejected.
+     * Issue #52421 - Case 4: binding_required=true, valid binding method, but proof types contains invalid values should be rejected.
      */
     @Test
     public void testBindingRequiredWithInvalidProofTypesRejected() {
         CredentialScopeRepresentation scope = new CredentialScopeRepresentation("issue-52421-invalid-proof-types");
         scope.setBindingRequired(true);
         scope.setCryptographicBindingMethods(CRYPTOGRAPHIC_BINDING_METHOD_JWK);
-        scope.setRequiredProofTypes("incorrect-value");
+        scope.setRequiredProofTypes("jwt,incorrect-value");
 
         String error = assertClientScopeCreateFailure(scope);
-        assertTrue(error.contains("vc.binding_required_proof_types"));
+        assertTrue(error.contains(VC_BINDING_REQUIRED_PROOF_TYPES));
     }
 
     /**

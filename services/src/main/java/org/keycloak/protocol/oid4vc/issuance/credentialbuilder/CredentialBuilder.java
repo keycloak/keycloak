@@ -17,7 +17,7 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
-import java.util.List;
+import java.util.Set;
 
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
@@ -41,8 +41,8 @@ public interface CredentialBuilder extends Provider {
     /**
      * Returns list of supported binding methods for this credential format
      */
-    default List<String> getSupportedBindingMethods() {
-        return List.of(CRYPTOGRAPHIC_BINDING_METHOD_JWK);
+    default Set<String> getSupportedBindingMethods() {
+        return Set.of(CRYPTOGRAPHIC_BINDING_METHOD_JWK);
     }
 
     /**
