@@ -99,6 +99,12 @@ jobs:
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
         working-directory: js
 
+      - run: pnpm --fail-if-no-match --filter @keycloak/keycloak-ui-shared-pf6 build
+        working-directory: js
+
+      - run: pnpm --fail-if-no-match --filter @keycloak/keycloak-ui-shared-pf6 test
+        working-directory: js
+
   account-ui:
     name: Account UI
     needs: conditional

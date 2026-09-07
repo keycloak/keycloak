@@ -233,6 +233,7 @@ async function main() {
   const appDir = await resolveAppDir(options.appPath);
   const runTimestamp = formatTimestamp();
   const tempRoot = await mkdtemp(path.join(tmpdir(), "kc-pf6-account-migrate-"));
+  try {
   const stagedAppDir = path.join(tempRoot, "account-ui");
   await cp(appDir, stagedAppDir, { recursive: true });
 
@@ -379,6 +380,9 @@ async function main() {
   console.log(`Residual findings: ${residuals.length}`);
   console.log(`Report: ${reportMdPath}`);
   console.log(`REPORT_READY:${reportMdPath}`);
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
 }
 
 main().catch((error) => {
