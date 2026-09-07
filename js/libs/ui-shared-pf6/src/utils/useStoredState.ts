@@ -31,7 +31,7 @@ export function useStoredState<S>(
   const value = useMemo<S>(() => JSON.parse(storedValue), [storedValue]);
   const setValue = useCallback(
     (value: S) => setStoredValue(JSON.stringify(value)),
-    [],
+    [setStoredValue],
   );
 
   return [value, setValue];

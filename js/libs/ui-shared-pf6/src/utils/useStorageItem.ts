@@ -17,10 +17,13 @@ export function useStorageItem(
     () => storageArea.getItem(keyName) ?? defaultValue,
   );
 
-  const setValue = useCallback((newValue: string) => {
-    setInnerValue(newValue);
-    storageArea.setItem(keyName, newValue);
-  }, []);
+  const setValue = useCallback(
+    (newValue: string) => {
+      setInnerValue(newValue);
+      storageArea.setItem(keyName, newValue);
+    },
+    [storageArea, keyName],
+  );
 
   useEffect(() => {
     // If the key name or storage area has changed, we want to update the value.
@@ -45,7 +48,7 @@ export function useStorageItem(
     }
 
     return () => window.removeEventListener("storage", handleStorage);
-  }, [storageArea, keyName]);
+  }, [storageArea, keyName, defaultValue]);
 
   return [value, setValue];
 }
