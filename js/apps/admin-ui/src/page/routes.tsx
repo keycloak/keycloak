@@ -18,6 +18,15 @@ const PageListRoute: AppRouteObject = {
 };
 
 const PageDetailRoute: AppRouteObject = {
+  path: "/:realm/page-section/:providerId/:id/:tab?",
+  element: <Page />,
+  handle: {
+    access: "view-realm",
+    breadcrumb: (t) => t("details"),
+  },
+};
+
+const PageDetailLegacyRoute: AppRouteObject = {
   path: "/:realm/page-section/:providerId/:id",
   element: <Page />,
   handle: {
@@ -37,6 +46,7 @@ const AddPageDetailRoute: AppRouteObject = {
 
 const routes: AppRouteObject[] = [
   PageDetailRoute,
+  PageDetailLegacyRoute,
   AddPageDetailRoute,
   PageListRoute,
 ];

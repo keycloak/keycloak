@@ -1,0 +1,104 @@
+package org.keycloak.services.resources.admin;
+
+import java.util.stream.Stream;
+
+import org.keycloak.component.ComponentFactory;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.services.ui.extend.ComponentStorageFactory;
+import org.keycloak.services.ui.extend.UiExtensionSupport;
+import org.keycloak.services.ui.extend.UiPageProvider;
+import org.keycloak.services.ui.extend.UiTabProvider;
+
+final class UiExtensionComponentStorage {
+
+    private UiExtensionComponentStorage() {
+    }
+
+    static ComponentStorageFactory getStorageFactory(KeycloakSession session, String providerType, String providerId) {
+        ProviderFactory<?> factory = getProviderFactory(session, providerType, providerId);
+        if (factory instanceof ComponentStorageFactory storageFactory) {
+            return storageFactory;
+        }
+        return null;
+    }
+
+    static UiExtensionSupport getExtensionFactory(KeycloakSession session, String providerType, String providerId) {
+        ProviderFactory<?> factory = getProviderFactory(session, providerType, providerId);
+        if (factory instanceof UiExtensionSupport extensionSupport) {
+            return extensionSupport;
+        }
+        return null;
+    }
+
+    static Stream<ComponentModel> listComponents(
+            KeycloakSession session,
+            RealmModel realm,
+            String parent,
+            String type,
+            String providerId) {
+        ComponentStorageFactory storageFactory = getStorageFactory(session, type, providerId);
+        if (storageFactory == null) {
+            return null;
+        }
+        return storageFactory.listComponents(session, realm, parent, providerId);
+    }
+
+    static ComponentModel getComponent(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        ComponentStorageFactory storageFactory = getStorageFactory(session, model.getProviderType(), model.getProviderId());
+        if (storageFactory == null) {
+            return null;
+        }
+        return storageFactory.getComponent(session, realm, model.getId());
+    }
+
+    static ComponentModel createComponent(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        ComponentStorageFactory storageFactory = getStorageFactory(session, model.getProviderType(), model.getProviderId());
+        if (storageFactory == null) {
+            return null;
+        }
+        return storageFactory.createComponent(session, realm, model);
+    }
+
+    static ComponentModel updateComponent(
+            KeycloakSession session,
+            RealmModel realm,
+            ComponentModel oldModel,
+            ComponentModel newModel) {
+        ComponentStorageFactory storageFactory = getStorageFactory(session, oldModel.getProviderType(), oldModel.getProviderId());
+        if (storageFactory == null) {
+            return null;
+        }
+        return storageFactory.updateComponent(session, realm, oldModel, newModel);
+    }
+
+    static void removeComponent(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        ComponentStorageFactory storageFactory = getStorageFactory(session, model.getProviderType(), model.getProviderId());
+        if (storageFactory != null) {
+            storageFactory.removeComponent(session, realm, model);
+        }
+    }
+
+    static boolean usesCustomStorage(String providerType, String providerId, KeycloakSession session) {
+        return getStorageFactory(session, providerType, providerId) != null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ProviderFactory<?> getProviderFactory(KeycloakSession session, String providerType, String providerId) {
+        try {
+            Class<? extends Provider> providerClass =
+                    (Class<? extends Provider>) session.getProviderClass(providerType);
+            ProviderFactory<?> factory =
+                    session.getKeycloakSessionFactory().getProviderFactory(providerClass, providerId);
+            if (factory instanceof ComponentFactory<?, ?> componentFactory && componentFactory.isInternal()) {
+                return null;
+            }
+            return factory;
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+}

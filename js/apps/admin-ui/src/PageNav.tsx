@@ -15,6 +15,8 @@ import { useServerInfo } from "./context/server-info/ServerInfoProvider";
 import type { Environment } from "./environment-types";
 import { toPage } from "./page/routes";
 import { normalizeNavRoutePath } from "./page-nav-utils";
+import { PAGE_PROVIDER } from "./page/constants";
+import { canViewUiExtension, getNavSection } from "./page/uiExtensionAccess";
 import { routes } from "./routes";
 import { resolveDisplayName } from "./util";
 import useIsFeatureEnabled, { Feature } from "./utils/useIsFeatureEnabled";
@@ -25,6 +27,28 @@ type LeftNavProps = {
   title: string;
   path: string;
   id?: string;
+};
+
+const ExtensionNav = ({ title, path }: { title: string; path: string }) => {
+  const { t } = useTranslation();
+  const { realm } = useRealm();
+  const encodedRealm = encodeURIComponent(realm);
+  const name = "nav-item" + path.replace("/", "-");
+
+  return (
+    <li>
+      <NavLink
+        id={name}
+        data-testid={name}
+        to={`/${encodedRealm}${path}`}
+        className={({ isActive }) =>
+          `pf-v5-c-nav__link${isActive ? " pf-m-current" : ""}`
+        }
+      >
+        {t(title)}
+      </NavLink>
+    </li>
+  );
 };
 
 const LeftNav = ({ title, path, id }: LeftNavProps) => {
@@ -67,11 +91,20 @@ const LeftNav = ({ title, path, id }: LeftNavProps) => {
 export const PageNav = () => {
   const { t } = useTranslation();
   const { environment } = useEnvironment<Environment>();
-  const { hasSomeAccess } = useAccess();
+  const { hasSomeAccess, hasAccess } = useAccess();
   const { componentTypes } = useServerInfo();
   const isFeatureEnabled = useIsFeatureEnabled();
   const pages =
-    componentTypes?.["org.keycloak.services.ui.extend.UiPageProvider"];
+    componentTypes?.[PAGE_PROVIDER]?.filter((page) =>
+      canViewUiExtension(page, { hasAccess, hasSomeAccess }),
+    ) ?? [];
+  const extensionPages = pages.filter(
+    (page) => getNavSection(page) === "extensions",
+  );
+  const configurePages = pages.filter(
+    (page) => getNavSection(page) === "configure",
+  );
+  const managePages = pages.filter((page) => getNavSection(page) === "manage");
   const navigate = useNavigate();
   const { realm, realmRepresentation } = useRealm();
 
@@ -139,6 +172,14 @@ export const PageNav = () => {
               <LeftNav title="groups" path="/groups" />
               <LeftNav title="sessions" path="/sessions" />
               <LeftNav title="events" path="/events" />
+              {isFeatureEnabled(Feature.DeclarativeUI) &&
+                managePages.map((p) => (
+                  <ExtensionNav
+                    key={p.id}
+                    title={p.id!}
+                    path={toPage({ providerId: p.id }).pathname!}
+                  />
+                ))}
             </NavGroup>
           )}
 
@@ -154,16 +195,27 @@ export const PageNav = () => {
               <LeftNav title="userFederation" path="/user-federation" />
               {showWorkflows && <LeftNav title="workflows" path="/workflows" />}
               {isFeatureEnabled(Feature.DeclarativeUI) &&
-                pages?.map((p) => (
-                  <LeftNav
+                configurePages.map((p) => (
+                  <ExtensionNav
                     key={p.id}
-                    title={p.id}
+                    title={p.id!}
                     path={toPage({ providerId: p.id }).pathname!}
-                    id="/page-section"
                   />
                 ))}
             </NavGroup>
           )}
+          {isFeatureEnabled(Feature.DeclarativeUI) &&
+            extensionPages.length > 0 && (
+              <NavGroup aria-label={t("extensions")} title={t("extensions")}>
+                {extensionPages.map((p) => (
+                  <ExtensionNav
+                    key={p.id}
+                    title={p.id!}
+                    path={toPage({ providerId: p.id }).pathname!}
+                  />
+                ))}
+              </NavGroup>
+            )}
         </Nav>
       </PageSidebarBody>
     </PageSidebar>
