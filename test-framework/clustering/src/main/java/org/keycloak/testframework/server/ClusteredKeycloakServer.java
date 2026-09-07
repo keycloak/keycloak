@@ -212,6 +212,6 @@ public class ClusteredKeycloakServer implements KeycloakServer {
         if (!stateless) {
             return;
         }
-        configBuilder.spiOption("cache-embedded", "default", "cluster-name", "cluster-" + id);
+        configBuilder.option("cache-embedded-cluster-name", "cluster-" + id);
     }
 }

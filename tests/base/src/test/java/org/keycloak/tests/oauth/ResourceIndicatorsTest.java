@@ -9,6 +9,7 @@ import org.keycloak.testframework.oauth.DefaultOAuthClientConfiguration;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -35,6 +36,9 @@ public class ResourceIndicatorsTest {
 
     @InjectOAuthClient(config = OAuthClientConfig.class)
     OAuthClient oauth;
+
+    @InjectOAuthClient(ref = "bare", config = BareClientConfig.class)
+    OAuthClient bareOauth;
 
     @TestSetup
     public void loginUser() {
@@ -134,6 +138,20 @@ public class ResourceIndicatorsTest {
         assertErrorResponse(refreshResponse,  INVALID_TARGET, ERROR_NOT_MATCHING);
     }
 
+    @Test
+    public void testNullAudienceReturnsInvalidTarget() {
+        AccessTokenResponse tokenResponse = bareOauth.passwordGrantRequest("user-without-roles", "pass")
+                .resource("urn:client:theservice").send();
+        assertErrorResponse(tokenResponse, INVALID_TARGET, ERROR_INVALID_RESOURCE);
+    }
+
+    @Test
+    public void testClientCredentialsWithoutRefreshTokenSetsAudience() {
+        AccessTokenResponse tokenResponse = oauth.clientCredentialsGrantRequest()
+                .resource("urn:client:test-app").send();
+        assertValidResponse(tokenResponse, "test-app");
+    }
+
     private static final class ResourceIndicatorsRealm implements RealmConfig {
 
         @Override
@@ -152,7 +170,18 @@ public class ResourceIndicatorsTest {
                     .clientRoles("otherservice", "myrole")
                     .clientRoles("serviceWithoutResource", "myrole"));
 
+            realm.users(UserBuilder.create("user-without-roles").firstName("noroles").lastName("noroles")
+                    .password("pass").email("noroles@email.localhost"));
+
             return realm;
+        }
+    }
+
+    private static final class BareClientConfig implements ClientConfig {
+
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return client.clientId("no-audience").secret("password").directAccessGrantsEnabled();
         }
     }
 

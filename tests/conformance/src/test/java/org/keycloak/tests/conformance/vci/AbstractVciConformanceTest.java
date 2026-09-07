@@ -22,10 +22,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import org.keycloak.testframework.conformance.OpenIdConformanceSuite;
+import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
+import org.keycloak.testframework.conformance.runner.ModuleRun;
 import org.keycloak.tests.conformance.AbstractConformanceTest;
-import org.keycloak.tests.conformance.containers.OpenIdConformanceSuite;
-import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
-import org.keycloak.tests.conformance.runner.ModuleRun;
 
 import com.fasterxml.jackson.databind.JsonNode;
 

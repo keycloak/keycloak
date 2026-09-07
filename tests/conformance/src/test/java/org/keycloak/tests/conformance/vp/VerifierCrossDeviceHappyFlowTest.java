@@ -22,11 +22,11 @@ import java.util.stream.Stream;
 
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.conformance.runner.BrowserInteraction;
+import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
+import org.keycloak.testframework.conformance.runner.ConformanceResult;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.tests.conformance.runner.BrowserInteraction;
-import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
-import org.keycloak.tests.conformance.runner.ConformanceResult;
 
 /**
  * The verifier accepts a valid cross device SD-JWT VC presentation. The wallet uses the QR code link,

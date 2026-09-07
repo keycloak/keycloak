@@ -25,7 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 import org.keycloak.representations.idm.oid4vc.VerifiableCredentialOfferActionConfig;
-import org.keycloak.tests.conformance.containers.OpenIdConformanceSuite;
+import org.keycloak.testframework.conformance.OpenIdConformanceSuite;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;

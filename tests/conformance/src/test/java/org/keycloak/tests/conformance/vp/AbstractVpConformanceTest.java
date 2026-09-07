@@ -29,10 +29,10 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
+import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
+import org.keycloak.testframework.conformance.runner.ModuleRun;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.tests.conformance.AbstractConformanceTest;
-import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
-import org.keycloak.tests.conformance.runner.ModuleRun;
 
 import com.fasterxml.jackson.databind.JsonNode;
 

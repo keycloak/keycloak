@@ -36,8 +36,8 @@ import org.keycloak.broker.oid4vp.OID4VPIdentityProviderEndpoint;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
-import org.keycloak.tests.conformance.containers.OpenIdConformanceSuite;
-import org.keycloak.tests.conformance.runner.ModuleRun;
+import org.keycloak.testframework.conformance.OpenIdConformanceSuite;
+import org.keycloak.testframework.conformance.runner.ModuleRun;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;

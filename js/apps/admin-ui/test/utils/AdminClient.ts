@@ -388,6 +388,17 @@ class AdminClient {
     );
   }
 
+  async getLocalizationTexts(
+    locale: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    return await this.#client.realms.getRealmLocalizationTexts({
+      realm,
+      selectedLocale: locale,
+    });
+  }
+
   async removeAllLocalizationTexts() {
     await this.#login();
     const localesWithTexts = await this.#client.realms.getRealmSpecificLocales({

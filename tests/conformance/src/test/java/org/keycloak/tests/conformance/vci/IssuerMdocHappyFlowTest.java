@@ -22,14 +22,14 @@ import java.util.stream.Stream;
 
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.conformance.runner.BrowserInteraction;
+import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
+import org.keycloak.testframework.conformance.runner.ConformanceResult;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.tests.conformance.runner.BrowserInteraction;
-import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
-import org.keycloak.tests.conformance.runner.ConformanceResult;
 
 /**
- * Runs the issuer happy flow with the ISO mdoc credential format, mirroring {@link IssuerHappyFlowTest} for SD-JWT VC.
+ * Runs the issuer happy flow with the ISO mdoc credential format, mirroring {@link org.keycloak.tests.conformance.vci.issuer.IssuerHappyFlowTest} for SD-JWT VC.
  */
 @KeycloakIntegrationTest(config = VciConformanceRealmConfig.ServerConfig.class)
 public class IssuerMdocHappyFlowTest extends AbstractVciConformanceTest {

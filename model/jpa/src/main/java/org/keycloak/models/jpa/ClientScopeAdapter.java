@@ -250,11 +250,24 @@ public class ClientScopeAdapter implements ClientScopeModel, JpaModel<ClientScop
 
     @Override
     public void setAttribute(String name, String value) {
+        boolean valueUndefined = value == null || "".equals(value.trim());
+
         for (ClientScopeAttributeEntity attr : entity.getAttributes()) {
             if (attr.getName().equals(name)) {
-                attr.setValue(value);
+                // clean up, so that attributes previously set with either a empty or null value are removed
+                // we should remove this in future versions so that new client scopes never store empty/null attributes
+                if (valueUndefined) {
+                    removeAttribute(name);
+                } else {
+                    attr.setValue(value);
+                }
                 return;
             }
+        }
+
+        // do not create attributes if empty or null
+        if (valueUndefined) {
+            return;
         }
 
         ClientScopeAttributeEntity attr = new ClientScopeAttributeEntity();

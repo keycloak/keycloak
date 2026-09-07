@@ -44,6 +44,7 @@ import org.keycloak.protocol.oid4vc.issuance.TimeClaimNormalizer;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCStaticClaimMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -57,6 +58,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.RejectImplicitGrantExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureParContentsExecutorFactory;
+import org.keycloak.testframework.conformance.OpenIdConformanceSuite;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -64,7 +66,6 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.conformance.ConformanceSigningKey;
-import org.keycloak.tests.conformance.containers.OpenIdConformanceSuite;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -242,7 +243,7 @@ public class VciConformanceRealmConfig implements RealmConfig {
                 // mDoc carries the doctype where SD-JWT VC carries the vct
                 .setVct(MDOC_DOC_TYPE);
 
-        scope.setDisplay(JsonSerialization.valueAsString(List.of(new DisplayObject().setName(MDOC_CREDENTIAL_CONFIGURATION_ID).setLocale("en-EN"))));
+        scope.setDisplay(JsonSerialization.valueAsString(List.of(new DisplayObject().setName(MDOC_CREDENTIAL_CONFIGURATION_ID).setLocale("en-US"))));
         scope.setProtocolMappers(mdocProtocolMappers());
 
         Map<String, String> attributes = Optional.ofNullable(scope.getAttributes()).orElseGet(HashMap::new);
@@ -308,12 +309,31 @@ public class VciConformanceRealmConfig implements RealmConfig {
                         OID4VCIssuedAtTimeClaimMapper.VALUE_SOURCE, "COMPUTE")));
     }
 
-    // mDoc claims are organised into namespaces, so every mapper pins the ISO 18013-5 namespace
+    // mDoc claims are organised into namespaces, so every mapper pins the ISO 18013-5 namespace. ISO/IEC
+    // 18013-5 marks a fixed set of org.iso.18013.5.1 data elements mandatory for an mDL, so a conformant
+    // issuer must emit all of them (the suite's EnsureMdocMdlMandatoryDataElementsPresent check enforces this).
+    // The holder-specific ones come from user attributes; the rest are static document values.
     private List<ProtocolMapperRepresentation> mdocProtocolMappers() {
         return List.of(
                 mdocMapper("did-mapper", "oid4vc-subject-id-mapper", "id", "did"),
                 mdocMapper("given-name-mapper", "oid4vc-user-attribute-mapper", "given_name", "firstName"),
-                mdocMapper("family-name-mapper", "oid4vc-user-attribute-mapper", "family_name", "lastName"));
+                mdocMapper("family-name-mapper", "oid4vc-user-attribute-mapper", "family_name", "lastName"),
+                mdocStaticMapper("birth-date-mapper", "birth_date", "1986-03-22"),
+                mdocStaticMapper("issue-date-mapper", "issue_date", "2019-10-20"),
+                mdocStaticMapper("expiry-date-mapper", "expiry_date", "2029-10-20"),
+                mdocStaticMapper("issuing-country-mapper", "issuing_country", "US"),
+                mdocStaticMapper("issuing-authority-mapper", "issuing_authority", "Keycloak Conformance"),
+                mdocStaticMapper("document-number-mapper", "document_number", "TEST-1234567"),
+                mdocStaticMapper("un-distinguishing-sign-mapper", "un_distinguishing_sign", "USA"),
+                mdocStaticMapper("portrait-mapper", "portrait", "conformance-portrait"),
+                mdocStaticMapper("driving-privileges-mapper", "driving_privileges", "[]"));
+    }
+
+    private ProtocolMapperRepresentation mdocStaticMapper(String name, String claimName, String value) {
+        return mapper(name, OID4VCStaticClaimMapper.MAPPER_ID, Map.of(
+                OID4VCMapper.CLAIM_NAME, claimName,
+                OID4VCStaticClaimMapper.STATIC_CLAIM_KEY, value,
+                OID4VCMapper.MDOC_NAMESPACE, MDOC_NAMESPACE));
     }
 
     private ProtocolMapperRepresentation mdocMapper(String name, String type, String claimName, String userAttribute) {
