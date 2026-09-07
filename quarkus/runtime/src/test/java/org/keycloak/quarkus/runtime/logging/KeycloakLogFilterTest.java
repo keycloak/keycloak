@@ -1,9 +1,11 @@
 package org.keycloak.quarkus.runtime.logging;
 
 import java.util.Set;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
@@ -26,6 +28,8 @@ public class KeycloakLogFilterTest {
                     + " necessary, make sure to file a feature request or bug report so that a solution can be"
                     + " implemented in Quarkus. Unsupported properties that override Quarkus' own settings: %s";
 
+    private KeycloakLogFilter keycloakLogFilter;
+
     private static LogRecord record(Level level, String loggerName, String message, Object... parameters) {
         LogRecord record = new LogRecord(level, message);
         record.setLoggerName(loggerName);
@@ -33,41 +37,61 @@ public class KeycloakLogFilterTest {
         return record;
     }
 
+    @Before
+    public void prepareKeycloakLogFilter() {
+        keycloakLogFilter = new KeycloakLogFilter() {
+            @Override
+            protected Class<? extends Handler> getHandlerClass() {
+                return null;
+            }
+
+            @Override
+            public boolean isHandlerEnabled() {
+                return false;
+            }
+
+            @Override
+            public boolean isAsyncLoggingEnabled() {
+                return false;
+            }
+        };
+    }
+
     @Test
     public void suppressesGenericWarningForDefaultUnit() {
-        assertTrue(KeycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
+        assertTrue(keycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
                 record(Level.WARNING, FASTBOOT, GENERIC_WARN, "<default>", Set.of("hibernate.order_inserts"))));
     }
 
     @Test
     public void suppressesOverrideWarningForDefaultUnit() {
-        assertTrue(KeycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
+        assertTrue(keycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
                 record(Level.WARNING, FASTBOOT, OVERRIDE_WARN, "<default>", Set.of("hibernate.order_inserts"))));
     }
 
     @Test
     public void keepsWarningForUserDefinedUnit() {
-        assertFalse(KeycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
+        assertFalse(keycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
                 record(Level.WARNING, FASTBOOT, GENERIC_WARN, "user-store", Set.of("hibernate.order_inserts"))));
     }
 
     @Test
     public void keepsWarningWhenUserAddsOwnUnsupportedProperty() {
-        assertFalse(KeycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
+        assertFalse(keycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
                 record(Level.WARNING, FASTBOOT, GENERIC_WARN, "<default>",
                         Set.of("hibernate.order_inserts", "hibernate.jdbc.fetch_size"))));
     }
 
     @Test
     public void suppressesWarningForKeycloakNamedQueryProperty() {
-        assertTrue(KeycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
+        assertTrue(keycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
                 record(Level.WARNING, FASTBOOT, GENERIC_WARN, "<default>",
                         Set.of("hibernate.use_sql_comments", "kc.query.deleteExpiredClientSessions[native]"))));
     }
 
     @Test
     public void keepsUnrelatedWarningFromSameLogger() {
-        assertFalse(KeycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
+        assertFalse(keycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
                 record(Level.WARNING, FASTBOOT,
                         "Persistence-unit [%s]: enabling best-effort backwards compatibility with '%2$s=%3$s'.",
                         "<default>")));
@@ -75,19 +99,19 @@ public class KeycloakLogFilterTest {
 
     @Test
     public void keepsNonWarningLevel() {
-        assertFalse(KeycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
+        assertFalse(keycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
                 record(Level.INFO, FASTBOOT, GENERIC_WARN, "<default>", Set.of("hibernate.order_inserts"))));
     }
 
     @Test
     public void keepsWarningFromDifferentLogger() {
-        assertFalse(KeycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
+        assertFalse(keycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
                 record(Level.WARNING, "org.hibernate.orm.deprecation", GENERIC_WARN, "<default>", Set.of("x"))));
     }
 
     @Test
     public void keepsWarningWithNoParameters() {
-        assertFalse(KeycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
+        assertFalse(keycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
                 record(Level.WARNING, FASTBOOT, GENERIC_WARN)));
     }
 }
