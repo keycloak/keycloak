@@ -2,8 +2,8 @@ import {
   Button,
   ButtonVariant,
   Divider,
-  Text,
-  TextVariants,
+  Content,
+  ContentVariants,
 } from "@patternfly/react-core";
 import { PlusCircleIcon } from "@patternfly/react-icons";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
@@ -124,9 +124,9 @@ export const AttributeValidations = () => {
             </Tbody>
           </Table>
         ) : (
-          <Text className="kc-emptyValidators" component={TextVariants.p}>
+          <Content className="kc-emptyValidators" component={ContentVariants.p}>
             {t("emptyValidators")}
-          </Text>
+          </Content>
         )}
       </div>
     </>

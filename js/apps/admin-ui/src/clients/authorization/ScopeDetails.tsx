@@ -113,7 +113,7 @@ export default function ScopeDetails() {
             : undefined
         }
       />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormProvider {...form}>
           <FormAccess
             isHorizontal

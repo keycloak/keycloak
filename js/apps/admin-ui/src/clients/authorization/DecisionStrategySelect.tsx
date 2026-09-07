@@ -23,7 +23,7 @@ export const DecisionStrategySelect = ({
   return (
     <FormGroup
       label={t("decisionStrategy")}
-      labelIcon={
+      labelHelp={
         <HelpItem
           helpText={t(helpLabel || "decisionStrategyHelp")}
           fieldLabelId="decisionStrategy"

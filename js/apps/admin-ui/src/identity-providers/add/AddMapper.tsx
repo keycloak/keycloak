@@ -169,7 +169,7 @@ export default function AddMapper() {
   }
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <DeleteMapperConfirm />
       <ViewHeader
         className="kc-add-mapper-title"

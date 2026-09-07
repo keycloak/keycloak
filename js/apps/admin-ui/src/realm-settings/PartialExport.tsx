@@ -3,13 +3,15 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
+  Content,
   Form,
   FormGroup,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
   Switch,
-  Text,
-  TextContent,
 } from "@patternfly/react-core";
 import { saveAs } from "file-saver";
 import { useState } from "react";
@@ -71,10 +73,62 @@ export const PartialExportDialog = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("partialExport")}
       isOpen={isOpen}
       onClose={onClose}
-      actions={[
+      aria-label={t("partialExport")}
+    >
+      <ModalHeader title={t("partialExport")} />
+      <ModalBody>
+        <Content>
+          <Content component="p">{t("partialExportHeaderText")}</Content>
+        </Content>
+        <Form
+          isHorizontal
+          className="keycloak__realm-settings__partial-import_form"
+        >
+          <FormGroup
+            label={t("includeGroupsAndRoles")}
+            fieldId="include-groups-and-roles-check"
+            hasNoPaddingTop
+          >
+            <Switch
+              id="include-groups-and-roles-check"
+              data-testid="include-groups-and-roles-check"
+              isChecked={exportGroupsAndRoles}
+              onChange={(_event, val) => setExportGroupsAndRoles(val)}
+              label={t("on")}
+              aria-label={t("includeGroupsAndRoles")}
+            />
+          </FormGroup>
+          <FormGroup
+            label={t("includeClients")}
+            fieldId="include-clients-check"
+            hasNoPaddingTop
+          >
+            <Switch
+              id="include-clients-check"
+              data-testid="include-clients-check"
+              onChange={(_event, val) => setExportClients(val)}
+              isChecked={exportClients}
+              label={t("on")}
+              aria-label={t("includeClients")}
+            />
+          </FormGroup>
+        </Form>
+
+        {showWarning && (
+          <Alert
+            data-testid="warning-message"
+            variant="warning"
+            component="p"
+            title={t("exportWarningTitle")}
+            isInline
+          >
+            {t("exportWarningDescription")}
+          </Alert>
+        )}
+      </ModalBody>
+      <ModalFooter>
         <Button
           key="export"
           data-testid="confirm"
@@ -82,7 +136,7 @@ export const PartialExportDialog = ({
           onClick={exportRealm}
         >
           {t("export")}
-        </Button>,
+        </Button>
         <Button
           key="cancel"
           data-testid="cancel"
@@ -90,59 +144,8 @@ export const PartialExportDialog = ({
           onClick={onClose}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <TextContent>
-        <Text>{t("partialExportHeaderText")}</Text>
-      </TextContent>
-      <Form
-        isHorizontal
-        className="keycloak__realm-settings__partial-import_form"
-      >
-        <FormGroup
-          label={t("includeGroupsAndRoles")}
-          fieldId="include-groups-and-roles-check"
-          hasNoPaddingTop
-        >
-          <Switch
-            id="include-groups-and-roles-check"
-            data-testid="include-groups-and-roles-check"
-            isChecked={exportGroupsAndRoles}
-            onChange={(_event, val) => setExportGroupsAndRoles(val)}
-            label={t("on")}
-            labelOff={t("off")}
-            aria-label={t("includeGroupsAndRoles")}
-          />
-        </FormGroup>
-        <FormGroup
-          label={t("includeClients")}
-          fieldId="include-clients-check"
-          hasNoPaddingTop
-        >
-          <Switch
-            id="include-clients-check"
-            data-testid="include-clients-check"
-            onChange={(_event, val) => setExportClients(val)}
-            isChecked={exportClients}
-            label={t("on")}
-            labelOff={t("off")}
-            aria-label={t("includeClients")}
-          />
-        </FormGroup>
-      </Form>
-
-      {showWarning && (
-        <Alert
-          data-testid="warning-message"
-          variant="warning"
-          component="p"
-          title={t("exportWarningTitle")}
-          isInline
-        >
-          {t("exportWarningDescription")}
-        </Alert>
-      )}
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

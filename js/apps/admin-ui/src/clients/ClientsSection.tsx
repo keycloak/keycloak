@@ -192,7 +192,7 @@ export default function ClientsSection() {
         helpUrl={helpUrls.clientsUrl}
         divider={false}
       />
-      <PageSection variant="light" className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
         <RoutableTabs
           mountOnEnter
           unmountOnExit

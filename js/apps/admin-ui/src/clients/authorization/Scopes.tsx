@@ -151,7 +151,7 @@ export const AuthorizationScopes = ({
   const noData = scopes.length === 0;
   const searching = search !== "";
   return (
-    <PageSection variant="light" className="pf-v5-u-p-0">
+    <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
       <DeleteScopeDialog
         clientId={clientId}
         open={deleteDialog}

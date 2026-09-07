@@ -36,7 +36,7 @@ export const isParameterizedScope = (scope: ClientScopeRepresentation) =>
   scope.attributes?.["is.parameterized.scope"] === "true";
 
 export const ParameterizedScopeLabel = () => (
-  <Label color="gold" isCompact>
+  <Label color="yellow" isCompact>
     parameterized
   </Label>
 );
