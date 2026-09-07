@@ -166,7 +166,7 @@ export default function ProfilesTab() {
   return (
     <>
       <DeleteConfirm />
-      <PageSection>
+      <PageSection hasBodyWrapper={false}>
         <Flex className="kc-profiles-config-section">
           <FlexItem>
             <Title headingLevel="h1" size="md">

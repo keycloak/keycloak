@@ -10,7 +10,6 @@ import {
   DrawerPanelContent,
   DropdownItem,
   PageSection,
-  PageSectionVariants,
   Tab,
   TabTitleText,
   Tabs,
@@ -171,7 +170,7 @@ export default function GroupsSection({ orgId }: { orgId?: string } = {}) {
         />
       )}
       <PageSection
-        variant={PageSectionVariants.light}
+        hasBodyWrapper={false}
         className="pf-v5-u-p-0 keycloak-admin--groups__section"
       >
         <Drawer isInline isExpanded={open} key={key} position="left">
@@ -236,7 +235,7 @@ export default function GroupsSection({ orgId }: { orgId?: string } = {}) {
                     : undefined
                 }
               />
-              <PageSection className="pf-v5-u-pt-0">
+              <PageSection hasBodyWrapper={false} className="pf-v5-u-pt-0">
                 {currentGroup()?.description}
               </PageSection>
               {subGroups.length > 0 && (

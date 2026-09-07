@@ -227,7 +227,7 @@ const CreateStreamFormBody = ({
           <FormGroup
             label={t("ssfStreamPushAuthHeader")}
             fieldId="ssfCreateStreamAuthHeader"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("ssfStreamPushAuthHeaderHelp")}
                 fieldLabelId="ssfStreamPushAuthHeader"
@@ -267,7 +267,7 @@ const CreateStreamFormBody = ({
       <FormGroup
         label={t("ssfCreateStreamEventsRequested")}
         fieldId="ssfCreateStreamEventsRequested"
-        labelIcon={
+        labelHelp={
           <HelpItem
             helpText={t("ssfCreateStreamEventsRequestedHelp")}
             fieldLabelId="ssfCreateStreamEventsRequested"
@@ -284,7 +284,7 @@ const CreateStreamFormBody = ({
               data-testid="ssfCreateStreamEventsRequested"
               variant={SelectVariant.typeaheadMulti}
               chipGroupProps={{
-                numChips: 5,
+                numLabels: 5,
                 expandedText: t("hide"),
                 collapsedText: t("showRemaining"),
               }}

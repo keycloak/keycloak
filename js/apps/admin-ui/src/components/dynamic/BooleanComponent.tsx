@@ -22,7 +22,7 @@ export const BooleanComponent = ({
       hasNoPaddingTop
       label={t(label!)}
       fieldId={name!}
-      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
+      labelHelp={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
     >
       <Controller
         name={convertToName(name!)}
@@ -34,7 +34,6 @@ export const BooleanComponent = ({
             id={name!}
             isDisabled={isDisabled}
             label={t("on")}
-            labelOff={t("off")}
             isChecked={
               field.value === "true" ||
               field.value === true ||

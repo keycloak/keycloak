@@ -101,7 +101,7 @@ export const RealmSettingsEmailTab = ({
   };
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <FormProvider {...form}>
         <FormPanel title={t("template")} className="kc-email-template">
           <FormAccess
