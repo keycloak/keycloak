@@ -5,6 +5,9 @@ import {
   ButtonVariant,
   Form,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
   PageSection,
   Radio,
@@ -25,7 +28,7 @@ const AuthenticationProviderList = ({
   setValue,
 }: AuthenticationProviderListProps) => {
   return (
-    <PageSection variant="light" className="pf-v5-u-py-lg">
+    <PageSection hasBodyWrapper={false} className="pf-v5-u-py-lg">
       <Form isHorizontal>
         {list?.map((provider) => (
           <Radio
@@ -105,13 +108,39 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
     <Modal
       variant={ModalVariant.medium}
       isOpen={true}
-      title={
-        type == "condition"
-          ? t("addConditionTo", { name })
-          : t("addExecutionTo", { name })
-      }
       onClose={() => onSelect()}
-      actions={[
+    >
+      <ModalHeader
+        title={
+          type == "condition"
+            ? t("addConditionTo", { name })
+            : t("addExecutionTo", { name })
+        }
+      />
+      <ModalBody>
+        {providers && (
+          <PaginatingTableToolbar
+            count={page.length || 0}
+            first={first}
+            max={max}
+            onNextClick={setFirst}
+            onPreviousClick={setFirst}
+            onPerPageSelect={(first, max) => {
+              setFirst(first);
+              setMax(max);
+            }}
+            inputGroupName="search"
+            inputGroupPlaceholder={t("search")}
+            inputGroupOnEnter={setSearch}
+          >
+            <AuthenticationProviderList
+              list={page.slice(0, max)}
+              setValue={setValue}
+            />
+          </PaginatingTableToolbar>
+        )}
+      </ModalBody>
+      <ModalFooter>
         <Button
           id="modal-add"
           data-testid="modal-add"
@@ -119,7 +148,7 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
           onClick={() => onSelect(value)}
         >
           {t("add")}
-        </Button>,
+        </Button>
         <Button
           data-testid="cancel"
           id="modal-cancel"
@@ -130,30 +159,8 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
           }}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      {providers && (
-        <PaginatingTableToolbar
-          count={page.length || 0}
-          first={first}
-          max={max}
-          onNextClick={setFirst}
-          onPreviousClick={setFirst}
-          onPerPageSelect={(first, max) => {
-            setFirst(first);
-            setMax(max);
-          }}
-          inputGroupName="search"
-          inputGroupPlaceholder={t("search")}
-          inputGroupOnEnter={setSearch}
-        >
-          <AuthenticationProviderList
-            list={page.slice(0, max)}
-            setValue={setValue}
-          />
-        </PaginatingTableToolbar>
-      )}
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

@@ -60,7 +60,7 @@ export default function AddOid4Vp() {
       <ViewHeader
         titleKey={t("addIdentityProvider", { provider: "OpenID4VP" })}
       />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormProvider {...form}>
           <FormAccess
             role="manage-identity-providers"

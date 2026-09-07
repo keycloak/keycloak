@@ -130,7 +130,7 @@ const FromTo = ({ name, ...rest }: NumberControlProps) => {
     <FormGroup
       label={t(name)}
       fieldId={name}
-      labelIcon={<HelpItem helpText={t(`${name}Help`)} fieldLabelId={name} />}
+      labelHelp={<HelpItem helpText={t(`${name}Help`)} fieldLabelId={name} />}
     >
       <Split hasGutter>
         <SplitItem>
@@ -157,7 +157,7 @@ export const Time = () => {
       <FormGroup
         label={t("repeat")}
         fieldId="repeat"
-        labelIcon={
+        labelHelp={
           <HelpItem helpText={t("repeatHelp")} fieldLabelId="repeat" />
         }
       >
@@ -197,7 +197,7 @@ export const Time = () => {
       <FormGroup
         label={t("startTime")}
         fieldId="notBefore"
-        labelIcon={
+        labelHelp={
           <HelpItem helpText={t("startTimeHelp")} fieldLabelId="startTime" />
         }
         isRequired
@@ -208,7 +208,7 @@ export const Time = () => {
       <FormGroup
         label={t("expireTime")}
         fieldId="notOnOrAfter"
-        labelIcon={
+        labelHelp={
           <HelpItem helpText={t("expireTimeHelp")} fieldLabelId="expireTime" />
         }
         isRequired

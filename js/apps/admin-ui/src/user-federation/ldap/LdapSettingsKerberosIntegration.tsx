@@ -42,7 +42,7 @@ export const LdapSettingsKerberosIntegration = ({
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           label={t("allowKerberosAuthentication")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("allowKerberosAuthenticationHelp")}
               fieldLabelId="allowKerberosAuthentication"
@@ -63,7 +63,6 @@ export const LdapSettingsKerberosIntegration = ({
                 onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
-                labelOff={t("off")}
                 aria-label={t("allowKerberosAuthentication")}
               />
             )}
@@ -104,7 +103,7 @@ export const LdapSettingsKerberosIntegration = ({
 
             <FormGroup
               label={t("debug")}
-              labelIcon={
+              labelHelp={
                 <HelpItem helpText={t("debugHelp")} fieldLabelId="debug" />
               }
               fieldId="kc-debug"
@@ -122,7 +121,6 @@ export const LdapSettingsKerberosIntegration = ({
                     onChange={(_event, value) => field.onChange([`${value}`])}
                     isChecked={field.value[0] === "true"}
                     label={t("on")}
-                    labelOff={t("off")}
                     aria-label={t("debug")}
                   />
                 )}
@@ -132,7 +130,7 @@ export const LdapSettingsKerberosIntegration = ({
         )}
         <FormGroup
           label={t("useKerberosForPasswordAuthentication")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("useKerberosForPasswordAuthenticationHelp")}
               fieldLabelId="useKerberosForPasswordAuthentication"
@@ -153,7 +151,6 @@ export const LdapSettingsKerberosIntegration = ({
                 onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
-                labelOff={t("off")}
                 aria-label={t("useKerberosForPasswordAuthentication")}
               />
             )}
