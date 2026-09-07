@@ -16,8 +16,8 @@
  */
 package org.keycloak.organization.validation;
 
-import java.util.Objects;
-
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RoleContainerModel;
@@ -25,7 +25,10 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.validate.BuiltinValidators;
 
+import static org.keycloak.models.AdminRoles.isAdminRoleOrComposite;
+
 public class OrganizationsValidation {
+
     public static void validateUrl(String redirectUrl) {
         if (!BuiltinValidators.uriValidator().validate(redirectUrl).isValid()) {
             throw new OrganizationValidationException("Organization redirect URL is not valid.");
@@ -36,20 +39,35 @@ public class OrganizationsValidation {
         if (role == null || !role.isType(RoleModel.Type.ORGANIZATION)) {
             return;
         }
-        if (user == null) {
-            throw new ModelException("Organization roles can only be assigned to organization members");
-        }
 
         OrganizationModel organization = getOrganizationRoleContainer(role);
 
-        if (!organization.isMember(user)) {
+        if (user == null || !organization.isMember(user)) {
             throw new ModelException("Organization roles can only be assigned to members of the organization");
+        }
+
+        if (isAdminRoleOrComposite(role)) {
+            throw new ModelException("Organization members can not be granted with admin roles");
         }
     }
 
-    public static void validateOrganizationRoleGroupMapping(RoleModel role) {
-        if (role != null && role.isType(RoleModel.Type.ORGANIZATION)) {
-            throw new ModelException("Organization roles cannot be assigned to groups");
+    public static void validateOrganizationRoleGroupMapping(GroupModel group, RoleModel role) {
+        if (role == null) {
+            return;
+        }
+
+        boolean isOrgGroup = Type.ORGANIZATION.equals(group.getType());
+        boolean isOrgRole = role.isType(RoleModel.Type.ORGANIZATION);
+
+        if (isOrgGroup) {
+            if (isAdminRoleOrComposite(role)) {
+                throw new ModelException("Admin roles cannot be assigned to organization groups");
+            }
+            return;
+        }
+
+        if (isOrgRole) {
+            throw new ModelException("Organization roles can only be assigned to organization groups");
         }
     }
 
@@ -60,19 +78,23 @@ public class OrganizationsValidation {
     }
 
     public static void validateOrganizationRoleComposite(RoleModel parent, RoleModel child) {
-        if (parent == null || child == null || (!parent.isType(RoleModel.Type.ORGANIZATION) && !child.isType(RoleModel.Type.ORGANIZATION))) {
+        if (parent == null || child == null) {
             return;
         }
 
-        OrganizationModel parentOrganization = parent.isType(RoleModel.Type.ORGANIZATION) ? getOrganizationRoleContainer(parent) : null;
-        OrganizationModel childOrganization = child.isType(RoleModel.Type.ORGANIZATION) ? getOrganizationRoleContainer(child) : null;
+        boolean isParentOrgRole = parent.isType(RoleModel.Type.ORGANIZATION);
+        boolean isChildOrgRole = child.isType(RoleModel.Type.ORGANIZATION);
 
-        if (parentOrganization == null) {
-            throw new ModelException("Organization roles cannot be composites of realm or client roles");
+        if (!isParentOrgRole && !isChildOrgRole) {
+            return;
         }
 
-        if (childOrganization != null && !Objects.equals(parentOrganization.getId(), childOrganization.getId())) {
-            throw new ModelException("Organization role composites cannot cross organizations");
+        if (isChildOrgRole && (!isParentOrgRole || !parent.getContainer().equals(child.getContainer()))) {
+            throw new ModelException("Organization roles can only be added as composites to other organization roles");
+        }
+
+        if (isAdminRoleOrComposite(child)) {
+            throw new ModelException("Organization roles can not have admin roles as composites");
         }
     }
 

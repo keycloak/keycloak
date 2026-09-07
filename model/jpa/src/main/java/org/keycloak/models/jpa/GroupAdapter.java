@@ -368,7 +368,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public void grantRole(RoleModel role) {
-        OrganizationsValidation.validateOrganizationRoleGroupMapping(role);
+        OrganizationsValidation.validateOrganizationRoleGroupMapping(this, role);
         if (hasDirectRole(role)) return;
         GroupRoleMappingEntity entity = new GroupRoleMappingEntity();
         entity.setGroup(getEntity());
