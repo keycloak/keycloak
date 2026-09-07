@@ -22,7 +22,7 @@ import {
   Tab,
   TabTitleText,
   Tabs,
-  Text,
+  Content,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { useMemo, useState } from "react";
@@ -599,9 +599,9 @@ export default function DetailSettings() {
       isHidden: !isJWTAuthorizationGrantSupported,
       panel: (
         <>
-          <Text className="pf-v5-u-pb-lg">
+          <Content component="p" className="pf-v5-u-pb-lg">
             {t("authorizationGrantSettingsHelp")}
-          </Text>
+          </Content>
           <Form
             isHorizontal
             className="pf-v5-u-py-lg"
@@ -794,7 +794,7 @@ export default function DetailSettings() {
         )}
       />
 
-      <PageSection variant="light" className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
         <RoutableTabs isBox defaultLocation={toTab("settings")}>
           <Tab
             id="settings"

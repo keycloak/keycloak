@@ -1,7 +1,15 @@
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { KeycloakDataTable, useFetch } from "@keycloak/keycloak-ui-shared";
-import { Button, Label, Modal, ModalVariant } from "@patternfly/react-core";
+import {
+  Button,
+  Label,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalVariant,
+} from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
@@ -73,11 +81,43 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
   return (
     <Modal
       data-testid="addClientProfile"
-      title={t("addClientProfile")}
       isOpen={props.open}
       onClose={props.toggleDialog}
       variant={ModalVariant.large}
-      actions={[
+      aria-label={t("addClientProfile")}
+    >
+      <ModalHeader title={t("addClientProfile")} />
+      <ModalBody>
+        <KeycloakDataTable
+          loader={loader}
+          ariaLabelKey="profilesList"
+          searchPlaceholderKey="searchProfile"
+          canSelectAll
+          onSelect={(rows) => {
+            setSelectedRows([...rows]);
+          }}
+          columns={[
+            {
+              name: "name",
+              displayKey: "clientProfileName",
+              cellRenderer: AliasRenderer,
+            },
+            {
+              name: "description",
+              cellFormatters: [translationFormatter(t)],
+            },
+          ]}
+          emptyState={
+            <ListEmptyState
+              hasIcon
+              message={t("noRoles")}
+              instructions={t("noRolesInstructions")}
+              primaryActionText={t("createRole")}
+            />
+          }
+        />
+      </ModalBody>
+      <ModalFooter>
         <Button
           key="add"
           data-testid="add-client-profile-button"
@@ -89,7 +129,7 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
           }}
         >
           {t("add")}
-        </Button>,
+        </Button>
         <Button
           key="cancel"
           variant="link"
@@ -98,37 +138,8 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
           }}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <KeycloakDataTable
-        loader={loader}
-        ariaLabelKey="profilesList"
-        searchPlaceholderKey="searchProfile"
-        canSelectAll
-        onSelect={(rows) => {
-          setSelectedRows([...rows]);
-        }}
-        columns={[
-          {
-            name: "name",
-            displayKey: "clientProfileName",
-            cellRenderer: AliasRenderer,
-          },
-          {
-            name: "description",
-            cellFormatters: [translationFormatter(t)],
-          },
-        ]}
-        emptyState={
-          <ListEmptyState
-            hasIcon
-            message={t("noRoles")}
-            instructions={t("noRolesInstructions")}
-            primaryActionText={t("createRole")}
-          />
-        }
-      />
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

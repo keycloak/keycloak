@@ -149,7 +149,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
   });
 
   return (
-    <PageSection>
+    <PageSection hasBodyWrapper={false}>
       <FormAccess
         onSubmit={handleSubmit(save)}
         isHorizontal
@@ -159,7 +159,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
       >
         <ClientSecretConfirm />
         <AccessTokenConfirm />
-        <Card isFlat>
+        <Card>
           <CardBody>
             <SelectControl
               name="clientAuthenticatorType"
@@ -230,12 +230,12 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
             </ActionGroup>
           </CardBody>
         </Card>
-        <Card isFlat>
+        <Card>
           <CardBody>
             <FormGroup
               label={t("registrationAccessToken")}
               fieldId="kc-access-token"
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("registrationAccessTokenHelp")}
                   fieldLabelId="registrationAccessToken"

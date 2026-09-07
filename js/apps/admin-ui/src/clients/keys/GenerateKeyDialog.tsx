@@ -8,11 +8,13 @@ import {
 import {
   Button,
   ButtonVariant,
+  Content,
   Form,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
-  Text,
-  TextContent,
 } from "@patternfly/react-core";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -139,10 +141,20 @@ export const GenerateKeyDialog = ({
   return (
     <Modal
       variant={ModalVariant.medium}
-      title={t("generateKeys")}
       isOpen
       onClose={toggleDialog}
-      actions={[
+      aria-label={t("generateKeys")}
+    >
+      <ModalHeader title={t("generateKeys")} />
+      <ModalBody>
+        <Content>
+          <Content component="p">{t("generateKeysDescription")}</Content>
+        </Content>
+        <FormProvider {...form}>
+          <KeyForm />
+        </FormProvider>
+      </ModalBody>
+      <ModalFooter>
         <Button
           id="modal-confirm"
           key="confirm"
@@ -156,7 +168,7 @@ export const GenerateKeyDialog = ({
           }}
         >
           {t("generate")}
-        </Button>,
+        </Button>
         <Button
           id="modal-cancel"
           key="cancel"
@@ -167,15 +179,8 @@ export const GenerateKeyDialog = ({
           }}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <TextContent>
-        <Text>{t("generateKeysDescription")}</Text>
-      </TextContent>
-      <FormProvider {...form}>
-        <KeyForm />
-      </FormProvider>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

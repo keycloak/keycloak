@@ -25,7 +25,7 @@ export const SecurityDefenses = ({ realm, save }: SecurityDefensesProps) => {
         data-testid="security-defenses-headers-tab"
         title={<TabTitleText>{t("headers")}</TabTitleText>}
       >
-        <PageSection variant="light">
+        <PageSection hasBodyWrapper={false}>
           <HeadersForm realm={realm} save={save} />
         </PageSection>
       </Tab>
@@ -35,7 +35,7 @@ export const SecurityDefenses = ({ realm, save }: SecurityDefensesProps) => {
         data-testid="security-defenses-brute-force-tab"
         title={<TabTitleText>{t("bruteForceDetection")}</TabTitleText>}
       >
-        <PageSection variant="light">
+        <PageSection hasBodyWrapper={false}>
           <BruteForceDetection realm={realm} save={save} />
         </PageSection>
       </Tab>

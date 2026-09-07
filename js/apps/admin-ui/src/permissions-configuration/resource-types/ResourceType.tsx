@@ -52,7 +52,7 @@ export const ResourceType = ({
       {withEnforceAccessTo && (
         <FormGroup
           label={t("enforceAccessTo")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("enforceAccessToHelpText")}
               fieldLabelId="enforce-access-to"

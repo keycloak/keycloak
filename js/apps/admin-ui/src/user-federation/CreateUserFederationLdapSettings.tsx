@@ -39,8 +39,8 @@ export default function CreateUserFederationLdapSettings() {
         noDivider
         save={() => form.handleSubmit(onSubmit)()}
       />
-      <PageSection variant="light" className="pf-v5-u-p-0">
-        <PageSection variant="light">
+      <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
+        <PageSection hasBodyWrapper={false}>
           <UserFederationLdapForm onSubmit={onSubmit} />
         </PageSection>
       </PageSection>

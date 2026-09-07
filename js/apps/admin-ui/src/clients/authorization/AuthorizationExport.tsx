@@ -63,7 +63,7 @@ export const AuthorizationExport = () => {
   }
 
   return (
-    <PageSection>
+    <PageSection hasBodyWrapper={false}>
       <FormAccess
         isHorizontal
         role="manage-authorization"
