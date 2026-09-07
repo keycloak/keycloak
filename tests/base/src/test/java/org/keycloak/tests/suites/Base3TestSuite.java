@@ -10,6 +10,7 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.organization",
         "org.keycloak.tests.oid4vc",
         "org.keycloak.tests.policy",
+        "org.keycloak.tests.providers",
         "org.keycloak.tests.saml",
         "org.keycloak.tests.securityprofile",
         "org.keycloak.tests.session",

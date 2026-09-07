@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
@@ -75,10 +76,10 @@ public class DatabaseIndexCheckerTest {
 
         var schema = factory.getSchema();
 
-        markIndexInvalid(factory, INDEX_NAME, schema);
         boolean recreated = false;
 
         try {
+            createInvalidIndex(factory, INDEX_NAME, schema);
             var detectOnly = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, false, 0);
             assertThat(detectOnly.getMissingIndexesName(), hasItem(INDEX_NAME));
 
@@ -209,17 +210,55 @@ public class DatabaseIndexCheckerTest {
         }
     }
 
-    private static void markIndexInvalid(JpaConnectionProviderFactory factory, String indexName, String schema) {
-        try (Connection connection = factory.getConnection();
-             var ps = connection.prepareStatement(
-                     "UPDATE pg_index SET indisvalid = false WHERE indexrelid = ("
-                             + "SELECT c.oid FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
-                             + "WHERE c.relname = ? AND n.nspname = coalesce(?, current_schema))")) {
-            ps.setString(1, indexName.toLowerCase());
-            ps.setString(2, schema);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to mark index " + indexName + " as invalid", e);
+    // Runs outside the @TestOnServer thread to avoid JTA enlistment — uncommitted
+    // drop/inserts would deadlock with CREATE INDEX CONCURRENTLY waiting on join().
+    private static void createInvalidIndex(JpaConnectionProviderFactory factory, String indexName, String schema) {
+        String indexId = indexName.toLowerCase();
+        String tableId = TABLE_NAME.toLowerCase();
+        String schemaPrefix = schema != null ? "\"" + schema.replace("\"", "\"\"") + "\"." : "";
+        String qualifiedTable = schemaPrefix + "\"" + tableId.replace("\"", "\"\"") + "\"";
+        String qualifiedIndex = schemaPrefix + "\"" + indexId.replace("\"", "\"\"") + "\"";
+
+        String columns = "user_session_id, offline_flag, user_id, realm_id, created_on, last_session_refresh, version, session_bucket, last_session_refresh_coarse";
+        String values = "'%s', '0', '__test', '__test', 0, 0, 0, 0, 0";
+
+        var failure = new AtomicReference<RuntimeException>();
+        Thread thread = new Thread(() -> {
+            try {
+                dropIndex(factory, indexName);
+
+                try (Connection connection = factory.getConnection()) {
+                    connection.setAutoCommit(true);
+                    try (Statement stmt = connection.createStatement()) {
+                        stmt.executeUpdate(String.format("INSERT INTO %s (%s) VALUES (%s)", qualifiedTable, columns, String.format(values, "__test_invalid_idx_1")));
+                        stmt.executeUpdate(String.format("INSERT INTO %s (%s) VALUES (%s)", qualifiedTable, columns, String.format(values, "__test_invalid_idx_2")));
+
+                        try {
+                            stmt.executeUpdate(String.format("CREATE UNIQUE INDEX CONCURRENTLY %s ON %s (realm_id)", qualifiedIndex, qualifiedTable));
+                        } catch (SQLException e) {
+                            if (!"23505".equals(e.getSQLState())) {
+                                throw e;
+                            }
+                        }
+
+                        stmt.executeUpdate(String.format("DELETE FROM %s WHERE user_session_id IN ('__test_invalid_idx_1', '__test_invalid_idx_2')", qualifiedTable));
+                    }
+                }
+            } catch (SQLException e) {
+                failure.set(new RuntimeException("Failed to create invalid index " + indexName, e));
+            } catch (RuntimeException e) {
+                failure.set(e);
+            }
+        });
+        thread.start();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+        if (failure.get() != null) {
+            throw failure.get();
         }
     }
 

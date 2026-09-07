@@ -98,6 +98,7 @@ public class JdbcPingClusterHealthImpl implements ClusterHealth {
                     logger.warn("Unable to check the cluster health because no coordinator has been found.");
                     // fallthrough
                 case UNHEALTHY:
+                case MULTIPLE_CLUSTERS:
                     logger.debug("Set cluster health status to unhealthy");
                     healthy = false;
                     break;
