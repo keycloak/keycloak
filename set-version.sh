@@ -15,15 +15,16 @@ fi
 ./mvnw versions:set-property --non-recursive -Dproperty=project.version.npm -DnewVersion="$NEW_NPM_VERSION"
 
 # Docker
-sed -i "s/ENV KEYCLOAK_VERSION .*/ENV KEYCLOAK_VERSION $NEW_VERSION/" quarkus/container/Dockerfile
+sed "s/ENV KEYCLOAK_VERSION .*/ENV KEYCLOAK_VERSION $NEW_VERSION/" quarkus/container/Dockerfile > quarkus/container/Dockerfile.tmp && mv quarkus/container/Dockerfile.tmp quarkus/container/Dockerfile
 
 # Documentation
 cd docs/documentation
 SHORT_VERSION=`echo $NEW_VERSION | awk -F '.' '{ print $1"."$2 }'`
-sed -i 's/:project_version: .*/:project_version: '$NEW_VERSION'/' topics/templates/document-attributes.adoc
-sed -i 's/:project_versionMvn: .*/:project_versionMvn: '$NEW_VERSION'/' topics/templates/document-attributes.adoc
-sed -i 's/:project_versionNpm: .*/:project_versionNpm: '$NEW_NPM_VERSION'/' topics/templates/document-attributes.adoc
-sed -i 's/:project_versionDoc: .*/:project_versionDoc: '$NEW_VERSION'/' topics/templates/document-attributes.adoc
+DOC_ATTRS=topics/templates/document-attributes.adoc
+sed 's/:project_version: .*/:project_version: '$NEW_VERSION'/' "$DOC_ATTRS" > "$DOC_ATTRS.tmp" && mv "$DOC_ATTRS.tmp" "$DOC_ATTRS"
+sed 's/:project_versionMvn: .*/:project_versionMvn: '$NEW_VERSION'/' "$DOC_ATTRS" > "$DOC_ATTRS.tmp" && mv "$DOC_ATTRS.tmp" "$DOC_ATTRS"
+sed 's/:project_versionNpm: .*/:project_versionNpm: '$NEW_NPM_VERSION'/' "$DOC_ATTRS" > "$DOC_ATTRS.tmp" && mv "$DOC_ATTRS.tmp" "$DOC_ATTRS"
+sed 's/:project_versionDoc: .*/:project_versionDoc: '$NEW_VERSION'/' "$DOC_ATTRS" > "$DOC_ATTRS.tmp" && mv "$DOC_ATTRS.tmp" "$DOC_ATTRS"
 cd -
 
 # NPM publish
