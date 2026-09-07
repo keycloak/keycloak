@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class WaitUtils {
@@ -23,7 +24,12 @@ public class WaitUtils {
     public WaitUtils waitForPage(AbstractPage page) {
         String expectedPageId = page.getExpectedPageId();
         try {
-            createDefaultWait().ignoring(StaleElementReferenceException.class).until(d -> expectedPageId.equals(managed.page().getCurrentPageId()));
+            createDefaultWait()
+                    .ignoring(StaleElementReferenceException.class)
+                    // Also ignore WebDriverException: Chrome CDP throws "Node with given id does not belong to the document"
+                    // instead of StaleElementReferenceException when getCurrentPageId() polls during a page navigation.
+                    .ignoring(WebDriverException.class)
+                    .until(d -> expectedPageId.equals(managed.page().getCurrentPageId()));
         } catch (TimeoutException e) {
             Assertions.fail("Expected page '" + expectedPageId + "' to be loaded, but currently on page '" + managed.page().getCurrentPageId() + "' after timeout");
         }
