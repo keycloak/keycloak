@@ -12,6 +12,7 @@ const REPO_ROOT = path.resolve(SCRIPT_DIR, "..", "..");
 const DEFAULT_REPORT_DIR = path.join(REPO_ROOT, "misc", "scripts", "reports");
 const DEFAULT_BACKUP_DIR = path.join(DEFAULT_REPORT_DIR, "backups");
 const PF5_PATTERN = /pf-v5-|patternfly-v5|--pf-v5-|--pf-t--temp--dev--tbd|t_temp_dev_tbd/;
+const V2_PARENT_PATTERN = /parent\s*=\s*(keycloak\.v2|rh-sso\.v2)/;
 
 function usage() {
   console.log(`Usage:
@@ -188,7 +189,7 @@ async function scanResiduals(loginDir) {
     const content = await readFile(filePath, "utf8");
     const lines = content.split("\n");
     for (let i = 0; i < lines.length; i++) {
-      if (PF5_PATTERN.test(lines[i])) {
+      if (PF5_PATTERN.test(lines[i]) || V2_PARENT_PATTERN.test(lines[i])) {
         residuals.push({
           file: path.relative(loginDir, filePath),
           line: i + 1,
@@ -206,8 +207,8 @@ async function rewriteThemeProperties(themePropertiesPath) {
   content = content
     .replaceAll("vendor/patternfly-v5/", "vendor/patternfly-v6/")
     .replaceAll("pf-v5-theme-dark", "pf-v6-theme-dark")
-    .replaceAll("parent=keycloak.v2", "parent=keycloak.v3")
-    .replaceAll("parent=rh-sso.v2", "parent=keycloak.v3");
+    .replace(/^\s*parent\s*=\s*keycloak\.v2\s*$/gm, "parent=keycloak.v3")
+    .replace(/^\s*parent\s*=\s*rh-sso\.v2\s*$/gm, "parent=keycloak.v3");
   await writeFile(themePropertiesPath, content, "utf8");
 }
 
