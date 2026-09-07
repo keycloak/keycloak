@@ -27,6 +27,7 @@ import java.util.Map;
 public class MappingsRepresentation {
     protected List<RoleRepresentation> realmMappings;
     protected Map<String, ClientMappingsRepresentation> clientMappings;
+    protected Map<String, List<RoleRepresentation>> organizationMappings;
 
     public List<RoleRepresentation> getRealmMappings() {
         return realmMappings;
@@ -42,5 +43,13 @@ public class MappingsRepresentation {
 
     public void setClientMappings(Map<String, ClientMappingsRepresentation> clientMappings) {
         this.clientMappings = clientMappings;
+    }
+
+    public Map<String, List<RoleRepresentation>> getOrganizationMappings() {
+        return organizationMappings;
+    }
+
+    public void setOrganizationMappings(Map<String, List<RoleRepresentation>> organizationMappings) {
+        this.organizationMappings = organizationMappings;
     }
 }

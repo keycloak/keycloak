@@ -69,7 +69,7 @@ public class OrganizationRoleMembershipMapper extends AbstractSAMLProtocolMapper
         UserModel user = userSession.getUser();
         provider.getByMember(user)
                 .filter(OrganizationModel::isEnabled)
-                .forEach(organization -> addAttributes(attributeStatement, organization, OrganizationRoleMapperUtils.resolveRoleClaims(organization, user)));
+                .forEach(organization -> addAttributes(attributeStatement, organization, OrganizationRoleMapperUtils.resolveRoleClaims(organization, user, session)));
     }
 
     private void addAttributes(AttributeStatementType attributeStatement, OrganizationModel organization, OrganizationRoleClaims claims) {
