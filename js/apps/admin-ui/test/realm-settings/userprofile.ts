@@ -1,6 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 import { switchOff } from "../utils/form.ts";
-import { waitForTableReady } from "../utils/loading.ts";
+import { waitForLoadingComplete } from "../utils/loading.ts";
 
 export async function goToUserProfileTab(page: Page) {
   await page.getByTestId("rs-user-profile-tab").click();
@@ -56,10 +56,14 @@ export async function switchOffIfOn(page: Page, selector: string) {
 }
 
 export async function clickCreateUser(page: Page) {
-  await waitForTableReady(page);
+  await waitForLoadingComplete(page);
 
   const emptyAction = page.locator('[data-testid$="-empty-action"]');
   const addUser = page.getByTestId("add-user");
+
+  await expect(emptyAction.first().or(addUser)).toBeVisible({
+    timeout: 15_000,
+  });
 
   if (
     (await emptyAction.count()) > 0 &&
