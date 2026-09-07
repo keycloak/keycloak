@@ -1,0 +1,104 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Extending the Admin Console declaratively"
+priority=25
+summary="Add pages and tabs to the Admin Console with Java SPIs and automatic form rendering.">
+
+The declarative UI SPI lets extension authors add Admin Console pages and tabs without writing React code.
+Implement `UiPageProviderFactory` for new top-level pages or `UiTabProviderFactory` for tabs on existing routes.
+The Admin Console renders forms from `ProviderConfigProperty` definitions returned by the provider factory.
+
+== Enable the feature
+
+The SPI is available as a preview feature:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --features=declarative-ui
+----
+
+See link:{adminguide_link}#features[Enabling and disabling features] for other ways to enable preview features.
+
+== Implement a page or tab
+
+. Create a JAR with a `META-INF/services/org.keycloak.services.ui.extend.UiPageProviderFactory` or
+  `META-INF/services/org.keycloak.services.ui.extend.UiTabProviderFactory` service file.
+. Implement the factory and return configuration properties from `getConfigProperties()`.
+. Deploy the provider JAR to the `providers` directory and restart {project_name}.
+
+An example extension is available in the
+https://github.com/keycloak/keycloak-quickstarts/tree/latest/extension/extend-admin-console-spi[keycloak-quickstarts repository].
+
+== Storage types for tabs
+
+Tabs can store form data in different backends by overriding `getStorageType()`:
+
+[cols="1,2", options="header"]
+|===
+| Storage type | Description
+
+| `COMPONENT`
+| Default. Data is stored as a realm component through the components REST API.
+
+| `CLIENT`
+| Reads and writes `client.attributes` for the `clientId` in the current route.
+
+| `USER`
+| Reads and writes `user.attributes` for the `id` route parameter.
+
+| `IDENTITY_PROVIDER`
+| Reads and writes `identityProvider.config` for the `alias` route parameter.
+
+| `CUSTOM`
+| Uses a custom admin REST endpoint declared with `getEndpoint()`.
+|===
+
+For `CUSTOM` storage, implement GET and PUT handlers relative to `/admin/realms/{realm}/`:
+
+* `GET` returns JSON with a `config` object whose keys match property names.
+* `PUT` receives submitted form data plus resolved route parameters as top-level fields.
+
+== Runtime configuration
+
+Static properties from server startup are still exposed through server info.
+For context-aware fields (for example dropdowns populated from realm data), override:
+
+[source,java]
+----
+List<ProviderConfigProperty> getConfigProperties(KeycloakSession session, Map<String, String> contextParams)
+----
+
+The Admin Console loads these properties at runtime from:
+
+* `/admin/realms/{realm}/ui-extensions/tabs/{providerId}/config`
+* `/admin/realms/{realm}/ui-extensions/pages/{providerId}/config`
+
+Pass route parameters such as `clientId`, `id`, or `alias` as query parameters when opening a tab.
+
+== Permissions and navigation
+
+Override these methods to control access and placement:
+
+* `getRequiredViewRoles()` and `getRequiredManageRoles()` — defaults to `view-realm` / `manage-realm`
+* `getNavSection()` for pages — `manage`, `configure`, or `extensions`
+* `getTabLabel()` for tabs — localized label key used instead of the provider id
+
+Entity-backed tabs (`CLIENT`, `USER`, `IDENTITY_PROVIDER`) use the existing admin-client APIs, so fine-grained permissions for those resources apply automatically.
+
+Component-backed pages and tabs can declare narrower roles in metadata.
+When a factory also implements `ComponentStorageFactory`, component CRUD is delegated to the custom storage backend.
+
+== Page detail tabs
+
+Pages can expose additional declarative tabs on their detail view by overriding:
+
+[source,java]
+----
+boolean supportsDetailTabs()
+----
+
+Child `UiTabProvider` entries whose path matches the page detail route are rendered automatically.
+
+</@tmpl.guide>

@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
+import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
 import { joinPath } from "../utils/joinPath";
@@ -28,6 +29,7 @@ import {
   type StorageType,
 } from "./pageHandlerStorage";
 import { toPage } from "./routes";
+import { canManageUiExtension, canViewUiExtension } from "./uiExtensionAccess";
 
 type PageHandlerProps = {
   id?: string;
@@ -38,14 +40,16 @@ type PageHandlerProps = {
 export const PageHandler = ({
   id: idAttribute,
   providerType,
-  page: { id: providerId, ...page },
+  page: pageType,
 }: PageHandlerProps) => {
+  const { id: providerId, ...page } = pageType;
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
   const form = useForm<ComponentRepresentation>();
   const { realm: realmName, realmRepresentation: realm } = useRealm();
   const { addAlert, addError } = useAlerts();
+  const access = useAccess();
   const [id, setId] = useState(idAttribute);
   const routeParams = useParams();
   const { pathname } = useLocation();
@@ -56,6 +60,9 @@ export const PageHandler = ({
   );
 
   const [isLoading, setIsLoading] = useState(true);
+  const [properties, setProperties] = useState(page.properties);
+  const canView = canViewUiExtension(pageType, access);
+  const canManage = canManageUiExtension(pageType, access);
 
   const storageType: StorageType =
     (page.metadata.storageType as StorageType | undefined) || "COMPONENT";
@@ -81,6 +88,60 @@ export const PageHandler = ({
   };
 
   useEffect(() => {
+    setProperties(page.properties);
+  }, [page.properties]);
+
+  useFetch(
+    async () => {
+      const params = new URLSearchParams();
+      if (providerType === TAB_PROVIDER) {
+        Object.entries(tabParams).forEach(([key, value]) => {
+          if (value) {
+            params.set(key, value);
+          }
+        });
+      } else if (componentId) {
+        params.set("componentId", componentId);
+      }
+
+      const query = params.toString();
+      const resource =
+        providerType === TAB_PROVIDER
+          ? `ui-extensions/tabs/${providerId}/config`
+          : `ui-extensions/pages/${providerId}/config`;
+      const response = await fetchWithError(
+        joinPath(
+          adminClient.baseUrl,
+          "admin/realms",
+          realmName,
+          `${resource}${query ? `?${query}` : ""}`,
+        ),
+        {
+          method: "GET",
+          headers: {
+            ...getAuthorizationHeaders(await adminClient.getAccessToken()),
+            Accept: "application/json",
+          },
+        },
+      );
+      return response.json();
+    },
+    (runtimeProperties) => {
+      if (Array.isArray(runtimeProperties) && runtimeProperties.length > 0) {
+        setProperties(runtimeProperties);
+      }
+    },
+    [
+      providerId,
+      providerType,
+      realmName,
+      resolvedEntityId,
+      componentId,
+      customEndpointDependency,
+    ],
+  );
+
+  useEffect(() => {
     setIsLoading(true);
     form.reset({});
   }, [form, idAttribute, resolvedEntityId, customEndpointDependency]);
@@ -96,7 +157,7 @@ export const PageHandler = ({
             return {
               config: normalizeConfig(
                 attributes as Record<string, unknown>,
-                page.properties,
+                properties,
                 "load",
                 "string-map",
               ),
@@ -111,7 +172,7 @@ export const PageHandler = ({
             return {
               config: normalizeConfig(
                 attributes as Record<string, unknown>,
-                page.properties,
+                properties,
                 "load",
                 "list-map",
               ),
@@ -128,7 +189,7 @@ export const PageHandler = ({
             return {
               config: normalizeConfig(
                 config as Record<string, unknown>,
-                page.properties,
+                properties,
                 "load",
                 "string-map",
               ),
@@ -222,7 +283,7 @@ export const PageHandler = ({
                 attributes: mergeEntityConfig(
                   client.attributes as Record<string, unknown>,
                   formData.config as Record<string, unknown>,
-                  page.properties,
+                  properties,
                   "string-map",
                 ) as typeof client.attributes,
               },
@@ -242,7 +303,7 @@ export const PageHandler = ({
                 attributes: mergeEntityConfig(
                   user.attributes as Record<string, unknown>,
                   formData.config as Record<string, unknown>,
-                  page.properties,
+                  properties,
                   "list-map",
                 ) as typeof user.attributes,
               },
@@ -264,7 +325,7 @@ export const PageHandler = ({
                 config: mergeEntityConfig(
                   idp.config as Record<string, unknown>,
                   formData.config as Record<string, unknown>,
-                  page.properties,
+                  properties,
                   "string-map",
                 ) as typeof idp.config,
               },
@@ -332,6 +393,10 @@ export const PageHandler = ({
     }
   };
 
+  if (!canView) {
+    return null;
+  }
+
   if (isLoading) {
     return <KeycloakSpinner />;
   }
@@ -344,13 +409,15 @@ export const PageHandler = ({
         className="keycloak__form"
       >
         <FormProvider {...form}>
-          <DynamicComponents properties={page.properties} />
+          <DynamicComponents properties={properties} />
         </FormProvider>
 
         <ActionGroup>
-          <Button data-testid="save" type="submit">
-            {t("save")}
-          </Button>
+          {canManage && (
+            <Button data-testid="save" type="submit">
+              {t("save")}
+            </Button>
+          )}
           {providerType === PAGE_PROVIDER ? (
             <Button
               data-testid="cancel"

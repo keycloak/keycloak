@@ -7,7 +7,7 @@ import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 
-public interface UiTabProviderFactory<T> extends ComponentFactory<T, UiTabProvider> {
+public interface UiTabProviderFactory<T> extends ComponentFactory<T, UiTabProvider>, UiExtensionSupport {
     default T create(KeycloakSession session, ComponentModel model) {
         return null;
     }
@@ -22,6 +22,7 @@ public interface UiTabProviderFactory<T> extends ComponentFactory<T, UiTabProvid
         if (endpoint != null) {
             metadata.put("endpoint", endpoint);
         }
+        putExtensionMetadata(metadata);
         return metadata;
     }
 
