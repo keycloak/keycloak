@@ -37,6 +37,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.WelcomeResource;
 import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.urls.UrlType;
 
@@ -54,7 +55,6 @@ import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.ext.Provider;
 
 import java.io.IOException;
-import java.util.Locale;
 import java.util.Properties;
 
 /**
@@ -305,8 +305,7 @@ public class AdminRoot {
     public static Properties getMessages(KeycloakSession session, RealmModel realm, String lang) {
         try {
             Theme theme = getTheme(session, realm);
-            Locale locale = lang != null ? Locale.forLanguageTag(lang) : Locale.ENGLISH;
-            return theme.getMessages(locale);
+            return theme.getMessages(LocaleUtil.resolveSupportedLocale(realm, theme, lang));
         } catch (IOException e) {
             logger.error("Failed to load messages from theme", e);
             return new Properties();
@@ -325,8 +324,7 @@ public class AdminRoot {
     private static Properties getMessages(KeycloakSession session, RealmModel realm, String lang, String bundle) {
         try {
             Theme theme = getTheme(session, realm);
-            Locale locale = lang != null ? Locale.forLanguageTag(lang) : Locale.ENGLISH;
-            return theme.getMessages(bundle, locale);
+            return theme.getMessages(bundle, LocaleUtil.resolveSupportedLocale(realm, theme, lang));
         } catch (IOException e) {
             logger.error("Failed to load messages from theme", e);
             return new Properties();
