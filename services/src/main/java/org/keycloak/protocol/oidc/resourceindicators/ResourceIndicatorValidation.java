@@ -6,7 +6,11 @@ import java.util.regex.Pattern;
 
 public class ResourceIndicatorValidation {
 
-    private static final Pattern URN_REGEX = Pattern.compile("^urn:[a-z0-9][a-z0-9-]{0,31}:([a-z0-9()+,-.:=@;$_!*']|%[0-9a-f]{2})++$", Pattern.CASE_INSENSITIVE);
+    // RFC 8141: NID = alphanum 0*30(ldh) alphanum, NSS = pchar *(pchar / "/"),
+    // with pchar as defined by RFC 3986: unreserved / pct-encoded / sub-delims / ":" / "@".
+    private static final String PCHAR = "[a-z0-9\\-._~!$&'()*+,;=:@]|%[0-9a-f]{2}";
+
+    private static final Pattern URN_REGEX = Pattern.compile("^urn:[a-z0-9][a-z0-9-]{0,30}[a-z0-9]:(" + PCHAR + ")((" + PCHAR + ")|/)*+$", Pattern.CASE_INSENSITIVE);
 
     private ResourceIndicatorValidation() {
     }
