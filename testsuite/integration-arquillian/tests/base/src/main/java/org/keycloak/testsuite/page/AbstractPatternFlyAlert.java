@@ -45,11 +45,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @Deprecated
 public abstract class AbstractPatternFlyAlert {
-    public static final String ALERT_CLASS_NAME = "pf-v6-c-alert";
+    public static final String ALERT_CSS_SELECTOR = ".pf-v5-c-alert, .pf-v6-c-alert";
 
     protected final Logger log = Logger.getLogger(this.getClass());
 
-    @FindBy(className = ALERT_CLASS_NAME)
+    @FindBy(css = ALERT_CSS_SELECTOR)
     protected WebElement alertRoot;
 
     @Drone
@@ -68,7 +68,7 @@ public abstract class AbstractPatternFlyAlert {
     }
 
     private static void waitUntilDisplayedOrHidden(boolean displayed) {
-        ExpectedCondition condition = ExpectedConditions.visibilityOfElementLocated(By.className(ALERT_CLASS_NAME));
+        ExpectedCondition condition = ExpectedConditions.visibilityOfElementLocated(By.cssSelector(ALERT_CSS_SELECTOR));
         condition = displayed ? condition : ExpectedConditions.not(condition);
         new WebDriverWait(getCurrentDriver(), Duration.ofMillis(PAGELOAD_TIMEOUT_MILLIS)).until(condition);
     }

@@ -11,7 +11,7 @@ const PF5_TO_PF6_TOKEN_MAP: Record<string, string> = {
   "link--Color": "text--color--link--default",
   "link--Color--hover": "text--color--link--hover",
   "BackgroundColor--light-100": "background--color--100",
-  "BackgroundColor--100": "background--color--100",
+  "BackgroundColor--100": "dark--background--color--100",
   "BackgroundColor--300": "background--color--200",
   "BackgroundColor--400": "background--color--400",
   "BackgroundColor--dark-100": "background--color--highlight--default",
