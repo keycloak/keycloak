@@ -41,10 +41,6 @@ export async function waitForTableReady(
         }
 
         const readyCount = await tableReady.count();
-        if (readyCount === 0) {
-          return true;
-        }
-
         for (let index = 0; index < readyCount; index++) {
           if (await tableReady.nth(index).isVisible()) {
             return true;
