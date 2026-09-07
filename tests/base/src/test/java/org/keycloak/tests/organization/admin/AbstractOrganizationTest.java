@@ -374,8 +374,6 @@ public abstract class AbstractOrganizationTest {
         config.put("userInfoUrl", providerBaseUrl + "/protocol/openid-connect/userinfo");
         config.put("defaultScope", "email profile");
         config.put("syncMode", "IMPORT");
-        config.put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomain);
-        config.put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
         config.put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.TRUE.toString());
         config.put(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.TRUE.toString());
         config.put(OIDCIdentityProviderConfig.JWKS_URL, providerBaseUrl + "/protocol/openid-connect/certs");
