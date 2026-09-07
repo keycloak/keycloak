@@ -48,7 +48,7 @@ public class X509IdentityConfirmationPage extends LanguageComboboxAwarePage {
     @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
     private WebElement loginErrorMessage;
 
-    @FindBy(className = "pf-v6-c-warning")
+    @FindBy(css = ".pf-v6-c-alert.pf-m-warning")
     private WebElement loginWarningMessage;
 
     @FindBy(className = "alert-success")
