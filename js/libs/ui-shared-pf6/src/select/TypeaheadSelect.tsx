@@ -1,18 +1,20 @@
 import {
-	Label, LabelGroup, Button,
-	MenuFooter,
-	MenuToggle,
-	MenuToggleStatus,
-	Select,
-	SelectList,
-	SelectOptionProps,
-	TextInputGroup,
-	TextInputGroupMain,
-	TextInputGroupUtilities
-} from '@patternfly/react-core';
+  Label,
+  LabelGroup,
+  Button,
+  MenuFooter,
+  MenuToggle,
+  MenuToggleStatus,
+  Select,
+  SelectList,
+  SelectOptionProps,
+  TextInputGroup,
+  TextInputGroupMain,
+  TextInputGroupUtilities,
+} from "@patternfly/react-core";
 
 import { TimesIcon } from "@patternfly/react-icons";
-import { Children, useRef, useState } from "react";
+import { Children, useId, useRef, useState } from "react";
 import {
   KeycloakSelectProps,
   SelectVariant,
@@ -45,6 +47,7 @@ export const TypeaheadSelect = ({
   const [isFiltering, setIsFiltering] = useState(false);
   const [focusedItemIndex, setFocusedItemIndex] = useState<number>(0);
   const textInputRef = useRef<HTMLInputElement>();
+  const listboxId = `${useId()}-listbox`;
 
   const childArray = Children.toArray(
     children,
@@ -172,7 +175,7 @@ export const TypeaheadSelect = ({
               innerRef={textInputRef}
               role="combobox"
               isExpanded={rest.isOpen}
-              aria-controls="select-typeahead-listbox"
+              aria-controls={listboxId}
               aria-label={typeAheadAriaLabel}
             >
               {variant === SelectVariant.typeaheadMulti &&
@@ -182,7 +185,8 @@ export const TypeaheadSelect = ({
                 ) : (
                   <LabelGroup {...chipGroupProps}>
                     {selections.map((selection, index: number) => (
-                      <Label variant="outline"
+                      <Label
+                        variant="outline"
                         key={index}
                         onClose={(ev) => {
                           ev.stopPropagation();
@@ -197,7 +201,8 @@ export const TypeaheadSelect = ({
             </TextInputGroupMain>
             <TextInputGroupUtilities>
               {!!inputValue && (
-                <Button icon={<TimesIcon aria-hidden />}
+                <Button
+                  icon={<TimesIcon aria-hidden />}
                   variant="plain"
                   onClick={() => {
                     // Consumers that track their own value need to reset it
@@ -212,14 +217,14 @@ export const TypeaheadSelect = ({
                     textInputRef.current?.focus();
                   }}
                   aria-label="Clear input value"
-                 />
+                />
               )}
             </TextInputGroupUtilities>
           </TextInputGroup>
         </MenuToggle>
       )}
     >
-      <SelectList>{visibleChildren}</SelectList>
+      <SelectList id={listboxId}>{visibleChildren}</SelectList>
       {footer && <MenuFooter>{footer}</MenuFooter>}
     </Select>
   );

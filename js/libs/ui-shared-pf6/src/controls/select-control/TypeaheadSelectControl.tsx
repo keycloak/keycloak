@@ -14,7 +14,7 @@ import {
 
 import { TimesIcon } from "@patternfly/react-icons";
 import { get } from "lodash-es";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useId, useRef, useState } from "react";
 import {
   Controller,
   ControllerRenderProps,
@@ -65,6 +65,7 @@ export const TypeaheadSelectControl = <
     SelectControlOption[]
   >([]);
   const textInputRef = useRef<HTMLInputElement>();
+  const listboxId = `${useId()}-listbox`;
   const required = getRuleValue(controller.rules?.required) === true;
   const isTypeaheadMulti = variant === SelectVariant.typeaheadMulti;
 
@@ -240,7 +241,7 @@ export const TypeaheadSelectControl = <
                     innerRef={textInputRef}
                     role="combobox"
                     isExpanded={open}
-                    aria-controls="select-typeahead-listbox"
+                    aria-controls={listboxId}
                   >
                     {variant === SelectVariant.typeaheadMulti &&
                       Array.isArray(field.value) && (
@@ -301,7 +302,7 @@ export const TypeaheadSelectControl = <
             }}
             isOpen={open}
           >
-            <SelectList>
+            <SelectList id={listboxId}>
               {filteredOptions.map((option, index) => (
                 <SelectOption
                   key={key(option)}

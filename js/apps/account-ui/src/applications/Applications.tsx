@@ -142,7 +142,7 @@ export const Applications = () => {
                 <DataListCell
                   key="applications-list-action-header"
                   width={2}
-                  className="pf-v5-u-pt-md"
+                  className="pf-v6-u-pt-md"
                 />,
               ]}
             />
