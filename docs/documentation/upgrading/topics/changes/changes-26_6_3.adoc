@@ -3,9 +3,9 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
-=== Token endpoint error responses for client authentication failures now consistently use 401
+=== Two token endpoint client authentication failure cases now use 401
 
-The token endpoint now returns `401 Unauthorized` with `invalid_client` for all client authentication failures, consistent with link:https://datatracker.ietf.org/doc/html/rfc6749#section-5.2[RFC 6749 Section 5.2].
+The token endpoint now returns `401 Unauthorized` with `invalid_client` when client credentials are not configured or when authentication raises an unexpected error, consistent with link:https://datatracker.ietf.org/doc/html/rfc6749#section-5.2[RFC 6749 Section 5.2].
 
 Previously, two cases returned `400 Bad Request` with `unauthorized_client` instead: when a client had no credentials configured, and when an unexpected error occurred during authentication. Both now return `401` with `invalid_client`.
 
