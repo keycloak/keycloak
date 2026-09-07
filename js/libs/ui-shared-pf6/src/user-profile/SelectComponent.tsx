@@ -1,4 +1,4 @@
-import { SelectOption } from "@patternfly/react-core";
+import { Label, LabelGroup, SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, ControllerRenderProps } from "react-hook-form";
 import { KeycloakSelect, SelectVariant } from "../select/KeycloakSelect";
@@ -76,7 +76,13 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
           <KeycloakSelect
             toggleId={attribute.name}
             onToggle={(b) => setOpen(b)}
-            onClear={() => setValue("", field)}
+            onClear={() => {
+              if (isMultiValue) {
+                setFilter("");
+              } else {
+                setValue("", field);
+              }
+            }}
             onSelect={(value) => {
               const option = value.toString();
               setValue(option, field);
@@ -84,9 +90,27 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
                 setOpen(false);
               }
             }}
+            chipGroupComponent={
+              isMultiValue && Array.isArray(field.value) ? (
+                <LabelGroup>
+                  {field.value.map((option) => (
+                    <Label
+                      key={option}
+                      variant="outline"
+                      onClose={(ev) => {
+                        ev.stopPropagation();
+                        setValue(option, field);
+                      }}
+                    >
+                      {fetchLabel(option)}
+                    </Label>
+                  ))}
+                </LabelGroup>
+              ) : undefined
+            }
             selections={
               isMultiValue && Array.isArray(field.value)
-                ? field.value.map((option) => fetchLabel(option))
+                ? field.value
                 : fetchLabel(field.value)
             }
             variant={
