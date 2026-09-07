@@ -75,7 +75,7 @@ public class LogoutTokenUtil {
 
         String logoutTokenPayloadEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(logoutToken));
 
-        return logoutTokenHeaderEncoded + "." + logoutTokenPayloadEncoded;
+        return logoutTokenHeaderEncoded + "." + logoutTokenPayloadEncoded + ".";
     }
     
 }
