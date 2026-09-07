@@ -284,11 +284,10 @@ export const GroupTree = ({
                     id: "next",
                     name: (
                       <Button
+                        icon={<AngleRightIcon />}
                         variant="plain"
                         onClick={() => setFirstSub(firstSub + SUBGROUP_COUNT)}
-                      >
-                        <AngleRightIcon />
-                      </Button>
+                      />
                     ),
                   },
                 ]

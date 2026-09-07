@@ -44,7 +44,7 @@ export const SignedJWT = ({ clientAuthenticatorType }: SignedJWTProps) => {
         label={t("signatureMaxExp")}
         fieldId="signatureMaxExp"
         className="pf-v5-u-my-md"
-        labelIcon={
+        labelHelp={
           <HelpItem
             helpText={t("signatureMaxExpHelp")}
             fieldLabelId="signatureMaxExp"

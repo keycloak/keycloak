@@ -160,7 +160,7 @@ async function fillTimeSelectorValue(
   const input = page.getByTestId(testId);
   await input.waitFor({ state: "visible" });
   await input.evaluate((el: HTMLElement) => {
-    const split = el.closest(".pf-v5-l-split");
+    const split = el.closest(".pf-v6-l-split");
     const toggle = split?.querySelector<HTMLButtonElement>(
       'button[aria-label="Select a time unit"]',
     );

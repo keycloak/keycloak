@@ -10,8 +10,7 @@ import {
   FormGroup,
   InputGroup,
   InputGroupItem,
-  Text,
-  TextContent,
+  Content,
   TextInput,
 } from "@patternfly/react-core";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -127,14 +126,14 @@ export const EventSearchTab = ({ client }: EventSearchTabProps) => {
   }, [handlePendingLookup, setSearchParams]);
 
   return (
-    <Card isFlat className="pf-v5-u-mt-md">
+    <Card className="pf-v5-u-mt-md">
       <CardHeader>
         <CardTitle>{t("ssfLookupTitle")}</CardTitle>
       </CardHeader>
       <CardBody>
-        <TextContent>
-          <Text>{t("ssfLookupTitleHelp")}</Text>
-        </TextContent>
+        <Content>
+          <Content component="p">{t("ssfLookupTitleHelp")}</Content>
+        </Content>
       </CardBody>
       <CardBody>
         <FormAccess
@@ -149,7 +148,7 @@ export const EventSearchTab = ({ client }: EventSearchTabProps) => {
           <FormGroup
             label={t("ssfPendingLookupJti")}
             fieldId="ssfPendingLookupJti"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("ssfPendingLookupJtiHelp")}
                 fieldLabelId="ssfPendingLookupJti"
@@ -181,83 +180,84 @@ export const EventSearchTab = ({ client }: EventSearchTabProps) => {
             </Button>
           </ActionGroup>
           {pendingLookupError && (
-            <Text
+            <Content
+              component="p"
               className="pf-v5-u-mt-md pf-v5-u-color-status-danger--100"
               data-testid="ssfPendingLookupError"
             >
               {pendingLookupError}
-            </Text>
+            </Content>
           )}
           {pendingLookupResult && (
             <FormGroup
               label={t("ssfPendingLookupResult")}
               fieldId="ssfPendingLookupResult"
             >
-              <TextContent data-testid="ssfPendingLookupResult">
-                <Text>
+              <Content data-testid="ssfPendingLookupResult">
+                <Content component="p">
                   <strong>{t("ssfPendingFieldStatus")}:</strong>{" "}
                   {pendingLookupResult.status ?? "-"}
-                </Text>
-                <Text>
+                </Content>
+                <Content component="p">
                   <strong>{t("ssfPendingFieldEventType")}:</strong>{" "}
                   {pendingLookupResult.eventType ?? "-"}
-                </Text>
-                <Text>
+                </Content>
+                <Content component="p">
                   <strong>{t("ssfPendingFieldDeliveryMethod")}:</strong>{" "}
                   {pendingLookupResult.deliveryMethod ?? "-"}
-                </Text>
+                </Content>
                 {/* Attempts + Next attempt at are PUSH drainer
                 retry state — for POLL the receiver pulls on its
                 own cadence and these fields carry no useful
                 information. Hide them for POLL rows to avoid
                 operator confusion. */}
                 {pendingLookupResult.deliveryMethod !== "POLL" && (
-                  <Text>
+                  <Content component="p">
                     <strong>{t("ssfPendingFieldAttempts")}:</strong>{" "}
                     {pendingLookupResult.attempts ?? 0}
-                  </Text>
+                  </Content>
                 )}
-                <Text>
+                <Content component="p">
                   <strong>{t("ssfPendingFieldCreatedAt")}:</strong>{" "}
                   {pendingLookupResult.createdAt
                     ? formatDate(new Date(pendingLookupResult.createdAt * 1000))
                     : "-"}
-                </Text>
+                </Content>
                 {pendingLookupResult.deliveryMethod !== "POLL" && (
-                  <Text>
+                  <Content component="p">
                     <strong>{t("ssfPendingFieldNextAttemptAt")}:</strong>{" "}
                     {pendingLookupResult.nextAttemptAt
                       ? formatDate(
                           new Date(pendingLookupResult.nextAttemptAt * 1000),
                         )
                       : "-"}
-                  </Text>
+                  </Content>
                 )}
-                <Text>
+                <Content component="p">
                   <strong>{t("ssfPendingFieldDeliveredAt")}:</strong>{" "}
                   {pendingLookupResult.deliveredAt
                     ? formatDate(
                         new Date(pendingLookupResult.deliveredAt * 1000),
                       )
                     : "-"}
-                </Text>
+                </Content>
                 {pendingLookupResult.lastError && (
-                  <Text>
+                  <Content component="p">
                     <strong>{t("ssfPendingFieldLastError")}:</strong>{" "}
                     {pendingLookupResult.lastError}
-                  </Text>
+                  </Content>
                 )}
                 {pendingLookupResult.userId && (
-                  <Text>
+                  <Content component="p">
                     <strong>{t("ssfPendingFieldUserId")}:</strong>{" "}
                     {pendingLookupResult.userId}
-                  </Text>
+                  </Content>
                 )}
                 {pendingLookupResult.decodedSet && (
                   <>
-                    <Text>
+                    <Content component="p">
                       <strong>{t("ssfPendingFieldDecodedSet")}:</strong>
-                    </Text>
+                    </Content>
                     <pre
                       data-testid="ssfPendingFieldDecodedSetJson"
                       className="pf-v5-u-font-family-monospace"
@@ -266,7 +266,7 @@ export const EventSearchTab = ({ client }: EventSearchTabProps) => {
                     </pre>
                   </>
                 )}
-              </TextContent>
+              </Content>
             </FormGroup>
           )}
         </FormAccess>

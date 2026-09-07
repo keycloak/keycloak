@@ -233,7 +233,7 @@ export default function EditClientScope() {
         divider={false}
       />
 
-      <PageSection variant="light" className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
         <RoutableTabs isBox mountOnEnter unmountOnExit>
           <Tab
             id="settings"
@@ -241,7 +241,7 @@ export default function EditClientScope() {
             title={<TabTitleText>{t("settings")}</TabTitleText>}
             {...settingsTab}
           >
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
               <ScopeForm save={onSubmit} clientScope={clientScope} />
             </PageSection>
           </Tab>
@@ -272,7 +272,7 @@ export default function EditClientScope() {
             {...scopeTab}
           >
             {enabled && (
-              <PageSection>
+              <PageSection hasBodyWrapper={false}>
                 <Alert
                   variant="info"
                   isInline

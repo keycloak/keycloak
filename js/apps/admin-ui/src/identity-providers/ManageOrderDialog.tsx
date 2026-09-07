@@ -7,22 +7,17 @@ import {
 import {
   Button,
   ButtonVariant,
+  Content,
   DataList,
   DataListCell,
-  DataListControl,
-  DataListDragButton,
-  DataListItem,
   DataListItemCells,
-  DataListItemRow,
-  DragDrop,
-  Draggable,
-  DraggableItemPosition,
-  Droppable,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
-  Text,
-  TextContent,
 } from "@patternfly/react-core";
+import { DragDropSort, DraggableObject } from "@patternfly/react-drag-drop";
 import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -33,6 +28,20 @@ type ManageOrderDialogProps = {
   hideRealmBasedIdps?: boolean;
   onClose: () => void;
 };
+
+const toDraggableItems = (aliases: string[]): DraggableObject[] =>
+  aliases.map((alias) => ({
+    id: alias,
+    content: (
+      <DataListItemCells
+        dataListCells={[
+          <DataListCell key={alias} data-testid={alias}>
+            {alias}
+          </DataListCell>,
+        ]}
+      />
+    ),
+  }));
 
 export const ManageOrderDialog = ({
   orgId,
@@ -47,33 +56,9 @@ export const ManageOrderDialog = ({
   const [liveText, setLiveText] = useState("");
   const [providers, setProviders] =
     useState<IdentityProviderRepresentation[]>();
-  const [order, setOrder] = useState<string[]>([]);
+  const [items, setItems] = useState<DraggableObject[]>([]);
 
-  const onDragStart = ({ index }: DraggableItemPosition) => {
-    setLiveText(t("onDragStart", { item: order[index] }));
-    return true;
-  };
-
-  const onDragMove = ({ index }: DraggableItemPosition) => {
-    setLiveText(t("onDragMove", { item: order[index] }));
-  };
-
-  const onDragFinish = (
-    source: DraggableItemPosition,
-    dest?: DraggableItemPosition,
-  ) => {
-    if (dest) {
-      const result = [...order];
-      const [removed] = result.splice(source.index, 1);
-      result.splice(dest.index, 0, removed);
-      setLiveText(t("onDragFinish", { list: result }));
-      setOrder(result);
-      return true;
-    } else {
-      setLiveText(t("onDragCancel"));
-      return false;
-    }
-  };
+  const order = items.map((item) => item.id as string);
 
   useFetch(
     () =>
@@ -82,9 +67,11 @@ export const ManageOrderDialog = ({
         : adminClient.identityProviders.find({ realmOnly: hideRealmBasedIdps }),
     (providers) => {
       setProviders(providers);
-      setOrder(
-        sortBy(providers, ["config.guiOrder", "alias"]).map(
-          (provider) => provider.alias!,
+      setItems(
+        toDraggableItems(
+          sortBy(providers, ["config.guiOrder", "alias"]).map(
+            (provider) => provider.alias!,
+          ),
         ),
       );
     },
@@ -95,13 +82,46 @@ export const ManageOrderDialog = ({
     return <KeycloakSpinner />;
   }
 
+  const title = t("manageDisplayOrder");
+
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("manageDisplayOrder")}
       isOpen
       onClose={onClose}
-      actions={[
+      aria-label={title}
+    >
+      <ModalHeader title={title} />
+      <ModalBody>
+        <Content className="pf-v5-u-pb-lg">
+          <Content component="p">{t("orderDialogIntro")}</Content>
+        </Content>
+
+        <DragDropSort
+          items={items}
+          variant="DataList"
+          overlayProps={{ isCompact: true }}
+          onDrag={(_, index) => {
+            setLiveText(t("onDragStart", { item: order[index] }));
+          }}
+          onDrop={(_, newItems) => {
+            setItems(newItems);
+            setLiveText(
+              t("onDragFinish", { list: newItems.map((item) => item.id) }),
+            );
+          }}
+        >
+          <DataList
+            aria-label={t("manageOrderTableAria")}
+            data-testid="manageOrderDataList"
+            isCompact
+          />
+        </DragDropSort>
+        <div className="pf-v5-screen-reader" aria-live="assertive">
+          {liveText}
+        </div>
+      </ModalBody>
+      <ModalFooter>
         <Button
           id="modal-confirm"
           data-testid="confirm"
@@ -124,7 +144,7 @@ export const ManageOrderDialog = ({
           }}
         >
           {t("save")}
-        </Button>,
+        </Button>
         <Button
           id="modal-cancel"
           data-testid="cancel"
@@ -133,48 +153,8 @@ export const ManageOrderDialog = ({
           onClick={onClose}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <TextContent className="pf-v5-u-pb-lg">
-        <Text>{t("orderDialogIntro")}</Text>
-      </TextContent>
-
-      <DragDrop
-        onDrag={onDragStart}
-        onDragMove={onDragMove}
-        onDrop={onDragFinish}
-      >
-        <Droppable hasNoWrapper>
-          <DataList
-            aria-label={t("manageOrderTableAria")}
-            data-testid="manageOrderDataList"
-            isCompact
-          >
-            {order.map((alias) => (
-              <Draggable hasNoWrapper key={alias}>
-                <DataListItem aria-label={alias} id={alias}>
-                  <DataListItemRow>
-                    <DataListControl>
-                      <DataListDragButton aria-label={t("dragHelp")} />
-                    </DataListControl>
-                    <DataListItemCells
-                      dataListCells={[
-                        <DataListCell key={alias} data-testid={alias}>
-                          {alias}
-                        </DataListCell>,
-                      ]}
-                    />
-                  </DataListItemRow>
-                </DataListItem>
-              </Draggable>
-            ))}
-          </DataList>
-        </Droppable>
-      </DragDrop>
-      <div className="pf-v5-screen-reader" aria-live="assertive">
-        {liveText}
-      </div>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

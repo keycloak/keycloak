@@ -5,16 +5,17 @@ import PolicyRepresentation, {
 import PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
 import { useTranslation } from "react-i18next";
 import {
-  Modal,
-  ModalVariant,
-  TextContent,
-  Text,
-  TextVariants,
   ActionGroup,
-  Button,
-  Form,
-  ButtonVariant,
   AlertVariant,
+  Button,
+  ButtonVariant,
+  Content,
+  ContentVariants,
+  Form,
+  Modal,
+  ModalBody,
+  ModalHeader,
+  ModalVariant,
 } from "@patternfly/react-core";
 import {
   SelectControl,
@@ -171,67 +172,75 @@ export const NewPermissionPolicyDialog = ({
     <Modal
       aria-label={t("createPermissionPolicy")}
       variant={ModalVariant.medium}
-      header={
-        <TextContent>
-          <Text component={TextVariants.h1}>{t("createPermissionPolicy")}</Text>
-        </TextContent>
-      }
       isOpen
       onClose={toggleDialog}
     >
-      <Form
-        id="createPermissionPolicy-form"
-        onSubmit={async (e) => {
-          e.stopPropagation();
-          await handleSubmit(save)(e);
-        }}
-        isHorizontal
-      >
-        <FormProvider {...form}>
-          <TextControl
-            name="name"
-            label={t("name")}
-            labelIcon={t("policyNameHelpText")}
-            rules={{ required: t("required") }}
-          />
-          <TextControl name="description" label={t("description")} />
-          {providers.length > 0 && (
-            <SelectControl
-              name="type"
-              label={t("policyType")}
-              labelIcon={t("policyTypeHelpText")}
-              options={providers.map((provider) => ({
-                key: provider.type!,
-                value: capitalize(provider.type!),
-              }))}
-              controller={{ defaultValue: "" }}
+      <ModalHeader>
+        <Content>
+          <Content component={ContentVariants.h1}>
+            {t("createPermissionPolicy")}
+          </Content>
+        </Content>
+      </ModalHeader>
+      <ModalBody>
+        <Form
+          id="createPermissionPolicy-form"
+          onSubmit={async (e) => {
+            e.stopPropagation();
+            await handleSubmit(save)(e);
+          }}
+          isHorizontal
+        >
+          <FormProvider {...form}>
+            <TextControl
+              name="name"
+              label={t("name")}
+              labelIcon={t("policyNameHelpText")}
+              rules={{ required: t("required") }}
             />
-          )}
-          <ComponentType
-            isPermissionClient={isPermissionClient}
-            permissionClientId={permissionClientId}
-          />
-          <LogicSelector />
-        </FormProvider>
-        <ActionGroup>
-          <div className="pf-v5-u-mt-md">
-            <Button
-              variant={ButtonVariant.primary}
-              className="pf-v5-u-mr-md"
-              type="submit"
-              data-testid="save"
-              isDisabled={
-                policies.length === 0 && policyTypeSelector === "aggregate"
-              }
-            >
-              {t("save")}
-            </Button>
-            <Button variant="link" data-testid="cancel" onClick={toggleDialog}>
-              {t("cancel")}
-            </Button>
-          </div>
-        </ActionGroup>
-      </Form>
+            <TextControl name="description" label={t("description")} />
+            {providers.length > 0 && (
+              <SelectControl
+                name="type"
+                label={t("policyType")}
+                labelIcon={t("policyTypeHelpText")}
+                options={providers.map((provider) => ({
+                  key: provider.type!,
+                  value: capitalize(provider.type!),
+                }))}
+                controller={{ defaultValue: "" }}
+              />
+            )}
+            <ComponentType
+              isPermissionClient={isPermissionClient}
+              permissionClientId={permissionClientId}
+            />
+            <LogicSelector />
+          </FormProvider>
+          <ActionGroup>
+            <div className="pf-v5-u-mt-md">
+              <Button
+                variant={ButtonVariant.primary}
+                className="pf-v5-u-mr-md"
+                type="submit"
+                data-testid="save"
+                isDisabled={
+                  policies.length === 0 && policyTypeSelector === "aggregate"
+                }
+              >
+                {t("save")}
+              </Button>
+              <Button
+                variant="link"
+                data-testid="cancel"
+                onClick={toggleDialog}
+              >
+                {t("cancel")}
+              </Button>
+            </div>
+          </ActionGroup>
+        </Form>
+      </ModalBody>
     </Modal>
   );
 };

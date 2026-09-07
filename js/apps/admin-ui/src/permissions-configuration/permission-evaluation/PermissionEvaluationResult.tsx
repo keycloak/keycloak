@@ -1,6 +1,6 @@
 import PolicyEvaluationResponse from "@keycloak/keycloak-admin-client/lib/defs/policyEvaluationResponse";
 import { useMemo } from "react";
-import { Alert, List, ListItem, Text } from "@patternfly/react-core";
+import { Alert, List, ListItem, Content } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { sortBy } from "lodash-es";
 
@@ -41,9 +41,9 @@ export const PermissionEvaluationResult = ({
 
     return (
       <>
-        <Text className="pf-v5-u-pt-sm">
+        <Content component="p" className="pf-v5-u-pt-sm">
           <strong>{t(title)}</strong>:
-        </Text>
+        </Content>
         <List className="pf-v5-u-mt-sm">
           {permissions.map((p) => (
             <ListItem key={p.policy?.id}>
@@ -62,9 +62,9 @@ export const PermissionEvaluationResult = ({
     <Alert isInline variant={alertVariant} title={alertTitle} component="h6">
       {evaluatedAllowedScopes.length > 0 && (
         <>
-          <Text>
+          <Content component="p">
             <b>{t("grantedScope")}</b>
-          </Text>
+          </Content>
           <List className="pf-v5-u-mt-sm">
             {evaluatedAllowedScopes.map((scope) => (
               <ListItem key={scope.id}>{scope.name}</ListItem>
@@ -75,9 +75,9 @@ export const PermissionEvaluationResult = ({
 
       {evaluatedDeniedScopes.length > 0 && (
         <>
-          <Text className="pf-v5-u-pt-sm">
+          <Content component="p" className="pf-v5-u-pt-sm">
             <strong>{t("deniedScope")}</strong>
-          </Text>
+          </Content>
 
           <List className="pf-v5-u-mt-sm">
             {evaluatedDeniedScopes.map((scope) => (

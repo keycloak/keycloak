@@ -32,7 +32,7 @@ export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
   ];
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <FormAccess
         isHorizontal
         role="manage-realm"

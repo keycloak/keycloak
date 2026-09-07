@@ -116,7 +116,7 @@ export const AttributeGeneralSettings = () => {
         />
         <FormGroup
           label={t("attributeDisplayName")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("attributeDisplayNameHelp")}
               fieldLabelId="attributeDisplayName"
@@ -168,7 +168,7 @@ export const AttributeGeneralSettings = () => {
             <Divider />
             <FormGroup
               label={t("enabledWhen")}
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("enabledWhenTooltip")}
                   fieldLabelId="enabled-when"
@@ -212,7 +212,7 @@ export const AttributeGeneralSettings = () => {
                       }}
                       typeAheadAriaLabel="Select"
                       chipGroupProps={{
-                        numChips: 3,
+                        numLabels: 3,
                         expandedText: t("hide"),
                         collapsedText: t("showRemaining"),
                       }}
@@ -252,7 +252,7 @@ export const AttributeGeneralSettings = () => {
             <Divider />
             <FormGroup
               label={t("required")}
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("requiredHelp")}
                   fieldLabelId="required"
@@ -272,7 +272,6 @@ export const AttributeGeneralSettings = () => {
                     onChange={field.onChange}
                     isChecked={field.value}
                     label={t("on")}
-                    labelOff={t("off")}
                     aria-label={t("required")}
                   />
                 )}
@@ -312,7 +311,7 @@ export const AttributeGeneralSettings = () => {
                 </FormGroup>
                 <FormGroup
                   label={t("requiredWhen")}
-                  labelIcon={
+                  labelHelp={
                     <HelpItem
                       helpText={t("requiredWhenTooltip")}
                       fieldLabelId="required-when"
@@ -352,7 +351,7 @@ export const AttributeGeneralSettings = () => {
                           variant={SelectVariant.typeaheadMulti}
                           typeAheadAriaLabel="Select"
                           chipGroupProps={{
-                            numChips: 3,
+                            numLabels: 3,
                             expandedText: t("hide"),
                             collapsedText: t("showRemaining"),
                           }}
