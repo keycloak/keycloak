@@ -7,8 +7,7 @@ import {
   PageSection,
   Tab,
   Tabs,
-  Text,
-  TextContent,
+  Content,
   ToggleGroup,
   ToggleGroupItem,
 } from "@patternfly/react-core";
@@ -253,10 +252,10 @@ export const ThemeColors = ({
           onClose={toggle}
         />
       )}
-      <PageSection variant="light">
-        <TextContent className="pf-v5-u-mb-lg">
-          <Text>{t("themeColorInfo")}</Text>
-        </TextContent>
+      <PageSection hasBodyWrapper={false}>
+        <Content className="pf-v5-u-mb-lg">
+          <Content component="p">{t("themeColorInfo")}</Content>
+        </Content>
         {mediaQuery.matches && theme === "light" && (
           <Alert variant="info" isInline title={t("themePreviewInfo")} />
         )}

@@ -45,8 +45,8 @@ export default function UsersSection() {
         divider={false}
       />
       <PageSection
+        hasBodyWrapper={false}
         data-testid="users-page"
-        variant="light"
         className="pf-v5-u-p-0"
       >
         <RoutableTabs

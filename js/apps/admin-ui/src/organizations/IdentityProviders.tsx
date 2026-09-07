@@ -94,7 +94,7 @@ export const IdentityProviders = () => {
   });
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <UnlinkConfirm />
       {open && (
         <LinkIdentityProviderModal

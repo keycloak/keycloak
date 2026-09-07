@@ -14,6 +14,8 @@ import {
   ButtonVariant,
   Form,
   Modal,
+  ModalBody,
+  ModalHeader,
   ModalVariant,
 } from "@patternfly/react-core";
 import { TrashIcon } from "@patternfly/react-icons";
@@ -115,45 +117,51 @@ export const RequiredActionConfigModal = ({
     <Modal
       variant={ModalVariant.small}
       isOpen
-      title={t("requiredActionConfig", { name: requiredAction.name })}
       onClose={onClose}
+      aria-label={t("requiredActionConfig", { name: requiredAction.name })}
     >
-      <Form id="required-action-config-form" onSubmit={handleSubmit(save)}>
-        <FormProvider {...form}>
-          <DynamicComponents
-            stringify
-            properties={configDescription?.properties || []}
-          />
-        </FormProvider>
-        <ActionGroup>
-          <Button data-testid="save" variant="primary" type="submit">
-            {t("save")}
-          </Button>
-          <Button
-            data-testid="cancel"
-            variant={ButtonVariant.link}
-            onClick={onClose}
-          >
-            {t("cancel")}
-          </Button>
-          <Button
-            className="pf-v5-u-ml-3xl"
-            data-testid="clear"
-            variant={ButtonVariant.link}
-            onClick={async () => {
-              await adminClient.authenticationManagement.removeRequiredActionConfig(
-                {
-                  alias: requiredAction.alias!,
-                },
-              );
-              form.reset({});
-              onClose();
-            }}
-          >
-            {t("clear")} <TrashIcon />
-          </Button>
-        </ActionGroup>
-      </Form>
+      <ModalHeader
+        title={t("requiredActionConfig", { name: requiredAction.name })}
+      />
+      <ModalBody>
+        <Form id="required-action-config-form" onSubmit={handleSubmit(save)}>
+          <FormProvider {...form}>
+            <DynamicComponents
+              stringify
+              properties={configDescription?.properties || []}
+            />
+          </FormProvider>
+          <ActionGroup>
+            <Button data-testid="save" variant="primary" type="submit">
+              {t("save")}
+            </Button>
+            <Button
+              data-testid="cancel"
+              variant={ButtonVariant.link}
+              onClick={onClose}
+            >
+              {t("cancel")}
+            </Button>
+            <Button
+              icon={<TrashIcon />}
+              className="pf-v5-u-ml-3xl"
+              data-testid="clear"
+              variant={ButtonVariant.link}
+              onClick={async () => {
+                await adminClient.authenticationManagement.removeRequiredActionConfig(
+                  {
+                    alias: requiredAction.alias!,
+                  },
+                );
+                form.reset({});
+                onClose();
+              }}
+            >
+              {t("clear")}
+            </Button>
+          </ActionGroup>
+        </Form>
+      </ModalBody>
     </Modal>
   );
 };

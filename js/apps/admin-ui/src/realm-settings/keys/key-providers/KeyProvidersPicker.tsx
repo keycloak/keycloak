@@ -5,6 +5,8 @@ import {
   DataListItemCells,
   DataListItemRow,
   Modal,
+  ModalBody,
+  ModalHeader,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../../context/server-info/ServerInfoProvider";
@@ -24,38 +26,49 @@ export const KeyProvidersPicker = ({
   const keyProviderComponentTypes =
     serverInfo.componentTypes?.[KEY_PROVIDER_TYPE] ?? [];
   return (
-    <Modal variant="medium" title={t("addProvider")} isOpen onClose={onClose}>
-      <DataList
-        onSelectDataListItem={(_event, id) => {
-          onConfirm(id);
-        }}
-        aria-label={t("addPredefinedMappers")}
-        isCompact
-      >
-        {keyProviderComponentTypes.map((provider) => (
-          <DataListItem
-            aria-label={provider.id}
-            key={provider.id}
-            id={provider.id}
-          >
-            <DataListItemRow>
-              <DataListItemCells
-                dataListCells={[
-                  <DataListCell
-                    key={`name-${provider.id}`}
-                    data-testid={`option-${provider.id}`}
-                  >
-                    {provider.id}
-                  </DataListCell>,
-                  <DataListCell width={2} key={`helpText-${provider.helpText}`}>
-                    {provider.helpText}
-                  </DataListCell>,
-                ]}
-              />
-            </DataListItemRow>
-          </DataListItem>
-        ))}
-      </DataList>
+    <Modal
+      variant="medium"
+      isOpen
+      onClose={onClose}
+      aria-label={t("addProvider")}
+    >
+      <ModalHeader title={t("addProvider")} />
+      <ModalBody>
+        <DataList
+          onSelectDataListItem={(_event, id) => {
+            onConfirm(id);
+          }}
+          aria-label={t("addPredefinedMappers")}
+          isCompact
+        >
+          {keyProviderComponentTypes.map((provider) => (
+            <DataListItem
+              aria-label={provider.id}
+              key={provider.id}
+              id={provider.id}
+            >
+              <DataListItemRow>
+                <DataListItemCells
+                  dataListCells={[
+                    <DataListCell
+                      key={`name-${provider.id}`}
+                      data-testid={`option-${provider.id}`}
+                    >
+                      {provider.id}
+                    </DataListCell>,
+                    <DataListCell
+                      width={2}
+                      key={`helpText-${provider.helpText}`}
+                    >
+                      {provider.helpText}
+                    </DataListCell>,
+                  ]}
+                />
+              </DataListItemRow>
+            </DataListItem>
+          ))}
+        </DataList>
+      </ModalBody>
     </Modal>
   );
 };

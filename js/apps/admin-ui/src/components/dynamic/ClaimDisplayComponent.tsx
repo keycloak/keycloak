@@ -134,7 +134,7 @@ export const ClaimDisplayComponent = ({
   return displays.length !== 0 ? (
     <FormGroup
       label={t(label!)}
-      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
+      labelHelp={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
       isRequired={required}
     >
@@ -173,14 +173,13 @@ export const ClaimDisplayComponent = ({
             </FlexItem>
             <FlexItem>
               <Button
+                icon={<MinusCircleIcon />}
                 variant="link"
                 title={t("removeClaimDisplay")}
                 isDisabled={isDisabled}
                 onClick={() => remove(index)}
                 data-testid={`${fieldName}.${index}.remove`}
-              >
-                <MinusCircleIcon />
-              </Button>
+              ></Button>
             </FlexItem>
           </Flex>
         ))}

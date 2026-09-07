@@ -143,7 +143,7 @@ export const ClientSecret = ({
         label={t("clientSecret")}
         fieldId="kc-client-secret"
         className="pf-v5-u-my-md"
-        labelIcon={
+        labelHelp={
           <HelpItem
             helpText={t("oidcClientSecretHelp")}
             fieldLabelId="kc-client-secret"

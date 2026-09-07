@@ -127,7 +127,7 @@ export default function WorkflowDetailForm() {
       <ViewHeader titleKey={titlekeyMap[mode]} subKey={subkeyMap[mode]} />
 
       <FormProvider {...form}>
-        <PageSection variant="light">
+        <PageSection hasBodyWrapper={false}>
           <FormAccess
             isHorizontal
             onSubmit={
@@ -141,7 +141,7 @@ export default function WorkflowDetailForm() {
           >
             <FormGroup
               label={t("workflowYAML")}
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("workflowYAMLHelp")}
                   fieldLabelId="code"

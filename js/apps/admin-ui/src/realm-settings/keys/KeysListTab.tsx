@@ -140,7 +140,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
   }
 
   return (
-    <PageSection variant="light" padding={{ default: "noPadding" }}>
+    <PageSection hasBodyWrapper={false} padding={{ default: "noPadding" }}>
       <PublicKeyDialog />
       <CertificateDialog />
       <KeycloakDataTable

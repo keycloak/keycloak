@@ -60,7 +60,7 @@ export default function AddDefaultTrust() {
       <ViewHeader
         titleKey={t("addIdentityProvider", { provider: "Default Trust" })}
       />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormProvider {...form}>
           <FormAccess
             role="manage-identity-providers"

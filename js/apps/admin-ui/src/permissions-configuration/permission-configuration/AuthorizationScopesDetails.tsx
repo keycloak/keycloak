@@ -4,12 +4,8 @@ import {
   Label,
   LabelGroup,
   Popover,
-  Text,
-  TextContent,
-  TextList,
-  TextListItem,
-  TextListItemVariants,
-  TextListVariants,
+  Content,
+  ContentVariants,
 } from "@patternfly/react-core";
 
 type AuthorizationScopesDetailsProps = {
@@ -35,32 +31,35 @@ export const AuthorizationScopesDetails = ({
           position="top"
           hasAutoWidth
           bodyContent={
-            <TextContent>
-              <Text className="pf-v5-u-font-size-md pf-v5-u-font-weight-bold">
+            <Content>
+              <Content
+                component="p"
+                className="pf-v5-u-font-size-md pf-v5-u-font-weight-bold"
+              >
                 {t("authorizationScopeDetailsTitle")}
-              </Text>
-              <Text className="pf-v5-u-font-size-sm">
+              </Content>
+              <Content component="p" className="pf-v5-u-font-size-sm">
                 {t("authorizationScopeDetailsSubtitle")}
-              </Text>
-              <TextList
-                component={TextListVariants.dl}
+              </Content>
+              <Content
+                component={ContentVariants.dl}
                 className="pf-v5-u-font-size-sm"
               >
-                <TextListItem component={TextListItemVariants.dt}>
+                <Content component={ContentVariants.dt}>
                   {t("authorizationScopeDetailsName")}
-                </TextListItem>
-                <TextListItem component={TextListItemVariants.dd}>
+                </Content>
+                <Content component={ContentVariants.dd}>
                   {capitalize(scope.name)}
-                </TextListItem>
-                <TextListItem component={TextListItemVariants.dt}>
+                </Content>
+                <Content component={ContentVariants.dt}>
                   {t("authorizationScopeDetailsDescription")}
-                </TextListItem>
-                <TextListItem component={TextListItemVariants.dd}>
+                </Content>
+                <Content component={ContentVariants.dd}>
                   {" "}
                   {t(`authorizationScope.${row.resourceType}.${scope.name}`)}
-                </TextListItem>
-              </TextList>
-            </TextContent>
+                </Content>
+              </Content>
+            </Content>
           }
         >
           <Label color="blue">{capitalize(scope.name)}</Label>
