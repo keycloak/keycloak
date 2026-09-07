@@ -475,14 +475,16 @@ public interface OrganizationProvider extends Provider {
     long count();
 
     /**
-     * Returns an {@link OrganizationModel} with the given {@code alias}.
+     * <p>Returns an {@link OrganizationModel} with the given {@code alias}.
+     *
+     * <p>Like {@link #getById(String)} and {@link #getByDomainName(String)}, this is a lookup of a single, known
+     * organization and is not subject to fine-grained admin permissions. Callers running in an administrative context
+     * are expected to check access to the returned organization themselves.
      *
      * @param alias the alias
      * @return the organization
      */
-    default OrganizationModel getByAlias(String alias) {
-        return getAllStream(Map.of(OrganizationModel.ALIAS, alias), 0, 1).findAny().orElse(null);
-    }
+    OrganizationModel getByAlias(String alias);
 
     /**
      * Returns a {@link InvitationManager} for managing invitations
