@@ -65,10 +65,10 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
           position-area: start center;
           margin-bottom: 3rem;
         }
-        .login-preview .pf-v6-c-login__main {
+        .login-preview .pf-v5-c-login__main {
           anchor-name: --logo;
         }
-        .login-preview .pf-v6-c-login__footer {
+        .login-preview .pf-v5-c-login__footer {
           display: none;
         }
       `}</style>
