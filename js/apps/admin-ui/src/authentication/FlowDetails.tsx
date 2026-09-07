@@ -6,9 +6,7 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  DragDrop,
   DropdownItem,
-  Droppable,
   Label,
   PageSection,
   ToggleGroup,
@@ -35,6 +33,7 @@ import { EmptyExecutionState } from "./EmptyExecutionState";
 import { AuthenticationProviderContextProvider } from "./components/AuthenticationProviderContext";
 import { FlowDiagram } from "./components/FlowDiagram";
 import { FlowHeader } from "./components/FlowHeader";
+import { FlowDragDropProvider } from "./components/FlowDragDropContext";
 import { FlowRow } from "./components/FlowRow";
 import { AddStepModal } from "./components/modals/AddStepModal";
 import { AddSubFlowModal, Flow } from "./components/modals/AddSubFlowModal";
@@ -364,7 +363,7 @@ export default function FlowDetails() {
         ]}
         dropdownItems={dropdownItems}
       />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         {executionList && hasExecutions && (
           <>
             <Toolbar id="toolbar">
@@ -409,74 +408,58 @@ export default function FlowDetails() {
             </Toolbar>
             <DeleteConfirm />
             {tableView && (
-              <DragDrop
-                onDrag={({ index }) => {
-                  const item = executionList.findExecution(index)!;
-                  setLiveText(t("onDragStart", { item: item.displayName }));
-                  if (!item.isCollapsed) {
-                    item.isCollapsed = true;
-                    setExecutionList(executionList.clone());
-                  }
-                  return true;
+              <FlowDragDropProvider
+                executionList={executionList}
+                onReorder={(dragged, sourceIndex, destIndex) => {
+                  const order = executionList.order().map((ex) => ex.id!);
+                  const [removed] = order.splice(sourceIndex, 1);
+                  order.splice(destIndex, 0, removed);
+                  const change = executionList.getChange(dragged, order);
+                  void executeChange(dragged, change);
                 }}
-                onDragMove={({ index }) => {
-                  const dragged = executionList.findExecution(index);
+                onDragStartAnnouncement={(item) => {
+                  setLiveText(t("onDragStart", { item: item.displayName }));
+                  setExecutionList(executionList.clone());
+                }}
+                onDragMoveAnnouncement={(dragged) => {
                   setLiveText(t("onDragMove", { item: dragged?.displayName }));
                 }}
-                onDrop={(source, dest) => {
-                  if (dest) {
-                    if (source.index === dest.index) {
-                      return false;
-                    }
-
-                    const dragged = executionList.findExecution(source.index)!;
-                    const order = executionList.order().map((ex) => ex.id!);
-                    setLiveText(
-                      t("onDragFinish", { list: dragged.displayName }),
-                    );
-
-                    const [removed] = order.splice(source.index, 1);
-                    order.splice(dest.index, 0, removed);
-                    const change = executionList.getChange(dragged, order);
-                    void executeChange(dragged, change);
-                    return true;
-                  } else {
-                    setLiveText(t("onDragCancel"));
-                    return false;
-                  }
+                onDragFinishAnnouncement={(dragged) => {
+                  setLiveText(t("onDragFinish", { list: dragged.displayName }));
+                }}
+                onDragCancelAnnouncement={() => {
+                  setLiveText(t("onDragCancel"));
                 }}
               >
-                <Droppable hasNoWrapper>
-                  <Table aria-label={t("flows")} isTreeTable>
-                    <FlowHeader />
-                    <>
-                      {executionList.expandableList.map((execution) => (
-                        <Tbody draggable key={execution.id}>
-                          <FlowRow
-                            builtIn={!!builtIn}
-                            execution={execution}
-                            onRowClick={(execution) => {
-                              execution.isCollapsed = !execution.isCollapsed;
-                              setExecutionList(executionList.clone());
-                            }}
-                            onRowChange={update}
-                            onAddExecution={(execution, type) =>
-                              addExecution(execution.displayName!, type)
-                            }
-                            onAddFlow={(execution, flow) =>
-                              addFlow(execution.displayName!, flow)
-                            }
-                            onDelete={(execution) => {
-                              setSelectedExecution(execution);
-                              toggleDeleteDialog();
-                            }}
-                          />
-                        </Tbody>
-                      ))}
-                    </>
-                  </Table>
-                </Droppable>
-              </DragDrop>
+                <Table aria-label={t("flows")} isTreeTable>
+                  <FlowHeader />
+                  <>
+                    {executionList.expandableList.map((execution) => (
+                      <Tbody key={execution.id}>
+                        <FlowRow
+                          builtIn={!!builtIn}
+                          execution={execution}
+                          onRowClick={(execution) => {
+                            execution.isCollapsed = !execution.isCollapsed;
+                            setExecutionList(executionList.clone());
+                          }}
+                          onRowChange={update}
+                          onAddExecution={(execution, type) =>
+                            addExecution(execution.displayName!, type)
+                          }
+                          onAddFlow={(execution, flow) =>
+                            addFlow(execution.displayName!, flow)
+                          }
+                          onDelete={(execution) => {
+                            setSelectedExecution(execution);
+                            toggleDeleteDialog();
+                          }}
+                        />
+                      </Tbody>
+                    ))}
+                  </>
+                </Table>
+              </FlowDragDropProvider>
             )}
             {flow && (
               <>

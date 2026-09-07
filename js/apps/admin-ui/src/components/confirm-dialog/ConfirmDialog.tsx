@@ -3,6 +3,9 @@ import {
   Button,
   ButtonVariant,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
@@ -62,13 +65,21 @@ export const ConfirmDialogModal = ({
   confirmButtonDisabled,
 }: ConfirmDialogModalProps) => {
   const { t } = useTranslation();
+  const title = t(titleKey);
+
   return (
     <Modal
-      title={t(titleKey)}
       isOpen={open}
       onClose={toggleDialog}
       variant={variant}
-      actions={[
+      aria-label={title}
+    >
+      <ModalHeader title={title} />
+      <ModalBody>
+        {!messageKey && children}
+        {messageKey && t(messageKey)}
+      </ModalBody>
+      <ModalFooter>
         <Button
           id="modal-confirm"
           data-testid="confirm"
@@ -81,8 +92,8 @@ export const ConfirmDialogModal = ({
           }}
         >
           {t(continueButtonLabel || "continue")}
-        </Button>,
-        !noCancelButton && (
+        </Button>
+        {!noCancelButton && (
           <Button
             id="modal-cancel"
             data-testid="cancel"
@@ -95,11 +106,8 @@ export const ConfirmDialogModal = ({
           >
             {t(cancelButtonLabel || "cancel")}
           </Button>
-        ),
-      ]}
-    >
-      {!messageKey && children}
-      {messageKey && t(messageKey)}
+        )}
+      </ModalFooter>
     </Modal>
   );
 };

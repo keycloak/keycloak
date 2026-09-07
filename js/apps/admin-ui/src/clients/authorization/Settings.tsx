@@ -83,7 +83,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
   }
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       {importDialog && (
         <ImportDialog
           onConfirm={importResource}
@@ -98,7 +98,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
         <FormGroup
           label={t("import")}
           fieldId="import"
-          labelIcon={
+          labelHelp={
             <HelpItem helpText={t("importHelp")} fieldLabelId="import" />
           }
         >
@@ -109,7 +109,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
         <Divider />
         <FormGroup
           label={t("policyEnforcementMode")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("policyEnforcementModeHelp")}
               fieldLabelId="policyEnforcementMode"

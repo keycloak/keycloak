@@ -24,9 +24,9 @@ export const PreviewWindow = ({ cssVars }: PreviewWindowProps) => (
           .join("\n")}
       }
     `}</style>
-    <Page className="preview" header={<Header />}>
+    <Page className="preview" masthead={<Header />}>
       <PageSection
-        variant="light"
+        hasBodyWrapper={false}
         style={{
           backgroundColor: cssVars["BackgroundColor--light-100"],
         }}

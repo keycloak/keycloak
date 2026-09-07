@@ -98,7 +98,7 @@ const ValueInput = ({
               toggleId={`${attribute.id}-value`}
               className="kc-attribute-value-selectable"
               chipGroupProps={{
-                numChips: 1,
+                numLabels: 1,
                 expandedText: t("hide"),
                 collapsedText: t("showRemaining"),
               }}
@@ -217,14 +217,13 @@ export const KeyBasedAttributeInput = ({
             />
             <Td>
               <Button
+                icon={<MinusCircleIcon />}
                 id={`${name}-minus-button-${rowIndex}`}
                 variant="link"
                 className="kc-attributes__minus-icon"
                 onClick={() => remove(rowIndex)}
                 aria-label={t("remove")}
-              >
-                <MinusCircleIcon />
-              </Button>
+              ></Button>
             </Td>
           </Tr>
         ))}

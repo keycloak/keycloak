@@ -134,7 +134,7 @@ export const AssignedPolicies = ({
   return (
     <FormGroup
       label={t("policies")}
-      labelIcon={
+      labelHelp={
         <HelpItem
           helpText={t("permissionPoliciesHelp")}
           fieldLabelId="policies"

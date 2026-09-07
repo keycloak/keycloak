@@ -1,5 +1,5 @@
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import { PageSection, PageSectionVariants } from "@patternfly/react-core";
+import { PageSection } from "@patternfly/react-core";
 import { UseFormReturn, useFormContext } from "react-hook-form";
 
 import {
@@ -26,7 +26,7 @@ export const UserAttributes = ({
   const form = useFormContext<UserFormFields>();
 
   return (
-    <PageSection variant={PageSectionVariants.light}>
+    <PageSection hasBodyWrapper={false}>
       <AttributesForm
         form={form as UseFormReturn<AttributeForm>}
         save={save}

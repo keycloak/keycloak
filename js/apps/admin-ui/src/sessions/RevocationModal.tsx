@@ -3,11 +3,14 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
+  Content,
   Form,
   FormGroup,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
-  TextContent,
   TextInput,
 } from "@patternfly/react-core";
 import { useForm } from "react-hook-form";
@@ -106,10 +109,43 @@ export const RevocationModal = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("revocation")}
       isOpen={true}
       onClose={handleModalToggle}
-      actions={[
+      aria-label={t("revocation")}
+    >
+      <ModalHeader title={t("revocation")} />
+      <ModalBody>
+        <Content className="kc-revocation-description-text">
+          {t("revocationDescription")}
+        </Content>
+        <Form
+          id="revocation-modal-form"
+          isHorizontal
+          onSubmit={handleSubmit(save)}
+        >
+          <FormGroup
+            className="kc-revocation-modal-form-group"
+            label={t("notBefore")}
+            name="notBefore"
+            fieldId="not-before"
+          >
+            <TextInput
+              data-testid="not-before-input"
+              autoFocus
+              readOnly
+              value={
+                realm.notBefore === 0
+                  ? (t("none") as string)
+                  : new Date(realm.notBefore! * 1000).toString()
+              }
+              type="text"
+              id="not-before"
+              {...register("notBefore")}
+            />
+          </FormGroup>
+        </Form>
+      </ModalBody>
+      <ModalFooter>
         <Button
           data-testid="set-to-now-button"
           key="set-to-now"
@@ -121,7 +157,7 @@ export const RevocationModal = ({
           form="revocation-modal-form"
         >
           {t("setToNow")}
-        </Button>,
+        </Button>
         <Button
           data-testid="clear-not-before-button"
           key="clear"
@@ -133,7 +169,7 @@ export const RevocationModal = ({
           form="revocation-modal-form"
         >
           {t("clear")}
-        </Button>,
+        </Button>
         <Button
           data-testid="modal-test-connection-button"
           key="push"
@@ -145,7 +181,7 @@ export const RevocationModal = ({
           form="revocation-modal-form"
         >
           {t("push")}
-        </Button>,
+        </Button>
         <Button
           id="modal-cancel"
           data-testid="cancel"
@@ -156,38 +192,8 @@ export const RevocationModal = ({
           }}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <TextContent className="kc-revocation-description-text">
-        {t("revocationDescription")}
-      </TextContent>
-      <Form
-        id="revocation-modal-form"
-        isHorizontal
-        onSubmit={handleSubmit(save)}
-      >
-        <FormGroup
-          className="kc-revocation-modal-form-group"
-          label={t("notBefore")}
-          name="notBefore"
-          fieldId="not-before"
-        >
-          <TextInput
-            data-testid="not-before-input"
-            autoFocus
-            readOnly
-            value={
-              realm.notBefore === 0
-                ? (t("none") as string)
-                : new Date(realm.notBefore! * 1000).toString()
-            }
-            type="text"
-            id="not-before"
-            {...register("notBefore")}
-          />
-        </FormGroup>
-      </Form>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

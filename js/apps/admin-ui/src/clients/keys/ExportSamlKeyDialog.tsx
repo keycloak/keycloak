@@ -1,5 +1,12 @@
 import KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
-import { Button, Form, Modal } from "@patternfly/react-core";
+import {
+  Button,
+  Form,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+} from "@patternfly/react-core";
 import { saveAs } from "file-saver";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -55,10 +62,23 @@ export const ExportSamlKeyDialog = ({
   return (
     <Modal
       variant="medium"
-      title={t("exportSamlKeyTitle")}
       isOpen
       onClose={close}
-      actions={[
+      aria-label={t("exportSamlKeyTitle")}
+    >
+      <ModalHeader title={t("exportSamlKeyTitle")} />
+      <ModalBody>
+        <Form
+          id="export-saml-key-form"
+          className="pf-v5-u-pt-lg"
+          onSubmit={form.handleSubmit(download)}
+        >
+          <FormProvider {...form}>
+            <KeyForm isSaml />
+          </FormProvider>
+        </Form>
+      </ModalBody>
+      <ModalFooter>
         <Button
           id="modal-confirm"
           data-testid="confirm"
@@ -67,7 +87,7 @@ export const ExportSamlKeyDialog = ({
           form="export-saml-key-form"
         >
           {t("export")}
-        </Button>,
+        </Button>
         <Button
           id="modal-cancel"
           data-testid="cancel"
@@ -78,18 +98,8 @@ export const ExportSamlKeyDialog = ({
           }}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <Form
-        id="export-saml-key-form"
-        className="pf-v5-u-pt-lg"
-        onSubmit={form.handleSubmit(download)}
-      >
-        <FormProvider {...form}>
-          <KeyForm isSaml />
-        </FormProvider>
-      </Form>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

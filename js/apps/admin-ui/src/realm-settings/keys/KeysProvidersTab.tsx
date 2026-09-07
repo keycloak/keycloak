@@ -158,7 +158,7 @@ export const KeysProvidersTab = ({
         />
       )}
       <DeleteConfirm />
-      <PageSection variant="light" padding={{ default: "noPadding" }}>
+      <PageSection hasBodyWrapper={false} padding={{ default: "noPadding" }}>
         <Toolbar>
           <ToolbarGroup className="providers-toolbar">
             <ToolbarItem>
@@ -179,12 +179,11 @@ export const KeysProvidersTab = ({
                 </InputGroupItem>
                 <InputGroupItem>
                   <Button
+                    icon={<SearchIcon />}
                     variant={ButtonVariant.control}
                     aria-label={t("search")}
                     onClick={onSearch}
-                  >
-                    <SearchIcon />
-                  </Button>
+                  ></Button>
                 </InputGroupItem>
               </InputGroup>
             </ToolbarItem>

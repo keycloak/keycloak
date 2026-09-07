@@ -6,6 +6,9 @@ import {
   ButtonVariant,
   Form,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
 } from "@patternfly/react-core";
 import { useEffect } from "react";
@@ -45,10 +48,24 @@ export const EditFlowModal = ({ flow, toggleDialog }: EditFlowModalProps) => {
 
   return (
     <Modal
-      title={t("editFlow")}
       onClose={toggleDialog}
       variant={ModalVariant.small}
-      actions={[
+      isOpen
+      aria-label={t("editFlow")}
+    >
+      <ModalHeader title={t("editFlow")} />
+      <ModalBody>
+        <FormProvider {...form}>
+          <Form
+            id="edit-flow-form"
+            onSubmit={handleSubmit(onSubmit)}
+            isHorizontal
+          >
+            <NameDescription />
+          </Form>
+        </FormProvider>
+      </ModalBody>
+      <ModalFooter>
         <Button
           key="confirm"
           data-testid="confirm"
@@ -56,7 +73,7 @@ export const EditFlowModal = ({ flow, toggleDialog }: EditFlowModalProps) => {
           form="edit-flow-form"
         >
           {t("edit")}
-        </Button>,
+        </Button>
         <Button
           key="cancel"
           data-testid="cancel"
@@ -64,19 +81,8 @@ export const EditFlowModal = ({ flow, toggleDialog }: EditFlowModalProps) => {
           onClick={() => toggleDialog()}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-      isOpen
-    >
-      <FormProvider {...form}>
-        <Form
-          id="edit-flow-form"
-          onSubmit={handleSubmit(onSubmit)}
-          isHorizontal
-        >
-          <NameDescription />
-        </Form>
-      </FormProvider>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

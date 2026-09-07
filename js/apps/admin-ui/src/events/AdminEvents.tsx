@@ -11,8 +11,6 @@ import {
 import {
   ActionGroup,
   Button,
-  Chip,
-  ChipGroup,
   DatePicker,
   DescriptionList,
   DescriptionListDescription,
@@ -22,7 +20,11 @@ import {
   FlexItem,
   Form,
   FormGroup,
+  Label,
+  LabelGroup,
   Modal,
+  ModalBody,
+  ModalHeader,
   ModalVariant,
   SelectOption,
 } from "@patternfly/react-core";
@@ -78,11 +80,12 @@ const DisplayDialog = ({
   return (
     <Modal
       variant={ModalVariant.medium}
-      title={t(titleKey)}
       isOpen={true}
       onClose={onClose}
+      aria-label={t(titleKey)}
     >
-      {children}
+      <ModalHeader title={t(titleKey)} />
+      <ModalBody>{children}</ModalBody>
     </Modal>
   );
 };
@@ -331,7 +334,7 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
                             className="keycloak__events_search__type_select"
                             data-testid="resource-types-searchField"
                             chipGroupProps={{
-                              numChips: 1,
+                              numLabels: 1,
                               expandedText: t("hide"),
                               collapsedText: t("showRemaining"),
                             }}
@@ -357,11 +360,12 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
                             isOpen={selectResourceTypesOpen}
                             aria-labelledby={"resourceTypes"}
                             chipGroupComponent={
-                              <ChipGroup>
+                              <LabelGroup>
                                 {field.value.map((chip: string) => (
-                                  <Chip
+                                  <Label
+                                    variant="outline"
                                     key={chip}
-                                    onClick={(resource) => {
+                                    onClose={(resource) => {
                                       resource.stopPropagation();
                                       field.onChange(
                                         field.value.filter(
@@ -371,9 +375,9 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
                                     }}
                                   >
                                     {chip}
-                                  </Chip>
+                                  </Label>
                                 ))}
-                              </ChipGroup>
+                              </LabelGroup>
                             }
                           >
                             {resourceTypes?.map((option) => (
@@ -398,7 +402,7 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
                             className="keycloak__events_search__type_select"
                             data-testid="operation-types-searchField"
                             chipGroupProps={{
-                              numChips: 1,
+                              numLabels: 1,
                               expandedText: t("hide"),
                               collapsedText: t("showRemaining"),
                             }}
@@ -424,11 +428,12 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
                             isOpen={selectOperationTypesOpen}
                             aria-labelledby={"operationTypes"}
                             chipGroupComponent={
-                              <ChipGroup>
+                              <LabelGroup>
                                 {field.value.map((chip: string) => (
-                                  <Chip
+                                  <Label
+                                    variant="outline"
                                     key={chip}
-                                    onClick={(operation) => {
+                                    onClose={(operation) => {
                                       operation.stopPropagation();
                                       field.onChange(
                                         field.value.filter(
@@ -438,9 +443,9 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
                                     }}
                                   >
                                     {chip}
-                                  </Chip>
+                                  </Label>
                                 ))}
-                              </ChipGroup>
+                              </LabelGroup>
                             }
                           >
                             {operationTypes?.map((option) => (
@@ -532,25 +537,26 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
                       }
 
                       return (
-                        <ChipGroup
+                        <LabelGroup
                           className="pf-v5-u-mt-md pf-v5-u-mr-md"
                           key={key}
                           categoryName={filterLabels[key]}
                           onClick={() => removeFilter(key)}
                         >
                           {typeof value === "string" ? (
-                            <Chip isReadOnly>{value}</Chip>
+                            <Label variant="outline">{value}</Label>
                           ) : (
                             value.map((entry) => (
-                              <Chip
+                              <Label
+                                variant="outline"
                                 key={entry}
-                                onClick={() => removeFilterValue(key, entry)}
+                                onClose={() => removeFilterValue(key, entry)}
                               >
                                 {entry}
-                              </Chip>
+                              </Label>
                             ))
                           )}
-                        </ChipGroup>
+                        </LabelGroup>
                       );
                     })}
                   </div>

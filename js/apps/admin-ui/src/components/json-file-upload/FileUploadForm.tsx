@@ -8,6 +8,9 @@ import {
   HelperText,
   HelperTextItem,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
 } from "@patternfly/react-core";
 import {
@@ -80,10 +83,13 @@ export const FileUploadForm = ({
       {fileUpload.modal && (
         <Modal
           variant={ModalVariant.small}
-          title={t("clearFile")}
           isOpen
           onClose={removeDialog}
-          actions={[
+          aria-label={t("clearFile")}
+        >
+          <ModalHeader title={t("clearFile")} />
+          <ModalBody>{t("clearFileExplain")}</ModalBody>
+          <ModalFooter>
             <Button
               key="confirm"
               variant="primary"
@@ -94,7 +100,7 @@ export const FileUploadForm = ({
               }}
             >
               {t("clear")}
-            </Button>,
+            </Button>
             <Button
               data-testid="cancel"
               key="cancel"
@@ -102,10 +108,8 @@ export const FileUploadForm = ({
               onClick={removeDialog}
             >
               {t("cancel")}
-            </Button>,
-          ]}
-        >
-          {t("clearFileExplain")}
+            </Button>
+          </ModalFooter>
         </Modal>
       )}
       {unWrap && (

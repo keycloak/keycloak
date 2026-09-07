@@ -5,6 +5,9 @@ import {
   ButtonVariant,
   Form,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
 } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
@@ -79,10 +82,24 @@ export const DuplicateFlowModal = ({
 
   return (
     <Modal
-      title={t("duplicateFlow")}
       onClose={toggleDialog}
       variant={ModalVariant.small}
-      actions={[
+      isOpen
+      aria-label={t("duplicateFlow")}
+    >
+      <ModalHeader title={t("duplicateFlow")} />
+      <ModalBody>
+        <FormProvider {...form}>
+          <Form
+            id="duplicate-flow-form"
+            onSubmit={handleSubmit(onSubmit)}
+            isHorizontal
+          >
+            <NameDescription />
+          </Form>
+        </FormProvider>
+      </ModalBody>
+      <ModalFooter>
         <Button
           key="confirm"
           data-testid="confirm"
@@ -90,7 +107,7 @@ export const DuplicateFlowModal = ({
           form="duplicate-flow-form"
         >
           {t("duplicate")}
-        </Button>,
+        </Button>
         <Button
           key="cancel"
           data-testid="cancel"
@@ -98,19 +115,8 @@ export const DuplicateFlowModal = ({
           onClick={toggleDialog}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-      isOpen
-    >
-      <FormProvider {...form}>
-        <Form
-          id="duplicate-flow-form"
-          onSubmit={handleSubmit(onSubmit)}
-          isHorizontal
-        >
-          <NameDescription />
-        </Form>
-      </FormProvider>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };
