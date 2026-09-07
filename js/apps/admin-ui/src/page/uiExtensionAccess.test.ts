@@ -40,7 +40,7 @@ describe("uiExtensionAccess", () => {
     expect(getRequiredManageRoles(extension)).toEqual(["manage-clients"]);
   });
 
-  it("gates view and manage access", () => {
+  it("gates manage access with any declared role", () => {
     const extension = page({
       requiredViewRoles: ["view-clients"],
       requiredManageRoles: ["manage-clients"],

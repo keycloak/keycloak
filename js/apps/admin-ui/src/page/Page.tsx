@@ -17,11 +17,14 @@ import {
   RoutableTabs,
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
-import { useRealm } from "../context/realm-context/RealmContext";
+import { ForbiddenSection } from "../ForbiddenSection";
+import { useAccess } from "../context/access/Access";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { PageHandler } from "./PageHandler";
 import { PAGE_PROVIDER } from "./constants";
+import { useRealm } from "../context/realm-context/RealmContext";
 import { PageParams, toDetailPage, toPage } from "./routes";
+import { canViewUiExtension, getRequiredViewRoles } from "./uiExtensionAccess";
 
 export default function Page() {
   const { adminClient } = useAdminClient();
@@ -29,6 +32,7 @@ export default function Page() {
   const { t } = useTranslation();
   const { componentTypes } = useServerInfo();
   const { realm } = useRealm();
+  const access = useAccess();
   const pages = componentTypes?.[PAGE_PROVIDER];
   const navigate = useNavigate();
   const { id, providerId } = useParams<PageParams>();
@@ -36,19 +40,21 @@ export default function Page() {
   const [pageData, setPageData] = useState<ComponentRepresentation>();
 
   const page = pages?.find((p) => p.id === providerId);
-  if (!page) {
-    throw new Error(t("notFound"));
-  }
-
-  const supportsDetailTabs = Boolean(page.metadata.supportsDetailTabs);
+  const detailTabPath = page?.metadata.detailTabPath as string | undefined;
+  const supportsDetailTabs = Boolean(page?.metadata.supportsDetailTabs);
   const settingsTab = useRoutableTab(
     id && providerId
-      ? toDetailPage({ realm, providerId, id })
+      ? toDetailPage({
+          realm,
+          providerId,
+          id,
+          detailTabPath,
+        })
       : { pathname: "" },
   );
 
   useFetch(
-    async () => adminClient.components.findOne({ id: id! }),
+    async () => (id ? adminClient.components.findOne({ id }) : undefined),
     setPageData,
     [id],
   );
@@ -70,6 +76,15 @@ export default function Page() {
       }
     },
   });
+
+  if (!page) {
+    throw new Error(t("notFound"));
+  }
+
+  if (!canViewUiExtension(page, access)) {
+    return <ForbiddenSection permissionNeeded={getRequiredViewRoles(page)} />;
+  }
+
   return (
     <>
       <DeleteConfirm />
@@ -95,7 +110,14 @@ export default function Page() {
         }
       />
       {supportsDetailTabs && id && providerId ? (
-        <RoutableTabs defaultLocation={toDetailPage({ realm, providerId, id })}>
+        <RoutableTabs
+          defaultLocation={toDetailPage({
+            realm,
+            providerId,
+            id,
+            detailTabPath,
+          })}
+        >
           <Tab
             {...settingsTab}
             title={<TabTitleText>{t("settings")}</TabTitleText>}

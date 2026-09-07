@@ -19,10 +19,13 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ViewHeader } from "../components/view-header/ViewHeader";
+import { ForbiddenSection } from "../ForbiddenSection";
+import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { PAGE_PROVIDER } from "./constants";
 import { addDetailPage, PageListParams, toDetailPage } from "./routes";
+import { canViewUiExtension, getRequiredViewRoles } from "./uiExtensionAccess";
 
 type DetailLinkProps = {
   obj: ComponentRepresentation;
@@ -54,9 +57,10 @@ export default function PageList() {
   const { realm: realmName, realmRepresentation: realm } = useRealm();
   const [selectedItem, setSelectedItem] = useState<ComponentRepresentation>();
   const { componentTypes } = useServerInfo();
+  const access = useAccess();
   const pages = componentTypes?.[PAGE_PROVIDER];
 
-  const page = pages?.find((p) => p.id === providerId)!;
+  const page = pages?.find((p) => p.id === providerId);
 
   const loader = {
     signal: { providerId },
@@ -87,6 +91,14 @@ export default function PageList() {
       }
     },
   });
+
+  if (!page) {
+    throw new Error(t("notFound"));
+  }
+
+  if (!canViewUiExtension(page, access)) {
+    return <ForbiddenSection permissionNeeded={getRequiredViewRoles(page)} />;
+  }
 
   return (
     <PageSection variant="light" className="pf-v5-u-p-0">

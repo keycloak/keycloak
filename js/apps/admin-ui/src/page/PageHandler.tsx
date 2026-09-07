@@ -18,6 +18,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
 import { joinPath } from "../utils/joinPath";
 import { useParams } from "../utils/useParams";
+import { convertFormValuesToObject, convertToFormValues } from "../util";
 import { PAGE_PROVIDER, TAB_PROVIDER } from "./constants";
 import {
   getEntityId,
@@ -78,6 +79,14 @@ export const PageHandler = ({
             .map(([key, value]) => `${key}=${value}`),
         ].join("|")
       : undefined;
+  const tabParamsDependency = Object.entries(tabParams)
+    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+    .map(([key, value]) => `${key}=${value}`)
+    .join("|");
+  const propertySignature = properties
+    .map((property) => `${property.name}:${property.type}`)
+    .join("|");
+  const encodedRealmName = encodeURIComponent(realmName);
 
   const resolveCustomEndpoint = () => {
     if (!customEndpointTemplate) {
@@ -113,7 +122,7 @@ export const PageHandler = ({
         joinPath(
           adminClient.baseUrl,
           "admin/realms",
-          realmName,
+          encodedRealmName,
           `${resource}${query ? `?${query}` : ""}`,
         ),
         {
@@ -127,24 +136,31 @@ export const PageHandler = ({
       return response.json();
     },
     (runtimeProperties) => {
-      if (Array.isArray(runtimeProperties) && runtimeProperties.length > 0) {
+      if (Array.isArray(runtimeProperties)) {
         setProperties(runtimeProperties);
       }
     },
     [
       providerId,
       providerType,
-      realmName,
+      encodedRealmName,
       resolvedEntityId,
       componentId,
       customEndpointDependency,
+      tabParamsDependency,
     ],
   );
 
   useEffect(() => {
     setIsLoading(true);
     form.reset({});
-  }, [form, idAttribute, resolvedEntityId, customEndpointDependency]);
+  }, [
+    form,
+    idAttribute,
+    resolvedEntityId,
+    customEndpointDependency,
+    propertySignature,
+  ]);
 
   useFetch(
     async () => {
@@ -206,7 +222,7 @@ export const PageHandler = ({
               joinPath(
                 adminClient.baseUrl,
                 "admin/realms",
-                realmName,
+                encodedRealmName,
                 endpoint,
               ),
               {
@@ -230,7 +246,11 @@ export const PageHandler = ({
               ? adminClient.components.findOne({ id: componentId })
               : Promise.resolve(),
             providerType === TAB_PROVIDER
-              ? adminClient.components.find({ type: TAB_PROVIDER })
+              ? adminClient.components.find({
+                  type: TAB_PROVIDER,
+                  providerId,
+                  parent: realm.id,
+                })
               : Promise.resolve(),
           ]);
           const tab = (tabs || []).find((t) => t.providerId === providerId);
@@ -239,7 +259,10 @@ export const PageHandler = ({
       }
     },
     (data) => {
-      form.reset(data || {});
+      form.reset({});
+      if (data) {
+        convertToFormValues(data, form.setValue);
+      }
       setId(data?.id);
       setIsLoading(false);
     },
@@ -248,15 +271,18 @@ export const PageHandler = ({
       idAttribute,
       providerId,
       providerType,
-      realmName,
+      encodedRealmName,
       resolvedEntityId,
       customEndpointDependency,
+      propertySignature,
+      tabParamsDependency,
     ],
   );
 
   const onSubmit = async (formData: ComponentRepresentation) => {
     try {
       const entityId = resolvedEntityId;
+      const converted = convertFormValuesToObject(formData);
 
       if (
         (isEntityStorageType(storageType) && !entityId) ||
@@ -282,7 +308,7 @@ export const PageHandler = ({
                 ...client,
                 attributes: mergeEntityConfig(
                   client.attributes as Record<string, unknown>,
-                  formData.config as Record<string, unknown>,
+                  converted.config as Record<string, unknown>,
                   properties,
                   "string-map",
                 ) as typeof client.attributes,
@@ -302,7 +328,7 @@ export const PageHandler = ({
                 ...user,
                 attributes: mergeEntityConfig(
                   user.attributes as Record<string, unknown>,
-                  formData.config as Record<string, unknown>,
+                  converted.config as Record<string, unknown>,
                   properties,
                   "list-map",
                 ) as typeof user.attributes,
@@ -324,7 +350,7 @@ export const PageHandler = ({
                 ...idp,
                 config: mergeEntityConfig(
                   idp.config as Record<string, unknown>,
-                  formData.config as Record<string, unknown>,
+                  converted.config as Record<string, unknown>,
                   properties,
                   "string-map",
                 ) as typeof idp.config,
@@ -342,7 +368,7 @@ export const PageHandler = ({
               joinPath(
                 adminClient.baseUrl,
                 "admin/realms",
-                realmName,
+                encodedRealmName,
                 endpoint,
               ),
               {
@@ -353,7 +379,7 @@ export const PageHandler = ({
                   ),
                   "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ ...formData, ...tabParams }),
+                body: JSON.stringify({ ...converted, ...tabParams }),
               },
             );
           }
@@ -361,7 +387,7 @@ export const PageHandler = ({
         }
         case "COMPONENT":
         default: {
-          const component = formData as ComponentRepresentation;
+          const component = converted as ComponentRepresentation;
           component.config = Object.assign(component.config || {}, tabParams);
           Object.entries(component.config).forEach(
             ([key, value]) =>
