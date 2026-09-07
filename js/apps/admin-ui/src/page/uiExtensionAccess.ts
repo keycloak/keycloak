@@ -34,9 +34,9 @@ export function canViewUiExtension(
 
 export function canManageUiExtension(
   page: ComponentTypeRepresentation,
-  { hasAccess }: AccessChecker,
+  { hasSomeAccess }: AccessChecker,
 ): boolean {
-  return hasAccess(...getRequiredManageRoles(page));
+  return hasSomeAccess(...getRequiredManageRoles(page));
 }
 
 export function getNavSection(page: ComponentTypeRepresentation): NavSection {

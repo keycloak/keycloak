@@ -1,5 +1,6 @@
 package org.keycloak.services.resources.admin;
 
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.keycloak.component.ComponentFactory;
@@ -53,6 +54,18 @@ final class UiExtensionComponentStorage {
             return null;
         }
         return storageFactory.getComponent(session, realm, model.getId());
+    }
+
+    static ComponentModel getComponentById(KeycloakSession session, RealmModel realm, String id) {
+        return Stream.concat(
+                session.getKeycloakSessionFactory().getProviderFactoriesStream(UiPageProvider.class),
+                session.getKeycloakSessionFactory().getProviderFactoriesStream(UiTabProvider.class))
+                .filter(factory -> factory instanceof ComponentStorageFactory)
+                .map(ComponentStorageFactory.class::cast)
+                .map(storage -> storage.getComponent(session, realm, id))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 
     static ComponentModel createComponent(KeycloakSession session, RealmModel realm, ComponentModel model) {

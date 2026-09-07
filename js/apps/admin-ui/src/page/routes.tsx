@@ -12,7 +12,7 @@ const PageListRoute: AppRouteObject = {
   path: "/:realm?/page-section/:providerId",
   element: <PageList />,
   handle: {
-    access: "view-realm",
+    access: "anyone",
     breadcrumb: (t) => t("page"),
   },
 };
@@ -21,7 +21,7 @@ const PageDetailRoute: AppRouteObject = {
   path: "/:realm/page-section/:providerId/:id/:tab?",
   element: <Page />,
   handle: {
-    access: "view-realm",
+    access: "anyone",
     breadcrumb: (t) => t("details"),
   },
 };
@@ -30,7 +30,7 @@ const PageDetailLegacyRoute: AppRouteObject = {
   path: "/:realm/page-section/:providerId/:id",
   element: <Page />,
   handle: {
-    access: "view-realm",
+    access: "anyone",
     breadcrumb: (t) => t("details"),
   },
 };
@@ -39,7 +39,7 @@ const AddPageDetailRoute: AppRouteObject = {
   path: "/:realm/page-section/:providerId/add",
   element: <Page />,
   handle: {
-    access: "view-realm",
+    access: "anyone",
     breadcrumb: (t) => t("add"),
   },
 };
@@ -55,8 +55,10 @@ export const toPage = (params: PageListParams): Partial<Path> => ({
   pathname: generatePath(PageListRoute.path, params),
 });
 
-export const toDetailPage = (params: PageParams): Partial<Path> => ({
-  pathname: generatePath(PageDetailRoute.path, params),
+export const toDetailPage = (
+  params: PageParams & { detailTabPath?: string },
+): Partial<Path> => ({
+  pathname: generatePath(params.detailTabPath ?? PageDetailRoute.path, params),
 });
 
 export const addDetailPage = (params: Partial<PageParams>): Partial<Path> => ({

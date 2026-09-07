@@ -181,8 +181,8 @@ public class ComponentResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
     @Operation()
     public ComponentRepresentation getComponent(@PathParam("id") String id) {
-        ComponentModel model = realm.getComponent(id);
-        if (model == null || isInternalComponent(model.getProviderType(), model.getProviderId())) {
+        ComponentModel model = resolveComponentModel(id);
+        if (model == null) {
             throw new NotFoundException("Could not find component");
         }
         requireViewForProviderType(model.getProviderType(), model.getProviderId());
@@ -201,13 +201,13 @@ public class ComponentResource {
     @Operation()
     public Response updateComponent(@PathParam("id") String id, ComponentRepresentation rep) {
         try {
-            ComponentModel model = realm.getComponent(id);
+            ComponentModel model = resolveComponentModel(id);
             if (model == null) {
                 throw new NotFoundException("Could not find component");
             }
             rejectInternalComponent(model.getProviderType(), model.getProviderId());
             requireManageForProviderType(model.getProviderType(), model.getProviderId());
-            ComponentModel oldModel = model;
+            ComponentModel oldModel = new ComponentModel(model);
             // Record which config fields have the SECRET_VALUE placeholder or are omitted/empty before merging,
             // so downstream validation can detect auto-preserved (not re-entered) secrets.
             Set<String> secretPlaceholderFields = new HashSet<>();
@@ -246,7 +246,7 @@ public class ComponentResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
     @Operation()
     public void removeComponent(@PathParam("id") String id) {
-        ComponentModel model = realm.getComponent(id);
+        ComponentModel model = resolveComponentModel(id);
         if (model == null) {
             throw new NotFoundException("Could not find component");
         }
@@ -326,6 +326,14 @@ public class ComponentResource {
         if (isInternalComponent(providerType, providerId)) {
             throw new ForbiddenException("Components managed through internal APIs cannot be managed through the component endpoint");
         }
+    }
+
+    private ComponentModel resolveComponentModel(String id) {
+        ComponentModel model = realm.getComponent(id);
+        if (model != null && !isInternalComponent(model.getProviderType(), model.getProviderId())) {
+            return model;
+        }
+        return UiExtensionComponentStorage.getComponentById(session, realm, id);
     }
 
     private void requireViewForProviderType(String providerType, String providerId) {
