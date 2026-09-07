@@ -274,6 +274,39 @@ export class Groups extends Resource<{ realm?: string }> {
   });
 
   /**
+   * Organization role mappings
+   */
+
+  public listAvailableOrganizationRoleMappings = this.makeRequest<
+    { id: string },
+    RoleRepresentation[]
+  >({
+    method: "GET",
+    path: "/{id}/role-mappings/organizations/available",
+    urlParamKeys: ["id"],
+  });
+
+  public addOrganizationRoleMappings = this.makeRequest<
+    { id: string; roles: RoleMappingPayload[] },
+    void
+  >({
+    method: "POST",
+    path: "/{id}/role-mappings/organizations",
+    urlParamKeys: ["id"],
+    payloadKey: "roles",
+  });
+
+  public delOrganizationRoleMappings = this.makeRequest<
+    { id: string; roles: RoleMappingPayload[] },
+    void
+  >({
+    method: "DELETE",
+    path: "/{id}/role-mappings/organizations",
+    urlParamKeys: ["id"],
+    payloadKey: "roles",
+  });
+
+  /**
    * Authorization permissions
    */
   public updatePermission = this.makeUpdateRequest<

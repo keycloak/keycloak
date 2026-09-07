@@ -18,13 +18,17 @@
 package org.keycloak.admin.client.resource;
 
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import java.util.List;
 
 import org.keycloak.representations.idm.MappingsRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br
@@ -41,5 +45,17 @@ public interface RoleMappingResource {
 
     @Path("clients/{clientUUID}")
     RoleScopeResource clientLevel(@PathParam("clientUUID") String clientUUID);
+
+    @GET
+    @Path("organizations/available")
+    List<RoleRepresentation> getAvailableOrganizationRoleMappings();
+
+    @POST
+    @Path("organizations")
+    void addOrganizationRoleMappings(List<RoleRepresentation> roles);
+
+    @DELETE
+    @Path("organizations")
+    void deleteOrganizationRoleMappings(List<RoleRepresentation> roles);
 
 }

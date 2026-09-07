@@ -24,13 +24,33 @@ export const GroupRoleMapping = ({
   const assignRoles = async (rows: Row[]) => {
     try {
       const realmRoles = rows
-        .filter((row) => row.client === undefined)
+        .filter(
+          (row) => row.client === undefined && !(row.role as any).isOrgRole,
+        )
         .map((row) => row.role as RoleMappingPayload)
         .flat();
-      await groups.addRealmRoleMappings({
-        id,
-        roles: realmRoles,
-      });
+      if (realmRoles.length > 0) {
+        await groups.addRealmRoleMappings({
+          id,
+          roles: realmRoles,
+        });
+      }
+
+      const orgRoles = rows
+        .filter((row) => (row.role as any).isOrgRole)
+        .map((row) => {
+          const role = { ...row.role } as any;
+          delete role.isOrgRole;
+          return role as RoleMappingPayload;
+        })
+        .flat();
+      if (orgRoles.length > 0) {
+        await groups.addOrganizationRoleMappings({
+          id,
+          roles: orgRoles,
+        });
+      }
+
       await Promise.all(
         rows
           .filter((row) => row.client !== undefined)

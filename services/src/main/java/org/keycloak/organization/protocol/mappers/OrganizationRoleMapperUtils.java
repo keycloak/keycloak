@@ -27,10 +27,13 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 
 public final class OrganizationRoleMapperUtils {
 
@@ -41,7 +44,7 @@ public final class OrganizationRoleMapperUtils {
     private OrganizationRoleMapperUtils() {
     }
 
-    public static OrganizationRoleClaims resolveRoleClaims(OrganizationModel organization, UserModel user) {
+    public static OrganizationRoleClaims resolveRoleClaims(OrganizationModel organization, UserModel user, KeycloakSession session) {
         if (organization == null || user == null || !organization.isEnabled() || !organization.isMember(user)) {
             return OrganizationRoleClaims.empty();
         }
@@ -51,6 +54,15 @@ public final class OrganizationRoleMapperUtils {
                 .filter(role -> role.isType(RoleModel.Type.ORGANIZATION))
                 .filter(role -> Objects.equals(organization.getId(), role.getContainerId()))
                 .collect(Collectors.toSet());
+
+        // Include organization roles from user's organization groups
+        OrganizationProvider orgProvider = Organizations.getProvider(session);
+        orgProvider.getOrganizationGroupsByMember(organization, user)
+                .flatMap(group -> group.getRoleMappingsStream())
+                .filter(Objects::nonNull)
+                .filter(role -> role.isType(RoleModel.Type.ORGANIZATION))
+                .filter(role -> Objects.equals(organization.getId(), role.getContainerId()))
+                .forEach(organizationRoles::add);
 
         if (organizationRoles.isEmpty()) {
             return OrganizationRoleClaims.empty();

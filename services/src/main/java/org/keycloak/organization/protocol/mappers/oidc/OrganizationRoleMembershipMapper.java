@@ -98,7 +98,7 @@ public class OrganizationRoleMembershipMapper extends AbstractOIDCProtocolMapper
         UserModel user = userSession.getUser();
 
         resolveOrganizations(session, userSession, clientSessionCtx).forEach(organization -> {
-            OrganizationRoleClaims claims = OrganizationRoleMapperUtils.resolveRoleClaims(organization, user);
+            OrganizationRoleClaims claims = OrganizationRoleMapperUtils.resolveRoleClaims(organization, user, session);
             if (claims.isEmpty()) {
                 return;
             }
