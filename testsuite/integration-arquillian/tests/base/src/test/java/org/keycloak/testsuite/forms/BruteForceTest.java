@@ -262,6 +262,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             AccessTokenResponse response = getTestToken(getPassword("test-user@localhost"), totpSecret);
             Assertions.assertNotNull(response.getAccessToken());
             Assertions.assertNull(response.getError());
+            WaitUtils.waitForBruteForceExecutors(testingClient);
             events.clear();
         }
         {
@@ -310,6 +311,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             AccessTokenResponse response = getTestToken(getPassword("test-user@localhost"), totpSecret);
             Assertions.assertNotNull(response.getAccessToken());
             Assertions.assertNull(response.getError());
+            WaitUtils.waitForBruteForceExecutors(testingClient);
             events.clear();
         }
         {
@@ -360,6 +362,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             AccessTokenResponse response = getTestToken(getPassword("test-user@localhost"), totpSecret);
             Assertions.assertNotNull(response.getAccessToken());
             Assertions.assertNull(response.getError());
+            WaitUtils.waitForBruteForceExecutors(testingClient);
             events.clear();
         }
         {
@@ -412,6 +415,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
                 AccessTokenResponse response = getTestToken(getPassword("test-user@localhost"), totpSecret);
                 Assertions.assertNotNull(response.getAccessToken());
                 Assertions.assertNull(response.getError());
+                WaitUtils.waitForBruteForceExecutors(testingClient);
                 events.clear();
             }
             for (int i = 0; i <= managedRealm.admin().toRepresentation().getMaxSecondaryAuthFailures(); i++) {
@@ -1045,6 +1049,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         Assertions.assertNull(response.getAccessToken());
         Assertions.assertEquals(response.getError(), "invalid_grant");
         Assertions.assertEquals(response.getErrorDescription(), "Invalid user credentials");
+        WaitUtils.waitForBruteForceExecutors(testingClient);
 
         UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
         Map<String, Object> userAttackInfo = adminClient.realm("test").attackDetection().bruteForceUserStatus(user.getId());
@@ -1053,6 +1058,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         response = getTestToken(getPassword("test-user@localhost"), totpSecret);
         Assertions.assertNotNull(response.getAccessToken());
         Assertions.assertNull(response.getError());
+        WaitUtils.waitForBruteForceExecutors(testingClient);
         events.clear();
 
         userAttackInfo = adminClient.realm("test").attackDetection().bruteForceUserStatus(user.getId());
@@ -1157,6 +1163,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         loginTotpPage.login(totpSecret);
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         String sessionId = EventAssertion.expectLoginSuccess(events.poll()).getEvent().getSessionId();
+        WaitUtils.waitForBruteForceExecutors(testingClient);
 
         getTestToken("wrongpass", totpSecret);
         WaitUtils.waitForBruteForceExecutors(testingClient);
@@ -1302,6 +1309,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         String code = oauth.parseLoginResponse().getCode();
         String idTokenHint = oauth.doAccessTokenRequest(code ).getIdToken();
         oauth.logoutForm().idTokenHint(idTokenHint).withRedirect().open();
+        WaitUtils.waitForBruteForceExecutors(testingClient);
         events.clear();
     }
 
@@ -1458,6 +1466,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         AccessTokenResponse response = getTestToken(getPassword("test-user@localhost"), totpSecret);
         Assertions.assertNotNull(response.getAccessToken());
         Assertions.assertNull(response.getError());
+        WaitUtils.waitForBruteForceExecutors(testingClient);
         events.clear();
 
         for (int i = 0; i < failureFactor; ++i) {
