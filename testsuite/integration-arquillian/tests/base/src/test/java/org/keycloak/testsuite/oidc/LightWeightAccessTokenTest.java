@@ -29,6 +29,7 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -1115,6 +1116,44 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
                     .updateAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, "false");
             deleteProtocolMappers(protocolMappers);
             alwaysUseLightWeightAccessToken(false);
+        }
+    }
+
+    @Test
+    public void testPolicyLightWeightTokenExchangeTest() throws Exception {
+        setUseLightweightAccessTokenExecutor();
+
+        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true, false);
+        try {
+            ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(TEST_CLIENT).alwaysUseLightweightAccessToken(false);
+            ClientResource clientResource = AdminApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT);
+            ClientRepresentation clientRep = clientResource.toRepresentation();
+            if (clientRep.getAttributes() == null) clientRep.setAttributes(new java.util.HashMap<>());
+            clientRep.getAttributes().put("standard.token.exchange.enabled", "true");
+            clientResource.update(clientRep);
+            oauth.scope("address");
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            assertAccessToken(oauth.verifyToken(response.getAccessToken()), true, true, true);
+            AccessTokenResponse exchangeResponse = oauth.tokenExchangeRequest(response.getAccessToken()).send();
+            String exchangedTokenString = exchangeResponse.getAccessToken();
+            org.junit.Assert.assertNotNull("Token exchange response should contain access token", exchangedTokenString);
+            AccessTokenContext ctx = runOnServer.fetch(RunHelpers.getTokenContext(oauth.verifyToken(exchangedTokenString).getId()));
+            Assertions.assertEquals(AccessTokenContext.TokenType.LIGHTWEIGHT, ctx.getTokenType());
+            oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
+            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(exchangedTokenString).getRaw();
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, true, false);
+        } finally {
+            try {
+                ClientResource cr = AdminApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT);
+                ClientRepresentation crRep = cr.toRepresentation();
+                if (crRep.getAttributes() != null) {
+                    crRep.getAttributes().remove("standard.token.exchange.enabled");
+                    cr.update(crRep);
+                }
+            } catch (Exception ignored) {
+            }
+            deleteProtocolMappers(protocolMappers);
         }
     }
 }
