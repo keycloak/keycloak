@@ -70,7 +70,7 @@ export const QuickTheme = ({ realm, theme }: QuickThemeProps) => {
     zip.file(
       `theme/${themeNameClean}/admin/theme.properties`,
       `
-parent=keycloak.v2
+parent=keycloak.v3
 import=common/${themeNameClean}
 
 ${logo ? "logo=" + logoName : ""}

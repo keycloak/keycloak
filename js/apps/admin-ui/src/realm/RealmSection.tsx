@@ -246,9 +246,9 @@ export default function RealmSection() {
                   <Link to={toDashboard({ realm: name })}>{name}</Link>
                 ) : (
                   <Tooltip content={t("currentRealmExplain")}>
-                    <>
+                    <span>
                       {name} <Badge isRead>{t("currentRealm")}</Badge>
-                    </>
+                    </span>
                   </Tooltip>
                 ),
             },
