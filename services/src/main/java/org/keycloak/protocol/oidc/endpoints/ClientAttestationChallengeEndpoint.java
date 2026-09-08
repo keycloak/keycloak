@@ -17,7 +17,6 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
-import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -43,13 +42,11 @@ public class ClientAttestationChallengeEndpoint {
 
     private final KeycloakSession session;
     private final RealmModel realm;
-    private final HttpRequest request;
     private final ClientConnection clientConnection;
 
     public ClientAttestationChallengeEndpoint(KeycloakSession session) {
         this.session = session;
         this.realm = session.getContext().getRealm();
-        this.request = session.getContext().getHttpRequest();
         this.clientConnection = session.getContext().getConnection();
     }
 
@@ -81,26 +78,25 @@ public class ClientAttestationChallengeEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public Response requestChallenge() {
         ProfileHelper.requireFeature(Profile.Feature.CLIENT_AUTH_ABCA);
-        checkSsl();
+        Cors cors = Cors.builder().auth().allowedMethods("POST").auth()
+                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS,
+                        AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_CHALLENGE_HEADER);
+        checkSsl(cors);
 
         String challenge = buildChallenge(session);
         ClientAttestationChallengeResponse challengeResponse = new ClientAttestationChallengeResponse();
         challengeResponse.setAttestationChallenge(challenge);
 
-        return Response.ok(challengeResponse)
+        return cors.allowAllOrigins().add(Response.ok(challengeResponse)
                 .header(HttpHeaders.CACHE_CONTROL, "no-store")
                 .header("Pragma", "no-cache")
                 .header(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
-                .header(AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_CHALLENGE_HEADER, challenge)
-                .build();
+                .header(AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_CHALLENGE_HEADER, challenge));
     }
 
-    private void checkSsl() {
+    private void checkSsl(Cors cors) {
         if (!session.getContext().getUri().getBaseUri().getScheme().equals("https")
                 && realm.getSslRequired().isRequired(clientConnection)) {
-            Cors cors = Cors.builder().auth().allowedMethods(request.getHttpMethod()).auth()
-                    .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS,
-                            AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_CHALLENGE_HEADER);
             throw new CorsErrorResponseException(cors.allowAllOrigins(), OAuthErrorException.INVALID_REQUEST,
                     "HTTPS required", Response.Status.FORBIDDEN);
         }
