@@ -1,7 +1,10 @@
 package org.keycloak.admin.ui.rest;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.ForbiddenException;
@@ -148,7 +151,7 @@ public class RoleMappingDeleteResource {
                 .success();
     }
 
-    private List<RoleRepresentation> deleteRoleMappings(List<RoleDeleteRequest> roles, java.util.function.Consumer<RoleModel> deleteAction) {
+    private List<RoleRepresentation> deleteRoleMappings(List<RoleDeleteRequest> roles, Consumer<RoleModel> deleteAction) {
         List<RoleRepresentation> reps = new ArrayList<>();
         for (RoleDeleteRequest roleRequest : roles) {
             RoleModel role = this.realm.getRoleById(roleRequest.getRoleId());
@@ -164,11 +167,11 @@ public class RoleMappingDeleteResource {
         return reps;
     }
 
-    private void deleteRoleMappings(List<RoleDeleteRequest> roles, java.util.function.Consumer<RoleModel> deleteAction, ResourceType realmResourceType, ResourceType clientResourceType) {
+    private void deleteRoleMappings(List<RoleDeleteRequest> roles, Consumer<RoleModel> deleteAction, ResourceType realmResourceType, ResourceType clientResourceType) {
         List<RoleRepresentation> reps = deleteRoleMappings(roles, deleteAction);
 
         List<RoleRepresentation> realmRoles = new ArrayList<>();
-        java.util.Map<String, List<RoleRepresentation>> clientRoles = new java.util.HashMap<>();
+        Map<String, List<RoleRepresentation>> clientRoles = new HashMap<>();
 
         for (RoleRepresentation rep : reps) {
             if (Boolean.TRUE.equals(rep.getClientRole())) {
@@ -178,21 +181,22 @@ public class RoleMappingDeleteResource {
             }
         }
 
+        // adminEvent is intentionally reused across multiple success() calls: AdminEventBuilder#send()
+        // copies its state into a new event before dispatch, so firing several correctly-typed events
+        // from a single bulk delete request is safe without cloning the builder.
         if (!realmRoles.isEmpty()) {
-            adminEvent.clone(session)
-                    .operation(OperationType.DELETE)
+            adminEvent.operation(OperationType.DELETE)
                     .resourcePath(session.getContext().getUri())
                     .resource(realmResourceType)
                     .representation(realmRoles)
                     .success();
         }
 
-        for (java.util.Map.Entry<String, List<RoleRepresentation>> entry : clientRoles.entrySet()) {
-            adminEvent.clone(session)
-                    .operation(OperationType.DELETE)
+        for (List<RoleRepresentation> clientRoleReps : clientRoles.values()) {
+            adminEvent.operation(OperationType.DELETE)
                     .resourcePath(session.getContext().getUri())
                     .resource(clientResourceType)
-                    .representation(entry.getValue())
+                    .representation(clientRoleReps)
                     .success();
         }
     }
