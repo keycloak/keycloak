@@ -4,8 +4,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
 import org.keycloak.models.AdminRoles;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
