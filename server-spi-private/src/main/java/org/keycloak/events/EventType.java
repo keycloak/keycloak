@@ -129,7 +129,14 @@ public enum EventType implements EnumWithStableIndex {
     CUSTOM_REQUIRED_ACTION_ERROR(0x10000 + CUSTOM_REQUIRED_ACTION.getStableIndex(), true),
     EXECUTE_ACTIONS(37, true),
     EXECUTE_ACTIONS_ERROR(0x10000 + EXECUTE_ACTIONS.getStableIndex(), true),
-    EXECUTE_ACTION_TOKEN(38, true),
+
+    /**
+     * Marks a request to the {@code action-token} endpoint before the token has been parsed and the action
+     * identified. Only {@link #EXECUTE_ACTION_TOKEN_ERROR} is ever emitted, covering failures that occur
+     * before an action-specific type is known. Once the handler is resolved the event is retyped to the type
+     * declared by that handler, so this type itself is never recorded.
+     */
+    EXECUTE_ACTION_TOKEN(38, false),
     EXECUTE_ACTION_TOKEN_ERROR(0x10000 + EXECUTE_ACTION_TOKEN.getStableIndex(), true),
 
     CLIENT_INFO(39, false),
