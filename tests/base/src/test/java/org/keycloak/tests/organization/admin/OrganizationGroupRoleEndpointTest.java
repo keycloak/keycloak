@@ -17,12 +17,10 @@
 
 package org.keycloak.tests.organization.admin;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.util.List;
+
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -32,8 +30,10 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.core.Response;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test the REST endpoints used by the Admin UI for managing organization roles on organization groups.
@@ -209,6 +209,32 @@ public class OrganizationGroupRoleEndpointTest extends AbstractOrganizationTest 
                         .groups().group(orgGroup.getId())
                         .roles()
                         .addOrganizationRoleMappings(List.of(defaultRole)),
+                "Should not allow assigning default organization role to groups");
+    }
+
+    @Test
+    public void testCannotAssignDefaultRoleAsComposite() {
+        // Get the organization with its default role
+        OrganizationRepresentation org = realm.admin().organizations().get(organization.getId()).toRepresentation();
+
+        // The default role is automatically created when organization is created
+        List<RoleRepresentation> allRoles = realm.admin().organizations().get(organization.getId()).roles().list();
+        RoleRepresentation defaultRole = allRoles.stream()
+                .filter(role -> role.getName().startsWith("default-roles"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Default role should exist"));
+
+        RoleRepresentation compositeRole = new RoleRepresentation("composite-role", "Composite role", false);
+
+        try (Response response = realm.admin().organizations().get(organization.getId()).roles().create(compositeRole)) {
+            compositeRole.setId(response.getLocation().getPath().replaceAll(".*/", ""));
+        }
+
+        // Attempt to assign the default role to the group via organization resource should fail
+        assertThrows(BadRequestException.class,
+                () -> realm.admin().organizations().get(organization.getId())
+                        .roles().get(compositeRole.getId())
+                        .addComposites(List.of(defaultRole)),
                 "Should not allow assigning default organization role to groups");
     }
 

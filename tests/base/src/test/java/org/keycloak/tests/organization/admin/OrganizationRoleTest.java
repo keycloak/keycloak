@@ -937,6 +937,69 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
                 "Should prevent assigning admin role to organization group");
     }
 
+    @Test
+    public void testPreventCrossOrganizationRoleAssignmentToGroup() {
+        OrganizationRepresentation org1 = createOrganization("cross-org-test-org1");
+        OrganizationRepresentation org2 = createOrganization("cross-org-test-org2");
+        
+        OrganizationResource org1Resource = realm.admin().organizations().get(org1.getId());
+        OrganizationResource org2Resource = realm.admin().organizations().get(org2.getId());
+
+        // Create a role in org2
+        RoleRepresentation org2Role = createOrganizationRole(org2Resource, "cross-org-test-role");
+
+        // Create a group in org1
+        String groupName = "cross-org-test-group";
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName(groupName);
+        try (Response response = org1Resource.groups().addTopLevelGroup(group)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
+
+        GroupRepresentation org1Group = org1Resource.groups().getAll(groupName, null, true, 0, 10, false, false).get(0);
+
+        // Attempt to assign org2's role to org1's group
+        // This should fail because the role belongs to a different organization
+        assertThrows(BadRequestException.class,
+                () -> org1Resource.groups().group(org1Group.getId()).roles()
+                        .addOrganizationRoleMappings(List.of(org2Role)),
+                "Should prevent assigning a role from a different organization to a group");
+    }
+
+    @Test
+    public void testPreventCrossOrganizationRoleDeletionFromGroup() {
+        OrganizationRepresentation org1 = createOrganization("cross-org-delete-org1");
+        OrganizationRepresentation org2 = createOrganization("cross-org-delete-org2");
+        
+        OrganizationResource org1Resource = realm.admin().organizations().get(org1.getId());
+        OrganizationResource org2Resource = realm.admin().organizations().get(org2.getId());
+
+        // Create roles in both organizations
+        RoleRepresentation org1Role = createOrganizationRole(org1Resource, "org1-role");
+        RoleRepresentation org2Role = createOrganizationRole(org2Resource, "cross-org-delete-role");
+
+        // Create a group in org1
+        String groupName = "cross-org-delete-group";
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName(groupName);
+        try (Response response = org1Resource.groups().addTopLevelGroup(group)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
+
+        GroupRepresentation org1Group = org1Resource.groups().getAll(groupName, null, true, 0, 10, false, false).get(0);
+
+        // Assign org1's role to the group
+        org1Resource.groups().group(org1Group.getId()).roles()
+                .addOrganizationRoleMappings(List.of(org1Role));
+
+        // Attempt to delete org2's role from org1's group
+        // This should fail because the role belongs to a different organization
+        assertThrows(BadRequestException.class,
+                () -> org1Resource.groups().group(org1Group.getId()).roles()
+                        .deleteOrganizationRoleMappings(List.of(org2Role)),
+                "Should prevent deleting a role from a different organization from a group");
+    }
+
     private Keycloak createRestrictedAdmin() {
         String username = "organization-role-restricted-admin";
         UserRepresentation user = UserBuilder.create()
