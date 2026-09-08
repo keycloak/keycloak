@@ -141,11 +141,11 @@ export const AuthorizationPolicies = ({
               isPlain
               component="p"
               title={t("deletePolicyWarning")}
-              className="pf-v5-u-pt-lg"
+              className="pf-v6-u-pt-lg"
             >
-              <p className="pf-v5-u-pt-xs">
+              <p className="pf-v6-u-pt-xs">
                 {selectedPolicy.dependentPolicies.map((policy) => (
-                  <strong key={policy.id} className="pf-v5-u-pr-md">
+                  <strong key={policy.id} className="pf-v6-u-pr-md">
                     {policy.name}
                   </strong>
                 ))}
@@ -176,7 +176,7 @@ export const AuthorizationPolicies = ({
   const noData = policies.length === 0;
   const searching = Object.keys(search).length !== 0;
   return (
-    <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
+    <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
       <DeleteConfirm />
       {(!noData || searching) && (
         <>

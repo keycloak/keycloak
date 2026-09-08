@@ -346,7 +346,7 @@ export const RealmOverrides = ({
       )}
       <Content>
         <Content
-          className="pf-v5-u-mt-lg pf-v5-u-ml-md"
+          className="pf-v6-u-mt-lg pf-v6-u-ml-md"
           component={ContentVariants.p}
         >
           {t("realmOverridesDescription")}
@@ -471,7 +471,7 @@ export const RealmOverrides = ({
           >
             <Thead>
               <Tr>
-                <Th className="pf-v5-u-px-lg">
+                <Th className="pf-v6-u-px-lg">
                   <input
                     type="checkbox"
                     aria-label={t("selectAll")}
@@ -480,8 +480,8 @@ export const RealmOverrides = ({
                     data-testid="selectAll"
                   />
                 </Th>
-                <Th className="pf-v5-u-py-lg">{t("key")}</Th>
-                <Th className="pf-v5-u-py-lg">{t("value")}</Th>
+                <Th className="pf-v6-u-py-lg">{t("key")}</Th>
+                <Th className="pf-v6-u-py-lg">{t("value")}</Th>
                 <Th aria-hidden="true" />
               </Tr>
             </Thead>
@@ -489,7 +489,7 @@ export const RealmOverrides = ({
               {tableRows.map((row, rowIndex) => (
                 <Tr key={(row.cells?.[0] as IRowCell).props.value}>
                   <Td
-                    className="pf-v5-u-px-lg"
+                    className="pf-v6-u-px-lg"
                     select={{
                       rowIndex,
                       onSelect: (event) =>
@@ -502,11 +502,11 @@ export const RealmOverrides = ({
                       ),
                     }}
                   />
-                  <Td className="pf-m-sm pf-v5-u-px-sm" dataLabel={t("key")}>
+                  <Td className="pf-m-sm pf-v6-u-px-sm" dataLabel={t("key")}>
                     {(row.cells?.[0] as IRowCell).props.value}
                   </Td>
                   <Td
-                    className="pf-m-sm pf-v5-u-px-sm"
+                    className="pf-m-sm pf-v6-u-px-sm"
                     dataLabel={t("value")}
                     key={rowIndex}
                   >
@@ -519,14 +519,14 @@ export const RealmOverrides = ({
                     >
                       <FormGroup
                         fieldId="kc-translationValue"
-                        className="pf-v5-u-display-inline-block"
+                        className="pf-v6-u-display-inline-block"
                       >
                         {editStates[rowIndex] ? (
                           <>
                             <TextInput
                               aria-label={t("editTranslationValue")}
                               type="text"
-                              className="pf-v5-u-w-initial"
+                              className="pf-v6-u-w-initial"
                               data-testid={`editTranslationValueInput-${rowIndex}`}
                               value={formValue}
                               onChange={(

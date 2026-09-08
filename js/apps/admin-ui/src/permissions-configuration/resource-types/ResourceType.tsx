@@ -74,7 +74,7 @@ export const ResourceType = ({
               setIsSpecificResources(false);
               form.setValue("resources", []);
             }}
-            className="pf-v5-u-mb-md"
+            className="pf-v6-u-mb-md"
           />
           <Radio
             id="specificResources"
@@ -86,7 +86,7 @@ export const ResourceType = ({
               setIsSpecificResources(true);
               form.setValue("resources", []);
             }}
-            className="pf-v5-u-mb-md"
+            className="pf-v6-u-mb-md"
           />
         </FormGroup>
       )}

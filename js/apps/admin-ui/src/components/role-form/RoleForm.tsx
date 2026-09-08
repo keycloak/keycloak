@@ -49,7 +49,7 @@ export const RoleForm = ({
           isHorizontal
           onSubmit={handleSubmit(onSubmit)}
           role={role}
-          className="pf-v5-u-mt-lg"
+          className="pf-v6-u-mt-lg"
           fineGrainedAccess={true} // We would never want to show this form in read-only mode
         >
           <TextControl

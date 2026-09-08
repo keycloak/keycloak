@@ -209,7 +209,7 @@ export const WebauthnPolicy = ({
                   labelPrefix="mediation"
                 />
               )}
-              <Divider className="pf-v5-u-mb-lg pf-v5-u-mt-lg" />
+              <Divider className="pf-v6-u-mb-lg pf-v6-u-mt-lg" />
               <Title headingLevel="h2" size="lg">
                 {t("webauthnPasswordlessPolicy")}
               </Title>
