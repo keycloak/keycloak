@@ -297,9 +297,14 @@ public class ServerInfoAdminResource {
         boolean filterLoginV2 = (type == Theme.Type.LOGIN) &&
                 !Profile.isFeatureEnabled(Profile.Feature.LOGIN_V2);
 
-        if (filterAdminV3 || filterLoginV2) {
+        if (filterAdminV3) {
             filteredNames.remove("keycloak.v3");
             filteredNames.remove("rh-sso.v3");
+        }
+
+        if (filterLoginV2) {
+            filteredNames.remove("keycloak.v2");
+            filteredNames.remove("rh-sso.v2");
         }
 
         boolean filterAccountV3 = (type == Theme.Type.ACCOUNT) &&
