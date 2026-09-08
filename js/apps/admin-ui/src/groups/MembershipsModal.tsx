@@ -116,7 +116,7 @@ export const MembershipsModal = ({
                   refresh();
                 }}
                 isChecked={isDirectMembership}
-                className="pf-v5-u-mt-sm"
+                className="pf-v6-u-mt-sm"
               />
               {enabled && (
                 <Popover

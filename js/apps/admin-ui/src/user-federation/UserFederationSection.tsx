@@ -201,11 +201,11 @@ export default function UserFederationSection() {
               <Content component={ContentVariants.p}>{t("getStarted")}</Content>
             </Content>
             <Content>
-              <Content className="pf-v5-u-mt-lg" component={ContentVariants.h2}>
+              <Content className="pf-v6-u-mt-lg" component={ContentVariants.h2}>
                 {t("add-providers")}
               </Content>
             </Content>
-            <hr className="pf-v5-u-mb-lg" />
+            <hr className="pf-v6-u-mb-lg" />
             <Gallery hasGutter>
               {providers.map((p) => (
                 <ClickableCard

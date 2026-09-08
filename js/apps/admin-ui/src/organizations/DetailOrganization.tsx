@@ -100,7 +100,7 @@ export default function DetailOrganization() {
   const [activeEventsTab, setActiveEventsTab] = useState("adminEvents");
 
   return (
-    <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
+    <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
       <FormProvider {...form}>
         <DetailOrganizationHeader save={() => save(form.getValues())} />
         <RoutableTabs

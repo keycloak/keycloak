@@ -148,7 +148,7 @@ export const AddTranslationsDialog = ({
               <FlexItem>
                 <Content>
                   <Content
-                    className="pf-v5-u-font-size-sm pf-v5-u-font-weight-bold"
+                    className="pf-v6-u-font-size-sm pf-v6-u-font-weight-bold"
                     component={ContentVariants.p}
                   >
                     {t("translationsTableHeading")}
@@ -188,10 +188,10 @@ export const AddTranslationsDialog = ({
                     >
                       <Thead>
                         <Tr>
-                          <Th className="pf-v5-u-py-lg">
+                          <Th className="pf-v6-u-py-lg">
                             {t("supportedLanguagesTableColumnName")}
                           </Th>
-                          <Th className="pf-v5-u-py-lg">
+                          <Th className="pf-v6-u-py-lg">
                             {t("translationTableColumnName")}
                           </Th>
                         </Tr>
@@ -207,7 +207,7 @@ export const AddTranslationsDialog = ({
                                   whoAmI.locale,
                                 )}
                                 {translation.locale === realm.defaultLocale && (
-                                  <Label className="pf-v5-u-ml-xs" color="blue">
+                                  <Label className="pf-v6-u-ml-xs" color="blue">
                                     {t("defaultLanguage")}
                                   </Label>
                                 )}
