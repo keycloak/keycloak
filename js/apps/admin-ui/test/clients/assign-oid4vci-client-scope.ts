@@ -39,7 +39,12 @@ export async function assignOptionalOid4vciClientScope(
   await scopeRow.getByRole("checkbox").click();
 
   await page.getByTestId("add-dropdown").click();
-  await page.getByRole("menuitem", { name: "Optional" }).click();
+  const menuItem = page.getByRole("menuitem", {
+    name: "Optional",
+    exact: true,
+  });
+  await expect(menuItem).toBeVisible();
+  await menuItem.click();
 
   await expect(page.getByText("Scope mapping updated")).toBeVisible();
   await expect(

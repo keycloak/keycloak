@@ -3,7 +3,11 @@ import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { login } from "../utils/login.ts";
 import { goToUserFederation } from "../utils/sidebar.ts";
-import { assertProviderCardText, assertRealmSettingsText } from "./i18n.ts";
+import {
+  assertProviderCardText,
+  assertRealmSettingsText,
+  skipIfThemeLocalizationUnavailable,
+} from "./i18n.ts";
 
 // Test configuration
 const testConfig = {
@@ -19,6 +23,7 @@ async function setupRealm() {
   await adminClient.createRealm(realmName, {
     supportedLocales: ["en", "de", "de-CH", "fo"],
     internationalizationEnabled: true,
+    adminTheme: "keycloak.v3",
     enabled: true,
   });
 }
@@ -46,7 +51,7 @@ async function createUser() {
 
 async function updateUserLocale(locale: string) {
   await adminClient.updateUser(testConfig.userId, {
-    attributes: { locale: locale },
+    attributes: { locale: [locale] },
     realm: testConfig.realmName,
   });
 }
@@ -71,6 +76,10 @@ async function addLocalization(locale: string, key: string, value: string) {
 }
 
 test.describe.serial("i18n tests", () => {
+  test.beforeEach(async () => {
+    await skipIfThemeLocalizationUnavailable();
+  });
+
   // Constants for test assertions
   const texts = {
     realmLocalizationEn: "realmSettings en",
