@@ -14,7 +14,8 @@ public interface UiPageProviderFactory<T> extends ComponentFactory<T, UiPageProv
     }
 
     /**
-     * Fields shown in the page list. Defaults to the first configured property.
+     * Fields shown in the page list. When empty, the Admin Console falls back to
+     * the first three configured properties.
      */
     default List<String> getDisplayFields() {
         return List.of();

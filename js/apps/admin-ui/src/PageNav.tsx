@@ -140,6 +140,12 @@ export const PageNav = () => {
     isFeatureEnabled(Feature.Workflows);
 
   const showManageRealm = environment.masterRealm === environment.realm;
+  const showManageSection =
+    showManage ||
+    (isFeatureEnabled(Feature.DeclarativeUI) && managePages.length > 0);
+  const showConfigureSection =
+    showConfigure ||
+    (isFeatureEnabled(Feature.DeclarativeUI) && configurePages.length > 0);
 
   return (
     <PageSidebar className="keycloak__page_nav__nav">
@@ -159,7 +165,7 @@ export const PageNav = () => {
               <LeftNav title={t("manageRealms")} path="/realms" />
             </NavGroup>
           )}
-          {showManage && (
+          {showManageSection && (
             <NavGroup aria-label={t("manage")} title={t("manage")}>
               {isFeatureEnabled(Feature.Organizations) &&
                 realmRepresentation.organizationsEnabled && (
@@ -183,7 +189,7 @@ export const PageNav = () => {
             </NavGroup>
           )}
 
-          {showConfigure && (
+          {showConfigureSection && (
             <NavGroup aria-label={t("configure")} title={t("configure")}>
               <LeftNav title="realmSettings" path="/realm-settings" />
               <LeftNav title="authentication" path="/authentication" />

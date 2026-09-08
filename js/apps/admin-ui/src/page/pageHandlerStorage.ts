@@ -82,7 +82,11 @@ function isClearedValue(value: unknown): boolean {
     return true;
   }
 
-  return Array.isArray(value) && value.length === 0;
+  if (Array.isArray(value)) {
+    return value.length === 0 || value.every((item) => isClearedValue(item));
+  }
+
+  return false;
 }
 
 export function mergeEntityConfig(
