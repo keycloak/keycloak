@@ -11,6 +11,10 @@ import org.keycloak.jgroups.certificates.CertificateReloadManager;
 import org.keycloak.jgroups.certificates.DatabaseJGroupsCertificateProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.RealmModel;
+import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.sessions.StickySessionEncoderProvider;
+import org.keycloak.sessions.StickySessionEncoderProviderFactory;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
 
 import org.infinispan.factories.GlobalComponentRegistry;
@@ -296,6 +300,68 @@ public final class ClusterTestTasks {
             var resourceServer = storeFactory.getResourceServerStore().findByClient(client);
             var ticket = storeFactory.getPermissionTicketStore().findById(resourceServer, ticketId);
             return Long.toString(ticket.getGrantedTimestamp());
+        }
+    }
+
+    public static final class SetShouldAttachRoute implements RunOnServer {
+        private final boolean shouldAttachRoute;
+
+        public SetShouldAttachRoute(boolean shouldAttachRoute) {
+            this.shouldAttachRoute = shouldAttachRoute;
+        }
+
+        @Override
+        public void run(KeycloakSession session) {
+            StickySessionEncoderProviderFactory factory = (StickySessionEncoderProviderFactory) session.getKeycloakSessionFactory()
+                    .getProviderFactory(StickySessionEncoderProvider.class);
+            factory.setShouldAttachRoute(shouldAttachRoute);
+        }
+    }
+
+    public static final class AssertAuthSessionRoute implements RunOnServer {
+        private final String realmName;
+        private final String authSessionCookie;
+        private final String expectedRoutePrefix;
+
+        public AssertAuthSessionRoute(String realmName, String authSessionCookie, String expectedRoutePrefix) {
+            this.realmName = realmName;
+            this.authSessionCookie = authSessionCookie;
+            this.expectedRoutePrefix = expectedRoutePrefix;
+        }
+
+        @Override
+        public void run(KeycloakSession session) {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realm);
+            StickySessionEncoderProvider provider = session.getProvider(StickySessionEncoderProvider.class);
+            StickySessionEncoderProvider.SessionIdAndRoute sessionIdAndRoute = provider.decodeSessionIdAndRoute(authSessionCookie);
+            if (!sessionIdAndRoute.route().startsWith(expectedRoutePrefix)) {
+                throw new AssertionError("Expected route to start with " + expectedRoutePrefix + " but was " + sessionIdAndRoute.route());
+            }
+            String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(sessionIdAndRoute.sessionId());
+            if (!sessionIdAndRoute.isSameRoute(provider.sessionIdRoute(decodedAuthSessionId))) {
+                throw new AssertionError("Route owner does not match session route");
+            }
+        }
+    }
+
+    public static final class AssertAuthSessionWithoutRoute implements RunOnServer {
+        private final String realmName;
+        private final String authSessionCookie;
+
+        public AssertAuthSessionWithoutRoute(String realmName, String authSessionCookie) {
+            this.realmName = realmName;
+            this.authSessionCookie = authSessionCookie;
+        }
+
+        @Override
+        public void run(KeycloakSession session) {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realm);
+            String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionCookie);
+            if (session.getProvider(StickySessionEncoderProvider.class).sessionIdRoute(decodedAuthSessionId) != null) {
+                throw new AssertionError("Expected no route for authentication session");
+            }
         }
     }
 

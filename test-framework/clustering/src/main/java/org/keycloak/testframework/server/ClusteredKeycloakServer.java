@@ -204,6 +204,21 @@ public class ClusteredKeycloakServer implements KeycloakServer {
         return containers.length;
     }
 
+    public boolean isNodeRunning(int index) {
+        return containers[index] != null && containers[index].isRunning();
+    }
+
+    public void stopNode(int index) {
+        containers[index].stopKeepContainer();
+    }
+
+    public void startNode(int index) {
+        if (!containers[index].isRunning()) {
+            containers[index].restartContainer();
+            ReadinessProbe.waitUntilReady(this::getBaseUrl, 1, startTimeout);
+        }
+    }
+
     public LoadBalancer getLoadBalancer() {
         return loadBalancer;
     }

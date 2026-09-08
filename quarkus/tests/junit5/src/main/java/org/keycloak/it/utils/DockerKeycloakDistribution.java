@@ -225,6 +225,33 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
 
     @Override
     public void stop() {
+        stop(true);
+    }
+
+    public void stopKeepContainer() {
+        stop(false);
+    }
+
+    public boolean isRunning() {
+        return keycloakContainer != null && keycloakContainer.isRunning();
+    }
+
+    public void restartContainer() {
+        if (keycloakContainer == null) {
+            throw new IllegalStateException("Container has not been started");
+        }
+        if (keycloakContainer.isRunning()) {
+            return;
+        }
+        try {
+            keycloakContainer.start();
+            containerId = keycloakContainer.getContainerId();
+        } catch (Exception cause) {
+            throw new RuntimeException("Failed to restart the server", cause);
+        }
+    }
+
+    private void stop(boolean removeContainer) {
         try {
             if (keycloakContainer != null) {
                 containerId = keycloakContainer.getContainerId();
@@ -247,8 +274,10 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
             this.exitCode = -1;
             throw new RuntimeException("Failed to stop the server", cause);
         } finally {
-            cleanupContainer();
-            keycloakContainer = null;
+            if (removeContainer) {
+                cleanupContainer();
+                keycloakContainer = null;
+            }
         }
     }
 
