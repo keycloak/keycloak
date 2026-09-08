@@ -61,6 +61,8 @@ final class UiExtensionComponentStorage {
                 session.getKeycloakSessionFactory().getProviderFactoriesStream(UiPageProvider.class),
                 session.getKeycloakSessionFactory().getProviderFactoriesStream(UiTabProvider.class))
                 .filter(factory -> factory instanceof ComponentStorageFactory)
+                .filter(factory -> !(factory instanceof ComponentFactory<?, ?> componentFactory
+                        && componentFactory.isInternal()))
                 .map(ComponentStorageFactory.class::cast)
                 .map(storage -> storage.getComponent(session, realm, id))
                 .filter(Objects::nonNull)

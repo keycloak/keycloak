@@ -211,6 +211,21 @@ describe("mergeEntityConfig", () => {
       keep: "value",
     });
   });
+
+  it("removes cleared multiline values represented as an empty string array", () => {
+    const multilineProperty: ConfigPropertyRepresentation = {
+      name: "notes",
+      type: "MultivaluedString",
+    };
+    const result = mergeEntityConfig(
+      { notes: "existing" },
+      { notes: [""] },
+      [multilineProperty],
+      "string-map",
+    );
+
+    expect(result).toEqual({});
+  });
 });
 
 describe("interpolateEndpoint", () => {

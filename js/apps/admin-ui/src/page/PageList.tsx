@@ -25,7 +25,11 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { PAGE_PROVIDER } from "./constants";
 import { addDetailPage, PageListParams, toDetailPage } from "./routes";
-import { canViewUiExtension, getRequiredViewRoles } from "./uiExtensionAccess";
+import {
+  canManageUiExtension,
+  canViewUiExtension,
+  getRequiredViewRoles,
+} from "./uiExtensionAccess";
 
 type DetailLinkProps = {
   obj: ComponentRepresentation;
@@ -100,6 +104,8 @@ export default function PageList() {
     return <ForbiddenSection permissionNeeded={getRequiredViewRoles(page)} />;
   }
 
+  const canManage = canManageUiExtension(page, access);
+
   return (
     <PageSection variant="light" className="pf-v5-u-p-0">
       <DeleteConfirm />
@@ -107,28 +113,37 @@ export default function PageList() {
       <KeycloakDataTable
         key={key}
         toolbarItem={
-          <ToolbarItem>
-            <Button
-              component={(props) => (
-                <Link
-                  {...props}
-                  to={addDetailPage({ realm: realmName, providerId: page.id })}
-                />
-              )}
-            >
-              {t("createItem")}
-            </Button>
-          </ToolbarItem>
+          canManage ? (
+            <ToolbarItem>
+              <Button
+                component={(props) => (
+                  <Link
+                    {...props}
+                    to={addDetailPage({
+                      realm: realmName,
+                      providerId: page.id,
+                    })}
+                  />
+                )}
+              >
+                {t("createItem")}
+              </Button>
+            </ToolbarItem>
+          ) : undefined
         }
-        actionResolver={(item: IRowData) => [
-          {
-            title: t("delete"),
-            onClick() {
-              setSelectedItem(item.data);
-              toggleDeleteDialog();
-            },
-          },
-        ]}
+        actionResolver={
+          canManage
+            ? (item: IRowData) => [
+                {
+                  title: t("delete"),
+                  onClick() {
+                    setSelectedItem(item.data);
+                    toggleDeleteDialog();
+                  },
+                },
+              ]
+            : undefined
+        }
         searchPlaceholderKey="searchItem"
         loader={loader}
         columns={[
@@ -152,11 +167,14 @@ export default function PageList() {
             hasIcon
             message={t("noItems")}
             instructions={t("noItemsInstructions")}
-            primaryActionText={t("createItem")}
-            onPrimaryAction={() =>
-              void navigate(
-                addDetailPage({ realm: realmName, providerId: page.id }),
-              )
+            primaryActionText={canManage ? t("createItem") : undefined}
+            onPrimaryAction={
+              canManage
+                ? () =>
+                    void navigate(
+                      addDetailPage({ realm: realmName, providerId: page.id }),
+                    )
+                : undefined
             }
           />
         }

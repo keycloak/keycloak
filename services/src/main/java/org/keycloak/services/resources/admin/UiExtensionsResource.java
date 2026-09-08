@@ -9,8 +9,8 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.models.KeycloakSession;
@@ -51,13 +51,10 @@ public class UiExtensionsResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
     @Operation(summary = "Returns runtime configuration properties for a declarative UI tab")
     public List<ConfigPropertyRepresentation> getTabConfig(
-            @PathParam("providerId") String providerId,
-            @QueryParam("clientId") String clientId,
-            @QueryParam("id") String id,
-            @QueryParam("alias") String alias) {
+            @PathParam("providerId") String providerId) {
         UiExtensionSupport factory = getFactory(UiTabProvider.class, providerId);
         UiExtensionPermissions.requireView(auth, factory);
-        return toRepresentation(factory.getConfigProperties(session, contextParams(clientId, id, alias)));
+        return toRepresentation(factory.getConfigProperties(session, queryParams()));
     }
 
     @GET
@@ -67,15 +64,10 @@ public class UiExtensionsResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
     @Operation(summary = "Returns runtime configuration properties for a declarative UI page")
     public List<ConfigPropertyRepresentation> getPageConfig(
-            @PathParam("providerId") String providerId,
-            @QueryParam("componentId") String componentId) {
+            @PathParam("providerId") String providerId) {
         UiExtensionSupport factory = getFactory(UiPageProvider.class, providerId);
         UiExtensionPermissions.requireView(auth, factory);
-        Map<String, String> params = new HashMap<>();
-        if (componentId != null) {
-            params.put("componentId", componentId);
-        }
-        return toRepresentation(factory.getConfigProperties(session, params));
+        return toRepresentation(factory.getConfigProperties(session, queryParams()));
     }
 
     private <T extends Provider> UiExtensionSupport getFactory(Class<T> providerClass, String providerId) {
@@ -89,16 +81,13 @@ public class UiExtensionsResource {
         return extensionSupport;
     }
 
-    private Map<String, String> contextParams(String clientId, String id, String alias) {
+    private Map<String, String> queryParams() {
+        MultivaluedMap<String, String> query = session.getContext().getUri().getQueryParameters();
         Map<String, String> params = new HashMap<>();
-        if (clientId != null) {
-            params.put("clientId", clientId);
-        }
-        if (id != null) {
-            params.put("id", id);
-        }
-        if (alias != null) {
-            params.put("alias", alias);
+        for (Map.Entry<String, List<String>> entry : query.entrySet()) {
+            if (!entry.getValue().isEmpty() && entry.getValue().get(0) != null) {
+                params.put(entry.getKey(), entry.getValue().get(0));
+            }
         }
         return params;
     }

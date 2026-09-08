@@ -24,7 +24,11 @@ import { PageHandler } from "./PageHandler";
 import { PAGE_PROVIDER } from "./constants";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { PageParams, toDetailPage, toPage } from "./routes";
-import { canViewUiExtension, getRequiredViewRoles } from "./uiExtensionAccess";
+import {
+  canManageUiExtension,
+  canViewUiExtension,
+  getRequiredViewRoles,
+} from "./uiExtensionAccess";
 
 export default function Page() {
   const { adminClient } = useAdminClient();
@@ -85,6 +89,8 @@ export default function Page() {
     return <ForbiddenSection permissionNeeded={getRequiredViewRoles(page)} />;
   }
 
+  const canManage = canManageUiExtension(page, access);
+
   return (
     <>
       <DeleteConfirm />
@@ -96,7 +102,7 @@ export default function Page() {
           )?.[0] || t("createItem")
         }
         dropdownItems={
-          id
+          id && canManage
             ? [
                 <DropdownItem
                   data-testid="delete-item"
