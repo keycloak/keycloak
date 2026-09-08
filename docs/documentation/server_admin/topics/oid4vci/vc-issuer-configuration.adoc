@@ -647,6 +647,8 @@ include::credential-offer-aia.adoc[]
 
 include::requesting-credentials.adoc[]
 
+include::managing-credentials.adoc[]
+
 include::wallet-integration.adoc[]
 
 include::proofs.adoc[]
