@@ -35,7 +35,9 @@ export async function clickAddClientScope(page: Page) {
 
 export async function clickAddScope(page: Page, option: string) {
   await page.getByTestId("add-dropdown").click();
-  await page.getByRole("menuitem", { name: option }).click();
+  const menuItem = page.getByRole("menuitem", { name: option, exact: true });
+  await expect(menuItem).toBeVisible();
+  await menuItem.click();
 }
 
 export async function assertTableCellDropdownValue(page: Page, value: string) {
