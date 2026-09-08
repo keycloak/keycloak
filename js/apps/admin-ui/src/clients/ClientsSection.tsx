@@ -52,7 +52,7 @@ const ClientDetailLink = (client: ClientRepresentation) => {
       >
         {client.clientId}
         {!client.enabled && (
-          <Badge key={`${client.id}-disabled`} isRead className="pf-v5-u-ml-sm">
+          <Badge key={`${client.id}-disabled`} isRead className="pf-v6-u-ml-sm">
             {t("disabled")}
           </Badge>
         )}
@@ -60,7 +60,7 @@ const ClientDetailLink = (client: ClientRepresentation) => {
       {client.attributes?.["is_temporary_admin"] === "true" && (
         <Tooltip content={t("temporaryService")}>
           <WarningTriangleIcon
-            className="pf-v5-u-ml-sm"
+            className="pf-v6-u-ml-sm"
             id="temporary-admin-label"
           />
         </Tooltip>
@@ -192,7 +192,7 @@ export default function ClientsSection() {
         helpUrl={helpUrls.clientsUrl}
         divider={false}
       />
-      <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
         <RoutableTabs
           mountOnEnter
           unmountOnExit

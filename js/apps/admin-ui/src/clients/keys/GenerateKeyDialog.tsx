@@ -65,7 +65,7 @@ export const KeyForm = ({
   const keySizes = ["4096", "3072", "2048"];
 
   return (
-    <Form className="pf-v5-u-pt-lg">
+    <Form className="pf-v6-u-pt-lg">
       <SelectControl
         name="format"
         label={t("archiveFormat")}

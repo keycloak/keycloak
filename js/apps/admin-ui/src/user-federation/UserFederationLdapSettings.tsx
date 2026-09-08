@@ -105,7 +105,7 @@ export default function UserFederationLdapSettings() {
         editMode={component.config?.editMode}
         save={() => form.handleSubmit(onSubmit)()}
       />
-      <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
         <RoutableTabs
           defaultLocation={toUserFederationLdap({
             realm,

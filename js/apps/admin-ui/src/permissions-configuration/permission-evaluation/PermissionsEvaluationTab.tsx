@@ -219,7 +219,7 @@ const PermissionEvaluateContent = ({ client }: Props) => {
               <Button
                 data-testid="permission-eval"
                 id="permission-eval"
-                className="pf-v5-u-mr-md"
+                className="pf-v6-u-mr-md"
                 isDisabled={!form.formState.isValid}
                 onClick={() => evaluate()}
               >
@@ -228,7 +228,7 @@ const PermissionEvaluateContent = ({ client }: Props) => {
               <Button
                 data-testid="permission-eval-revert"
                 id="permission-eval-revert"
-                className="pf-v5-u-mr-md"
+                className="pf-v6-u-mr-md"
                 variant="link"
                 onClick={() => {
                   reset();

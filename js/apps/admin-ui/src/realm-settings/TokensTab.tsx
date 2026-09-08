@@ -275,7 +275,7 @@ export const RealmSettingsTokensTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-v5-u-mt-lg"
+          className="pf-v6-u-mt-lg"
           onSubmit={handleSubmit(save)}
         >
           <FormGroup
@@ -346,7 +346,7 @@ export const RealmSettingsTokensTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-v5-u-mt-lg"
+          className="pf-v6-u-mt-lg"
           onSubmit={handleSubmit(save)}
         >
           <FormGroup
@@ -475,7 +475,7 @@ export const RealmSettingsTokensTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-v5-u-mt-lg"
+          className="pf-v6-u-mt-lg"
           onSubmit={handleSubmit(save)}
         >
           <FormGroup
@@ -666,7 +666,7 @@ export const RealmSettingsTokensTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-v5-u-mt-lg"
+          className="pf-v6-u-mt-lg"
           onSubmit={handleSubmit(save, onError)}
         >
           <TimeSelectorControl
@@ -839,7 +839,7 @@ export const RealmSettingsTokensTab = ({
   return (
     <ScrollForm
       label={t("jumpToSection")}
-      className="pf-v5-u-px-lg pf-v5-u-pb-lg"
+      className="pf-v6-u-px-lg pf-v6-u-pb-lg"
       sections={sections}
     />
   );
