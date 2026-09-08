@@ -80,9 +80,11 @@ public abstract class AbstractClusterTest {
 
     protected void logFailoverSetup() {
         log.info("Current failover setup");
-        log.infof("Fail node: %s%s", getCurrentFailNode(), unavailableNodes.contains(currentFailNodeIndex) ? " (simulated down)" : "");
+        boolean started = loadBalancer.isNodeRunning(currentFailNodeIndex);
+        log.infof("Fail node: %s%s", getCurrentFailNode(), started ? "" : " (stopped)");
         for (ContainerInfo survivor : getCurrentSurvivorNodes()) {
-            log.infof("Survivor:  %s", survivor);
+            started = loadBalancer.isNodeRunning(survivor.getIndex());
+            log.infof("Survivor:  %s%s", survivor, started ? "" : " (stopped)");
         }
     }
 
@@ -92,8 +94,13 @@ public abstract class AbstractClusterTest {
     }
 
     public void failback() {
-        log.info("Resetting simulated backend node availability");
-        unavailableNodes.clear();
+        log.info("Bringing all backend nodes online");
+        for (int i = 0; i < getClusterSize(); i++) {
+            if (!loadBalancer.isNodeRunning(i)) {
+                loadBalancer.startNode(i);
+            }
+            unavailableNodes.remove(i);
+        }
         if (getClusterSize() > 0) {
             loadBalancer.node(0);
         }
@@ -108,23 +115,27 @@ public abstract class AbstractClusterTest {
     }
 
     protected void startBackendNode(ContainerInfo node) {
+        if (!loadBalancer.isNodeRunning(node.getIndex())) {
+            loadBalancer.startNode(node.getIndex());
+        }
         unavailableNodes.remove(node.getIndex());
         loadBalancer.node(node.getIndex());
-        log.infof("Backend node %s marked as available", node);
+        log.infof("Backend node %s is started", node);
     }
 
     protected void killBackendNode(ContainerInfo node) {
         unavailableNodes.add(node.getIndex());
         backendTestingClients.remove(node.getIndex());
+        loadBalancer.stopNode(node.getIndex());
 
         if (getClusterSize() > 1) {
             int fallback = (node.getIndex() + 1) % getClusterSize();
-            if (!unavailableNodes.contains(fallback)) {
+            if (!unavailableNodes.contains(fallback) && loadBalancer.isNodeRunning(fallback)) {
                 loadBalancer.node(fallback);
             }
         }
 
-        log.infof("Backend node %s marked as unavailable (simulated)", node);
+        log.infof("Backend node %s stopped", node);
     }
 
     protected Keycloak getAdminClientFor(ContainerInfo node) {

@@ -20,33 +20,37 @@ public class SessionFailoverClusterTest extends AbstractFailoverClusterTest {
 
     @Test
     public void sessionFailover() {
-        log.infof("SESSION FAILOVER TEST: cluster size = %d, session-cache owners = %d", getClusterSize(), SESSION_CACHE_OWNERS);
+        boolean expectSuccessfulFailover = SESSION_CACHE_OWNERS >= 2;
+
+        log.infof("SESSION FAILOVER TEST: cluster size = %d, session-cache owners = %d --> testing for %sSUCCESSFUL session failover",
+                getClusterSize(), SESSION_CACHE_OWNERS, expectSuccessfulFailover ? "" : "UN");
 
         assertEquals(2, getClusterSize());
-        runSessionFailoverFlow();
+        runSessionFailoverFlow(expectSuccessfulFailover);
     }
 
-    private void runSessionFailoverFlow() {
+    private void runSessionFailoverFlow(boolean expectSuccessfulFailover) {
         Cookie sessionCookie = login();
 
         switchFailedNode();
-        sessionCookie = verifyLoggedInOrRelogin(sessionCookie);
+        if (expectSuccessfulFailover) {
+            verifyLoggedIn(sessionCookie);
+        } else {
+            verifyLoggedOut();
+        }
 
         switchFailedNode();
-        sessionCookie = verifyLoggedInOrRelogin(sessionCookie);
+        if (expectSuccessfulFailover) {
+            verifyLoggedIn(sessionCookie);
+        } else {
+            verifyLoggedOut();
+            login();
+        }
 
         logout();
         verifyLoggedOut();
 
         switchFailedNode();
         verifyLoggedOut();
-    }
-
-    private Cookie verifyLoggedInOrRelogin(Cookie expectedSessionCookie) {
-        try {
-            return verifyLoggedIn(expectedSessionCookie);
-        } catch (AssertionError e) {
-            return login();
-        }
     }
 }

@@ -201,6 +201,19 @@ public class ComponentInvalidationClusterTest extends AbstractInvalidationCluste
         } else {
             assertThat(componentOnNode.getConfig(), hasEntry("val3", val3));
         }
+
+        TestComponentProvider.DetailsRepresentation providerDetails = getTestingClientFor(survivorNode).server().fetch(
+                new ClusterComponentTestTasks.ComponentProviderDetails(testRealmName, testEntityOnFailNode.getName()),
+                TestComponentProvider.DetailsRepresentation.class);
+        assertThat(providerDetails.getConfig(), hasEntry("number", testEntityOnFailNode.getConfig().get("number")));
+        assertThat(providerDetails.getConfig(), hasEntry("required", testEntityOnFailNode.getConfig().get("required")));
+        assertThat(providerDetails.getConfig(), hasEntry("val1", testEntityOnFailNode.getConfig().get("val1")));
+        assertThat(providerDetails.getConfig(), hasEntry("val2", testEntityOnFailNode.getConfig().get("val2")));
+        if (val3 == null) {
+            assertThat(providerDetails.getConfig(), anyOf(hasEntry("val3", null), not(hasKey("val3"))));
+        } else {
+            assertThat(providerDetails.getConfig(), hasEntry("val3", val3));
+        }
     }
 
 }

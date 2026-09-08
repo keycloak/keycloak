@@ -61,6 +61,18 @@ public class LoadBalancer {
         return server.clusterSize();
     }
 
+    public boolean isNodeRunning(int index) {
+        return server.isNodeRunning(index);
+    }
+
+    public void stopNode(int index) {
+        server.stopNode(index);
+    }
+
+    public void startNode(int index) {
+        server.startNode(index);
+    }
+
     public void nextNode() {
         node((currentNodeIndex + 1) % nodeCount());
     }

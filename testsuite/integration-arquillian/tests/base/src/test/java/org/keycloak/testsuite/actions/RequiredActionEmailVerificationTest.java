@@ -50,7 +50,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.cluster.AuthenticationSessionFailoverClusterTest;
+import org.keycloak.testsuite.cluster.ClusterTestUtils;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -1066,7 +1066,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         oauth.openLoginForm();
 
-        String authSessionId = AuthenticationSessionFailoverClusterTest.getAuthSessionCookieValue(driver);
+        String authSessionId = ClusterTestUtils.getAuthSessionCookieValue(driver);
         String realmId = managedRealm.admin().toRepresentation().getId();
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
