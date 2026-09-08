@@ -56,18 +56,20 @@ export async function fillAdminEventsSearchPanel(
   page: Page,
   { resourceType, operationType }: AdminEventsSearchParam,
 ) {
-  if (resourceType)
+  if (resourceType) {
     await selectItem(
       page,
       page.getByLabel("select-resourceTypes"),
       resourceType,
     );
-  if (operationType)
+  }
+  if (operationType) {
     await selectItem(
       page,
       page.getByLabel("select-operationTypes"),
       operationType,
     );
+  }
 }
 
 export async function assertSearchButtonDisabled(page: Page, disabled = true) {
@@ -79,7 +81,12 @@ export async function assertSearchButtonDisabled(page: Page, disabled = true) {
 }
 
 export async function clickSearchButton(page: Page) {
-  await page.getByTestId("search-events-btn").click();
+  const button = page.getByTestId("search-events-btn");
+  if (!(await button.isVisible())) {
+    await clickSearchPanel(page);
+  }
+  await expect(button).toBeEnabled();
+  await button.click();
 }
 
 export async function assertSearchChipGroupItemExist(
@@ -87,9 +94,11 @@ export async function assertSearchChipGroupItemExist(
   itemName: string,
   exist = true,
 ) {
-  const locator = page.getByRole("group", { name: "User ID" });
+  const locator = page.locator(".keycloak__searchChips").filter({
+    hasText: "User ID",
+  });
   if (exist) {
-    await expect(locator).toHaveText(`User ID${itemName}`);
+    await expect(locator).toContainText(itemName);
   } else {
     await expect(locator).toBeHidden();
   }
