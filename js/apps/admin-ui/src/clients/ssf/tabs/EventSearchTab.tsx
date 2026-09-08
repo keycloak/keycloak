@@ -126,7 +126,7 @@ export const EventSearchTab = ({ client }: EventSearchTabProps) => {
   }, [handlePendingLookup, setSearchParams]);
 
   return (
-    <Card className="pf-v5-u-mt-md">
+    <Card className="pf-v6-u-mt-md">
       <CardHeader>
         <CardTitle>{t("ssfLookupTitle")}</CardTitle>
       </CardHeader>
@@ -182,7 +182,7 @@ export const EventSearchTab = ({ client }: EventSearchTabProps) => {
           {pendingLookupError && (
             <Content
               component="p"
-              className="pf-v5-u-mt-md pf-v5-u-color-status-danger--100"
+              className="pf-v6-u-mt-md pf-v6-u-color-status-danger--100"
               data-testid="ssfPendingLookupError"
             >
               {pendingLookupError}
@@ -260,7 +260,7 @@ export const EventSearchTab = ({ client }: EventSearchTabProps) => {
                     </Content>
                     <pre
                       data-testid="ssfPendingFieldDecodedSetJson"
-                      className="pf-v5-u-font-family-monospace"
+                      className="pf-v6-u-font-family-monospace"
                     >
                       {JSON.stringify(pendingLookupResult.decodedSet, null, 2)}
                     </pre>

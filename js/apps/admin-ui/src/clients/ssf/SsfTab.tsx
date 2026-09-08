@@ -227,7 +227,7 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
     ]);
 
   return (
-    <PageSection hasBodyWrapper={false} className="pf-v5-u-py-0">
+    <PageSection hasBodyWrapper={false} className="pf-v6-u-py-0">
       {activeTab === "receiver" && (
         <ReceiverTab
           client={client}

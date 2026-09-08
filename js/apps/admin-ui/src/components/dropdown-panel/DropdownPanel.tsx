@@ -36,7 +36,7 @@ const DropdownPanel: React.FC<DropdownPanelProps> = ({
       // Ignore clicks on portaled menus (Select, Dropdown, etc.)
       if (
         target.closest(
-          '[role="listbox"], [role="menu"], .pf-v6-c-menu, .pf-v5-c-menu',
+          '[role="listbox"], [role="menu"], .pf-v6-c-menu, .pf-v6-c-menu',
         )
       ) {
         return;
