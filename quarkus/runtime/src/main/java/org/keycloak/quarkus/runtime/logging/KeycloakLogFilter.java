@@ -104,6 +104,15 @@ public abstract class KeycloakLogFilter implements Filter {
             }
         }
 
+        // ISPN000208 "No live owners found for segments" fires during state transfer when a node is the sole
+        // remaining owner after another node departed. The data is safe (this node has it), but the message
+        // is logged at ERROR and alarms users. With numOwners>=2 enforced by Keycloak, a single node
+        // departure always leaves at least one live owner, so this is expected during rolling restarts.
+        // https://github.com/keycloak/keycloak/issues/52088
+        if (Objects.equals(record.getLevel(), Level.SEVERE) && record.getLoggerName().equals("org.infinispan.CLUSTER") && record.getMessage().startsWith("ISPN000208")) {
+            return false;
+        }
+
         if (executor != null && ThreadCreator.isVirtual(Thread.currentThread())) {
             executor.submit(new RecordLogger(ExtLogRecord.wrap(record), this));
             return false;
