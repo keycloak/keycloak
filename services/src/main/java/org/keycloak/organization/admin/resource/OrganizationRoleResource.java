@@ -192,15 +192,7 @@ public class OrganizationRoleResource extends RoleResource {
         auth.roles().requireManage(role);
 
         List<RoleModel> composites = resolveCompositeRoles(roles, true);
-        
-        // Prevent adding admin roles as composite roles
-        RoleModel defaultOrgRole = organization.getDefaultRole();
-        for (RoleModel composite : composites) {
-            if (defaultOrgRole != null && defaultOrgRole.getId().equals(composite.getId())) {
-                throw new BadRequestException("The default organization role cannot be added as a composite role");
-            }
-        }
-        
+
         composites.forEach(role::addCompositeRole);
 
         if (!roles.isEmpty()) {

@@ -16,6 +16,8 @@
  */
 package org.keycloak.organization.validation;
 
+import jakarta.ws.rs.BadRequestException;
+
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.ModelException;
@@ -59,6 +61,14 @@ public class OrganizationsValidation {
         boolean isOrgGroup = Type.ORGANIZATION.equals(group.getType());
         boolean isOrgRole = role.isType(RoleModel.Type.ORGANIZATION);
 
+        if (isOrgRole) {
+            OrganizationModel organization = getOrganizationRoleContainer(role);
+
+            if (organization.isDefaultRole(role)) {
+                throw new BadRequestException("The default organization role cannot be assigned to groups");
+            }
+        }
+
         if (isOrgGroup) {
             if (isAdminRoleOrComposite(role)) {
                 throw new ModelException("Admin roles cannot be assigned to organization groups");
@@ -89,8 +99,16 @@ public class OrganizationsValidation {
             return;
         }
 
-        if (isChildOrgRole && (!isParentOrgRole || !parent.getContainer().equals(child.getContainer()))) {
-            throw new ModelException("Organization roles can only be added as composites to other organization roles");
+        if (isChildOrgRole) {
+            if (!isParentOrgRole || !parent.getContainer().equals(child.getContainer())) {
+                throw new ModelException("Organization roles can only be added as composites to other organization roles");
+            }
+
+            OrganizationModel organization = getOrganizationRoleContainer(child);
+
+            if (organization.isDefaultRole(child)) {
+                throw new ModelException("The default organization role cannot be added as a composite role");
+            }
         }
 
         if (isAdminRoleOrComposite(child)) {
