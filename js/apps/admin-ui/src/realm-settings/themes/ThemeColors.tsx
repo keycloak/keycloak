@@ -44,9 +44,9 @@ const switchTheme = (theme: ThemeType) => {
     document
       .querySelector('meta[name="color-scheme"]')!
       .setAttribute("content", "light");
-    document.documentElement.classList.remove("pf-v5-theme-dark");
+    document.documentElement.classList.remove("pf-v6-theme-dark");
   } else {
-    document.documentElement.classList.add("pf-v5-theme-dark");
+    document.documentElement.classList.add("pf-v6-theme-dark");
   }
 };
 
@@ -253,13 +253,13 @@ export const ThemeColors = ({
         />
       )}
       <PageSection hasBodyWrapper={false}>
-        <Content className="pf-v5-u-mb-lg">
+        <Content className="pf-v6-u-mb-lg">
           <Content component="p">{t("themeColorInfo")}</Content>
         </Content>
         {mediaQuery.matches && theme === "light" && (
           <Alert variant="info" isInline title={t("themePreviewInfo")} />
         )}
-        <Flex className="pf-v5-u-pt-lg">
+        <Flex className="pf-v6-u-pt-lg">
           <FlexItem>
             <FormAccess isHorizontal role="manage-realm">
               <FormProvider {...form}>

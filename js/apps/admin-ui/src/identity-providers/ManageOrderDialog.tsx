@@ -93,7 +93,7 @@ export const ManageOrderDialog = ({
     >
       <ModalHeader title={title} />
       <ModalBody>
-        <Content className="pf-v5-u-pb-lg">
+        <Content className="pf-v6-u-pb-lg">
           <Content component="p">{t("orderDialogIntro")}</Content>
         </Content>
 
@@ -117,7 +117,7 @@ export const ManageOrderDialog = ({
             isCompact
           />
         </DragDropSort>
-        <div className="pf-v5-screen-reader" aria-live="assertive">
+        <div className="pf-v6-screen-reader" aria-live="assertive">
           {liveText}
         </div>
       </ModalBody>

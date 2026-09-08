@@ -95,7 +95,7 @@ export const ViewHeader = ({
           <LevelItem>
             <Level>
               <LevelItem>
-                <Content className="pf-v5-u-mr-sm">
+                <Content className="pf-v6-u-mr-sm">
                   <Content
                     className={className}
                     component="h1"
@@ -126,7 +126,7 @@ export const ViewHeader = ({
             </Level>
           </LevelItem>
           <LevelItem>
-            <Toolbar className="pf-v5-u-p-0">
+            <Toolbar className="pf-v6-u-p-0">
               <ToolbarContent>
                 {onToggle && (
                   <ToolbarItem alignSelf="center">
@@ -134,7 +134,7 @@ export const ViewHeader = ({
                       id={`${toKey(titleKey)}-switch`}
                       data-testid={`${titleKey}-switch`}
                       label={t("enabled")}
-                      className="pf-v5-u-mr-lg"
+                      className="pf-v6-u-mr-lg"
                       isDisabled={isReadOnly}
                       isChecked={isEnabled}
                       aria-label={t("enabled")}
@@ -191,7 +191,7 @@ export const ViewHeader = ({
                   title={t("learnMore")}
                   href={helpUrl}
                   isInline
-                  className="pf-v5-u-ml-md"
+                  className="pf-v6-u-ml-md"
                 />
               )}
             </Content>

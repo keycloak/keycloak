@@ -315,7 +315,7 @@ const CreateStreamFormBody = ({
                   <SelectOption key={event} value={event}>
                     {event}
                     {nativelyEmittedEvents.includes(event) && (
-                      <Label color="blue" isCompact className="pf-v5-u-ml-sm">
+                      <Label color="blue" isCompact className="pf-v6-u-ml-sm">
                         {t("ssfNativelyEmittedBadge")}
                       </Label>
                     )}

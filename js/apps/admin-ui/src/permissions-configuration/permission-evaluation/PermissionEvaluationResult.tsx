@@ -41,10 +41,10 @@ export const PermissionEvaluationResult = ({
 
     return (
       <>
-        <Content component="p" className="pf-v5-u-pt-sm">
+        <Content component="p" className="pf-v6-u-pt-sm">
           <strong>{t(title)}</strong>:
         </Content>
-        <List className="pf-v5-u-mt-sm">
+        <List className="pf-v6-u-mt-sm">
           {permissions.map((p) => (
             <ListItem key={p.policy?.id}>
               {t("evaluatedPolicy", {
@@ -65,7 +65,7 @@ export const PermissionEvaluationResult = ({
           <Content component="p">
             <b>{t("grantedScope")}</b>
           </Content>
-          <List className="pf-v5-u-mt-sm">
+          <List className="pf-v6-u-mt-sm">
             {evaluatedAllowedScopes.map((scope) => (
               <ListItem key={scope.id}>{scope.name}</ListItem>
             ))}
@@ -75,11 +75,11 @@ export const PermissionEvaluationResult = ({
 
       {evaluatedDeniedScopes.length > 0 && (
         <>
-          <Content component="p" className="pf-v5-u-pt-sm">
+          <Content component="p" className="pf-v6-u-pt-sm">
             <strong>{t("deniedScope")}</strong>
           </Content>
 
-          <List className="pf-v5-u-mt-sm">
+          <List className="pf-v6-u-mt-sm">
             {evaluatedDeniedScopes.map((scope) => (
               <ListItem key={scope.id}>{scope.name}</ListItem>
             ))}

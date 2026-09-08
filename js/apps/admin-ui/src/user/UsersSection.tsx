@@ -47,7 +47,7 @@ export default function UsersSection() {
       <PageSection
         hasBodyWrapper={false}
         data-testid="users-page"
-        className="pf-v5-u-p-0"
+        className="pf-v6-u-p-0"
       >
         <RoutableTabs
           data-testid="user-tabs"
