@@ -60,6 +60,12 @@ For `CUSTOM` storage, implement GET and PUT handlers relative to `/admin/realms/
 * `GET` returns JSON with a `config` object whose keys match property names.
 * `PUT` receives submitted form data plus resolved route parameters as top-level fields.
 
+Custom endpoints are served by a separate `AdminRealmResourceProvider` and are not protected by
+`getRequiredViewRoles()` / `getRequiredManageRoles()`. Each handler must enforce admin permissions
+explicitly, for example by using `AdminPermissionEvaluator` in the resource implementation.
+The UI role metadata only controls Admin Console visibility; it is not a security boundary for
+direct REST access.
+
 == Runtime configuration
 
 Static properties from server startup are still exposed through server info.

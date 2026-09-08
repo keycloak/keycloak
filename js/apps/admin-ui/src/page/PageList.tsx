@@ -34,15 +34,21 @@ import {
 type DetailLinkProps = {
   obj: ComponentRepresentation;
   field: string;
+  detailTabPath?: string;
 };
 
-const DetailLink = ({ obj, field }: DetailLinkProps) => {
+const DetailLink = ({ obj, field, detailTabPath }: DetailLinkProps) => {
   const { realm } = useRealm();
   const value = get(obj, field);
   return (
     <Link
       key={value}
-      to={toDetailPage({ realm, providerId: obj.providerId!, id: obj.id! })}
+      to={toDetailPage({
+        realm,
+        providerId: obj.providerId!,
+        id: obj.id!,
+        detailTabPath,
+      })}
     >
       {value}
     </Link>
@@ -105,6 +111,7 @@ export default function PageList() {
   }
 
   const canManage = canManageUiExtension(page, access);
+  const detailTabPath = page.metadata.detailTabPath as string | undefined;
 
   return (
     <PageSection variant="light" className="pf-v5-u-p-0">
@@ -156,7 +163,11 @@ export default function PageList() {
             cellRenderer:
               index === 0
                 ? (obj: ComponentRepresentation) => (
-                    <DetailLink obj={obj} field={`config.${name}`} />
+                    <DetailLink
+                      obj={obj}
+                      field={`config.${name}`}
+                      detailTabPath={detailTabPath}
+                    />
                   )
                 : undefined,
           })),

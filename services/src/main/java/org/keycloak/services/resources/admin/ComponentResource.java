@@ -227,6 +227,8 @@ public class ComponentResource {
                 session.setAttribute(SECRET_PLACEHOLDER_FIELDS_ATTR, secretPlaceholderFields);
             }
             RepresentationToModel.updateComponent(session, rep, model, false);
+            rejectInternalComponent(model.getProviderType(), model.getProviderId());
+            requireManageForProviderType(model.getProviderType(), model.getProviderId());
             ComponentModel customModel = UiExtensionComponentStorage.updateComponent(session, realm, oldModel, model);
             if (customModel != null) {
                 model = customModel;
