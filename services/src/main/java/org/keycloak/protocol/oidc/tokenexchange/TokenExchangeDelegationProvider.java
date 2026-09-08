@@ -70,6 +70,11 @@ public class TokenExchangeDelegationProvider extends StandardTokenExchangeProvid
     }
 
     @Override
+    protected void validateSubjectToken(AccessToken subjectToken) {
+        // Delegation legitimately exchanges tokens carrying "may_act". The allowed actor is validated separately in validateMayAct() using the actor_token. So permit these tokens here, overriding the standard rejection of delegation subject tokens.
+    }
+
+    @Override
     protected Response tokenExchange() {
         // validate subject token
         AuthenticationManager.AuthResult subjectAuthResult = processSubjectToken();
