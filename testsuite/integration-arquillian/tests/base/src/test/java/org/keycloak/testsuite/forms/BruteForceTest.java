@@ -1322,6 +1322,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         loginTotpPage.login("123456");
         loginTotpPage.assertCurrent();
         Assertions.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
+        WaitUtils.waitForBruteForceExecutors(testingClient);
         events.clear();
     }
 
@@ -1359,6 +1360,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         loginTotpPage.assertCurrent();
         Assertions.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
+        WaitUtils.waitForBruteForceExecutors(testingClient);
     }
 
     public void continueLoginWithMissingTotp() {
@@ -1368,6 +1370,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         loginTotpPage.assertCurrent();
         Assertions.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
+        WaitUtils.waitForBruteForceExecutors(testingClient);
         events.clear();
     }
 
@@ -1381,6 +1384,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         loginTotpPage.assertCurrent();
         Assertions.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
 
+        WaitUtils.waitForBruteForceExecutors(testingClient);
         events.clear();
     }
 
