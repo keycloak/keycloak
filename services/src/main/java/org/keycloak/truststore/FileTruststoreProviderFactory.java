@@ -18,6 +18,11 @@
 package org.keycloak.truststore;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -37,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.net.ssl.SSLSocketFactory;
 import javax.security.auth.x500.X500Principal;
 
 import org.keycloak.Config;
@@ -54,26 +60,36 @@ import org.jboss.logging.Logger;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public class FileTruststoreProviderFactory implements TruststoreProviderFactory {
+public class FileTruststoreProviderFactory implements TruststoreProviderFactory, TruststoreReloadListener {
 
     static final String HOSTNAME_VERIFICATION_POLICY = "hostname-verification-policy";
 
     private static final Logger log = Logger.getLogger(FileTruststoreProviderFactory.class);
 
-    private TruststoreProvider provider;
+    private final ReloadableTruststoreProvider provider = new ReloadableTruststoreProvider();
+    private volatile Config.Scope config;
 
     @Override
     public TruststoreProvider create(KeycloakSession session) {
+        if (provider.delegate == null) {
+            return null;
+        }
         return provider;
     }
 
     // For testing purposes
+    public TruststoreProvider getDelegate() {
+        return this.provider.delegate;
+    }
+
+    // For testing purposes
     public void setProvider(TruststoreProvider provider) {
-        this.provider = provider;
+        this.provider.delegate = provider;
     }
 
     @Override
-    public void init(Config.Scope config) {
+    public synchronized void init(Config.Scope config) {
+        this.config = config;
 
         String storepath = config.get("file");
         String pass = config.get("password");
@@ -151,13 +167,16 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
         }
 
         TruststoreCertificatesLoader certsLoader = new TruststoreCertificatesLoader(truststore);
-        provider = new FileTruststoreProvider(truststore, verificationPolicy, Collections.unmodifiableMap(certsLoader.trustedRootCerts),
+        // we don't need to close previous delegate because currently it is NOOP
+        // if it wasn't NOOP, we would have to find out when it is safe based on the implementation
+        provider.delegate = new FileTruststoreProvider(truststore, verificationPolicy,
+                Collections.unmodifiableMap(certsLoader.trustedRootCerts),
                 Collections.unmodifiableMap(certsLoader.intermediateCerts),
                 httpsTruststore,
                 httpsCertsLoader != null ? Collections.unmodifiableMap(httpsCertsLoader.trustedRootCerts) : null,
                 httpsCertsLoader != null ? Collections.unmodifiableMap(httpsCertsLoader.intermediateCerts) : null
         );
-        TruststoreProviderSingleton.set(provider);
+        TruststoreProviderSingleton.setAndNotifyListeners(provider);
         log.debugf("File truststore provider initialized: %s, Truststore type: %s",  new File(storepath).getAbsolutePath(), type);
     }
 
@@ -200,6 +219,13 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
                 .helpText("DEPRECATED: Type of the truststore. If not provided, the type would be detected based on the truststore file extension or platform default type.")
                 .add()
                 .build();
+    }
+
+    @Override
+    public void truststoreReloaded(KeycloakSession session) {
+        if (config != null) {
+            init(config);
+        }
     }
 
     private static class TruststoreCertificatesLoader {
@@ -285,6 +311,116 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
                 log.trace("certificate " + cert.getSubjectDN() + " detected as intermediate CA");
             }
             return false;
+        }
+    }
+
+    private static final class ReloadableTruststoreProvider implements TruststoreProvider {
+
+        private volatile TruststoreProvider delegate;
+
+        @Override
+        public HostnameVerificationPolicy getPolicy() {
+            return delegate.getPolicy();
+        }
+
+        @Override
+        public SSLSocketFactory getSSLSocketFactory() {
+            return new ReloadableSSLSocketFactory();
+        }
+
+        @Override
+        public KeyStore getTruststore() {
+            return delegate.getTruststore();
+        }
+
+        @Override
+        public Map<X500Principal, List<X509Certificate>> getRootCertificates() {
+            return delegate.getRootCertificates();
+        }
+
+        @Override
+        public Map<X500Principal, List<X509Certificate>> getIntermediateCertificates() {
+            return delegate.getIntermediateCertificates();
+        }
+
+        @Override
+        public KeyStore getHttpsTruststore() {
+            return delegate.getHttpsTruststore();
+        }
+
+        @Override
+        public Map<X500Principal, List<X509Certificate>> getHttpsRootCertificates() {
+            return delegate.getHttpsRootCertificates();
+        }
+
+        @Override
+        public Map<X500Principal, List<X509Certificate>> getHttpsIntermediateCertificates() {
+            return delegate.getHttpsIntermediateCertificates();
+        }
+
+        @Override
+        public void close() {
+            if (delegate != null) {
+                delegate.close();
+            }
+        }
+
+        private final class ReloadableSSLSocketFactory extends SSLSocketFactory {
+
+            @Override
+            public String[] getDefaultCipherSuites() {
+                return delegate.getSSLSocketFactory().getDefaultCipherSuites();
+            }
+
+            @Override
+            public String[] getSupportedCipherSuites() {
+                return delegate.getSSLSocketFactory().getSupportedCipherSuites();
+            }
+
+            @Override
+            public Socket createSocket(Socket s, String host, int port, boolean autoClose) throws IOException {
+                return delegate.getSSLSocketFactory().createSocket(s, host, port, autoClose);
+            }
+
+            @Override
+            public Socket createSocket(String host, int port) throws IOException {
+                return delegate.getSSLSocketFactory().createSocket(host, port);
+            }
+
+            @Override
+            public Socket createSocket(String host, int port, InetAddress localHost, int localPort) throws IOException, UnknownHostException {
+                return delegate.getSSLSocketFactory().createSocket(host, port, localHost, localPort);
+            }
+
+            @Override
+            public Socket createSocket(InetAddress host, int port) throws IOException {
+                return delegate.getSSLSocketFactory().createSocket(host, port);
+            }
+
+            @Override
+            public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort) throws IOException {
+                return delegate.getSSLSocketFactory().createSocket(address, port, localAddress, localPort);
+            }
+
+            @Override
+            public String toString() {
+                return delegate.getSSLSocketFactory().toString();
+            }
+
+            @Override
+            public int hashCode() {
+                return delegate.getSSLSocketFactory().hashCode();
+            }
+
+            @Override
+            public Socket createSocket() throws IOException {
+                return delegate.getSSLSocketFactory().createSocket();
+            }
+
+            @Override
+            public Socket createSocket(Socket s, InputStream consumed, boolean autoClose) throws IOException {
+                return delegate.getSSLSocketFactory().createSocket(s, consumed, autoClose);
+            }
         }
     }
 }

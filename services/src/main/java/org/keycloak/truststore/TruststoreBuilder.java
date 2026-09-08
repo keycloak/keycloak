@@ -20,6 +20,12 @@ package org.keycloak.truststore;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFileAttributeView;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.cert.Certificate;
@@ -48,6 +54,7 @@ public class TruststoreBuilder {
     public static final String SYSTEM_TRUSTSTORE_TYPE_KEY = "javax.net.ssl.trustStoreType";
     private static final String CERT_PROTECTION_ALGORITHM_KEY = "keystore.pkcs12.certProtectionAlgorithm";
     public static final String DUMMY_PASSWORD = "keycloakchangeit"; // fips length compliant dummy password
+    private static final String DEFAULT_CACERTS_PASSWORD = "changeit"; // standard JVM cacerts password; non-approved BCFIPS rejects a null PKCS12 password
     static final String PKCS12 = "PKCS12";
 
     private static final String KUBERNETES_CA_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
@@ -55,13 +62,17 @@ public class TruststoreBuilder {
 
     private static final Logger LOGGER = Logger.getLogger(TruststoreBuilder.class);
 
+    /**
+     * @deprecated use {@link #setAndGetSystemTruststore(String[], boolean, String, TruststoreFormat)}
+     */
+    @Deprecated(forRemoval = true)
     public static void setSystemTruststore(String[] truststores,
                                            boolean trustStoreIncludeDefault,
                                            String dataDir) {
-        setSystemTruststore(truststores, trustStoreIncludeDefault, dataDir, null);
+        setAndGetSystemTruststore(truststores, trustStoreIncludeDefault, dataDir, null);
     }
 
-    public static void setSystemTruststore(String[] truststores,
+    public static KeyStore setAndGetSystemTruststore(String[] truststores,
                                            boolean trustStoreIncludeDefault,
                                            String dataDir,
                                            TruststoreFormat preferredTruststoreType) {
@@ -77,6 +88,8 @@ public class TruststoreBuilder {
         System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY, file.getAbsolutePath());
         System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY, truststoreType.name());
         System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY, DUMMY_PASSWORD);
+
+        return truststore;
     }
 
     /**
@@ -115,10 +128,32 @@ public class TruststoreBuilder {
     static File saveTruststore(KeyStore truststore, TruststoreFormat truststoreType, String dataDir, char[] password) {
         File file = new File(dataDir, "keycloak-truststore." + truststoreType.getPrimaryExtension());
         file.getParentFile().mkdirs();
-        try (FileOutputStream fos = new FileOutputStream(file)) {
-            if (truststoreType == TruststoreFormat.PKCS12) {
-                // this should inhibit the use of encryption in storing the certs
-                // it's of course not concurrency safe, but it should only be run at startup
+        try {
+            if (file.exists()) {
+                File staged = File.createTempFile("keycloak-truststore", ".tmp", file.getParentFile());
+                try {
+                    writeTruststore(truststore, truststoreType, false, staged, password);
+                    copyPermissions(file, staged);
+                    moveIntoPlace(staged.toPath(), file.toPath());
+                } finally {
+                    try {
+                        Files.deleteIfExists(staged.toPath());
+                    } catch (IOException ignored) {
+                        // best-effort cleanup; a successful move already consumed the staging file
+                    }
+                }
+            } else {
+                writeTruststore(truststore, truststoreType, true, file, password);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to save truststore: " + file.getAbsolutePath(), e);
+        }
+        return file;
+    }
+
+    private static void writeTruststore(KeyStore truststore, TruststoreFormat truststoreType, boolean initialCreation, File target, char[] password) throws Exception {
+        try (FileOutputStream fos = new FileOutputStream(target)) {
+            if (truststoreType == TruststoreFormat.PKCS12 && initialCreation) {
                 String oldValue = System.setProperty(CERT_PROTECTION_ALGORITHM_KEY, "NONE");
                 try {
                     truststore.store(fos, password);
@@ -132,10 +167,22 @@ public class TruststoreBuilder {
             } else {
                 truststore.store(fos, password);
             }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to save truststore: " + file.getAbsolutePath(), e);
         }
-        return file;
+    }
+
+    private static void copyPermissions(File from, File to) throws IOException {
+        PosixFileAttributeView view = Files.getFileAttributeView(from.toPath(), PosixFileAttributeView.class);
+        if (view != null) {
+            Files.setPosixFilePermissions(to.toPath(), view.readAttributes().permissions());
+        }
+    }
+
+    private static void moveIntoPlace(Path staged, Path target) throws IOException {
+        try {
+            Files.move(staged, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException e) {
+            Files.move(staged, target, StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 
     static KeyStore createMergedTruststore(String[] truststores, boolean trustStoreIncludeDefault) {
@@ -166,7 +213,7 @@ public class TruststoreBuilder {
             } else {
                 var format = KeystoreUtil.getKeystoreFormat(file).orElse(null);
                 if (format == KeystoreFormat.PKCS12) {
-                    mergeTrustStore(truststore, file, loadStore(file, PKCS12, null));
+                    mergeTrustStore(truststore, file, loadPkcs12Truststore(file));
                     discoveredFiles.add(f.getAbsolutePath());
                 } else if (mergePemFile(truststore, file, topLevel)) {
                     discoveredFiles.add(f.getAbsolutePath());
@@ -219,6 +266,13 @@ public class TruststoreBuilder {
             trustStorePath = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY);
             if (trustStorePath == null) {
                 defaultTrustStore = getJRETruststore();
+                // Read the default JVM cacerts with its standard password rather than null: non-approved
+                // BCFIPS (FIPS non-strict) throws "No password supplied for PKCS#12 KeyStore" on a null
+                // password. Matches FileTruststoreProviderFactory, which already defaults the cacerts password to "changeit".
+                password = DEFAULT_CACERTS_PASSWORD;
+                System.setProperty(originalTruststoreKey, defaultTrustStore.getAbsolutePath());
+                System.setProperty(originalTruststoreTypeKey, type);
+                System.setProperty(originalTruststorePasswordKey, password);
             } else {
                 type = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY, KeyStore.getDefaultType());
                 password = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY);
@@ -240,9 +294,37 @@ public class TruststoreBuilder {
 
         if (defaultTrustStore.exists()) {
             String path = defaultTrustStore.getAbsolutePath();
-            mergeTrustStore(truststore, path, loadStore(path, type, password));
+            mergeTrustStore(truststore, path, loadDefaultTruststore(path, type, password));
         } else {
             LOGGER.warnf("Default truststore was to be included, but could not be found at: %s", defaultTrustStore);
+        }
+    }
+
+    private static KeyStore loadDefaultTruststore(String path, String type, String password) {
+        try {
+            return loadStore(path, type, password);
+        } catch (RuntimeException primaryFailure) {
+            if (!"jks".equalsIgnoreCase(type)) {
+                try {
+                    return loadStore(path, "jks", password);
+                } catch (RuntimeException jksFailure) {
+                    primaryFailure.addSuppressed(jksFailure);
+                }
+            }
+            throw primaryFailure;
+        }
+    }
+
+    private static KeyStore loadPkcs12Truststore(String path) {
+        try {
+            return loadStore(path, PKCS12, "");
+        } catch (RuntimeException emptyPasswordFailure) {
+            try {
+                return loadStore(path, PKCS12, null);
+            } catch (RuntimeException nullPasswordFailure) {
+                emptyPasswordFailure.addSuppressed(nullPasswordFailure);
+            }
+            throw emptyPasswordFailure;
         }
     }
 

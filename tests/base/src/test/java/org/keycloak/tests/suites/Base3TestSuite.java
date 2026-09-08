@@ -18,6 +18,7 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.ssl",
         "org.keycloak.tests.tracing",
         "org.keycloak.tests.transactions",
+        "org.keycloak.tests.truststore",
         "org.keycloak.tests.url",
         "org.keycloak.tests.vault",
         "org.keycloak.tests.welcomepage",

@@ -4,7 +4,7 @@
 <@tmpl.guide
 title="Configuring trusted certificates"
 summary="Configure the {project_name} Truststore to communicate through TLS."
-includedOptions="truststore-paths truststore-kubernetes-enabled tls-hostname-verifier">
+includedOptions="truststore-paths truststore-paths-reload-period truststore-kubernetes-enabled tls-hostname-verifier">
 
 When {project_name} communicates with external services or has an incoming connection through TLS, it has to validate the remote certificate in order to ensure it is connecting to a trusted server. This is necessary in order to prevent man-in-the-middle attacks.
 
@@ -12,7 +12,7 @@ The certificates of these clients or servers, or the CA that signed these certif
 
 == Configuring the System Truststore
 
-The existing Java default truststore certs will always be trusted.  If you need additional certificates, which will be the case if you have self-signed or internal certificate authorities that are not recognized by the JRE, they can be included in the `conf/truststores` directory or subdirectories.  The certs may be in PEM files, or PKCS12 files with extension `.p12`, `.pfx`, or `.pkcs12`.  If in PKCS12, the certs must be unencrypted - meaning no password is expected.
+The existing Java default truststore certs will always be trusted.  If you need additional certificates, which will be the case if you have self-signed or internal certificate authorities that are not recognized by the JRE, they can be included in the `conf/truststores` directory or subdirectories.  The certs may be in PEM files, or passwordless PKCS12 files with extension `.p12`, `.pfx`, or `.pkcs12`. Such a file must either have no MAC, or a MAC computed with an empty password; files that use a non-empty password are not supported.
 
 If you need an alternative path, use the `--truststore-paths` option to specify additional files or directories where PEM or PKCS12 files are located. Paths are relative to where you launched {project_name}, so absolute paths are recommended instead. If a directory is specified, it will be recursively scanned for truststore files.
 
@@ -25,6 +25,22 @@ For example:
 <@kc.start parameters="--truststore-paths=/opt/truststore/myTrustStore.pfx,/opt/other-truststore/myOtherTrustStore.pem" />
 
 It is still possible to directly set your own `javax.net.ssl` truststore System properties, but it's recommended to use the `--truststore-paths` instead.
+
+== Reloading the system truststore
+
+By default, the system truststore is built once at startup and stays fixed for the lifetime of the server. To pick up rotated CA certificates without a restart - for example, when a certificate authority is renewed - set the `--truststore-paths-reload-period` option to a duration. Reloading is opt-in: when the option is unset, the system truststore is never reloaded automatically.
+
+When set, {project_name} periodically re-reads the files and directories referenced by `--truststore-paths`, together with the automatically discovered default CA certificates (such as the Kubernetes and OpenShift cluster CAs), and rebuilds the system truststore. The period controls how quickly a certificate rotation is detected.
+
+For example, to reload the system truststore every hour:
+
+<@kc.start parameters="--truststore-paths=/opt/truststore/myTrustStore.pem --truststore-paths-reload-period=1h" />
+
+The reload does not apply to database (JDBC) connections or to connections to a remote {jdgserver_name} server; these continue to use the trust material loaded at startup.
+
+Removing a certificate takes effect for new connections only. Existing pooled or keep-alive connections keep using the trust established when they were opened, until those connections are closed.
+
+Because a reload applies changes to the truststore without a restart, restrict write access to the files and directories referenced by `--truststore-paths` to trusted administrators.
 
 == Cluster CA certificates (Kubernetes and OpenShift)
 
