@@ -1,7 +1,7 @@
 import { type Page, expect, test } from "@playwright/test";
 import { createTestBed } from "../support/testbed.ts";
 import { goToClientScopes } from "../utils/sidebar.ts";
-import { clickSaveButton, selectItem } from "../utils/form.ts";
+import { clickSaveButton, selectItem, switchOn } from "../utils/form.ts";
 import {
   clickTableRowItem,
   clickTableToolbarItem,
@@ -71,11 +71,13 @@ async function addDisplayEntry(
     .fill(locale);
 }
 
+async function getMandatoryClaimSwitch(page: Page) {
+  return page.locator('[data-testid="vc.mandatory"]');
+}
+
 async function assertMandatoryClaimAndDisplayButtonVisible(page: Page) {
   await expect(page.getByText("Mandatory Claim")).toBeVisible();
-  await expect(
-    page.getByRole("checkbox", { name: "Mandatory Claim" }),
-  ).toBeVisible();
+  await expect(await getMandatoryClaimSwitch(page)).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Add display entry" }),
   ).toBeVisible();
@@ -114,10 +116,8 @@ test.describe("OID4VCI Protocol Mapper Configuration", () => {
     await setupMapperConfiguration(page, scopeName);
     await fillBasicMapperFields(page, mapperName, "testClaim", "testValue");
 
-    await page.getByText("Mandatory Claim").click();
-    const mandatoryToggle = page.getByRole("checkbox", {
-      name: "Mandatory Claim",
-    });
+    await switchOn(page, '[data-testid="vc.mandatory"]');
+    const mandatoryToggle = await getMandatoryClaimSwitch(page);
     await expect(mandatoryToggle).toBeChecked();
 
     await addDisplayEntry(page, 0, "Test Claim Name", "en");
@@ -129,9 +129,7 @@ test.describe("OID4VCI Protocol Mapper Configuration", () => {
     await goToMappersTab(page);
     await clickTableRowItem(page, mapperName);
 
-    await expect(
-      page.getByRole("checkbox", { name: "Mandatory Claim" }),
-    ).toBeChecked();
+    await expect(await getMandatoryClaimSwitch(page)).toBeChecked();
     await expect(
       page.locator('[data-testid="config.vc🍺display.0.name"]'),
     ).toHaveValue("Test Claim Name");

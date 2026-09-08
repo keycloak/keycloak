@@ -368,6 +368,22 @@ class AdminClient {
     );
   }
 
+  async isThemeLocalizationAvailable(
+    realm: string = this.#client.realmName,
+  ): Promise<boolean> {
+    await this.#login();
+    const serverInfo = await this.#client.serverInfo.find({ realm });
+    const adminV3Enabled =
+      serverInfo.features?.some(
+        (feature) => feature.enabled && feature.name === "ADMIN_V3",
+      ) ?? false;
+    const v3Theme = serverInfo.themes?.admin.find(
+      (theme) => theme.name === "keycloak.v3",
+    );
+
+    return adminV3Enabled && (v3Theme?.locales?.includes("de") ?? false);
+  }
+
   async deleteIdentityProvider(idpAlias: string) {
     await this.#login();
     await this.#client.identityProviders.del({
