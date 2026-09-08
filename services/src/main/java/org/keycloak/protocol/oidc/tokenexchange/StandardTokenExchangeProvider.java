@@ -47,6 +47,7 @@ import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -152,7 +153,19 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         }
         event.detail(Details.SUBJECT_TOKEN_CLIENT_ID, token.getIssuedFor());
 
+        validateSubjectToken(token);
+
         return authResult;
+    }
+
+
+    protected void validateSubjectToken(AccessToken subjectToken) {
+        if (subjectToken.getOtherClaims().containsKey(IDToken.MAY_ACT) || subjectToken.getOtherClaims().containsKey(IDToken.ACT)) {
+            event.detail(Details.REASON, "subject_token with a 'may_act' or 'act' claim is not allowed for standard token exchange");
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    "Subject token with a delegation claim is not allowed for standard token exchange", Response.Status.BAD_REQUEST);
+        }
     }
 
     protected void validateSenderConstrainedToken(AccessToken token) {
