@@ -275,7 +275,7 @@ export const EmitEventsTab = ({
   };
 
   return (
-    <Card className="pf-v5-u-mt-md">
+    <Card className="pf-v6-u-mt-md">
       <CardHeader>
         <CardTitle>{t("ssfEmitTitle")}</CardTitle>
       </CardHeader>
@@ -340,7 +340,7 @@ export const EmitEventsTab = ({
                           <Label
                             color="blue"
                             isCompact
-                            className="pf-v5-u-ml-sm"
+                            className="pf-v6-u-ml-sm"
                           >
                             {t("ssfNativelyEmittedBadge")}
                           </Label>
@@ -461,7 +461,7 @@ export const EmitEventsTab = ({
             {emitPayloadParseError && (
               <Content
                 component="p"
-                className="pf-v5-u-mt-sm pf-v5-u-color-status-danger--100"
+                className="pf-v6-u-mt-sm pf-v6-u-color-status-danger--100"
                 data-testid="ssfEmitPayloadParseError"
               >
                 {emitPayloadParseError}
@@ -483,16 +483,16 @@ export const EmitEventsTab = ({
             <Alert
               variant="danger"
               isInline
-              className="pf-v5-u-mt-md"
+              className="pf-v6-u-mt-md"
               data-testid="ssfEmitError"
               title={emitError}
             />
           )}
           {emitResult && (
-            <Content className="pf-v5-u-mt-md" data-testid="ssfEmitResult">
+            <Content className="pf-v6-u-mt-md" data-testid="ssfEmitResult">
               <Content
                 component="p"
-                className="pf-v5-u-color-status-success--100"
+                className="pf-v6-u-color-status-success--100"
               >
                 {t("ssfEmitResult", {
                   status: emitResult.status,

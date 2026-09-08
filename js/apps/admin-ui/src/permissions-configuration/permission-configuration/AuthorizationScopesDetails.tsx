@@ -34,16 +34,16 @@ export const AuthorizationScopesDetails = ({
             <Content>
               <Content
                 component="p"
-                className="pf-v5-u-font-size-md pf-v5-u-font-weight-bold"
+                className="pf-v6-u-font-size-md pf-v6-u-font-weight-bold"
               >
                 {t("authorizationScopeDetailsTitle")}
               </Content>
-              <Content component="p" className="pf-v5-u-font-size-sm">
+              <Content component="p" className="pf-v6-u-font-size-sm">
                 {t("authorizationScopeDetailsSubtitle")}
               </Content>
               <Content
                 component={ContentVariants.dl}
-                className="pf-v5-u-font-size-sm"
+                className="pf-v6-u-font-size-sm"
               >
                 <Content component={ContentVariants.dt}>
                   {t("authorizationScopeDetailsName")}

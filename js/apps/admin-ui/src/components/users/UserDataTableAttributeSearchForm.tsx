@@ -255,7 +255,7 @@ export function UserDataTableAttributeSearchForm({
       </div>
       {createAttributeSearchChips()}
 
-      <div className="pf-v5-u-pt-lg">
+      <div className="pf-v6-u-pt-lg">
         <Checkbox
           id="exact"
           data-testid="exact"

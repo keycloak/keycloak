@@ -67,7 +67,7 @@ export const AuthorizationExport = () => {
       <FormAccess
         isHorizontal
         role="manage-authorization"
-        className="pf-v5-u-mt-lg"
+        className="pf-v6-u-mt-lg"
       >
         <CodeEditor
           data-testid="authorization-export-code-editor"

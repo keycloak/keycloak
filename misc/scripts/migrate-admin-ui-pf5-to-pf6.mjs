@@ -293,6 +293,19 @@ async function main() {
   }
 
   if (!options.skipClassUpdater) {
+    const classUpdaterTargets = [stagedAppDirRelative];
+    if (await pathExists(path.join(stagedAppDir, "src"))) {
+      classUpdaterTargets.length = 0;
+      classUpdaterTargets.push(path.join(stagedAppDirRelative, "src"));
+      if (await pathExists(stagedTestDir)) {
+        classUpdaterTargets.push(path.join(stagedAppDirRelative, "test"));
+      }
+      const stagedMavenResourcesDir = path.join(stagedAppDir, "maven-resources");
+      if (await pathExists(stagedMavenResourcesDir)) {
+        classUpdaterTargets.push(path.join(stagedAppDirRelative, "maven-resources"));
+      }
+    }
+
     steps.push(
       await runCommand(
         "npx",
@@ -301,7 +314,7 @@ async function main() {
           "--v6",
           "--extensions",
           "css,scss,less,html,js,jsx,ts,tsx,md,ftl,properties",
-          stagedAppDirRelative,
+          ...classUpdaterTargets,
           "--fix",
         ],
         tempRoot,

@@ -319,7 +319,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
           <Button
             data-testid="authorization-eval"
             id="authorization-eval"
-            className="pf-v5-u-mr-md"
+            className="pf-v6-u-mr-md"
             isDisabled={!isValid}
             onClick={() => evaluate()}
           >
@@ -328,7 +328,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
           <Button
             data-testid="authorization-revert"
             id="authorization-revert"
-            className="pf-v5-u-mr-md"
+            className="pf-v6-u-mr-md"
             variant="link"
             onClick={() => reset()}
           >

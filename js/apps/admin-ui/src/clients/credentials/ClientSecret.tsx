@@ -97,7 +97,7 @@ const ExpireDateFormatter = ({ time }: { time: number }) => {
         })
       : undefined;
 
-  return <div className="pf-v5-u-my-md">{unixTimeToString(time)}</div>;
+  return <div className="pf-v6-u-my-md">{unixTimeToString(time)}</div>;
 };
 
 export const ClientSecret = ({
@@ -142,7 +142,7 @@ export const ClientSecret = ({
       <FormGroup
         label={t("clientSecret")}
         fieldId="kc-client-secret"
-        className="pf-v5-u-my-md"
+        className="pf-v6-u-my-md"
         labelHelp={
           <HelpItem
             helpText={t("oidcClientSecretHelp")}

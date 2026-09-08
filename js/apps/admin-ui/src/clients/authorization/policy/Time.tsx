@@ -170,7 +170,7 @@ export const Time = () => {
               name="repeat"
               onChange={() => setRepeat(false)}
               label={t("notRepeat")}
-              className="pf-v5-u-mb-md"
+              className="pf-v6-u-mb-md"
             />
           </FlexItem>
           <FlexItem>
@@ -181,7 +181,7 @@ export const Time = () => {
               name="repeat"
               onChange={() => setRepeat(true)}
               label={t("repeat")}
-              className="pf-v5-u-mb-md"
+              className="pf-v6-u-mb-md"
             />
           </FlexItem>
         </Flex>

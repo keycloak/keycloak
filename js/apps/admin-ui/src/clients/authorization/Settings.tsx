@@ -135,7 +135,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
                     name="policyEnforcementMode"
                     onChange={() => field.onChange(mode)}
                     label={t(`policyEnforcementModes.${mode}`)}
-                    className="pf-v5-u-mb-md"
+                    className="pf-v6-u-mb-md"
                   />
                 ))}
               </>

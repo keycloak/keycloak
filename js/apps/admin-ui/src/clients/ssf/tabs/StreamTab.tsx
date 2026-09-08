@@ -335,7 +335,7 @@ export const StreamTab = ({
   return (
     <>
       <DeleteStreamConfirm />
-      <Card className="pf-v5-u-mt-md">
+      <Card className="pf-v6-u-mt-md">
         {clientStream && (
           <>
             <CardHeader>
@@ -351,7 +351,7 @@ export const StreamTab = ({
         )}
         <CardBody>
           {clientStream && (
-            <ActionGroup className="pf-v5-u-pb-md">
+            <ActionGroup className="pf-v6-u-pb-md">
               <Button
                 icon={<SyncAltIcon />}
                 variant="link"

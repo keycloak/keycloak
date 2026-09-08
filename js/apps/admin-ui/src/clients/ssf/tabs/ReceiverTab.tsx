@@ -218,7 +218,7 @@ export const ReceiverTab = ({
   };
 
   return (
-    <Card className="pf-v5-u-mt-md">
+    <Card className="pf-v6-u-mt-md">
       <CardHeader>
         <CardTitle>{t("ssfReceiver")}</CardTitle>
       </CardHeader>
@@ -246,7 +246,7 @@ export const ReceiverTab = ({
                       rowGap: "1.5rem",
                     }}
                   >
-                    <Content component="p" className="pf-v5-u-pb-lg">
+                    <Content component="p" className="pf-v6-u-pb-lg">
                       {t("ssfSectionGeneralHelp")}
                     </Content>
                     <FormGroup
@@ -521,7 +521,7 @@ export const ReceiverTab = ({
                       rowGap: "1.5rem",
                     }}
                   >
-                    <Content component="p" className="pf-v5-u-pb-lg">
+                    <Content component="p" className="pf-v6-u-pb-lg">
                       {t("ssfSectionAuthenticationHelp")}
                     </Content>
                     <DefaultSwitchControl
@@ -613,7 +613,7 @@ export const ReceiverTab = ({
                       rowGap: "1.5rem",
                     }}
                   >
-                    <Content component="p" className="pf-v5-u-pb-lg">
+                    <Content component="p" className="pf-v6-u-pb-lg">
                       {t("ssfSectionDeliveryHelp")}
                     </Content>
                     <FormGroup
@@ -722,7 +722,7 @@ export const ReceiverTab = ({
                       rowGap: "1.5rem",
                     }}
                   >
-                    <Content component="p" className="pf-v5-u-pb-lg">
+                    <Content component="p" className="pf-v6-u-pb-lg">
                       {t("ssfSectionEventsHelp")}
                     </Content>
                     <FormGroup
@@ -790,7 +790,7 @@ export const ReceiverTab = ({
                                 <Label
                                   color="blue"
                                   isCompact
-                                  className="pf-v5-u-ml-sm"
+                                  className="pf-v6-u-ml-sm"
                                 >
                                   {t("ssfNativelyEmittedBadge")}
                                 </Label>
