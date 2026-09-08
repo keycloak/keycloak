@@ -10,6 +10,10 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import { Header } from "../../PageHeader";
+import {
+  getAdminPreviewBackgroundColor,
+  toAdminPreviewCssVars,
+} from "./previewCssVars";
 
 type PreviewWindowProps = {
   cssVars: Record<string, string>;
@@ -19,16 +23,14 @@ export const PreviewWindow = ({ cssVars }: PreviewWindowProps) => (
   <>
     <style>{`
       .preview {
-        ${Object.entries(cssVars)
-          .map(([key, value]) => `--pf-v5-global--${key}: ${value};`)
-          .join("\n")}
+        ${toAdminPreviewCssVars(cssVars)}
       }
     `}</style>
     <Page className="preview" masthead={<Header />}>
       <PageSection
         hasBodyWrapper={false}
         style={{
-          backgroundColor: cssVars["BackgroundColor--light-100"],
+          backgroundColor: getAdminPreviewBackgroundColor(cssVars),
         }}
       >
         <Tabs activeKey={1} className="pf-v6-u-p-lg">
