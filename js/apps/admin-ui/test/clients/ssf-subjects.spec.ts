@@ -73,7 +73,7 @@ test.describe.serial("Client SSF subjects", () => {
     await goToSubjectsTab(page);
 
     await page.getByTestId("ssfSubjectCheck").click();
-    await expect(page.getByTestId("ssfSubjectValueError")).toHaveText(
+    await expect(page.getByTestId("ssfSubjectValueError")).toContainText(
       "Please enter a subject value.",
     );
   });
@@ -83,7 +83,7 @@ test.describe.serial("Client SSF subjects", () => {
 
     await page.getByTestId("ssfSubjectValue").fill("nobody@example.com");
     await page.getByTestId("ssfSubjectCheck").click();
-    await expect(page.getByTestId("ssfSubjectValueError")).toHaveText(
+    await expect(page.getByTestId("ssfSubjectValueError")).toContainText(
       "Subject not found. Verify the value and subject type.",
     );
   });

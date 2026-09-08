@@ -24,12 +24,25 @@ const DropdownPanel: React.FC<DropdownPanelProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setSearchDropdownOpen(false);
+      const target = event.target as HTMLElement | null;
+      if (!target) {
+        return;
       }
+
+      if (dropdownRef.current?.contains(target)) {
+        return;
+      }
+
+      // Ignore clicks on portaled menus (Select, Dropdown, etc.)
+      if (
+        target.closest(
+          '[role="listbox"], [role="menu"], .pf-v6-c-menu, .pf-v5-c-menu',
+        )
+      ) {
+        return;
+      }
+
+      setSearchDropdownOpen(false);
     };
 
     document.addEventListener("mousedown", handleClickOutside);

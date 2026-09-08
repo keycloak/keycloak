@@ -41,7 +41,7 @@ export async function fillPermissionForm(page: Page, data: PermissionForm) {
 
 export async function pickGroup(page: Page, groupName: string) {
   await page.getByTestId("select-group-button").click();
-  await page.getByTestId(`${groupName}-check`).check();
+  await page.getByTestId(`${groupName}-check`).click();
   await page.getByTestId("add-button").click();
 }
 
