@@ -271,7 +271,8 @@ public class RepresentationToModel {
     }
 
 
-    private static void convertDeprecatedCredentialsFormat(UserRepresentation user) {
+    // Package-private rather than private so RepresentationToModelTest can exercise this directly.
+    static void convertDeprecatedCredentialsFormat(UserRepresentation user) {
         if (user.getCredentials() != null) {
             for (CredentialRepresentation cred : user.getCredentials()) {
                 try {
@@ -279,6 +280,11 @@ public class RepresentationToModel {
                         logger.warnf("Using deprecated 'credentials' format in JSON representation for user '%s'. It will be removed in future versions", user.getUsername());
 
                         if (PasswordCredentialModel.TYPE.equals(cred.getType()) || PasswordCredentialModel.PASSWORD_HISTORY.equals(cred.getType())) {
+                            if (cred.getHashIterations() == null) {
+                                throw new ModelValidationException(
+                                        "Cannot convert deprecated credentials format for user '%s': missing required field 'hashIterations' for credential type '%s'."
+                                                .formatted(user.getUsername(), cred.getType()));
+                            }
                             PasswordCredentialData credentialData = new PasswordCredentialData(cred.getHashIterations(), cred.getAlgorithm());
                             cred.setCredentialData(JsonSerialization.writeValueAsString(credentialData));
                             // Created this manually to avoid conversion from Base64 and back

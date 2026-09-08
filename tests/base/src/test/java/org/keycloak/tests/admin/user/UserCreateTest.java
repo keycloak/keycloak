@@ -272,6 +272,34 @@ public class UserCreateTest extends AbstractUserTest {
     }
 
     @Test
+    public void createUserWithDeprecatedCredentialsFormatMissingHashIterations() throws IOException {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user_creds_no_iterations");
+        user.setEmail("email.noiter@localhost");
+
+        PasswordCredentialModel pcm = PasswordCredentialModel.createFromValues("my-algorithm", "theSalt".getBytes(), 22, "ABC");
+        String deprecatedCredential = "{\n" +
+                "      \"type\" : \"password\",\n" +
+                "      \"hashedSaltedValue\" : \"" + pcm.getPasswordSecretData().getValue() + "\",\n" +
+                "      \"salt\" : \"" + Base64.getEncoder().encodeToString(pcm.getPasswordSecretData().getSalt()) + "\",\n" +
+                "      \"algorithm\" : \"" + pcm.getPasswordCredentialData().getAlgorithm() + "\"\n" +
+                "    }";
+
+        CredentialRepresentation deprecatedHashedPassword = JsonSerialization.readValue(deprecatedCredential, CredentialRepresentation.class);
+        Assertions.assertNull(deprecatedHashedPassword.getHashIterations());
+        deprecatedHashedPassword.setType(CredentialRepresentation.PASSWORD);
+
+        user.setCredentials(Arrays.asList(deprecatedHashedPassword));
+
+        try (Response response = managedRealm.admin().users().create(user)) {
+            assertEquals(400, response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            Assertions.assertEquals("Could not create user", error.getErrorMessage());
+            Assertions.assertNull(adminEvents.poll());
+        }
+    }
+
+    @Test
     public void createUserWithTemporaryCredentials() {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("user_temppw");

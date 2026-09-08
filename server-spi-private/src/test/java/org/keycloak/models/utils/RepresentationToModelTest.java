@@ -24,14 +24,21 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.util.JsonSerialization;
 
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public class RepresentationToModelTest {
 
@@ -54,6 +61,48 @@ public class RepresentationToModelTest {
 
         assertEquals(0, addedRoles.get());
         assertEquals("imported", existingRole.getDescription());
+    }
+
+    @Test
+    public void convertDeprecatedPasswordCredentialWithoutHashIterationsFailsValidation() throws Exception {
+        UserRepresentation user = deprecatedPasswordUser("password", null);
+
+        ModelValidationException ex = assertThrows(ModelValidationException.class,
+                () -> RepresentationToModel.convertDeprecatedCredentialsFormat(user));
+        assertTrue(ex.getMessage().contains("hashIterations"));
+    }
+
+    @Test
+    public void convertDeprecatedPasswordHistoryCredentialWithoutHashIterationsFailsValidation() throws Exception {
+        UserRepresentation user = deprecatedPasswordUser("password-history", null);
+
+        ModelValidationException ex = assertThrows(ModelValidationException.class,
+                () -> RepresentationToModel.convertDeprecatedCredentialsFormat(user));
+        assertTrue(ex.getMessage().contains("hashIterations"));
+    }
+
+    @Test
+    public void convertDeprecatedPasswordCredentialWithHashIterationsSucceeds() throws Exception {
+        UserRepresentation user = deprecatedPasswordUser("password", 27500);
+
+        RepresentationToModel.convertDeprecatedCredentialsFormat(user);
+
+        assertNull(user.getCredentials().get(0).getValue());
+        assertNotNull(user.getCredentials().get(0).getCredentialData());
+        assertNotNull(user.getCredentials().get(0).getSecretData());
+    }
+
+    private static UserRepresentation deprecatedPasswordUser(String type, Integer hashIterations) throws Exception {
+        String hashIterationsField = hashIterations == null ? "" : "\"hashIterations\":" + hashIterations + ",";
+        return JsonSerialization.readValue(
+                "{\"username\":\"test-user\",\"credentials\":[{"
+                        + "\"type\":\"" + type + "\","
+                        + "\"hashedSaltedValue\":\"aGFzaGVk\","
+                        + "\"salt\":\"c2FsdA==\","
+                        + hashIterationsField
+                        + "\"algorithm\":\"pbkdf2-sha256\""
+                        + "}]}",
+                UserRepresentation.class);
     }
 
     private static RealmModel realm(String clientId, ClientModel client) {
