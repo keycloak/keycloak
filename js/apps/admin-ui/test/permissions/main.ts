@@ -2,7 +2,7 @@ import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import type { Page } from "@playwright/test";
 import { selectItem } from "../utils/form.ts";
 import { confirmModal } from "../utils/modal.ts";
-import { clickRowKebabItem } from "../utils/table.ts";
+import { assertRowExists, clickRowKebabItem } from "../utils/table.ts";
 
 type PermissionForm = PolicyRepresentation & {
   enforcementMode?: "allResources" | "specificResources";
@@ -92,4 +92,5 @@ export { selectClient } from "../utils/form.ts";
 export async function deletePermission(page: Page, name: string) {
   await clickRowKebabItem(page, name, "Delete");
   await confirmModal(page);
+  await assertRowExists(page, name, false);
 }
