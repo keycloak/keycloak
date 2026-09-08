@@ -189,7 +189,7 @@ export const SubjectsTab = ({ client }: SubjectsTabProps) => {
   };
 
   return (
-    <Card className="pf-v5-u-mt-md">
+    <Card className="pf-v6-u-mt-md">
       <CardHeader>
         <CardTitle>{t("ssfTabSubjects")}</CardTitle>
       </CardHeader>
@@ -223,7 +223,7 @@ export const SubjectsTab = ({ client }: SubjectsTabProps) => {
               data-testid="ssfSubjectType"
               value={subjectType}
               onChange={(e) => setSubjectType(e.target.value as SubjectType)}
-              className="pf-v5-c-form-control"
+              className="pf-v6-c-form-control"
             >
               <option value="user-email">
                 {t("ssfSubjectType.userEmail")}

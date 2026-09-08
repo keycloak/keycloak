@@ -103,7 +103,7 @@ export default function DedicatedScopes() {
         subKey="dedicatedScopeExplain"
         divider={false}
       />
-      <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
         <RoutableTabs
           isBox
           mountOnEnter
