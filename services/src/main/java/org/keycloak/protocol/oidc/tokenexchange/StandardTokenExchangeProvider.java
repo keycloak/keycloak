@@ -47,6 +47,7 @@ import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -117,7 +118,18 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
     @Override
     protected Response tokenExchange() {
         AuthenticationManager.AuthResult authResult = processSubjectToken();
+        rejectDelegationSubjectToken(authResult.token());
         return exchangeClientToClient(authResult.user(), authResult.session(), authResult.token(), true);
+    }
+
+    // Reject standard token exchange when the subject_token carries a delegation credential
+    private void rejectDelegationSubjectToken(AccessToken token) {
+        if (token.getOtherClaims().containsKey(IDToken.MAY_ACT) || token.getOtherClaims().containsKey(IDToken.ACT)) {
+            event.detail(Details.REASON, "subject_token with a 'may_act' or 'act' claim requires the delegation token exchange with an actor_token");
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    "Subject token with a delegation claim is not allowed for standard token exchange", Response.Status.BAD_REQUEST);
+        }
     }
 
     protected AuthenticationManager.AuthResult processSubjectToken() {
