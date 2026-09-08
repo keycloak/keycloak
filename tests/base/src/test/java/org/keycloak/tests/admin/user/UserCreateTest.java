@@ -271,6 +271,10 @@ public class UserCreateTest extends AbstractUserTest {
         assertEquals(CredentialRepresentation.PASSWORD, credentialHashed.getType());
     }
 
+    /**
+     * Same payload as {@link #createUserWithDeprecatedCredentialsFormat()}, which is accepted, except that
+     * {@code hashIterations} is omitted - so the rejection can only be caused by the missing field.
+     */
     @Test
     public void createUserWithDeprecatedCredentialsFormatMissingHashIterations() throws IOException {
         UserRepresentation user = new UserRepresentation();
@@ -292,11 +296,16 @@ public class UserCreateTest extends AbstractUserTest {
         user.setCredentials(Arrays.asList(deprecatedHashedPassword));
 
         try (Response response = managedRealm.admin().users().create(user)) {
+            // A ModelValidationException is reported as 400 with the generic message that
+            // UsersResource uses for every ModelException; the specific reason (the missing
+            // 'hashIterations' field) is logged server-side.
             assertEquals(400, response.getStatus());
             ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
             Assertions.assertEquals("Could not create user", error.getErrorMessage());
             Assertions.assertNull(adminEvents.poll());
         }
+
+        assertEquals(0, managedRealm.admin().users().search("user_creds_no_iterations", null, null, true).size());
     }
 
     @Test

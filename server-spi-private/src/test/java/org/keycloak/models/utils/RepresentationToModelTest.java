@@ -38,7 +38,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 
 public class RepresentationToModelTest {
 
@@ -69,7 +68,8 @@ public class RepresentationToModelTest {
 
         ModelValidationException ex = assertThrows(ModelValidationException.class,
                 () -> RepresentationToModel.convertDeprecatedCredentialsFormat(user));
-        assertTrue(ex.getMessage().contains("hashIterations"));
+        assertEquals("Cannot convert deprecated credentials format for user 'test-user': "
+                + "missing required field 'hashIterations' for credential type 'password'.", ex.getMessage());
     }
 
     @Test
@@ -78,7 +78,8 @@ public class RepresentationToModelTest {
 
         ModelValidationException ex = assertThrows(ModelValidationException.class,
                 () -> RepresentationToModel.convertDeprecatedCredentialsFormat(user));
-        assertTrue(ex.getMessage().contains("hashIterations"));
+        assertEquals("Cannot convert deprecated credentials format for user 'test-user': "
+                + "missing required field 'hashIterations' for credential type 'password-history'.", ex.getMessage());
     }
 
     @Test
@@ -92,17 +93,25 @@ public class RepresentationToModelTest {
         assertNotNull(user.getCredentials().get(0).getSecretData());
     }
 
+    /**
+     * The deprecated credential fields have no setters on {@link org.keycloak.representations.idm.CredentialRepresentation},
+     * so the representation is built the way the server receives it - by deserializing JSON.
+     */
     private static UserRepresentation deprecatedPasswordUser(String type, Integer hashIterations) throws Exception {
-        String hashIterationsField = hashIterations == null ? "" : "\"hashIterations\":" + hashIterations + ",";
-        return JsonSerialization.readValue(
-                "{\"username\":\"test-user\",\"credentials\":[{"
-                        + "\"type\":\"" + type + "\","
-                        + "\"hashedSaltedValue\":\"aGFzaGVk\","
-                        + "\"salt\":\"c2FsdA==\","
-                        + hashIterationsField
-                        + "\"algorithm\":\"pbkdf2-sha256\""
-                        + "}]}",
-                UserRepresentation.class);
+        Map<String, Object> credential = new HashMap<>();
+        credential.put("type", type);
+        credential.put("hashedSaltedValue", "aGFzaGVk");
+        credential.put("salt", "c2FsdA==");
+        credential.put("algorithm", "pbkdf2-sha256");
+        if (hashIterations != null) {
+            credential.put("hashIterations", hashIterations);
+        }
+
+        Map<String, Object> user = new HashMap<>();
+        user.put("username", "test-user");
+        user.put("credentials", Collections.singletonList(credential));
+
+        return JsonSerialization.readValue(JsonSerialization.writeValueAsString(user), UserRepresentation.class);
     }
 
     private static RealmModel realm(String clientId, ClientModel client) {
