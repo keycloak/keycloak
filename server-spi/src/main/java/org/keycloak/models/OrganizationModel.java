@@ -151,4 +151,8 @@ public interface OrganizationModel extends RoleContainerModel {
     boolean isManaged(UserModel user);
 
     boolean isMember(UserModel user);
+
+    default boolean isDefaultRole(RoleModel role) {
+        return getDefaultRole().equals(role);
+    }
 }

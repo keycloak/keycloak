@@ -28,12 +28,12 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -57,7 +57,6 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
@@ -434,17 +433,11 @@ public class RoleMapperResource {
             throw new BadRequestException("Group does not belong to an organization");
         }
 
-        RoleModel defaultOrgRole = organization.getDefaultRole();
-
         for (RoleRepresentation roleRep : roles) {
             RoleModel roleModel = realm.getRoleById(roleRep.getId());
-            if (roleModel == null) {
-                throw new NotFoundException("Role not found");
-            }
-            
-            // Prevent assignment of default organization role
-            if (defaultOrgRole != null && defaultOrgRole.getId().equals(roleModel.getId())) {
-                throw new BadRequestException("The default organization role cannot be assigned to groups");
+
+            if (roleModel == null || !roleModel.getContainer().equals(organization)) {
+                throw new BadRequestException("Role not found");
             }
             
             roleMapper.grantRole(roleModel);
@@ -470,12 +463,17 @@ public class RoleMapperResource {
     public void deleteOrganizationRoleMappings(@Parameter(description = "Roles to remove") List<RoleRepresentation> roles) {
         managePermission.require();
 
-        logger.debugv("** deleteOrganizationRoleMappings: {0}", roles);
+        if (!(roleMapper instanceof GroupModel)) {
+            throw new BadRequestException("Organization role mappings can only be assigned to groups");
+        }
+
+        GroupModel group = (GroupModel) roleMapper;
+        OrganizationModel organization = group.getOrganization();
 
         for (RoleRepresentation roleRep : roles) {
             RoleModel roleModel = realm.getRoleById(roleRep.getId());
-            if (roleModel == null) {
-                throw new NotFoundException("Role not found");
+            if (roleModel == null || !roleModel.getContainer().equals(organization)) {
+                throw new BadRequestException("Role not found");
             }
             roleMapper.deleteRoleMapping(roleModel);
             adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri(), roleModel.getId()).success();

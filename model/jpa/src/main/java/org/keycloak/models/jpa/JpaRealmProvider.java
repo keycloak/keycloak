@@ -575,16 +575,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public boolean removeRole(RoleModel role) {
-        RealmModel realm;
-        if (role.getContainer() instanceof RealmModel) {
-            realm = (RealmModel) role.getContainer();
-        } else if (role.getContainer() instanceof ClientModel) {
-            realm = ((ClientModel)role.getContainer()).getRealm();
-        } else if (role.getContainer() instanceof OrganizationModel) {
-            realm = ((OrganizationModel) role.getContainer()).getRealm();
-        } else {
-            throw new IllegalStateException("RoleModel's container is not an instance of RealmModel, ClientModel or OrganizationModel");
-        }
+        RealmModel realm = role.getContainer().getRealm();
+
         if (role.isType(RoleModel.Type.ORGANIZATION) && role.getContainer() instanceof OrganizationModel organization) {
             RoleModel defaultRole = organization.getDefaultRole();
             if (defaultRole != null && defaultRole.getId().equals(role.getId())) {

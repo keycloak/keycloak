@@ -22,7 +22,6 @@ import java.io.Serializable;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
