@@ -270,6 +270,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             Assertions.assertNull(response.getAccessToken());
             Assertions.assertEquals(response.getError(), "invalid_grant");
             Assertions.assertEquals(response.getErrorDescription(), "Invalid user credentials");
+            WaitUtils.waitForBruteForceExecutors(testingClient);
             events.clear();
         }
         {
@@ -278,6 +279,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             Assertions.assertNull(response.getAccessToken());
             Assertions.assertEquals(response.getError(), "invalid_grant");
             Assertions.assertEquals(response.getErrorDescription(), "Invalid user credentials");
+            WaitUtils.waitForBruteForceExecutors(testingClient);
             events.clear();
         }
         {
@@ -315,6 +317,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             Assertions.assertNull(response.getAccessToken());
             Assertions.assertEquals(response.getError(), "invalid_grant");
             Assertions.assertEquals(response.getErrorDescription(), "Invalid user credentials");
+            WaitUtils.waitForBruteForceExecutors(testingClient);
             events.clear();
         }
         {
@@ -322,6 +325,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             Assertions.assertNull(response.getAccessToken());
             Assertions.assertEquals(response.getError(), "invalid_grant");
             Assertions.assertEquals(response.getErrorDescription(), "Invalid user credentials");
+            WaitUtils.waitForBruteForceExecutors(testingClient);
             events.clear();
         }
         {
@@ -363,6 +367,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             Assertions.assertNull(response.getAccessToken());
             Assertions.assertEquals(response.getError(), "invalid_grant");
             Assertions.assertEquals(response.getErrorDescription(), "Invalid user credentials");
+            WaitUtils.waitForBruteForceExecutors(testingClient);
             events.clear();
         }
         {
@@ -370,6 +375,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             Assertions.assertNull(response.getAccessToken());
             Assertions.assertEquals(response.getError(), "invalid_grant");
             Assertions.assertEquals(response.getErrorDescription(), "Invalid user credentials");
+            WaitUtils.waitForBruteForceExecutors(testingClient);
             events.clear();
         }
         {
@@ -413,6 +419,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
                 Assertions.assertNull(response.getAccessToken());
                 Assertions.assertEquals("invalid_grant", response.getError());
                 Assertions.assertEquals("Invalid user credentials", response.getErrorDescription());
+                WaitUtils.waitForBruteForceExecutors(testingClient);
                 events.clear();
             }
             {
@@ -536,8 +543,6 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             managedRealm.admin().update(realm);
             loginInvalidPassword();
 
-            //Wait for brute force executor to process the login and then wait for delta time
-            WaitUtils.waitForBruteForceExecutors(testingClient);
             timeOffSet.set(5);
 
             loginInvalidPassword();
@@ -604,8 +609,6 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         RealmRepresentation realm = managedRealm.admin().toRepresentation();
         loginInvalidPassword();
 
-        //Wait for brute force executor to process the login and then wait for delta time
-        WaitUtils.waitForBruteForceExecutors(testingClient);
         timeOffSet.set(realm.getMaxDeltaTimeSeconds());
 
         String realmId = realm.getId();
@@ -1156,7 +1159,9 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         String sessionId = EventAssertion.expectLoginSuccess(events.poll()).getEvent().getSessionId();
 
         getTestToken("wrongpass", totpSecret);
+        WaitUtils.waitForBruteForceExecutors(testingClient);
         getTestToken("wrongpass", totpSecret);
+        WaitUtils.waitForBruteForceExecutors(testingClient);
 
         AccessTokenResponse shouldBeLocked = getTestToken(getPassword("test-user@localhost"), totpSecret);
         Assertions.assertNull(shouldBeLocked.getAccessToken());
@@ -1387,6 +1392,8 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
+        WaitUtils.waitForBruteForceExecutors(testingClient);
+
         if (clearEventsQueue) {
             events.clear();
         }
@@ -1442,6 +1449,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         Assertions.assertNull(response.getAccessToken());
         Assertions.assertEquals(response.getError(), "invalid_grant");
         Assertions.assertEquals(response.getErrorDescription(), "Invalid user credentials");
+        WaitUtils.waitForBruteForceExecutors(testingClient);
         events.clear();
     }
 
