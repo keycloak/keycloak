@@ -48,6 +48,7 @@ import org.keycloak.models.MembershipMetadata;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -692,13 +693,13 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider) {
+    public boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                       boolean autoMembership, MembershipType membershipType) {
         throwExceptionIfObjectIsNull(organization, "Organization");
         throwExceptionIfObjectIsNull(identityProvider, "Identity provider");
 
         OrganizationEntity organizationEntity = getEntity(organization.getId());
 
-        // check the identity provider and the organization belongs to the same realm
         if (!checkOrgIdpAndRealm(organizationEntity, identityProvider)) {
             return false;
         }
@@ -709,15 +710,53 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             return false;
         }
 
+        validateAssociationConfig(identityProvider, autoMembership, membershipType, null);
+
         OrganizationIdentityProviderEntity link = new OrganizationIdentityProviderEntity();
         link.setOrganization(organizationEntity);
         link.setIdentityProviderId(identityProvider.getInternalId());
-        link.setAutoMembership(true);
-        link.setMembershipType("UNMANAGED");
+        link.setAutoMembership(autoMembership);
+        link.setMembershipType(membershipType.name());
         em.persist(link);
         organizationEntity.getIdentityProviderLinks().add(link);
 
         return true;
+    }
+
+    @Override
+    public OrganizationIdentityProviderLinkModel getIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        throwExceptionIfObjectIsNull(identityProvider, "Identity provider");
+
+        OrganizationEntity organizationEntity = getEntity(organization.getId());
+
+        return organizationEntity.getIdentityProviderLinks().stream()
+                .filter(oip -> oip.getIdentityProviderId().equals(identityProvider.getInternalId()))
+                .findFirst()
+                .map(link -> new OrganizationIdentityProviderLinkModel(
+                        link.getIdentityProviderId(),
+                        link.isAutoMembership(),
+                        MembershipType.valueOf(link.getMembershipType())))
+                .orElse(null);
+    }
+
+    @Override
+    public void updateIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                           boolean autoMembership, MembershipType membershipType) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        throwExceptionIfObjectIsNull(identityProvider, "Identity provider");
+
+        OrganizationEntity organizationEntity = getEntity(organization.getId());
+
+        OrganizationIdentityProviderEntity link = organizationEntity.getIdentityProviderLinks().stream()
+                .filter(oip -> oip.getIdentityProviderId().equals(identityProvider.getInternalId()))
+                .findFirst()
+                .orElseThrow(() -> new ModelException("Identity provider is not associated with the organization"));
+
+        validateAssociationConfig(identityProvider, autoMembership, membershipType, link);
+
+        link.setAutoMembership(autoMembership);
+        link.setMembershipType(membershipType.name());
     }
 
     @Override
@@ -746,6 +785,8 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         }
 
         organizationEntity.getIdentityProviderLinks().remove(link);
+        em.remove(link);
+        em.flush();
 
         // clear domain routing for this org's domains that reference the removed IdP
         organizationEntity.getDomains().stream()
@@ -757,6 +798,27 @@ public class JpaOrganizationProvider implements OrganizationProvider {
                 });
 
         return true;
+    }
+
+    private void validateAssociationConfig(IdentityProviderModel identityProvider, boolean autoMembership,
+                                           MembershipType membershipType, OrganizationIdentityProviderEntity currentLink) {
+        if (!autoMembership && MembershipType.MANAGED == membershipType) {
+            throw new ModelValidationException("Auto-membership must be enabled when membership type is MANAGED");
+        }
+
+        if (MembershipType.MANAGED == membershipType) {
+            List<OrganizationIdentityProviderEntity> managedLinks = em.createNamedQuery("getLinksByIdpAndMembershipType", OrganizationIdentityProviderEntity.class)
+                    .setParameter("idpId", identityProvider.getInternalId())
+                    .setParameter("membershipType", MembershipType.MANAGED.name())
+                    .getResultList();
+
+            for (OrganizationIdentityProviderEntity existing : managedLinks) {
+                if (currentLink != null && existing.getOrganization().getId().equals(currentLink.getOrganization().getId())) {
+                    continue;
+                }
+                throw new ModelValidationException("Another organization already has MANAGED membership type for this identity provider");
+            }
+        }
     }
 
     @Override
