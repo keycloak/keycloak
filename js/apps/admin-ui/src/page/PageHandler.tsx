@@ -280,6 +280,10 @@ export const PageHandler = ({
   );
 
   const onSubmit = async (formData: ComponentRepresentation) => {
+    if (!canManage) {
+      return;
+    }
+
     try {
       const entityId = resolvedEntityId;
       const converted = convertFormValuesToObject(formData);
@@ -431,7 +435,11 @@ export const PageHandler = ({
     <PageSection variant="light">
       <Form
         isHorizontal
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={
+          canManage
+            ? form.handleSubmit(onSubmit)
+            : (event) => event.preventDefault()
+        }
         className="keycloak__form"
       >
         <FormProvider {...form}>

@@ -29,7 +29,9 @@ public interface UiPageProviderFactory<T> extends ComponentFactory<T, UiPageProv
     }
 
     /**
-     * Route pattern for detail tabs, for example {@code /:realm/page-section/:providerId/:id/:tab?}.
+     * Route pattern for detail tabs. Must match the Admin Console page detail route
+     * ({@code /:realm/page-section/:providerId/:id/:tab?}); only the optional tab
+     * segment should be customized.
      */
     default String getDetailTabPath() {
         return "/:realm/page-section/:providerId/:id/:tab?";

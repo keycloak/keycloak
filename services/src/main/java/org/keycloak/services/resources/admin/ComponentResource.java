@@ -199,6 +199,8 @@ public class ComponentResource {
             requireManageForProviderType(model.getProviderType(), model.getProviderId());
             ComponentModel oldModel = new ComponentModel(model);
             RepresentationToModel.updateComponent(session, rep, model, false);
+            rejectInternalComponent(model.getProviderType(), model.getProviderId());
+            requireManageForProviderType(model.getProviderType(), model.getProviderId());
             ComponentModel customModel = UiExtensionComponentStorage.updateComponent(session, realm, oldModel, model);
             if (customModel != null) {
                 model = customModel;
