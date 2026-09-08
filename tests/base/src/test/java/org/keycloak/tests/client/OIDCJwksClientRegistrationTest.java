@@ -44,17 +44,14 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
-import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.oauth.JwksProvider;
+import org.keycloak.testframework.oauth.annotations.InjectJwksProvider;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
-import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
-import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.runonserver.CacheHelper;
 
@@ -70,29 +67,25 @@ import org.junit.jupiter.api.Test;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@KeycloakIntegrationTest(config = AbstractClientRegistrationTest.LegacyTestsuiteProvidersServerConfig.class)
+@KeycloakIntegrationTest
 public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTest {
+
+    @InjectJwksProvider
+    private JwksProvider jwksProvider;
 
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
-
-    @InjectRealm(ref="master", attachTo="master")
-    ManagedRealm managedMasterRealm;
 
     @InjectRunOnServer(ref = "master", realmRef = "master",
             permittedPackages = {"org.keycloak.tests", "org.keycloak.testsuite.util.runonserver"})
     RunOnServerClient runOnServerMaster;
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        super.addTestRealms(testRealms);
-    }
-
     @BeforeEach
+    @Override
     public void before() throws Exception {
         super.before();
 
-        ClientInitialAccessPresentation token = adminClient.realm(REALM_NAME).clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
+        ClientInitialAccessPresentation token = managedRealm.admin().clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
         reg.auth(Auth.token(token));
     }
 
@@ -113,10 +106,9 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
         clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.PRIVATE_KEY_JWT);
 
         // Generate keys for client
-        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys("RS256");
+        Map<String, String> generatedKeys = jwksProvider.generateKeys("RS256");
 
-        JSONWebKeySet keySet = oidcClientEndpointsResource.getJwks();
+        JSONWebKeySet keySet = jwksProvider.getJwks();
         clientRep.setJwks(keySet);
 
         OIDCClientRepresentation response = reg.oidc().create(clientRep);
@@ -138,10 +130,9 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
         clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.PRIVATE_KEY_JWT);
 
         // Generate keys for client
-        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys("RS256");
+        Map<String, String> generatedKeys = jwksProvider.generateKeys("RS256");
 
-        JSONWebKeySet keySet = oidcClientEndpointsResource.getJwks();
+        JSONWebKeySet keySet = jwksProvider.getJwks();
         clientRep.setJwks(keySet);
 
         OIDCClientRepresentation response = reg.oidc().create(clientRep);
@@ -156,7 +147,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
     public void createClientWithJWKS_customKid() throws Exception {
         OIDCClientRepresentation response = createClientWithManuallySetKid("a1");
 
-        Map<String, String> generatedKeys = testingClient.testApp().oidcClientEndpoints().getKeysAsPem();
+        Map<String, String> generatedKeys = jwksProvider.getKeysAsPem();
 
         // Tries to authenticate client with privateKey JWT
         assertAuthenticateClientSuccess(generatedKeys, response, "a1");
@@ -170,10 +161,9 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
         clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.PRIVATE_KEY_JWT);
 
         // Generate keys for client
-        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        oidcClientEndpointsResource.generateKeys("RS256");
+        jwksProvider.generateKeys("RS256");
 
-        JSONWebKeySet keySet = oidcClientEndpointsResource.getJwks();
+        JSONWebKeySet keySet = jwksProvider.getJwks();
 
         // Override kid with custom value
         keySet.getKeys()[0].setKeyId(kid);
@@ -209,7 +199,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
 
 
         // Authenticate client1
-        Map<String, String> generatedKeys = testingClient.testApp().oidcClientEndpoints().getKeysAsPem();
+        Map<String, String> generatedKeys = jwksProvider.getKeysAsPem();
         assertAuthenticateClientSuccess(generatedKeys, response, "a1");
 
         // Assert item in publicKey cache for client1
@@ -226,7 +216,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
     public void testPublicKeyCacheInvalidatedWhenUpdatingClient() throws Exception {
         OIDCClientRepresentation response = createClientWithManuallySetKid("a1");
 
-        Map<String, String> generatedKeys = testingClient.testApp().oidcClientEndpoints().getKeysAsPem();
+        Map<String, String> generatedKeys = jwksProvider.getKeysAsPem();
 
         // Tries to authenticate client with privateKey JWT
         assertAuthenticateClientSuccess(generatedKeys, response, "a1");
@@ -260,8 +250,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
         clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.PRIVATE_KEY_JWT);
 
         // Generate keys for client
-        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys("RS256");
+        Map<String, String> generatedKeys = jwksProvider.generateKeys("RS256");
 
         clientRep.setJwksUri(clientJwksUri());
 
@@ -283,8 +272,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
         clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.PRIVATE_KEY_JWT);
 
         // Generate keys for client
-        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys("RS256");
+        Map<String, String> generatedKeys = jwksProvider.generateKeys("RS256");
 
         clientRep.setJwksUri(clientJwksUri());
 
@@ -298,7 +286,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
         assertAuthenticateClientSuccess(generatedKeys, response, KEEP_GENERATED_KID);
 
         // Add new key to the jwks
-        Map<String, String> generatedKeys2 = oidcClientEndpointsResource.generateKeys("RS256");
+        Map<String, String> generatedKeys2 = jwksProvider.generateKeys("RS256");
 
         // Error should happen. KeyStorageProvider won't yet download new keys because of timeout
         assertAuthenticateClientError(generatedKeys2, response, KEEP_GENERATED_KID);
@@ -331,8 +319,8 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
     }
 
     private KeyPair getKeyPairFromGeneratedPems(Map<String, String> generatedKeys) {
-        String privateKeyPem = generatedKeys.get(TestingOIDCEndpointsApplicationResource.PRIVATE_KEY);
-        String publicKeyPem =  generatedKeys.get(TestingOIDCEndpointsApplicationResource.PUBLIC_KEY);
+        String privateKeyPem = generatedKeys.get(JwksProvider.PRIVATE_KEY);
+        String publicKeyPem =  generatedKeys.get(JwksProvider.PUBLIC_KEY);
         PrivateKey privateKey = KeycloakModelUtils.getPrivateKey(privateKeyPem);
         PublicKey publicKey = KeycloakModelUtils.getPublicKey(publicKeyPem);
         return new KeyPair(publicKey, privateKey);
@@ -385,6 +373,6 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
     }
 
     private String clientJwksUri() {
-        return getAuthServerRoot().resolve("realms/master/app/oidc-client-endpoints/get-jwks").toString();
+        return jwksProvider.getUri();
     }
 }

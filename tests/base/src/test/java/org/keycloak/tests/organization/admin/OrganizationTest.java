@@ -39,7 +39,6 @@ import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.OrganizationsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.OrganizationModel;
-import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.ErrorRepresentation;
@@ -1052,11 +1051,12 @@ public class OrganizationTest extends AbstractOrganizationTest {
     public void testResolveOrganizationByDomain() {
         OrganizationRepresentation orgA = createOrganization("org-a", "sub.example.com");
         OrganizationResource organization = realm.admin().organizations().get(orgA.getId());
+        orgA.getDomains().forEach(d -> d.setAutoRedirect(false));
+        organization.update(orgA).close();
         String brokerAliasA = orgA.getAlias() + "-identity-provider";
         OrganizationIdentityProviderResource broker = organization.identityProviders().get(brokerAliasA);
         IdentityProviderRepresentation brokerRepOrgA = broker.toRepresentation();
         brokerRepOrgA.setHideOnLogin(false);
-        brokerRepOrgA.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
         realm.admin().identityProviders().get(brokerRepOrgA.getAlias()).update(brokerRepOrgA);
 
         oauth.openLoginForm();
@@ -1066,11 +1066,12 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
         OrganizationRepresentation orgB = createOrganization("org-b", "example.com");
         organization = realm.admin().organizations().get(orgB.getId());
+        orgB.getDomains().forEach(d -> d.setAutoRedirect(false));
+        organization.update(orgB).close();
         String brokerAliasB = orgB.getAlias() + "-identity-provider";
         broker = organization.identityProviders().get(brokerAliasB);
         IdentityProviderRepresentation brokerRepOrgB = broker.toRepresentation();
         brokerRepOrgB.setHideOnLogin(false);
-        brokerRepOrgB.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
         realm.admin().identityProviders().get(brokerRepOrgB.getAlias()).update(brokerRepOrgB);
         oauth.openLoginForm();
         loginPage.fillLoginWithUsernameOnly("user@example.com");
@@ -1080,11 +1081,12 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
         OrganizationRepresentation orgC = createOrganization("org-c", "*.deep.sub.example.com");
         organization = realm.admin().organizations().get(orgC.getId());
+        orgC.getDomains().forEach(d -> d.setAutoRedirect(false));
+        organization.update(orgC).close();
         String brokerAliasC = orgC.getAlias() + "-identity-provider";
         broker = organization.identityProviders().get(brokerAliasC);
         IdentityProviderRepresentation brokerRepOrgC = broker.toRepresentation();
         brokerRepOrgC.setHideOnLogin(false);
-        brokerRepOrgC.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
         realm.admin().identityProviders().get(brokerRepOrgC.getAlias()).update(brokerRepOrgC);
         oauth.openLoginForm();
         loginPage.fillLoginWithUsernameOnly("user@deep.sub.example.com");

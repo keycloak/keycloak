@@ -25,7 +25,9 @@ import java.util.stream.Stream;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderStorageProvider.FetchMode;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -37,7 +39,10 @@ import org.keycloak.models.cache.infinispan.RealmCacheSession;
 import org.keycloak.models.cache.infinispan.UserCacheSession;
 import org.keycloak.organization.InvitationManager;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.representations.idm.MembershipType;
 
+import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyForLogin;
+import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyIdpAlias;
 import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyOrgId;
 
 public class InfinispanOrganizationProvider implements OrganizationProvider {
@@ -88,9 +93,15 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     @Override
     public boolean remove(OrganizationModel organization) {
+        // capture IdPs before deletion so we can invalidate their cache entries
+        java.util.List<IdentityProviderModel> idps = organization.getIdentityProviders().toList();
         registerOrganizationInvalidation(organization);
         registerCountInvalidation();
-        return getDelegate().remove(organization);
+        boolean removed = getDelegate().remove(organization);
+        if (removed) {
+            idps.forEach(this::registerIdentityProviderInvalidation);
+        }
+        return removed;
     }
 
     @Override
@@ -382,12 +393,27 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider) {
-        boolean added = getDelegate().addIdentityProvider(organization, identityProvider);
+    public boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                       boolean autoMembership, MembershipType membershipType) {
+        boolean added = getDelegate().addIdentityProvider(organization, identityProvider, autoMembership, membershipType);
         if (added) {
             registerOrganizationInvalidation(organization);
+            registerIdentityProviderInvalidation(identityProvider);
         }
         return added;
+    }
+
+    @Override
+    public OrganizationIdentityProviderLinkModel getIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider) {
+        return getDelegate().getIdentityProviderLink(organization, identityProvider);
+    }
+
+    @Override
+    public void updateIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                           boolean autoMembership, MembershipType membershipType) {
+        getDelegate().updateIdentityProviderLink(organization, identityProvider, autoMembership, membershipType);
+        registerOrganizationInvalidation(organization);
+        registerIdentityProviderInvalidation(identityProvider);
     }
 
     @Override
@@ -400,6 +426,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         boolean removed = getDelegate().removeIdentityProvider(organization, identityProvider);
         if (removed) {
             registerOrganizationInvalidation(organization);
+            registerIdentityProviderInvalidation(identityProvider);
         }
         return removed;
     }
@@ -462,6 +489,16 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
         if (adapter != null) {
             adapter.invalidate();
+        }
+    }
+
+    private void registerIdentityProviderInvalidation(IdentityProviderModel idp) {
+        if (realmCache != null) {
+            realmCache.registerInvalidation(idp.getInternalId());
+            realmCache.registerInvalidation(cacheKeyIdpAlias(getRealm(), idp.getAlias()));
+            for (FetchMode mode : FetchMode.values()) {
+                realmCache.registerInvalidation(cacheKeyForLogin(getRealm(), mode));
+            }
         }
     }
 

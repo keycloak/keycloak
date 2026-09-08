@@ -147,7 +147,6 @@ import org.jboss.logging.Logger;
 import static java.util.Optional.ofNullable;
 
 import static org.keycloak.models.Constants.DEFAULT_PROTOCOL;
-import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
 import static org.keycloak.protocol.saml.util.ArtifactBindingUtils.computeArtifactBindingIdentifierString;
 
 public class RepresentationToModel {
@@ -991,7 +990,7 @@ public class RepresentationToModel {
         identityProviderModel.setStoreToken(representation.isStoreToken());
         identityProviderModel.setAddReadTokenRoleOnCreate(representation.isAddReadTokenRoleOnCreate());
         updateOrganizationBroker(representation, session);
-        identityProviderModel.setOrganizationId(representation.getOrganizationId());
+        identityProviderModel.setOrganizationIds(representation.getOrganizationIds());
 
         // Merge config from the identity provider model in case the provider sets some default config
         Map<String, String> repConfig = removeEmptyString(representation.getConfig());
@@ -1885,28 +1884,35 @@ public class RepresentationToModel {
 
         IdentityProviderModel existing = Optional.ofNullable(session.identityProviders().getByAlias(representation.getAlias()))
                         .orElse(session.identityProviders().getById(representation.getInternalId()));
-        String repOrgId = representation.getOrganizationId() != null ? representation.getOrganizationId() :
-                representation.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
-        String orgId = existing != null ? existing.getOrganizationId() : repOrgId;
 
-        if (orgId != null) {
+        // backwards compat: legacy imports may carry a single org ID in config
+        String legacyOrgId = representation.getConfig() != null
+                ? representation.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE) : null;
+
+        Set<String> repOrgIds = representation.getOrganizationIds();
+        if ((repOrgIds == null || repOrgIds.isEmpty()) && legacyOrgId != null) {
+            repOrgIds = Set.of(legacyOrgId);
+        }
+
+        Set<String> orgIds = existing != null ? existing.getOrganizationIds() : repOrgIds;
+
+        if (orgIds != null && !orgIds.isEmpty()) {
             OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel org = provider.getById(orgId);
 
-            if (org == null || (repOrgId != null && provider.getById(repOrgId) == null)) {
-                throw new IllegalArgumentException("Organization associated with broker does not exist");
+            for (String id : orgIds) {
+                if (provider.getById(id) == null) {
+                    throw new IllegalArgumentException("Organization associated with broker does not exist");
+                }
             }
 
-            String domain = representation.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
-
-            if (StringUtil.isBlank(domain)) {
-                representation.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
-            } else if (!ANY_DOMAIN.equals(domain) && org.getDomains().map(OrganizationDomainModel::getName).noneMatch(domain::equals)) {
-                throw new IllegalArgumentException("Domain does not match any domain from the organization");
+            // strip old domain config entries that are no longer used
+            if (representation.getConfig() != null) {
+                representation.getConfig().remove(MigrationUtils.ORGANIZATION_DOMAIN_ATTRIBUTE);
+                representation.getConfig().remove(MigrationUtils.ORGANIZATION_EXCLUDED_DOMAIN_ATTRIBUTE);
             }
+            representation.getConfig().remove(MigrationUtils.ORGANIZATION_REDIRECT_MODE_ATTRIBUTE);
 
-            // make sure the link to an organization does not change
-            representation.setOrganizationId(orgId);
+            representation.setOrganizationIds(orgIds);
         }
     }
 
@@ -1930,7 +1936,7 @@ public class RepresentationToModel {
     }
 
     public static OrganizationDomainModel toModel(OrganizationDomainRepresentation domainRepresentation) {
-        return new OrganizationDomainModel(domainRepresentation.getName(), domainRepresentation.isVerified());
+        return new OrganizationDomainModel(domainRepresentation.getName(), domainRepresentation.isVerified(), domainRepresentation.getIdentityProviderAlias(), domainRepresentation.isAutoRedirect());
     }
 
     public static IssuedVerifiableCredentialModel toModel(IssuedVerifiableCredentialRepresentation representation, String verifiableCredentialId) {
