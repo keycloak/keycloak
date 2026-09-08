@@ -453,7 +453,9 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         }
 
         boolean bindingRequired = Boolean.parseBoolean(clientScope.getAttributes().get(VC_BINDING_REQUIRED));
-        String format = clientScope.getAttributes().getOrDefault(VC_FORMAT, CredentialScopeModel.VC_FORMAT_DEFAULT);
+String format = Objects.requireNonNullElseGet(
+        clientScope.getAttributes().get(VC_FORMAT),
+        () -> getFormatFromScope(clientScope.getName()));
 
         CredentialBuilder credentialBuilder = session.getProvider(CredentialBuilder.class, format);
         if (credentialBuilder != null) {
