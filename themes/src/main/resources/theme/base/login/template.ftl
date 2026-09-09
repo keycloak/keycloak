@@ -48,6 +48,7 @@
         }
     </script>
     <script src="${url.resourcesPath}/js/menu-button-links.js" type="module"></script>
+    <script type="module" src="${url.resourcesPath}/js/disableSubmitOnSameTab.js"></script>
     <#if scripts??>
         <#list scripts as script>
             <script src="${script}" type="text/javascript"></script>
