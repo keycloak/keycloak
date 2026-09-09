@@ -134,6 +134,7 @@ export function UserDataTable() {
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
+  const [forceLoadUsers, setForceLoadUsers] = useState(false);
 
   useFetch(
     async () => {
@@ -234,8 +235,8 @@ export function UserDataTable() {
     return <KeycloakSpinner />;
   }
 
-  //should *only* list users when no user federation is configured
-  const listUsers = !uiRealmInfo.userProfileProvidersEnabled;
+  //should *only* list users when no user federation is configured, unless explicitly requested
+  const listUsers = !uiRealmInfo.userProfileProvidersEnabled || forceLoadUsers;
 
   const clearAllFilters = () => {
     setActiveFilters({ exact: false, userAttribute: [] });
@@ -369,6 +370,17 @@ export function UserDataTable() {
                 <TextContent className="kc-search-users-text">
                   <Text>{t("searchForUserDescription")}</Text>
                 </TextContent>
+                <Button
+                  data-testid="load-all-users-btn"
+                  variant="primary"
+                  onClick={() => {
+                    setForceLoadUsers(true);
+                    refresh();
+                  }}
+                  className="pf-v5-u-mt-md"
+                >
+                  {t("loadAllUsers")}
+                </Button>
               </EmptyState>
             </>
           ) : (
