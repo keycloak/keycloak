@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.conformance.vci.haip.fapi2;
+package org.keycloak.tests.conformance.vci.nonhaip.mdoc;
 
 import java.util.stream.Stream;
 
@@ -25,29 +25,30 @@ import org.keycloak.testframework.conformance.runner.BrowserInteraction;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.testframework.conformance.runner.ConformanceResult;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.tests.conformance.vci.AbstractVciConformanceTest;
-import org.keycloak.tests.conformance.vci.haip.configs.HaipVciRealmConfig;
-import org.keycloak.tests.conformance.vci.haip.configs.HaipVciServerConfig;
+import org.keycloak.tests.conformance.vci.nonhaip.AbstractNonHaipVciConformanceTest;
+import org.keycloak.tests.conformance.vci.nonhaip.configs.MdocNonHaipVciRealmConfig;
+import org.keycloak.tests.conformance.vci.nonhaip.configs.MdocNonHaipVciServerConfig;
+import org.keycloak.tests.conformance.vci.nonhaip.issuer.IssuerHappyFlowTest;
 
-import static org.keycloak.tests.conformance.vci.haip.configs.HaipVciRealmConfig.HAIP_PLAN;
+import static org.keycloak.tests.conformance.vci.VciConformanceRealmUtil.MDOC_CREDENTIAL_FORMAT_VARIANT;
+import static org.keycloak.tests.conformance.vci.nonhaip.configs.NonHaipVciRealmConfig.NON_HAIP_PLAN;
 
 /**
- * Sends an unsigned authorization request without going through PAR: Keycloak requires pushed authorization, so
- * it rejects the request because it has no pushed request_uri to resolve.
+ * Runs the issuer happy flow with the ISO mdoc credential format, mirroring {@link IssuerHappyFlowTest} for SD-JWT VC.
  */
-@KeycloakIntegrationTest(config = HaipVciServerConfig.class)
-public class IssuerFapi2UnsignedRequestWithoutParTest extends AbstractVciConformanceTest {
+@KeycloakIntegrationTest(config = MdocNonHaipVciServerConfig.class)
+public class IssuerMdocHappyFlowTest extends AbstractNonHaipVciConformanceTest {
 
-    @InjectRealm(config = HaipVciRealmConfig.class)
+    @InjectRealm(config = MdocNonHaipVciRealmConfig.class)
     ManagedRealm realm;
 
     @Override
     protected Stream<ConformanceModuleVariant> moduleVariants() {
         return discoverModuleVariants(
-                HAIP_PLAN,
-                walletInitiated(),
-                "fapi2-security-profile-final-ensure-unsigned-authorization-request-without-using-par-fails",
-                ConformanceResult.REVIEW,
-                BrowserInteraction.errorPage("PAR request_uri not included."));
+                NON_HAIP_PLAN,
+                planVariant(MDOC_CREDENTIAL_FORMAT_VARIANT, "wallet_initiated"),
+                "oid4vci-1_0-issuer-happy-flow",
+                ConformanceResult.PASSED,
+                BrowserInteraction.LOGIN);
     }
 }

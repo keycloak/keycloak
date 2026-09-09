@@ -25,17 +25,24 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.VCFormat;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.constants.OID4VCIConstants;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.keys.KeyProvider;
 import org.keycloak.mdoc.MdocIssuerSignedDocument;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+
+import org.junit.jupiter.api.BeforeEach;
 
 import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED;
@@ -50,6 +57,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class OID4VCMdocTestBase extends OID4VCIssuerTestBase {
+
+    @BeforeEach
+    void mdocTestSetup() {
+        ensureMdocCompliantSigningConfiguration();
+    }
 
     public static class VCTestServerWithMdocEnabled implements KeycloakServerConfig {
         @Override
@@ -271,6 +283,37 @@ public abstract class OID4VCMdocTestBase extends OID4VCIssuerTestBase {
             protocolMapperRepresentation.setConfig(config);
             return protocolMapperRepresentation;
         }
+    }
+
+    /**
+     * Persistently add an ES256 signing key with a CA issued certificate, as mdoc issuance rejects
+     * the self signed certificates of generated realm keys.
+     */
+    protected void ensureMdocCompliantSigningConfiguration() {
+        final String providerName = "mdoc-signing-key-provider";
+        var components = testRealm.admin().components();
+        if (!components.query(testRealm.getId(), KeyProvider.class.getName(), providerName).isEmpty()) {
+            return;
+        }
+
+        ComponentRepresentation component = new ComponentRepresentation();
+        component.setProviderType(KeyProvider.class.getName());
+        component.setName(providerName);
+        component.setId(UUID.randomUUID().toString());
+        component.setProviderId("java-keystore");
+        component.setConfig(new MultivaluedHashMap<>(Map.of(
+                "keystore", List.of(MdocTestSigningKey.keyStorePath()),
+                "keystorePassword", List.of(MdocTestSigningKey.PASSWORD),
+                "keystoreType", List.of("PKCS12"),
+                "keyAlias", List.of(MdocTestSigningKey.KEY_ALIAS),
+                "keyPassword", List.of(MdocTestSigningKey.PASSWORD),
+                "algorithm", List.of(Algorithm.ES256),
+                "keyUse", List.of(KeyUse.SIG.name()),
+                "priority", List.of("300"),
+                "enabled", List.of("true"),
+                "active", List.of("true")
+        )));
+        components.add(component).close();
     }
 
     private static MdocIssuerSignedDocument parseCredential(String encodedIssuerSigned) {
