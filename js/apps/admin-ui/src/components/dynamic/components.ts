@@ -18,6 +18,7 @@ import { StringComponent } from "./StringComponent";
 import { TextComponent } from "./TextComponent";
 import { UrlComponent } from "./UrlComponent";
 import { UserProfileAttributeListComponent } from "./UserProfileAttributeListComponent";
+import { ClientScopeListComponent } from "./ClientScopeListComponent";
 import { IntComponent } from "./IntComponent";
 import { NumberComponent } from "./NumberComponent";
 
@@ -49,6 +50,7 @@ type ComponentType =
   | "ClientList"
   | "IdentityProviderMultiList"
   | "UserProfileAttributeList"
+  | "ClientScopeList"
   | "MultivaluedString"
   | "File"
   | "Password"
@@ -71,6 +73,7 @@ export const COMPONENTS: {
   ClientList: ClientSelectComponent,
   IdentityProviderMultiList: IdentityProviderMultiSelectComponent,
   UserProfileAttributeList: UserProfileAttributeListComponent,
+  ClientScopeList: ClientScopeListComponent,
   MultivaluedList: MultiValuedListComponent,
   MultivaluedString: MultiValuedStringComponent,
   File: FileComponent,

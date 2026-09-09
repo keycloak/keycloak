@@ -81,6 +81,8 @@ public class OIDCAttributeMapperHelper {
 
     public static final String INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN_HELP_TEXT = "includeInLightweight.tooltip";
 
+    public static final String SCOPE_CONDITION = "scope.condition";
+
     private static final Logger logger = Logger.getLogger(OIDCAttributeMapperHelper.class);
 
     /**

@@ -127,8 +127,31 @@ Parameterized Scope User Property:: Resolves a user from the parameter value (us
 +
 This mapper is applicable when the parameter type is `username` or `delegation`. Access control depends on the type:
 +
-* `username` — the mapper checks whether the authenticated user has `view-users` permission or fine-grained admin permission for the target user. If the *Allow access to user data* switch is enabled on the scope, this check is skipped. Without permission, user property claims are silently omitted from the token.
-* `delegation` — the impersonation permission is already validated during scope resolution. Since this is a stronger check than `view-users`, no additional access control is applied and user property claims are always included.
+* `username` -- the mapper checks whether the authenticated user has `view-users` permission or fine-grained admin permission for the target user. If the *Allow access to user data* switch is enabled on the scope, this check is skipped. Without permission, user property claims are silently omitted from the token.
+* `delegation` -- the impersonation permission is already validated during scope resolution. Since this is a stronger check than `view-users`, no additional access control is applied and user property claims are always included.
+
+==== Scope-level and client-level placement
+
+By default, parameterized scope mappers are placed directly on the parameterized client scope. The mapper automatically binds to the scope that contains it and resolves the parameter value from the authorization request.
+
+However, when different clients need to produce different claims from the same parameterized scope, placing mappers on the scope itself is not sufficient because all clients sharing that scope would get the same claims. To solve this, parameterized scope mappers can also be placed on a client.
+
+When adding a parameterized scope mapper to a client, a *Scope Condition* field appears. This field specifies which parameterized scope the mapper should bind to. The dropdown lists all parameterized scopes assigned to the client. The mapper executes only when the specified scope is granted in the authorization request.
+
+For example, two clients can share a `project` scope but produce different claims:
+
+* *Client A* has a client-level `Parameterized Scope Parameter` mapper with scope condition `project`, mapping the parameter to a `project_id` claim.
+* *Client B* has a client-level `Parameterized Scope Parameter` mapper with scope condition `project`, mapping the parameter to an `active_project` claim.
+
+When both clients request `scope=openid project:alpha`, Client A receives a token with `"project_id": "alpha"` and Client B receives a token with `"active_project": "alpha"`.
+
+Scope-level and client-level mappers can coexist on the same scope. When they target different claim names, both execute and produce their respective claims. When a client-level mapper targets the same claim name as a scope-level mapper on the same scope, the client-level mapper takes precedence and the scope-level mapper is suppressed for that client.
+
+This override behavior enables a common pattern: define default claim mappings on the scope, then let individual clients customize specific claims without affecting other clients.
+
+For example, consider a `project` scope with a scope-level mapper that maps the raw parameter to a `project_ref` claim. By default, all clients sharing this scope receive `"project_ref": "alpha"` when requesting `scope=openid project:alpha`. If one client needs the project owner's email instead of the raw identifier, it can add a client-level `Parameterized Scope User Property` mapper with scope condition `project` targeting the same `project_ref` claim. That client then receives `"project_ref": "owner@example.com"` while all other clients continue to receive the raw parameter value.
+
+NOTE: The *Scope Condition* field is only available when the mapper is placed on a client. It cannot be set on a mapper placed directly on a client scope.
 
 === Constraints
 

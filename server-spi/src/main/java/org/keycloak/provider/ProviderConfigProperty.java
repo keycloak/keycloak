@@ -91,6 +91,11 @@ public class ProviderConfigProperty {
      */
     public static final String CLAIM_DISPLAY_TYPE="ClaimDisplay";
 
+    /**
+     * Select from client scopes assigned to the current client.
+     */
+    public static final String CLIENT_SCOPE_LIST_TYPE="ClientScopeList";
+
     protected String name;
     protected String label;
     protected String helpText;
