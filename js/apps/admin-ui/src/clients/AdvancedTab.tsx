@@ -6,7 +6,12 @@ import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { ScrollForm } from "@keycloak/keycloak-ui-shared";
 import type { AddAlertFunction } from "@keycloak/keycloak-ui-shared";
-import { convertAttributeNameToForm, toUpperCase } from "../util";
+import {
+  convertAttributeNameToForm,
+  normalizeBooleanOverride,
+  normalizeNonNegativeIntegerOverride,
+  toUpperCase,
+} from "../util";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import type { FormFields, SaveOptions } from "./ClientDetails";
 import { AdvancedSettings } from "./advanced/AdvancedSettings";
@@ -47,6 +52,30 @@ export const parseResult = (
   }
 };
 
+// The ACR to LoA mapping is stored as a JSON string but edited as key/value pairs (see setupForm in ClientDetails)
+const toFormValue = (name: string, value?: string) => {
+  if (name === "acr.loa.map") {
+    if (!value) {
+      return [];
+    }
+    try {
+      return Object.entries(JSON.parse(value)).map(([key, value]) => ({
+        key,
+        value,
+      }));
+    } catch {
+      return [];
+    }
+  }
+  if (name === "revoke.refresh.token") {
+    return normalizeBooleanOverride(value);
+  }
+  if (name === "refresh.token.max.reuse") {
+    return normalizeNonNegativeIntegerOverride(value);
+  }
+  return value || "";
+};
+
 export type AdvancedProps = {
   save: (options?: SaveOptions) => void;
   client: ClientRepresentation;
@@ -69,7 +98,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
     for (const name of names) {
       setValue(
         convertAttributeNameToForm<FormFields>(`attributes.${name}`),
-        attributes?.[name] || "",
+        toFormValue(name, attributes?.[name]),
       );
     }
   };
@@ -191,6 +220,8 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                       "client.session.max.lifespan",
                       "client.offline.session.idle.timeout",
                       "client.offline.session.max.lifespan",
+                      "revoke.refresh.token",
+                      "refresh.token.max.reuse",
                       "dpop.bound.access.tokens",
                       "tls.client.certificate.bound.access.tokens",
                       "require.pushed.authorization.requests",

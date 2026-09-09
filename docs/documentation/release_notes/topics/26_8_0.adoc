@@ -17,6 +17,10 @@ Client Secret Rotation enables confidential clients to rotate their secrets thro
 
 In this release, Client Secret Rotation is promoted from preview to supported. For more details, see the link:{adminguide_link}#_secret_rotation[{adminguide_name}].
 
+== Refresh token revocation configurable per client
+
+The realm settings *Revoke Refresh Token* and *Refresh Token Max Reuse* can now be overridden per client in the *Advanced settings* section of the client. This allows enabling refresh token rotation only for clients that need it, or exempting specific clients when rotation is enabled for the realm. When no client override is set, the realm setting is used.
+
 = Configuring and Running
 
 == Support for encrypted PEM private keys

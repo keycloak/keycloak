@@ -103,6 +103,42 @@ export async function assertTokenLifespanClientOfflineSessionMaxVisible(
   }
 }
 
+function getRevokeRefreshTokenSelect(page: Page) {
+  return page.locator("#revokeRefreshToken");
+}
+
+function getRefreshTokenMaxReuseInput(page: Page) {
+  return page.getByTestId("refreshTokenMaxReuse");
+}
+
+export async function selectRevokeRefreshToken(page: Page, value: string) {
+  await selectItem(page, getRevokeRefreshTokenSelect(page), value);
+}
+
+export async function assertRevokeRefreshToken(page: Page, value: string) {
+  await assertSelectValue(getRevokeRefreshTokenSelect(page), value);
+}
+
+export async function assertRefreshTokenMaxReuseVisible(
+  page: Page,
+  visible: boolean,
+) {
+  const locator = getRefreshTokenMaxReuseInput(page);
+  if (visible) {
+    await expect(locator).toBeVisible();
+  } else {
+    await expect(locator).toBeHidden();
+  }
+}
+
+export async function fillRefreshTokenMaxReuse(page: Page, value: string) {
+  await getRefreshTokenMaxReuseInput(page).fill(value);
+}
+
+export async function assertRefreshTokenMaxReuse(page: Page, value: string) {
+  await expect(getRefreshTokenMaxReuseInput(page)).toHaveValue(value);
+}
+
 const oAuthMutualSwitch =
   "#attributes\\.tls🍺client🍺certificate🍺bound🍺access🍺tokens";
 const pushedAuthorizationRequestRequiredSwitch =

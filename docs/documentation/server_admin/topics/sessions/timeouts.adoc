@@ -64,7 +64,7 @@ image:images/tokens-tab.png[Tokens Tab]
 
 [[_revoke-refresh-token]]
 |Revoke Refresh Token
-|When *Enabled*, {project_name} revokes refresh tokens and issues another token that the client must use. This action applies to OIDC clients performing the refresh token flow.
+|When *Enabled*, {project_name} revokes refresh tokens and issues another token that the client must use. This action applies to OIDC clients performing the refresh token flow. This setting and the related *Refresh Token Max Reuse* can be overridden per client in the <<_client_advanced_settings_oidc,Advanced Settings>> of the client.
 
 |Access Token Lifespan
 |When {project_name} creates an OIDC access token, this value controls the lifetime of the token.
