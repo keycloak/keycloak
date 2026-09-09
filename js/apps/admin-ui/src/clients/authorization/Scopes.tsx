@@ -265,40 +265,42 @@ export const AuthorizationScopes = ({
                     <Td />
                     <Td colSpan={4}>
                       <ExpandableRowContent>
-                        {isExpanded(scope.id) && scope.isLoaded ? (
-                          <DescriptionList
-                            isHorizontal
-                            className="keycloak_resource_details"
-                          >
-                            <DetailDescriptionLink
-                              name="resources"
-                              array={scope.resources}
-                              convert={(r) => r.name!}
-                              link={(r) =>
-                                toResourceDetails({
-                                  id: clientId,
-                                  realm,
-                                  resourceId: r._id!,
-                                })
-                              }
-                            />
-                            <DetailDescriptionLink
-                              name="associatedPermissions"
-                              array={scope.permissions}
-                              convert={(p) => p.name!}
-                              link={(p) =>
-                                toPermissionDetails({
-                                  id: clientId,
-                                  realm,
-                                  permissionId: p.id!,
-                                  permissionType: p.type!,
-                                })
-                              }
-                            />
-                          </DescriptionList>
-                        ) : (
-                          <KeycloakSpinner />
-                        )}
+                        {isExpanded(scope.id) ? (
+                          scope.isLoaded ? (
+                            <DescriptionList
+                              isHorizontal
+                              className="keycloak_resource_details"
+                            >
+                              <DetailDescriptionLink
+                                name="resources"
+                                array={scope.resources}
+                                convert={(r) => r.name!}
+                                link={(r) =>
+                                  toResourceDetails({
+                                    id: clientId,
+                                    realm,
+                                    resourceId: r._id!,
+                                  })
+                                }
+                              />
+                              <DetailDescriptionLink
+                                name="associatedPermissions"
+                                array={scope.permissions}
+                                convert={(p) => p.name!}
+                                link={(p) =>
+                                  toPermissionDetails({
+                                    id: clientId,
+                                    realm,
+                                    permissionId: p.id!,
+                                    permissionType: p.type!,
+                                  })
+                                }
+                              />
+                            </DescriptionList>
+                          ) : (
+                            <KeycloakSpinner />
+                          )
+                        ) : null}
                       </ExpandableRowContent>
                     </Td>
                   </Tr>

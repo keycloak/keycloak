@@ -48,7 +48,10 @@ export const LoadingOverlay = ({
         {children}
       </div>
       {isLoading && (
-        <div className={style.overlaySkeleton} data-testid="loading-spinner">
+        <div
+          className={style.overlaySkeleton}
+          data-testid="table-loading-overlay"
+        >
           {skeleton ?? <TableLoadingSkeleton />}
         </div>
       )}
