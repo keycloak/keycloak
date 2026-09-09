@@ -34,13 +34,19 @@ export async function clickAddClientScope(page: Page) {
 }
 
 export async function clickAddScope(page: Page, option: string) {
-  const menuItem = page.getByRole("menuitem", { name: option, exact: true });
+  const addDropdown = page.getByTestId("add-dropdown");
+
+  await expect(addDropdown).toBeEnabled();
 
   // Retry: the add-scope dropdown can fail to stay open due to rendering races under CI load.
   await expect(async () => {
-    await page.getByTestId("add-dropdown").click();
+    await addDropdown.click();
+    const menuItem = page
+      .getByRole("menuitem", { name: option, exact: true })
+      .last();
+    await expect(menuItem).toBeVisible({ timeout: 2_000 });
     await menuItem.click({ timeout: 2_000 });
-  }).toPass({ timeout: 10_000 });
+  }).toPass({ timeout: 15_000 });
 }
 
 export async function assertTableCellDropdownValue(page: Page, value: string) {
