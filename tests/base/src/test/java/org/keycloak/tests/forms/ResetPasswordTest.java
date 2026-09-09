@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import jakarta.mail.internet.MimeMessage;
 
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -15,23 +17,31 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
+import org.keycloak.testframework.oauth.DefaultOAuthClientConfiguration;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmAttributesBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.realm.UserConfig;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginPasswordResetPage;
 import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
@@ -39,6 +49,7 @@ import org.keycloak.testframework.ui.page.RegisterPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.utils.MailUtils;
 import org.keycloak.testsuite.util.MailServerConfiguration;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Test;
 
@@ -61,13 +72,19 @@ public class ResetPasswordTest {
     protected static final String BROKER_APP_CLIENT_ID = "broker-app";
     protected static final String BASE_URL = "http://localhost:8080";
 
-    @InjectRealm(ref = PROVIDER_REALM_NAME, config = ProviderRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    protected static final String TEST_REALM_NAME = "test";
+    protected static final String LOGIN_TEST_USER = "login-test";
+    protected static final String LOGIN_TEST_EMAIL = "login@test.com";
+    protected static final String LOGIN_TEST_PASSWORD = "password";
+    protected static final String TEST_APP_BASE_URL = BASE_URL + "/app/auth";
+
+    @InjectRealm(ref = PROVIDER_REALM_NAME, config = ProviderRealmConfig.class)
     protected ManagedRealm providerRealm;
 
     @InjectRealm(ref = CONSUMER_REALM_NAME, config = ConsumerRealmConfig.class, lifecycle = LifeCycle.METHOD)
     protected ManagedRealm consumerRealm;
 
-    @InjectOAuthClient(realmRef = CONSUMER_REALM_NAME, config = BrokerAppClientConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectOAuthClient(realmRef = CONSUMER_REALM_NAME, config = BrokerAppClientConfig.class)
     protected OAuthClient oauth;
 
     @InjectPage
@@ -90,6 +107,24 @@ public class ResetPasswordTest {
 
     @InjectEvents(realmRef = CONSUMER_REALM_NAME)
     protected Events events;
+
+    @InjectRealm(ref = TEST_REALM_NAME, config = TestRealmConfig.class)
+    protected ManagedRealm testRealm;
+
+    @InjectUser(realmRef = TEST_REALM_NAME, config = LoginTestUserConfig.class, lifecycle = LifeCycle.METHOD)
+    protected ManagedUser loginTestUser;
+
+    @InjectOAuthClient(ref = TEST_REALM_NAME, realmRef = TEST_REALM_NAME, config = TestAppClientConfig.class)
+    protected OAuthClient testOAuth;
+
+    @InjectEvents(ref = TEST_REALM_NAME, realmRef = TEST_REALM_NAME)
+    protected Events testEvents;
+
+    @InjectPage
+    protected ErrorPage errorPage;
+
+    @InjectTimeOffSet(enableForCaches = true)
+    protected TimeOffSet timeOffSet;
 
     @Test
     public void shouldOfferAllOidcOptionOnLoginPageUserTriesToResetTheirPasswordAndGoesBack() {
@@ -175,7 +210,7 @@ public class ResetPasswordTest {
             .details(Details.EMAIL, USER_EMAIL);
 
 
-        MimeMessage message = mailServer.getReceivedMessages()[0];
+        MimeMessage message = mailServer.getLastReceivedMessage();
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 
         // Navigate back to the login page, which triggers UsernamePasswordForm to clear the user from the auth session
@@ -245,6 +280,398 @@ public class ResetPasswordTest {
                 .details(Details.USERNAME, "a".repeat(Validation.MAX_USERNAME_LENGTH));
     }
 
+    @Test
+    public void resetPasswordWithLengthPasswordPolicy() throws IOException {
+        testRealm.cleanup().add(RealmResource::logoutAll);
+        testRealm.updateWithCleanup(r -> r.passwordPolicy("length"));
+        String userId = loginTestUser.getId();
+
+        initiateResetPasswordFromResetPasswordPage(LOGIN_TEST_USER);
+
+        assertEquals(1, mailServer.getReceivedMessages().length);
+        MimeMessage message = mailServer.getLastReceivedMessage();
+        String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
+
+        EventAssertion.expectRequiredAction(testEvents.poll())
+                .type(EventType.SEND_RESET_PASSWORD)
+                .userId(userId)
+                .details(Details.USERNAME, LOGIN_TEST_USER)
+                .details(Details.EMAIL, LOGIN_TEST_EMAIL);
+
+        driver.driver().navigate().to(changePasswordUrl.trim());
+
+        updatePasswordPage.assertCurrent();
+        updatePasswordPage.changePassword("invalid", "invalid");
+
+        assertEquals("Invalid password: minimum length 8.", updatePasswordPage.getError());
+
+        EventAssertion.assertError(testEvents.poll())
+                .type(EventType.UPDATE_CREDENTIAL_ERROR)
+                .details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE)
+                .error(Errors.PASSWORD_REJECTED)
+                .userId(userId)
+                .details(Details.USERNAME, LOGIN_TEST_USER);
+        EventAssertion.assertError(testEvents.poll())
+                .type(EventType.UPDATE_PASSWORD_ERROR)
+                .details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE)
+                .error(Errors.PASSWORD_REJECTED)
+                .userId(userId)
+                .details(Details.USERNAME, LOGIN_TEST_USER);
+
+        updatePasswordPage.changePassword("resetPasswordWithPasswordPolicy", "resetPasswordWithPasswordPolicy");
+
+        EventAssertion.expectRequiredAction(testEvents.poll())
+                .type(EventType.UPDATE_PASSWORD)
+                .details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE)
+                .userId(userId)
+                .details(Details.USERNAME, LOGIN_TEST_USER);
+        EventAssertion.expectRequiredAction(testEvents.poll())
+                .type(EventType.UPDATE_CREDENTIAL)
+                .details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE)
+                .userId(userId)
+                .details(Details.USERNAME, LOGIN_TEST_USER);
+
+        assertTrue(testOAuth.parseLoginResponse().isSuccess());
+
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(testEvents.poll())
+                .userId(userId)
+                .details(Details.USERNAME, LOGIN_TEST_USER)
+                .getEvent();
+        String sessionId = loginEvent.getSessionId();
+
+        AccessTokenResponse tokenResponse = getTokenResponse();
+        testOAuth.logoutForm().idTokenHint(tokenResponse.getIdToken()).postLogoutRedirectUri(testOAuth.getRedirectUri()).open();
+
+        EventAssertion.expectLogoutSuccess(testEvents.poll()).sessionId(sessionId).userId(userId);
+
+        testOAuth.openLoginForm();
+        loginPage.fillLogin(LOGIN_TEST_USER, "resetPasswordWithPasswordPolicy");
+        loginPage.submit();
+
+        assertTrue(testOAuth.parseLoginResponse().isSuccess());
+        EventAssertion.expectLoginSuccess(testEvents.poll())
+                .userId(userId)
+                .details(Details.USERNAME, LOGIN_TEST_USER);
+    }
+
+    @Test
+    public void resetPasswordExpiredCode() throws IOException {
+        assertLinkExpiredOnLoginPage(360);
+    }
+
+    @Test
+    public void resetPasswordExpiredCodeShort() throws IOException {
+        testRealm.updateWithCleanup(r -> r.actionTokenGeneratedByUserLifespan(60));
+
+        assertLinkExpiredOnLoginPage(70);
+    }
+
+    @Test
+    public void resetPasswordExpiredCodeShortPerActionLifespan() throws IOException {
+        testRealm.updateWithCleanup(r -> r.attributes(RealmAttributesBuilder.create().resetCredentialsLifespan(60)));
+
+        assertLinkExpiredOnLoginPage(70);
+    }
+
+    @Test
+    public void resetPasswordExpiredCodeShortPerActionMultipleTimeouts() throws IOException {
+        // Make sure that one attribute setting won't affect the other
+        testRealm.updateWithCleanup(r -> r.attributes(RealmAttributesBuilder.create()
+                .resetCredentialsLifespan(60)
+                .verifyEmailLifespan(300)));
+
+        assertLinkExpiredOnLoginPage(70);
+    }
+
+    @Test
+    public void resetPasswordExpiredCodeAndAuthSession() throws IOException {
+        testRealm.updateWithCleanup(r -> r.actionTokenGeneratedByUserLifespan(60));
+
+        assertLinkExpiredOnErrorPage(70);
+    }
+
+    @Test
+    public void resetPasswordExpiredCodeAndAuthSessionPerActionLifespan() throws IOException {
+        testRealm.updateWithCleanup(r -> r.attributes(RealmAttributesBuilder.create().resetCredentialsLifespan(60)));
+
+        assertLinkExpiredOnErrorPage(70);
+    }
+
+    @Test
+    public void resetPasswordExpiredCodeAndAuthSessionPerActionMultipleTimeouts() throws IOException {
+        // Make sure that one attribute setting won't affect the other
+        testRealm.updateWithCleanup(r -> r.attributes(RealmAttributesBuilder.create()
+                .resetCredentialsLifespan(60)
+                .verifyEmailLifespan(300)));
+
+        assertLinkExpiredOnErrorPage(70);
+    }
+
+    // KEYCLOAK-5061
+    @Test
+    public void resetPasswordExpiredCodeForgotPasswordFlow() throws IOException {
+        testRealm.updateWithCleanup(r -> r.actionTokenGeneratedByUserLifespan(60));
+
+        assertLinkExpiredInForgotPasswordFlow(70);
+    }
+
+    @Test
+    public void resetPasswordExpiredCodeForgotPasswordFlowPerActionLifespan() throws IOException {
+        testRealm.updateWithCleanup(r -> r.attributes(RealmAttributesBuilder.create().resetCredentialsLifespan(60)));
+
+        assertLinkExpiredInForgotPasswordFlow(70);
+    }
+
+    @Test
+    public void resetPasswordExpiredCodeForgotPasswordFlowPerActionMultipleTimeouts() throws IOException {
+        // Make sure that one attribute setting won't affect the other
+        testRealm.updateWithCleanup(r -> r.attributes(RealmAttributesBuilder.create()
+                .resetCredentialsLifespan(60)
+                .verifyEmailLifespan(300)));
+
+        assertLinkExpiredInForgotPasswordFlow(70);
+    }
+
+    @Test
+    public void resetPasswordWithPasswordHistoryPolicy() throws IOException {
+        testRealm.cleanup().add(RealmResource::logoutAll);
+        // Block passwords that are equal to previous passwords. Default value is 3.
+        testRealm.updateWithCleanup(r -> r.passwordPolicy("passwordHistory"));
+
+        String notEqualToLastThree = "Invalid password: must not be equal to any of last 3 passwords.";
+
+        // History is compared by creation order only, so each reset just needs a later timestamp. Keep the jumps small: the legacy multi-week offsets are suspected in the teardown 401 of issue 52059.
+        timeOffSet.set(60);
+        resetPassword(LOGIN_TEST_USER, "password1");
+
+        resetPasswordInvalidPassword(LOGIN_TEST_USER, "password1", notEqualToLastThree);
+
+        timeOffSet.set(120);
+        resetPassword(LOGIN_TEST_USER, "password2");
+
+        resetPasswordInvalidPassword(LOGIN_TEST_USER, "password1", notEqualToLastThree);
+        resetPasswordInvalidPassword(LOGIN_TEST_USER, "password2", notEqualToLastThree);
+
+        timeOffSet.set(180);
+        resetPassword(LOGIN_TEST_USER, "password3");
+
+        resetPasswordInvalidPassword(LOGIN_TEST_USER, "password1", notEqualToLastThree);
+        resetPasswordInvalidPassword(LOGIN_TEST_USER, "password2", notEqualToLastThree);
+        resetPasswordInvalidPassword(LOGIN_TEST_USER, "password3", notEqualToLastThree);
+
+        timeOffSet.set(240);
+        resetPassword(LOGIN_TEST_USER, LOGIN_TEST_PASSWORD);
+    }
+
+    // Requests a reset-password email and returns the link it contains.
+    private String requestResetPasswordEmail() throws IOException {
+        initiateResetPasswordFromResetPasswordPage(LOGIN_TEST_USER);
+
+        EventAssertion.expectRequiredAction(testEvents.poll())
+                .type(EventType.SEND_RESET_PASSWORD)
+                .userId(loginTestUser.getId())
+                .details(Details.USERNAME, LOGIN_TEST_USER)
+                .details(Details.EMAIL, LOGIN_TEST_EMAIL);
+
+        assertEquals(1, mailServer.getReceivedMessages().length);
+        return MailUtils.getPasswordResetEmailLink(mailServer.getLastReceivedMessage());
+    }
+
+    // The auth session is still around, so the expired link sends the user back to the login page.
+    private void assertLinkExpiredOnLoginPage(int offsetSeconds) throws IOException {
+        String changePasswordUrl = requestResetPasswordEmail();
+
+        timeOffSet.set(offsetSeconds);
+
+        driver.driver().navigate().to(changePasswordUrl.trim());
+
+        loginPage.assertCurrent();
+        assertEquals("Action expired. Please start again.", loginPage.getErrorMessage().orElse(null));
+
+        assertExpiredActionTokenEvent();
+    }
+
+    // Without the auth session (cookies cleared) the expired link lands on the error page instead.
+    private void assertLinkExpiredOnErrorPage(int offsetSeconds) throws IOException {
+        String changePasswordUrl = requestResetPasswordEmail().replace("&amp;", "&");
+
+        // Necessary to delete the KC_RESTART cookie, which is restricted to the /realms/test path
+        driver.driver().manage().deleteAllCookies();
+
+        timeOffSet.set(offsetSeconds);
+
+        driver.driver().navigate().to(changePasswordUrl.trim());
+
+        errorPage.assertCurrent();
+        assertEquals("Action expired.", errorPage.getError());
+        assertEquals(TEST_APP_BASE_URL, errorPage.getBackToApplicationLink());
+
+        assertExpiredActionTokenEvent();
+    }
+
+    // Same as above but entered through the "forgot credentials" endpoint rather than the login form.
+    private void assertLinkExpiredInForgotPasswordFlow(int offsetSeconds) throws IOException {
+        // Redirect directly to the KC "forgot password" endpoint instead of the "authenticate" endpoint
+        String forgotPasswordUrl = testOAuth.loginForm().build().replace("/auth?", "/forgot-credentials?");
+
+        driver.driver().navigate().to(forgotPasswordUrl);
+        resetPasswordPage.assertCurrent();
+        resetPasswordPage.changePassword(LOGIN_TEST_USER);
+
+        loginPage.assertCurrent();
+        assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+
+        EventAssertion.expectRequiredAction(testEvents.poll())
+                .type(EventType.SEND_RESET_PASSWORD)
+                .userId(loginTestUser.getId())
+                .details(Details.USERNAME, LOGIN_TEST_USER)
+                .details(Details.EMAIL, LOGIN_TEST_EMAIL);
+
+        assertEquals(1, mailServer.getReceivedMessages().length);
+        String changePasswordUrl = MailUtils.getPasswordResetEmailLink(mailServer.getLastReceivedMessage());
+
+        timeOffSet.set(offsetSeconds);
+
+        driver.driver().navigate().to(changePasswordUrl.trim());
+
+        resetPasswordPage.assertCurrent();
+        assertEquals("Action expired. Please start again.", loginPage.getErrorMessage().orElse(null));
+
+        assertExpiredActionTokenEvent();
+    }
+
+    private void assertExpiredActionTokenEvent() {
+        EventAssertion.assertError(testEvents.poll())
+                .type(EventType.EXECUTE_ACTION_TOKEN_ERROR)
+                .error("expired_code")
+                .clientId(null)
+                .userId(loginTestUser.getId())
+                .sessionId(null)
+                .details(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE);
+    }
+
+    // Full successful reset-password flow: request the email, set a new password, land back on the app,
+    // then log out and log in again with the new password.
+    private void resetPassword(String username, String password) throws IOException {
+        String userId = loginTestUser.getId();
+
+        initiateResetPasswordFromResetPasswordPage(username);
+
+        EventAssertion.expectRequiredAction(testEvents.poll())
+                .type(EventType.SEND_RESET_PASSWORD)
+                .userId(userId)
+                .details(Details.USERNAME, username.trim())
+                .details(Details.EMAIL, LOGIN_TEST_EMAIL);
+
+        MimeMessage message = mailServer.getLastReceivedMessage();
+        String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
+
+        driver.driver().navigate().to(changePasswordUrl.trim());
+
+        updatePasswordPage.assertCurrent();
+        assertEquals("You need to change your password.", updatePasswordPage.getFeedbackMessage());
+        updatePasswordPage.changePassword(password, password);
+
+        EventAssertion.expectRequiredAction(testEvents.poll())
+                .type(EventType.UPDATE_PASSWORD)
+                .details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE)
+                .userId(userId)
+                .details(Details.USERNAME, username.trim());
+        EventAssertion.expectRequiredAction(testEvents.poll())
+                .type(EventType.UPDATE_CREDENTIAL)
+                .details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE)
+                .userId(userId)
+                .details(Details.USERNAME, username.trim());
+
+        assertTrue(testOAuth.parseLoginResponse().isSuccess());
+
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(testEvents.poll())
+                .userId(userId)
+                .details(Details.USERNAME, username.trim())
+                .getEvent();
+
+        AccessTokenResponse tokenResponse = getTokenResponse();
+        testOAuth.logoutForm().idTokenHint(tokenResponse.getIdToken()).postLogoutRedirectUri(testOAuth.getRedirectUri()).open();
+
+        EventAssertion.expectLogoutSuccess(testEvents.poll())
+                .sessionId(loginEvent.getSessionId())
+                .userId(userId);
+
+        testOAuth.openLoginForm();
+        loginPage.fillLogin(LOGIN_TEST_USER, password);
+        loginPage.submit();
+
+        assertTrue(testOAuth.parseLoginResponse().isSuccess());
+
+        EventRepresentation reloginEvent = EventAssertion.expectLoginSuccess(testEvents.poll())
+                .userId(userId)
+                .details(Details.USERNAME, LOGIN_TEST_USER)
+                .getEvent();
+
+        AccessTokenResponse reloginTokenResponse = getTokenResponse();
+        testOAuth.logoutForm().idTokenHint(reloginTokenResponse.getIdToken()).postLogoutRedirectUri(testOAuth.getRedirectUri()).open();
+
+        EventAssertion.expectLogoutSuccess(testEvents.poll())
+                .sessionId(reloginEvent.getSessionId())
+                .userId(userId);
+    }
+
+    // Requests a reset and then tries a password the policy rejects.
+    private void resetPasswordInvalidPassword(String username, String password, String error) throws IOException {
+        String userId = loginTestUser.getId();
+
+        initiateResetPasswordFromResetPasswordPage(username);
+
+        EventAssertion.expectRequiredAction(testEvents.poll())
+                .type(EventType.SEND_RESET_PASSWORD)
+                .userId(userId)
+                .details(Details.USERNAME, username)
+                .details(Details.EMAIL, LOGIN_TEST_EMAIL);
+
+        MimeMessage message = mailServer.getLastReceivedMessage();
+        String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
+
+        driver.driver().navigate().to(changePasswordUrl.trim());
+
+        updatePasswordPage.assertCurrent();
+        updatePasswordPage.changePassword(password, password);
+
+        updatePasswordPage.assertCurrent();
+        assertEquals(error, updatePasswordPage.getError());
+
+        EventAssertion.assertError(testEvents.poll())
+                .type(EventType.UPDATE_CREDENTIAL_ERROR)
+                .details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE)
+                .error(Errors.PASSWORD_REJECTED)
+                .userId(userId)
+                .details(Details.USERNAME, LOGIN_TEST_USER);
+        EventAssertion.assertError(testEvents.poll())
+                .type(EventType.UPDATE_PASSWORD_ERROR)
+                .details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE)
+                .error(Errors.PASSWORD_REJECTED)
+                .userId(userId)
+                .details(Details.USERNAME, LOGIN_TEST_USER);
+    }
+
+    private void initiateResetPasswordFromResetPasswordPage(String username) {
+        testOAuth.openLoginForm();
+        loginPage.assertCurrent();
+        loginPage.resetPassword();
+        resetPasswordPage.assertCurrent();
+        resetPasswordPage.changePassword(username);
+        loginPage.assertCurrent();
+        assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+    }
+
+    // Exchanges the authorization code for tokens and drains the resulting CODE_TO_TOKEN event.
+    private AccessTokenResponse getTokenResponse() {
+        String code = testOAuth.parseLoginResponse().getCode();
+        AccessTokenResponse response = testOAuth.doAccessTokenRequest(code);
+        assertEquals(200, response.getStatusCode());
+        testEvents.skip(); // CODE_TO_TOKEN
+        return response;
+    }
+
     static class ConsumerRealmConfig implements RealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
@@ -285,6 +712,36 @@ public class ResetPasswordTest {
                 .clientId(BROKER_APP_CLIENT_ID)
                 .publicClient()
                 .redirectUris(BASE_URL + "/*");
+        }
+    }
+
+    static class TestRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return realm
+                .eventsEnabled(true)
+                .resetPasswordAllowed(true)
+                .registrationAllowed(true)
+                .smtp(MailServerConfiguration.HOST, Integer.parseInt(MailServerConfiguration.PORT), MailServerConfiguration.FROM);
+        }
+    }
+
+    static class LoginTestUserConfig implements UserConfig {
+        @Override
+        public UserBuilder configure(UserBuilder user) {
+            return user
+                .username(LOGIN_TEST_USER)
+                .name("Login", "Test")
+                .email(LOGIN_TEST_EMAIL)
+                .password(LOGIN_TEST_PASSWORD);
+        }
+    }
+
+    static class TestAppClientConfig implements ClientConfig {
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            // The error page only shows the "Back to Application" link when the client has a base URL.
+            return new DefaultOAuthClientConfiguration().configure(client).baseUrl(TEST_APP_BASE_URL);
         }
     }
 }
