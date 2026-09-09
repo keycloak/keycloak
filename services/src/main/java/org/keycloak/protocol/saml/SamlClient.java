@@ -330,4 +330,12 @@ public class SamlClient extends ClientConfigResolver {
     public void setMetadataDescriptorUrl(String metadataUrl) {
         client.setAttribute(SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL, metadataUrl);
     }
+
+    public String getSigningKeyId() {
+        return client.getAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KID);
+    }
+
+    public void setSigningKeyId(String keyId) {
+        client.setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KID, keyId);
+    }
 }

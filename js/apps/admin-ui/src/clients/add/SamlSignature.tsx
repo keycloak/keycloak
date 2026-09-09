@@ -2,6 +2,7 @@ import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { SelectControl, TextControl } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
+import { SigningKeySelect } from "../../components/signing-key/SigningKeySelect";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 import { Toggle } from "./SamlConfig";
@@ -95,6 +96,14 @@ export const SamlSignature = () => {
               defaultValue: KEYNAME_TRANSFORMER[0],
             }}
             options={[...KEYNAME_TRANSFORMER]}
+          />
+          <SigningKeySelect
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.saml.server.signature.kid",
+            )}
+            protocol="saml"
+            label={t("signingKeySamlLabel")}
+            labelIcon={t("signingKeySamlHelp")}
           />
           <SelectControl
             name="attributes.saml_signature_canonicalization_method"
