@@ -1,0 +1,87 @@
+{
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "permissions": {
+    "allow": [
+      "Read",
+      "LS",
+      "Glob",
+      "Grep",
+      "Bash",
+      "Bash(wc:*)",
+      "Bash(ls:*)",
+      "Bash(pwd)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(less:*)",
+      "Bash(more:*)",
+      "Bash(file:*)",
+      "Bash(printenv:*)",
+      "Bash(echo:*)",
+      "Bash(printf:*)",
+      "Bash(mvn dependency:tree:*)",
+      "Bash(mvn help:*)",
+      "Bash(mvn clean:*)",
+      "Bash(mvn compile:*)",
+      "Bash(mvn install:*)",
+      "Bash(mvn test:*)",
+      "Bash(mvn verify:*)",
+      "Bash(lsof:*)",
+      "Bash(jq:*)",
+      "Bash(yq:*)",
+      "Bash(xmllint:*)",
+      "Bash(diff:*)",
+      "Bash(md5:*)",
+      "Bash(shasum:*)",
+      "Bash(sha256sum:*)",
+      "Bash(base64:*)",
+      "Bash(tar -tzf:*)",
+      "Bash(tar -tvf:*)",
+      "Bash(unzip -l:*)",
+      "Bash(zip -sf:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(awk:*)",
+      "Bash(sed -n:*)",
+      "Bash(sort:*)",
+      "Bash(uniq:*)",
+      "Bash(cut:*)",
+      "Bash(tr:*)",
+      "Bash(xargs:*)",
+      "Bash(sleep:*)"
+    ],
+    "deny": [
+      "Bash(git push upstream:*)",
+      "Bash(git push origin:*)",
+      "Bash(git fetch:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(rm -rf:*)",
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ],
+    "ask": [
+      "Edit",
+      "Write",
+      "MultiEdit"
+    ],
+    "disableBypassPermissionsMode": "disable"
+  },
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "idle_prompt",
+        "hooks": []
+      },
+      {
+        "matcher": "permission_prompt",
+        "hooks": []
+      }
+    ]
+  },
+  "model": "claude-opus-4-6[1m]",
+  "language":  "english"
+}
