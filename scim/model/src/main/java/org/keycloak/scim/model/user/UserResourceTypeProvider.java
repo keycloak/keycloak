@@ -346,6 +346,9 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
 
     @Override
     protected boolean isManageable(UserModel model) {
+        if (model == null) {
+            return false;
+        }
         return !session.getContext().getPermissions().isAdminUser(model);
     }
 }
