@@ -403,6 +403,11 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder otpCodeReusable(Boolean reusable) {
+        rep.setOtpPolicyCodeReusable(reusable);
+        return this;
+    }
+
     public RealmBuilder passwordPolicy(String passwordPolicy) {
         rep.setPasswordPolicy(passwordPolicy);
         return this;
