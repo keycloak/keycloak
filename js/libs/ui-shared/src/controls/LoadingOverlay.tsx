@@ -43,7 +43,7 @@ export const LoadingOverlay = ({
     >
       <div
         className={style.overlayContent}
-        {...(isLoading ? { inert: "" } : {})}
+        {...(isLoading ? { inert: true } : {})}
       >
         {children}
       </div>
