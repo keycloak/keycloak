@@ -27,15 +27,18 @@ import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class LoggedInPageHeader extends AbstractHeader {
-    @FindBy(xpath = "//*[@data-testid='page-header']//*[text() = 'Sign out']")
+    @FindBy(xpath = "//*[@role='menuitem' and normalize-space()='Sign out']")
     private WebElement logoutBtn;
 
     @FindBy(xpath = "//*[@data-testid='options-toggle']")
-    private WebElement options;
+    private WebElement desktopOptions;
+
+    @FindBy(xpath = "//*[@data-testid='options-kebab-toggle']")
+    private WebElement mobileOptions;
 
     @Override
     public void clickOptions() {
-        clickLink(options);
+        clickLink(isMobileLayout() ? mobileOptions : desktopOptions);
     }
 
     @Override
@@ -45,6 +48,6 @@ public class LoggedInPageHeader extends AbstractHeader {
     }
 
     public String getToolbarLoggedInUser() {
-        return getTextFromElement(options);
+        return getTextFromElement(isMobileLayout() ? mobileOptions : desktopOptions);
     }
 }
