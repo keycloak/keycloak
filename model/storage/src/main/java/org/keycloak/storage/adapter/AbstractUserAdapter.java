@@ -254,21 +254,11 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
 
     }
 
-    /**
-     * This method should not be overridden
-     *
-     * @return
-     */
     @Override
     public String getServiceAccountClientLink() {
         return null;
     }
 
-    /**
-     * This method should not be overridden
-     *
-     * @return
-     */
     @Override
     public void setServiceAccountClientLink(String clientInternalId) {
         throw new ReadOnlyException("user is read only for this update");
