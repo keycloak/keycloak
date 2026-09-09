@@ -216,6 +216,14 @@ This is intentional: without the `stateless` feature, neither deployment invalid
 * *Multiple independent deployments sharing the same database*: enable the `stateless` feature and assign each deployment a unique cluster name via `--cache-embedded-cluster-name`.
   Without `stateless`, cross-deployment cache invalidation does not work and serving traffic from multiple deployments simultaneously leads to incorrect behavior.
 
+=== Optimistic locking conflicts now return HTTP 409 instead of HTTP 500
+
+When two requests change the same entity at the same time, one of them can fail with an optimistic locking conflict in the JPA store.
+Before, this returned an HTTP `500 Internal Server Error`. Now it returns an HTTP `409 Conflict` with the error code `conflict`, which means you can retry the request.
+
+This affects write requests in the Admin and Account REST APIs. The most common case is resetting a user's password from more than one request at the same time (`PUT /admin/realms/\{realm}/users/\{id}/reset-password`). See the https://github.com/keycloak/keycloak/issues/50924[GitHub issue].
+If your client treated these errors as `500`, change it to handle `409` and retry.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

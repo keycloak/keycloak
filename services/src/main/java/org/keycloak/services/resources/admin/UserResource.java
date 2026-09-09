@@ -73,6 +73,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelConcurrentModificationException;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
@@ -262,6 +263,8 @@ public class UserResource {
             session.getTransactionManager().setRollbackOnly();
             throw new ErrorResponseException(e.getMessage(), ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), e.getMessage(), e.getParameters()),
                     Status.BAD_REQUEST);
+        } catch (ModelConcurrentModificationException e) {
+            throw ErrorResponse.error(e.getMessage(), Response.Status.CONFLICT);
         } catch (ModelIllegalStateException e) {
             logger.error(e.getMessage(), e);
             throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
@@ -779,6 +782,7 @@ public class UserResource {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "409", description = "Conflict"),
         @APIResponse(responseCode = "500", description = "Internal Server Error", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class)))
     })
     public void resetPassword(@Parameter(description = "The representation must contain a rawPassword with the plain-text password") CredentialRepresentation cred) {
@@ -800,6 +804,8 @@ public class UserResource {
             logger.warn("Password policy not met for user " + e.getUsername(), e);
             throw new ErrorResponseException(e.getMessage(), ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), e.getMessage(), e.getParameters()),
                     Status.BAD_REQUEST);
+        } catch (ModelConcurrentModificationException e) {
+            throw ErrorResponse.error(e.getMessage(), Response.Status.CONFLICT);
         } catch (ModelIllegalStateException e) {
             logger.error(e.getMessage(), e);
             throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
