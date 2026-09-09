@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
@@ -81,9 +82,20 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
     }
 
     public void failure(KeycloakSession session, RealmModel realm, String userId, String remoteAddr, long failureTime, Set<String> categories) {
-        UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, userId);
+        UserModel user = session.users().getUserById(realm, userId);
+        List<String> failureKeys = user != null
+                ? BruteForceUserProperty.getFailureKeys(realm, user)
+                : List.of(userId);
+        for (String failureKey : failureKeys) {
+            failure(session, realm, user, failureKey, remoteAddr, failureTime, categories);
+        }
+    }
+
+    private void failure(KeycloakSession session, RealmModel realm, UserModel user, String failureKey,
+            String remoteAddr, long failureTime, Set<String> categories) {
+        UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, failureKey);
         if (userLoginFailure == null) {
-            userLoginFailure = session.loginFailures().addUserLoginFailure(realm, userId);
+            userLoginFailure = session.loginFailures().addUserLoginFailure(realm, failureKey);
         }
         long last = userLoginFailure.getLastFailure();
         long deltaTime = 0;
@@ -135,7 +147,8 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
                 // Converting to int is workaround for the fact that "failedLoginNotBefore" is int in the model. Should be fine as user would be considered temporarily disabled with Integer.MAX_VALUE
                 int notBeforeInt = notBefore > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) notBefore;
                 userLoginFailure.setFailedLoginNotBefore(notBeforeInt);
-                sendEvent(session, realm, userLoginFailure, EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT);
+                sendEvent(session, realm, user != null ? user.getId() : failureKey, userLoginFailure,
+                        EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT);
             }
         }
 
@@ -146,7 +159,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
             logger.debugv("new num secondaryAuthFailures: {0}", Integer.valueOf(userLoginFailure.getNumSecondaryAuthFailures()));
             if (lockoutEnabled && userLoginFailure.getNumSecondaryAuthFailures() > maxSecondaryAuthFailures) {
                 // permanently lock user account anyway
-                permanentUserLockOut(session, realm, userLoginFailure);
+                permanentUserLockOut(session, realm, user, userLoginFailure);
             }
         }
 
@@ -156,12 +169,12 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
 
         if(userLoginFailure.getNumTemporaryLockouts() > realm.getMaxTemporaryLockouts() ||
                 (realm.getMaxTemporaryLockouts() == 0 && userLoginFailure.getNumFailures() >= realm.getFailureFactor())) {
-            permanentUserLockOut(session, realm, userLoginFailure);
+            permanentUserLockOut(session, realm, user, userLoginFailure);
         }
     }
 
-    private void permanentUserLockOut(KeycloakSession session, RealmModel realm, UserLoginFailureModel userLoginFailure) {
-        UserModel user = session.users().getUserById(realm, userLoginFailure.getUserId());
+    private void permanentUserLockOut(KeycloakSession session, RealmModel realm, UserModel user,
+            UserLoginFailureModel userLoginFailure) {
         if (user == null) {
             return;
         }
@@ -173,7 +186,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
             logger.debug("Cannot set disabled reason on read only user");
         }
         // Send event
-        sendEvent(session, realm, userLoginFailure, EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT);
+        sendEvent(session, realm, user.getId(), userLoginFailure, EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT);
     }
 
 
@@ -182,13 +195,14 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         return session.loginFailures().getUserLoginFailure(realm, userId);
     }
 
-    protected void sendEvent(KeycloakSession session, RealmModel realm, UserLoginFailureModel userLoginFailure, EventType type) {
+    protected void sendEvent(KeycloakSession session, RealmModel realm, String userId,
+            UserLoginFailureModel userLoginFailure, EventType type) {
         EventBuilder builder = new EventBuilder(realm, session)
                 .ipAddress(userLoginFailure.getLastIPFailure())
                 .event(type)
                 .detail(Details.REASON, "brute_force_attack detected")
                 .detail(Details.NUM_FAILURES, String.valueOf(userLoginFailure.getNumFailures()))
-                .user(userLoginFailure.getUserId());
+                .user(userId);
 
         if (type == EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT) {
             long secondsSinceEpoch = userLoginFailure.getFailedLoginNotBefore();
@@ -205,18 +219,24 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
     public void shutdown() {}
 
     protected void success(KeycloakSession session, RealmModel realm, String userId, Set<String> categories) {
-        UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, userId);
-        if(userLoginFailure == null) return;
-        if (logger.isDebugEnabled()) {
-            UserModel model = session.users().getUserById(realm, userId);
-            logger.debugv("user {0} successfully logged in:", model.getUsername());
+        UserModel user = session.users().getUserById(realm, userId);
+        if (user == null) {
+            return;
         }
-        if (categories != null && categories.contains(OTP_CATEGORY)) {
-            logger.debug("clearing primary and secondary (OTP) failures");
-            userLoginFailure.clearPrimaryAndSecondaryAuthFailures();
-        } else {
-            logger.debug("clearing primary failures");
-            userLoginFailure.clearFailures();
+        if (logger.isDebugEnabled()) {
+            logger.debugv("user {0} successfully logged in:", user.getUsername());
+        }
+        for (String failureKey : BruteForceUserProperty.getFailureKeys(realm, user)) {
+            UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, failureKey);
+            if (userLoginFailure != null) {
+                if (categories != null && categories.contains(OTP_CATEGORY)) {
+                    logger.debug("clearing primary and secondary (OTP) failures");
+                    userLoginFailure.clearPrimaryAndSecondaryAuthFailures();
+                } else {
+                    logger.debug("clearing primary failures");
+                    userLoginFailure.clearFailures();
+                }
+            }
         }
     }
 
@@ -252,22 +272,25 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         final HttpRequest bruteForceHttpRequest = new BruteForceHttpRequest(uriInfo);
         final HttpResponse bruteForceHttpResponse = new BruteForceHttpResponse();
         executor.execute(() -> KeycloakModelUtils.runJobInTransaction(factory, s -> {
-            s.getContext().setRealm(s.realms().getRealm(realm.getId()));
+            RealmModel currentRealm = s.realms().getRealm(realm.getId());
+            s.getContext().setRealm(currentRealm);
             s.getContext().setHttpRequest(bruteForceHttpRequest);
             s.getContext().setHttpResponse(bruteForceHttpResponse);
             if (success) {
-                success(s, realm, user.getId(), categories);
+                success(s, currentRealm, user.getId(), categories);
             } else {
-                failure(s, realm, user.getId(), clientConnection.getRemoteHost(), Time.currentTimeMillis(), categories);
+                failure(s, currentRealm, user.getId(), clientConnection.getRemoteHost(), Time.currentTimeMillis(), categories);
             }
         }));
     }
 
     @Override
     public boolean isTemporarilyDisabled(KeycloakSession session, RealmModel realm, UserModel user) {
-        UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, user.getId());
-
-        if (userLoginFailure != null) {
+        for (String failureKey : BruteForceUserProperty.getFailureKeys(realm, user)) {
+            UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, failureKey);
+            if (userLoginFailure == null) {
+                continue;
+            }
             long currTime = Time.currentTimeMillis() / 1000;
             int failedLoginNotBefore = userLoginFailure.getFailedLoginNotBefore();
             if (currTime < failedLoginNotBefore) {
@@ -289,8 +312,12 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         if (!realm.isPermanentLockout()) return false;
 
         // recheck failures just in case we are in a race
-        UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, user.getId());
-        return userLoginFailure != null && userLoginFailure.getNumTemporaryLockouts() > realm.getMaxTemporaryLockouts();
+        return BruteForceUserProperty.getFailureKeys(realm, user).stream()
+                .map(failureKey -> getUserFailureModel(session, realm, failureKey))
+                .anyMatch(userLoginFailure -> userLoginFailure != null
+                        && (userLoginFailure.getNumTemporaryLockouts() > realm.getMaxTemporaryLockouts()
+                        || (realm.getMaxTemporaryLockouts() == 0
+                        && userLoginFailure.getNumFailures() >= realm.getFailureFactor())));
     }
 
     @Override
@@ -299,7 +326,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
             user.removeAttribute(DISABLED_REASON);
 
             if (!isTemporarilyDisabled(session, realm, user)) {
-                session.loginFailures().removeUserLoginFailure(realm, user.getId());
+                BruteForceUserProperty.removeLoginFailures(session, realm, user);
             }
         }
     }

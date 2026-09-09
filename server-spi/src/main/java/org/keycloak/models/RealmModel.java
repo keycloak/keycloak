@@ -18,6 +18,7 @@
 package org.keycloak.models;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -189,6 +190,60 @@ public interface RealmModel extends RoleContainerModel {
     void setFailureFactor(int failureFactor);
     int getMaxSecondaryAuthFailures();
     void setMaxSecondaryAuthFailures(int maxSecondaryAuthFailures);
+
+    /**
+     * User property names (user profile attribute ids such as {@code username}, {@code email},
+     * or a custom attribute) that each get a dedicated brute-force failure counter.
+     * Combined with {@link #getBruteForceLockPolicy()} to decide whether those
+     * counters, the per-user counter, or either may lock login.
+     */
+    default List<String> getBruteForceProtectedUserProperties() {
+        String value = getAttribute("bruteForceProtectedUserProperties");
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        return value.lines()
+                .map(String::trim)
+                .filter(property -> !property.isEmpty())
+                .distinct()
+                .toList();
+    }
+    default void setBruteForceProtectedUserProperties(List<String> properties) {
+        List<String> normalized = properties == null
+                ? List.<String>of()
+                : properties.stream()
+                        .map(String::trim)
+                        .filter(property -> !property.isEmpty())
+                        .distinct()
+                        .toList();
+        if (normalized.isEmpty()) {
+            removeAttribute("bruteForceProtectedUserProperties");
+            return;
+        }
+        setAttribute("bruteForceProtectedUserProperties", String.join("\n", normalized));
+    }
+    /**
+     * Which brute-force counters may disable login. Defaults to
+     * {@link RealmRepresentation.BruteForceLockPolicy#USER}.
+     */
+    default RealmRepresentation.BruteForceLockPolicy getBruteForceLockPolicy() {
+        String value = getAttribute("bruteForceLockPolicy");
+        if (value == null || value.isBlank()) {
+            return RealmRepresentation.BruteForceLockPolicy.USER;
+        }
+        try {
+            return RealmRepresentation.BruteForceLockPolicy.valueOf(value);
+        } catch (IllegalArgumentException ignored) {
+            return RealmRepresentation.BruteForceLockPolicy.USER;
+        }
+    }
+    default void setBruteForceLockPolicy(RealmRepresentation.BruteForceLockPolicy policy) {
+        if (policy == null || policy == RealmRepresentation.BruteForceLockPolicy.USER) {
+            removeAttribute("bruteForceLockPolicy");
+            return;
+        }
+        setAttribute("bruteForceLockPolicy", policy.name());
+    }
     //--- end brute force settings
 
 

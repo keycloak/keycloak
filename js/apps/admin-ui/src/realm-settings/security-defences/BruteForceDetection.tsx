@@ -1,10 +1,12 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
   HelpItem,
   KeycloakSelect,
   NumberControl,
   SelectVariant,
   SelectControl,
+  useFetch,
 } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
@@ -12,12 +14,21 @@ import {
   FormGroup,
   SelectOption,
 } from "@patternfly/react-core";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { useAdminClient } from "../../admin-client";
 import { FormAccess } from "../../components/form/FormAccess";
 import { convertToFormValues } from "../../util";
 import { Time } from "./Time";
+
+const BUILT_IN_USER_PROPERTIES = [
+  "id",
+  "username",
+  "email",
+  "firstName",
+  "lastName",
+];
 
 type BruteForceDetectionProps = {
   realm: RealmRepresentation;
@@ -29,6 +40,7 @@ export const BruteForceDetection = ({
   save,
 }: BruteForceDetectionProps) => {
   const { t } = useTranslation();
+  const { adminClient } = useAdminClient();
   const form = useForm();
   const {
     setValue,
@@ -38,6 +50,22 @@ export const BruteForceDetection = ({
 
   const [isBruteForceModeOpen, setIsBruteForceModeOpen] = useState(false);
   const [isBruteForceModeUpdated, setIsBruteForceModeUpdated] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfileConfig>();
+
+  useFetch(() => adminClient.users.getProfile(), setUserProfile, []);
+
+  const lockPropertyOptions = useMemo(() => {
+    const names = new Set(BUILT_IN_USER_PROPERTIES);
+    userProfile?.attributes?.forEach((attribute) => {
+      if (attribute.name) {
+        names.add(attribute.name);
+      }
+    });
+    realm.bruteForceProtectedUserProperties?.forEach((property) =>
+      names.add(property),
+    );
+    return [...names];
+  }, [userProfile, realm.bruteForceProtectedUserProperties]);
 
   enum BruteForceMode {
     Disabled = "Disabled",
@@ -54,12 +82,16 @@ export const BruteForceDetection = ({
   ];
 
   const bruteForceStrategyTypes = ["MULTIPLE", "LINEAR"];
+  const bruteForceLockPolicies = ["USER", "PROPERTIES", "ANY"] as const;
 
   const setupForm = () => {
     convertToFormValues(realm, setValue);
+    setValue("bruteForceLockPolicy", realm.bruteForceLockPolicy ?? "USER");
     setIsBruteForceModeUpdated(false);
   };
   useEffect(setupForm, [realm]);
+
+  const lockPolicy = form.watch("bruteForceLockPolicy") ?? "USER";
 
   const bruteForceMode = (() => {
     if (!form.getValues("bruteForceProtected")) {
@@ -152,6 +184,34 @@ export const BruteForceDetection = ({
                 rules: { required: t("required"), min: 0 },
               }}
             />
+            <SelectControl
+              name="bruteForceLockPolicy"
+              label={t("bruteForceLockPolicy")}
+              labelIcon={t("bruteForceLockPolicyHelp")}
+              controller={{ defaultValue: "USER" }}
+              options={bruteForceLockPolicies.map((key) => ({
+                key,
+                value: t(`bruteForceLockPolicy.${key}`),
+              }))}
+            />
+            {lockPolicy !== "USER" && (
+              <SelectControl
+                name="bruteForceProtectedUserProperties"
+                label={t("bruteForceProtectedUserProperties")}
+                labelIcon={t("bruteForceProtectedUserPropertiesHelp")}
+                controller={{ defaultValue: [] }}
+                variant={SelectVariant.typeaheadMulti}
+                placeholderText={t(
+                  "bruteForceProtectedUserPropertiesPlaceholder",
+                )}
+                chipGroupProps={{
+                  numChips: 3,
+                  expandedText: t("hide"),
+                  collapsedText: t("showRemaining"),
+                }}
+                options={lockPropertyOptions}
+              />
+            )}
             {bruteForceMode ===
               BruteForceMode.PermanentAfterTemporaryLockout && (
               <NumberControl

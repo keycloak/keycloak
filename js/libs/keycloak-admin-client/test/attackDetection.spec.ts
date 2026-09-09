@@ -32,11 +32,21 @@ describe("Attack Detection", () => {
     expect(attackDetection).to.deep.equal({
       numFailures: 0,
       numSecondaryAuthFailures: 0,
+      numTemporaryLockouts: 0,
       disabled: false,
       lastIPFailure: "n/a",
       lastFailure: 0,
-      numTemporaryLockouts: 0,
       failedLoginNotBefore: 0,
+      properties: {
+        id: {
+          numFailures: 0,
+          numTemporaryLockouts: 0,
+          disabled: false,
+          lastIPFailure: "n/a",
+          lastFailure: 0,
+          failedLoginNotBefore: 0,
+        },
+      },
     });
   });
 
@@ -46,5 +56,12 @@ describe("Attack Detection", () => {
 
   it("clear any user login failures for a user", async () => {
     await kcAdminClient.attackDetection.del({ id: currentUser.id! });
+  });
+
+  it("clear user login failures for one property", async () => {
+    await kcAdminClient.attackDetection.delByProperty({
+      id: currentUser.id!,
+      property: "id",
+    });
   });
 });
