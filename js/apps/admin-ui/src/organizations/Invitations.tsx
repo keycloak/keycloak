@@ -353,11 +353,12 @@ export const Invitations = () => {
             </ToolbarItem>
             <ToolbarItem>
               <Button
-                icon={t("deleteInvitations")}
                 variant="plain"
                 isDisabled={selectedInvitations.length === 0}
                 onClick={toggleDeleteDialog}
-              />
+              >
+                {t("deleteInvitations")}
+              </Button>
             </ToolbarItem>
             <ToolbarItem>
               <CheckboxFilterComponent
