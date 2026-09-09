@@ -127,14 +127,16 @@ export const OrganizationTable = ({
           name: "description",
           displayKey: "description",
         },
-        {
-          name: "membershipType",
-          displayKey: "membershipType",
-          ...(membershipTypeRenderer && {
-            transforms: [cellWidth(20)],
-            cellRenderer: membershipTypeRenderer,
-          }),
-        },
+        ...(membershipTypeRenderer
+          ? [
+              {
+                name: "membershipType",
+                displayKey: "membershipType",
+                transforms: [cellWidth(20)],
+                cellRenderer: membershipTypeRenderer,
+              },
+            ]
+          : []),
       ]}
       emptyState={children}
     />
