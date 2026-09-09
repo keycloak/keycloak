@@ -407,6 +407,41 @@ public class SecureRedirectUrisEnforcerExecutorTest {
         ).forEach(i->checkSuccess(i, false));
     }
 
+    @Test
+    public void successNormalUri_BlankOnlyPermittedDomainsNotEnforced() {
+        // A permitted-domains list that contains only the empty-string default should be treated as "no restriction"
+        ArrayNode arrayNode = JsonSerialization.mapper.createArrayNode();
+        arrayNode.add("");
+        configuration.set(ALLOW_PERMITTED_DOMAINS, arrayNode);
+
+        checkSuccess("https://example.org/realms/master", false);
+        checkSuccess("https://other.org/path", false);
+    }
+
+    @Test
+    public void normalUri_BlankEntriesMixedWithValidPermittedDomains() {
+        // Blank entries in the permitted-domains list must be ignored; valid entries still enforced
+        ArrayNode arrayNode = JsonSerialization.mapper.createArrayNode();
+        arrayNode.add("");
+        arrayNode.add("example.org");
+        configuration.set(ALLOW_PERMITTED_DOMAINS, arrayNode);
+
+        checkSuccess("https://example.org/realms/master", false);
+        checkFail("https://other.org/realms/master", false, SecureRedirectUrisEnforcerExecutor.ERR_NORMALURI);
+    }
+
+    @Test
+    public void normalUri_NullEntriesMixedWithValidPermittedDomains() {
+        // Null entries in the permitted-domains list must be ignored; valid entries still enforced
+        ArrayNode arrayNode = JsonSerialization.mapper.createArrayNode();
+        arrayNode.addNull();
+        arrayNode.add("example.org");
+        configuration.set(ALLOW_PERMITTED_DOMAINS, arrayNode);
+
+        checkSuccess("https://example.org/realms/master", false);
+        checkFail("https://other.org/realms/master", false, SecureRedirectUrisEnforcerExecutor.ERR_NORMALURI);
+    }
+
     private void permittedDomains(String... domains) {
         ArrayNode arrayNode = JsonSerialization.mapper.createArrayNode();
         Arrays.stream(domains).forEach(arrayNode::add);
