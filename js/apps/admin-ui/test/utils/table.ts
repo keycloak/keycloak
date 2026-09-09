@@ -1,5 +1,5 @@
 import { type Locator, type Page, expect } from "@playwright/test";
-import { waitForLoadingComplete, waitForLoadingCycle } from "./loading.ts";
+import { waitForLoadingCycle } from "./loading.ts";
 
 // The realm list can load slowly while parallel workers create and delete realms.
 const TABLE_LOAD_TIMEOUT_MS = 15_000;
@@ -31,7 +31,6 @@ export async function searchItem(
   placeHolder: string,
   itemName: string,
 ) {
-  await waitForLoadingComplete(page);
   await page
     .locator("table tbody")
     // Use first() because some pages have multiple <tbody> elements (e.g. drag-and-drop rows).
@@ -47,13 +46,11 @@ export async function clearAllFilters(page: Page) {
 }
 
 export async function clickTableRowItem(page: Page, itemName: string) {
-  await waitForLoadingComplete(page);
   const tableBody = page.locator("table tbody");
   // Use first() because some pages have multiple <tbody> elements (e.g. drag-and-drop rows).
   await tableBody
     .first()
     .waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
-
   const rowLink = getTableRowLink(tableBody, itemName);
 
   await expect(rowLink.first()).toBeVisible({ timeout: TABLE_LOAD_TIMEOUT_MS });
@@ -88,7 +85,6 @@ export async function assertRowExists(
   itemName: string,
   exist = true,
 ) {
-  await waitForLoadingComplete(page);
   const row = page.locator("table tbody").getByRole("row", { name: itemName });
   if (exist) {
     await expect(row.first()).toBeVisible({ timeout: TABLE_LOAD_TIMEOUT_MS });
@@ -108,8 +104,9 @@ export async function clickTableToolbarItem(
   itemName: string,
   kebab = false,
 ) {
-  await waitForLoadingComplete(page);
   const toolbar = page.getByTestId("table-toolbar");
+  await expect(toolbar).toBeVisible({ timeout: TABLE_LOAD_TIMEOUT_MS });
+
   if (kebab) {
     await toolbar.getByTestId("kebab").click();
     const exactMenuItem = page.getByRole("menuitem", {
@@ -128,10 +125,6 @@ export async function clickTableToolbarItem(
     .getByRole("button", { name: itemName, exact: true })
     .or(toolbar.getByRole("link", { name: itemName, exact: true }))
     .first();
-  await exactToolbarItem.waitFor({
-    state: "visible",
-    timeout: TABLE_LOAD_TIMEOUT_MS,
-  });
   await exactToolbarItem.click();
 }
 
@@ -169,7 +162,6 @@ export async function assertTableRowsLength(
 }
 
 async function getTableRows(page: Page, name: string): Promise<Locator> {
-  await waitForLoadingComplete(page);
   const table = page
     .getByRole("grid")
     .and(page.getByLabel(name, { exact: true }));
