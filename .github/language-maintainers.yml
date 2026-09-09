@@ -1,6 +1,6 @@
 # Language maintainers for Keycloak translations
 # This file maps language codes to their responsible maintainers. It is used to notify them once a translation changes.
-# Format: language_code [list of GitHub usernames]
+# Format: language_code: [list of GitHub usernames]
 
 # Sort alphabetically by language code:
 # yq -i '.languages = (.languages | to_entries | sort_by(.key) | from_entries)' .github/language-maintainers.yml
