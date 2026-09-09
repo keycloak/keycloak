@@ -18,8 +18,8 @@
 package org.keycloak.testsuite.organization.broker;
 
 import java.util.List;
+import java.util.Set;
 
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -32,19 +32,17 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
-import static org.keycloak.models.OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -58,52 +56,31 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         IdentityProviderRepresentation expected = orgIdPResource.toRepresentation();
 
         // organization link set
-        Assertions.assertEquals(expected.getOrganizationId(), organization.getId());
+        Assertions.assertTrue(expected.getOrganizationIds().contains(organization.getId()));
 
         IdentityProviderResource idpResource = managedRealm.admin().identityProviders().get(expected.getAlias());
         IdentityProviderRepresentation actual = idpResource.toRepresentation();
-        Assertions.assertEquals(actual.getOrganizationId(), organization.getId());
-        // ignore organization id from repo when updating
-        actual.setOrganizationId("somethingelse");
+        Assertions.assertTrue(actual.getOrganizationIds().contains(organization.getId()));
+        // ignore organization ids from repo when updating
+        actual.setOrganizationIds(Set.of("somethingelse"));
         idpResource.update(actual);
         actual = idpResource.toRepresentation();
-        assertEquals(actual.getOrganizationId(), organization.getId());
+        Assertions.assertTrue(actual.getOrganizationIds().contains(organization.getId()));
 
         OrganizationRepresentation secondOrg = createOrganization("secondorg");
-        actual.setOrganizationId(secondOrg.getId());
+        actual.setOrganizationIds(Set.of(secondOrg.getId()));
         idpResource.update(actual);
         actual = idpResource.toRepresentation();
-        Assertions.assertEquals(actual.getOrganizationId(), organization.getId());
+        Assertions.assertTrue(actual.getOrganizationIds().contains(organization.getId()));
 
         actual = idpResource.toRepresentation();
         // the link to the organization should not change
-        Assertions.assertEquals(actual.getOrganizationId(), organization.getId());
-        actual.setOrganizationId(null);
+        Assertions.assertTrue(actual.getOrganizationIds().contains(organization.getId()));
+        actual.setOrganizationIds(Set.of());
         idpResource.update(actual);
         actual = idpResource.toRepresentation();
         // the link to the organization should not change
-        Assertions.assertEquals(actual.getOrganizationId(), organization.getId());
-
-        String domain = actual.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE);
-
-        assertNotNull(domain);
-        actual.getConfig().put(ORGANIZATION_DOMAIN_ATTRIBUTE, " ");
-        idpResource.update(actual);
-        actual = idpResource.toRepresentation();
-        // domain removed
-        Assertions.assertNull(actual.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE));
-
-        actual.getConfig().put(ORGANIZATION_DOMAIN_ATTRIBUTE, domain);
-        idpResource.update(actual);
-        actual = idpResource.toRepresentation();
-        // domain set again
-        Assertions.assertNotNull(actual.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE));
-
-        actual.getConfig().remove(ORGANIZATION_DOMAIN_ATTRIBUTE);
-        idpResource.update(actual);
-        actual = idpResource.toRepresentation();
-        // domain removed
-        Assertions.assertNull(actual.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE));
+        Assertions.assertTrue(actual.getOrganizationIds().contains(organization.getId()));
     }
 
     @Test
@@ -113,9 +90,7 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
                 .identityProviders().get(bc.getIDPAlias()).toRepresentation();
 
         //remove Org related stuff from the template
-        idpTemplate.setOrganizationId(null);
-        idpTemplate.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
-        idpTemplate.getConfig().remove(OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
+        idpTemplate.setOrganizationIds(Set.of());
 
         for (int i = 0; i < 5; i++) {
             idpTemplate.setAlias("idp-" + i);
@@ -154,7 +129,8 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
 
     @Test
     public void testCreatingExistingIdentityProvider() {
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = managedRealm.admin().organizations().get(orgRep.getId());
         OrganizationIdentityProviderResource orgIdPResource = organization
                 .identityProviders().get(bc.getIDPAlias());
 
@@ -172,12 +148,18 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         idpRepresentation.setAlias(alias);
         idpRepresentation.setInternalId(null);
 
-        OrganizationResource secondOrg = managedRealm.admin().organizations().get(createOrganization("secondorg").getId());
+        OrganizationRepresentation secondOrgRep = createOrganization("secondorg");
+        OrganizationResource secondOrg = managedRealm.admin().organizations().get(secondOrgRep.getId());
 
         try (Response response = secondOrg.identityProviders().addIdentityProvider(alias)) {
-            // associated with another org
-            assertThat(response.getStatus(), equalTo(Status.BAD_REQUEST.getStatusCode()));
+            // M:N: linking an IdP to a second org is allowed
+            assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
         }
+
+        // verify the IdP is linked to both orgs
+        IdentityProviderRepresentation idpAfterLink = managedRealm.admin().identityProviders().get(alias).toRepresentation();
+        Assertions.assertTrue(idpAfterLink.getOrganizationIds().contains(orgRep.getId()));
+        Assertions.assertTrue(idpAfterLink.getOrganizationIds().contains(secondOrgRep.getId()));
     }
 
     @Test
@@ -192,8 +174,7 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         // broker not removed from realm
         IdentityProviderRepresentation idpRep = managedRealm.admin().identityProviders().get(bc.getIDPAlias()).toRepresentation();
         // broker no longer linked to the org
-        Assertions.assertNull(idpRep.getOrganizationId());
-        Assertions.assertNull(idpRep.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE));
+        Assertions.assertTrue(idpRep.getOrganizationIds() == null || idpRep.getOrganizationIds().isEmpty());
     }
 
     @Test
@@ -216,28 +197,19 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
     }
 
     @Test
-    public void testAssignDomainNotBoundToOrganization() {
+    public void testAssignDomainWithNonExistentIdp() {
         OrganizationRepresentation orgRep = createOrganization();
         OrganizationResource orgResource = managedRealm.admin().organizations().get(orgRep.getId());
-        OrganizationIdentityProviderResource orgIdPResource = orgResource.identityProviders().get(bc.getIDPAlias());
-        IdentityProviderRepresentation idpRep = orgIdPResource.toRepresentation();
-        idpRep.getConfig().put(ORGANIZATION_DOMAIN_ATTRIBUTE, "unknown.org");
 
-        try {
-            managedRealm.admin().identityProviders().get(idpRep.getAlias()).update(idpRep);
-            Assertions.fail("Domain set to broker is invalid");
-        } catch (BadRequestException ignore) {
+        orgRep = orgResource.toRepresentation();
+        orgRep.getDomains().stream()
+                .filter(d -> d.getName().equals(organizationName + ".org"))
+                .findFirst()
+                .ifPresent(d -> d.setIdentityProviderAlias("unknown-idp"));
 
+        try (Response response = orgResource.update(orgRep)) {
+            assertThat(response.getStatus(), is(equalTo(Status.BAD_REQUEST.getStatusCode())));
         }
-
-        idpRep.setAlias("newbroker");
-        idpRep.setInternalId(null);
-        try (Response response = managedRealm.admin().identityProviders().create(idpRep)) {
-            Assertions.assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
-            getCleanup().addCleanup(() -> managedRealm.admin().identityProviders().get("newbroker").remove());
-        }
-        IdentityProviderRepresentation created = managedRealm.admin().identityProviders().get("newbroker").toRepresentation();
-        Assertions.assertNull(created.getOrganizationId());
     }
 
     @Test
@@ -271,21 +243,23 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
     public void testRemovedDomainUpdatedInIDP() {
         OrganizationRepresentation orgRep = createOrganization("testorg", "testorg.com", "testorg.net");
         OrganizationResource orgResource = managedRealm.admin().organizations().get(orgRep.getId());
-        OrganizationIdentityProviderResource orgIdPResource = orgResource.identityProviders().get("testorg-identity-provider");
-        IdentityProviderRepresentation idpRep = orgIdPResource.toRepresentation();
 
-        // IDP should have been assigned to the first domain.
-        assertThat(idpRep.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE), is(equalTo("testorg.com")));
+        // first domain should have the IdP assigned
+        orgRep = orgResource.toRepresentation();
+        OrganizationDomainRepresentation firstDomain = orgRep.getDomain("testorg.com");
+        assertThat(firstDomain.getIdentityProviderAlias(), is(equalTo("testorg-identity-provider")));
 
-        // let's update the organization, removing the domain linked to the IDP.
-        orgRep.removeDomain(orgRep.getDomain("testorg.com"));
+        // remove the domain linked to the IDP
+        orgRep.removeDomain(firstDomain);
         try (Response response = orgResource.update(orgRep)) {
             assertThat(response.getStatus(), is(equalTo(Status.NO_CONTENT.getStatusCode())));
         }
 
-        // fetch the idp config and check if the domain has been unlinked.
-        idpRep = orgIdPResource.toRepresentation();
-        assertThat(idpRep.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE), is(nullValue()));
+        // remaining domain should not have an IdP assigned
+        orgRep = orgResource.toRepresentation();
+        OrganizationDomainRepresentation remainingDomain = orgRep.getDomain("testorg.net");
+        assertNotNull(remainingDomain);
+        assertThat(remainingDomain.getIdentityProviderAlias(), is(nullValue()));
     }
 
     @Test
@@ -294,6 +268,54 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         OrganizationResource orgResource = managedRealm.admin().organizations().get(orgRep.getId());
         List<IdentityProviderRepresentation> identityProviders = orgResource.identityProviders().getIdentityProviders();
         assertThat(identityProviders.size(), is(1));
+    }
+
+    @Test
+    public void testLinkIdpToMultipleOrganizations() {
+        OrganizationRepresentation orgA = createOrganization("orga", "orga.com");
+        OrganizationResource orgAResource = managedRealm.admin().organizations().get(orgA.getId());
+
+        // get the IdP that was created with orgA
+        String idpAlias = orgAResource.identityProviders().getIdentityProviders().get(0).getAlias();
+
+        // create second org and link the same IdP
+        OrganizationRepresentation orgB = createOrganization("orgb", "orgb.com");
+        OrganizationResource orgBResource = managedRealm.admin().organizations().get(orgB.getId());
+
+        try (Response response = orgBResource.identityProviders().addIdentityProvider(idpAlias)) {
+            assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
+        }
+
+        // IdP should be linked to both orgs
+        IdentityProviderRepresentation idpRep = managedRealm.admin().identityProviders().get(idpAlias).toRepresentation();
+        Assertions.assertEquals(2, idpRep.getOrganizationIds().size());
+        Assertions.assertTrue(idpRep.getOrganizationIds().contains(orgA.getId()));
+        Assertions.assertTrue(idpRep.getOrganizationIds().contains(orgB.getId()));
+
+        // IdP visible from both org endpoints
+        assertNotNull(orgAResource.identityProviders().get(idpAlias).toRepresentation());
+        assertNotNull(orgBResource.identityProviders().get(idpAlias).toRepresentation());
+
+        // unlink from orgA
+        try (Response response = orgAResource.identityProviders().get(idpAlias).delete()) {
+            assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
+        }
+
+        // IdP still linked to orgB only
+        idpRep = managedRealm.admin().identityProviders().get(idpAlias).toRepresentation();
+        Assertions.assertEquals(1, idpRep.getOrganizationIds().size());
+        Assertions.assertTrue(idpRep.getOrganizationIds().contains(orgB.getId()));
+        assertFalse(idpRep.getOrganizationIds().contains(orgA.getId()));
+
+        // still visible from orgB
+        assertNotNull(orgBResource.identityProviders().get(idpAlias).toRepresentation());
+
+        // not visible from orgA
+        try {
+            orgAResource.identityProviders().get(idpAlias).toRepresentation();
+            Assertions.fail("IdP should not be visible from orgA after unlinking");
+        } catch (NotFoundException expected) {
+        }
     }
 
     private IdentityProviderRepresentation createRep(String alias, String providerId) {

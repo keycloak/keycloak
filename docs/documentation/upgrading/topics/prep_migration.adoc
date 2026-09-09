@@ -23,6 +23,7 @@ The database schema will no longer be compatible with the old server after the u
 If the `persistent-user-sessions` feature is disabled in your current setup and the server is upgraded, all user sessions will be lost except for offline user sessions.
 Users with these sessions will have to log in again.
 Note that the `persistent-user-sessions` feature is disabled by default in {project_name} server releases prior to 26.0.0.
+Disabling `persistent-user-sessions` is deprecated since {project_name} 26.8 and will not be supported in a future release.
 ====
 
 [WARNING]

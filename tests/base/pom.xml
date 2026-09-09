@@ -153,7 +153,95 @@
             <artifactId>keycloak-model-jpa</artifactId>
             <scope>test</scope>
         </dependency>
+        <!--
+            CLI tests spawn the kcadm.sh / kcreg.sh client tools and reference
+            org.keycloak.client.cli.* / KcAdmMain / KcRegMain for CLI constants.
+        -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-cli</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Unpack the client CLI tools (kcadm.sh / kcreg.sh) used by the cli tests -->
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-client-cli-dist</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-client-cli-dist</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${project.build.directory}/containers</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <!-- A separate copy of the client tools used only by the FIPS suites (see Fips*TestSuite) -->
+                    <execution>
+                        <id>unpack-client-cli-dist-fips</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <!-- distinct markers dir so this second unpack of the same artifact is not skipped -->
+                            <markersDirectory>${project.build.directory}/containers-fips/dependency-markers</markersDirectory>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-client-cli-dist</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${project.build.directory}/containers-fips</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <!-- kcadm/kcreg tests run in FIPS mode needs following dependencies according to our FIPS documentation -->
+                    <execution>
+                        <id>copy-client-cli-fips-libs</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.bouncycastle</groupId>
+                                    <artifactId>bc-fips</artifactId>
+                                    <version>${bouncycastle.bcfips.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.bouncycastle</groupId>
+                                    <artifactId>bctls-fips</artifactId>
+                                    <version>${bouncycastle.bctls-fips.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.bouncycastle</groupId>
+                                    <artifactId>bcutil-fips</artifactId>
+                                    <version>${bouncycastle.bcutilfips.version}</version>
+                                </artifactItem>
+                            </artifactItems>
+                            <outputDirectory>${project.build.directory}/containers-fips/keycloak-client-tools/bin/client/lib</outputDirectory>
+                            <stripVersion>false</stripVersion>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
     <profiles>
         <profile>

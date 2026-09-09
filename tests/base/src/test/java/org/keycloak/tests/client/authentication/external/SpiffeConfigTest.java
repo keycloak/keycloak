@@ -70,7 +70,7 @@ public class SpiffeConfigTest {
         Assertions.assertNull(createdRep.getUpdateProfileFirstLoginMode());
         Assertions.assertNull(createdRep.getFirstBrokerLoginFlowAlias());
         Assertions.assertNull(createdRep.getPostBrokerLoginFlowAlias());
-        Assertions.assertNull(createdRep.getOrganizationId());
+        Assertions.assertTrue(createdRep.getOrganizationIds() == null || createdRep.getOrganizationIds().isEmpty());
         Assertions.assertNull(createdRep.isAddReadTokenRoleOnCreate());
         Assertions.assertNull(createdRep.isAuthenticateByDefault());
         Assertions.assertNull(createdRep.isHideOnLogin());

@@ -1,9 +1,5 @@
 import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
-import {
-  FormSubmitButton,
-  SelectControl,
-  TextControl,
-} from "@keycloak/keycloak-ui-shared";
+import { FormSubmitButton } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
@@ -12,7 +8,7 @@ import {
   ModalVariant,
 } from "@patternfly/react-core";
 import { useEffect } from "react";
-import { FormProvider, useForm, useFormContext } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { DefaultSwitchControl } from "../components/SwitchControl";
@@ -23,7 +19,6 @@ import {
   convertToFormValues,
 } from "../util";
 import { IdentityProviderSelect } from "./IdentityProviderSelect";
-import { OrganizationFormType } from "./OrganizationForm";
 
 type LinkIdentityProviderModalProps = {
   orgId: string;
@@ -34,10 +29,7 @@ type LinkIdentityProviderModalProps = {
 type LinkRepresentation = {
   alias: string[] | string;
   hideOnLogin: boolean;
-  config: {
-    "kc.org.domain": string;
-    "kc.org.excluded.domains": string;
-  };
+  config: Record<string, string>;
 };
 
 export const LinkIdentityProviderModal = ({
@@ -51,7 +43,6 @@ export const LinkIdentityProviderModal = ({
 
   const form = useForm<LinkRepresentation>({ mode: "onChange" });
   const { handleSubmit, formState, setValue } = form;
-  const { getValues } = useFormContext<OrganizationFormType>();
 
   useEffect(
     () =>
@@ -139,24 +130,6 @@ export const LinkIdentityProviderModal = ({
             isRequired
             isDisabled={!!identityProvider}
           />
-          <SelectControl
-            name={convertAttributeNameToForm("config.kc.org.domain")}
-            label={t("domain")}
-            controller={{ defaultValue: "" }}
-            options={[
-              { key: "", value: t("none") },
-              { key: "ANY", value: t("any") },
-              ...(getValues("domains")
-                ? getValues("domains")!.map((d) => ({ key: d, value: d }))
-                : []),
-            ]}
-            menuAppendTo="parent"
-          />
-          <TextControl
-            label={t("excludedDomains")}
-            name={convertAttributeNameToForm("config.kc.org.excluded.domains")}
-            labelIcon={t("excludedDomainsHelp")}
-          />
           <DefaultSwitchControl
             name="hideOnLogin"
             label={t("hideOnLoginPage")}
@@ -177,14 +150,6 @@ export const LinkIdentityProviderModal = ({
             )}
             label={t("showOnLoginForUnlinkedMembers")}
             labelIcon={t("showOnLoginForUnlinkedMembersHelp")}
-            stringify
-          />
-          <DefaultSwitchControl
-            name={convertAttributeNameToForm(
-              "config.kc.org.broker.redirect.mode.email-matches",
-            )}
-            label={t("redirectWhenEmailMatches")}
-            labelIcon={t("redirectWhenEmailMatchesHelp")}
             stringify
           />
         </Form>

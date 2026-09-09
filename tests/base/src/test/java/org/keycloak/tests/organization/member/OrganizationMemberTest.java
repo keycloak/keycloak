@@ -80,8 +80,6 @@ import org.keycloak.tests.suites.DatabaseTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
@@ -667,21 +665,22 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         }
 
         // assign IdP to the org
-        idpRep.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomain);
-        idpRep.getConfig().put(OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
-        realm.admin().identityProviders().get(idpRep.getAlias()).update(idpRep);
-
         try (Response response = realm.admin().organizations().get(id).identityProviders().addIdentityProvider(idpAlias)) {
             assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
         }
 
+        // set domain routing via the new API
+        orgRep = realm.admin().organizations().get(id).toRepresentation();
+        orgRep.getDomains().stream()
+                .filter(d -> d.getName().equals(orgDomain))
+                .findFirst()
+                .ifPresent(d -> {
+                    d.setIdentityProviderAlias(idpAlias);
+                    d.setAutoRedirect(true);
+                });
+        realm.admin().organizations().get(id).update(orgRep).close();
+
         //check the federated user is not a member
-        assertThat(realm.admin().organizations().get(id).members().list(-1, -1), hasSize(0));
-
-        // test again this time assigning any org domain to the identity provider
-
-        idpRep.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
-        realm.admin().identityProviders().get(idpRep.getAlias()).update(idpRep);
         assertThat(realm.admin().organizations().get(id).members().list(-1, -1), hasSize(0));
     }
 

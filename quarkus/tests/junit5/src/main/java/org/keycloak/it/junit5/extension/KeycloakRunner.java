@@ -42,7 +42,8 @@ public class KeycloakRunner {
     private DistributionTest config;
     private KeycloakDistribution delegate;
     private StopServer.Mode stopServer;
-    private long startTimeout = TimeUnit.SECONDS.toMillis(Long.getLong("keycloak.distribution.start.timeout", 120L));
+    // MySQL Liquibase migrations can exceed 2 minutes on slow CI runners
+    private long startTimeout = TimeUnit.SECONDS.toMillis(Long.getLong("keycloak.distribution.start.timeout", 300L));
 
     public KeycloakRunner(DistributionTest config,
                                          KeycloakDistribution delegate) {

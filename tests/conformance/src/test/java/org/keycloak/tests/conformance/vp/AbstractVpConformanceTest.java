@@ -29,10 +29,10 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
+import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
+import org.keycloak.testframework.conformance.runner.ModuleRun;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.tests.conformance.AbstractConformanceTest;
-import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
-import org.keycloak.tests.conformance.runner.ModuleRun;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -55,7 +55,7 @@ abstract class AbstractVpConformanceTest extends AbstractConformanceTest {
     protected Consumer<ModuleRun> interaction(ConformanceModuleVariant moduleVariant) {
         return moduleRun -> {
             KeycloakVerifierBrowser browser =
-                    new KeycloakVerifierBrowser(suite, keycloakUrls.getBase(), browserSslContext());
+                    new KeycloakVerifierBrowser(server, keycloakUrls.getBase(), browserSslContext());
             if (crossDevice()) {
                 browser.loginCrossDevice(VpConformanceRealmConfig.REALM, VpConformanceRealmConfig.CLIENT_ID,
                         VpConformanceRealmConfig.IDP_ALIAS, moduleRun);
@@ -77,7 +77,7 @@ abstract class AbstractVpConformanceTest extends AbstractConformanceTest {
         try {
             KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
             trustStore.load(null, null);
-            trustStore.setCertificateEntry("conformance-suite", suite.nginxCertificate());
+            trustStore.setCertificateEntry("conformance-suite", server.nginxCertificate());
 
             KeyStore serverKeyStore = KeyStore.getInstance(certificates.getKeystoreFormat().name());
             try (InputStream in = Files.newInputStream(Path.of(certificates.getServerKeyStorePath()))) {

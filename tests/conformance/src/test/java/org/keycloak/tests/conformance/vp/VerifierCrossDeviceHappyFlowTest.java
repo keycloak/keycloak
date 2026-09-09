@@ -22,11 +22,13 @@ import java.util.stream.Stream;
 
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.conformance.runner.BrowserInteraction;
+import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
+import org.keycloak.testframework.conformance.runner.ConformanceResult;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.tests.conformance.runner.BrowserInteraction;
-import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
-import org.keycloak.tests.conformance.runner.ConformanceResult;
+
+import static org.keycloak.tests.conformance.vp.VpConformanceRealmConfig.TEST_PLAN;
 
 /**
  * The verifier accepts a valid cross device SD-JWT VC presentation. The wallet uses the QR code link,
@@ -47,7 +49,7 @@ public class VerifierCrossDeviceHappyFlowTest extends AbstractVpConformanceTest 
     @Override
     protected Stream<ConformanceModuleVariant> moduleVariants() {
         return discoverModuleVariants(
-                "oid4vp-1final-verifier-test-plan",
+                TEST_PLAN,
                 Map.of(
                         "vp_profile", "plain_vp",
                         "credential_format", "sd_jwt_vc",

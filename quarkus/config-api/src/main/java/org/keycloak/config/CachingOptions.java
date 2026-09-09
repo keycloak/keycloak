@@ -18,6 +18,8 @@ public class CachingOptions {
     public static final String CACHE_EMBEDDED_MTLS_TRUSTSTORE_FILE_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-trust-store-file";
     public static final String CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-trust-store-password";
     public static final String CACHE_EMBEDDED_MTLS_ROTATION_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-rotation-interval-days";
+    public static final String CACHE_EMBEDDED_NODE_NAME_PROPERTY = CACHE_EMBEDDED_PREFIX + "-node-name";
+    public static final String CACHE_EMBEDDED_CLUSTER_NAME_PROPERTY = CACHE_EMBEDDED_PREFIX + "-cluster-name";
     public static final String CACHE_EMBEDDED_NETWORK_BIND_ADDRESS_PROPERTY = CACHE_EMBEDDED_PREFIX + "-network-bind-address";
     public static final String CACHE_EMBEDDED_NETWORK_BIND_PORT_PROPERTY = CACHE_EMBEDDED_PREFIX + "-network-bind-port";
     public static final String CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS_PROPERTY = CACHE_EMBEDDED_PREFIX + "-network-external-address";
@@ -119,6 +121,21 @@ public class CachingOptions {
             .category(OptionCategory.CACHE)
             .defaultValue(30)
             .description("Rotation period in days of automatic JGroups MTLS certificates.")
+            .build();
+
+    public static final Option<String> CACHE_EMBEDDED_NODE_NAME = new OptionBuilder<>(CACHE_EMBEDDED_NODE_NAME_PROPERTY, String.class)
+            .category(OptionCategory.CACHE)
+            .description("Name of this node in the embedded cluster. Used in log messages and management tools to identify this instance. "
+                    + "If not set, a name is generated automatically.")
+            .build();
+
+    public static final Option<String> CACHE_EMBEDDED_CLUSTER_NAME = new OptionBuilder<>(CACHE_EMBEDDED_CLUSTER_NAME_PROPERTY, String.class)
+            .category(OptionCategory.CACHE)
+            .description("Name of the embedded Infinispan cluster. All nodes that belong to the same Keycloak deployment must share the same value; "
+                    + "nodes that belong to different deployments sharing the same database must each use a different value. "
+                    + "Defaults to 'ISPN' if not set. "
+                    + "WARNING: Using distinct cluster names without enabling the stateless feature disables cross-cluster cache invalidation, "
+                    + "which leads to stale caches and incorrect behavior. Use only together with '--features=stateless'.")
             .build();
 
     public static final Option<String> CACHE_EMBEDDED_NETWORK_BIND_ADDRESS = new OptionBuilder<>(CACHE_EMBEDDED_NETWORK_BIND_ADDRESS_PROPERTY, String.class)

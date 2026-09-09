@@ -1,9 +1,7 @@
-account,4
 actions,1
 adapter,IGNORED
 authz,3
 broker,2
-cli,4
 client,4
 cluster,IGNORED
 composites,4
@@ -18,7 +16,6 @@ oauth,6
 oidc,6
 organization,3
 policy,6
-providers,4
 saml,6
 script,6
 theme,6

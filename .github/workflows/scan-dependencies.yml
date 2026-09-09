@@ -61,7 +61,7 @@ jobs:
         with:
           cache: true
           version: v0.70.0 # There's an issue in v0.71.0 that makes it not work with Keycloak
-      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+      - uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
         with:
           distribution: 'temurin'
           java-version: '25'
@@ -79,14 +79,11 @@ jobs:
           output: 'trivy-report.json'
           scanners: 'vuln'          
           skip-setup-trivy: true
-      - name: Display report
-        run: |
-          cat trivy-report.json | jq -r '"| ID | PKG | INSTALLED | FIXED | SEVERITY |", "| -- | -- | -- | -- | -- |", ([.Results[] | select(.Vulnerabilities != null) | .Vulnerabilities[]] | unique_by(.VulnerabilityID) | .[] | "| \(.VulnerabilityID) | \(.PkgName) | \(.InstalledVersion) | \(.FixedVersion) | \(.Severity) |")' >> $GITHUB_STEP_SUMMARY
       - name: Convert to sarif
         run: |
           trivy convert --format sarif -o trivy-report.sarif --scanners vuln trivy-report.json
       - name: Upload report
-        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+        uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         with:
           sarif_file: 'trivy-report.sarif'
           category: 'dependencies'
@@ -99,4 +96,44 @@ jobs:
         with:
           name: ${{ env.TRIVY_ARTIFACT_NAME }}
           path: trivy-report.json
-          retention-days: 30
+          retention-days: 7
+
+  parse-reports:
+    name: Parse Reports
+    needs: scan-dependencies
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Download report artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: /tmp/trivy-logs
+          pattern: trivy-report-*
+      - uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+      - name: List artifacts
+        run: tree /tmp/trivy-logs
+      - name: Parse reports
+        run: ./mvnw -f misc/vuln-to-issues package exec:java -Dexec.mainClass="org.keycloak.misc.TrivyReportParser"
+      - name: Set issue type
+        run: |
+          gh issue list \
+            --label source/scan-dependencies \
+            --label kind/cve \
+            --state all \
+            --limit 500 \
+            --search "no:type" \
+            --json number \
+            --jq '.[].number' \
+          | while read -r issue_number; do
+              gh issue edit "$issue_number" --type cve
+            done

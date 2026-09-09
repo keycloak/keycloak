@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.configuration;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -33,6 +34,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import io.agroal.api.AgroalPoolInterceptor;
 import io.agroal.pool.wrapper.ConnectionWrapper;
 import io.quarkus.runtime.configuration.DurationConverter;
+import org.jboss.logging.Logger;
 import org.jspecify.annotations.NonNull;
 import org.postgresql.PGConnection;
 
@@ -43,6 +45,15 @@ import org.postgresql.PGConnection;
  */
 @ApplicationScoped
 public class UpdateSocketTimeoutOnConnectionAcquireInterceptor implements AgroalPoolInterceptor {
+
+    private static final Logger logger = Logger.getLogger(UpdateSocketTimeoutOnConnectionAcquireInterceptor.class);
+
+    // The Oracle OCI (thick) driver does not implement Connection.setNetworkTimeout() and throws
+    // SQLFeatureNotSupportedException. Timeouts for OCI connections are governed by sqlnet.ora/TNS
+    // descriptor parameters instead. Skip setNetworkTimeout() for OCI connections.
+    // No trailing colon — matches both "jdbc:oracle:oci:" and the older "jdbc:oracle:oci8:" schemes,
+    // which are both Type 2 (thick) drivers that lack setNetworkTimeout() support.
+    private static final String ORACLE_OCI_URL_PREFIX = "jdbc:oracle:oci";
 
     // Executor is not closed during shutdown to avoid interfering with shutting down database connections
     private final Executor executor;
@@ -74,10 +85,27 @@ public class UpdateSocketTimeoutOnConnectionAcquireInterceptor implements Agroal
                 wrapper.unwrap(PGConnection.class).setQueryTimeout((int) TimeUnit.MILLISECONDS.toSeconds(timeoutMillis));
                 timeoutMillis += 1000;
             }
+            if (isOracleOci(connection)) {
+                return;
+            }
             connection.setNetworkTimeout(executor, timeoutMillis);
+        } catch (SQLFeatureNotSupportedException e) {
+            logger.warnf("JDBC driver does not support setNetworkTimeout, skipping socket timeout configuration: %s", e.getMessage());
         } catch (SQLException e) {
             throw new IllegalStateException("Can't set timeouts for connection", e);
         }
+    }
+
+    private static boolean isOracleOci(Connection connection) {
+        try {
+            String url = connection.getMetaData().getURL();
+            if (url != null && url.startsWith(ORACLE_OCI_URL_PREFIX)) {
+                return true;
+            }
+        } catch (SQLException e) {
+            logger.debugf("Unable to determine JDBC URL from connection metadata: %s", e.getMessage());
+        }
+        return false;
     }
 
     private static class InternalThreadFactory implements ThreadFactory {
