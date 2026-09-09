@@ -61,12 +61,19 @@ export async function clickCreateUser(page: Page) {
   const addUser = page.getByTestId("add-user");
   const emptyAction = page.getByTestId("no-users-found-empty-action");
 
+  await expect
+    .poll(
+      async () =>
+        (await addUser.isVisible()) || (await emptyAction.isVisible()),
+      { timeout: 15_000 },
+    )
+    .toBe(true);
+
   if (await addUser.isVisible()) {
     await addUser.click();
     return;
   }
 
-  await expect(emptyAction).toBeVisible({ timeout: 15_000 });
   await emptyAction.click();
 }
 
