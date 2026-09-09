@@ -172,7 +172,7 @@ Enables or disables an attribute. If set to `Always`, the attribute is available
 If set to `Scopes are requested`, the attribute is only available when the client acting on behalf of the user is requesting a
 set of one or more scopes. You can use this option to dynamically enforce certain attributes depending on the client scopes
 being requested. For the administration console, scopes are not evaluated and the attribute is always enabled.
-That is because filtering attributes by scopes only works when running end-user authentication flows.
+That is because filtering attributes by scopes only works in end-user contexts, such as authentication flows and the account console.
 
 Required::
 Set the conditions to mark an attribute as required. If disabled, the attribute is optional.
@@ -181,8 +181,8 @@ the attribute is required for end-users (via end-user contexts) or to administra
 You can also set the `Required when` setting to mark the attribute as required only when a set of one or more client scopes are requested.
 If set to `Always`, the attribute is required from any user profile context.
 If set to `Scopes are requested`, the attribute is only required when the client acting on behalf of the user is requesting a
-set of one or more scopes. For the account and administration consoles, scopes are not evaluated and the attribute is not required.
-That is because filtering attributes by scopes only works when running authentication flows.
+set of one or more scopes. For the administration console, scopes are not evaluated and the attribute is not required.
+That is because filtering attributes by scopes only works in end-user contexts, such as authentication flows and the account console.
 
 Permission::
 In this section, you can define read and write permissions when the attribute is being managed from an end-user or administrative context.
