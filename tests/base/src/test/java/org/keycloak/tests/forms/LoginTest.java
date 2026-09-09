@@ -36,6 +36,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -76,6 +77,7 @@ import org.keycloak.tests.oauth.ParameterizedScopeBuilder;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -381,21 +383,37 @@ public class LoginTest {
     @Test
     @DatabaseTest
     public void loginDifferentUserAfterDisabledUserThrownOut() {
+        // act: Login as a user
         oauth.openLoginForm();
         loginPage.fillLogin("test-user@localhost", getPassword("test-user@localhost"));
         loginPage.submit();
 
-        assertTrue(oauth.parseLoginResponse().isSuccess());
+        // verify: User is logged in
+        AuthorizationEndpointResponse loginResponse = oauth.parseLoginResponse();
+        assertTrue(loginResponse.isSuccess());
+        String code = loginResponse.getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+
+        // prepare: User is now disabled
         managedRealm.updateUserWithCleanup("test-user@localhost", user -> user.enabled(false));
 
+        // act: Open the login page again (similar to changing the password or other actions)
+        events.clear();
         oauth.openLoginForm();
-        loginPage.assertCurrent();
 
-        // try to log in as different user
+        // verify: New Authentication session started, but no user logged in. Existing user session should be removed (as the identity cookie is also gone)
+        loginPage.assertCurrent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .userId(accessToken.getSubject())
+                .sessionId(accessToken.getSessionId());
+
+        // act: try to log in as different user
         loginPage.fillLogin("keycloak-user@localhost", getPassword("keycloak-user@localhost"));
         loginPage.submit();
 
-        // keycloak-user@localhost has UPDATE_PASSWORD required action, so should be on password update page
+        // verify: keycloak-user@localhost has UPDATE_PASSWORD required action, so should be on password update page
         updatePasswordPage.assertCurrent();
     }
 
