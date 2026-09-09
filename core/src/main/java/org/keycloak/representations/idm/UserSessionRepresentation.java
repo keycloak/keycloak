@@ -34,6 +34,11 @@ public class UserSessionRepresentation {
     private boolean rememberMe;
     private Map<String, String> clients = new HashMap<>();
     private boolean transientUser;
+    private String os;
+    private String osVersion;
+    private String browser;
+    private String device;
+    private boolean mobile;
 
     public String getId() {
         return id;
@@ -110,5 +115,45 @@ public class UserSessionRepresentation {
 
     public void setTransientUser(boolean transientUser) {
         this.transientUser = transientUser;
+    }
+
+    public String getOs() {
+        return os;
+    }
+
+    public void setOs(String os) {
+        this.os = os;
+    }
+
+    public String getOsVersion() {
+        return osVersion;
+    }
+
+    public void setOsVersion(String osVersion) {
+        this.osVersion = osVersion;
+    }
+
+    public String getBrowser() {
+        return browser;
+    }
+
+    public void setBrowser(String browser) {
+        this.browser = browser;
+    }
+
+    public String getDevice() {
+        return device;
+    }
+
+    public void setDevice(String device) {
+        this.device = device;
+    }
+
+    public boolean isMobile() {
+        return mobile;
+    }
+
+    public void setMobile(boolean mobile) {
+        this.mobile = mobile;
     }
 }

@@ -7,4 +7,9 @@ export default interface UserSessionRepresentation {
   userId?: string;
   username?: string;
   transientUser?: boolean;
+  os?: string;
+  osVersion?: string;
+  browser?: string;
+  device?: string;
+  mobile?: boolean;
 }
