@@ -161,7 +161,10 @@ export async function dragExecutionAboveExecution(
     .filter({ hasText: targetExecution })
     .first();
   const getDragHandle = (row: Locator) =>
-    row.locator("[data-testid^='drag-handle-']").first();
+    row
+      .locator("[data-testid^='drag-handle-']")
+      .getByRole("button", { name: /draggable row/i })
+      .first();
   const sourceHandle = getDragHandle(sourceRow);
   const targetHandle = getDragHandle(targetRow);
 
@@ -298,6 +301,12 @@ export async function dragExecutionAboveExecution(
 
   if (!moved) {
     moved = await waitForMove();
+  }
+
+  if (moved) {
+    await expect(page.getByTestId("flow-order-stable")).toBeVisible({
+      timeout: 15_000,
+    });
   }
 
   return moved;
