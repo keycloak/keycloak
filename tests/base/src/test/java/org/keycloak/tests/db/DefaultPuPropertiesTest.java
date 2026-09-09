@@ -15,7 +15,6 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.jpa.HibernateHints;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
@@ -65,7 +64,6 @@ public class DefaultPuPropertiesTest {
                 .sorted()
                 .toList();
 
-        assertNotNull(entityNames);
         assertTrue(entityNames.size() >= 70,
                 "Expected at least 70 entities but found " + entityNames.size());
         assertTrue(entityNames.contains("org.keycloak.models.jpa.entities.UserEntity"));

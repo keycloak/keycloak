@@ -533,6 +533,10 @@ class KeycloakProcessor {
             for (String mappingFile : descriptor.getMappingFileNames()) {
                 builder.mappingFile(mappingFile);
             }
+            String resolvedDialect = resolveUserDefinedDialect(descriptor, datasourceName);
+            if (resolvedDialect != null) {
+                builder.dialect(resolvedDialect);
+            }
             Properties properties = descriptor.getProperties();
             if (properties != null) {
                 for (Entry<Object, Object> entry : properties.entrySet()) {
@@ -540,11 +544,7 @@ class KeycloakProcessor {
                         logger.debugf("Skipping non-String property from persistence.xml unit '%s': %s", puName, entry.getKey());
                         continue;
                     }
-                    if (DATASOURCE_PROPERTIES.contains(key)) {
-                        continue;
-                    }
-                    if (AvailableSettings.DIALECT.equals(key)) {
-                        builder.dialect(value);
+                    if (DATASOURCE_PROPERTIES.contains(key) || AvailableSettings.DIALECT.equals(key)) {
                         continue;
                     }
                     builder.property(key, value);
@@ -560,6 +560,24 @@ class KeycloakProcessor {
             }
             producer.produce(builder.build());
         }
+    }
+
+    static String resolveUserDefinedDialect(PersistenceUnitDescriptor descriptor, String datasourceName) {
+        Optional<String> explicitDialect = getExplicitlySetDatasourceOption(DatabaseOptions.DB_DIALECT, datasourceName);
+        if (explicitDialect.isPresent()) {
+            return explicitDialect.get();
+        }
+        Properties properties = descriptor.getProperties();
+        String puDialect = properties != null ? properties.getProperty(AvailableSettings.DIALECT) : null;
+        if (puDialect != null && !puDialect.isBlank()) {
+            return switch (puDialect) {
+                case "H2", "H2Dialect", "org.hibernate.dialect.H2Dialect" -> Database.getDialect("h2").orElse(puDialect);
+                case "MSSQL", "SQLServer", "SQLServerDialect", "org.hibernate.dialect.SQLServerDialect" -> Database.getDialect("mssql").orElse(puDialect);
+                case "Oracle", "OracleDialect", "org.hibernate.dialect.OracleDialect" -> Database.getDialect("oracle").orElse(puDialect);
+                default -> puDialect;
+            };
+        }
+        return DatabasePropertyMappers.getDatasourceOptionValue(DatabaseOptions.DB_DIALECT, datasourceName).orElse(null);
     }
 
     static boolean isResourceLocal(PersistenceUnitDescriptor descriptor) {

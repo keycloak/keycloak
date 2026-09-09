@@ -93,7 +93,7 @@ public class CustomJpaEntityProviderDistTest {
         cliResult.assertMessageWasShownExactlyNumberOfTimes("com.acme.provider.legacy.jpa.entity.UnlistedEntity", 1);
 
         cliResult.assertMessageWasShownExactlyNumberOfTimes("hibernate.dialect: com.acme.provider.legacy.jpa.entity.KeycloakItH2Dialect", 1);
-        cliResult.assertMessageWasShownExactlyNumberOfTimes("hibernate.dialect: org.hibernate.dialect.H2Dialect", 2);
+        cliResult.assertMessageWasShownExactlyNumberOfTimes("hibernate.dialect: org.keycloak.connections.jpa.dialect.KeycloakH2Dialect", 3);
 
         cliResult.assertMessageWasShownExactlyNumberOfTimes("jakarta.persistence.sharedCache.mode: ENABLE_SELECTIVE", 1);
         cliResult.assertMessageWasShownExactlyNumberOfTimes("jakarta.persistence.validation.mode: NONE", 1);

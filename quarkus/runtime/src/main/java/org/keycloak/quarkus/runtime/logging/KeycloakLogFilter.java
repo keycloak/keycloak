@@ -62,7 +62,7 @@ public abstract class KeycloakLogFilter implements Filter {
     private static final Pattern ISPN000312_PATTERN = Pattern.compile(
             "^\\[Context=(" + String.join("|", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME) + ")] ISPN000312: .*");
     // prefix of a Quarkus Hibernate ORM property in application properties
-    private static final String QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX = "quarkus.hibernate-orm.unsupported-properties.\"";
+    private static final String QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX = "quarkus.hibernate-orm.unsupported-properties.";
 
     // Use this thread pool to asynchronously log from virtual threads, which could otherwise be pinned and lead to deadlocks.
     // A single thread ensures that all log entries appear in the correct order.
@@ -98,7 +98,12 @@ public abstract class KeycloakLogFilter implements Filter {
         return properties
                 .filter(Objects::nonNull)
                 .filter(p -> p.startsWith(QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX))
-                .map(p -> p.substring(QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX.length(), p.length() - 1))
+                .map(p -> {
+                    if (p.startsWith(QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX + "\"")) {
+                        return p.substring(QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX.length() + 1, p.length() - 1);
+                    }
+                    return p.substring(QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX.length());
+                })
                 .collect(Collectors.toUnmodifiableSet());
     }
 
