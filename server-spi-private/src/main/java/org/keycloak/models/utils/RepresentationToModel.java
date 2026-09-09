@@ -146,8 +146,6 @@ import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 
-import static java.util.Optional.ofNullable;
-
 import static org.keycloak.models.Constants.DEFAULT_PROTOCOL;
 import static org.keycloak.protocol.saml.util.ArtifactBindingUtils.computeArtifactBindingIdentifierString;
 
@@ -1940,10 +1938,12 @@ public class RepresentationToModel {
         model.setRedirectUrl(rep.getRedirectUrl());
         model.setDescription(rep.getDescription());
         model.setAttributes(rep.getAttributes());
-        model.setDomains(ofNullable(rep.getDomains()).orElse(Set.of()).stream()
-                .filter(Objects::nonNull)
-                .map(RepresentationToModel::toModel)
-                .collect(Collectors.toSet()));
+        if (rep.getDomains() != null) {
+            model.setDomains(rep.getDomains().stream()
+                    .filter(Objects::nonNull)
+                    .map(RepresentationToModel::toModel)
+                    .collect(Collectors.toSet()));
+        }
 
         return model;
     }
