@@ -183,6 +183,10 @@ public class IdentityProviderResource {
                 message = "Invalid request";
             }
 
+            if (logger.isDebugEnabled()) {
+                logger.debug(message, e);
+            }
+
             throw ErrorResponse.error(message, BAD_REQUEST);
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Identity Provider " + providerRep.getAlias() + " already exists");
