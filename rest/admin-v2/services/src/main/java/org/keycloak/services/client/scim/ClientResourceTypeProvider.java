@@ -84,9 +84,6 @@ import org.keycloak.validation.jakarta.HibernateValidatorProvider;
 import org.keycloak.validation.jakarta.JakartaValidatorProvider;
 import org.keycloak.validation.jakarta.ValidationContext;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.util.EntityUtils;
-
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.representations.admin.v2.validators.ClientSecretNotBlankValidator.isClientSecret;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -506,12 +503,7 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
         // Add missing roles (in desiredRoleNames but not in currentRoleNames)
         desiredRoleNames.stream()
                 .filter(roleName -> !currentRoleNames.contains(roleName))
-                .forEach(roleName -> {
-                    try (var response = clientRoles.createRole(new RoleRepresentation(roleName, "", false))) {
-                        // close response and consume payload due to performance reasons
-                        EntityUtils.consumeQuietly((HttpEntity) response.getEntity());
-                    }
-                });
+                .forEach(roleName -> clientRoles.doCreateRole(new RoleRepresentation(roleName, "", false)));
 
         // Remove extra roles (in currentRoleNames but not in desiredRoleNames)
         currentRoleNames.stream()

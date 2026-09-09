@@ -406,27 +406,44 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             putRep.setClientId(clientId);
             putRep.setCreatedTimestamp(created.getCreatedTimestamp() + 100000);
             putRep.setUpdatedTimestamp(created.getUpdatedTimestamp() + 100000);
+            OIDCClientRepresentation updated = null;
             try (var response = getClientsApi().client(clientId).createOrUpdateClient(putRep)) {
                 assertThat(response.getStatus(), is(200));
-                var updated = response.readEntity(OIDCClientRepresentation.class);
+                updated = response.readEntity(OIDCClientRepresentation.class);
                 
-                assertThat(updated.getCreatedTimestamp(), is(created.getCreatedTimestamp()));
-                assertTrue(updated.getUpdatedTimestamp() > created.getUpdatedTimestamp());
-                assertThat(updated.getUpdatedTimestamp(), is(not(putRep.getUpdatedTimestamp())));
-                
-                try {
-                    // wait to perform the get to see if updated response timestamps remain consistent
-                    Thread.sleep(10);    
-                } catch (InterruptedException e) {
-                }
-                
-                var current = getClientsApi().client(clientId).getClient();
-                assertThat(current.getCreatedTimestamp(), is(updated.getCreatedTimestamp()));
-                assertThat(current.getUpdatedTimestamp(), is(updated.getUpdatedTimestamp()));
+                checkTimestamps(clientId, created, putRep, updated);
             }
+            
+            setServerTimeOffset(2);
+            
+            // patch with a modified values succeeds - readOnly is just ignored
+            OIDCClientRepresentation patchRep = new OIDCClientRepresentation();
+            patchRep.setEnabled(true);
+            patchRep.setCreatedTimestamp(updated.getCreatedTimestamp() + 100000);
+            patchRep.setUpdatedTimestamp(updated.getUpdatedTimestamp() + 100000);
+
+            var patched = getClientsApi().client(clientId).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patchRep)));
+            checkTimestamps(clientId, created, patchRep, patched);
         } finally {
             setServerTimeOffset(0);
         }
+    }
+
+    private void checkTimestamps(String clientId, OIDCClientRepresentation created, BaseClientRepresentation rep,
+            BaseClientRepresentation updated) {
+        assertThat(updated.getCreatedTimestamp(), is(created.getCreatedTimestamp()));
+        assertTrue(updated.getUpdatedTimestamp() > created.getUpdatedTimestamp());
+        assertThat(updated.getUpdatedTimestamp(), is(not(rep.getUpdatedTimestamp())));
+        
+        try {
+            // wait to perform the get to see if updated response timestamps remain consistent
+            Thread.sleep(10);    
+        } catch (InterruptedException e) {
+        }
+        
+        var current = getClientsApi().client(clientId).getClient();
+        assertThat(current.getCreatedTimestamp(), is(updated.getCreatedTimestamp()));
+        assertThat(current.getUpdatedTimestamp(), is(updated.getUpdatedTimestamp()));
     }
 
     @Test

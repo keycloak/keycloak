@@ -168,77 +168,82 @@ public class RoleContainerResource extends RoleResource {
         @APIResponse(responseCode = "500", description = "Internal Server Error")
     })
     public Response createRole(final RoleRepresentation rep) {
-        auth.roles().requireManage(roleContainer);
-
-        if (rep.getName() == null) {
-            throw new BadRequestException("role has no name");
-        }
-
         try {
-            RoleModel role = roleContainer.addRole(rep.getName());
-            role.setDescription(rep.getDescription());
-
-            Map<String, List<String>> attributes = rep.getAttributes();
-            if (attributes != null) {
-                for (Map.Entry<String, List<String>> attr : attributes.entrySet()) {
-                    role.setAttribute(attr.getKey(), attr.getValue());
-                }
-            }
-
-            rep.setId(role.getId());
-
-            if (role.isClientRole()) {
-                adminEvent.resource(ResourceType.CLIENT_ROLE);
-            } else {
-                adminEvent.resource(ResourceType.REALM_ROLE);
-            }
-
-            // Handling of nested composite roles for KEYCLOAK-12754
-            if (rep.isComposite() && rep.getComposites() != null) {
-                RoleRepresentation.Composites composites = rep.getComposites();
-
-                Set<String> compositeRealmRoles = composites.getRealm();
-                if (compositeRealmRoles != null && !compositeRealmRoles.isEmpty()) {
-                    Set<RoleModel> realmRoles = new LinkedHashSet<>();
-                    for (String roleName : compositeRealmRoles) {
-                        RoleModel realmRole = realm.getRole(roleName);
-                        if (realmRole == null) {
-                            throw ErrorResponse.error("Realm Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
-                        }
-                        realmRoles.add(realmRole);
-                    }
-                    realmRoles.stream().peek(auth.roles()::requireMapComposite).forEach(role::addCompositeRole);
-                }
-
-                Map<String, List<String>> compositeClientRoles = composites.getClient();
-                if (compositeClientRoles != null && !compositeClientRoles.isEmpty()) {
-                    Set<Map.Entry<String, List<String>>> entries = compositeClientRoles.entrySet();
-                    for (Map.Entry<String, List<String>> clientIdWithClientRoleNames : entries) {
-                        String clientId = clientIdWithClientRoleNames.getKey();
-                        List<String> clientRoleNames = clientIdWithClientRoleNames.getValue();
-                        ClientModel client = realm.getClientByClientId(clientId);
-                        if (client == null) {
-                            continue;
-                        }
-                        Set<RoleModel> clientRoles = new LinkedHashSet<>();
-                        for (String roleName : clientRoleNames) {
-                            RoleModel clientRole = client.getRole(roleName);
-                            if (clientRole == null) {
-                                throw ErrorResponse.error("Client Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
-                            }
-                            clientRoles.add(clientRole);
-                        }
-                        clientRoles.stream().peek(auth.roles()::requireMapComposite).forEach(role::addCompositeRole);
-                    }
-                }
-            }
-
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, role.getName()).representation(rep).success();
+            RoleModel role = doCreateRole(rep);
 
             return Response.created(uriInfo.getAbsolutePathBuilder().path(Encode.encodePathSegmentAsIs(role.getName())).build()).build();
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Role with name " + rep.getName() + " already exists");
         }
+    }
+
+    public RoleModel doCreateRole(final RoleRepresentation rep) {
+        auth.roles().requireManage(roleContainer);
+
+        if (rep.getName() == null) {
+            throw new BadRequestException("role has no name");
+        }
+        
+        RoleModel role = roleContainer.addRole(rep.getName());
+        role.setDescription(rep.getDescription());
+
+        Map<String, List<String>> attributes = rep.getAttributes();
+        if (attributes != null) {
+            for (Map.Entry<String, List<String>> attr : attributes.entrySet()) {
+                role.setAttribute(attr.getKey(), attr.getValue());
+            }
+        }
+
+        rep.setId(role.getId());
+
+        if (role.isClientRole()) {
+            adminEvent.resource(ResourceType.CLIENT_ROLE);
+        } else {
+            adminEvent.resource(ResourceType.REALM_ROLE);
+        }
+
+        // Handling of nested composite roles for KEYCLOAK-12754
+        if (rep.isComposite() && rep.getComposites() != null) {
+            RoleRepresentation.Composites composites = rep.getComposites();
+
+            Set<String> compositeRealmRoles = composites.getRealm();
+            if (compositeRealmRoles != null && !compositeRealmRoles.isEmpty()) {
+                Set<RoleModel> realmRoles = new LinkedHashSet<>();
+                for (String roleName : compositeRealmRoles) {
+                    RoleModel realmRole = realm.getRole(roleName);
+                    if (realmRole == null) {
+                        throw ErrorResponse.error("Realm Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
+                    }
+                    realmRoles.add(realmRole);
+                }
+                realmRoles.stream().peek(auth.roles()::requireMapComposite).forEach(role::addCompositeRole);
+            }
+
+            Map<String, List<String>> compositeClientRoles = composites.getClient();
+            if (compositeClientRoles != null && !compositeClientRoles.isEmpty()) {
+                Set<Map.Entry<String, List<String>>> entries = compositeClientRoles.entrySet();
+                for (Map.Entry<String, List<String>> clientIdWithClientRoleNames : entries) {
+                    String clientId = clientIdWithClientRoleNames.getKey();
+                    List<String> clientRoleNames = clientIdWithClientRoleNames.getValue();
+                    ClientModel client = realm.getClientByClientId(clientId);
+                    if (client == null) {
+                        continue;
+                    }
+                    Set<RoleModel> clientRoles = new LinkedHashSet<>();
+                    for (String roleName : clientRoleNames) {
+                        RoleModel clientRole = client.getRole(roleName);
+                        if (clientRole == null) {
+                            throw ErrorResponse.error("Client Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
+                        }
+                        clientRoles.add(clientRole);
+                    }
+                    clientRoles.stream().peek(auth.roles()::requireMapComposite).forEach(role::addCompositeRole);
+                }
+            }
+        }
+
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, role.getName()).representation(rep).success();
+        return role;
     }
 
     /**
