@@ -19,6 +19,7 @@ public class UserSessionLimitsAuthenticatorFactory implements AuthenticatorFacto
     public static final String TERMINATE_OLDEST_SESSION = "Terminate oldest session";
     public static final String USER_SESSION_LIMITS = "user-session-limits";
     public static final String ERROR_MESSAGE = "errorMessage";
+    public static final String REFERENCE_CATEGORY = "not-brute-force-protected";
 
     private static AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.REQUIRED,
@@ -32,7 +33,7 @@ public class UserSessionLimitsAuthenticatorFactory implements AuthenticatorFacto
 
     @Override
     public String getReferenceCategory() {
-        return null;
+        return REFERENCE_CATEGORY;
     }
 
     @Override
