@@ -1,0 +1,691 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Managing policies"
+priority=50
+summary="Create and manage authorization policies that define conditions for granting access.">
+
+[[_policy_overview]]
+As mentioned previously, policies define the conditions that must be satisfied before granting access to an object.
+
+.Procedure
+
+. Click the *Policy* tab to view all policies associated with a resource server.
++
+.Policies
+image::policy/view.png[alt="Policies"]
++
+On this tab, you can view the list of previously created policies as well as create and edit a policy.
+
+To create a new policy, click *Create policy*, then select a policy type from the list.
+
+Details about each policy type are described in this section.
+
+[[_policy_user]]
+== User-based policy
+
+You can use this type of policy to define conditions for your permissions where a set of one or more users is permitted to access an object.
+
+To create a new user-based policy, select *User* in the item list in the upper right corner of the policy listing.
+
+.Add a User Policy
+image::policy/create-user.png[alt="Add User Policy"]
+
+=== Configuration
+
+* *Name*
++
+A human-readable and unique string identifying the policy. A best practice is to use names that are closely related to your business and security requirements, so you
+can identify them more easily.
++
+* *Description*
++
+A string containing details about this policy.
++
+* *Users*
++
+Specifies which users are given access by this policy.
++
+* *Logic*
++
+The logic of this policy to apply after the other conditions have been evaluated.
+
+[role="_additional-resources"]
+.Additional resources
+* <<_policy_logic, Positive and negative logic>>
+
+[[_policy_rbac]]
+== Role-based policy
+
+You can use this type of policy to define conditions for your permissions where a set of one or more roles is permitted to access an object.
+
+By default, roles added to this policy are not specified as required and the policy will grant access if the user requesting access has been granted any of these roles. However, you can specify a specific role as <<_policy_rbac_required, required>> if you want to enforce a specific role. You can also combine required and non-required roles, regardless of whether they are realm or client roles.
+
+Role policies can be useful when you need more restricted role-based access control (RBAC), where specific roles must be enforced to grant access to an object. For instance, you can enforce that a user must consent to allowing a client application (which is acting on the user's behalf) to access the user's resources. You can use {project_name} Client Scope Mapping to enable consent pages or even enforce clients to explicitly provide a scope when obtaining access tokens from a {project_name} server.
+
+To create a new role-based policy, select *Role* from the policy type list.
+
+.Add Role Policy
+image::policy/create-role.png[alt="Add Role Policy"]
+
+=== Configuration
+
+* *Name*
++
+A human-readable and unique string describing the policy. A best practice is to use names that are closely related to your business and security requirements, so you
+can identify them more easily.
++
+* *Description*
++
+A string containing details about this policy.
++
+* *Realm Roles*
++
+Specifies which *realm* roles are permitted by this policy.
++
+* *Client Roles*
++
+Specifies which *client* roles are permitted by this policy. To enable this field must first select a `Client`.
++
+* *Fetch Roles*
++
+By default, only the roles available from the token sent with the authorization requests are used to check if the user is granted with a role. If this setting is enabled, the policy will ignore roles from the token and check any role associated with the user instead.
++
+* *Logic*
++
+The logic of this policy to apply after the other conditions have been evaluated.
+
+[role="_additional-resources"]
+.Additional resources
+* <<_policy_logic, Positive and negative logic>>
+
+[[_policy_rbac_required]]
+=== Defining a role as required
+
+When creating a role-based policy, you can specify a specific role as `Required`. When you do that, the policy will grant access
+only if the user requesting access has been granted *all* the *required* roles. Both realm and client roles can be configured as such.
+
+.Example of a required role
+image::policy/create-role.png[alt="Example of a required role"]
+
+To specify a role as required, select the `Required` checkbox for the role you want to configure as required.
+
+Required roles can be useful when your policy defines multiple roles but only a subset of them are mandatory. In this case, you can combine realm and client roles to enable an
+even more fine-grained role-based access control (RBAC) model for your application. For example, you can have policies specific for a client and require a specific client role associated with that client. Or you can enforce that access is granted only in the presence of a specific realm role. You can also combine both approaches within the same policy.
+
+[[_policy_js]]
+== JavaScript-based policy
+
+WARNING: If your policy implementation is using Attribute based access control (ABAC) as in the examples below, then please make sure that
+users are not able to edit the protected attributes and the corresponding attributes are read-only. See the details in the link:{adminguide_link}#mitigating_security_threats[Threat model mitigation] chapter.
+
+You can use this type of policy to define conditions for your permissions using JavaScript. It is one of the rule-based policy types
+supported by {project_name}, and provides flexibility to write any policy based on the <<_policy_evaluation_api, Evaluation API>>.
+
+To create a new JavaScript-based policy, select *JavaScript* in the item list in the upper right corner of the policy listing.
+
+NOTE: By default, JavaScript Policies can not be uploaded to the server. You should prefer deploying your JS Policies directly to
+the server as described in link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}].
+
+=== Creating a JS policy from a deployed JAR file
+
+{project_name} allows you to deploy a JAR file in order to deploy scripts to the server. Please, take a look at link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}]
+for more details.
+
+Once you have your scripts deployed, you should be able to select the scripts you deployed from the list of available policy providers.
+
+=== Examples
+
+==== Checking for attributes from the evaluation context
+Here is a simple example of a JavaScript-based policy that uses attribute-based access control (ABAC) to define a condition based on an attribute
+obtained from the execution context:
+
+```javascript
+const context = $evaluation.getContext();
+const contextAttributes = context.getAttributes();
+
+if (contextAttributes.containsValue('kc.client.network.ip_address', '127.0.0.1')) {
+    $evaluation.grant();
+}
+```
+
+==== Checking for attributes from the current identity
+Here is a simple example of a JavaScript-based policy that uses attribute-based access control (ABAC) to define a condition based on an attribute
+obtained associated with the current identity:
+
+```javascript
+const context = $evaluation.getContext();
+const identity = context.getIdentity();
+const attributes = identity.getAttributes();
+const email = attributes.getValue('email').asString(0);
+
+if (email.endsWith('@keycloak.org')) {
+    $evaluation.grant();
+}
+```
+
+Where these attributes are mapped from whatever claim is defined in the token that was used in the authorization request.
+
+==== Checking for roles granted to the current identity
+You can also use Role-Based Access Control (RBAC) in your policies. In the example below, we check if a user is granted with a `keycloak_user` *realm* role:
+
+```javascript
+const context = $evaluation.getContext();
+const identity = context.getIdentity();
+
+if (identity.hasRealmRole('keycloak_user')) {
+    $evaluation.grant();
+}
+```
+
+Or you can check if a user is granted with a `my-client-role` *client* role, where `my-client` is the client id of the client application:
+
+```javascript
+const context = $evaluation.getContext();
+const identity = context.getIdentity();
+
+if (identity.hasClientRole('my-client', 'my-client-role')) {
+    $evaluation.grant();
+}
+```
+
+==== Checking for roles granted to a user
+To check for realm roles granted to a user:
+
+```javascript
+const realm = $evaluation.getRealm();
+
+if (realm.isUserInRealmRole('marta', 'role-a')) {
+    $evaluation.grant();
+}
+```
+
+Or for client roles granted to a user:
+
+```javascript
+const realm = $evaluation.getRealm();
+
+if (realm.isUserInClientRole('marta', 'my-client', 'some-client-role')) {
+    $evaluation.grant();
+}
+```
+
+==== Checking for roles granted to a group
+To check for realm roles granted to a group:
+
+```javascript
+const realm = $evaluation.getRealm();
+
+if (realm.isGroupInRole('/Group A/Group D', 'role-a')) {
+    $evaluation.grant();
+}
+```
+
+==== Pushing arbitrary claims to the resource server
+To push arbitrary claims to the resource server in order to provide additional information on how permissions should be
+enforced:
+
+```javascript
+const permission = $evaluation.getPermission();
+
+// decide if permission should be granted
+
+if (granted) {
+    permission.addClaim('claim-a', 'claim-a');
+    permission.addClaim('claim-a', 'claim-a1');
+    permission.addClaim('claim-b', 'claim-b');
+}
+
+```
+
+==== Checking for group membership
+
+```javascript
+const realm = $evaluation.getRealm();
+
+if (realm.isUserInGroup('marta', '/Group A/Group B')) {
+    $evaluation.grant();
+}
+```
+
+==== Mixing different access control mechanisms
+You can also use a combination of several access control mechanisms. The example below shows how roles(RBAC) and
+claims/attributes(ABAC) checks can be used within the same policy. In this case we check if user is granted with `admin` role
+or has an e-mail from `keycloak.org` domain:
+
+```javascript
+const context = $evaluation.getContext();
+const identity = context.getIdentity();
+const attributes = identity.getAttributes();
+const email = attributes.getValue('email').asString(0);
+
+if (identity.hasRealmRole('admin') || email.endsWith('@keycloak.org')) {
+    $evaluation.grant();
+}
+```
+
+NOTE: When writing your own rules, keep in mind that the *$evaluation* object is an object implementing *org.keycloak.authorization.policy.evaluation.Evaluation*. For more information about what you can access from this interface, see the <<_policy_evaluation_api, Evaluation API>>.
+
+[[_policy_time]]
+== Time-based policy
+
+You can use this type of policy to define time conditions for your permissions.
+
+To create a new time-based policy, select *Time* in the item list in the upper right corner of the policy listing.
+
+.Add Time Policy
+image::policy/create-time.png[alt="Add Time Policy"]
+
+=== Configuration
+
+* *Name*
++
+A human-readable and unique string describing the policy. A best practice is to use names that are closely related to your business and security requirements, so you
+can identify them more easily.
++
+* *Description*
++
+A string containing details about this policy.
++
+* *Start time*
++
+Defines the time before which access must *not* be granted. Permission is granted only if the current date/time is later than or equal to this value.
+* *Expire time*
++
+Defines the time after which access must *not* be granted. Permission is granted only if the current date/time is earlier than or equal to this value. Select *Repeat* to repeat access being granted on a specific *Day of Month*, *Month*, *Year*, *Hour* or *Minute*.
+
+* *Day of Month*
++
+Defines the day of month that access must be granted. You can also specify a range of dates. In this case, permission is granted only if the current day of the month is between or equal to the two values specified.
+* *Month*
++
+Defines the month that access must be granted. You can also specify a range of months. In this case, permission is granted only if the current month is between or equal to the two values specified.
+* *Year*
++
+Defines the year that access must be granted. You can also specify a range of years. In this case, permission is granted only if the current year is between or equal to the two values specified.
+* *Hour*
++
+Defines the hour that access must be granted. You can also specify a range of hours. In this case, permission is granted only if the current hour is between or equal to the two values specified.
+* *Minute*
++
+Defines the minute that access must be granted. You can also specify a range of minutes. In this case, permission is granted only if the current minute is between or equal to the two values specified.
+* *Logic*
++
+The logic of this policy to apply after the other conditions have been evaluated.
+
+Access is only granted if all conditions are satisfied. {project_name} will perform an _AND_ based on the outcome of each condition.
+
+[role="_additional-resources"]
+.Additional resources
+* <<_policy_logic, Positive and negative logic>>
+
+[[_policy_aggregated]]
+== Aggregated policy
+
+As mentioned previously, {project_name} allows you to build a policy of policies, a concept referred to as policy aggregation. You can use policy aggregation to reuse existing policies to build more complex ones and keep your permissions even more decoupled from the policies that are evaluated during the processing of authorization requests.
+
+ifeval::[{project_community}==true]
+To create a new aggregated policy, select *Aggregated* from the policy type list.
+endif::[]
+ifeval::[{project_product}==true]
+To create a new aggregated policy, select *Aggregated* in the item list located in the right upper corner of the policy listing.
+endif::[]
+
+.Add an aggregated policy
+image::policy/create-aggregated.png[alt="Add aggregated policy"]
+
+Let's suppose you have a resource called _Confidential Resource_ that can be accessed only by users from the _keycloak.org_ domain and from a certain range of IP addresses.
+You can create a single policy with both conditions. However, you want to reuse the domain part of this policy to apply to permissions that operate regardless of the originating network.
+
+You can create separate policies for both domain and network conditions and create a third policy based on the combination of these two policies. With an aggregated policy, you can freely combine other policies and then apply the new aggregated policy to any permission you want.
+
+[NOTE]
+When creating aggregated policies, be mindful that you are not introducing a circular reference or dependency between policies. If a circular dependency is detected, you cannot create or update the policy.
+
+=== Configuration
+
+* *Name*
++
+A human-readable and unique string describing the policy. We strongly suggest that you use names that are closely related with your business and security requirements, so you
+can identify them more easily and also know what they mean.
++
+* *Description*
++
+A string with more details about this policy.
++
+* *Apply Policy*
++
+Defines a set of one or more policies to associate with the aggregated policy. To associate a policy you can either select an existing policy
+or create a new one by selecting the type of the policy you want to create.
++
+* *Decision Strategy*
++
+The decision strategy for this permission.
++
+* *Logic*
++
+The logic of this policy to apply after the other conditions have been evaluated.
+
+[role="_additional-resources"]
+.Additional resources
+* <<_policy_logic, Positive and negative logic>>
+
+=== Decision strategy for aggregated policies
+
+When creating aggregated policies, you can also define the decision strategy that will be used to determine the final decision based on the outcome from each policy.
+
+* *Unanimous*
++
+The default strategy if none is provided. In this case, _all_ policies must evaluate to a positive decision for the final decision to be also positive.
++
+* *Affirmative*
++
+In this case, _at least one_ policy must evaluate to a positive decision in order for the final decision to be also positive.
++
+* *Consensus*
++
+In this case, the number of positive decisions must be greater than the number of negative decisions. If the number of positive and negative decisions is the same, the final decision will be negative.
+
+[[_policy_client]]
+== Client-based policy
+
+You can use this type of policy to define conditions for your permissions where a set of one or more clients is permitted to access an object.
+
+To create a new client-based policy, select *Client* from the policy type list.
+
+.Add a Client Policy
+image::policy/create-client.png[alt="Add a Client Policy"]
+
+=== Configuration
+
+* *Name*
++
+A human-readable and unique string identifying the policy. A best practice is to use names that are closely related to your business and security requirements, so you
+can identify them more easily.
++
+* *Description*
++
+A string containing details about this policy.
++
+* *Clients*
++
+Specifies which clients have access by this policy.
++
+* *Logic*
++
+The logic of this policy to apply after the other conditions have been evaluated.
+
+[role="_additional-resources"]
+.Additional resources
+* <<_policy_logic, Positive and negative logic>>
+
+[[_policy_group]]
+== Group-based policy
+
+You can use this type of policy to define conditions for your permissions where a set of one or more groups (and their hierarchies) is permitted to access an object.
+
+To create a new group-based policy, select *Group* from the policy type list.
+
+.Group Policy
+image::policy/create-group.png[alt="Add Group Policy"]
+
+=== Configuration
+
+* *Name*
++
+A human-readable and unique string describing the policy. A best practice is to use names that are closely related to your business and security requirements, so you
+can identify them more easily.
++
+* *Description*
++
+A string containing details about this policy.
++
+* *Groups Claim*
++
+Specifies the name of the claim in the token holding the group names and/or paths. Usually, authorization requests are processed based on an ID Token or Access Token
+previously issued to a client acting on behalf of some user. If defined, the policy uses the claim as the first source of truth to obtain the groups the user is a member of.
+If not defined or if the claim is empty, the policy falls back to the user's actual group memberships from the realm configuration.
++
+When the claim contains full group paths (for example, `/Organization/Admins`), the policy matches groups by their exact path in the realm hierarchy.
+When the claim contains bare group names without a path prefix, the policy resolves each name against top-level realm groups only.
+If your realm has groups with duplicate names at different levels of the hierarchy, configure the Group Membership protocol mapper with *Full group path* enabled
+so that tokens include the complete group path and the policy can unambiguously identify the correct group.
+Group names that contain slashes (for example, a group named `/Organization/Admins`) are resolved as top-level group names first, before being treated as paths.
+This prevents a group name from being confused with a nested group path.
++
+* *Groups*
++
+Allows you to select the groups that should be enforced by this policy when evaluating permissions. After adding a group, you can extend access to children of the group
+by marking the checkbox *Extend to Children*. If left unmarked, access restrictions only apply to the selected group.
++
+* *Logic*
++
+The logic of this policy to apply after the other conditions have been evaluated.
+
+[role="_additional-resources"]
+.Additional resources
+* <<_policy_logic, Positive and negative logic>>
+
+[[_policy_group_extend_access_children]]
+=== Extending access to child groups
+
+By default, when you add a group to this policy, access restrictions will only apply to members of the selected group.
+
+Under some circumstances, it might be necessary to allow access not only to the group itself but to any child group in the hierarchy. For any group
+added you can mark a checkbox *Extend to Children* in order to extend access to child groups.
+
+.Extending access to child groups
+image::policy/create-group-extend-children.png[alt="Extending access to child groups"]
+
+In the example above, the policy is granting access for any user member of *IT* or any of its children.
+
+[[_policy_client_scope]]
+== Client scope-based policy
+
+You can use this type of policy to define conditions for your permissions where a set of one or more client scopes is permitted to access an object.
+
+By default, client scopes added to this policy are not specified as required and the policy will grant access if the client requesting access has been granted any of these client scopes. However, you can specify a specific client scope as <<_policy_client_scope_required, required>> if you want to enforce a specific client scope.
+
+To create a new client scope-based policy, select *Client Scope* from the policy type list.
+
+.Add Client Scope Policy
+image::policy/create-client-scope.png[alt="Add Client Scope Policy"]
+
+=== Configuration
+
+* *Name*
++
+A human-readable and unique string describing the policy. A best practice is to use names that are closely related to your business and security requirements, so you can identify them more easily.
++
+* *Description*
++
+A string containing details about this policy.
++
+* *Client Scopes*
++
+Specifies which client scopes are permitted by this policy.
++
+* *Logic*
++
+The logic of this policy to apply after the other conditions have been evaluated.
+
+[role="_additional-resources"]
+.Additional resources
+* <<_policy_logic, Positive and negative logic>>
+
+[[_policy_client_scope_required]]
+=== Defining a client scope as required
+
+When creating a client scope-based policy, you can specify a specific client scope as `Required`. When you do that, the policy will grant access only if the client requesting access has been granted *all* the *required* client scopes.
+
+.Example of required client scope
+image::policy/create-client-scope.png[alt="Example of required client scope"]
+
+To specify a client scope as required, select the `Required` checkbox for the client scope you want to configure as required.
+
+Required client scopes can be useful when your policy defines multiple client scopes but only a subset of them are mandatory.
+
+[[_policy_regex]]
+== Regex-Based Policy
+
+You can use this type of policy to define regex conditions for your permissions.
+
+To create a new regex-based policy, select *Regex* from the policy type list.
+
+This policy resolves attributes available from the current identity.
+
+.Add Regex Policy
+image::policy/create-regex.png[alt="Add Regex Policy"]
+
+=== Configuration
+
+* *Name*
++
+A human-readable and unique string describing the policy. A best practice is to use names that are closely related to your business and security requirements, so you can identify them more easily.
++
+* *Description*
++
+A string containing details about this policy.
++
+* *Target Claim*
++
+Specifies the name of the target claim in the token. For JSON-based claims, you can use dot notation for nesting and square brackets to access array fields by index. For example, contact.address[0].country. If the target claim references a JSON
+object, the first path (for example, `contact`) should map to the attribute name holding the JSON object.
++
+* *Regex Pattern*
++
+Specifies the regex pattern.
++
+* *Logic*
++
+The <<_policy_logic, Logic>> of this policy to apply after the other conditions have been evaluated.
+
+[[_policy_logic]]
+== Positive and negative logic
+
+Policies can be configured with positive or negative logic. Briefly, you can use this option to define whether the policy result should be kept as it is or be negated.
+
+For example, suppose you want to create a policy where only users *not* granted with a specific role should be given access. In this case,
+you can create a role-based policy using that role and set its *Logic* field to *Negative*. If you keep *Positive*, which
+is the default behavior, the policy result will be kept as it is.
+
+[[_policy_evaluation_api]]
+== Policy evaluation API
+
+When writing rule-based policies using JavaScript, {project_name} provides an Evaluation API that provides useful information to help determine whether a permission should be granted.
+
+This API consists of a few interfaces that provide you access to information, such as
+
+* The permission being evaluated, representing both the resource and scopes being requested.
+* The attributes associated with the resource being requested
+* Runtime environment and any other attribute associated with the execution context
+* Information about users such as group membership and roles
+
+The main interface is *org.keycloak.authorization.policy.evaluation.Evaluation*, which defines the following contract:
+
+```java
+public interface Evaluation {
+
+    /**
+     * Returns the {@link ResourcePermission} to be evaluated.
+     *
+     * @return the permission to be evaluated
+     */
+    ResourcePermission getPermission();
+
+    /**
+     * Returns the {@link EvaluationContext}. Which provides access to the whole evaluation runtime context.
+     *
+     * @return the evaluation context
+     */
+    EvaluationContext getContext();
+
+    /**
+     * Returns a {@link Realm} that can be used by policies to query information.
+     *
+     * @return a {@link Realm} instance
+     */
+    Realm getRealm();
+
+    /**
+     * Grants the requested permission to the caller.
+     */
+    void grant();
+
+    /**
+     * Denies the requested permission.
+     */
+    void deny();
+}
+```
+
+When processing an authorization request, {project_name} creates an `Evaluation` instance before evaluating any policy. This instance is then passed to each policy to determine whether access is *GRANT* or *DENY*.
+
+Policies determine this by invoking the `grant()` or `deny()` methods on an `Evaluation` instance. By default, the state of the `Evaluation` instance is denied, which means that your policies must explicitly invoke the `grant()` method to indicate to the policy evaluation engine that permission should be granted.
+
+=== The evaluation context
+
+The evaluation context provides useful information to policies during their evaluation.
+
+```java
+public interface EvaluationContext {
+
+    /**
+     * Returns the {@link Identity} that represents an entity (person or non-person) to which the permissions must be granted, or not.
+     *
+     * @return the identity to which the permissions must be granted, or not
+     */
+    Identity getIdentity();
+
+    /**
+     * Returns all attributes within the current execution and runtime environment.
+     *
+     * @return the attributes within the current execution and runtime environment
+     */
+    Attributes getAttributes();
+}
+```
+
+From this interface, policies can obtain:
+
+* The authenticated `Identity`
+* Information about the execution context and runtime environment
+
+The `Identity` is built based on the OAuth2 Access Token that was sent along with the authorization request, and this construct has access to all claims
+extracted from the original token. For example, if you are using a _Protocol Mapper_ to include a custom claim in an OAuth2 Access Token you can also access this claim
+from a policy and use it to build your conditions.
+
+The `EvaluationContext` also gives you access to attributes related to both the execution and runtime environments. For now, these are only a few built-in attributes.
+
+.Execution and Runtime Attributes
+|===
+|Name |Description | Type
+
+| kc.time.date_time
+| Current date and time
+| String. Format `MM/dd/yyyy hh:mm:ss`
+
+| kc.client.network.ip_address
+| IP address of the client, can be null if a valid IP is not provided.
+| String
+
+| kc.client.network.host
+| Client's host name, will be the IP address or whatever is provided by proxy headers
+| String
+
+| kc.client.id
+| The client id
+| String
+
+| kc.client.user_agent
+| The value of the 'User-Agent' HTTP header
+| String[]
+
+| kc.realm.name
+| The name of the realm
+| String
+
+|===
+
+</@tmpl.guide>
