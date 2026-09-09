@@ -222,7 +222,7 @@ public class MdocCredential {
         List<X509Certificate> chain = new ArrayList<>(certificateChain);
         try {
             if (CertificateUtils.isSelfSigned(chain.get(0))) {
-                throw new MdocException("mDoc signing certificate must not be self signed");
+                throw new MdocException("mDoc signing certificate must not be self signed as required by ISO/IEC 18013-5");
             }
             while (CertificateUtils.isSelfSigned(chain.get(chain.size() - 1))) {
                 chain.remove(chain.size() - 1);

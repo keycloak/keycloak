@@ -37,6 +37,8 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 
+import org.junit.jupiter.api.BeforeEach;
+
 import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES;
@@ -50,6 +52,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class OID4VCMdocTestBase extends OID4VCIssuerTestBase {
+
+    @Override
+    @BeforeEach
+    protected void beforeEachBase() {
+        super.beforeEachBase();
+        ensureMdocCompliantSigningConfiguration();
+    }
 
     public static class VCTestServerWithMdocEnabled implements KeycloakServerConfig {
         @Override

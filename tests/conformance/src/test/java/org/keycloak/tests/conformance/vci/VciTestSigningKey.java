@@ -89,7 +89,9 @@ final class VciTestSigningKey {
             KeyPair caKeyPair = keyGenerator.generateKeyPair();
             KeyPair leafKeyPair = keyGenerator.generateKeyPair();
 
-            X500Name caName = new X500Name("C=DE,CN=OID4VCI Conformance CA");
+            // ISO 18013-5 Table B.3 requires the DS certificate countryName to match the credential's
+            // issuing_country data element (see VciConformanceRealmUtil issuing-country-mapper -> US)
+            X500Name caName = new X500Name("C=US,CN=OID4VCI Conformance CA");
             X509Certificate caCertificate = generateCaCertificate(caName, caKeyPair);
             X509Certificate leafCertificate = generateLeafCertificate(caName, leafKeyPair, caKeyPair, caCertificate);
 
@@ -138,7 +140,7 @@ final class VciTestSigningKey {
 
     private static X509Certificate generateLeafCertificate(X500Name caName, KeyPair leafKeyPair, KeyPair caKeyPair,
             X509Certificate caCertificate) throws Exception {
-        X500Name leafName = new X500Name("C=DE,CN=OID4VCI Conformance Issuer");
+        X500Name leafName = new X500Name("C=US,CN=OID4VCI Conformance Issuer");
         X509v3CertificateBuilder builder = certificateBuilder(caName, leafName, leafKeyPair.getPublic());
         JcaX509ExtensionUtils extensionUtils = new JcaX509ExtensionUtils();
         builder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature));

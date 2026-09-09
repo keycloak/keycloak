@@ -23,10 +23,19 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.oid4vc.OID4VCMdocTestBase;
 
+import org.junit.jupiter.api.BeforeEach;
+
 import static org.keycloak.tests.oid4vc.OID4VCMdocTestBase.assertMdocCredentialStructure;
 
 @KeycloakIntegrationTest(config = OID4VCMdocTestBase.VCTestServerWithPreAuthCodeAndMdocEnabled.class)
 public class OID4VCMdocAuthorizationDetailsFlowPreAuthTest extends OID4VCAuthorizationDetailsFlowPreAuthTestBase {
+
+    @Override
+    @BeforeEach
+    protected void beforeEachBase() {
+        super.beforeEachBase();
+        ensureMdocCompliantSigningConfiguration();
+    }
 
     @Override
     protected String getCredentialFormat() {
