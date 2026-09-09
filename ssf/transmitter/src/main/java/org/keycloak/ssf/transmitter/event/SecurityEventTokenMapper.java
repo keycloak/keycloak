@@ -700,6 +700,7 @@ public class SecurityEventTokenMapper {
         }
         return switch (event.getType()) {
             case LOGOUT -> !shouldIgnoreLogout(event);
+            case REVOKE_GRANT -> !shouldIgnoreRevokeGrant(event);
             case UPDATE_CREDENTIAL,
                  REMOVE_CREDENTIAL,
                  RESET_PASSWORD -> !shouldIgnoreCredentialChange(event);
@@ -795,6 +796,22 @@ public class SecurityEventTokenMapper {
                 yield generateSessionRevokedEvent(event, adminEvent, stream, "User logout");
             }
 
+            case REVOKE_GRANT -> {
+
+                // Token revocation via the OAuth2 /revoke endpoint that
+                // actually ended the user session,  see shouldIgnoreRevokeGrant
+                // for the cases that must NOT map (consent revocation,
+                // partial revocation with surviving SSO session). Future
+                // revoke-grant flavors (e.g. consent revocation → RISC
+                // opt-out) branch on the event's shape here, mirrored in
+                // canConvert.
+                if (shouldIgnoreRevokeGrant(event)) {
+                    yield null;
+                }
+
+                yield generateSessionRevokedEvent(event, adminEvent, stream, "Token revoked");
+            }
+
             case UPDATE_CREDENTIAL -> {
 
                 // ignore credential changes for credentials that are not used for authentication
@@ -875,6 +892,41 @@ public class SecurityEventTokenMapper {
         }
         String reason = details.get(Details.REASON);
         return Details.USER_SESSION_EXPIRED_REASON.equals(reason) || Details.INVALID_USER_SESSION_REMEMBER_ME_REASON.equals(reason);
+    }
+
+    /**
+     * {@code REVOKE_GRANT} covers two very different flows: OAuth2 token
+     * revocation ({@code POST /protocol/openid-connect/revoke} with a
+     * refresh or offline token, where the endpoint puts the token's session id
+     * on the event) and account-console consent revocation (no session
+     * id). Only the former can end a session, so events without a session
+     * id are ignored.
+     *
+     * <p>Even a token revocation only detaches the revoking client's
+     * client-session; Keycloak removes the user session itself only when
+     * no other client sessions remain. We therefore emit CAEP
+     * session-revoked only when the session is gone from both the online
+     * and the offline store, therefore announcing a session as revoked while other
+     * clients still legitimately use it would let receivers kill a live
+     * SSO session. The revocation ran earlier in this same transaction,
+     * so the lookups below observe its result.
+     */
+    protected boolean shouldIgnoreRevokeGrant(Event event) {
+        String sessionId = event.getSessionId();
+        if (sessionId == null) {
+            return true;
+        }
+        if (session == null) {
+            // No session to verify liveness against, therefore we err on emitting:
+            // a REVOKE_GRANT carrying a session id is a revocation.
+            return false;
+        }
+        RealmModel realm = session.getContext().getRealm();
+        if (realm == null) {
+            return false;
+        }
+        return session.sessions().getUserSession(realm, sessionId) != null
+                || session.sessions().getOfflineUserSession(realm, sessionId) != null;
     }
 
     protected SsfSecurityEventToken generateSecurityEventTokenFromEvent(Event event, StreamConfig stream) {
