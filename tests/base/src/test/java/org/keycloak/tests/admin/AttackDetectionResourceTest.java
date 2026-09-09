@@ -96,7 +96,7 @@ public class AttackDetectionResourceTest {
 
         assertBruteForce(detection.bruteForceUserStatus(testUser.getId()), 2, 1, true, true);
         assertBruteForce(detection.bruteForceUserStatus(testUser2.getId()), 2, 1, true, true);
-        assertBruteForce(detection.bruteForceUserStatus("nosuchuser"), 0, 0, false, false);
+        assertBruteForce(detection.bruteForceUserStatus("nosuchuser"), 0, 0, false, false, false);
 
         detection.clearBruteForceForUser(testUser.getId());
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.attackDetectionClearBruteForceForUserPath(testUser.getId()), ResourceType.USER_LOGIN_FAILURE);
@@ -112,10 +112,26 @@ public class AttackDetectionResourceTest {
     }
 
     private void assertBruteForce(Map<String, Object> status, Integer expectedNumFailures, Integer expectedNumTemporaryLockouts, Boolean expectedFailure, Boolean expectedDisabled) {
-        assertEquals(7, status.size());
+        assertBruteForce(status, expectedNumFailures, expectedNumTemporaryLockouts, expectedFailure,
+                expectedDisabled, true);
+    }
+
+    private void assertBruteForce(Map<String, Object> status, Integer expectedNumFailures,
+            Integer expectedNumTemporaryLockouts, Boolean expectedFailure, Boolean expectedDisabled,
+            boolean expectPropertyStatus) {
+        assertEquals(expectPropertyStatus ? 8 : 7, status.size());
         assertEquals(expectedNumFailures, status.get("numFailures"));
         assertEquals(expectedNumTemporaryLockouts, status.get("numTemporaryLockouts"));
         assertEquals(expectedDisabled, status.get("disabled"));
+        if (expectPropertyStatus) {
+            @SuppressWarnings("unchecked")
+            Map<String, Map<String, Object>> properties =
+                    (Map<String, Map<String, Object>>) status.get("properties");
+            assertEquals(1, properties.size());
+            assertEquals(expectedNumFailures, properties.get("id").get("numFailures"));
+            assertEquals(expectedNumTemporaryLockouts, properties.get("id").get("numTemporaryLockouts"));
+            assertEquals(expectedDisabled, properties.get("id").get("disabled"));
+        }
         if (expectedFailure) {
             assertEquals("127.0.0.1", status.get("lastIPFailure"));
             Long lastFailure = (Long) status.get("lastFailure");

@@ -18,6 +18,16 @@ export class AttackDetection extends Resource<{ realm?: string }> {
     urlParamKeys: ["id"],
   });
 
+  public delByProperty = this.makeRequest<
+    { id: string; property: string },
+    void
+  >({
+    method: "DELETE",
+    path: "/users/{id}",
+    urlParamKeys: ["id"],
+    queryParamKeys: ["property"],
+  });
+
   public delAll = this.makeRequest<{}, void>({
     method: "DELETE",
     path: "/users",

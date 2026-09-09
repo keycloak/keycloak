@@ -25,6 +25,8 @@ import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.managers.BruteForceUserProperty;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.UserPermissionEvaluator;
 import org.keycloak.utils.SearchQueryUtils;
@@ -176,51 +178,46 @@ public class BruteForceUsersResource {
         return userModels.map(user -> {
             UserRepresentation userRep = ModelToRepresentation.toRepresentation(session, user, briefRep);
             userRep.setAccess(usersEvaluator.getAccessForListing(user));
-            return userRep;
-        }).map(this::getBruteForceStatus);
+            return getBruteForceStatus(user, userRep);
+        });
     }
 
-    private BruteUser getBruteForceStatus(UserRepresentation user) {
-        BruteUser bruteUser = new BruteUser(user);
+    private BruteUser getBruteForceStatus(UserModel user, UserRepresentation representation) {
+        BruteUser bruteUser = new BruteUser(representation);
         Map<String, Object> data = new HashMap<>();
         data.put("disabled", false);
         data.put("numFailures", 0);
         data.put("lastFailure", 0);
         data.put("lastIPFailure", "n/a");
-        if (!realm.isBruteForceProtected())
-            bruteUser.setBruteForceStatus(data);
-
-        UserLoginFailureModel model = session.loginFailures().getUserLoginFailure(realm, user.getId());
-        if (model == null) {
+        if (!realm.isBruteForceProtected()) {
             bruteUser.setBruteForceStatus(data);
             return bruteUser;
         }
 
-        boolean disabled;
-        disabled = isTemporarilyDisabled(session, realm, user);
-        if (disabled) {
-            data.put("disabled", true);
-        }
-
-        data.put("numFailures", model.getNumFailures());
-        data.put("lastFailure", model.getLastFailure());
-        data.put("lastIPFailure", model.getLastIPFailure());
-        bruteUser.setBruteForceStatus(data);
-
-        return bruteUser;
-    }
-
-    public boolean isTemporarilyDisabled(KeycloakSession session, RealmModel realm, UserRepresentation user) {
-        UserLoginFailureModel failure = session.loginFailures().getUserLoginFailure(realm, user.getId());
-        if (failure != null) {
-            int currTime = (int)(Time.currentTimeMillis() / 1000L);
-            int failedLoginNotBefore = failure.getFailedLoginNotBefore();
-            if (currTime < failedLoginNotBefore) {
-                logger.debugv("Current: {0} notBefore: {1}", currTime, failedLoginNotBefore);
-                return true;
+        UserLoginFailureModel latestFailure = null;
+        boolean disabled = session.getProvider(BruteForceProtector.class)
+                .isPermanentlyLockedOut(session, realm, user);
+        int currentTime = Time.currentTime();
+        for (UserLoginFailureModel model : BruteForceUserProperty.getLoginFailures(session, realm, user).toList()) {
+            data.put("numFailures", Math.max((int) data.get("numFailures"), model.getNumFailures()));
+            if (latestFailure == null || model.getLastFailure() > latestFailure.getLastFailure()) {
+                latestFailure = model;
+            }
+            if (currentTime < model.getFailedLoginNotBefore()) {
+                logger.debugv("Current: {0} notBefore: {1}", currentTime, model.getFailedLoginNotBefore());
+                disabled = true;
             }
         }
 
-        return false;
+        if (latestFailure == null) {
+            bruteUser.setBruteForceStatus(data);
+            return bruteUser;
+        }
+        data.put("disabled", disabled);
+        data.put("lastFailure", latestFailure.getLastFailure());
+        data.put("lastIPFailure", latestFailure.getLastIPFailure());
+        bruteUser.setBruteForceStatus(data);
+
+        return bruteUser;
     }
 }

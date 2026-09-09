@@ -52,6 +52,7 @@ const TERMS_AND_CONDITIONS_ATTRIBUTE = "terms_and_conditions";
 export type BruteForced = {
   isBruteForceProtected?: boolean;
   isLocked?: boolean;
+  lockedProperties?: string[];
 };
 
 export type UserFormProps = {
@@ -69,9 +70,10 @@ export const UserForm = ({
   form,
   realm,
   user,
-  bruteForce: { isBruteForceProtected, isLocked } = {
+  bruteForce: { isBruteForceProtected, isLocked, lockedProperties } = {
     isBruteForceProtected: false,
     isLocked: false,
+    lockedProperties: [],
   },
   userProfileMetadata,
   save,
@@ -99,16 +101,28 @@ export const UserForm = ({
     [],
   );
   const [open, setOpen] = useState(false);
-  const [locked, setLocked] = useState(isLocked);
+  const [lockedPropertyNames, setLockedPropertyNames] = useState(
+    lockedProperties ?? (isLocked ? ["id"] : []),
+  );
   const navigate = useNavigate();
 
   useEffect(() => {
     setValue("requiredActions", user?.requiredActions || []);
   }, [user, setValue]);
 
-  const unLockUser = async () => {
+  useEffect(() => {
+    setLockedPropertyNames(lockedProperties ?? (isLocked ? ["id"] : []));
+  }, [lockedProperties, isLocked]);
+
+  const unlockProperty = async (property: string) => {
     try {
-      await adminClient.users.update({ id: user!.id! }, { enabled: true });
+      await adminClient.attackDetection.delByProperty({
+        id: user!.id!,
+        property,
+      });
+      setLockedPropertyNames((properties) =>
+        properties.filter((name) => name !== property),
+      );
       addAlert(t("unlockSuccess"), AlertVariant.success);
       if (refresh) {
         refresh();
@@ -383,18 +397,27 @@ export const UserForm = ({
               />
             }
           >
-            <Switch
-              data-testid="user-locked-switch"
-              id="temporaryLocked"
-              onChange={async (_event, value) => {
-                await unLockUser();
-                setLocked(value);
-              }}
-              isChecked={locked}
-              isDisabled={!locked}
-              label={t("on")}
-              labelOff={t("off")}
-            />
+            {lockedPropertyNames.length === 0 ? (
+              <Switch
+                data-testid="user-locked-switch"
+                id="temporaryLocked"
+                isChecked={false}
+                isDisabled
+                label={t("on")}
+                labelOff={t("off")}
+              />
+            ) : (
+              lockedPropertyNames.map((property) => (
+                <Switch
+                  data-testid={`user-locked-switch-${property}`}
+                  id={`temporaryLocked-${property}`}
+                  key={property}
+                  onChange={() => unlockProperty(property)}
+                  isChecked
+                  label={property}
+                />
+              ))
+            )}
           </FormGroup>
         )}
         {!user?.id && (

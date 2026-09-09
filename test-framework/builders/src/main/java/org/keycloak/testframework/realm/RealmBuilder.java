@@ -418,6 +418,16 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder bruteForceProtectedUserProperties(String... properties) {
+        rep.setBruteForceProtectedUserProperties(List.of(properties));
+        return this;
+    }
+
+    public RealmBuilder bruteForceLockPolicy(RealmRepresentation.BruteForceLockPolicy policy) {
+        rep.setBruteForceLockPolicy(policy);
+        return this;
+    }
+
     public RealmBuilder maxSecondaryAuthFailures(int count) {
         rep.setMaxSecondaryAuthFailures(count);
         return this;
