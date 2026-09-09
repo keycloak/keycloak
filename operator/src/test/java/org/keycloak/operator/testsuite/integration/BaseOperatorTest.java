@@ -411,30 +411,26 @@ public enum OperatorDeployment {local_apiserver,local,remote}
       }
       Log.info("Deleting Keycloak CR");
 
-      // Graceful scaledown: wait for instances==0 (pods terminated) AND observedGeneration
-      // matching generation (reconciler finished processing the scaledown). Checking both
-      // reduces the chance that an in-flight reconciliation re-creates the StatefulSet after
-      // the CR is deleted below — see https://github.com/keycloak/keycloak/issues/52497
-      // Skip paused CRs: the reconciler returns noUpdate() without scaling down or updating
-      // observedGeneration, so neither condition would ever be met.
-      var keycloaks = k8sclient.resources(Keycloak.class).list().getItems();
-      keycloaks.stream().filter(k -> !Boolean.parseBoolean(
-              Optional.ofNullable(k.getMetadata().getAnnotations())
-                      .map(a -> a.get(Constants.KEYCLOAK_PAUSE_ANNOTATION)).orElse(null)))
-              .forEach(k -> k8sclient.resource(new KeycloakBuilder(k).editSpec().withInstances(0).endSpec().build()).unlock().patch());
+      // Graceful scaledown: unpause, set instances=0, then wait for instances==0 AND
+      // observedGeneration matching generation (reconciler finished processing the scaledown).
+      // Checking both reduces the chance that an in-flight reconciliation re-creates the
+      // StatefulSet after the CR is deleted below — see https://github.com/keycloak/keycloak/issues/52497
+      k8sclient.resources(Keycloak.class).list().getItems().forEach(k -> {
+          var annotations = k.getMetadata().getAnnotations();
+          if (annotations != null) {
+              annotations.remove(Constants.KEYCLOAK_PAUSE_ANNOTATION);
+          }
+          k8sclient.resource(new KeycloakBuilder(k).editSpec().withInstances(0).endSpec().build()).unlock().patch();
+      });
 
       try {
           k8sclient.resources(Keycloak.class).informOnCondition(
-                  l -> l.stream()
-                      .filter(k -> !Boolean.parseBoolean(
-                              Optional.ofNullable(k.getMetadata().getAnnotations())
-                                      .map(a -> a.get(Constants.KEYCLOAK_PAUSE_ANNOTATION)).orElse(null)))
-                      .allMatch(k -> {
-                          var status = k.getStatus();
-                          return Optional.ofNullable(status).map(KeycloakStatus::getInstances).orElse(0).equals(0)
-                                  && Optional.ofNullable(status).map(KeycloakStatus::getObservedGeneration).orElse(0L)
-                                          .equals(k.getMetadata().getGeneration());
-                      }))
+                  l -> l.stream().allMatch(k -> {
+                      var status = k.getStatus();
+                      return Optional.ofNullable(status).map(KeycloakStatus::getInstances).orElse(0).equals(0)
+                              && Optional.ofNullable(status).map(KeycloakStatus::getObservedGeneration).orElse(0L)
+                                      .equals(k.getMetadata().getGeneration());
+                  }))
                   .get(40, TimeUnit.SECONDS);
       } catch (Exception e) {
           throw KubernetesClientException.launderThrowable(e);
