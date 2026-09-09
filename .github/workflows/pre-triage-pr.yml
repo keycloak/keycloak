@@ -4,7 +4,7 @@ on:
   pull_request_target:
     types: [opened, edited, reopened, synchronize, labeled, unlabeled, ready_for_review]
     branches:
-      - main 
+      - main
 
 concurrency:
   group: pre-triage-pr-${{ github.event.pull_request.number }}
@@ -74,25 +74,6 @@ jobs:
             ' | sort -u || true
           }
           
-          # Collect all issue references mentioned across all commit messages in the PR.
-          # Returns one issue reference per line (may contain duplicates; caller can sort -u).
-          get_all_commit_issues() {
-            local all_commit_issues=""
-            local sha commit_msg issues
-
-            while IFS= read -r sha; do
-              if ! commit_msg=$(gh api "repos/$REPO/git/commits/$sha" --jq '.message' 2>&1); then
-                add_error "Failed to retrieve commit message for $sha: $commit_msg"
-                continue
-              fi
-
-              issues=$(extract_issues "$commit_msg")
-              all_commit_issues="${all_commit_issues}"$'\n'"${issues}"
-            done < <(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/commits" --jq '.[].sha')
-
-            printf '%s\n' "$all_commit_issues"
-          }
-
           if [ -z "$HAS_SKIP_LABEL" ]; then
             # --- Check PR description ---
             PR_BODY_NO_COMMENTS=$(strip_html_comments "$PR_BODY")
@@ -102,28 +83,30 @@ jobs:
               add_error "PR description must contain a linked issue (e.g. 'Closes #NNN')"
             fi
 
-            ALL_COMMIT_ISSUES=$(get_all_commit_issues)
+            # Collect issue references from every commit message in the current shell so
+            # that add_error failures are not lost inside a command-substitution subshell.
+            ALL_COMMIT_ISSUES=""
+            while IFS= read -r sha; do
+              if ! commit_msg=$(gh api "repos/$REPO/git/commits/$sha" --jq '.message' 2>&1); then
+                add_error "Failed to retrieve commit message for $sha: $commit_msg - the workflow will need to be rerun"
+                continue
+              fi
+              issues=$(extract_issues "$commit_msg")
+              ALL_COMMIT_ISSUES="${ALL_COMMIT_ISSUES}"$'\n'"${issues}"
+            done < <(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/commits" --jq '.[].sha')
             COMMIT_ISSUES=$(printf '%s\n' "$ALL_COMMIT_ISSUES" | sort -u | grep -v '^$' || true)
             
             # TODO: determine if there are potential timing issues with querying closingIssuesReferences
             # - it's not clear that they will be updated prior to when the workflow runs
             # TODO: there's no PR event for manually linking/unlinking issues, so this check can be out-of-sync after that
             
-            # Parse GraphQL closingIssuesReferences into owner/repo#NNN format
+            # Parse GraphQL closingIssuesReferences into owner/repo#NNN<TAB>closed<TAB>expired-by-bot.
+            # Derive the plain ref list with: parse_closing_refs ... | cut -f1
             parse_closing_refs() {
               local json="$1"
               printf '%s\n' "$json" | jq -r '
                 .data.repository.pullRequest.closingIssuesReferences.nodes[]
-                | "\(.repository.owner.login)/\(.repository.name)#\(.number)"
-              ' 2>/dev/null | sort -u || true
-            }
-            
-            # Parse GraphQL closingIssuesReferences into owner/repo#NNN<TAB>closed
-            parse_closing_refs_with_state() {
-              local json="$1"
-              printf '%s\n' "$json" | jq -r '
-                .data.repository.pullRequest.closingIssuesReferences.nodes[]
-                | "\(.repository.owner.login)/\(.repository.name)#\(.number)\t\(.closed)"
+                | "\(.repository.owner.login)/\(.repository.name)#\(.number)\t\(.closed)\t\(.labels.nodes | map(.name) | contains(["status/expired-by-bot"]))"
               ' 2>/dev/null | sort -u || true
             }
 
@@ -132,7 +115,9 @@ jobs:
             REPO_NAME="${REPO##*/}"
 
             # Query GitHub for closing issue references
-            CLOSING_ISSUES_REFERENCES_RAW=$(
+            CLOSING_ISSUES_WITH_STATE=""
+            CLOSING_ISSUES_REFERENCES=""
+            if ! CLOSING_ISSUES_REFERENCES_RAW=$(
               gh api graphql \
                 -F owner="$REPO_OWNER" \
                 -F repo="$REPO_NAME" \
@@ -145,6 +130,9 @@ jobs:
                           nodes {
                             number
                             closed
+                            labels(first: 50) {
+                              nodes { name }
+                            }
                             repository {
                               owner { login }
                               name
@@ -154,12 +142,15 @@ jobs:
                       }
                     }
                   }
-                '
-            )
-
-            CLOSING_ISSUES_REFERENCES=$(parse_closing_refs "$CLOSING_ISSUES_REFERENCES_RAW")
-            CLOSING_ISSUES_WITH_STATE=$(parse_closing_refs_with_state "$CLOSING_ISSUES_REFERENCES_RAW")
+                ' 2>&1
+            ); then
+              add_error "Failed to query closing issue references: $CLOSING_ISSUES_REFERENCES_RAW - the workflow will need to be rerun"
+            else
+              CLOSING_ISSUES_WITH_STATE=$(parse_closing_refs "$CLOSING_ISSUES_REFERENCES_RAW")
+              CLOSING_ISSUES_REFERENCES=$(printf '%s\n' "$CLOSING_ISSUES_WITH_STATE" | cut -f1)
+            fi
             
+            HAS_EXPIRED_ISSUE=0
             if [ "$FAILED" -eq 0 ]; then
               while IFS= read -r ref; do
                 [ -z "$ref" ] && continue
@@ -170,11 +161,15 @@ jobs:
                   continue
                 fi
 
-                # Find matching line: owner/repo#NNN<TAB>true|false
+                # Find matching line: owner/repo#NNN<TAB>closed<TAB>expired-by-bot
                 state_line=$(printf '%s\n' "$CLOSING_ISSUES_WITH_STATE" | grep -F -- "^$ref"$'\t' || true)
 
-                is_closed="${state_line##*$'\t'}"
-                if [ "$is_closed" = "true" ]; then
+                is_closed=$(printf '%s\n' "$state_line" | cut -f2)
+                is_expired=$(printf '%s\n' "$state_line" | cut -f3)
+                if [ "$is_expired" = "true" ]; then
+                  HAS_EXPIRED_ISSUE=1
+                fi
+                if [ "$is_closed" = "true" ] && [ "$is_expired" != "true" ]; then
                   add_error "Issue $ref is not open (current state: closed)"
                   continue
                 fi
@@ -183,7 +178,7 @@ jobs:
                   add_error "Issue $ref is a manually linked GitHub issue, but it's not in the PR description."
                 fi
               done <<< "$CLOSING_ISSUES_REFERENCES"
-            fi  
+            fi
             
             if [ "$FAILED" -eq 0 ]; then
               while IFS= read -r ref; do
@@ -193,13 +188,14 @@ jobs:
                   add_error "Issue $ref in the PR description is from a different repository - do not use a closing keyword with it."
                   continue
                 fi
+                if ! printf '%s\n' "$CLOSING_ISSUES_REFERENCES" | grep -Fxq -- "$ref"; then
+                  add_error "$ref is linked in the PR description but is not an issue - do not use a closing keyword with it."
+                  continue
+                fi
                 if ! printf '%s\n' "$COMMIT_ISSUES" | grep -Fxq -- "$ref"; then
                   add_error "Issue $ref is linked in the PR description but not in a commit message"
                   continue
-                fi
-                if ! printf '%s\n' "$CLOSING_ISSUES_REFERENCES" | grep -Fxq -- "$ref"; then
-                  add_error "$ref is linked in the PR description but is not an issue - do not use a closing keyword with it."
-                fi
+                fi                
               done <<< "$PR_ISSUES"
             fi
 
@@ -222,7 +218,10 @@ jobs:
           fi
 
           # --- Find last existing bot comment with our marker ---
-          EXISTING_COMMENT_ID=$(gh api --paginate "repos/$REPO/issues/$PR_NUMBER/comments" | jq --arg marker "$MARKER" '.[] | select(.user.login == "github-actions[bot]" and (.body | contains($marker)?)) | .id' | tail -n1)
+          # --paginate with --jq applies the filter per-page so all pages are searched.
+          EXISTING_COMMENT_ID=$(gh api --paginate "repos/$REPO/issues/$PR_NUMBER/comments" \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("'"$MARKER"'"))) | .id' \
+            | tail -n1)
           
           if [ -n "$EXISTING_COMMENT_ID" ]; then
             gh api "repos/$REPO/issues/comments/$EXISTING_COMMENT_ID" -X DELETE
@@ -241,4 +240,9 @@ jobs:
           else
             echo "All linked issue checks passed."
             gh pr edit "${{ github.event.pull_request.number }}" -R "$GITHUB_REPOSITORY" --remove-label "action/waiting-for-author"
+            if [ "${HAS_EXPIRED_ISSUE:-0}" -eq 1 ]; then
+              gh pr edit "${{ github.event.pull_request.number }}" -R "$GITHUB_REPOSITORY" --add-label "status/issue-expired"
+            else
+              gh pr edit "${{ github.event.pull_request.number }}" -R "$GITHUB_REPOSITORY" --remove-label "status/issue-expired"
+            fi
           fi
