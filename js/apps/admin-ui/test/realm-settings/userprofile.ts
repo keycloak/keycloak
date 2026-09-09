@@ -58,15 +58,16 @@ export async function switchOffIfOn(page: Page, selector: string) {
 export async function clickCreateUser(page: Page) {
   await waitForLoadingComplete(page);
 
-  const createUserAction = page
-    .getByTestId("no-users-found-empty-action")
-    .or(page.getByTestId("add-user"));
+  const addUser = page.getByTestId("add-user");
+  const emptyAction = page.getByTestId("no-users-found-empty-action");
 
-  await expect(createUserAction.first()).toBeVisible({
-    timeout: 15_000,
-  });
+  if (await addUser.isVisible()) {
+    await addUser.click();
+    return;
+  }
 
-  await createUserAction.first().click();
+  await expect(emptyAction).toBeVisible({ timeout: 15_000 });
+  await emptyAction.click();
 }
 
 export async function fillEmailAndOptionalUsername(
