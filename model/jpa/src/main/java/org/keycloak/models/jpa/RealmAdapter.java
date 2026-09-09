@@ -163,6 +163,16 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     }
 
     @Override
+    public String getDisplayNameShort() {
+        return getAttribute(RealmAttributes.DISPLAY_NAME_SHORT);
+    }
+
+    @Override
+    public void setDisplayNameShort(String displayNameShort) {
+        setAttribute(RealmAttributes.DISPLAY_NAME_SHORT, displayNameShort);
+    }
+
+    @Override
     public boolean isEnabled() {
         return realm.isEnabled();
     }

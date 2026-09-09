@@ -64,6 +64,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected String name;
     protected String displayName;
     protected String displayNameHtml;
+    protected String displayNameShort;
     protected boolean enabled;
     protected SslRequired sslRequired;
     protected boolean registrationAllowed;
@@ -183,6 +184,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         name = model.getName();
         displayName = model.getDisplayName();
         displayNameHtml = model.getDisplayNameHtml();
+        displayNameShort = model.getDisplayNameShort();
         enabled = model.isEnabled();
         allowUserManagedAccess = model.isUserManagedAccessAllowed();
         sslRequired = model.getSslRequired();
@@ -352,6 +354,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public String getDisplayNameHtml() {
         return displayNameHtml;
+    }
+
+    public String getDisplayNameShort() {
+        return displayNameShort;
     }
 
     public boolean isEnabled() {

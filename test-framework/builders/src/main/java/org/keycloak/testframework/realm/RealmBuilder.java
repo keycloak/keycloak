@@ -56,6 +56,11 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder displayNameShort(String displayNameShort) {
+        rep.setDisplayNameShort(displayNameShort);
+        return this;
+    }
+
     @Deprecated
     public RealmBuilder publicKey(String publicKey) {
         rep.setPublicKey(publicKey);
