@@ -124,3 +124,16 @@ jobs:
         run: tree /tmp/trivy-logs
       - name: Parse reports
         run: ./mvnw -f misc/vuln-to-issues package exec:java -Dexec.mainClass="org.keycloak.misc.TrivyReportParser"
+      - name: Set issue type
+        run: |
+          gh issue list \
+            --label source/scan-dependencies \
+            --label kind/cve \
+            --state all \
+            --limit 500 \
+            --search "no:type" \
+            --json number \
+            --jq '.[].number' \
+          | while read -r issue_number; do
+              gh issue edit "$issue_number" --type cve
+            done
