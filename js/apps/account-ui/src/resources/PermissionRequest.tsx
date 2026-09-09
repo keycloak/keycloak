@@ -75,6 +75,7 @@ export const PermissionRequest = ({
         }
         variant="link"
         onClick={toggle}
+        aria-label={modalTitle}
       >
         <Badge>{resource.shareRequests?.length}</Badge>
       </Button>
