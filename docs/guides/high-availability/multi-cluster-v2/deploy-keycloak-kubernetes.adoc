@@ -11,6 +11,7 @@ previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
 This {section} describes advanced {project_name} configurations for {kubernetes} which are load tested and will recover from single Pod failures or site failures.
 
 These instructions are intended for use with the setup described in the <@links.ha id="multi-cluster-v2-concepts"/> {section}.
+Ensure that the <@links.ha id="multi-cluster-v2-introduction" anchor="multi-cluster-v2-infrastructure-requirements" /> are met before proceeding.
 
 While this blueprint uses {kubernetes}, the concepts are not limited to {kubernetes}.
 
