@@ -416,11 +416,13 @@ public enum OperatorDeployment {local_apiserver,local,remote}
       // Checking both reduces the chance that an in-flight reconciliation re-creates the
       // StatefulSet after the CR is deleted below — see https://github.com/keycloak/keycloak/issues/52497
       k8sclient.resources(Keycloak.class).list().getItems().forEach(k -> {
-          var annotations = k.getMetadata().getAnnotations();
-          if (annotations != null) {
-              annotations.remove(Constants.KEYCLOAK_PAUSE_ANNOTATION);
-          }
-          k8sclient.resource(new KeycloakBuilder(k).editSpec().withInstances(0).endSpec().build()).unlock().patch();
+          var patched = new KeycloakBuilder(k)
+                  .editMetadata()
+                      .addToAnnotations(Constants.KEYCLOAK_PAUSE_ANNOTATION, null)
+                  .endMetadata()
+                  .editSpec().withInstances(0).endSpec()
+                  .build();
+          k8sclient.resource(patched).unlock().patch();
       });
 
       try {
