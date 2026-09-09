@@ -34,10 +34,13 @@ export async function clickAddClientScope(page: Page) {
 }
 
 export async function clickAddScope(page: Page, option: string) {
-  await page.getByTestId("add-dropdown").click();
   const menuItem = page.getByRole("menuitem", { name: option, exact: true });
-  await expect(menuItem).toBeVisible();
-  await menuItem.click();
+
+  // Retry: the add-scope dropdown can fail to stay open due to rendering races under CI load.
+  await expect(async () => {
+    await page.getByTestId("add-dropdown").click();
+    await menuItem.click({ timeout: 2_000 });
+  }).toPass({ timeout: 10_000 });
 }
 
 export async function assertTableCellDropdownValue(page: Page, value: string) {
