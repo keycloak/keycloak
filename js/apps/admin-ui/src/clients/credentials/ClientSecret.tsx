@@ -62,12 +62,7 @@ const SecretInput = ({
             )}
           </InputGroupItem>
           <InputGroupItem>
-            <CopyToClipboardButton
-              id={id}
-              text={secret}
-              label="clientSecret"
-              variant="control"
-            />
+            <CopyToClipboardButton id={id} text={secret} variant="control" />
           </InputGroupItem>
         </InputGroup>
       </SplitItem>
