@@ -131,6 +131,17 @@ public class Urls {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "detachedInfo").build(realmName);
     }
 
+    public static URI loginActionsVerifyEmailSuccess(URI baseUri, String realmName, String tokenString, String clientId, String tabId, String clientData) {
+        UriBuilder builder = loginActionsBase(baseUri).path(LoginActionsService.class, "verifyEmailSuccess")
+                .replaceQueryParam(Constants.KEY, tokenString)
+                .replaceQueryParam(Constants.CLIENT_ID, clientId)
+                .replaceQueryParam(Constants.TAB_ID, tabId);
+        if (StringUtil.isNotBlank(clientData)) {
+            builder = builder.replaceQueryParam(Constants.CLIENT_DATA, clientData);
+        }
+        return builder.build(realmName);
+    }
+
     public static UriBuilder requiredActionBase(URI baseUri) {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "requiredAction");
     }

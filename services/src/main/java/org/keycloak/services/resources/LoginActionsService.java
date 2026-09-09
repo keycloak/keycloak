@@ -53,6 +53,7 @@ import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticato
 import org.keycloak.authentication.authenticators.broker.util.PostBrokerLoginConstants;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
+import org.keycloak.authentication.requiredactions.VerifyEmailSuccessToken;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
@@ -137,6 +138,8 @@ public class LoginActionsService {
     public static final String RESTART_PATH = "restart";
 
     public static final String DETACHED_INFO_PATH = "detached-info";
+
+    public static final String VERIFY_EMAIL_SUCCESS_PATH = "verify-email-success";
 
     public static final String FORWARDED_ERROR_MESSAGE_NOTE = "forwardedErrorMessage";
 
@@ -314,6 +317,55 @@ public class LoginActionsService {
         return type == MessageType.ERROR ? loginForm.createErrorPage(statusObj) : loginForm.createInfoPage();
     }
 
+    /**
+     * Confirmation page for a registration whose email was verified in another browser or tab.
+     *
+     * The tab that started the registration is still sitting on the verify-email page and cannot be routed back
+     * through the authentication flow, because verifying the email removes the VERIFY_EMAIL required action from
+     * the user, so the flow finds nothing left to do and completes, redirecting to the client instead of showing
+     * a confirmation.
+     *
+     * The tab reaches this endpoint from session polling, which fires as soon as any session cookie appears - it
+     * does not know whether it was this registration that completed. The registration is therefore identified by
+     * a {@link VerifyEmailSuccessToken} signed with the realm key, handed to the verify-email page when it was
+     * rendered, and the confirmation is only shown after re-checking that the user it names really has a
+     * verified email. An unrelated login in another tab, or a direct request to this endpoint, falls through to
+     * the usual "logged in on another tab" handling rather than claiming an email was verified.
+     *
+     * @return
+     */
+    @Path(VERIFY_EMAIL_SUCCESS_PATH)
+    @GET
+    public Response verifyEmailSuccess(@QueryParam(Constants.KEY) String tokenString,
+                                       @QueryParam(Constants.CLIENT_ID) String clientId,
+                                       @QueryParam(Constants.TAB_ID) String tabId,
+                                       @QueryParam(Constants.CLIENT_DATA) String clientData) {
+        VerifyEmailSuccessToken token = tokenString == null
+                ? null
+                : session.tokens().decode(tokenString, VerifyEmailSuccessToken.class);
+        // decode only verifies the signature, so anything the realm signed can arrive here. The user id is
+        // required rather than assumed - looking one up by null id fails inside StorageId rather than returning
+        // no user, which would surface as a 500 instead of the fallback below.
+        UserModel user = token == null || token.getUserId() == null || token.isExpired()
+                ? null
+                : session.users().getUserById(realm, token.getUserId());
+
+        if (user == null || !user.isEmailVerified()) {
+            // Either this is not a registration waiting on verification, or the verification has not happened -
+            // the session that triggered the polling belongs to something else. Fall back to the behaviour the
+            // verify-email page had before, rather than claiming an email was verified.
+            return Response.status(Response.Status.FOUND)
+                    .location(Urls.realmLoginRestartPage(session.getContext().getUri().getBaseUri(), realm.getName(),
+                            clientId, tabId, clientData, true))
+                    .build();
+        }
+
+        processLocaleParam(null);
+
+        return session.getProvider(LoginFormsProvider.class)
+                .setDetachedAuthSession()
+                .createVerifyEmailSuccessPage();
+    }
 
     /**
      * protocol independent login page entry point
