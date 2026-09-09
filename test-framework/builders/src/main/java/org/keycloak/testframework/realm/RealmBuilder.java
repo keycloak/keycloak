@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
@@ -487,6 +488,12 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
 
     public RealmBuilder verifiableCredentialsEnabled(boolean enabled) {
         rep.setVerifiableCredentialsEnabled(enabled);
+        return this;
+    }
+
+    public RealmBuilder webAuthn(boolean passwordless, Consumer<WebAuthnRealmData.Builder> webAuthnRealmData) {
+        WebAuthnRealmData.Builder builder = new WebAuthnRealmData.Builder(rep, passwordless);
+        webAuthnRealmData.accept(builder);
         return this;
     }
 
