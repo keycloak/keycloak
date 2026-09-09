@@ -357,3 +357,30 @@ test.describe("Existing users", () => {
     await assertRowExists(page, "test-group");
   });
 });
+
+test.describe("Total user count", () => {
+  const placeHolder = "Search user";
+  const userA = "count-user-a";
+  const userB = "count-user-b";
+  const userC = "count-user-c";
+
+  const overrides: RealmRepresentation = {
+    users: [{ username: userA }, { username: userB }, { username: userC }],
+  };
+
+  test("shows total in pagination toggle", async ({ page }) => {
+    await using testBed = await createTestBed(overrides);
+
+    await login(page, { to: toUsers({ realm: testBed.realm }) });
+
+    // PatternFly's Pagination toggle button is identified by its rendered
+    // accessible name, which matches the visible "X - Y of Z" text.
+    const toggle = page.getByRole("button", { name: /\d+ - \d+ of/ }).first();
+
+    await expect(toggle).toContainText(/\d+ - \d+ of \d+/);
+
+    // Filter to a single user and assert the total updates.
+    await searchItem(page, placeHolder, userA);
+    await expect(toggle).toContainText("1 - 1 of 1");
+  });
+});

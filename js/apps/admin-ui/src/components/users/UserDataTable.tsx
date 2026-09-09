@@ -191,6 +191,25 @@ export function UserDataTable() {
     }
   };
 
+  const countLoader = async (search?: string) => {
+    const params: { [name: string]: string | number | boolean } = {
+      q: query!,
+    };
+
+    const searchParam = search || searchUser || "";
+    if (searchParam) {
+      params.search = searchParam;
+    }
+
+    if (activeFilters.exact) params.exact = true;
+
+    if (!listUsers && !(params.search || params.q)) {
+      return 0;
+    }
+
+    return adminClient.users.count(params);
+  };
+
   const [toggleUnlockUsersDialog, UnlockUsersConfirm] = useConfirmDialog({
     titleKey: "unlockAllUsers",
     messageKey: "unlockUsersConfirm",
@@ -355,6 +374,7 @@ export function UserDataTable() {
         }
         key={key}
         loader={loader}
+        countLoader={countLoader}
         isPaginated
         ariaLabelKey="titleUsers"
         canSelectAll
