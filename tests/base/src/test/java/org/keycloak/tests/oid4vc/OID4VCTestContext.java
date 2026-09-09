@@ -43,48 +43,65 @@ public class OID4VCTestContext {
     private String issuer;      // Issuing username (i.e. agent who creates credential offers)
     private String holder;      // Holder who requests the credential
 
-    private ClientRepresentation client;
+    private ClientRepresentation holderClient;
+    private ClientRepresentation issuerClient;
     private CredentialScopeRepresentation credentialScope;
 
     private final Map<AttachmentKey<?>, Object> attachments = new HashMap<>();
 
     public OID4VCTestContext(ClientRepresentation client, CredentialScopeRepresentation credentialScope) {
-        this.client = client;
+        this.holderClient = client;
+        this.issuerClient = client;
         this.issuer = "john";
         this.holder = "alice";
         this.credentialScope = credentialScope;
     }
 
-    public ClientRepresentation getClient() {
-        return client;
+    public ClientRepresentation getHolderClient() {
+        return holderClient;
     }
 
-    public void setClient(ClientRepresentation client) {
-        this.client = client;
+    public OID4VCTestContext withHolderClient(ClientRepresentation client) {
+        this.holderClient = client;
+        return this;
     }
+
+    public ClientRepresentation getIssuerClient() {
+        return issuerClient;
+    }
+
+    public OID4VCTestContext withIssuerClient(ClientRepresentation client) {
+        this.issuerClient = client;
+        return this;
+    }
+
+    public String getClientId() { return holderClient.getClientId(); }
 
     public String getIssuer() {
         return issuer;
     }
 
-    public void setIssuer(String issuer) {
+    public OID4VCTestContext withIssuer(String issuer) {
         this.issuer = issuer;
+        return this;
     }
 
     public String getHolder() {
         return holder;
     }
 
-    public void setHolder(String holder) {
+    public OID4VCTestContext withHolder(String holder) {
         this.holder = holder;
+        return this;
     }
 
     public CredentialScopeRepresentation getCredentialScope() {
         return credentialScope;
     }
 
-    public void setCredentialScope(CredentialScopeRepresentation credentialScope) {
+    public OID4VCTestContext setCredentialScope(CredentialScopeRepresentation credentialScope) {
         this.credentialScope = credentialScope;
+        return this;
     }
 
     public List<OID4VCAuthorizationDetail> getAuthorizationDetails() {

@@ -73,6 +73,7 @@ public class OID4VCJWTIssuerEndpointPreAuthTest extends OID4VCIssuerEndpointTest
                 .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
                 .targetUser("john")
+                .targetClient(client.getClientId())
                 .bearerToken(token)
                 .send()
                 .getCredentialOfferURI();
@@ -163,6 +164,7 @@ public class OID4VCJWTIssuerEndpointPreAuthTest extends OID4VCIssuerEndpointTest
                 .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
                 .targetUser("john")
+                .targetClient(oauth.getClientId())
                 .bearerToken(token)
                 .send()
                 .getCredentialOfferURI();
@@ -216,6 +218,7 @@ public class OID4VCJWTIssuerEndpointPreAuthTest extends OID4VCIssuerEndpointTest
                 .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
                 .targetUser("john")
+                .targetClient(oauth.getClientId())
                 .bearerToken(token)
                 .send()
                 .getCredentialOfferURI();

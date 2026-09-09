@@ -170,14 +170,14 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
         String credentialConfigurationId = actionConfig.getCredentialConfigurationId();
         event = event.clone().detail(Details.CREDENTIAL_TYPE, credentialConfigurationId);
 
-        String clientId = actionConfig.getClientId();
         CredentialOfferProvider offerProvider = session.getProvider(CredentialOfferProvider.class);
         CredentialOfferState offerState = offerProvider.createCredentialOffer(user, grantType,
-                List.of(credentialConfigurationId), clientId, user.getUsername(), expiresAt);
+                List.of(credentialConfigurationId), actionConfig.getClientId(), user.getUsername(), expiresAt);
 
         CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
         offerStorage.putOfferState(offerState);
 
+        String clientId = offerState.getTargetClientId();
         logger.debugf("Stored credential offer state: [credentialConfigId=%s, clientId=%s, username=%s, nonce=%s]",
                 credentialConfigurationId, clientId, user.getUsername(), offerState.getNonce());
 
