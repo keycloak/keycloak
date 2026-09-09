@@ -248,7 +248,10 @@ public class StandardTokenExchangeV1Test extends AbstractKeycloakTest {
         Assertions.assertEquals(token.getPreferredUsername(), "user");
         Assertions.assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
         Assert.assertNames(Arrays.asList(token.getScope().split(" ")),"profile", "email", "openid", "phone");
-        //change scopes for token exchange - profile,phone must be removed
+        //change scopes for token exchange - email is removed via form scope (and also
+        //invalid for different-scope-client); phone is omitted from the form scope but
+        //still present on the subject token and valid for different-scope-client, so the
+        //scope-union logic preserves it in the exchanged token below
         oauth.scope("openid profile email");
         oauth.client("different-scope-client", "secret");
         {
@@ -259,7 +262,7 @@ public class StandardTokenExchangeV1Test extends AbstractKeycloakTest {
             Assertions.assertEquals("different-scope-client", exchangedToken.getIssuedFor());
             Assertions.assertNull(exchangedToken.getAudience());
             Assertions.assertEquals(exchangedToken.getPreferredUsername(), "user");
-            Assert.assertNames(Arrays.asList(exchangedToken.getScope().split(" ")),"profile", "openid");
+            Assert.assertNames(Arrays.asList(exchangedToken.getScope().split(" ")),"profile", "openid", "phone");
             Assertions.assertNull(exchangedToken.getEmailVerified());
         }
 
@@ -275,6 +278,37 @@ public class StandardTokenExchangeV1Test extends AbstractKeycloakTest {
             Assert.assertNames(Arrays.asList(exchangedToken.getScope().split(" ")),"profile", "email","openid");
             Assertions.assertFalse(exchangedToken.getEmailVerified());
         }
+        oauth.scope(null);
+    }
+
+    @Test
+    @UncaughtServerErrorExpected
+    public void testExchangeScopeParameterMergesWithSubjectTokenScope() throws Exception {
+        setupRealm();
+
+        oauth.realm(TEST);
+        oauth.client("client-exchanger", "secret");
+        // subject token intentionally does NOT include "phone"
+        oauth.scope("openid profile");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("user", "password");
+        String accessToken = response.getAccessToken();
+        TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        AccessToken token = accessTokenVerifier.parse().getToken();
+        Assert.assertNames(Arrays.asList(token.getScope().split(" ")), "profile", "openid");
+
+        // exchange requests "phone" via the form scope parameter, which is valid for
+        // different-scope-client but absent from the subject token above. The result
+        // must be the union of both scope sets (filtered by what the target client
+        // allows), not their intersection - otherwise "phone" would be silently dropped.
+        oauth.client("different-scope-client", "secret");
+        oauth.scope("openid profile phone");
+        response = oauth.doTokenExchange(accessToken);
+        String exchangedTokenString = response.getAccessToken();
+        TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
+        AccessToken exchangedToken = verifier.parse().getToken();
+        Assertions.assertEquals("different-scope-client", exchangedToken.getIssuedFor());
+        Assert.assertNames(Arrays.asList(exchangedToken.getScope().split(" ")), "profile", "openid", "phone");
+
         oauth.scope(null);
     }
 

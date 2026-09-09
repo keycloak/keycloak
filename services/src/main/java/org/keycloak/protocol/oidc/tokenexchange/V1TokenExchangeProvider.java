@@ -20,9 +20,11 @@
 package org.keycloak.protocol.oidc.tokenexchange;
 
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.MediaType;
@@ -37,6 +39,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -274,28 +277,65 @@ public class V1TokenExchangeProvider extends AbstractTokenExchangeProvider {
         if (token != null && token.getScope() != null && scope == null) {
             scope = token.getScope();
 
-            Set<String> targetClientScopes = new HashSet<String>();
-            targetClientScopes.addAll(targetClient.getClientScopes(true).keySet());
-            targetClientScopes.addAll(targetClient.getClientScopes(false).keySet());
+            Map<String, ClientScopeModel> targetClientScopeModels = collectTargetClientScopeModels(targetClient);
             //from return scope remove scopes that are not default or optional scopes for targetClient
-            scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || (targetClientScopes.contains(Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES) ? s.split(":")[0] : s))).collect(Collectors.joining(" "));
+            scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || targetClientScopeModels.containsKey(resolveScopeKey(s, targetClientScopeModels.values()))).collect(Collectors.joining(" "));
         } else if (token != null && token.getScope() != null) {
-            String subjectTokenScopes = token.getScope();
-            if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
-                Set<String> subjectTokenScopesSet = Arrays.stream(subjectTokenScopes.split(" ")).map(s -> s.split(":")[0]).collect(Collectors.toSet());
-                scope = Arrays.stream(scope.split(" ")).filter(sc -> subjectTokenScopesSet.contains(sc.split(":")[0])).collect(Collectors.joining(" "));
-            } else {
-                Set<String> subjectTokenScopesSet = Arrays.stream(subjectTokenScopes.split(" ")).collect(Collectors.toSet());
-                scope = Arrays.stream(scope.split(" ")).filter(sc -> subjectTokenScopesSet.contains(sc)).collect(Collectors.joining(" "));
-            }
+            Map<String, ClientScopeModel> targetClientScopeModels = collectTargetClientScopeModels(targetClient);
 
-            Set<String> targetClientScopes = new HashSet<String>();
-            targetClientScopes.addAll(targetClient.getClientScopes(true).keySet());
-            targetClientScopes.addAll(targetClient.getClientScopes(false).keySet());
+            // merge scopes from the subject token and the form params (union, not intersection).
+            // Each raw scope token is resolved to the name of the registered client scope it
+            // actually matches (via longest-prefix parameterized-scope matching, mirroring
+            // ClientScopeAuthorizationRequestParser#getMatchingClientScope) so that "scope:param"
+            // variants are deduped by their real target scope and not by a naive split(":")[0],
+            // which would incorrectly collide scopes whose own name contains a colon. The same
+            // resolver is used for the target-client-scope filter below, so a resolved
+            // parameterized scope is not immediately re-dropped by a naive split.
+            String subjectTokenScopes = token.getScope();
+            Map<String, String> scopeByResolvedName = new HashMap<>();
+            for (String s : subjectTokenScopes.split(" ")) {
+                if (!s.isEmpty()) {
+                    scopeByResolvedName.put(resolveScopeKey(s, targetClientScopeModels.values()), s);
+                }
+            }
+            for (String s : scope.split(" ")) {
+                if (!s.isEmpty()) {
+                    scopeByResolvedName.put(resolveScopeKey(s, targetClientScopeModels.values()), s);
+                }
+            }
+            scope = String.join(" ", scopeByResolvedName.values());
+
             //from return scope remove scopes that are not default or optional scopes for targetClient
-            scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || (targetClientScopes.contains(Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES) ? s.split(":")[0] : s))).collect(Collectors.joining(" "));
+            scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || targetClientScopeModels.containsKey(resolveScopeKey(s, targetClientScopeModels.values()))).collect(Collectors.joining(" "));
         }
         return scope;
+    }
+
+    /**
+     * Resolves a raw requested scope token (e.g. "read" or "read:account:42") to the name of the
+     * registered {@link ClientScopeModel} it actually matches, using the longest-name-first
+     * parameterized-scope matching strategy also used by
+     * {@link org.keycloak.protocol.oidc.rar.parsers.ClientScopeAuthorizationRequestParser}. Falls
+     * back to the raw token when no registered scope matches (e.g. the scope is invalid for the
+     * target client, in which case it is dropped by the caller's target-client-scope filter anyway).
+     */
+    private static String resolveScopeKey(String rawScope, Collection<ClientScopeModel> registeredScopes) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
+            return rawScope;
+        }
+        return registeredScopes.stream()
+                .sorted(Comparator.comparingInt((ClientScopeModel s) -> s.getName().length()).reversed())
+                .filter(s -> s.isParameterizedScope() ? s.getParameterFromScope(rawScope).isPresent() : s.getName().equals(rawScope))
+                .findFirst()
+                .map(ClientScopeModel::getName)
+                .orElse(rawScope);
+    }
+
+    private static Map<String, ClientScopeModel> collectTargetClientScopeModels(ClientModel targetClient) {
+        Map<String, ClientScopeModel> targetClientScopeModels = new HashMap<>();
+        targetClient.getClientScopes(true).values().forEach(s -> targetClientScopeModels.put(s.getName(), s));
+        targetClient.getClientScopes(false).values().forEach(s -> targetClientScopeModels.put(s.getName(), s));
+        return targetClientScopeModels;
     }
 
     @Override
