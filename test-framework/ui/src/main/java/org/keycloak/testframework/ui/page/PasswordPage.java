@@ -2,7 +2,6 @@ package org.keycloak.testframework.ui.page;
 
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
-import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -50,19 +49,8 @@ public class PasswordPage extends AbstractLoginPage {
     }
 
     public String getPasswordError() {
-        try {
-            return getFieldErrorText(passwordError);
-        } catch (NoSuchElementException e) {
-            return null;
-        }
-    }
-
-    private static String getFieldErrorText(WebElement errorElement) {
-        try {
-            return errorElement.findElement(By.className("kc-feedback-text")).getText();
-        } catch (NoSuchElementException e) {
-            return errorElement.getText();
-        }
+        String error = FieldErrorText.readNow(driver, "input-error-password");
+        return error.isBlank() ? null : error;
     }
 
     public String getError() {
