@@ -30,6 +30,8 @@ import useToggle from "../utils/useToggle";
 type IdentityProviderSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: "typeaheadMulti" | "typeahead";
   isRequired?: boolean;
+  orgId?: string;
+  onIdpSelected?: (idp: IdentityProviderRepresentation) => void;
 };
 
 export const IdentityProviderSelect = ({
@@ -40,6 +42,8 @@ export const IdentityProviderSelect = ({
   isRequired,
   variant = "typeahead",
   isDisabled,
+  orgId,
+  onIdpSelected,
 }: IdentityProviderSelectProps) => {
   const { adminClient } = useAdminClient();
 
@@ -65,13 +69,19 @@ export const IdentityProviderSelect = ({
     async () => {
       const params: IdentityProvidersQuery = {
         max: 20,
-        realmOnly: true,
       };
       if (search) {
         params.search = search;
       }
 
-      return await adminClient.identityProviders.find(params);
+      const allIdps = await adminClient.identityProviders.find(params);
+      if (!orgId) return allIdps;
+      return allIdps.filter(
+        (idp) =>
+          !idp.organizationLinks?.some(
+            (link) => link.organizationId === orgId,
+          ),
+      );
     },
     setIdps,
     [search],
@@ -202,6 +212,7 @@ export const IdentityProviderSelect = ({
                   field.onChange([]);
                 } else {
                   field.onChange([option]);
+                  onIdpSelected?.(idp);
                 }
 
                 setInputValue(removed ? "" : option || "");

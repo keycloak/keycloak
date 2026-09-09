@@ -117,10 +117,6 @@ export const OrganizationTable = ({
           name: "description",
           displayKey: "description",
         },
-        {
-          name: "membershipType",
-          displayKey: "membershipType",
-        },
       ]}
       emptyState={children}
     />

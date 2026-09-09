@@ -2,6 +2,8 @@
  * https://www.keycloak.org/docs-api/11.0/rest-api/index.html#_identityproviderrepresentation
  */
 
+import type OrganizationIdentityProviderLinkRepresentation from "./organizationIdentityProviderLinkRepresentation.js";
+
 export enum IdentityProviderType {
   ANY = "ANY",
   USER_AUTHENTICATION = "USER_AUTHENTICATION",
@@ -25,6 +27,8 @@ export default interface IdentityProviderRepresentation {
   providerId?: string;
   storeToken?: boolean;
   trustEmail?: boolean;
+  /** @deprecated Use organizationLinks instead */
   organizationId?: string;
+  organizationLinks?: OrganizationIdentityProviderLinkRepresentation[];
   types?: string[];
 }

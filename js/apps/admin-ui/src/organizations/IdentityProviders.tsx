@@ -9,61 +9,39 @@ import {
   Button,
   ButtonVariant,
   PageSection,
-  Switch,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { sortBy } from "lodash-es";
-import { BellIcon } from "@patternfly/react-icons";
+import { BellIcon, ExternalLinkAltIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { ManageOrderDialog } from "../identity-providers/ManageOrderDialog";
 import { toIdentityProvider } from "../identity-providers/routes/IdentityProvider";
 import { useRealm } from "../context/realm-context/RealmContext";
 import useToggle from "../utils/useToggle";
 import { LinkIdentityProviderModal } from "./LinkIdentityProviderModal";
 import { EditOrganizationParams } from "./routes/EditOrganization";
 
-type ShownOnLoginPageCheckProps = {
-  row: IdentityProviderRepresentation;
-  refresh: () => void;
-};
-
-const ShownOnLoginPageCheck = ({
+const OrgLinkProperty = ({
   row,
-  refresh,
-}: ShownOnLoginPageCheckProps) => {
-  const { adminClient } = useAdminClient();
-  const { addAlert, addError } = useAlerts();
+  orgId,
+  property,
+}: {
+  row: IdentityProviderRepresentation;
+  orgId: string;
+  property: "autoMembership" | "membershipType";
+}) => {
   const { t } = useTranslation();
-
-  const toggle = async (value: boolean) => {
-    try {
-      await adminClient.identityProviders.update(
-        { alias: row.alias! },
-        {
-          ...row,
-          hideOnLogin: value,
-        },
-      );
-      addAlert(t("linkUpdatedSuccessful"));
-
-      refresh();
-    } catch (error) {
-      addError("linkUpdatedError", error);
-    }
-  };
-
-  return (
-    <Switch
-      label={t("on")}
-      labelOff={t("off")}
-      isChecked={row.hideOnLogin}
-      onChange={(_, value) => toggle(value)}
-    />
+  const link = row.organizationLinks?.find(
+    (l) => l.organizationId === orgId,
   );
+  if (!link) return "—";
+  if (property === "autoMembership") {
+    return link.autoMembership ? "True" : "False";
+  }
+  return t(link.membershipType || "UNMANAGED");
 };
 
 export const IdentityProviders = () => {
@@ -76,7 +54,6 @@ export const IdentityProviders = () => {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
 
-  const [manageDisplayDialog, setManageDisplayDialog] = useState(false);
   const [hasProviders, setHasProviders] = useState(false);
   const [selectedRow, setSelectedRow] =
     useState<IdentityProviderRepresentation>();
@@ -119,15 +96,6 @@ export const IdentityProviders = () => {
 
   return (
     <>
-      {manageDisplayDialog && (
-        <ManageOrderDialog
-          orgId={orgId!}
-          onClose={() => {
-            setManageDisplayDialog(false);
-            refresh();
-          }}
-        />
-      )}
       <PageSection variant="light">
         <UnlinkConfirm />
         {open && (
@@ -153,27 +121,16 @@ export const IdentityProviders = () => {
             ariaLabelKey="identityProviders"
             searchPlaceholderKey="searchProvider"
             toolbarItem={
-              <>
-                <ToolbarItem>
-                  <Button
-                    onClick={() => {
-                      setSelectedRow(undefined);
-                      toggleOpen();
-                    }}
-                  >
-                    {t("linkIdentityProvider")}
-                  </Button>
-                </ToolbarItem>
-                <ToolbarItem>
-                  <Button
-                    data-testid="manageDisplayOrder"
-                    variant="link"
-                    onClick={() => setManageDisplayDialog(true)}
-                  >
-                    {t("manageDisplayOrder")}
-                  </Button>
-                </ToolbarItem>
-              </>
+              <ToolbarItem>
+                <Button
+                  onClick={() => {
+                    setSelectedRow(undefined);
+                    toggleOpen();
+                  }}
+                >
+                  {t("linkIdentityProvider")}
+                </Button>
+              </ToolbarItem>
             }
             actions={[
               {
@@ -195,6 +152,22 @@ export const IdentityProviders = () => {
               {
                 name: "alias",
                 cellRenderer: (row) => (
+                  <Button
+                    variant="link"
+                    isInline
+                    onClick={() => {
+                      setSelectedRow(row);
+                      toggleOpen();
+                    }}
+                  >
+                    {row.alias}
+                  </Button>
+                ),
+              },
+              {
+                name: "providerId",
+                displayKey: "providerDetails",
+                cellRenderer: (row) => (
                   <Link
                     to={toIdentityProvider({
                       realm,
@@ -203,19 +176,30 @@ export const IdentityProviders = () => {
                       tab: "settings",
                     })}
                   >
-                    {row.alias}
+                    {row.providerId} <ExternalLinkAltIcon />
                   </Link>
                 ),
               },
               {
-                name: "providerId",
-                displayKey: "providerDetails",
+                name: "autoMembership",
+                displayKey: "autoMembership",
+                cellRenderer: (row) => (
+                  <OrgLinkProperty
+                    row={row}
+                    orgId={orgId!}
+                    property="autoMembership"
+                  />
+                ),
               },
               {
-                name: "hideOnLogin",
-                displayKey: "hideOnLoginPage",
+                name: "membershipType",
+                displayKey: "membershipType",
                 cellRenderer: (row) => (
-                  <ShownOnLoginPageCheck row={row} refresh={refresh} />
+                  <OrgLinkProperty
+                    row={row}
+                    orgId={orgId!}
+                    property="membershipType"
+                  />
                 ),
               },
             ]}
