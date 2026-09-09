@@ -7,8 +7,8 @@ import {
   useRequiredContext,
 } from "@keycloak/keycloak-ui-shared";
 import { PropsWithChildren, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
-import { useHash } from "./useHash";
 import { useTranslation } from "react-i18next";
 
 type RealmContextType = {
@@ -26,13 +26,14 @@ export const RealmContextProvider = ({ children }: PropsWithChildren) => {
   const { adminClient } = useAdminClient();
   const { environment } = useEnvironment();
   const { i18n } = useTranslation();
+  const { pathname } = useLocation();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
   const [realmRepresentation, setRealmRepresentation] =
     useState<RealmRepresentation>();
 
-  const locationRealm = useHash();
-  const realm = locationRealm.split("/")[1] ?? environment.realm;
+  const locationRealm = decodeURIComponent(pathname);
+  const realm = locationRealm.split("/")[1] || environment.realm;
 
   // Configure admin client to use selected realm when it changes.
   useEffect(() => {

@@ -5,7 +5,7 @@ import {
   mainPageContentId,
 } from "@keycloak/keycloak-ui-shared";
 import { Flex, FlexItem, Page } from "@patternfly/react-core";
-import { PropsWithChildren, Suspense, useEffect } from "react";
+import { PropsWithChildren, Suspense } from "react";
 import { Outlet } from "react-router-dom";
 import { AdminClientProvider } from "./admin-client";
 import { Header } from "./PageHeader";
@@ -40,12 +40,6 @@ export const AppContexts = ({ children }: PropsWithChildren) => (
 );
 
 export const App = () => {
-  const hrefEndsWithHashSlash = location.href.endsWith("#/");
-  useEffect(() => {
-    if (!hrefEndsWithHashSlash) return;
-    history.replaceState(null, "", location.pathname);
-  }, [hrefEndsWithHashSlash, location.pathname]);
-
   return (
     <AdminClientProvider>
       <AppContexts>
