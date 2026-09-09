@@ -51,7 +51,7 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
     @FindBy(name = "cancel-aia")
     private WebElement cancelAIAButton;
 
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
+    @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
     private WebElement loginAlertErrorMessage;
 
     private final UpdateProfileErrors errorsPage;
@@ -301,7 +301,12 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
 
         private String getTextById(String id) {
             try {
-                return driver.findElement(By.id(id)).getText();
+                WebElement errorElement = driver.findElement(By.id(id));
+                try {
+                    return errorElement.findElement(By.className("kc-feedback-text")).getText();
+                } catch (NoSuchElementException e) {
+                    return errorElement.getText();
+                }
             } catch (NoSuchElementException e) {
                 return null;
             }
