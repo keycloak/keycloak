@@ -112,8 +112,10 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         WebAuthnCredentialPresentationData presentationData = new WebAuthnCredentialPresentationData(
                 data.getAaguid(), data.getCredentialId(), data.getCounter(), data.getAttestationStatement(), data.getCredentialPublicKey(),
                 data.getAttestationStatementFormat(), data.getTransports(), metadata.name(), metadata.iconLight(), metadata.iconDark());
-        return WebAuthnCredentialModel.create(origCredential.getId(), origCredential.getType(), origCredential.getCreatedDate(), origCredential.getUserLabel(),
+        WebAuthnCredentialModel presentationCredential = WebAuthnCredentialModel.create(origCredential.getId(), origCredential.getType(), origCredential.getCreatedDate(), origCredential.getUserLabel(),
                 presentationData, origCredential.getWebAuthnSecretData());
+        presentationCredential.setPriority(origCredential.getPriority());
+        return presentationCredential;
     }
 
     /**
