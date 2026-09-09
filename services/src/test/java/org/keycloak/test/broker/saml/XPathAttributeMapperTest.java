@@ -13,18 +13,15 @@ import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
 
 public class XPathAttributeMapperTest {
 
@@ -48,9 +45,7 @@ public class XPathAttributeMapperTest {
 
     @Test
     public void testInvalidXml() {
-        RuntimeException actualException =
-                assertThrows(RuntimeException.class, () -> testMapping("<Open>Foo</Close>", "//*"));
-        assertThat(actualException.getCause(), instanceOf(ParsingException.class));
+        assertNull(testMapping("<Open>Foo</Close>", "//*"));
 
         // it seems additional validation is added as 'TransformerException: Prefix must resolve to a namespace: unknownPrefix'
         // is thrown before the XPath function resolver
