@@ -1,0 +1,36 @@
+= Admin console migrated to PatternFly 6
+
+The admin console has been upgraded to PatternFly 6 and the built-in admin theme has been renamed from `keycloak.v2` to `keycloak.v3`. Realms that explicitly use the built-in admin theme are migrated automatically. Custom admin themes must be updated manually.
+
+== Rename the admin theme parent
+
+If your custom admin theme extends the built-in theme, update `theme.properties`:
+
+[source,properties]
+----
+# Before
+parent=keycloak.v2
+
+# After
+parent=keycloak.v3
+----
+
+If your theme extends `rh-sso.v2`, change the parent to `rh-sso.v3` if available in your distribution, or extend `keycloak.v3` instead.
+
+== Update PatternFly dependencies and imports
+
+The admin console now uses PatternFly 6 React components and design tokens. Custom admin themes that bundle their own React components should:
+
+* Upgrade `@patternfly/react-core` and related packages to PatternFly 6.
+* Replace deprecated PatternFly 5 APIs removed during the migration, including modal variants, `Chip` (use `Label`), and drag-and-drop helpers that depended on removed packages.
+* Update CSS class prefixes from `pf-v5-*` to `pf-v6-*` and replace `--pf-v5-global--*` variables with the corresponding `--pf-t--global--*` tokens where applicable.
+
+Consult the https://www.patternfly.org/get-started/develop/[PatternFly documentation] for component and token changes between major versions.
+
+== Quick theme downloads
+
+The built-in quick-theme generator now produces admin themes with `parent=keycloak.v3`. Download a new quick theme after upgrading if you previously generated one for `keycloak.v2`.
+
+== Login and account themes are unchanged
+
+This release only migrates the admin console. Login themes continue to use PatternFly 5 (`keycloak.v2`), and account themes remain on `keycloak.v3` as introduced in earlier releases. Do not change login theme parents as part of this admin console upgrade.

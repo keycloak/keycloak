@@ -405,7 +405,6 @@ export const StreamTab = ({
                     <CopyToClipboardButton
                       id="ssfStreamId"
                       text={clientStream.streamId ?? ""}
-                      label="ssfStreamId"
                       variant="control"
                     />
                   </InputGroupItem>
@@ -588,7 +587,6 @@ export const StreamTab = ({
                       <CopyToClipboardButton
                         id="ssfStreamEndpointUrl"
                         text={clientStream.delivery.endpoint_url}
-                        label="ssfStreamEndpointUrl"
                         variant="control"
                       />
                     </InputGroupItem>
@@ -629,7 +627,6 @@ export const StreamTab = ({
                           text={
                             clientStream.delivery.authorization_header ?? ""
                           }
-                          label="ssfStreamPushAuthHeader"
                           variant="control"
                         />
                       </InputGroupItem>

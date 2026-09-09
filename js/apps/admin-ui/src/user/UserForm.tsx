@@ -233,7 +233,6 @@ export const UserForm = ({
                   <CopyToClipboardButton
                     id={`user-${user.id}`}
                     text={user.id}
-                    label={t("userID")}
                     variant="control"
                   />
                 </InputGroupItem>
