@@ -63,33 +63,41 @@ public class ImpersonateActionTokenHandler extends AbstractActionTokenHandler<Im
         RealmModel realm = tokenContext.getRealm();
         UserModel user = session.users().getUserById(realm, token.getUserId());
         ClientConnection clientConnection = tokenContext.getClientConnection();
-        EventBuilder event = new EventBuilder(realm, session, clientConnection);
+        EventBuilder event = tokenContext.getEvent();
+        event.event(EventType.IMPERSONATE)
+                .detail(Details.IMPERSONATOR_REALM, token.getImpersonatorRealm())
+                .detail(Details.IMPERSONATOR, token.getImpersonatorUsername());
 
         // Normally, action tokens are invalidated after the intended required action is executed. However, since
         // impersonation doesn't have a required action and is instead executed immediately when the token is handled,
         // we need to invalidate the token here to prevent it from being used multiple times.
         if (!AuthenticationManager.invalidateActionToken(session, token.serializeKey(), 0L)) {
-            return handleImpersonationError(tokenContext, Messages.IMPERSONATE_ERROR, Status.BAD_REQUEST);
+            return handleImpersonationError(tokenContext, Errors.EXPIRED_CODE, Status.BAD_REQUEST);
         }
 
         if (user == null) {
-            return handleImpersonationError(tokenContext, Messages.IMPERSONATE_ERROR, Status.NOT_FOUND);
+            return handleImpersonationError(tokenContext, Errors.USER_NOT_FOUND, Status.NOT_FOUND);
         }
         if (!user.isEnabled()) {
-            return handleImpersonationError(tokenContext, Messages.IMPERSONATE_ERROR, Status.BAD_REQUEST);
+            return handleImpersonationError(tokenContext, Errors.USER_DISABLED, Status.BAD_REQUEST);
         }
         if (user.getServiceAccountClientLink() != null) {
-            return handleImpersonationError(tokenContext, Messages.IMPERSONATE_ERROR, Status.BAD_REQUEST);
+            return handleImpersonationError(tokenContext, Errors.NOT_ALLOWED, Status.BAD_REQUEST);
         }
 
-        // If the current user is already impersonating another user, we expire the existing session to prevent
-        // multiple impersonations at the same time.
-        UserSessionModel activeUserSession = session.getContext().getUserSession();
-        if (activeUserSession != null && !activeUserSession.getUser().getId().equals(user.getId())) {
-            AuthenticationManager.expireIdentityCookie(session);
-            AuthenticationManager.expireRememberMeCookie(session);
-            AuthenticationManager.expireAuthSessionCookie(session);
-            AuthenticationManager.backchannelLogout(session, realm, activeUserSession, session.getContext().getUri(), clientConnection, session.getContext().getRequestHeaders(), true);
+        // When impersonating within the same realm, the administrator's own session is terminated here (at redemption
+        // time), because their identity cookie is about to be replaced with the impersonated user's session. The
+        // session to terminate is carried in the token instead of being resolved from the request context, as this
+        // handler opts out of the identity-cookie authentication performed by LoginActionsServiceChecks#checkIsUserValid.
+        if (token.getImpersonatorSessionId() != null) {
+            UserSessionModel impersonatorSession = session.sessions().getUserSession(realm, token.getImpersonatorSessionId());
+            if (impersonatorSession != null && !impersonatorSession.getUser().getId().equals(user.getId())) {
+                AuthenticationManager.expireIdentityCookie(session);
+                AuthenticationManager.expireRememberMeCookie(session);
+                AuthenticationManager.expireAuthSessionCookie(session);
+                AuthenticationManager.backchannelLogout(session, realm, impersonatorSession, session.getContext().getUri(),
+                        clientConnection, session.getContext().getRequestHeaders(), true);
+            }
         }
 
         UserSessionModel userSession = new UserSessionManager(session).createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteHost(), "impersonate", false, null, null);
@@ -99,12 +107,13 @@ public class ImpersonateActionTokenHandler extends AbstractActionTokenHandler<Im
         AuthenticationManager.createLoginCookie(session, realm, userSession.getUser(), userSession, session.getContext().getUri(), clientConnection);
         URI redirect = URI.create(token.getRedirectUri());
 
-        event.event(EventType.IMPERSONATE)
-                .session(userSession)
+        event.session(userSession)
                 .user(user)
-                .detail(Details.IMPERSONATOR_REALM, token.getImpersonatorRealm())
-                .detail(Details.IMPERSONATOR, token.getImpersonatorUsername())
                 .success();
+
+        // The fresh authentication session created for processing this action token has served its purpose and would
+        // otherwise linger (together with its browser cookie) until it times out.
+        removeAuthenticationSession(tokenContext);
 
         return Response.status(Response.Status.FOUND)
                 .location(redirect)
@@ -125,12 +134,18 @@ public class ImpersonateActionTokenHandler extends AbstractActionTokenHandler<Im
         return false;
     }
 
-    private Response handleImpersonationError(ActionTokenContext<?> tokenContext, String errorMessage, Status status) {
-        if (tokenContext != null && tokenContext.getAuthenticationSession() != null) {
+    private Response handleImpersonationError(ActionTokenContext<?> tokenContext, String error, Status status) {
+        removeAuthenticationSession(tokenContext);
+
+        tokenContext.getEvent().event(EventType.IMPERSONATE).error(error);
+
+        return ErrorPage.error(tokenContext.getSession(), null, status, Messages.IMPERSONATE_ERROR);
+    }
+
+    private static void removeAuthenticationSession(ActionTokenContext<?> tokenContext) {
+        if (tokenContext.getAuthenticationSession() != null) {
             new AuthenticationSessionManager(tokenContext.getSession())
                 .removeAuthenticationSession(tokenContext.getRealm(), tokenContext.getAuthenticationSession(), true);
         }
-
-        return ErrorPage.error(tokenContext.getSession(), null, status, errorMessage);
     }
 }
