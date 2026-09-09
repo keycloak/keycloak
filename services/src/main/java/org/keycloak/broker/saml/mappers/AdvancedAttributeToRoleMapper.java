@@ -33,6 +33,9 @@ import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import static org.keycloak.utils.RegexUtils.valueMatchesRegex;
@@ -46,6 +49,7 @@ public class AdvancedAttributeToRoleMapper extends AbstractAttributeToRoleMapper
     public static final String PROVIDER_ID = "saml-advanced-role-idp-mapper";
     public static final String ATTRIBUTE_PROPERTY_NAME = "attributes";
     public static final String ARE_ATTRIBUTE_VALUES_REGEX_PROPERTY_NAME = "are.attribute.values.regex";
+    public static final String DELETE_PREVIOUS_ROLES = "delete.previous.roles";
 
     private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
 
@@ -75,6 +79,14 @@ public class AdvancedAttributeToRoleMapper extends AbstractAttributeToRoleMapper
         isAttributeRegexProperty.setHelpText("If enabled attribute values are interpreted as regular expressions.");
         isAttributeRegexProperty.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         configProperties.add(isAttributeRegexProperty);
+
+        ProviderConfigProperty deletePreviousRolesProperty = new ProviderConfigProperty();
+        deletePreviousRolesProperty.setName(DELETE_PREVIOUS_ROLES);
+        deletePreviousRolesProperty.setLabel("Delete all previous roles");
+        deletePreviousRolesProperty.setHelpText("If enabled, removes all directly assigned roles before applying this mapper.");
+        deletePreviousRolesProperty.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        deletePreviousRolesProperty.setDefaultValue(Boolean.FALSE.toString());
+        configProperties.add(deletePreviousRolesProperty);
 
         ProviderConfigProperty roleProperty = new ProviderConfigProperty();
         roleProperty.setName(ConfigConstants.ROLE);
@@ -122,6 +134,24 @@ public class AdvancedAttributeToRoleMapper extends AbstractAttributeToRoleMapper
     }
 
     @Override
+    public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user,
+                              IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+        if (isDeletePreviousRolesEnabled(mapperModel)) {
+            deleteAllRoleMappings(user);
+        }
+        super.importNewUser(session, realm, user, mapperModel, context);
+    }
+
+    @Override
+    public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user,
+                                   IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+        if (isDeletePreviousRolesEnabled(mapperModel)) {
+            deleteAllRoleMappings(user);
+        }
+        super.updateBrokeredUser(session, realm, user, mapperModel, context);
+    }
+
+    @Override
     protected boolean applies(final IdentityProviderMapperModel mapperModel, final BrokeredIdentityContext context) {
         Map<String, List<String>> attributes = mapperModel.getConfigMap(ATTRIBUTE_PROPERTY_NAME);
         boolean areAttributeValuesRegexes = Boolean.parseBoolean(mapperModel.getConfig().get(ARE_ATTRIBUTE_VALUES_REGEX_PROPERTY_NAME));
@@ -151,5 +181,15 @@ public class AdvancedAttributeToRoleMapper extends AbstractAttributeToRoleMapper
         }
 
         return true;
+    }
+
+    private boolean isDeletePreviousRolesEnabled(IdentityProviderMapperModel mapperModel) {
+        return Boolean.parseBoolean(mapperModel.getConfig().getOrDefault(DELETE_PREVIOUS_ROLES, Boolean.FALSE.toString()));
+    }
+
+    private void deleteAllRoleMappings(UserModel user) {
+        user.getRoleMappingsStream()
+                .collect(Collectors.toList())
+                .forEach(user::deleteRoleMapping);
     }
 }
