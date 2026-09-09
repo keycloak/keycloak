@@ -103,6 +103,34 @@ public class StreamsUtilTest {
     }
 
     @Test
+    public void testClosingStreamClosesOnExceptionDuringTerminalOperation() {
+        AtomicBoolean closed = new AtomicBoolean();
+        try {
+            StreamsUtil.closing(Stream.of(1, 2, 3).onClose(() -> closed.set(true)))
+                    .forEach(i -> { throw new RuntimeException("fail"); });
+            Assert.fail("Expected RuntimeException");
+        } catch (RuntimeException e) {
+            Assert.assertEquals("fail", e.getMessage());
+        }
+        Assert.assertTrue("Stream should be closed even when terminal operation throws", closed.get());
+    }
+
+    @Test
+    public void testClosingStreamClosesOnExceptionDuringToList() {
+        AtomicBoolean closed = new AtomicBoolean();
+        try {
+            StreamsUtil.closing(Stream.of(1, 2, 3)
+                    .map(i -> { if (i == 2) throw new RuntimeException("fail"); return i; })
+                    .onClose(() -> closed.set(true)))
+                    .toList();
+            Assert.fail("Expected RuntimeException");
+        } catch (RuntimeException e) {
+            // expected
+        }
+        Assert.assertTrue("Stream should be closed even when toList throws", closed.get());
+    }
+
+    @Test
     public void testSortedInsideOfFlatMapShouldRespectTerminalOperation() {
         AtomicInteger numberOfFetchedElements = new AtomicInteger();
 
