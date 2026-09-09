@@ -1,13 +1,17 @@
 package org.keycloak.tests.scim.tck;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -19,7 +23,10 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.UserRemovedEvent;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -50,6 +57,9 @@ import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.userprofile.UserProfileConstants;
@@ -60,6 +70,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.http.client.HttpClient;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -94,6 +105,9 @@ public class UserTest extends AbstractScimTest {
     @InjectHttpClient
     HttpClient httpClient;
 
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
+
     @BeforeEach
     public void onBefore() {
         UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
@@ -117,6 +131,11 @@ public class UserTest extends AbstractScimTest {
         realmRep.setEditUsernameAllowed(false);
         realm.admin().update(realmRep);
         adminEvents.clear();
+    }
+
+    @AfterEach
+    public void onAfterEach() {
+        unregisterProviderEventListener();
     }
 
     @Test
@@ -655,6 +674,16 @@ public class UserTest extends AbstractScimTest {
 
         actual = client.users().get(id);
         assertNull(actual);
+    }
+
+    @Test
+    public void testDeleteFiresUserRemovedEvent() {
+        registerProviderEventListener();
+        User expected = createUser();
+        String id = client.users().create(expected).getId();
+        client.users().delete(id);
+        assertThrows(NotFoundException.class, () -> realm.admin().users().get(id).toRepresentation());
+        runOnServer.run(assertUserRemovedEventFired());
     }
 
     @Test
@@ -3037,5 +3066,59 @@ public class UserTest extends AbstractScimTest {
         upConfig.addOrReplaceAttribute(affiliationAttribute);
 
         realm.admin().users().userProfile().update(upConfig);
+    }
+
+    private void registerProviderEventListener() {
+        runOnServer.run(session -> {
+            ProviderEventCollector collector = ProviderEventCollector.getInstance();
+            session.getKeycloakSessionFactory().register(collector);
+            collector.clear();
+        });
+    }
+
+    private void unregisterProviderEventListener() {
+        runOnServer.run(session -> {
+            ProviderEventCollector collector = ProviderEventCollector.getInstance();
+            session.getKeycloakSessionFactory().unregister(collector);
+            collector.clear();
+        });
+    }
+
+    private static RunOnServer assertUserRemovedEventFired() {
+        return session -> assertFalse(ProviderEventCollector.getInstance().getEvents(UserRemovedEvent.class).isEmpty(), "User removed event was not fired");
+    }
+
+    private static class ProviderEventCollector implements ProviderEventListener, Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        private static final ProviderEventCollector INSTANCE = new ProviderEventCollector();
+
+        private final List<ProviderEvent> events = new CopyOnWriteArrayList<>();
+
+        private ProviderEventCollector() {}
+
+        public static ProviderEventCollector getInstance() {
+            return INSTANCE;
+        }
+
+        @Override
+        public void onEvent(ProviderEvent event) {
+            if (event instanceof UserRemovedEvent) {
+                events.add(event);
+            }
+        }
+
+        public <T extends ProviderEvent> List<T> getEvents(Class<T> eventType) {
+            return events.stream()
+                    .filter(eventType::isInstance)
+                    .map(eventType::cast)
+                    .toList();
+        }
+
+        public void clear() {
+            events.clear();
+        }
     }
 }

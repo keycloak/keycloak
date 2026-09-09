@@ -27,6 +27,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.Permissions;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.entities.UserEntity;
@@ -244,7 +245,7 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     public boolean onDelete(UserModel model) {
         RealmModel realm = session.getContext().getRealm();
-        return session.users().removeUser(realm, model);
+        return new UserManager(session).removeUser(realm, model);
     }
 
     @Override
