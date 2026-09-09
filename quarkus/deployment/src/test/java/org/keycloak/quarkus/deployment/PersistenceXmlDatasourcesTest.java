@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.quarkus.deployment.KeycloakProcessor.getDatasourceNameFromPersistenceXml;
 import static org.keycloak.quarkus.deployment.KeycloakProcessor.getUserPersistenceUnitOverrides;
 import static org.keycloak.quarkus.deployment.KeycloakProcessor.isResourceLocal;
+import static org.keycloak.quarkus.deployment.KeycloakProcessor.resolveUserDefinedDialect;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -187,6 +188,183 @@ public class PersistenceXmlDatasourcesTest {
 
         Map<String, String> overrides = getUserPersistenceUnitOverrides("user-store");
         assertEquals("org.hibernate.dialect.MySQLDialect", overrides.get(AvailableSettings.DIALECT));
+    }
+
+    @Test
+    public void resolveUserDefinedDialectReplacedStandardDialects() throws IOException {
+        // H2Dialect upgraded to KeycloakH2Dialect
+        assertSingle("""
+                <persistence-unit name="user-store-pu">
+                    <properties>
+                        <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
+                    </properties>
+                </persistence-unit>
+                """, descriptor -> {
+            assertEquals("org.keycloak.connections.jpa.dialect.KeycloakH2Dialect",
+                    resolveUserDefinedDialect(descriptor, "user-store"));
+        });
+
+        // H2 short name upgraded to KeycloakH2Dialect
+        assertSingle("""
+                <persistence-unit name="user-store-pu">
+                    <properties>
+                        <property name="hibernate.dialect" value="H2" />
+                    </properties>
+                </persistence-unit>
+                """, descriptor -> {
+            assertEquals("org.keycloak.connections.jpa.dialect.KeycloakH2Dialect",
+                    resolveUserDefinedDialect(descriptor, "user-store"));
+        });
+
+        // H2 simple name upgraded to KeycloakH2Dialect
+        assertSingle("""
+                <persistence-unit name="user-store-pu">
+                    <properties>
+                        <property name="hibernate.dialect" value="H2Dialect" />
+                    </properties>
+                </persistence-unit>
+                """, descriptor -> {
+            assertEquals("org.keycloak.connections.jpa.dialect.KeycloakH2Dialect",
+                    resolveUserDefinedDialect(descriptor, "user-store"));
+        });
+
+        // SQLServerDialect upgraded to KeycloakSQLServerDialect
+        assertSingle("""
+                <persistence-unit name="user-store-pu">
+                    <properties>
+                        <property name="hibernate.dialect" value="org.hibernate.dialect.SQLServerDialect" />
+                    </properties>
+                </persistence-unit>
+                """, descriptor -> {
+            assertEquals("org.keycloak.connections.jpa.dialect.KeycloakSQLServerDialect",
+                    resolveUserDefinedDialect(descriptor, "user-store"));
+        });
+
+        // SQLServer short names upgraded to KeycloakSQLServerDialect
+        assertSingle("""
+                <persistence-unit name="user-store-pu">
+                    <properties>
+                        <property name="hibernate.dialect" value="SQLServer" />
+                    </properties>
+                </persistence-unit>
+                """, descriptor -> {
+            assertEquals("org.keycloak.connections.jpa.dialect.KeycloakSQLServerDialect",
+                    resolveUserDefinedDialect(descriptor, "user-store"));
+        });
+
+        assertSingle("""
+                <persistence-unit name="user-store-pu">
+                    <properties>
+                        <property name="hibernate.dialect" value="SQLServerDialect" />
+                    </properties>
+                </persistence-unit>
+                """, descriptor -> {
+            assertEquals("org.keycloak.connections.jpa.dialect.KeycloakSQLServerDialect",
+                    resolveUserDefinedDialect(descriptor, "user-store"));
+        });
+
+        // OracleDialect upgraded to KeycloakOracleDialect
+        assertSingle("""
+                <persistence-unit name="user-store-pu">
+                    <properties>
+                        <property name="hibernate.dialect" value="org.hibernate.dialect.OracleDialect" />
+                    </properties>
+                </persistence-unit>
+                """, descriptor -> {
+            assertEquals("org.keycloak.connections.jpa.dialect.KeycloakOracleDialect",
+                    resolveUserDefinedDialect(descriptor, "user-store"));
+        });
+
+        // Oracle short names upgraded to KeycloakOracleDialect
+        assertSingle("""
+                <persistence-unit name="user-store-pu">
+                    <properties>
+                        <property name="hibernate.dialect" value="Oracle" />
+                    </properties>
+                </persistence-unit>
+                """, descriptor -> {
+            assertEquals("org.keycloak.connections.jpa.dialect.KeycloakOracleDialect",
+                    resolveUserDefinedDialect(descriptor, "user-store"));
+        });
+
+        assertSingle("""
+                <persistence-unit name="user-store-pu">
+                    <properties>
+                        <property name="hibernate.dialect" value="OracleDialect" />
+                    </properties>
+                </persistence-unit>
+                """, descriptor -> {
+            assertEquals("org.keycloak.connections.jpa.dialect.KeycloakOracleDialect",
+                    resolveUserDefinedDialect(descriptor, "user-store"));
+        });
+    }
+
+    @Test
+    public void resolveUserDefinedDialectCustomDialectHonored() throws IOException {
+        assertSingle("""
+                <persistence-unit name="user-store-pu">
+                    <properties>
+                        <property name="hibernate.dialect" value="com.acme.CustomH2Dialect" />
+                    </properties>
+                </persistence-unit>
+                """, descriptor -> {
+            assertEquals("com.acme.CustomH2Dialect",
+                    resolveUserDefinedDialect(descriptor, "user-store"));
+        });
+
+        assertSingle("""
+                <persistence-unit name="user-store-pu">
+                    <properties>
+                        <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect" />
+                    </properties>
+                </persistence-unit>
+                """, descriptor -> {
+            assertEquals("org.hibernate.dialect.PostgreSQLDialect",
+                    resolveUserDefinedDialect(descriptor, "user-store"));
+        });
+    }
+
+    @Test
+    public void resolveUserDefinedDialectFallbackToDbKind() throws IOException {
+        ConfigArgsConfigSource.setCliArgs("--db-kind-user-store=dev-file");
+        initConfig();
+
+        assertSingle("""
+                <persistence-unit name="user-store-pu">
+                </persistence-unit>
+                """, descriptor -> {
+            assertEquals("org.keycloak.connections.jpa.dialect.KeycloakH2Dialect",
+                    resolveUserDefinedDialect(descriptor, "user-store"));
+        });
+
+        ConfigArgsConfigSource.setCliArgs("--db-kind-user-store=mariadb");
+        initConfig();
+
+        assertSingle("""
+                <persistence-unit name="user-store-pu">
+                </persistence-unit>
+                """, descriptor -> {
+            assertEquals("org.hibernate.dialect.MariaDBDialect",
+                    resolveUserDefinedDialect(descriptor, "user-store"));
+        });
+    }
+
+    @Test
+    public void resolveUserDefinedDialectExplicitCliOverridesAll() throws IOException {
+        ConfigArgsConfigSource.setCliArgs("--db-kind-user-store=dev-file",
+                "--db-dialect-user-store=org.hibernate.dialect.PostgreSQLDialect");
+        initConfig();
+
+        assertSingle("""
+                <persistence-unit name="user-store-pu">
+                    <properties>
+                        <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
+                    </properties>
+                </persistence-unit>
+                """, descriptor -> {
+            assertEquals("org.hibernate.dialect.PostgreSQLDialect",
+                    resolveUserDefinedDialect(descriptor, "user-store"));
+        });
     }
 
     private static void initConfig() {
