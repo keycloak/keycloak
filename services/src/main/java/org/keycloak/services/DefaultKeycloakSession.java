@@ -163,16 +163,20 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     public <T> T runAsReadOnly(Supplier<T> supplier) {
         boolean previous = readOnly;
         readOnly = true;
+        boolean restore = true;
         try {
             T result = supplier.get();
             if (result instanceof Stream<?> stream) {
-                return (T) stream.onClose(() -> readOnly = previous);
+                T closing = (T) stream.onClose(() -> readOnly = previous);
+                // the close handler is registered, so it takes over restoring the flag
+                restore = false;
+                return closing;
             }
-            readOnly = previous;
             return result;
-        } catch (RuntimeException e) {
-            readOnly = previous;
-            throw e;
+        } finally {
+            if (restore) {
+                readOnly = previous;
+            }
         }
     }
 
