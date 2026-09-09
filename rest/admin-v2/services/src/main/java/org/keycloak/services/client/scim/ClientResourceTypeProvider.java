@@ -358,17 +358,15 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
             predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(
                     session, AdminPermissionsSchema.CLIENTS, realm, cb, query, root));
 
-            ClientResourceTypeProvider provider = new ClientResourceTypeProvider(session);
-
             ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(
-                    provider, provider.getSchemas(), cb, root);
+                    this, this.getSchemas(), cb, root);
             if (searchOptions.getFilterContext() != null) {
                 predicates.add(evaluator.visit(searchOptions.getFilterContext()).predicate());
             }
 
             var q = query.where(predicates.toArray(jakarta.persistence.criteria.Predicate[]::new));
             var orders = new ArrayList<>(searchOptions.getSort().stream().map(sortOption -> {
-                String field = provider.getSchemas().stream()
+                String field = this.getSchemas().stream()
                         .map(s -> s.getAttributeByPath(sortOption.fieldName()))
                         .map(Attribute::getModelAttributeName).findFirst().orElseThrow();
                 return sortOption.order().isAscending() ? cb.asc(root.get(field)) : cb.desc(root.get(field));
