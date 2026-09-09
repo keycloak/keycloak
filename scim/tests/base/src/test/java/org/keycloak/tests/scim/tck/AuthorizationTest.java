@@ -98,6 +98,33 @@ public class AuthorizationTest extends AbstractScimTest {
     }
 
     @Test
+    public void testMissingResourceDoesNotLeakExistence() {
+        String missingId = KeycloakModelUtils.generateId();
+        User user = new User();
+        user.setId(missingId);
+        user.setUserName("missing");
+        // A caller without any access must receive 403 (not 404) even for a missing
+        // resource, so the response code cannot be used to probe whether a given
+        // resource id exists.
+        assertAccessDenied(() -> noAccessClient.users().get(missingId));
+        assertAccessDenied(() -> noAccessClient.users().update(missingId, user));
+        assertAccessDenied(() -> noAccessClient.users().patch(missingId, PatchRequest.create()
+                .add("name.displayName", "new display name")
+                .build()));
+        assertAccessDenied(() -> noAccessClient.users().delete(missingId));
+
+        assertAccessDenied(() -> noAccessClient.groups().get(missingId));
+        Group resource = new Group();
+        resource.setId(missingId);
+        resource.setDisplayName("display name");
+        assertAccessDenied(() -> noAccessClient.groups().update(missingId, resource));
+        assertAccessDenied(() -> noAccessClient.groups().patch(missingId, PatchRequest.create()
+                .add("displayName", "new display name")
+                .build()));
+        assertAccessDenied(() -> noAccessClient.groups().delete(missingId));
+    }
+
+    @Test
     public void testUsersCanQueryIfQueryRoleGranted() {
         grantAdminRole(AdminRoles.QUERY_USERS);
         ListResponse<User> response = noAccessClient.users().search("");

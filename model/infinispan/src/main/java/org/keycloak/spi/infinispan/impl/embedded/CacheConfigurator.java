@@ -45,10 +45,12 @@ import org.infinispan.configuration.cache.AbstractStoreConfiguration;
 import org.infinispan.configuration.cache.BackupConfiguration;
 import org.infinispan.configuration.cache.BackupFailurePolicy;
 import org.infinispan.configuration.cache.CacheMode;
+import org.infinispan.configuration.cache.ClusteringConfiguration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.ExpirationConfiguration;
 import org.infinispan.configuration.cache.HashConfiguration;
 import org.infinispan.configuration.cache.HashConfigurationBuilder;
+import org.infinispan.configuration.cache.LockingConfiguration;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.transaction.LockingMode;
@@ -351,6 +353,28 @@ public final class CacheConfigurator {
     }
 
     /**
+     * Validates that lock-timeout &lt; remote-timeout for distributed synchronous caches.
+     * <p>
+     * The remote-timeout is the outer timeout for the entire remote RPC, which includes lock acquisition
+     * on the remote node. If lock-timeout &ge; remote-timeout, the remote call times out before lock
+     * acquisition can complete, causing spurious {@code TimeoutException}s.
+     */
+    public static void ensureTimeoutOrdering(ConfigurationBuilderHolder holder) {
+        for (var entry : holder.getNamedConfigurationBuilders().entrySet()) {
+            var builder = entry.getValue();
+            if (!builder.clustering().cacheMode().isDistributed() || !builder.clustering().cacheMode().isSynchronous()) {
+                continue;
+            }
+            long remoteTimeout = builder.clustering().attributes().attribute(ClusteringConfiguration.REMOTE_TIMEOUT).get().longValue();
+            long lockTimeout = builder.locking().attributes().attribute(LockingConfiguration.LOCK_ACQUISITION_TIMEOUT).get().longValue();
+            if (lockTimeout >= remoteTimeout) {
+                logger.errorf("Cache '%s': lock-timeout (%d ms) must be less than remote-timeout (%d ms). "
+                        + "Current values will cause spurious remote timeouts during lock acquisition.", entry.getKey(), lockTimeout, remoteTimeout);
+            }
+        }
+    }
+
+    /**
      * Configures (and overwrites) the {@link HashConfigurationBuilder#numOwners(int)} based on the SPI configuration
      * input.
      *
@@ -575,7 +599,15 @@ public final class CacheConfigurator {
             case AUTHENTICATION_SESSIONS_CACHE_NAME:
             case LOGIN_FAILURE_CACHE_NAME:
                 if (clustered) {
-                    builder.clustering().cacheMode(CacheMode.DIST_SYNC);
+                    // lock-timeout < remote-timeout < retry budget in AbstractRefreshTokenProvider (12s).
+                    // Infinispan defaults (15s remote, 10s lock) are too high for a setup like Keycloak.
+                    builder.clustering().cacheMode(CacheMode.DIST_SYNC)
+                            // 5s remote-timeout is 10x the worst-case G1GC pause for in-memory caches.
+                            .remoteTimeout(5, TimeUnit.SECONDS);
+                    builder.locking()
+                            // 3s lock-timeout is the inner timeout; must be less than remote-timeout.
+                            .lockAcquisitionTimeout(3, TimeUnit.SECONDS);
+                    // 12s retry budget in AbstractRefreshTokenProvider allows 2 retries at ~5s each.
                 }
                 builder.encoding().mediaType(MediaType.APPLICATION_OBJECT_TYPE);
                 return builder;
