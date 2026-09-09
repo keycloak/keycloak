@@ -35,19 +35,6 @@ Note that {project_name}'s trust store (or mTLS store) is shared for all the rea
 
 Revalidating certificates can be problematic in certain installations (for example if a proxy is configured for TLS termination and the certificates are passed to {project_name} using headers). The trust-store or mTLS store in {project_name} should always be configured correctly to validate the client certificate chain. Please see link:https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] and link:https://www.keycloak.org/server/mutual-tls[Configuring trusted certificates for mTLS], for more information if you are using a TLS termination proxy and X509 client authentication.
 
-=== Mandatory signature validation for OIDC identity provider tokens
-
-{project_name} now enforces signature validation for ID tokens, backchannel logout tokens, and access tokens (when *Access Token Is JWT* is enabled) received from external OIDC identity providers, regardless of the *Validate Signatures* setting. This change aligns with the OIDC specification, which mandates that ID tokens and backchannel logout tokens must be signed and prohibits the `none` algorithm.
-
-Previously, disabling the *Validate Signatures* switch on an OIDC identity provider skipped signature validation for all tokens, including ID tokens and backchannel logout tokens. An attacker could exploit this to forge unsigned logout tokens and force-logout targeted users (CVE-2026-18569).
-
-After upgrading, {project_name} always validates signatures on ID tokens, backchannel logout tokens, and JWT access tokens. The *Validate Signatures* switch now only controls validation of optional tokens such as UserInfo responses returned as JWT.
-
-If your OIDC identity provider integration was configured with *Validate Signatures* disabled, you must now configure the public key settings so that {project_name} can validate mandatory token signatures:
-
-* Enable *Use JWKS URL* and set the *JWKS URL* to the external IDP's `protocol/openid-connect/certs` endpoint, or
-* Provide the IDP's public key directly in the *Validating Public Key* field.
-
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

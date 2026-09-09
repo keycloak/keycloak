@@ -57,8 +57,7 @@ test.describe("Linked accounts", () => {
       config: {
         clientId: "groups-idp",
         clientSecret: "H0JaTc7VBu3HJR26vrzMxgidfJmgI5Dw",
-        validateSignature: "true",
-        useJwksUrl: "true",
+        validateSignature: "false",
         tokenUrl: `${SERVER_URL}/realms/${externalTestBed.realm}/protocol/openid-connect/token`,
         jwksUrl: `${SERVER_URL}/realms/${externalTestBed.realm}/protocol/openid-connect/certs`,
         issuer: `${SERVER_URL}/realms/${externalTestBed.realm}`,

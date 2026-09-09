@@ -5,7 +5,6 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.mappers.UsernameTemplateMapper;
 import org.keycloak.models.IdentityProviderModel;
@@ -171,9 +170,7 @@ public class IdpCreateUserIfUniqueAuthenticatorTest {
                     "authorizationUrl",  providerBase + "/protocol/openid-connect/auth",
                     "tokenUrl",          providerBase + "/protocol/openid-connect/token",
                     "userInfoUrl",       providerBase + "/protocol/openid-connect/userinfo",
-                    OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.TRUE.toString(),
-                    OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.TRUE.toString(),
-                    OIDCIdentityProviderConfig.JWKS_URL, providerBase + "/protocol/openid-connect/certs",
+                    "jwksUrl",           providerBase + "/protocol/openid-connect/certs",
                     "defaultScope",      "openid email profile",
                     IdentityProviderModel.SYNC_MODE, "IMPORT"
             ));

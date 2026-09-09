@@ -796,7 +796,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             }
 
             // verify signature of the JWS
-            if (!verify(jws, shouldBeSigned)) {
+            if (!verify(jws, false)) {
                 throw new IdentityBrokerException("token signature validation failed");
             }
             return new String(jws.getContent(), StandardCharsets.UTF_8);
