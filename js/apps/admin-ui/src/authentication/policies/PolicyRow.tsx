@@ -22,7 +22,7 @@ type PolicyRowProps = {
 };
 
 export const PolicyRow = ({
-  policy: { id, configType, defaultValue, displayName },
+  policy: { id, configType, defaultValue, displayName, helpText },
   onRemove,
 }: PolicyRowProps) => {
   const { t } = useTranslation();
@@ -41,7 +41,9 @@ export const PolicyRow = ({
       isRequired
       labelIcon={
         <HelpItem
-          helpText={t(`passwordPoliciesHelp.${id}`)}
+          helpText={t(`passwordPoliciesHelp.${id}`, {
+            defaultValue: helpText ?? `passwordPoliciesHelp.${id}`,
+          })}
           fieldLabelId={id!}
         />
       }
