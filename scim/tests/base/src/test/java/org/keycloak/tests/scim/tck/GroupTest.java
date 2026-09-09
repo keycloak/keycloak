@@ -3,16 +3,20 @@ package org.keycloak.tests.scim.tck;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.scim.client.ResourceFilter;
 import org.keycloak.scim.client.ScimClientException;
 import org.keycloak.scim.protocol.request.PatchRequest;
@@ -23,6 +27,7 @@ import org.keycloak.scim.resource.group.Member;
 import org.keycloak.scim.resource.user.User;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Test;
@@ -879,5 +884,84 @@ public class GroupTest extends AbstractScimTest {
         User created = client.users().create(user);
         adminEvents.clear();
         return created;
+    }
+
+    @Test
+    public void testCannotCreateGroupWithServiceAccountMember() {
+        ClientRepresentation confidentialClient = ClientBuilder.create()
+                .clientId("sa-create-group-test-client")
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        String clientDbId;
+        try (Response response = realm.admin().clients().create(confidentialClient)) {
+            clientDbId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clients().get(clientDbId).remove());
+
+        UserRepresentation serviceAccount = realm.admin().clients().get(clientDbId).getServiceAccountUser();
+
+        // Try to create a group with service account in members
+        Group newGroup = new Group();
+        newGroup.setDisplayName("test-sa-group-" + KeycloakModelUtils.generateId());
+        newGroup.addMember(serviceAccount.getId());
+
+        try {
+            client.groups().create(newGroup);
+            fail("Should not be able to create group with service account member");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testCanRemoveRegularMemberWhenServiceAccountIsAlsoMember() {
+        ClientRepresentation confidentialClient = ClientBuilder.create()
+                .clientId("sa-remove-regular-test-client")
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        String clientDbId;
+        try (Response response = realm.admin().clients().create(confidentialClient)) {
+            clientDbId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clients().get(clientDbId).remove());
+
+        User regularUser = createScimUser();
+        Group group = new Group();
+        group.setDisplayName("test-group-" + KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        UserRepresentation serviceAccount = realm.admin().clients().get(clientDbId).getServiceAccountUser();
+
+        // Add both service account and regular user to group via Admin API
+        realm.admin().users().get(serviceAccount.getId()).joinGroup(group.getId());
+        realm.admin().users().get(regularUser.getId()).joinGroup(group.getId());
+
+        // Verify regular user is removed from group
+        Group updated = client.groups().get(group.getId(), List.of("members"), null);
+        assertNotNull(updated.getMembers(), "Members list should not be null");
+        assertEquals(1, updated.getMembers().size());
+        assertTrue(updated.getMembers().stream().anyMatch(m -> regularUser.getId().equals(m.getValue())), "Regular user should be in group");
+
+
+        // Should be able to remove the regular user even though service account is in the group
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .remove("members[value eq \"" + regularUser.getId() + "\"]")
+                    .build());
+        } catch (ScimClientException sce) {
+            fail("Should be able to remove regular member even when service account is in the group: " + sce.getError().getDetail());
+        }
+
+        // Verify regular user is removed from group
+        updated = client.groups().get(group.getId(), List.of("members"), null);
+        assertNull(updated.getMembers(), "Members list should be null");
+
+        // Verify service account is still in the group (using Admin API, since SCIM filters them out)
+        List<String> groupIds = Optional.ofNullable(realm.admin().users().get(serviceAccount.getId()).groups()).orElse(List.of()).stream().map(GroupRepresentation::getId).toList();
+        assertTrue(groupIds.contains(group.getId()), "Service account should still be in group");
     }
 }

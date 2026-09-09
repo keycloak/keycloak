@@ -147,6 +147,10 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
                     RealmModel realm = session.getContext().getRealm();
                     checkGroupMembershipPermission(session.getContext().getPermissions(), model);
 
+                    if (values.isEmpty()) {
+                        checkGroupHasNoServiceAccounts(realm, model);
+                    }
+
                     for (Member member : values) {
                         UserModel user = session.users().getUserById(realm, member.getValue());
                         if (user == null || !canViewUser(user)) {
@@ -217,6 +221,9 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
     }
 
     private void checkRequireManageGroupMembership(Permissions permissions, UserModel model) {
+        if (model.isServiceAccount()) {
+            throw new ForbiddenException();
+        }
         if (permissions.isAdminUser(model)) {
             throw new ForbiddenException();
         }
@@ -225,7 +232,22 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
         }
     }
 
+    private void checkGroupHasNoServiceAccounts(RealmModel realm, GroupModel group) {
+        // Check direct members
+        boolean hasServiceAccounts = session.users().getGroupMembersStream(realm, group)
+                .anyMatch(UserModel::isServiceAccount);
+        if (hasServiceAccounts) {
+            throw new ModelValidationException("Cannot modify group membership when service accounts are members");
+        }
+        // Check all descendant groups recursively
+        group.getSubGroupsStream()
+                .forEach(subGroup -> checkGroupHasNoServiceAccounts(realm, subGroup));
+    }
+
     private boolean canViewUser(UserModel u) {
+        if (u.isServiceAccount()) {
+            return false;
+        }
         Permissions permissions = session.getContext().getPermissions();
         return permissions.hasPermission(u, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
     }
