@@ -1413,6 +1413,34 @@ public class AuthorizationTest extends AbstractScimTest {
         }
     }
 
+    @Test
+    public void testDeletingRegularParentGroupIsRejectedWhenSubgroupIsAdminGroup() {
+        realm.updateWithCleanup(realm -> realm.adminPermissionsEnabled(true));
+
+        GroupRepresentation regularParent = createGroup("regular-parent-cascade");
+        GroupRepresentation adminChild = new GroupRepresentation();
+        adminChild.setName("admin-child-cascade");
+        try (Response response = realm.admin().groups().group(regularParent.getId()).subGroup(adminChild)) {
+            adminChild.setId(ApiUtil.getCreatedId(response));
+        }
+
+        // Make the child an admin-protected group
+        ClientRepresentation realmMgmt = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation manageUsersRole = realm.admin().clients().get(realmMgmt.getId()).roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
+        realm.admin().groups().group(adminChild.getId()).roles().clientLevel(realmMgmt.getId()).add(List.of(manageUsersRole));
+
+        // Grant the restricted client MANAGE permission only on the parent group, not the child
+        UserPolicyRepresentation policy = createUserPolicy(getServiceAccount().getId());
+        createPermission("groups", Set.of(regularParent.getId()), Set.of("manage"), policy.getName());
+
+        // Deleting the parent should be rejected because it has an admin child
+        assertAccessDenied(() -> noAccessClient.groups().delete(regularParent.getId()));
+
+        // Verify both groups still exist
+        assertNotNull(realm.admin().groups().group(regularParent.getId()).toRepresentation());
+        assertNotNull(realm.admin().groups().group(adminChild.getId()).toRepresentation());
+    }
+
     private ClientRepresentation getScimClient() {
         return realm.admin().clients().findByClientId("scim-client-restricted").get(0);
     }

@@ -42,6 +42,7 @@ import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
+import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.group.Member;
@@ -168,7 +169,18 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     @Override
     public boolean onDelete(GroupModel model) {
         RealmModel realm = session.getContext().getRealm();
+        Permissions permissions = session.getContext().getPermissions();
+        rejectIfAdminDescendant(model, permissions);
         return session.groups().removeGroup(realm, model);
+    }
+
+    private void rejectIfAdminDescendant(GroupModel group, Permissions permissions) {
+        group.getSubGroupsStream().forEach(subGroup -> {
+            if (permissions.isAdminGroup(subGroup)) {
+                throw new ForbiddenException();
+            }
+            rejectIfAdminDescendant(subGroup, permissions);
+        });
     }
 
     @Override
