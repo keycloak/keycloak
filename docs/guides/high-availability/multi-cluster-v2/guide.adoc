@@ -1,0 +1,755 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
+
+<@tmpl.guide
+title="Multi-cluster deployments (v2)"
+summary="Deploy and operate multi-cluster {project_name} with the stateless feature without an external {jdgserver_name} cluster."
+tileVisible="false"
+preview="true"
+previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
+
+{project_name} allows deployments that consist of multiple {project_name} instances that connect to each other using its embedded Infinispan caches.
+Load balancers can distribute the load evenly across those instances.
+Such setups are intended for transparent networks; see <@links.ha id="single-cluster-introduction" /> for more details.
+
+A multi-cluster setup adds additional components to provide high availability that may be needed for some environments.
+
+Unlike the standard <@links.ha id="multi-cluster-introduction" />, it removes the requirement for an external {jdgserver_name} cluster.
+This simplifies the deployment architecture and lifts any requirement for a specific environment such as {kubernetes} or AWS.
+
+== When to use a multi-cluster setup
+
+The multi-cluster deployment capabilities of {project_name} are targeted at use cases that:
+
+* Are constrained to a single region or an equivalent low-latency setup.
+* Permit planned outages for maintenance.
+* Fit within a defined user and request count.
+* Can accept the impact of periodic outages.
+* Provide data centers with the appropriate network latency and database configuration.
+
+Use this setup to provide {project_name} deployments that are able to tolerate cluster failures, reducing the likelihood of downtime.
+
+Multiple {project_name} clusters share a synchronously replicated database.
+This removes the need for an external monitoring solution that reconfigures the external {jdgserver_name} on failover and reduces operational procedures on failback.
+
+[#multi-cluster-v2-guide-tested-configuration]
+== Tested Configuration
+
+We regularly test {project_name} with the following configuration:
+
+* Two OpenShift single-AZ clusters, in the same AWS Region
+** Provisioned with https://www.redhat.com/en/technologies/cloud-computing/openshift/aws[Red Hat OpenShift Service on AWS] (ROSA),
+using ROSA HCP.
+** All worker nodes reside in a single Availability Zone.
+** OpenShift version 4.21.
+
+* Amazon Aurora PostgreSQL database
+** High availability with a primary DB instance in one availability zone, and a synchronously replicated reader in the second availability zone.
+** Version ${properties["aurora-postgresql.version"]}
+
+* AWS Global Accelerator, sending traffic to both ROSA clusters
+
+[#multi-cluster-v2-guide-infrastructure-requirements]
+== Infrastructure requirements
+
+IMPORTANT: Failure to meet these infrastructure requirements can result in data loss, service errors, or outages.
+You are responsible for validating that your deployment meets these requirements before going to production.
+
+The following infrastructure requirements need to be met:
+
+* A highly available database with synchronous replication.
+Without synchronous replication, a database failover can result in data loss, including lost user sessions, recent configuration changes, or authentication state.
+
+* Two or more clusters with low network round-trip time between {project_name} nodes and the primary database instance.
+A round-trip time below 5 ms is suggested, and below 10 ms is required.
+Higher round-trip times directly increase the response time of every request, and can lead to request timeouts and service degradation under load.
+
+* Low commit latency on the database.
+With synchronous replication, each commit includes a round-trip from the database primary to its replica to transfer the write-ahead log.
+A commit latency of less than 5 ms is suggested, and below 10 ms is required.
+High commit latency slows every write operation, including login and token requests, and can cause cascading timeouts under normal load.
+
+* An external load balancer to balance requests between the clusters.
+Without a load balancer that actively probes the {project_name} health endpoints, site failures are not detected automatically, and traffic continues to be routed to a failed site until manual intervention.
+
+Latency and latency spikes amplify in the response time of the service and can lead to queued requests, timeouts, and failed requests.
+Networking problems can cause downtimes until the failure detection isolates problematic nodes.
+
+<#include "/high-availability/partials/configuration-disclaimer.adoc" />
+
+[#multi-cluster-v2-guide-load]
+<#include "/high-availability/partials/tested-load.adoc" />
+
+<@profile.ifCommunity>
+While we did not see a hard limit in our tests with these values, we ask you to test for higher volumes with horizontally and vertically scaled {project_name} instances and databases.
+</@profile.ifCommunity>
+
+[#multi-cluster-v2-guide-limitations]
+== Limitations
+
+* During certain failure scenarios, there may be downtime of several minutes depending on the configuration of the database, the load balancer, or {project_name}. By default, {project_name} detects the failure of another node within one minute and either isolates it from the cluster or propagates its state via readiness probes to the load balancer.
+* After certain failure scenarios, manual intervention may be required depending on the database vendor.
+
+[#multi-cluster-v2-guide-concepts]
+== Concepts
+
+This section describes the multi-cluster v2 architecture, including how data is stored and replicated, how caches are invalidated, and how the setup behaves during failures.
+
+=== Deployment, data storage and caching
+
+Two or more independent {project_name} deployments run in different sites.
+
+Users, realms, clients, sessions, and other entities are stored in a database that is replicated synchronously across all sites.
+
+Realm data (including clients and groups) and authorization data are cached in the {project_name} embedded Infinispan caches as local caches.
+
+image::high-availability/active-active-stateless.dio.svg[]
+
+=== Background jobs
+
+Background jobs will run only in one of the active clusters and will be automatically redistributed to another cluster on a cluster failure.
+
+=== Health check endpoints
+
+{project_name} exposes two health check endpoints for different purposes:
+
+* `/health/ready` on the management port indicates whether an individual node is ready to serve traffic. Use this for the internal load balancer or {kubernetes} readiness probes.
+* `/lb-check` indicates whether a site as a whole is available. Use this for the external load balancer that routes traffic between sites.
+
+=== Updates to realm data and cache invalidation
+
+NOTE: This paragraph describes the internal implementation of how cache invalidation works across clusters with the `stateless` feature to allow administrators to understand the emerging observed behavior.
+This internal implementation might change between minor or patch releases.
+If it changes, this section will be updated.
+
+When the realm data, including clients and groups, is changed in one {project_name} instance, that data is updated in the database.
+The instance sends a cache invalidation message to the other sites via the database, leveraging the outbox pattern with a queuing table.
+The other sites retrieve the message via polling.
+The polling interval is configurable and set to 100ms by default.
+The sending instance waits for five times the polling interval for the messages to be consumed by the receiver before returning to the caller.
+This allows callers in regular operations to ensure that all nodes have received the invalidation message and will use the new data from the database upon the next call.
+
+Updates to realm data in these multi-cluster v2 setups are slower than in single-cluster setups, as the invalidation mechanism adds a delay of up to 100 ms to calls that modify realm-related data.
+
+When planning for large batch updates of realm data, consider shutting down all clusters except for one to avoid the delay, and start up the other clusters once the update is complete.
+
+Invalidation messages are queued for up to 60 seconds, which is in line with the cluster membership mechanism, which updates its information in the database every 30–45 seconds.
+
+To handle edge cases and to avoid permanently out-of-sync caches, any cached realm information expires by default after one hour.
+The data is then fetched again from the database on the next call that requires it.
+
+=== Causes of data and service loss
+
+While this setup aims for high availability, the following situations can still lead to service or data loss:
+
+* {project_name} site failure may result in requests failing in the period between the failure and the load balancer detecting it, as requests may still be routed to the failed site.
+
+* Once failures occur in the communication between the sites, manual steps may be necessary depending on the database vendor, for example to promote an instance to be the new writer.
+
+* Degraded setups can lead to service or data loss if additional components fail.
+Monitoring is necessary to detect degraded setups.
+Without monitoring, a degraded state may go unnoticed until a subsequent failure causes a full outage or data loss.
+
+=== Failures which this setup can survive
+
+[%autowidth]
+|===
+| Failure | Recovery | RPO^1^ | RT^2^
+
+| Database node
+| If the writer instance fails, the database can promote a reader instance in the same or other site to be the new writer.
+| No data loss
+| Seconds to minutes (depending on the database)
+
+| {project_name} node
+| Multiple {project_name} instances run in each site.
+If one instance fails, some incoming requests might receive an error message or be delayed for some seconds until the load balancer takes the node out of rotation.
+| No data loss
+| Seconds to minutes (depending on the load balancer)
+
+| Database connectivity loss
+| If the connectivity between sites is lost, the synchronous replication will fail.
+Some requests might receive an error message or be delayed for a few seconds.
+Manual operations might be necessary depending on the database.
+{project_name} instances that have access to a writable database instance will continue to serve traffic, while other nodes will mark themselves as not ready to the load balancer.
+| No data loss
+| Seconds to minutes (depending on the database and load balancer)
+
+| Site failure
+| If none of the {project_name} nodes are available, the load balancer will detect the outage and redirect the traffic to the other site.
+Some requests might receive an error message until the load balancer detects the failure.
+| No data loss
+| Seconds to minutes (depending on the load balancer)
+
+|===
+
+.Table footnotes:
+^1^ Tested Recovery Point Objective, assuming all parts of the setup were healthy at the time this occurred. +
+^2^ Estimated Recovery Time. +
+
+The statement "`No data loss`" depends on the setup not being degraded from previous failures, which includes completing any pending manual operations to resynchronize the state between the sites.
+
+To restore the service, restart any failed {project_name} node and restore its database connectivity. No other recovery operations are necessary for {project_name}.
+A standard load balancer configuration should detect the active {project_name} nodes automatically and route traffic to them.
+Recovery operations on the database side might depend on the database vendor.
+
+=== Failover prerequisites
+
+Site Failure::
+A successful failover requires a setup not degraded from previous failures.
+Use monitoring to ensure degradations are detected and handled in a timely manner.
+
+=== Questions and answers
+
+Why synchronous database replication?::
+A synchronously replicated database ensures that data written in one site is always available in the other site after site failures and no data is lost.
+It also ensures that the next request will not return stale data, independent of which site serves it.
+
+Why is a low-latency network between sites needed?::
+Synchronous replication defers the response to the caller until the data is received at the other site.
+A low latency is necessary as each request can potentially involve multiple interactions between the sites when data is updated, which would amplify the latency.
+See <<multi-cluster-v2-guide-infrastructure-requirements>> for specific latency thresholds.
+
+Is a synchronous cluster less stable than an asynchronous cluster?::
+An asynchronous setup would handle network failures between the sites gracefully, while the synchronous setup would delay requests and throw errors to the caller where the asynchronous setup would have deferred the writes to the database on the other site.
+However, as the sites would never be fully up-to-date, this setup could lead to data loss during failures.
+This would include:
++
+--
+* Lost changes leading to users being able to log in with an old password because database changes are not replicated to the other site at the point of failure when using an asynchronous database.
+--
++
+Therefore, tradeoffs exist between high availability and consistency. The focus of this topic is to prioritize consistency over availability with {project_name}.
+
+[#multi-cluster-v2-guide-deploy-kubernetes]
+== Deploying on {kubernetes}
+
+This {section} describes advanced {project_name} configurations for {kubernetes} which are load tested and will recover from single Pod failures or site failures.
+These instructions are intended for use with the setup described in the <<multi-cluster-v2-guide-concepts>> {section}.
+You should verify the performance and failure behavior of your specific environment.
+Ensure that the <<multi-cluster-v2-guide-infrastructure-requirements>> are met before proceeding.
+
+While this blueprint uses {kubernetes}, the concepts are not limited to {kubernetes}.
+
+=== Prerequisites
+
+* {kubernetes} clusters running. Each {kubernetes} cluster should have its own internal load balancing to leverage the startup, liveness and readiness probes of the {project_name} Pods.
+* A load balancer in front of the clusters that is probing the URL `/lb-check` of the {project_name} clusters.
+* A highly available database deployed with synchronous replication across sites, reachable from all {project_name} nodes in all clusters.
+The following example assumes a PostgreSQL database.
+Any database supported by {project_name} will work.
+How to configure the database for high availability is out of scope for this guide.
+* Understanding of a <@links.operator id="basic-deployment" /> of {project_name} with the {project_name} Operator.
+
+The following setup assumes a TLS passthrough setup, though this is not limited to this configuration.
+
+=== Procedure
+
+Perform the following steps in each {kubernetes} cluster:
+
+. Determine the sizing of the deployment using the <@links.ha id="multi-cluster-concepts-memory-and-cpu-sizing" /> {section}.
+For this setup, you might see approximately twice the CPU usage and write IOPS on your database, though your results might vary based on your use case.
+
+. Install the {project_name} Operator as described in the <@links.operator id="installation" /> {section}.
+
+. For a production-grade deployment, secure the database connection by creating a `ConfigMap` with the database certificate bundle:
++
+[source,bash]
+----
+kubectl --namespace keycloak create configmap keycloak-db-rootcert --from-file db-ca.pem=/path/to/certificate.pem
+----
+
+. Deploy the {project_name} CR with the following values, using the resource requests and limits calculated in the first step:
++
+[source,yaml]
+----
+include::../examples/generated/keycloak-stateless.yaml[tag=keycloak-stateless]
+----
+<1> Set the database URL.
+<2> The database connection pool initial, max and min size should be identical to allow statement caching for the database.
+The values shown are a starting point for production deployments; adjust to meet the needs of your system.
+With the `stateless` feature, authentication sessions and action tokens are stored in the database, which increases database load compared to setups with an external {jdgserver_name} cluster. Adjust the pool size accordingly.
+See the <@links.ha id="multi-cluster-concepts-database-connections" /> {section} for details.
+<3> Specify the URL to your custom {project_name} image. If your image is optimized, set the `startOptimized` flag to `true`.
+<4> Enable the `stateless` feature to remove the requirement for an external {jdgserver_name} cluster.
+<5> Set a unique cluster name that identifies this cluster. Each cluster must have a distinct name; no two clusters may share the same name.
+This option is only available if the `stateless` feature is enabled.
+<6> To be able to analyze the system under load, enable the metrics endpoint.
+<7> Secure the database connection. For non-production-grade environments without database TLS, set `db-tls-mode` to `disabled` in `additionalOptions` and omit the `truststores` block and the `keycloak-db-rootcert` `ConfigMap`.
+<8> Specify the `ConfigMap` name that contains the database certificate bundle.
+The Operator will automatically mount the file in the directory `/opt/keycloak/conf/truststores/configmap-<config map name>/<file-name>`.
+
+IMPORTANT: Set `spec.hostname.hostname` to the same public URL on every site, and use either the same TLS certificate, or the same subject alternative name in the certificate.
+This URL is the external load balancer's address that clients use to access {project_name}.
+If the public URL uses a port other than 443, include the port in the hostname value (for example, `+https://auth.example.com:8443+`).
+
+=== Verify the deployment
+
+Confirm that the {project_name} deployment is ready.
+
+[source,bash]
+----
+kubectl wait --for=condition=Ready keycloaks.k8s.keycloak.org/keycloak
+kubectl wait --for=condition=RollingUpdate=False keycloaks.k8s.keycloak.org/keycloak
+----
+
+To verify the hostname configuration, confirm that the OIDC issuer is identical on every site by querying each cluster's internal load balancer:
+
+[source,bash]
+----
+curl -sk https://<SITE_LB_HOSTNAME>/realms/master/.well-known/openid-configuration | jq .issuer
+----
+
+Afterward, verify that the external load balancer routes traffic to both clusters.
+The external load balancer should probe `GET /lb-check` on each cluster and expect an HTTP `200 OK` response to determine if a site is healthy.
+When a site's {project_name} nodes are all unavailable, `/lb-check` will not return `200 OK`, and the load balancer should stop routing traffic to that site.
+
+=== Optional: Disable sticky sessions
+
+When running on OpenShift and the default passthrough Ingress setup as provided by the {project_name} Operator, the load balancing done by HAProxy is done by using sticky sessions based on the IP address of the source.
+
+The recommended way to run {project_name} behind a load balancer is to disable sticky sessions to allow for an even distribution of requests across all nodes.
+
+Add the following supplementary configuration under the `spec` in the {project_name} Custom Resource to disable sticky sessions.
+
+[source,yaml,subs="attributes+"]
+----
+spec:
+  ingress:
+    enabled: true
+    annotations:
+      # When running load tests, disable sticky sessions on the OpenShift HAProxy router
+      # to avoid receiving all requests on a single {project_name} Pod.
+      haproxy.router.openshift.io/balance: roundrobin
+      haproxy.router.openshift.io/disable_cookies: 'true'
+----
+
+[#multi-cluster-v2-guide-deploy-bare-metal]
+== Deploying on bare-metal or virtual machines
+
+This {section} describes advanced {project_name} configurations for bare-metal servers or virtual machines that will recover from single node failures or site failures.
+These instructions are intended for use with the setup described in the <<multi-cluster-v2-guide-concepts>> {section}.
+You should verify the performance and failure behavior of your specific environment.
+Ensure that the <<multi-cluster-v2-guide-infrastructure-requirements>> are met before proceeding.
+
+=== Prerequisites
+
+* https://openjdk.java.net/[OpenJDK {jdk_version_latest}] installed on each node.
+* {archivedownloadurl}[{archivebasename}-{version}.zip] downloaded and extracted on each node.
+* A highly available database deployed with synchronous replication across sites, reachable from all {project_name} nodes. The following example assumes a PostgreSQL database. Any database supported by {project_name} will work. How to configure the database for high availability is out of scope for this guide.
+* TLS certificate and private key files for HTTPS.
+* A load balancer in front of the {project_name} nodes.
+* The database CA certificate file for securing the database connection.
+* Network connectivity between all {project_name} nodes within each site for cache clustering and failure detection (TCP ports 7800 and 57800 by default).
+See the <@links.server id="caching" anchor="network-ports"/> {section} for details.
+
+=== Load balancer topology
+
+For a multi-site deployment, two load balancer topologies are common:
+
+Per-site load balancer with a global load balancer in front::
+Each site has its own load balancer (for example, HAProxy or NGINX) that distributes traffic across the {project_name} nodes within that site, probing `/health/ready` on management port 9000 of each node.
+A global load balancer routes client traffic to the per-site load balancers, probing `/lb-check` through them to detect site-level failures.
++
+This topology provides better operational isolation: individual sites can be drained or taken offline for maintenance without affecting the global load balancer configuration.
+
+Single load balancer::
+One load balancer routes directly to all {project_name} nodes across all sites, probing `/health/ready` on management port 9000 of each node.
++
+This topology is simpler to manage.
+Per-site operational tasks such as draining a site for maintenance or isolating a failing site require reconfiguring a shared component, which increases operational risk.
+
+The following example assumes a per-site topology with a global load balancer.
+
+With the `stateless` feature, {project_name} does not store session data in memory, so configuring sticky sessions on the load balancer is no longer recommended as it will not provide a performance benefit.
+
+See the <@links.server id="reverseproxy"/> {section} for details on configuring a reverse proxy with {project_name}.
+
+=== Procedure
+
+The following setup assumes a TLS passthrough setup, though this is not limited to this configuration.
+This procedure assumes one {project_name} instance per host.
+Running multiple instances on the same host requires additional port configuration and is not covered by this {section}.
+
+Perform the following steps on each {project_name} node at each site:
+
+. Determine the sizing of the deployment using the <@links.ha id="multi-cluster-concepts-memory-and-cpu-sizing" /> {section}.
+For this setup, you might see approximately twice the CPU usage and write IOPS on your database, though your results might vary based on your use case.
+
+. Set the database credentials using environment variables to avoid exposing them in shell history or the process list:
++
+[source,bash]
+----
+export KC_DB_USERNAME=<DB_USERNAME>
+export KC_DB_PASSWORD=<DB_PASSWORD>
+----
+
+. Start {project_name} with the following command, replacing the placeholder values with your environment-specific settings:
++
+[source,bash]
+----
+bin/kc.sh start \
+    --db=postgres \ # <1>
+    --db-url=jdbc:postgresql://<DATABASE_URL>:5432/keycloak \ # <1>
+    --db-pool-initial-size=30 \ # <2>
+    --db-pool-min-size=30 \ # <2>
+    --db-pool-max-size=30 \ # <2>
+    --features=stateless \ # <3>
+    --cache-embedded-cluster-name=<CLUSTER_NAME> \ # <4>
+    --hostname=<KEYCLOAK_HOSTNAME> \ # <5>
+    --https-certificate-file=/path/to/tls.crt \ # <6>
+    --https-certificate-key-file=/path/to/tls.key \ # <6>
+    --db-tls-mode=verify-server \ # <7>
+    --truststore-paths=/path/to/db-ca.pem \ # <7>
+    --proxy-protocol-enabled=true \ # <8>
+    --shutdown-delay=30 \ # <8>
+    --health-enabled=true \
+    --metrics-enabled=true \ # <9>
+    --event-metrics-user-enabled=true \
+    --log-console-output=json \
+    --http-max-queued-requests=1000 # <10>
+----
+<1> Set the database vendor and URL.
+<2> The database connection pool initial, max and min size should be identical to allow statement caching for the database.
+The values shown are a starting point for production deployments; adjust to meet the needs of your system.
+With the `stateless` feature, authentication sessions and action tokens are stored in the database, which increases database load compared to setups with an external {jdgserver_name} cluster. Adjust the pool size accordingly.
+See the <@links.ha id="multi-cluster-concepts-database-connections" /> {section} for details.
+<3> Enable the `stateless` feature to remove the requirement for an external {jdgserver_name} cluster.
+<4> Set a unique cluster name that identifies this cluster. Each cluster must have a distinct name; no two clusters may share the same name.
+This option is only available if the `stateless` feature is enabled.
+<5> Set the hostname clients use to connect to {project_name}. This must be the same on every site and match the hostname configured on the external load balancer, so that the OIDC issuer is identical regardless of which site answers.
+If the public URL uses a port other than 443, include the port (for example, `+https://auth.example.com:8443+`).
+<6> Provide the TLS certificate and private key files for HTTPS.
+<7> Secure the database connection. Specify the path to the database CA certificate file. {project_name} automatically loads certificates from the specified truststore path.
+For non-production-grade environments without database TLS, set `--db-tls-mode` to `disabled` and omit `--truststore-paths`.
+<8> Enable the PROXY protocol so that {project_name} can read the real client IP address from the PROXY protocol header sent by the load balancer.
+To use this option, the load balancer must also be configured to send PROXY protocol headers (for example, `send-proxy-v2` in HAProxy).
+If your load balancer does not support the PROXY protocol, remove this option to use plain HTTPS.
+Do not set `--proxy-headers` when using TLS passthrough; the two options are mutually exclusive.
+See the <@links.server id="haproxy-passthrough"/> or <@links.server id="traefik-passthrough"/> {sections} for complete examples.
+The `--shutdown-delay` keeps {project_name} running long enough for the load balancer to detect the shutdown via health check failures and remove the node from rotation.
+Set this value to at least the load balancer's detection time (health check interval multiplied by the failure threshold).
+See the Graceful HTTP shutdown section in the <@links.server id="reverseproxy"/> {section} for details.
+<9> To be able to analyze the system under load, enable the metrics endpoint.
+<10> Limit the number of queued requests for load shedding. All exceeding requests are served with an HTTP 503.
+See the <@links.ha id="multi-cluster-concepts-threads" anchor="multi-cluster-load-shedding"/> {section} about load shedding for details.
+
+[#multi-cluster-v2-bare-metal-verify-deployment]
+=== Verify the deployment
+
+Confirm that each {project_name} node is ready by checking the health endpoint on the management port:
+
+[source,bash]
+----
+curl -sk -w '\n%{http_code}\n' https://localhost:9000/health/ready
+----
+
+A healthy node returns HTTP 200 with an overall status of `UP`.
+The `checks` array contains the readiness checks enabled for the deployment.
+
+Repeat this check for each node in each site.
+
+To verify the hostname configuration, confirm that the OIDC issuer is identical on every site by querying each site's load balancer:
+
+[source,bash]
+----
+curl -sk https://<SITE_LB_HOSTNAME>/realms/master/.well-known/openid-configuration | jq .issuer
+----
+
+Additionally, verify that `/lb-check` per site returns `200 OK`:
+
+[source,bash]
+----
+curl -sk -w '\n%{http_code}\n' https://<SITE_LB_HOSTNAME>/lb-check
+----
+
+Finally, verify that the external load balancer routes traffic to both sites.
+
+[#multi-cluster-v2-guide-upgrades]
+== Managing upgrades
+
+This section describes upgrade procedures for multi-cluster v2 deployments.
+
+=== {project_name} upgrades
+
+Patch upgrades can be deployed with zero-downtime.
+
+Deploying different {project_name} major/minor versions on each of the sites is not supported.
+It is technically possible for upgrades to be rolled out to both sites simultaneously, however we recommend that upgrades be rolled out to one site at a time in order to simplify monitoring and debugging.
+Rollouts in the different sites should be done promptly to avoid older sites writing data that other sites assume to be already migrated.
+
+For major or minor version upgrades:
+
+* Shut down all sites except one.
+* Deploy the new minor or major version in one site and verify the installation.
+* Deploy the new version in all other sites.
+
+=== Database upgrades
+
+Follow your database vendor's zero-downtime upgrade procedure, and possibly combine it with a {project_name} upgrade.
+Ensure that synchronous replication remains configured after the upgrade, as losing synchronous replication can lead to data loss during failover.
+Verify that the <<multi-cluster-v2-guide-infrastructure-requirements>> continue to be met after the upgrade.
+
+[#multi-cluster-v2-guide-migrate]
+== Migrating from multi-cluster v1 to v2
+
+This {section} describes how to migrate an existing <@links.ha id="multi-cluster-introduction" /> deployment to multi-cluster v2.
+
+Multi-cluster v2 uses the `stateless` feature to store volatile data in the database instead of an external {jdgserver_name} cluster.
+This simplifies the deployment architecture by removing {jdgserver_name}, its cross-site replication, the fencing automation, and {jdgserver_name}-specific monitoring.
+
+=== Overview of changes
+
+The migration involves the following changes:
+
+.Components removed
+[%autowidth]
+|===
+|Component |Reason
+
+|External {jdgserver_name} cluster
+|Authentication sessions, action tokens and login failure counters are stored in the database instead.
+
+|{jdgserver_name} cross-site replication
+|No inter-site cache replication is needed; the database handles all cross-site data.
+
+|{jdgserver_name} credentials and TLS secrets
+|No longer required without the external {jdgserver_name} cluster.
+
+|Fencing automation (for example, AWS Lambda)
+|Split-brain detection and fencing for {jdgserver_name} are no longer necessary.
+
+|{jdgserver_name}-specific monitoring and alerts
+|Prometheus alerts for {jdgserver_name} cache health and cross-site connectivity are no longer needed.
+|===
+
+.Components retained
+[%autowidth]
+|===
+|Component |Notes
+
+|Database
+|The existing synchronously replicated database is retained. Plan for approximately double the CPU usage and write IOPS compared to v1.
+
+|Load balancer
+|The external load balancer is retained.
+Remove any health checks that target {jdgserver_name} endpoints.
+The load balancer should probe the {project_name} `/lb-check` endpoint.
+|===
+
+.Configuration changes to {project_name}
+[%autowidth]
+|===
+|Change |Details
+
+|Enable the `stateless` feature
+|Replaces the `multi-site` feature.
+
+|Set a unique cluster name per site
+|Required for cross-cluster cache invalidation via the database outbox.
+
+|Increase the database connection pool size
+|Some data is now stored in database instead of {jdgserver_name}.
+
+|Remove external {jdgserver_name} connection options
+|Options such as `cache-remote-host`, `cache-remote-port`, `cache-remote-username`, and `cache-remote-password` are no longer used.
+|===
+
+=== Prerequisites
+
+* A running multi-cluster v1 deployment as described in the <@links.ha id="multi-cluster-introduction" /> {section}.
+* Familiarity with the v2 architecture, its requirements, and limitations as described in this guide.
+* A database sized for the increased load.
+With v2, database CPU usage and write IOPS can roughly double.
+Review and adjust the database instance size, storage IOPS, and connection pool sizing accordingly.
+See the <@links.ha id="multi-cluster-concepts-database-connections" /> {section} for details.
+* Network latency between database nodes that meets the requirements.
++
+include::../partials/network-latency.adoc[]
++
+Additionally, the commit latency on the database must be low.
+With synchronous replication, each commit includes a round-trip from the database primary to its replica to transfer the write-ahead log.
+A commit latency of less than 5 ms is suggested, and below 10 ms is required.
+See <<multi-cluster-v2-guide-infrastructure-requirements>> for the full set of requirements.
+
+=== Impact on volatile data
+
+Since user sessions are already stored in the database in multi-cluster v1, users remain logged in after migrating to v2.
+
+The following volatile data is lost during the migration:
+
+In-progress authentication sessions::
+Users who are mid-login need to restart their login flow.
+
+Login failure counters::
+Brute-force detection counters are reset.
+Any ongoing lockouts are cleared.
+
+OAuth authorization codes::
+OAuth authorization codes that were stored in {jdgserver_name} are lost.
+Users with in-progress OAuth flows need to restart the authorization.
+
+[IMPORTANT]
+====
+To minimize user impact, perform the migration during a maintenance window with low traffic.
+====
+
+=== Migrating on {kubernetes}
+
+This procedure assumes the {project_name} Operator is installed in each {kubernetes} cluster.
+
+Perform the following steps in each {kubernetes} cluster, unless stated otherwise:
+
+. Scale down {project_name} in all sites.
++
+Scaling down ensures a clean transition.
+No requests should be served during the migration.
++
+[source,bash]
+----
+kubectl --namespace keycloak scale keycloak keycloak --replicas=0
+----
++
+Wait until all {project_name} Pods are terminated in all sites before proceeding.
+
+. Prepare the updated {project_name} CR.
++
+The following changes are required:
++
+--
+.. Replace the `multi-site` feature with `stateless`:
++
+[source,yaml]
+----
+  features:
+    enabled:
+      - stateless # <1>
+----
+<1> Replaces the `multi-site` feature from v1.
++
+IMPORTANT: If you are using an optimized custom image, the `stateless` feature is a build-time option and cannot be enabled through the CR alone.
+You must rebuild the image with `--features=stateless` included in the build command before applying this CR.
+See <@links.operator id="customizing-keycloak" /> for details.
+
+.. Add a unique cluster name for each site:
++
+[source,yaml]
+----
+  additionalOptions:
+    - name: cache-embedded-cluster-name
+      value: CLUSTER1 # <1>
+----
+<1> Use a distinct name for each site (for example, `CLUSTER1` and `CLUSTER2`). No two sites may share the same name.
+
+.. Remove the external {jdgserver_name} connection options `cache-remote-host`, `cache-remote-port`, `cache-remote-username`, and `cache-remote-password` from `additionalOptions`.
+
+.. Increase the database connection pool size to handle the additional load:
++
+[source,yaml]
+----
+  db:
+    poolMinSize: 30  # <1>
+    poolInitialSize: 30
+    poolMaxSize: 30
+----
+<1> Adjust this value based on your workload.
+With the `stateless` feature, authentication sessions and action tokens are stored in the database, which increases database load.
+See the <@links.ha id="multi-cluster-concepts-database-connections" /> {section} for details.
+--
++
+See the <<multi-cluster-v2-guide-deploy-kubernetes>> {section} for a complete example of the v2 {project_name} CR.
+
+. Deploy the updated {project_name} CR to all sites:
++
+[source,bash]
+----
+kubectl --namespace keycloak apply -f keycloak.yaml
+----
+
+. Verify the deployment.
++
+Follow the verification steps in the <<multi-cluster-v2-guide-deploy-kubernetes>> {section}.
+Afterward, verify that the external load balancer routes traffic to all sites.
+
+. Remove the {jdgserver_name} deployment.
++
+Once the v2 deployment is verified, remove the v1 infrastructure.
++
+--
+.. Delete the {jdgserver_name} `Cache` CRs:
++
+[source,bash]
+----
+kubectl --namespace keycloak delete cache actiontokens authenticationssessions loginfailures work
+----
+
+.. Delete the `Infinispan` CR:
++
+[source,bash]
+----
+kubectl --namespace keycloak delete infinispan infinispan
+----
+
+.. Remove the {jdgserver_name} credentials and cross-site secrets:
++
+[source,bash]
+----
+kubectl --namespace keycloak delete secret remote-store-secret
+kubectl --namespace keycloak delete secret ispn-xsite-sa-token
+kubectl --namespace keycloak delete secret xsite-keystore-secret
+kubectl --namespace keycloak delete secret xsite-truststore-secret
+kubectl --namespace keycloak delete secret xsite-token-secret
+----
++
+Adjust the secret names to match your deployment.
+
+.. Optionally, uninstall the {jdgserver_name} Operator if it is no longer needed for other purposes.
+--
+
+. Remove the fencing automation.
++
+If using the AWS Lambda-based fencing as described in the <@links.ha id="multi-cluster-deploy-aws-accelerator-fencing-lambda" /> {section}:
++
+--
+.. Delete the AWS Lambda function.
+.. Remove the Prometheus `AlertmanagerConfig` and `PrometheusRule` CRs that triggered the Lambda.
+.. Remove the SNS topic and any related IAM roles.
+--
++
+Adjust these steps based on your fencing implementation.
+
+. Remove {jdgserver_name}-specific monitoring.
++
+Remove any Prometheus `ServiceMonitor` or `PodMonitor` resources that target the {jdgserver_name} deployment, as well as any Grafana dashboards for {jdgserver_name} cache metrics.
+
+=== Changes to operational procedures
+
+After migrating to v2, several operational procedures from v1 are no longer applicable:
+
+{jdgserver_name} synchronization::
+The procedure described in the <@links.ha id="multi-cluster-operate-synchronize" /> {section} is no longer needed, as there is no external {jdgserver_name} to synchronize.
+
+Site offline/online for {jdgserver_name}::
+The {jdgserver_name}-specific steps in the <@links.ha id="multi-cluster-operate-site-offline" /> and <@links.ha id="multi-cluster-operate-site-online" /> {sections} are replaced by load balancer configuration changes.
+To take a site offline, remove it from the load balancer.
+To bring it back online, add it to the load balancer.
+
+{jdgserver_name} health checks::
+The {jdgserver_name} health checks described in the <@links.ha id="multi-cluster-health-checks" /> {section} are no longer applicable.
+
+For upgrade procedures, see the <<multi-cluster-v2-guide-upgrades>> {section}.
+
+<@profile.ifCommunity>
+
+== Next steps
+
+* <<multi-cluster-v2-guide-concepts>>
+* <<multi-cluster-v2-guide-deploy-kubernetes>>
+* <<multi-cluster-v2-guide-deploy-bare-metal>>
+* <<multi-cluster-v2-guide-upgrades>>
+* <<multi-cluster-v2-guide-migrate>>
+
+</@profile.ifCommunity>
+
+</@tmpl.guide>
