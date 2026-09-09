@@ -123,11 +123,11 @@ export const TypeaheadSelectControl = <
 
         if (!isTypeaheadMulti) {
           setFilterValue(getValue(focusedItem));
+          field.onChange(key(focusedItem));
         } else {
           setFilterValue("");
+          updateValue(key(focusedItem), field);
         }
-
-        updateValue(key(focusedItem), field);
 
         setOpen(false);
         setFocusedItemIndex(0);
@@ -153,14 +153,14 @@ export const TypeaheadSelectControl = <
 
         if (event.key === "ArrowUp") {
           if (focusedItemIndex === 0) {
-            indexToFocus = options.length - 1;
+            indexToFocus = filteredOptions.length - 1;
           } else {
             indexToFocus = focusedItemIndex - 1;
           }
         }
 
         if (event.key === "ArrowDown") {
-          if (focusedItemIndex === options.length - 1) {
+          if (focusedItemIndex === filteredOptions.length - 1) {
             indexToFocus = 0;
           } else {
             indexToFocus = focusedItemIndex + 1;

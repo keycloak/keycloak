@@ -601,8 +601,13 @@ export function KeycloakDataTable<T>({
             <>
               {toolbarItem} <ToolbarItem variant="separator" />{" "}
               <ToolbarItem>
-                <Button icon={<SyncAltIcon />} variant="link" onClick={refresh} data-testid="refresh">
-                   {t("refresh")}
+                <Button
+                  icon={<SyncAltIcon />}
+                  variant="link"
+                  onClick={refresh}
+                  data-testid="refresh"
+                >
+                  {t("refresh")}
                 </Button>
               </ToolbarItem>
             </>
