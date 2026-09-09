@@ -113,6 +113,13 @@ public abstract class KeycloakLogFilter implements Filter {
             return false;
         }
 
+        // HHH100503 "JDBC batch still contained JDBC statements on release" is logged at INFO after a
+        // constraint violation that Keycloak already handles. Logged too loudly for a normal occurrence.
+        // https://hibernate.atlassian.net/browse/HHH-20861
+        if (Objects.equals(record.getLevel(), Level.INFO) && record.getLoggerName().equals("org.hibernate.orm.jdbc.batch") && record.getMessage().startsWith("HHH100503")) {
+            return false;
+        }
+
         if (executor != null && ThreadCreator.isVirtual(Thread.currentThread())) {
             executor.submit(new RecordLogger(ExtLogRecord.wrap(record), this));
             return false;
