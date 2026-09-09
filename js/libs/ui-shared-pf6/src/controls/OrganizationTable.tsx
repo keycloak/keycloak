@@ -1,7 +1,5 @@
 import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
-import {
-	Label, LabelGroup, Badge
-} from '@patternfly/react-core';
+import { Label, LabelGroup, Badge } from "@patternfly/react-core";
 
 import { TableText } from "@patternfly/react-table";
 import { FunctionComponent, PropsWithChildren, ReactNode } from "react";
@@ -48,7 +46,7 @@ const Domains = (org: OrganizationRepresentation) => {
       {org.domains?.map((dn) => {
         const name = typeof dn === "string" ? dn : dn.name;
         return (
-          <Label variant="outline" key={name} >
+          <Label variant="outline" key={name}>
             {name}
           </Label>
         );

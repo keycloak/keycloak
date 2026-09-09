@@ -42,10 +42,10 @@ public class ContentAlert {
     @FindBy(xpath = ROOT_ID)
     private WebElement alertElementRoot;
 
-    @FindBy(className = ROOT_ID + "[@class='pf-v6-c-alert__title']")
+    @FindBy(xpath = ROOT_ID + "[contains(@class,'pf-v6-c-alert__title')]")
     private WebElement messageElement;
 
-    @FindBy(className = ROOT_ID + "[@class='pf-v6-c-alert__action']")
+    @FindBy(xpath = ROOT_ID + "//button[contains(@class,'pf-v6-c-alert__action')]")
     private WebElement closeBtn;
 
     public boolean isDisplayed() {

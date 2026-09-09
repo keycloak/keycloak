@@ -99,6 +99,13 @@ async function resolveAppDir(appPath) {
     throw new Error(`Could not find account-ui app at '${absolute}'. Expected package.json.`);
   }
 
+  const { name } = JSON.parse(await readFile(packageJson, "utf8"));
+  if (name !== "@keycloak/keycloak-account-ui") {
+    throw new Error(
+      `Expected '@keycloak/keycloak-account-ui' at '${absolute}', found '${name ?? "unknown"}'.`,
+    );
+  }
+
   return absolute;
 }
 
