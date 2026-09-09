@@ -3,14 +3,12 @@ package org.keycloak.services.client.scim;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiFunction;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
@@ -85,12 +83,11 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
     }
 
     @Override
-    public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, Root<?> root,
-            BiFunction<Class<?>, Supplier<Join<?, ?>>, Join<?, ?>> joinResolver) {
+    public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, Root<?> root, Subquery<?> subquery) {
         if ("roles".equals(attribute.getName())) {
-            Join<?, ?> join = joinResolver.apply(RoleEntity.class, () -> root.join(RoleEntity.class));
-            join.on(cb.equal(root.get("id"), join.get("clientId")));
-            return join.get("name");
+            Root<RoleEntity> role = subquery.from(RoleEntity.class);
+            subquery.where(cb.equal(role.get("clientId"), root.get("id")));
+            return role.get("name");
         } else if ("auth.method".equals(attribute.getName())) {
             return cb.selectCase().when(cb.and(cb.equal(root.get("protocol"), OIDCClientRepresentation.PROTOCOL),
                     cb.isFalse(root.get("publicClient"))), root.get("clientAuthenticatorType"));

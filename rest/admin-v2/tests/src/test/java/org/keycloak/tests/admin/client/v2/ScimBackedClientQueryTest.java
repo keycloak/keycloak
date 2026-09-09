@@ -144,6 +144,34 @@ public class ScimBackedClientQueryTest extends AbstractClientApiV2Test {
     }
 
     @Test
+    public void filterByRolesConjunctionAndNegation() {
+        // Regression test for https://github.com/keycloak/keycloak/issues/51805: JOIN-based predicate
+        // generation for the "roles" relation could not correctly express conjunction across
+        // independent values, nor negation (NOT was applied per joined row instead of per resource).
+        try (var stream = getClientsApi().getClients(new ListOptions().query(
+                "roles eq \"admin\" and roles eq \"user\""))) {
+            List<BaseClientRepresentation> clients = stream.toList();
+            assertThat(clients, hasSize(1));
+            assertThat(clients.get(0).getClientId(), is("scim-jpa-roles-test"));
+        }
+
+        // the client DOES have the "admin" role, so negating that eq must not match it
+        try (var stream = getClientsApi().getClients(new ListOptions().query(
+                "clientId eq \"scim-jpa-roles-test\" and not (roles eq \"admin\")"))) {
+            List<BaseClientRepresentation> clients = stream.toList();
+            assertThat(clients, empty());
+        }
+
+        // "scim-jpa-0" has no roles at all, so it must still match the negated filter
+        try (var stream = getClientsApi().getClients(new ListOptions().query(
+                "clientId eq \"scim-jpa-0\" and not (roles eq \"admin\")"))) {
+            List<BaseClientRepresentation> clients = stream.toList();
+            assertThat(clients, hasSize(1));
+            assertThat(clients.get(0).getClientId(), is("scim-jpa-0"));
+        }
+    }
+
+    @Test
     public void filterWithNotExpression() {
         try (var stream = getClientsApi().getClients(
                 new ListOptions().query("not enabled eq false"))) {
