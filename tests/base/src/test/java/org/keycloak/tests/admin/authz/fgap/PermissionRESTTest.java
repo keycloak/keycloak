@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.admin.authz.fgap;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -39,13 +40,22 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testframework.admin.AdminClientFactory;
+import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
+import org.keycloak.testframework.annotations.InjectHttpClient;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.util.JsonSerialization;
 
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -53,6 +63,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -65,6 +76,15 @@ public class PermissionRESTTest extends AbstractPermissionTest {
 
     @InjectAdminClientFactory
     private AdminClientFactory adminClientFactory;
+
+    @InjectAdminClient
+    private Keycloak adminClient;
+
+    @InjectHttpClient
+    private CloseableHttpClient httpClient;
+
+    @InjectKeycloakUrls
+    private KeycloakUrls keycloakUrls;
 
     @Test
     public void testPreventDeletingAdminPermissionsClient() {
@@ -356,6 +376,31 @@ public class PermissionRESTTest extends AbstractPermissionTest {
                 .resources(Set.of(groupAuthzResourceId))
                 .scopes(AdminPermissionsSchema.USERS.getScopes())
                 .build(), Response.Status.BAD_REQUEST);
+    }
+
+    @Test
+    public void testUpdatePermissionReturns204() throws IOException {
+        ScopePermissionRepresentation permission = PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .scopes(Set.of(AdminPermissionsSchema.VIEW))
+                .build();
+        createPermission(adminPermissionsClient, permission);
+
+        String clientId = adminPermissionsClient.toRepresentation().getId();
+        String url = keycloakUrls.getAdminBuilder()
+                .path("realms/{realm}/clients/{clientId}/authz/resource-server/permission/scope/{permId}")
+                .build(realm.getName(), clientId, permission.getId())
+                .toString();
+
+        HttpPut put = new HttpPut(url);
+        put.setHeader("Authorization", "Bearer " + adminClient.tokenManager().getAccessTokenString());
+        put.setHeader("Content-Type", "application/json");
+        put.setEntity(new StringEntity(JsonSerialization.writeValueAsString(permission)));
+
+        try (CloseableHttpResponse response = httpClient.execute(put)) {
+            assertEquals(204, response.getStatusLine().getStatusCode(),
+                    "PUT permission update should return 204 No Content, not 201 Created");
+        }
     }
 
     @Test
