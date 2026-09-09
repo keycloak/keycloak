@@ -255,6 +255,9 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
     }
 
     void verifyRedirectUri(String redirectUri, boolean isRedirectUriParam) throws ClientPolicyException {
+	if (redirectUri == null || redirectUri.trim().isEmpty()){
+		return;
+	}
         UriValidation validation;
 
         try {
