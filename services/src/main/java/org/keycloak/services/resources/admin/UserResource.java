@@ -400,16 +400,16 @@ public class UserResource {
         }
 
         RealmModel authenticatedRealm = auth.adminAuth().getRealm();
-        // if same realm logout before impersonation
+        // When impersonating within the same realm, the administrator's own session has to be terminated because their
+        // identity cookie will be replaced by the impersonated user's session. This is deferred until the impersonation
+        // link is actually redeemed (see ImpersonateActionTokenHandler) so that merely requesting a link - e.g. from a
+        // non-browser API integration - does not log the administrator out.
         boolean sameRealm = false;
+        String impersonatorSessionId = null;
         String sessionState = auth.adminAuth().getToken().getSessionState();
         if (authenticatedRealm.getId().equals(realm.getId()) && sessionState != null) {
             sameRealm = true;
-            UserSessionModel userSession = session.sessions().getUserSession(authenticatedRealm, sessionState);
-            AuthenticationManager.expireIdentityCookie(session);
-            AuthenticationManager.expireRememberMeCookie(session);
-            AuthenticationManager.expireAuthSessionCookie(session);
-            AuthenticationManager.backchannelLogout(session, authenticatedRealm, userSession, session.getContext().getUri(), clientConnection, headers, true);
+            impersonatorSessionId = sessionState;
         }
 
         UserModel adminUser = auth.adminAuth().getUser();
@@ -419,7 +419,7 @@ public class UserResource {
         URI redirect = Urls.accountBase(session.getContext().getUri().getBaseUri()).build(realm.getName());
         int expires = (int) Time.currentTimeSeconds() + 60;
 
-        ImpersonateActionToken token = new ImpersonateActionToken(user.getId(), impersonator, impersonatorId, authenticatedRealm.getName(), redirect.toString(), expires);
+        ImpersonateActionToken token = new ImpersonateActionToken(user.getId(), impersonator, impersonatorId, authenticatedRealm.getName(), redirect.toString(), expires, impersonatorSessionId);
         String impersonateAction = LoginActionsService.actionTokenProcessor(session.getContext().getUri())
                 .queryParam(Constants.KEY, token.serialize(session, realm, session.getContext().getUri()))
                 .build(realm.getName())

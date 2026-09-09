@@ -87,7 +87,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.SingleUseObjectKeyModel;
-import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -1086,10 +1085,10 @@ public class AuthenticationManager {
     }
 
     /**
-     * Invalidates the action token by putting a revoked entry into the single use object provider.
+     * Invalidates the action token by revoking it via {@link KeycloakSession#revokedTokens()}.
      * This is used to prevent replay of the same action token.
      *
-     * @return true if the token was successfully invalidated, false if it was already invalidated
+     * @return true if the token was successfully invalidated, false if it was already invalidated or the key is invalid
      */
     public static boolean invalidateActionToken(KeycloakSession session, String actionTokenKeyToInvalidate, long skewSeconds) {
         SingleUseObjectKeyModel actionTokenKey = DefaultActionTokenKey.from(actionTokenKeyToInvalidate);
@@ -1097,9 +1096,7 @@ public class AuthenticationManager {
             return false;
         }
         long lifespanSeconds = Math.max(1L, actionTokenKey.getExp() - Time.currentTimeSeconds() + skewSeconds);
-        SingleUseObjectProvider singleUseObjectProvider = session.singleUseObjects();
-        return singleUseObjectProvider.putIfAbsent(actionTokenKeyToInvalidate + SingleUseObjectProvider.REVOKED_KEY,
-                lifespanSeconds);
+        return session.revokedTokens().put(actionTokenKeyToInvalidate, lifespanSeconds);
     }
 
     public static Response finishedRequiredActions(KeycloakSession session, AuthenticationSessionModel authSession, UserSessionModel userSession,

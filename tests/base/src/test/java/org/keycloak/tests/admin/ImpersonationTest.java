@@ -36,6 +36,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -342,11 +343,20 @@ public class ImpersonationTest {
             HttpResponse res = httpClient.execute(req);
             Assertions.assertEquals(200, res.getStatusLine().getStatusCode());
 
+            EventAssertion.assertSuccess(events.poll())
+                    .type(EventType.IMPERSONATE)
+                    .userId(managedUser.getId());
+
             HttpUriRequest secondReq = RequestBuilder.get()
                 .setUri(redirect)
                 .build();
             HttpResponse secondRes = httpClient.execute(secondReq);
             Assertions.assertEquals(400, secondRes.getStatusLine().getStatusCode());
+
+            // replaying the token must be audited as an IMPERSONATE_ERROR event
+            EventAssertion.assertError(events.poll())
+                    .type(EventType.IMPERSONATE_ERROR)
+                    .error(Errors.EXPIRED_CODE);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
