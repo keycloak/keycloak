@@ -308,6 +308,7 @@ export const AddScopeDialog = ({
         <Dropdown
           popperProps={{
             direction: "up",
+            appendTo: () => document.body,
           }}
           onOpenChange={(isOpen) => setAddToggle(isOpen)}
           className="keycloak__client-scopes-add__add-dropdown"
@@ -318,6 +319,7 @@ export const AddScopeDialog = ({
               ref={ref}
               isDisabled={rows.length === 0}
               onClick={() => setAddToggle(!addToggle)}
+              isExpanded={addToggle}
               variant="primary"
               id="add-dropdown"
               data-testid="add-dropdown"
