@@ -263,6 +263,7 @@ public class UsersResource {
      * @param briefRepresentation Boolean which defines whether brief representations are returned (default: false)
      * @param exact Boolean which defines whether the params "last", "first", "email" and "username" must match exactly
      * @param searchQuery A query to search for custom attributes, in the format 'key1:value2 key2:value2'
+     * @param includeServiceAccounts Boolean, which defines whether result list should include service accounts. When "true" then always included, "false" then never, null will fall back to known legacy behavior
      * @return a non-null {@code Stream} of users
      */
     @GET
@@ -291,7 +292,8 @@ public class UsersResource {
             @Parameter(description = "Boolean which defines whether the params \"last\", \"first\", \"email\" and \"username\" must match exactly") @QueryParam("exact") Boolean exact,
             @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
             @Parameter(description = "Only return users created after (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdAfter") String createdAfter,
-            @Parameter(description = "Only return users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdBefore") String createdBefore) {
+            @Parameter(description = "Only return users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdBefore") String createdBefore,
+            @Parameter(description = "Boolean, which defines whether result list should include service accounts. When \"true\" then always included, \"false\" then never, null will fall back to known legacy behavior") @QueryParam("includeServiceAccounts") Optional<Boolean> includeServiceAccounts) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
 
         userPermissionEvaluator.requireQuery();
@@ -325,7 +327,7 @@ public class UsersResource {
                 addCreatedTimestampConditions(attributes, createdAfter, createdBefore);
 
                 return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
-                        maxResults, false);
+                        maxResults, includeServiceAccounts.orElse(false));
             }
         } else if (last != null || first != null || email != null || username != null || emailVerified != null
                 || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()
@@ -363,10 +365,10 @@ public class UsersResource {
                     attributes.putAll(searchAttributes);
 
                     return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
-                            maxResults, true);
+                            maxResults, includeServiceAccounts.orElse(true));
                 } else {
                     return searchForUser(new HashMap<>(), realm, userPermissionEvaluator, briefRepresentation,
-                            firstResult, maxResults, false);
+                            firstResult, maxResults, includeServiceAccounts.orElse(false));
                 }
 
         return toRepresentation(realm, userPermissionEvaluator, briefRepresentation, userModels);
@@ -398,6 +400,7 @@ public class UsersResource {
      * @param enabled Boolean representing if user is enabled or not
      * @param exact Boolean which defines whether the params "last", "first", "email" and "username" must match exactly
      * @param searchQuery A query to search for custom attributes, in the format 'key1:value2 key2:value2'
+     * @param includeServiceAccounts Boolean, which defines whether result list should include service accounts. When "true" then always included, "false" then never, null will fall back to known legacy behavior
      * @return the number of users that match the given criteria
      */
     @Path("count")
@@ -428,7 +431,8 @@ public class UsersResource {
             @Parameter(description = "Boolean which defines whether the params \"last\", \"first\", \"email\" and \"username\" must match exactly") @QueryParam("exact") Boolean exact,
             @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
             @Parameter(description = "Only return users created after (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdAfter") String createdAfter,
-            @Parameter(description = "Only return users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdBefore") String createdBefore) {
+            @Parameter(description = "Only return users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdBefore") String createdBefore,
+            @Parameter(description = "Boolean, which defines whether result list should include service accounts. When \"true\" then always included, \"false\" then never, null will fall back to known legacy behavior") @QueryParam("includeServiceAccounts") Optional<Boolean> includeServiceAccounts) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
         userPermissionEvaluator.requireQuery();
 
@@ -456,7 +460,7 @@ public class UsersResource {
             }
             addCreatedTimestampConditions(parameters, createdAfter, createdBefore);
             // search /users equivalent to this doesn't include service-accounts so counting shouldn't as well
-            parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, "false");
+            parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts.orElse(false).toString());
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
             } else {
@@ -500,7 +504,7 @@ public class UsersResource {
             addCreatedTimestampConditions(parameters, createdAfter, createdBefore);
             parameters.putAll(searchAttributes);
             // search /users equivalent to this does include service-accounts so we should be explicit
-            parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, "true");
+            parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts.orElse(true).toString());
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
             } else {
@@ -513,7 +517,7 @@ public class UsersResource {
         } else {
             Map<String, String> parameters = new HashMap<>();
             // list /users equivalent to this doesn't include service-accounts so counting shouldn't as well
-            parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, "false");
+            parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts.orElse(false).toString());
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
             } else {
