@@ -258,20 +258,12 @@ class ClosingIntStream implements IntStream {
 
     @Override
     public LongStream asLongStream() {
-        try {
-            return delegate.asLongStream();
-        } finally {
-            close();
-        }
+        return new ClosingLongStream(delegate.asLongStream());
     }
 
     @Override
     public DoubleStream asDoubleStream() {
-        try {
-            return delegate.asDoubleStream();
-        } finally {
-            close();
-        }
+        return new ClosingDoubleStream(delegate.asDoubleStream());
     }
 
     @Override

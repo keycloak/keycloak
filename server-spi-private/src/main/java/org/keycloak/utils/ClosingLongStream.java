@@ -258,11 +258,7 @@ class ClosingLongStream implements LongStream {
 
     @Override
     public DoubleStream asDoubleStream() {
-        try {
-            return delegate.asDoubleStream();
-        } finally {
-            close();
-        }
+        return new ClosingDoubleStream(delegate.asDoubleStream());
     }
 
     @Override
