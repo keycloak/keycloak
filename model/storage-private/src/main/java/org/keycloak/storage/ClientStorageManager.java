@@ -169,6 +169,34 @@ public class ClientStorageManager implements ClientProvider {
     }
 
     @Override
+    public long searchClientsByClientIdCount(RealmModel realm, String clientId) {
+        // the local storage count always comes from the database COUNT query; only the (typically much
+        // smaller) external-provider contribution needs to be reified into a stream and counted in memory
+        return localStorage().searchClientsByClientIdCount(realm, clientId)
+                + countFromExternalProviders(realm, (p, f, m) -> p.searchClientsByClientIdStream(realm, clientId, f, m));
+    }
+
+    @Override
+    public long searchClientsByAttributesCount(RealmModel realm, Map<String, String> attributes) {
+        return localStorage().searchClientsByAttributesCount(realm, attributes)
+                + countFromExternalProviders(realm, (p, f, m) -> p.searchClientsByAttributes(realm, attributes, f, m));
+    }
+
+    private long countFromExternalProviders(RealmModel realm, PaginatedQuery paginatedQuery) {
+        if (!hasEnabledStorageProviders(session, realm, ClientLookupProvider.class)) {
+            return 0;
+        }
+        return getEnabledStorageProviders(session, realm, ClientLookupProvider.class)
+                .mapToLong(p -> {
+                    Stream<? extends ClientModel> res = p instanceof ClientStorageProvider
+                            ? ServicesUtils.timeBound(session, clientStorageProviderTimeout, p2 -> paginatedQuery.query((ClientLookupProvider) p2, null, null)).apply(p)
+                            : paginatedQuery.query(p, null, null);
+                    return res.count();
+                })
+                .sum();
+    }
+
+    @Override
     public Stream<ClientModel> searchClientsByAuthenticationFlowBindingOverrides(RealmModel realm, Map<String, String> overrides, Integer firstResult, Integer maxResults) {
         return query((p, f, m) -> p.searchClientsByAuthenticationFlowBindingOverrides(realm, overrides, f, m), realm, firstResult, maxResults);
     }

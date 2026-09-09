@@ -383,11 +383,27 @@ public interface RealmModel extends RoleContainerModel {
      */
     Stream<ClientModel> searchClientByClientIdStream(String clientId, Integer firstResult, Integer maxResults);
 
-    long searchClientByClientIdCount(String clientId);
+    /**
+     * Returns number of clients whose clientId contains the given string (case-insensitive).
+     * Implementations are encouraged to override this default with a database-level COUNT query.
+     * @param clientId {@code String} Id of the client.
+     * @return Number of matching clients.
+     */
+    default long searchClientByClientIdCount(String clientId) {
+        return searchClientByClientIdStream(clientId, null, null).count();
+    }
 
     Stream<ClientModel> searchClientByAttributes(Map<String, String> attributes, Integer firstResult, Integer maxResults);
 
-    long searchClientByAttributesCount(Map<String, String> attributes);
+    /**
+     * Returns number of clients matching all the given attributes.
+     * Implementations are encouraged to override this default with a database-level COUNT query.
+     * @param attributes map of attribute name to value (exact match per entry).
+     * @return Number of matching clients.
+     */
+    default long searchClientByAttributesCount(Map<String, String> attributes) {
+        return searchClientByAttributes(attributes, null, null).count();
+    }
 
     Stream<ClientModel> searchClientByAuthenticationFlowBindingOverrides(Map<String, String> overrides, Integer firstResult, Integer maxResults);
 
