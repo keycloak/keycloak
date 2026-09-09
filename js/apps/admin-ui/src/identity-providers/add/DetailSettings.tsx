@@ -21,6 +21,7 @@ import {
   PageSection,
   Tab,
   TabTitleText,
+  Tabs,
   Text,
   ToolbarItem,
 } from "@patternfly/react-core";
@@ -48,7 +49,7 @@ import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
-import { toUpperCase } from "../../util";
+import { convertAttributeNameToForm, toUpperCase } from "../../util";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { useParams } from "../../utils/useParams";
 import { toIdentityProviderAddMapper } from "../routes/AddMapper";
@@ -78,6 +79,8 @@ import JWTAuthorizationGrantSettings from "./JWTAuthorizationGrantSettings";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { GroupResourceContext } from "../../context/group-resource/GroupResourceContext";
 import DefaultTrustSettings from "./DefaultTrustSettings";
+import { IdpDomainsTab } from "./IdpDomainsTab";
+import { IdpOrganizationsTab } from "./IdpOrganizationsTab";
 import Oid4VpSettings from "./Oid4VpSettings";
 
 type HeaderProps = {
@@ -304,6 +307,7 @@ export default function DetailSettings() {
   const { realm, realmRepresentation } = useRealm();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
+  const [orgSubTab, setOrgSubTab] = useState("org-list");
   const { hasAccess } = useAccess();
 
   useFetch(
@@ -330,7 +334,7 @@ export default function DetailSettings() {
         );
       }
     },
-    [],
+    [key],
   );
 
   const toTab = (tab: IdentityProviderTab) =>
@@ -345,6 +349,7 @@ export default function DetailSettings() {
 
   const settingsTab = useTab("settings");
   const mappersTab = useTab("mappers");
+  const organizationsTab = useTab("organizations");
   const permissionsTab = useTab("permissions");
   const eventsTab = useTab("events");
 
@@ -447,8 +452,9 @@ export default function DetailSettings() {
     (isOAuth2 || isOIDC) &&
     !!provider.types?.includes(IdentityProviderType.JWT_AUTHORIZATION_GRANT) &&
     isFeatureEnabled(Feature.JWTAuthorizationGrant);
-  const groupResource = provider.organizationId
-    ? adminClient.organizations.groups(provider.organizationId)
+  const firstOrgLink = provider.organizationLinks?.[0];
+  const groupResource = firstOrgLink?.organizationId
+    ? adminClient.organizations.groups(firstOrgLink.organizationId)
     : adminClient.groups;
 
   const loader = async () => {
@@ -688,6 +694,40 @@ export default function DetailSettings() {
         </FormAccess>
       ),
     },
+    {
+      title: t("organizationSettings"),
+      isHidden: (provider.organizationLinks?.length ?? 0) === 0,
+      panel: (
+        <FormAccess
+          role="manage-identity-providers"
+          isHorizontal
+          onSubmit={handleSubmit(save)}
+        >
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm(
+              "config.kc.org.broker.login.hide-when-org-unknown",
+            )}
+            label={t("hideOnLoginWhenOrgNotResolved")}
+            labelIcon={t("hideOnLoginWhenOrgNotResolvedHelp")}
+            stringify
+          />
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm(
+              "config.kc.org.broker.login.show-when-linked-elsewhere",
+            )}
+            label={t("showOnLoginForUnlinkedMembers")}
+            labelIcon={t("showOnLoginForUnlinkedMembersHelp")}
+            stringify
+          />
+          <FixedButtonsGroup
+            name="idp-org-settings"
+            isSubmit
+            reset={reset}
+            isDisabled={!isDirty}
+          />
+        </FormAccess>
+      ),
+    },
   ];
 
   return (
@@ -806,6 +846,35 @@ export default function DetailSettings() {
               />
             </GroupResourceContext>
           </Tab>
+          {(provider.organizationLinks?.length ?? 0) > 0 && (
+            <Tab
+              id="organizations"
+              data-testid="organizationsTab"
+              title={<TabTitleText>{t("organizations")}</TabTitleText>}
+              {...organizationsTab}
+            >
+              <Tabs
+                activeKey={orgSubTab}
+                onSelect={(_, key) => setOrgSubTab(key as string)}
+                mountOnEnter
+              >
+                <Tab
+                  id="org-list"
+                  eventKey="org-list"
+                  title={<TabTitleText>{t("organizations")}</TabTitleText>}
+                >
+                  <IdpOrganizationsTab alias={alias} onLinksChange={refresh} />
+                </Tab>
+                <Tab
+                  id="org-domains"
+                  eventKey="org-domains"
+                  title={<TabTitleText>{t("domains")}</TabTitleText>}
+                >
+                  <IdpDomainsTab alias={alias} />
+                </Tab>
+              </Tabs>
+            </Tab>
+          )}
           {isFeatureEnabled(Feature.AdminFineGrainedAuthz) && (
             <Tab
               id="permissions"
