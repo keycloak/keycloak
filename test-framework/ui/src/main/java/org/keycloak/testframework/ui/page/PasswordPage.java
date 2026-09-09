@@ -2,6 +2,7 @@ package org.keycloak.testframework.ui.page;
 
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
+import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -22,7 +23,7 @@ public class PasswordPage extends AbstractLoginPage {
     @FindBy(name = "login")
     private WebElement submitButton;
 
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
+    @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
     private WebElement loginErrorMessage;
 
     @FindBy(linkText = "Forgot Password?")
@@ -50,9 +51,17 @@ public class PasswordPage extends AbstractLoginPage {
 
     public String getPasswordError() {
         try {
-            return passwordError.getText();
+            return getFieldErrorText(passwordError);
         } catch (NoSuchElementException e) {
             return null;
+        }
+    }
+
+    private static String getFieldErrorText(WebElement errorElement) {
+        try {
+            return errorElement.findElement(By.className("kc-feedback-text")).getText();
+        } catch (NoSuchElementException e) {
+            return errorElement.getText();
         }
     }
 
