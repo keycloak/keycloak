@@ -163,13 +163,13 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
             validation.clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetails);
         }
 
-        if (clientConfig.isUseRefreshToken()) {
+        if (clientConfig.generateRefreshToken(responseBuilder.isOfflineToken())) {
             //refresh token must have same scope as old refresh token (type, scope, expiration)
             responseBuilder.generateRefreshToken(oldRefreshToken, clientSession);
         }
 
         if (newToken.getAuthorization() != null
-                && clientConfig.isUseRefreshToken()) {
+                && clientConfig.generateRefreshToken(responseBuilder.isOfflineToken())) {
             responseBuilder.getRefreshToken().setAuthorization(newToken.getAuthorization());
         }
 

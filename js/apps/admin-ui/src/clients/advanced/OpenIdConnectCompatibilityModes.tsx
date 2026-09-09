@@ -15,7 +15,7 @@ type OpenIdConnectCompatibilityModesProps = {
   hasConfigureAccess?: boolean;
 };
 
-export const OpenIdConnectCompatibilityModes = ({
+const OpenIdConnectCompatibilityModes = ({
   save,
   reset,
   hasConfigureAccess,
@@ -166,6 +166,35 @@ export const OpenIdConnectCompatibilityModes = ({
         />
       </FormGroup>
       <FormGroup
+        label={t("useRefreshTokenForOfflineToken")}
+        fieldId="useRefreshTokenForOfflineToken"
+        hasNoPaddingTop
+        labelIcon={
+          <HelpItem
+            helpText={t("useRefreshTokenForOfflineTokenHelp")}
+            fieldLabelId="useRefreshTokenForOfflineToken"
+          />
+        }
+      >
+        <Controller
+          name={convertAttributeNameToForm<FormFields>(
+            "attributes.offline_token.use_refresh_token",
+          )}
+          defaultValue="false"
+          control={control}
+          render={({ field }) => (
+            <Switch
+              id="useRefreshTokenForOfflineToken"
+              label={t("on")}
+              labelOff={t("off")}
+              isChecked={field.value === "true"}
+              onChange={(_event, value) => field.onChange(value.toString())}
+              aria-label={t("useRefreshTokenForOfflineToken")}
+            />
+          )}
+        />
+      </FormGroup>
+      <FormGroup
         label={t("useLowerCaseBearerType")}
         fieldId="useLowerCaseBearerType"
         hasNoPaddingTop
@@ -304,3 +333,4 @@ export const OpenIdConnectCompatibilityModes = ({
     </FormAccess>
   );
 };
+export default OpenIdConnectCompatibilityModes;

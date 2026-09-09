@@ -380,7 +380,7 @@ public class AuthorizationTokenService {
             // Skip generating refresh token for accessToken without sessionState claim. This is "stateless" accessToken not pointing to any real persistent userSession
             rpt.setSessionId(null);
         } else {
-            if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
+            if (OIDCAdvancedConfigWrapper.fromClientModel(client).generateRefreshToken(clientSessionCtx.isOfflineTokenRequested())) {
                 responseBuilder.generateRefreshToken();
                 RefreshToken refreshToken = responseBuilder.getRefreshToken();
 
