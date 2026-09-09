@@ -313,6 +313,26 @@ public class ScimJPAPredicateProvider {
     }
 
     /**
+     * Reject the {@code and} operator within a SCIM value-path filter (e.g. {@code attr[cond1 and cond2]}) when the
+     * bracketed attribute is multivalued or non-complex. Mirrors the equivalent restriction already enforced on the
+     * PATCH path (see {@code ScimFilterToJsonNodeConverter}): for a scalar multivalued attribute, one value cannot
+     * satisfy two conditions simultaneously; for a complex multivalued attribute (e.g. groups/members), filtering is
+     * restricted to the "value" sub-attribute, so {@code and} has no valid interpretation. Without this guard, each
+     * comparison inside the brackets is evaluated as an independent correlated {@code EXISTS} subquery, so different
+     * elements of the collection could satisfy each condition instead of a single element satisfying all of them.
+     *
+     * @param valuePathAttribute the SCIM attribute path of the enclosing value path (e.g. "groups")
+     * @throws ScimFilterException if the {@code and} operator is not valid for the given value path
+     */
+    public void validateAndOperatorInValuePath(String valuePathAttribute) {
+        Attribute<?, ?> attrInfo = resolve(valuePathAttribute);
+        if (attrInfo != null && (attrInfo.isMultivalued() || attrInfo.getComplexType() == null)) {
+            throw new ScimFilterException(
+                    "'and' operator is not supported within a value path filter for multivalued or non-complex attributes: " + valuePathAttribute);
+        }
+    }
+
+    /**
      * Resolve the SCIM attribute path to the corresponding {@link Attribute} metadata. This method checks all registered schemas
      * to find the attribute. If the attribute is found but does not have a model attribute name (i.e., it is not mapped to a model field),
      * it returns {@code null} to indicate that this is an unknown attribute for filtering purposes. If the attribute is not found in any schema,
