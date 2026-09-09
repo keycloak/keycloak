@@ -1,8 +1,6 @@
 import { Switch } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { debeerify } from "@keycloak/keycloak-ui-shared";
-
 import { FieldProps, FormGroupField } from "./FormGroupField";
 
 type FieldType = "boolean" | "string";
@@ -31,8 +29,8 @@ export const SwitchField = ({
         control={control}
         render={({ field }) => (
           <Switch
-            id={fieldName}
-            data-testid={debeerify(fieldName)}
+            id={label}
+            data-testid={fieldName}
             label={t("on")}
             labelOff={t("off")}
             isChecked={

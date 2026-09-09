@@ -245,6 +245,7 @@ function DataTable<T>({
         <Tbody>
           {(rows as IRow[]).map((row, index) => (
             <Tr
+              // SubRow entries have no `data`; they key on index while parent rows use id.
               key={get(row.data, "id") ?? index}
               isExpanded={expandedRows[index]}
             >
@@ -422,7 +423,6 @@ export function KeycloakDataTable<T>({
   const [rows, setRows] = useState<(Row<T> | SubRow<T>)[]>();
   const [unPaginatedData, setUnPaginatedData] = useState<T[]>();
   const [loading, setLoading] = useState(true);
-  const [hasLoaded, setHasLoaded] = useState(false);
 
   const fetchGeneration = useRef(0);
 
@@ -554,7 +554,6 @@ export function KeycloakDataTable<T>({
     },
     (data) => {
       prevKey.current = key;
-      setHasLoaded(true);
       if (!isPaginated) {
         setUnPaginatedData(data);
         if (data.length > first) {
@@ -647,7 +646,6 @@ export function KeycloakDataTable<T>({
           <LoadingOverlay
             isLoading={loading}
             skeleton={<TableLoadingSkeleton rows={Math.min(maxRows, 5)} />}
-            data-testid={hasLoaded && !loading ? "table-ready" : undefined}
           >
             {!noData && (
               <DataTable
@@ -693,9 +691,7 @@ export function KeycloakDataTable<T>({
         </PaginatingTableToolbar>
       )}
       {loading && noData && !searching && <KeycloakSpinner />}
-      {hasLoaded && !loading && noData && !searching && (
-        <div data-testid="table-ready">{emptyState}</div>
-      )}
+      {!loading && noData && !searching && emptyState}
     </>
   );
 }
