@@ -29,6 +29,7 @@ export const SwitchControl = <
   P extends FieldPath<T> = FieldPath<T>,
 >({
   labelOn,
+  labelOff,
   stringify,
   defaultValue,
   labelIcon,
@@ -49,21 +50,24 @@ export const SwitchControl = <
         control={control}
         name={props.name}
         defaultValue={defValue}
-        render={({ field: { onChange, value } }) => (
-          <Switch
-            {...props}
-            id={props.name}
-            data-testid={debeerify(props.name)}
-            label={labelOn}
-            aria-label={props.label}
-            isChecked={stringify ? value === "true" : value}
-            onChange={(e, checked) => {
-              const value = stringify ? checked.toString() : checked;
-              props.onChange?.(e, checked);
-              onChange(value);
-            }}
-          />
-        )}
+        render={({ field: { onChange, value } }) => {
+          const isChecked = stringify ? value === "true" : value;
+          return (
+            <Switch
+              {...props}
+              id={props.name}
+              data-testid={debeerify(props.name)}
+              label={isChecked ? labelOn : labelOff}
+              aria-label={props.label}
+              isChecked={isChecked}
+              onChange={(e, checked) => {
+                const value = stringify ? checked.toString() : checked;
+                props.onChange?.(e, checked);
+                onChange(value);
+              }}
+            />
+          );
+        }}
       />
     </FormLabel>
   );

@@ -1,6 +1,7 @@
 
 .keycloak__page_nav__nav {
-  --pf-v6-c-page-sidebar--Transition: all 50ms cubic-bezier(.42, 0, .58, 1);
+  --pf-v6-c-page__sidebar--TransitionDuration: 50ms;
+  --pf-v6-c-page__sidebar--TransitionTimingFunction: cubic-bezier(.42, 0, .58, 1);
   overflow: inherit;
   overflow-y: auto;
 }

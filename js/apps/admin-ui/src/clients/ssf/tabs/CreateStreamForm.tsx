@@ -254,7 +254,6 @@ const CreateStreamFormBody = ({
                     <CopyToClipboardButton
                       id="ssfCreateStreamAuthHeader"
                       text={field.value}
-                      label="ssfStreamPushAuthHeader"
                       variant="control"
                     />
                   </InputGroupItem>
