@@ -67,8 +67,7 @@ export const CopyToClipboardButton = ({
   return (
     <ClipboardCopyButton
       id={`copy-button-${id}`}
-      textId={label}
-      aria-label={t("copyToClipboard")}
+      aria-label={t(label)}
       onClick={() => copyToClipboard(text)}
       exitDelay={600}
       variant={variant}
