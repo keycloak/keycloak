@@ -36,6 +36,7 @@ export type CompositeRole = RoleRepresentation & {
 
 export type Row = {
   client?: ClientRepresentation;
+  org?: ClientRepresentation & { orgAlias?: string };
   role: RoleRepresentation | CompositeRole;
   id?: string; // KeycloakDataTable expects an id for the row
 };
@@ -65,11 +66,16 @@ export const mapRoles = (
       }))),
 ];
 
-export const ServiceRole = ({ role, client }: Row) => (
+export const ServiceRole = ({ role, client, org }: Row) => (
   <>
     {client?.clientId && (
       <Badge isRead className="keycloak-admin--role-mapping__client-name">
         {client.clientId}
+      </Badge>
+    )}
+    {org?.orgAlias && (
+      <Badge isRead className="keycloak-admin--role-mapping__client-name">
+        {org.orgAlias}
       </Badge>
     )}
     {role.name}
@@ -141,10 +147,18 @@ export const RoleMapping = ({
         })),
       )
       .flat();
+    const orgMapping = Object.entries(roles.organizationMappings || {})
+      .map(([orgAlias, orgRoles]) =>
+        (orgRoles as RoleRepresentation[]).map((role: RoleRepresentation) => ({
+          org: { orgAlias, id: orgAlias },
+          role,
+        })),
+      )
+      .flat();
 
     return [
       ...mapRoles(
-        [...clientMapping, ...realmRolesMapping],
+        [...clientMapping, ...realmRolesMapping, ...orgMapping],
         allEffectiveRoles,
         hide,
       ),
@@ -162,7 +176,47 @@ export const RoleMapping = ({
     },
     onConfirm: async () => {
       try {
-        await Promise.all(deleteMapping(adminClient, type, id, selected));
+        const cleanRole = (role: any) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { isInherited, ...clean } = role;
+          return clean;
+        };
+
+        const realmRoles = selected.filter(
+          (row) => row.client === undefined && !row.org,
+        );
+        const clientRoles = selected.filter((row) => row.client !== undefined);
+        const orgRoles = selected.filter((row) => row.org);
+
+        await Promise.all([
+          ...(realmRoles.length > 0
+            ? deleteMapping(
+                adminClient,
+                type,
+                id,
+                realmRoles.map((row) => ({
+                  ...row,
+                  role: cleanRole(row.role),
+                })),
+              )
+            : []),
+          ...clientRoles.map(
+            (row) =>
+              (groupsResource as any)?.delClientRoleMappings?.({
+                id,
+                clientUniqueId: row.client!.id!,
+                roles: [cleanRole(row.role)],
+              }) || Promise.resolve(),
+          ),
+          ...(orgRoles.length > 0 && groupsResource
+            ? [
+                (groupsResource as any).delOrganizationRoleMappings({
+                  id,
+                  roles: orgRoles.map((row) => cleanRole(row.role)),
+                }),
+              ]
+            : []),
+        ]);
         addAlert(t("roleMappingUpdatedSuccess"), AlertVariant.success);
         setSelected([]);
         refresh();

@@ -130,6 +130,7 @@ export const getMapping = async (
   return {
     clientMappings: roleMappings.clientMappings,
     realmMappings: roleMappings.realmMappings,
+    organizationMappings: roleMappings.organizationMappings,
   };
 };
 

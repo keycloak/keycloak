@@ -26,13 +26,13 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.infinispan.entities.CachedClientRole;
-import org.keycloak.models.cache.infinispan.entities.CachedRealmRole;
 import org.keycloak.models.cache.infinispan.entities.CachedRole;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.organization.OrganizationProvider;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -82,7 +82,7 @@ public class RoleAdapter implements RoleModel {
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getRoleDelegate().getRoleById(realm, cached.getId());
+        updated = getRoleModel();
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }
@@ -164,29 +164,25 @@ public class RoleAdapter implements RoleModel {
     }
 
     @Override
-    public boolean isClientRole() {
-        return cached instanceof CachedClientRole;
+    public Type getType() {
+        if (isUpdated()) return updated.getType();
+        return cached.getType();
     }
 
     @Override
     public String getContainerId() {
-        if (isClientRole()) {
-            CachedClientRole appRole = (CachedClientRole) cached;
-            return appRole.getClientId();
-        } else {
-            return realm.getId();
-        }
+        if (isUpdated()) return updated.getContainerId();
+        return cached.getContainerId();
     }
 
 
     @Override
     public RoleContainerModel getContainer() {
-        if (cached instanceof CachedRealmRole) {
-            return realm;
-        } else {
-            CachedClientRole appRole = (CachedClientRole) cached;
-            return realm.getClientById(appRole.getClientId());
-        }
+        return switch (getType()) {
+            case CLIENT -> realm.getClientById((cached.getContainerId()));
+            case ORGANIZATION -> getOrganizationContainer(cached.getContainerId());
+            case REALM -> realm;
+        };
     }
 
     @Override
@@ -245,6 +241,14 @@ public class RoleAdapter implements RoleModel {
 
     protected RoleModel getRoleModel() {
         return cacheSession.getRoleDelegate().getRoleById(realm, cached.getId());
+    }
+
+    private OrganizationModel getOrganizationContainer(String organizationId) {
+        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+        if (provider == null) return null;
+        OrganizationModel organization = provider.getById(organizationId);
+        if (organization == null || !realm.getId().equals(organization.getRealm().getId())) return null;
+        return organization;
     }
 
     @Override

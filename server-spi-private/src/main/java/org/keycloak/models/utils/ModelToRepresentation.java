@@ -239,14 +239,20 @@ public class ModelToRepresentation {
         Set<RoleModel> roles = group.getRoleMappingsStream().collect(Collectors.toSet());
         List<String> realmRoleNames = new ArrayList<>();
         Map<String, List<String>> clientRoleNames = new HashMap<>();
+        Map<String, List<String>> orgRoleNames = new HashMap<>();
         for (RoleModel role : roles) {
             if (role.getContainer() instanceof RealmModel) {
                 realmRoleNames.add(role.getName());
-            } else {
+            } else if (role.getContainer() instanceof ClientModel) {
                 ClientModel client = (ClientModel) role.getContainer();
                 String clientId = client.getClientId();
                 List<String> currentClientRoles = clientRoleNames.computeIfAbsent(clientId, k -> new ArrayList<>());
                 currentClientRoles.add(role.getName());
+            } else if (role.getContainer() instanceof OrganizationModel) {
+                OrganizationModel org = (OrganizationModel) role.getContainer();
+                String orgAlias = org.getAlias();
+                List<String> currentOrgRoles = orgRoleNames.computeIfAbsent(orgAlias, k -> new ArrayList<>());
+                currentOrgRoles.add(role.getName());
             }
         }
         rep.setRealmRoles(realmRoleNames);

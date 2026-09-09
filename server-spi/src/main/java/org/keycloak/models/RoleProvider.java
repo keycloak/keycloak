@@ -35,7 +35,9 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
      * @param realm Realm owning this role.
      * @param name String name of the role.
      * @return Model of the created role.
+     * @deprecated Use {@link #addRole(RoleContainerModel, String, String)} instead.
      */
+    @Deprecated
     default RoleModel addRealmRole(RealmModel realm, String name) {
         return addRealmRole(realm, null, name);
     }
@@ -48,7 +50,9 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
      * @return Model of the created client.
      * @throws IllegalArgumentException If {@code id} does not conform
      *   the format understood by the underlying store.
+     * @deprecated Use {@link #addRole(RoleContainerModel, String, String)} instead.
      */
+    @Deprecated
     RoleModel addRealmRole(RealmModel realm, String id, String name);
 
     /**
@@ -56,7 +60,9 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
      * Effectively the same as the call {@code getRealmRolesStream(realm, null, null)}.
      * @param realm Realm.
      * @return Stream of the roles. Never returns {@code null}.
+     * @deprecated Use {@link #getRolesStream(RoleContainerModel)} instead.
      */
+    @Deprecated
     default Stream<RoleModel> getRealmRolesStream(RealmModel realm) {
         return getRealmRolesStream(realm, null, null);
     }
@@ -67,7 +73,9 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
      * @param first First result to return. Ignored if negative or {@code null}.
      * @param max Maximum number of results to return. Ignored if negative or {@code null}.
      * @return Stream of the roles. Never returns {@code null}.
+     * @deprecated Use {@link #getRolesStream(RoleContainerModel, Integer, Integer)} instead.
      */
+    @Deprecated
     Stream<RoleModel> getRealmRolesStream(RealmModel realm, Integer first, Integer max);
 
     /**
@@ -115,7 +123,9 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
     /**
      * Removes all roles from the given realm.
      * @param realm Realm.
+     * @deprecated Use {@link #removeRoles(RoleContainerModel)} instead.
      */
+    @Deprecated
     void removeRoles(RealmModel realm);
 
     /**
@@ -124,7 +134,9 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
      * @param client Client owning this role.
      * @param name String name of the role.
      * @return Model of the created role.
+     * @deprecated Use {@link #addRole(RoleContainerModel, String, String)} instead.
      */
+    @Deprecated
     default RoleModel addClientRole(ClientModel client, String name) {
         return addClientRole(client, null, name);
     }
@@ -135,7 +147,9 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
      * @param id Internal ID of the client role or {@code null} if one is to be created by the underlying store.
      * @param name String name of the role.
      * @return Model of the created role.
+     * @deprecated Use {@link #addRole(RoleContainerModel, String, String)} instead.
      */
+    @Deprecated
     RoleModel addClientRole(ClientModel client, String id, String name);
 
     /**
@@ -143,7 +157,9 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
      * Effectively the same as the call {@code getClientRoles(client, null, null)}.
      * @param client Client.
      * @return Stream of the roles. Never returns {@code null}.
+     * @deprecated Use {@link #getRolesStream(RoleContainerModel)} instead.
      */
+    @Deprecated
     default Stream<RoleModel> getClientRolesStream(ClientModel client) {
         return getClientRolesStream(client, null, null);
     }
@@ -154,12 +170,73 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
      * @param first First result to return. Ignored if negative or {@code null}.
      * @param max Maximum number of results to return. Ignored if negative or {@code null}.
      * @return Stream of the roles. Never returns {@code null}.
+     * @deprecated Use {@link #getRolesStream(RoleContainerModel, Integer, Integer)} instead.
      */
+    @Deprecated
     Stream<RoleModel> getClientRolesStream(ClientModel client, Integer first, Integer max);
 
     /**
      * Removes all roles from the given client.
      * @param client Client.
+     * @deprecated Use {@link #removeRoles(RoleContainerModel)} instead.
      */
+    @Deprecated
     void removeRoles(ClientModel client);
+
+    /**
+     * Adds a role with an automatically generated internal ID.
+     *
+     * @param container the container owning this role.
+     * @param name Role name.
+     * @return Model of the created role.
+     */
+    default RoleModel addRole(RoleContainerModel container, String name) {
+        return addRole(container, null, name);
+    }
+
+    /**
+     * Adds a role with the given internal ID.
+     *
+     * @param container the container owning this role.
+     * @param id Internal ID, or {@code null} to let the store generate one.
+     * @param name Role name.
+     * @return Model of the created role.
+     */
+    RoleModel addRole(RoleContainerModel container, String id, String name);
+
+    /**
+     * Returns all roles owned by an {@code container}.
+     *
+     * @param container the container owning the roles.
+     * @return Stream of roles. Never returns {@code null}.
+     */
+    default Stream<RoleModel> getRolesStream(RoleContainerModel container) {
+        return getRolesStream(container, null, null);
+    }
+
+    /**
+     * Returns a page of roles owned by a {@code container}.
+     *
+     * @param container the container owning the roles.
+     * @param first Index of the first result. Ignored if negative or {@code null}.
+     * @param max Maximum number of results. Ignored if negative or {@code null}.
+     * @return Stream of roles. Never returns {@code null}.
+     */
+    Stream<RoleModel> getRolesStream(RoleContainerModel container, Integer first, Integer max);
+
+    /**
+     * Counts roles matching a name or description within a {@code container}.
+     *
+     * @param container Container owning the roles.
+     * @param search Case-insensitive substring to search for. Ignored if {@code null}.
+     * @return Number of matching roles.
+     */
+    long getRolesCount(RoleContainerModel container, String search);
+
+    /**
+     * Removes all roles owned by a {@code container}.
+     *
+     * @param container Container owning the roles.
+     */
+    void removeRoles(RoleContainerModel container);
 }

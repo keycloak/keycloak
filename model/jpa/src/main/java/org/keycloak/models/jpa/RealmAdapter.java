@@ -137,6 +137,11 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     }
 
     @Override
+    public RealmModel getRealm() {
+        return this;
+    }
+
+    @Override
     public void setName(String name) {
         realm.setName(name);
         em.flush();

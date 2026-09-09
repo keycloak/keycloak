@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 
 import org.keycloak.provider.ProviderEvent;
 
-public interface OrganizationModel {
+public interface OrganizationModel extends RoleContainerModel {
 
     String ORGANIZATION_ATTRIBUTE = "kc.org";
     String ORGANIZATION_SWITCHABLE_ATTRIBUTE = "kc.org.switchable";
@@ -100,6 +100,22 @@ public interface OrganizationModel {
         }
     }
 
+    RealmModel getRealm();
+
+    /**
+     * Returns the default role assigned to new members of this organization.
+     *
+     * @return the default organization role
+     */
+    RoleModel getDefaultRole();
+
+    /**
+     * Sets the default role assigned to new members of this organization.
+     *
+     * @param role the organization role to use as the default role
+     */
+    void setDefaultRole(RoleModel role);
+
     String getId();
 
     void setName(String name);
@@ -135,4 +151,8 @@ public interface OrganizationModel {
     boolean isManaged(UserModel user);
 
     boolean isMember(UserModel user);
+
+    default boolean isDefaultRole(RoleModel role) {
+        return getDefaultRole().equals(role);
+    }
 }

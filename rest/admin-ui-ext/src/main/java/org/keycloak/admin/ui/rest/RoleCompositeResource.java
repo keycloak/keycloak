@@ -54,13 +54,7 @@ public class RoleCompositeResource {
             )}
     )
     public RoleMappingRepresentation getCompositeRoleMappings(@PathParam("id") String id) {
-        RoleModel role = this.realm.getRoleById(id);
-        if (role == null) {
-            role = this.session.roles().getRoleById(this.realm, id);
-        }
-        if (role == null) {
-            throw new NotFoundException("Could not find role");
-        }
+        RoleModel role = getNonOrganizationRoleById(id);
 
         auth.roles().requireView(role);
 
@@ -87,7 +81,7 @@ public class RoleCompositeResource {
                     }
                     clientMapping.getMappings().add(roleRep);
                 }
-            } else {
+            } else if (compositeRole.isType(RoleModel.Type.REALM)) {
                 realmMappings.add(roleRep);
             }
         }
@@ -96,6 +90,15 @@ public class RoleCompositeResource {
                 realmMappings.isEmpty() ? null : realmMappings,
                 clientMappings.isEmpty() ? null : clientMappings
         );
+    }
+
+    private RoleModel getNonOrganizationRoleById(String id) {
+        RoleModel role = this.realm.getRoleById(id);
+        if (role == null) {
+            role = this.session.roles().getRoleById(this.realm, id);
+        }
+        if (role == null || role.isType(RoleModel.Type.ORGANIZATION)) throw new NotFoundException("Could not find role");
+        return role;
     }
 
     private RoleRepresentation toRoleRepresentation(RoleModel role) {

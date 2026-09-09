@@ -158,7 +158,8 @@ public abstract class AbstractClientRegistrationTest {
         public RealmBuilder configure(RealmBuilder realm) {
             realm.name(REALM_NAME)
                     .id(REALM_NAME)
-                    .loginWithEmailAllowed(true);
+                    .loginWithEmailAllowed(true)
+                    .organizationsEnabled(true);
 
             UserBuilder manageClientUser = UserBuilder.create()
                     .username("manage-clients")

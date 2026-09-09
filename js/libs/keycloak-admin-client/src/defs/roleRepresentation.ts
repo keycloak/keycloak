@@ -12,6 +12,7 @@ export default interface RoleRepresentation {
   clientRole?: boolean;
   containerId?: string;
   attributes?: { [index: string]: string[] };
+  access?: Record<string, boolean>;
 }
 
 export interface Composites {

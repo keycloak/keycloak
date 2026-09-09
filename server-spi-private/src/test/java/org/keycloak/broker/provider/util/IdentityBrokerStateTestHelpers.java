@@ -525,6 +525,11 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public RealmModel getRealm() {
+            return this;
+        }
+
+        @Override
         public RoleModel getRole(String name) {
             return null;
         }

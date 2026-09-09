@@ -20,6 +20,7 @@ import { UrlComponent } from "./UrlComponent";
 import { UserProfileAttributeListComponent } from "./UserProfileAttributeListComponent";
 import { IntComponent } from "./IntComponent";
 import { NumberComponent } from "./NumberComponent";
+import { OrganizationRoleComponent } from "./OrganizationRoleComponent";
 
 export type ComponentProps = Omit<ConfigPropertyRepresentation, "type"> & {
   isDisabled?: boolean;
@@ -42,6 +43,7 @@ type ComponentType =
   | "boolean"
   | "List"
   | "Role"
+  | "OrganizationRole"
   | "Script"
   | "Map"
   | "Group"
@@ -65,6 +67,7 @@ export const COMPONENTS: {
   Number: NumberComponent,
   List: ListComponent,
   Role: RoleComponent,
+  OrganizationRole: OrganizationRoleComponent,
   Script: ScriptComponent,
   Map: MapComponent,
   Group: GroupComponent,

@@ -297,7 +297,9 @@ Group attributes are stored separately from user attributes. To include group at
 
 == Assigning roles to groups
 
-Organization groups support realm and client role mappings, just like realm groups. This lets you define role-based access that applies to all members of a group.
+Organization groups support realm, client, and organization role mappings. This lets you define role-based access that applies to all members of a group.
+
+=== Assigning realm and client roles
 
 .Procedure
 
@@ -311,7 +313,22 @@ Roles assigned to organization groups are automatically included in `realm_acces
 
 To also include these roles within the `organization` claim (organized per organization), enable the *Add group role mappings* option on the *Organization Group Membership* mapper. See <<oidc-token-with-roles,Token structure with roles>> and <<saml-assertion-with-roles,SAML assertion structure with roles>> for details.
 
-NOTE: Assigning roles to organization groups requires the `manage-organizations` realm admin role (or equivalent Fine-Grained Admin Permission on the organization) and the `map-role` permission on the specific role being assigned.
+=== Assigning organization roles
+
+.Procedure
+
+. Select an organization group.
+. Click the *Role mapping* tab.
+. Click *Assign role*.
+. In the role selection dialog, make sure you're viewing *Organization roles*:
+  - Look for a filter or tab at the top of the dialog
+  - Select *Organization roles* to view only roles scoped to this organization (instead of realm or client roles)
+. Select one or more organization roles from the list.
+. Click *Assign*.
+
+Organization roles assigned to groups are automatically included in token claims for members of those groups. They appear in the `organization` claim structure, just like directly assigned organization roles.
+
+NOTE: Assigning organization roles to organization groups requires the `manage-organizations` realm admin role (or equivalent Fine-Grained Admin Permission on the organization) and the `map-role` permission on the specific role being assigned.
 
 == Important distinctions
 

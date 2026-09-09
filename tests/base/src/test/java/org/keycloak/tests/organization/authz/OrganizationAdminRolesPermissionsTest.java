@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.OrganizationRoleResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -32,6 +33,7 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
@@ -220,6 +222,22 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             // get org
             assertThat(manageOrgsResource.organizations().get(orgId).toRepresentation(), Matchers.notNullValue());
 
+            // manage organization roles through the same organization permission
+            RoleRepresentation organizationRole = new RoleRepresentation("manage-org-role", "before update", false);
+            String organizationRoleId;
+            try (Response response = manageOrgsResource.organizations().get(orgId).roles().create(organizationRole)) {
+                assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+                organizationRoleId = ApiUtil.getCreatedId(response);
+            }
+            OrganizationRoleResource organizationRoleResource = manageOrgsResource.organizations().get(orgId).roles().get(organizationRoleId);
+            assertThat(manageOrgsResource.organizations().get(orgId).roles().list().stream()
+                    .map(RoleRepresentation::getId).toList(), Matchers.hasItem(organizationRoleId));
+            RoleRepresentation updatedOrganizationRole = new RoleRepresentation("manage-org-role", "after update", false);
+            try (Response response = organizationRoleResource.update(updatedOrganizationRole)) {
+                assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
+            }
+            assertThat(organizationRoleResource.toRepresentation().getDescription(), equalTo("after update"));
+
             // update org
             try (Response response = manageOrgsResource.organizations().get(orgId).update(orgRep)) {
                 assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
@@ -245,6 +263,10 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
                 assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
             }
 
+            try (Response response = organizationRoleResource.remove()) {
+                assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
+            }
+
             // delete org
             try (Response response = manageOrgsResource.organizations().get(orgId).delete()) {
                 assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
@@ -258,6 +280,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
         OrganizationRepresentation orgRep = createRepresentation("testViewOrg", "testViewOrg.org");
         String orgId;
         String userId;
+        String organizationRoleId;
         try (
                 Keycloak realmAdminClient = adminClientFactory.create()
                         .realm(realm.getName()).username("realm-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
@@ -279,6 +302,12 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             try (Response response = realmAdminResource.organizations().get(orgId).members().addMember(userId)) {
                 assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
             }
+
+            RoleRepresentation organizationRole = new RoleRepresentation("view-org-role", "view-only", false);
+            try (Response response = realmAdminResource.organizations().get(orgId).roles().create(organizationRole)) {
+                assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+                organizationRoleId = ApiUtil.getCreatedId(response);
+            }
         }
 
         try (
@@ -290,6 +319,10 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             // org-level read operations should succeed
             assertThat(viewOrgsResource.organizations().search("testViewOrg"), Matchers.notNullValue());
             assertThat(viewOrgsResource.organizations().get(orgId).toRepresentation(), Matchers.notNullValue());
+            assertThat(viewOrgsResource.organizations().get(orgId).roles().list().stream()
+                    .map(RoleRepresentation::getId).toList(), Matchers.hasItem(organizationRoleId));
+            OrganizationRoleResource viewOnlyRole = viewOrgsResource.organizations().get(orgId).roles().get(organizationRoleId);
+            assertThat(viewOnlyRole.toRepresentation().getName(), equalTo("view-org-role"));
 
             // member listing should fail - view-organizations alone is not enough, requires user query permission
             try {
@@ -311,6 +344,16 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
                 assertThat(response.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
             }
             try (Response response = viewOrgsResource.organizations().get(orgId).delete()) {
+                assertThat(response.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
+            }
+            try (Response response = viewOrgsResource.organizations().get(orgId).roles()
+                    .create(new RoleRepresentation("forbidden-role", null, false))) {
+                assertThat(response.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
+            }
+            try (Response response = viewOnlyRole.update(new RoleRepresentation("view-org-role", "forbidden update", false))) {
+                assertThat(response.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
+            }
+            try (Response response = viewOnlyRole.remove()) {
                 assertThat(response.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
             }
         }
@@ -689,6 +732,16 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             // get specific org should fail - requires view-organizations
             try {
                 queryOrgsResource.organizations().get(orgId).toRepresentation();
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
+
+            // organization roles expose organization-scoped data and require view-organizations too
+            try {
+                queryOrgsResource.organizations().get(orgId).roles().list();
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
+            try {
+                queryOrgsResource.organizations().get(orgId).roles().count(null);
                 fail("Expected ForbiddenException");
             } catch (ForbiddenException expected) {}
 

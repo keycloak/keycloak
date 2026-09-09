@@ -16,6 +16,8 @@
  */
 package org.keycloak.services.resources.admin.fgap;
 
+import java.util.Map;
+
 import org.keycloak.models.OrganizationModel;
 
 public interface OrganizationPermissionEvaluator {
@@ -39,4 +41,8 @@ public interface OrganizationPermissionEvaluator {
     boolean canQuery();
 
     void requireQuery();
+
+    default Map<String, Boolean> getAccess(OrganizationModel organization) {
+        return Map.of("view", canView(organization), "manage", canManage(organization));
+    }
 }

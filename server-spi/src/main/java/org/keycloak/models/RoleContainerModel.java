@@ -65,4 +65,6 @@ public interface RoleContainerModel {
      */
     Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max);
 
+    RealmModel getRealm();
+
 }
