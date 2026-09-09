@@ -82,8 +82,9 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
             error.setError(getErrorCode(throwable));
             if (throwable instanceof ModelValidationException || throwable.getCause() instanceof ModelException) {
-                error.setErrorDescription(throwable.getMessage());
-            } if (throwable instanceof ModelDuplicateException) {
+                Throwable cause = throwable.getCause();
+                error.setErrorDescription(cause instanceof ModelException ? cause.getMessage() : throwable.getMessage());
+            } else if (throwable instanceof ModelDuplicateException) {
                 error.setErrorDescription(throwable.getMessage());
             } else if (throwable instanceof JsonProcessingException || throwable.getCause() instanceof JsonProcessingException) {
                 error.setErrorDescription("Cannot parse the JSON");
