@@ -52,7 +52,7 @@ public final class NamedJpaConnectionProviderFactory extends AbstractJpaConnecti
     }
 
     private static boolean isExplicitlyDisabled(String dsName) {
-        return "false".equals(Configuration.getConfigValue("quarkus.datasource.\"" + dsName + "\".active").getValue());
+        return "false".equalsIgnoreCase(Configuration.getConfigValue("quarkus.datasource.\"" + dsName + "\".active").getValue());
     }
 
     @Override
