@@ -300,16 +300,8 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
         }
 
         private String getTextById(String id) {
-            try {
-                WebElement errorElement = driver.findElement(By.id(id));
-                try {
-                    return errorElement.findElement(By.className("kc-feedback-text")).getText();
-                } catch (NoSuchElementException e) {
-                    return errorElement.getText();
-                }
-            } catch (NoSuchElementException e) {
-                return null;
-            }
+            String error = FieldErrorText.read(driver, id);
+            return error.isBlank() ? null : error;
         }
 
         public String getFirstNameError() {
