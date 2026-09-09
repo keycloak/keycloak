@@ -168,7 +168,9 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
         
         // Resend invitation
         try (Response response = organization.invitations().resend(invitationId)) {
-            assertThat(response.getStatus(), equalTo(204));
+            assertThat(response.getStatus(), equalTo(201));
+            assertThat(response.getLocation(), notNullValue());
+            assertThat(response.getLocation().getPath(), containsString("/organizations/" + organizationId + "/invitations/"));
         }
         
         // Verify invitation is still pending
@@ -180,7 +182,8 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
 
         invitations = organization.invitations().list();
         assertThat(invitations, hasSize(1));
-        assertThat(invitations.get(0).getId(), not(equalTo(invitationId)));
+        String newInvitationId = invitations.get(0).getId();
+        assertThat(newInvitationId, not(equalTo(invitationId)));
     }
 
     @Test
@@ -579,7 +582,9 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
     
     private void sendInvitationToOrganization(OrganizationResource org, String email, String firstName, String lastName) {
         try (Response response = org.members().inviteUser(email, firstName, lastName)) {
-            assertThat(response.getStatus(), equalTo(204));
+            assertThat(response.getStatus(), equalTo(201));
+            assertThat(response.getLocation(), notNullValue());
+            assertThat(response.getLocation().getPath(), containsString("/invitations/"));
         }
     }
 }
