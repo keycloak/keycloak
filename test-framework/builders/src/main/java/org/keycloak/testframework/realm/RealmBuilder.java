@@ -348,6 +348,11 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder actionTokenGeneratedByUserLifespan(int actionTokenGeneratedByUserLifespan) {
+        rep.setActionTokenGeneratedByUserLifespan(actionTokenGeneratedByUserLifespan);
+        return this;
+    }
+
     public RealmBuilder clientSessionIdleTimeout(Integer clientSessionIdleTimeout) {
         rep.setClientSessionIdleTimeout(clientSessionIdleTimeout);
         return this;
