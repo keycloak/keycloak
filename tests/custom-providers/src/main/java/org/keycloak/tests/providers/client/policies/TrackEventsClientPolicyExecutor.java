@@ -1,6 +1,7 @@
 package org.keycloak.tests.providers.client.policies;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.keycloak.Config;
@@ -10,6 +11,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.services.clientpolicy.context.admin.ClientProtocolMapperContext;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProviderFactory;
 
@@ -17,6 +19,7 @@ import org.jboss.logging.Logger;
 
 public class TrackEventsClientPolicyExecutor implements ClientPolicyExecutorProviderFactory, ClientPolicyExecutorProvider<TrackEventsClientPolicyExecutor.Configuration> {
     public static final String PROVIDER_ID = "track-events-client-policy-executor";
+    public static final String POLICY_ADJUSTED = "policy.adjusted";
 
     private static final Logger log = Logger.getLogger(TrackEventsClientPolicyExecutor.class);
     private static final TrackEventsClientPolicyExecutor SINGLETON = new TrackEventsClientPolicyExecutor();
@@ -26,17 +29,36 @@ public class TrackEventsClientPolicyExecutor implements ClientPolicyExecutorProv
         this.events = new ArrayList<>();
     }
 
+    public static TrackEventsClientPolicyExecutor getInstance() {
+        return SINGLETON;
+    }
+
     @Override
-    public void executeOnEvent(ClientPolicyContext context) {
+    public synchronized void executeOnEvent(ClientPolicyContext context) {
         log.warnf("Executor with type: %s", context.getEvent());
         events.add(context.getEvent());
+        if (context instanceof ClientProtocolMapperContext mapperContext
+                && mapperContext.getProposedProtocolMappers() != null) {
+            mapperContext.getProposedProtocolMappers().forEach(mapper -> {
+                if (mapper.getConfig() == null) {
+                    mapper.setConfig(new HashMap<>());
+                }
+                mapper.getConfig().put(POLICY_ADJUSTED, Boolean.TRUE.toString());
+            });
+        }
     }
 
-    public List<ClientPolicyEvent> getEvents() {
-        return events;
+    public synchronized List<ClientPolicyEvent> snapshotAndClear() {
+        List<ClientPolicyEvent> snapshot = List.copyOf(events);
+        events.clear();
+        return snapshot;
     }
 
-    public void clearEventResult() {
+    public synchronized List<ClientPolicyEvent> getEvents() {
+        return List.copyOf(events);
+    }
+
+    public synchronized void clearEventResult() {
         events.clear();
     }
 
