@@ -35,6 +35,8 @@ public class ClassLoaderTheme extends FileBasedTheme {
 
     private String name;
 
+    private String renderedName;
+
     private String parentName;
 
     private String importName;
@@ -52,11 +54,20 @@ public class ClassLoaderTheme extends FileBasedTheme {
     private Properties properties;
 
     public ClassLoaderTheme(String name, Type type, ClassLoader classLoader) throws IOException {
-        init(name, type, classLoader);
+        this(name, name, type, classLoader);
+    }
+
+    public ClassLoaderTheme(String name, String renderedName, Type type, ClassLoader classLoader) throws IOException {
+        init(name, renderedName, type, classLoader);
     }
 
     public void init(String name, Type type, ClassLoader classLoader) throws IOException {
+        init(name, name, type, classLoader);
+    }
+
+    public void init(String name, String renderedName, Type type, ClassLoader classLoader) throws IOException {
         this.name = name;
+        this.renderedName = renderedName == null ? name : renderedName;
         this.type = type;
         this.classLoader = classLoader;
 
@@ -83,6 +94,11 @@ public class ClassLoaderTheme extends FileBasedTheme {
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String getRenderedName() {
+        return renderedName;
     }
 
     @Override

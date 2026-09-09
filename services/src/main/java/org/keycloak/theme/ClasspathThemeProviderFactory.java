@@ -47,6 +47,7 @@ public class ClasspathThemeProviderFactory implements ThemeProviderFactory {
 
     public static class ThemeRepresentation {
         private String name;
+        private String renderedName;
         private String[] types;
 
         public String getName() {
@@ -55,6 +56,14 @@ public class ClasspathThemeProviderFactory implements ThemeProviderFactory {
 
         public void setName(String name) {
             this.name = name;
+        }
+
+        public String getRenderedName() {
+            return renderedName;
+        }
+
+        public void setRenderedName(String renderedName) {
+            this.renderedName = renderedName;
         }
 
         public String[] getTypes() {
@@ -116,7 +125,7 @@ public class ClasspathThemeProviderFactory implements ThemeProviderFactory {
                     if (!themes.containsKey(type)) {
                         themes.put(type, new HashMap<>());
                     }
-                    themes.get(type).put(themeRep.getName(), new ClassLoaderTheme(themeRep.getName(), type, classLoader));
+                    themes.get(type).put(themeRep.getName(), new ClassLoaderTheme(themeRep.getName(), themeRep.getRenderedName(), type, classLoader));
                 }
             }
         } catch (Exception e) {
