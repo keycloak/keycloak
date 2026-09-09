@@ -25,7 +25,6 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
-import org.openqa.selenium.Keys;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -59,7 +58,7 @@ public class RegisterPage extends AbstractLoginPage {
     @FindBy(name = "termsAccepted")
     private WebElement termsAcceptedInput;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
 
     @FindBy(linkText = "« Back to Login")
@@ -139,7 +138,7 @@ public class RegisterPage extends AbstractLoginPage {
             }
         }
 
-        submitButton.sendKeys(Keys.ENTER);
+        submitButton.click();
     }
 
     public String getFirstName() {
