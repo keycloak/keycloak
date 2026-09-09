@@ -186,19 +186,13 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
         RealmModel realm = session.getContext().getRealm();
         Permissions permissions = session.getContext().getPermissions();
 
-        // When FGAP is enabled, only the eq operator is supported for members.value filters. The callback
-        // verifies that the caller has VIEW permission on the specific user being matched. Other operators
-        // (ne, pr, gt, co, etc.) cannot be safely authorized through value comparison because they can match
-        // rows the caller is not permitted to see, so they silently return empty results for this path.
-        // This restriction only applies to the members.value/members paths; all other filter attributes are
-        // unaffected. When FGAP is disabled, all operators are allowed.
+        // Only the eq operator can be safely authorized through a per-user check; other operators (ne, pr,
+        // gt, co, etc.) cannot be tied to a single user, so they are instead gated on whether the caller can
+        // view users at all, regardless of whether FGAP is enabled.
         BiPredicate<String, String> authCheck = (path, value) -> {
             if ("members.value".equalsIgnoreCase(path) || "members".equalsIgnoreCase(path)) {
-                if (!realm.isAdminPermissionsEnabled()) {
-                    return true;
-                }
                 if (value == null) {
-                    return false;
+                    return permissions.hasPermission(AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
                 }
                 UserModel user = session.users().getUserById(realm, value);
                 return user != null && permissions.hasPermission(user, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
@@ -207,7 +201,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
         };
 
         // create filter predicate using the same query and root that will be used for execution
-        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, root, authCheck);
+        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, query, root, authCheck);
         predicates.add(evaluator.visit(filterContext).predicate());
 
         // apply realm restriction and group type restrictions
@@ -221,7 +215,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     }
 
     @Override
-    public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, Root<?> root, BiFunction<Class<?>, Supplier<Join<?, ?>>, Join<?, ?>> joinResolver) {
+    public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, CriteriaQuery<?> query, Root<?> root, BiFunction<Class<?>, Supplier<Join<?, ?>>, Join<?, ?>> joinResolver) {
         if ("members".equals(attribute.getName())) {
             Join<?, ?> join = joinResolver.apply(UserGroupMembershipEntity.class, () -> root.join(UserGroupMembershipEntity.class));
             join.on(cb.equal(root.get("id"), join.get("groupId")));

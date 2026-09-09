@@ -4,6 +4,7 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Root;
@@ -23,9 +24,10 @@ public interface ScimAttributeJpaExpressionResolver {
      *
      * @param attribute the SCIM attribute for which to resolve the JPA expression
      * @param cb the criteria builder
+     * @param query the criteria query being built, made available so implementations can create correlated subqueries (e.g. to exclude rows not otherwise reachable through a mapped association)
      * @param root the root of the query
      * @param joinResolver a function that resolves a join for a given class. If the join does not exist, the function should create it using the provided supplier
      * @return the expression corresponding to the given attribute
      */
-    Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, Root<?> root, BiFunction<Class<?>, Supplier<Join<?, ?>>, Join<?, ?>> joinResolver);
+    Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, CriteriaQuery<?> query, Root<?> root, BiFunction<Class<?>, Supplier<Join<?, ?>>, Join<?, ?>> joinResolver);
 }

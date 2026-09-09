@@ -8,6 +8,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Root;
@@ -85,7 +86,7 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
     }
 
     @Override
-    public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, Root<?> root,
+    public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, CriteriaQuery<?> query, Root<?> root,
             BiFunction<Class<?>, Supplier<Join<?, ?>>, Join<?, ?>> joinResolver) {
         if ("roles".equals(attribute.getName())) {
             Join<?, ?> join = joinResolver.apply(RoleEntity.class, () -> root.join(RoleEntity.class));

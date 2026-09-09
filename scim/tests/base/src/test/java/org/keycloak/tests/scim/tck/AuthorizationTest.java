@@ -10,6 +10,7 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -17,6 +18,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -1490,6 +1493,134 @@ public class AuthorizationTest extends AbstractScimTest {
         ClientRepresentation realmMgmt = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
         RoleRepresentation viewUserRole = realm.admin().clients().get(realmMgmt.getId()).roles().get(role).toRepresentation();
         realm.admin().users().get(serviceAccountUser.getId()).roles().clientLevel(realmMgmt.getId()).add(List.of(viewUserRole));
+    }
+
+    @Test
+    public void testGroupsValueFilterDoesNotLeakMembershipWhenCallerCannotViewGroups() {
+        // FGAP is disabled on the test realm — this exercises the legacy code path
+        GroupRepresentation secretGroup = createGroup("secret-group");
+        managedUser.admin().joinGroup(secretGroup.getId());
+
+        // Grant only query-users — no view-groups, no query-groups
+        grantAdminRole(AdminRoles.QUERY_USERS);
+
+        // A query-only client filtering by groups.value must not see users from a group it cannot view
+        ListResponse<User> response = noAccessClient.users().search("groups.value eq \"" + secretGroup.getId() + "\"");
+        assertEquals(0, response.getTotalResults(),
+                "query-users client must not infer group membership via groups.value filter when it lacks view-groups");
+
+        // non-eq operators must not bypass the group-view check either (legacy code path)
+        ListResponse<User> neResponse = noAccessClient.users().search("groups.value ne \"" + secretGroup.getId() + "\"");
+        assertEquals(0, neResponse.getTotalResults(),
+                "query-users client must not infer group membership via groups.value ne filter when it lacks view-groups");
+
+        ListResponse<User> prResponse = noAccessClient.users().search("groups.value pr");
+        assertEquals(0, prResponse.getTotalResults(),
+                "query-users client must not infer group membership via groups.value pr filter when it lacks view-groups");
+    }
+
+    @Test
+    public void testGroupsValueNonEqFilterAllowedForCallerWithGroupViewPermissionLegacy() {
+        // FGAP is disabled on the test realm — this exercises the legacy code path
+        GroupRepresentation group = createGroup("visible-group-legacy");
+        managedUser.admin().joinGroup(group.getId());
+
+        // view-users grants both the users query endpoint and group-view permission in legacy mode
+        // (GroupPermissions.canView() only accepts manage-users/view-users, not query-groups),
+        // so non-eq operators must still work for this caller
+        grantAdminRole(AdminRoles.VIEW_USERS);
+
+        ListResponse<User> neResponse = noAccessClient.users()
+                .search("groups.value ne \"" + KeycloakModelUtils.generateId() + "\"");
+        assertEquals(1, neResponse.getTotalResults());
+        assertEquals(managedUser.getId(), neResponse.getResources().get(0).getId());
+
+        ListResponse<User> prResponse = noAccessClient.users().search("groups.value pr");
+        assertEquals(1, prResponse.getTotalResults());
+        assertEquals(managedUser.getId(), prResponse.getResources().get(0).getId());
+    }
+
+    @Test
+    public void testMembersValueFilterDoesNotLeakUserMembershipWhenCallerCannotViewUsers() {
+        GroupRepresentation group = createGroup("member-filter-group");
+        managedUser.admin().joinGroup(group.getId());
+
+        // Grant only query-groups — no view-users, no manage-users
+        grantAdminRole(AdminRoles.QUERY_GROUPS);
+
+        ListResponse<Group> response = noAccessClient.groups().getAll(
+                "members.value eq \"" + managedUser.getId() + "\"");
+        assertEquals(0, response.getTotalResults(),
+                "query-groups client must not infer user membership via members.value filter when it lacks view-users");
+
+        // non-eq operators must not bypass the user-view check either (legacy code path)
+        ListResponse<Group> neResponse = noAccessClient.groups().getAll(
+                "members.value ne \"" + KeycloakModelUtils.generateId() + "\"");
+        assertEquals(0, neResponse.getTotalResults(),
+                "query-groups client must not infer user membership via members.value ne filter when it lacks view-users");
+
+        ListResponse<Group> prResponse = noAccessClient.groups().getAll("members.value pr");
+        assertEquals(0, prResponse.getTotalResults(),
+                "query-groups client must not infer user membership via members.value pr filter when it lacks view-users");
+    }
+
+    @Test
+    public void testMembersValueNonEqFilterAllowedForCallerWithUserViewPermissionLegacy() {
+        // FGAP is disabled on the test realm — this covers the regression where non-eq member
+        // filters were rejected outright even for callers with legitimate user-view permission
+        GroupRepresentation group = createGroup("member-filter-group-legacy");
+        managedUser.admin().joinGroup(group.getId());
+
+        // view-users grants both the groups list endpoint and user-view permission in legacy mode
+        // (UserPermissions.canView() only accepts manage-users/view-users, not query-users)
+        grantAdminRole(AdminRoles.VIEW_USERS);
+
+        ListResponse<Group> neResponse = noAccessClient.groups().getAll(
+                "members.value ne \"" + KeycloakModelUtils.generateId() + "\"");
+        assertEquals(1, neResponse.getTotalResults());
+        assertEquals(group.getId(), neResponse.getResources().get(0).getId());
+
+        ListResponse<Group> prResponse = noAccessClient.groups().getAll("members.value pr");
+        assertEquals(1, prResponse.getTotalResults());
+        assertEquals(group.getId(), prResponse.getResources().get(0).getId());
+    }
+
+    @Test
+    public void testGroupsValueNonEqFilterDoesNotLeakOrganizationGroupMembership() {
+        // FGAP is disabled on the test realm — this exercises the legacy code path.
+        // Organization group memberships are never exposed via the groups/groups.value paths
+        // (see AbstractUserModelSchema#getAttributeValue), so a user whose only membership is
+        // organizational must not match ne/pr filters, even for a fully authorized caller.
+        realm.updateWithCleanup(realm -> realm.organizationsEnabled(true));
+
+        OrganizationRepresentation orgRep = new OrganizationRepresentation();
+        String orgName = KeycloakModelUtils.generateId();
+        orgRep.setName(orgName);
+        orgRep.setAlias(orgName);
+        orgRep.addDomain(new OrganizationDomainRepresentation(orgName + ".org"));
+        try (Response response = realm.admin().organizations().create(orgRep)) {
+            orgRep.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(r -> r.organizations().get(orgRep.getId()).delete().close());
+
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+
+        // organization membership is itself a membership in the organization's internal group
+        try (Response response = orgResource.members().addMember(managedUser.getId())) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+        }
+
+        // grant full view-users permission — the caller is otherwise fully authorized to view groups
+        grantAdminRole(AdminRoles.VIEW_USERS);
+
+        ListResponse<User> prResponse = noAccessClient.users().search("groups.value pr");
+        assertEquals(0, prResponse.getTotalResults(),
+                "a user whose only membership is an organization group must not match groups.value pr");
+
+        ListResponse<User> neResponse = noAccessClient.users()
+                .search("groups.value ne \"" + KeycloakModelUtils.generateId() + "\"");
+        assertEquals(0, neResponse.getTotalResults(),
+                "a user whose only membership is an organization group must not match groups.value ne");
     }
 
     private void revokeAdminRole(String name) {

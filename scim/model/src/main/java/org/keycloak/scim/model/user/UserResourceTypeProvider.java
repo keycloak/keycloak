@@ -17,6 +17,7 @@ import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
@@ -29,6 +30,7 @@ import org.keycloak.models.Permissions;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.scim.filter.ScimFilterParser;
@@ -274,21 +276,18 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         Permissions permissions = session.getContext().getPermissions();
 
         // Organization groups are always excluded from groups.value/groups filter paths, consistent with
-        // the serialization boundary in AbstractUserModelSchema. When FGAP is enabled, only the eq operator
-        // is supported; other operators (ne, pr, gt, co, etc.) silently return empty results because they
-        // cannot be safely authorized through value comparison. When FGAP is disabled, non-eq operators are
-        // allowed but eq filters still reject organization groups.
+        // the serialization boundary in AbstractUserModelSchema. Only the eq operator can be safely
+        // authorized through a per-group check; other operators (ne, pr, gt, co, etc.) cannot be tied to a
+        // single group, so they are instead gated on whether the caller can view groups at all, regardless
+        // of whether FGAP is enabled.
         BiPredicate<String, String> authCheck = (path, value) -> {
             if ("groups.value".equalsIgnoreCase(path) || "groups".equalsIgnoreCase(path)) {
                 if (value == null) {
-                    return !realm.isAdminPermissionsEnabled();
+                    return permissions.hasPermission(AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
                 }
                 GroupModel group = session.groups().getGroupById(realm, value);
                 if (group == null || AbstractUserModelSchema.isOrganizationGroup(group)) {
                     return false;
-                }
-                if (!realm.isAdminPermissionsEnabled()) {
-                    return true;
                 }
                 return permissions.hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
             }
@@ -296,7 +295,7 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         };
 
         // create filter predicate using the same query and root that will be used for execution
-        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, root, authCheck);
+        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, query, root, authCheck);
         predicates.add(evaluator.visit(filterContext).predicate());
 
         // apply service account restriction
@@ -312,10 +311,27 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     }
 
     @Override
-    public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, Root<?> root, BiFunction<Class<?>, Supplier<Join<?, ?>>, Join<?, ?>> joinResolver) {
+    public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, CriteriaQuery<?> query, Root<?> root, BiFunction<Class<?>, Supplier<Join<?, ?>>, Join<?, ?>> joinResolver) {
         if ("groups".equals(attribute.getName())) {
             Join<?, ?> join = joinResolver.apply(UserGroupMembershipEntity.class, () -> root.join(UserGroupMembershipEntity.class));
-            join.on(cb.equal(root.get("id"), join.get("user").get("id")));
+
+            // Organization group memberships are never exposed through the groups/groups.value paths
+            // (see AbstractUserModelSchema#getAttributeValue), so they must also be excluded here;
+            // otherwise ne/pr/gt/etc. filters could match/leak on membership rows that are never
+            // returned in the resource representation. UserGroupMembershipEntity.groupId is a plain
+            // column (no mapped relation to GroupEntity); a second query root cannot be used here
+            // (Hibernate rejects multiple query roots), so a correlated subquery is used instead.
+            Subquery<Long> organizationGroupMembership = query.subquery(Long.class);
+            Root<GroupEntity> groupRoot = organizationGroupMembership.from(GroupEntity.class);
+            organizationGroupMembership.select(cb.literal(1L));
+            organizationGroupMembership.where(
+                    cb.equal(groupRoot.get("id"), join.get("groupId")),
+                    cb.equal(groupRoot.get("type"), GroupModel.Type.ORGANIZATION.intValue()));
+
+            Predicate existingOn = join.getOn();
+            Predicate restriction = cb.and(cb.equal(root.get("id"), join.get("user").get("id")),
+                    cb.not(cb.exists(organizationGroupMembership)));
+            join.on(existingOn != null ? cb.and(existingOn, restriction) : restriction);
             return join.get("groupId");
         }
         return null;
