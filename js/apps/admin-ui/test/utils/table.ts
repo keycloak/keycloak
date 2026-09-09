@@ -7,6 +7,24 @@ function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function getTableRowLink(tableBody: Locator, itemName: string): Locator {
+  const exactNameRegex = new RegExp(`^${escapeRegex(itemName)}$`, "i");
+
+  return tableBody
+    .getByRole("link", { name: itemName })
+    .or(tableBody.getByRole("link", { name: exactNameRegex }))
+    .or(
+      tableBody.getByTestId("provider-name-link").filter({ hasText: itemName }),
+    )
+    .or(
+      tableBody
+        .locator("tr")
+        .filter({ hasText: exactNameRegex })
+        .getByRole("link")
+        .first(),
+    );
+}
+
 export async function searchItem(
   page: Page,
   placeHolder: string,
@@ -30,11 +48,10 @@ export async function clickTableRowItem(page: Page, itemName: string) {
   const tableBody = page.locator("table tbody");
   await tableBody.waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
 
-  const exactNameRegex = new RegExp(`^${escapeRegex(itemName)}$`, "i");
-  const link = tableBody.getByRole("link", { name: exactNameRegex }).first();
+  const rowLink = getTableRowLink(tableBody, itemName);
 
-  await expect(link).toBeVisible({ timeout: TABLE_LOAD_TIMEOUT_MS });
-  await link.click();
+  await expect(rowLink.first()).toBeVisible({ timeout: TABLE_LOAD_TIMEOUT_MS });
+  await rowLink.first().click();
 }
 
 export function getRowByCellText(page: Page, cellText: string): Locator {
@@ -60,9 +77,10 @@ export async function assertRowExists(
   itemName: string,
   exist = true,
 ) {
+  await waitForLoadingComplete(page);
   const row = page.locator("table tbody").getByRole("row", { name: itemName });
   if (exist) {
-    await expect(row.first()).toBeVisible({ timeout: 15_000 });
+    await expect(row.first()).toBeVisible({ timeout: TABLE_LOAD_TIMEOUT_MS });
   } else {
     await expect(row).toHaveCount(0);
   }
