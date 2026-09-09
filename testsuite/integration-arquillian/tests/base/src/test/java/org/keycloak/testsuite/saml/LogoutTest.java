@@ -826,6 +826,37 @@ public class LogoutTest extends AbstractSamlTest {
         );
     }
 
+    /**
+     * https://github.com/keycloak/keycloak/issues/51371
+     *
+     * An unauthenticated LogoutRequest (no Keycloak session/identity cookie for the requesting
+     * browser) for a client that has no logout service URL configured for the binding used on
+     * the request must be rejected with a 400 INVALID_REQUEST, not fail with a 500. The "sales-post"
+     * client only has its POST single-logout-service URL configured (see {@link #setup()}), so a
+     * REDIRECT-bound logout request has no destination to send the LogoutResponse to.
+     */
+    @Test
+    public void testLogoutNoLogoutServiceUrlConfiguredForBindingReturnsBadRequest() throws IOException {
+        new SamlClientBuilder()
+          .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
+          .login().user(bburkeUser).build()
+          .processSamlResponse(POST)
+            .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
+            .build()
+
+          // Simulate an unauthenticated request: no identity cookie is sent with the LogoutRequest below.
+          .clearCookies()
+
+          .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, REDIRECT)
+            .nameId(nameIdRef::get)
+            .sessionIndex(sessionIndexRef::get)
+            .build()
+
+          .doNotFollowRedirects()
+          .assertResponse(LogoutTest::assertBadRequest)
+          .execute();
+    }
+
     private void testLogoutDestination(Binding binding, final Consumer<CreateLogoutRequestStepBuilder> logoutReqUpdater, Consumer<? super CloseableHttpResponse> responseTester) throws IOException {
         final RealmResource realm = adminClient.realm(REALM_NAME);
 
