@@ -59,6 +59,12 @@ public class ScimJPAPredicateEvaluator extends ScimFilterParserBaseVisitor<JPAFi
     @Override
     public JPAFilterResult visitAndExpression(ScimFilterParser.AndExpressionContext ctx) {
         if (ctx.AND() != null) {
+            if (parentPath != null) {
+                // AND inside a value path (e.g. groups[value eq "A" and value eq "B"]) requires all conditions to
+                // be satisfied by the same collection element; reject it for multivalued/non-complex attributes
+                // rather than silently evaluating each condition as an independent EXISTS subquery
+                predicateProvider.validateAndOperatorInValuePath(parentPath);
+            }
             JPAFilterResult left = visit(ctx.andExpression());
             JPAFilterResult right = visit(ctx.notExpression());
 
