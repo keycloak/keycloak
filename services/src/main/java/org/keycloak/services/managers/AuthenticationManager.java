@@ -544,6 +544,12 @@ public class AuthenticationManager {
     private static Response backchannelLogoutClientSession(KeycloakSession session, RealmModel realm,
             AuthenticatedClientSessionModel clientSession, AuthenticationSessionModel logoutAuthSession,
             UriInfo uriInfo, HttpHeaders headers) {
+        return backchannelLogoutClientSession(session, realm, clientSession, logoutAuthSession, uriInfo, headers, false);
+    }
+
+    private static Response backchannelLogoutClientSession(KeycloakSession session, RealmModel realm,
+            AuthenticatedClientSessionModel clientSession, AuthenticationSessionModel logoutAuthSession,
+            UriInfo uriInfo, HttpHeaders headers, boolean logoutAllUserSessions) {
         UserSessionModel userSession = clientSession.getUserSession();
         ClientModel client = clientSession.getClient();
 
@@ -575,7 +581,7 @@ public class AuthenticationManager {
                     .setHttpHeaders(headers)
                     .setUriInfo(uriInfo);
 
-            Response clientSessionLogout = protocol.backchannelLogout(userSession, clientSession);
+            Response clientSessionLogout = protocol.backchannelLogout(userSession, clientSession, logoutAllUserSessions);
 
             setClientLogoutAction(logoutAuthSession, client.getId(), AuthenticationSessionModel.Action.LOGGED_OUT);
 
@@ -708,6 +714,25 @@ public class AuthenticationManager {
                 .forEach(userSession ->
                                 backchannelLogoutUserSessionFromClient(session, realm, userSession, client, uriInfo, headers)
                         );
+    }
+
+    /**
+     * Sends one sid-less backchannel logout token per unique client across the given user sessions. Per the OIDC
+     * Back-Channel Logout spec a token without {@code sid} terminates all of the user's sessions at the RP, so one
+     * token per client suffices. Each visited client session is marked {@link Action#LOGGED_OUT} so a later
+     * {@link #backchannelLogout} pass does not notify the same client again.
+     */
+    public static void backchannelLogoutUserClientsOnce(KeycloakSession session, RealmModel realm,
+            List<UserSessionModel> userSessions, UriInfo uriInfo, HttpHeaders headers) {
+        Set<String> notifiedClients = new HashSet<>();
+        for (UserSessionModel userSession : userSessions) {
+            for (AuthenticatedClientSessionModel clientSession : userSession.getAuthenticatedClientSessions().values()) {
+                if (notifiedClients.add(clientSession.getClient().getId())) {
+                    backchannelLogoutClientSession(session, realm, clientSession, null, uriInfo, headers, true);
+                }
+                clientSession.setAction(Action.LOGGED_OUT.name());
+            }
+        }
     }
 
     public static Response browserLogout(KeycloakSession session,
