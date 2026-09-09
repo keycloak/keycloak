@@ -131,7 +131,6 @@ export class Groups extends Resource<{ realm?: string }> {
       path: "/{parentId}/children",
       urlParamKeys: ["parentId"],
       queryParamKeys: ["search", "first", "max", "briefRepresentation"],
-      catchNotFound: true,
     },
   );
 
@@ -146,7 +145,6 @@ export class Groups extends Resource<{ realm?: string }> {
     method: "GET",
     path: "/{id}/members",
     urlParamKeys: ["id"],
-    catchNotFound: true,
   });
 
   /**
