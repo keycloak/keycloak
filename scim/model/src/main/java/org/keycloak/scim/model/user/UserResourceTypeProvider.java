@@ -5,18 +5,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
@@ -296,7 +294,7 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         };
 
         // create filter predicate using the same query and root that will be used for execution
-        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, root, authCheck);
+        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, query, root, authCheck);
         predicates.add(evaluator.visit(filterContext).predicate());
 
         // apply service account restriction
@@ -312,11 +310,11 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     }
 
     @Override
-    public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, Root<?> root, BiFunction<Class<?>, Supplier<Join<?, ?>>, Join<?, ?>> joinResolver) {
+    public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, Root<?> root, Subquery<?> subquery) {
         if ("groups".equals(attribute.getName())) {
-            Join<?, ?> join = joinResolver.apply(UserGroupMembershipEntity.class, () -> root.join(UserGroupMembershipEntity.class));
-            join.on(cb.equal(root.get("id"), join.get("user").get("id")));
-            return join.get("groupId");
+            Root<UserGroupMembershipEntity> membership = subquery.from(UserGroupMembershipEntity.class);
+            subquery.where(cb.equal(membership.get("user").get("id"), root.get("id")));
+            return membership.get("groupId");
         }
         return null;
     }

@@ -2,18 +2,17 @@ package org.keycloak.scim.model.filter;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiPredicate;
-import java.util.function.Supplier;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 import org.keycloak.common.util.TriFunction;
 import org.keycloak.scim.filter.ScimFilterException;
@@ -24,8 +23,13 @@ import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
 import org.jboss.logging.Logger;
 
 /**
- * Creates JPA predicates for SCIM filter operators. Handles both direct root entity fields and custom attributes stored
- * in an associated "attributes" collection. Also handles necessary type conversions for temporal fields.
+ * Creates JPA predicates for SCIM filter operators. Handles both direct root entity fields and collection-backed
+ * attributes - custom attributes stored in an associated "attributes" collection, and resource-specific relations
+ * such as groups/members/roles resolved via {@link ScimAttributeJpaExpressionResolver}. Collection-backed attributes
+ * are evaluated using a correlated {@code EXISTS} subquery rather than a shared {@code JOIN}, so that conjunction
+ * across independent values and negation are evaluated per-resource rather than per-joined-row (see
+ * <a href="https://github.com/keycloak/keycloak/issues/51805">#51805</a>). Also handles necessary type conversions
+ * for temporal fields.
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
@@ -36,6 +40,7 @@ public class ScimJPAPredicateProvider {
     private final ScimResourceTypeProvider resourceTypeProvider;
     private final List<ModelSchema<?, ?>> schemas;
     private final CriteriaBuilder cb;
+    private final CriteriaQuery<?> query;
     private final Root<?> root;
     private final BiPredicate<String, String> filterAuthorizationCheck;
 
@@ -53,18 +58,16 @@ public class ScimJPAPredicateProvider {
             "ew", (cb, exp, val) -> cb.like(exp.as(String.class), "%" + escapeLike(val.toString()), '\\')
     );
 
-    // cache joins to avoid creating duplicate joins for the same filter
-    private Map<String, Join<?, ?>> attributeJoin = new HashMap<>();
-
-    public ScimJPAPredicateProvider(ScimResourceTypeProvider resourceTypeProvider, List<ModelSchema<?, ?>> schemas, CriteriaBuilder cb, Root<?> root) {
-        this(resourceTypeProvider, schemas, cb, root, null);
+    public ScimJPAPredicateProvider(ScimResourceTypeProvider resourceTypeProvider, List<ModelSchema<?, ?>> schemas, CriteriaBuilder cb, CriteriaQuery<?> query, Root<?> root) {
+        this(resourceTypeProvider, schemas, cb, query, root, null);
     }
 
-    public ScimJPAPredicateProvider(ScimResourceTypeProvider resourceTypeProvider, List<ModelSchema<?, ?>> schemas, CriteriaBuilder cb, Root<?> root,
+    public ScimJPAPredicateProvider(ScimResourceTypeProvider resourceTypeProvider, List<ModelSchema<?, ?>> schemas, CriteriaBuilder cb, CriteriaQuery<?> query, Root<?> root,
                                     BiPredicate<String, String> filterAuthorizationCheck) {
         this.resourceTypeProvider = resourceTypeProvider;
         this.schemas = schemas;
         this.cb = cb;
+        this.query = query;
         this.root = root;
         this.filterAuthorizationCheck = filterAuthorizationCheck;
     }
@@ -135,9 +138,15 @@ public class ScimJPAPredicateProvider {
     }
 
     /**
-     * Build a JPA predicate for the given attribute, operator, and value. This method handles both direct fields (primary attributes) and custom attributes
-     * stored in the "attributes" collection. For direct fields, it applies the operator directly to the root entity field. For custom attributes, it creates a join
-     * to the "attributes" collection, adds a condition to match the attribute name, and then applies the operator to the "value" field of the joined entity.
+     * Build a JPA predicate for the given attribute, operator, and value. Direct fields on the root entity are compared
+     * in place. Collection-backed attributes - custom attributes stored in the "attributes" collection, or a
+     * resource-specific relation resolved via {@link ScimAttributeJpaExpressionResolver} (e.g. groups/members/roles) -
+     * are compared using a correlated {@code EXISTS} subquery, so that each attribute-path comparison is evaluated as
+     * an independent existence check against the resource, rather than against a single shared joined row. This
+     * matters for two SCIM filtering scenarios that a plain {@code JOIN} cannot express correctly: conjunction across
+     * independent values of the same multivalued attribute (each side must be allowed to match a different value/row),
+     * and negation (a {@code NOT} must apply to the resource as a whole, including resources with no values at all,
+     * not to a single joined row).
      *
      * @param attrInfo the attribute metadata to determine how to build the predicate
      * @param operation the comparison operator (eq, ne, gt, ge, lt, le, co, sw, ew)
@@ -145,47 +154,78 @@ public class ScimJPAPredicateProvider {
      * @return the JPA {@link Predicate} representing the comparison for the given attribute, operator, and value
      */
     private Predicate getAttributePredicate(Attribute<?,?> attrInfo, String operation, Object value) {
-        Expression<?> expression = null;
-        Predicate basePredicate = null;
         String modelAttributeName = attrInfo.getModelAttributeName();
 
+        Expression<?> directExpression = null;
         try {
-            expression = root.get(modelAttributeName);
+            directExpression = root.get(modelAttributeName);
         } catch (IllegalArgumentException ignore) {
-            // not a primary attribute - continue to check for custom attribute
+            // not a primary attribute - continue to check for a collection-backed attribute
         }
 
-        if (expression == null) {
-            if (resourceTypeProvider instanceof ScimAttributeJpaExpressionResolver mapper) {
-                expression = mapper.getAttributeExpression(attrInfo, cb, root, (aClass, joinSupplier) -> getOrCreateAttributeJoin(aClass.getName(), joinSupplier));
+        if (directExpression != null) {
+            return buildOperatorPredicate(directExpression, attrInfo, operation, value);
+        }
+
+        Subquery<Long> subquery = query.subquery(Long.class);
+        subquery.select(cb.literal(1L));
+
+        Expression<?> expression = null;
+        Predicate correlation = null;
+
+        if (resourceTypeProvider instanceof ScimAttributeJpaExpressionResolver mapper) {
+            // resolver implementations correlate their relation entity to "root" (the enclosing query's root, not a
+            // correlated root) via subquery.where(...); read that restriction back so it can be combined with the
+            // operator predicate below
+            expression = mapper.getAttributeExpression(attrInfo, cb, root, subquery);
+            if (expression != null && subquery.getRoots().isEmpty()) {
+                // the resolver returned a computed expression against the outer root directly (e.g. a derived
+                // field) rather than joining a relation collection into the subquery - no existential
+                // quantification is needed, so evaluate it as a plain predicate on the enclosing query
+                return buildOperatorPredicate(expression, attrInfo, operation, value);
+            }
+            correlation = subquery.getRestriction();
+            if (expression != null && correlation == null) {
+                // the resolver joined a relation collection into the subquery but never correlated it back to
+                // "root" via subquery.where(...) - left uncorrelated, the EXISTS below would silently match
+                // every resource instead of just the ones related to it, reintroducing the exact bug this
+                // subquery-based approach is meant to fix
+                throw new IllegalStateException(
+                        "ScimAttributeJpaExpressionResolver for attribute '" + attrInfo.getName()
+                                + "' joined a relation collection but did not correlate it to the enclosing query");
             }
         }
 
         if (expression == null) {
-            Join<?, ?> join = getOrCreateAttributeJoin("attributes", createAttributesJoinSupplier());
+            Join<?, ?> join = subquery.correlate(root).join("attributes");
             expression = join.get("value");
-            basePredicate = cb.equal(join.get("name"), modelAttributeName);
+            correlation = cb.equal(join.get("name"), modelAttributeName);
         }
 
+        Predicate operatorPredicate = buildOperatorPredicate(expression, attrInfo, operation, value);
+        subquery.where(correlation != null ? cb.and(correlation, operatorPredicate) : operatorPredicate);
+
+        return cb.exists(subquery);
+    }
+
+    /**
+     * Apply case-folding (if applicable) and the comparison operator to the given expression.
+     *
+     * @param expression the expression to compare (a direct root field, or a collection element within a subquery)
+     * @param attrInfo the attribute metadata to determine case sensitivity
+     * @param operation the comparison operator (eq, ne, gt, ge, lt, le, co, sw, ew)
+     * @param value the value to compare against, already normalized to the correct type
+     * @return the JPA {@link Predicate} representing the comparison
+     */
+    @SuppressWarnings("unchecked")
+    private Predicate buildOperatorPredicate(Expression<?> expression, Attribute<?,?> attrInfo, String operation, Object value) {
         if (value instanceof String && (attrInfo.isStoredLowerCase() || !attrInfo.isCaseExact())) {
             value = value.toString().toLowerCase();
             if (!attrInfo.isStoredLowerCase()) {
                 expression = cb.lower((Expression<String>) expression);
             }
         }
-
-        Predicate predicate = operatorMap.get(operation).apply(cb, expression, value);
-        return (basePredicate != null) ? cb.and(basePredicate, predicate) : predicate;
-    }
-
-    /**
-     * Helper method to get or create a join to the "attributes" collection. This method checks if the join has already been created
-     * and cached in the {@code attributeJoin} field.
-     *
-     * @return the existing or newly created join to the "attributes" collection
-     */
-    private Join<?, ?> getOrCreateAttributeJoin(String type, Supplier<Join<?, ?>> joinFactory) {
-        return attributeJoin.computeIfAbsent(type, k -> joinFactory.get());
+        return operatorMap.get(operation).apply(cb, expression, value);
     }
 
     /**
@@ -312,9 +352,5 @@ public class ScimJPAPredicateProvider {
         return value.replace("\\", "\\\\")
                 .replace("%", "\\%")
                 .replace("_", "\\_");
-    }
-
-    private Supplier<Join<?, ?>> createAttributesJoinSupplier() {
-        return () -> root.join("attributes", JoinType.LEFT);
     }
 }
