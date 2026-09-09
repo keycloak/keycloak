@@ -50,6 +50,10 @@ public class AdminEventBuilder {
     protected static final Logger logger = Logger.getLogger(AdminEventBuilder.class);
     protected final AdminAuth auth;
     protected final String ipAddress;
+    /**
+     * Realm associated with emitting the admin event.
+     * Not necessarily the affected realm or auth realm.
+     */
     protected final RealmModel realm;
     protected final AdminEvent adminEvent;
     protected final Map<String, EventListenerProvider> listeners;

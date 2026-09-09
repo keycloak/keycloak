@@ -152,19 +152,23 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
             sb.append("operationType=");
             sanitize(sb, adminEvent.getOperationType().toString());
             sb.append(", realmId=");
-            sanitize(sb, adminEvent.getAuthDetails().getRealmId());
+            sanitize(sb, adminEvent.getRealmId());
             sb.append(", realmName=");
-            sanitize(sb, adminEvent.getAuthDetails().getRealmName());
-            sb.append(", clientId=");
-            sanitize(sb, adminEvent.getAuthDetails().getClientId());
-            sb.append(", userId=");
-            sanitize(sb, adminEvent.getAuthDetails().getUserId());
-            sb.append(", ipAddress=");
-            sanitize(sb, adminEvent.getAuthDetails().getIpAddress());
+            sanitize(sb, adminEvent.getRealmName());
             sb.append(", resourceType=");
             sanitize(sb, adminEvent.getResourceTypeAsString());
             sb.append(", resourcePath=");
             sanitize(sb, adminEvent.getResourcePath());
+            sb.append(", authRealmId=");
+            sanitize(sb, adminEvent.getAuthDetails().getRealmId());
+            sb.append(", authRealmName=");
+            sanitize(sb, adminEvent.getAuthDetails().getRealmName());
+            sb.append(", authClientId=");
+            sanitize(sb, adminEvent.getAuthDetails().getClientId());
+            sb.append(", authUserId=");
+            sanitize(sb, adminEvent.getAuthDetails().getUserId());
+            sb.append(", authIpAddress=");
+            sanitize(sb, adminEvent.getAuthDetails().getIpAddress());
 
             if (adminEvent.getError() != null) {
                 sb.append(", error=");
