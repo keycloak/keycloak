@@ -356,11 +356,7 @@ export default function EditUser() {
         isEnabled={user.enabled}
       />
 
-      <PageSection
-        variant="light"
-        className="pf-v5-u-p-0"
-        data-testid="tab-content-ready"
-      >
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <UserProfileProvider>
           <FormProvider {...form}>
             <RoutableTabs

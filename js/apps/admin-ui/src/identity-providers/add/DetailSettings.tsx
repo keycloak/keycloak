@@ -25,7 +25,7 @@ import {
   Text,
   ToolbarItem,
 } from "@patternfly/react-core";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Controller,
   FormProvider,
@@ -34,7 +34,7 @@ import {
   useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
@@ -304,7 +304,6 @@ export default function DetailSettings() {
 
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
-  const location = useLocation();
   const { realm, realmRepresentation } = useRealm();
   const [key, setKey] = useState(0);
   const refresh = () => setKey((current) => current + 1);
@@ -353,12 +352,6 @@ export default function DetailSettings() {
   const organizationsTab = useTab("organizations");
   const permissionsTab = useTab("permissions");
   const eventsTab = useTab("events");
-
-  useEffect(() => {
-    if (location.pathname.endsWith("/mappers")) {
-      refresh();
-    }
-  }, [location.pathname]);
 
   const save = async (savedProvider?: IdentityProviderRepresentation) => {
     const p = savedProvider || getValues();

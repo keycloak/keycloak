@@ -140,7 +140,7 @@ export default function WorkflowsSection() {
                   label={t("enabled")}
                   labelOff={t("disabled")}
                   isChecked={workflow.enabled ?? true}
-                  isDisabled={togglingWorkflowId === workflow.id}
+                  isDisabled={togglingWorkflowId !== undefined}
                   aria-busy={togglingWorkflowId === workflow.id}
                   onChange={() => toggleEnabled(workflow)}
                 />

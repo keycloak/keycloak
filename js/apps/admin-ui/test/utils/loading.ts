@@ -5,9 +5,6 @@ const LOADING_APPEAR_TIMEOUT_MS = 2_000;
 
 /**
  * Waits until no loading spinners are present in the scope.
- * Does not wait on `table-ready` — that marker is only on KeycloakDataTable and
- * can disappear during reload while still briefly visible (race). Use
- * `waitForTableReady` when you know a KeycloakDataTable must be idle.
  */
 export async function waitForLoadingComplete(
   page: Page,
@@ -18,40 +15,6 @@ export async function waitForLoadingComplete(
   const spinner = root.getByTestId("loading-spinner");
 
   await expect.poll(async () => await spinner.count(), { timeout }).toBe(0);
-}
-
-/**
- * Waits for a visible KeycloakDataTable `table-ready` marker and spinner absence.
- * Use only on pages that render KeycloakDataTable, not DraggableTable or static tables.
- */
-export async function waitForTableReady(
-  page: Page,
-  scope?: Locator,
-  timeout = LOADING_TIMEOUT_MS,
-): Promise<void> {
-  const root = scope ?? page;
-  const tableReady = root.locator("[data-testid='table-ready']");
-  const spinner = root.getByTestId("loading-spinner");
-
-  await expect
-    .poll(
-      async () => {
-        if ((await spinner.count()) > 0) {
-          return false;
-        }
-
-        const readyCount = await tableReady.count();
-        for (let index = 0; index < readyCount; index++) {
-          if (await tableReady.nth(index).isVisible()) {
-            return true;
-          }
-        }
-
-        return false;
-      },
-      { timeout },
-    )
-    .toBe(true);
 }
 
 /**

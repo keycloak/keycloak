@@ -119,32 +119,8 @@ export async function clickDefaultSwitchPolicy(page: Page, policyName: string) {
 export async function assertSwitchPolicyChecked(
   page: Page,
   policyName: string,
-  checked = true,
 ) {
-  if (checked) {
-    await expect(getEnabledSwitch(page, policyName)).toBeChecked();
-  } else {
-    await expect(getEnabledSwitch(page, policyName)).not.toBeChecked();
-  }
-}
-
-export async function assertDefaultSwitchPolicyChecked(
-  page: Page,
-  policyName: string,
-  checked = true,
-) {
-  if (checked) {
-    await expect(getDefaultSwitch(page, policyName)).toBeChecked();
-  } else {
-    await expect(getDefaultSwitch(page, policyName)).not.toBeChecked();
-  }
-}
-
-export async function assertSwitchPolicyEnabled(
-  page: Page,
-  policyName: string,
-) {
-  await expect(getEnabledSwitch(page, policyName)).toBeEnabled();
+  await expect(getEnabledSwitch(page, policyName)).toBeChecked();
 }
 
 export async function assertDefaultSwitchPolicyEnabled(
@@ -185,10 +161,7 @@ export async function dragExecutionAboveExecution(
     .filter({ hasText: targetExecution })
     .first();
   const getDragHandle = (row: Locator) =>
-    row
-      .locator("[data-testid^='drag-handle-']")
-      .first()
-      .or(row.getByRole("button", { name: /draggable row/i }).first());
+    row.locator("[data-testid^='drag-handle-']").first();
   const sourceHandle = getDragHandle(sourceRow);
   const targetHandle = getDragHandle(targetRow);
 

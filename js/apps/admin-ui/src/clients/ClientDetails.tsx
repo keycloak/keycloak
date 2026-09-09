@@ -474,11 +474,7 @@ export default function ClientDetails() {
           />
         )}
       />
-      <PageSection
-        variant="light"
-        className="pf-v5-u-p-0"
-        data-testid="tab-content-ready"
-      >
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <FormProvider {...form}>
           <RoutableTabs
             data-testid="client-tabs"

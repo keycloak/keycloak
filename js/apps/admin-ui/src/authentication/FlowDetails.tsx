@@ -60,7 +60,7 @@ export default function FlowDetails() {
   const { id, usedBy, builtIn } = useParams<FlowParams>();
   const navigate = useNavigate();
   const [key, setKey] = useState(0);
-  const refresh = () => setKey(new Date().getTime());
+  const refresh = () => setKey((current) => current + 1);
 
   const [tableView, setTableView] = useState(true);
   const [flow, setFlow] = useState<AuthenticationFlowRepresentation>();

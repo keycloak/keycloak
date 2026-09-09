@@ -264,11 +264,6 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
       }
       save();
     },
-    onCancel: () => {
-      if (selectedType) {
-        setValue(KEYS_MAPPING[selectedType].name, "true");
-      }
-    },
   });
 
   const regenerateKey = selectedType
