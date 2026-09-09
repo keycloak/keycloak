@@ -10,6 +10,8 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.ssf.stream.DeliveryMethod;
+import org.keycloak.ssf.stream.DeliveryMethodFamily;
 import org.keycloak.ssf.transmitter.delivery.poll.PollDeliveryService;
 import org.keycloak.ssf.transmitter.delivery.poll.PollErrorRepresentation;
 import org.keycloak.ssf.transmitter.delivery.poll.PollRequest;
@@ -17,6 +19,7 @@ import org.keycloak.ssf.transmitter.delivery.poll.PollResponse;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.support.SsfActivityTracker;
 import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -126,9 +129,23 @@ public class SsfStreamPollResource {
             return streamNotFound();
         }
 
+        // 4. Only POLL-family streams have a poll endpoint. The URL is
+        //    deterministic, so a PUSH receiver could otherwise POST it,
+        //    read an (empty) POLL outbox and get POLL-only state such as
+        //    lastPollCompletedAt stamped onto its PUSH stream. The
+        //    caller is the authenticated stream owner, so a clear 400
+        //    is fine here — the 404 enumeration guard above is about
+        //    other clients' streams.
+        if (!isPollDelivery(stream)) {
+            log.debugf("SSF poll denied: stream does not use poll delivery. clientId=%s streamId=%s method=%s",
+                    callerClient.getClientId(), streamId,
+                    stream.getDelivery() == null ? null : stream.getDelivery().getMethod());
+            return invalidRequest("Stream does not use poll delivery");
+        }
+
         PollRequest body = request != null ? request : new PollRequest();
 
-        // 4. Cap the batch size of ack and setErrs at MAX_BATCH_CAP
+        // 5. Cap the batch size of ack and setErrs at MAX_BATCH_CAP
         //    (1000 each). Bounds the request payload + the
         //    per-(client, jti) IN-clause query that follows. Receivers
         //    that need to ack/NACK more than the cap split into
@@ -143,7 +160,34 @@ public class SsfStreamPollResource {
         }
 
         PollResponse response = pollDeliveryService.poll(callerClient, body);
+
+        // 6. Record the poll as completed — after all transmitter-side
+        //    work (ack / NACK / outbox read) is done, success path only —
+        //    so the admin console can show when this receiver last
+        //    polled. Kept inside the request transaction on purpose:
+        //    stamping from a response-completion hook would need a
+        //    second transaction per poll and lose atomicity with the
+        //    outbox row transitions. Write-coalesced — see
+        //    SsfActivityTracker.
+        SsfActivityTracker.stampPollCompleted(callerClient);
+
         return Response.ok(response).build();
+    }
+
+    /**
+     * {@code true} when the stream's delivery method resolves to the
+     * {@link DeliveryMethodFamily#POLL POLL} family (RFC 8936 or legacy
+     * RISC POLL). Missing or unknown methods count as not-poll.
+     */
+    protected boolean isPollDelivery(StreamConfig stream) {
+        if (stream.getDelivery() == null || stream.getDelivery().getMethod() == null) {
+            return false;
+        }
+        try {
+            return DeliveryMethod.valueOfUri(stream.getDelivery().getMethod()).family() == DeliveryMethodFamily.POLL;
+        } catch (IllegalArgumentException unknownMethod) {
+            return false;
+        }
     }
 
     protected Response invalidRequest(String message) {

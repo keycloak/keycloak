@@ -85,6 +85,7 @@ export type SsfClientStream = {
   createdAt?: number;
   updatedAt?: number;
   lastVerifiedAt?: number;
+  lastPollCompletedAt?: number;
   managedBy?: SsfStreamManagedBy;
 };
 
@@ -510,6 +511,34 @@ export const StreamTab = ({
                   }
                 />
               </FormGroup>
+              {/* Only POLL streams poll — a push receiver never hits
+                the poll endpoint, so an always-empty "Last poll" field
+                would just confuse operators. */}
+              {isPollDeliveryMethod(clientStream.delivery?.method) && (
+                <FormGroup
+                  label={t("ssfStreamLastPollCompletedAt")}
+                  fieldId="ssfStreamLastPollCompletedAt"
+                  labelIcon={
+                    <HelpItem
+                      helpText={t("ssfStreamLastPollCompletedAtHelp")}
+                      fieldLabelId="ssfStreamLastPollCompletedAt"
+                    />
+                  }
+                >
+                  <TextInput
+                    id="ssfStreamLastPollCompletedAt"
+                    data-testid="ssfStreamLastPollCompletedAt"
+                    readOnlyVariant="default"
+                    value={
+                      clientStream.lastPollCompletedAt
+                        ? formatDate(
+                            new Date(clientStream.lastPollCompletedAt * 1000),
+                          )
+                        : t("ssfStreamLastPollCompletedAtNever")
+                    }
+                  />
+                </FormGroup>
+              )}
               <FormGroup
                 label={t("ssfStreamAudience")}
                 fieldId="ssfStreamAudienceCurrent"
