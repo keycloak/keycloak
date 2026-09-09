@@ -35,7 +35,15 @@ import org.jboss.logging.Logger;
  * Utility class for validating client host values against a client's registered URLs.
  * Used to prevent SSRF attacks by ensuring that dynamic host values (like client_session_host)
  * only reference hosts that are already configured and trusted for the client.
- * Resolves [CVE-2026-4874] Server-Side Request Forgery via OIDC token endpoint
+ * <p>
+ * The trust model is: an administrator configures a client policy with the
+ * {@code secure-client-node-hostname} executor, which gates the {@code register-node} write
+ * endpoint against an admin-curated regex allowlist. Hostnames that pass that gate are stored
+ * in {@code registeredNodes}. This utility therefore treats {@code registeredNodes} as a
+ * pre-validated set and uses it (together with the management URL) as the source of allowed
+ * hosts for dynamic values such as {@code client_session_host}.
+ * <p>
+ * Resolves [CVE-2026-4874] Server-Side Request Forgery via OIDC token endpoint.
  */
 public class ClientHostUtils {
 
@@ -43,14 +51,17 @@ public class ClientHostUtils {
 
     /**
      * Validates that a hostname matches one of the client's registered nodes
-     * or the  management URL/Admin URL.
-     * This validation prevents SSRF attacks by ensuring that
-     * [1] only hostnames within the Management/Admin URL can be used.
-     * [2] hostnames matching registered clustered nodes can be used.
-     * @param hostname the hostname to validate
-     * @param client the client model containing registered URLs
-     * @param session the Keycloak session for URL resolution
-     * @return true if the hostname matches a registered client URL, false otherwise
+     * or the host component of the administrator-configured management URL.
+     * <p>
+     * Registered nodes are trusted here; if the {@code secure-client-node-hostname}
+     * executor is active, hostnames will have been validated at registration time.
+     * Without that executor, any hostname may be present.
+     *
+     * @param hostname the hostname (or {@code host:port}) to validate
+     * @param client   the client model containing registered nodes and management URL
+     * @param session  the Keycloak session used for relative URL resolution
+     * @return {@code true} if the hostname matches a registered node or the management URL host,
+     *         {@code false} otherwise
      */
     public static boolean isHostAllowedForClient(String hostname, ClientModel client, KeycloakSession session) {
         if (hostname == null || hostname.trim().isEmpty()) {
@@ -64,10 +75,9 @@ public class ClientHostUtils {
         // Extract just the hostname (strip port if present)
         String bareHostname = extractHostname(hostname);
 
-        // Extract hostname from the list of managed hosts (if any)
-        List<String> allowedHosts = extractHostsFromClientManagedHosts(client, hostname);
-
-        // Extract allowed hosts from managed/admin URL
+        // Start with hosts from registered cluster nodes (pre-validated by the executor allowlist
+        // at registration time) and add the host from the management URL as a fallback.
+        List<String> allowedHosts = extractHostsFromRegisteredNodes(client);
         addHostFromUrl(client.getManagementUrl(), client, session, allowedHosts);
 
         // Check if the hostname matches any allowed host (case-insensitive)
@@ -115,15 +125,15 @@ public class ClientHostUtils {
         }
     }
 
-    private static List<String> extractHostsFromClientManagedHosts(ClientModel client, String hostname) {
+    /**
+     * Returns the hostnames of all registered cluster nodes for the client.
+     * These are considered pre-validated because they were accepted through the
+     * {@code secure-client-node-hostname} executor allowlist at registration time.
+     */
+    private static List<String> extractHostsFromRegisteredNodes(ClientModel client) {
         List<String> allowedHosts = new ArrayList<>();
-        if (hostname == null || hostname.trim().isEmpty()) {
-            return allowedHosts;
-        }
         Optional.ofNullable(client.getRegisteredNodes())
-                .ifPresent(nodes -> nodes.forEach((host, timestamp) -> {
-                    allowedHosts.add(host);
-                }));
+                .ifPresent(nodes -> nodes.keySet().forEach(allowedHosts::add));
         return allowedHosts;
     }
 }

@@ -77,11 +77,13 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientUnregisterContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdatedContext;
 import org.keycloak.services.clientpolicy.context.AdminClientViewContext;
+import org.keycloak.services.clientpolicy.context.ClientNodeRegistrationContext;
 import org.keycloak.services.clientpolicy.context.ClientSecretRotationContext;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
@@ -664,6 +666,7 @@ public class ClientResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
     @Operation( summary = "Register a cluster node with the client Manually register cluster node to this client - usually it’s not needed to call this directly as adapter should handle by sending registration request to Keycloak")
     @APIResponse(responseCode = "204", description = "No Content")
+    @APIResponse(responseCode = "400", description = "Bad Request - node hostname is missing, contains reserved characters, or is rejected by client policy")
     public void registerNode(Map<String, String> formParams) {
         auth.clients().requireConfigure(client);
 
@@ -673,6 +676,14 @@ public class ClientResource {
         }
 
         ReservedCharValidator.validate(node);
+
+        try {
+            session.clientPolicy().triggerOnEvent(
+                    new ClientNodeRegistrationContext(client, node,
+                            ClientPolicyEvent.REGISTER_NODE));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
 
         logger.debugf("Register node: %s", node);
         client.registerNode(node, Time.currentTime());

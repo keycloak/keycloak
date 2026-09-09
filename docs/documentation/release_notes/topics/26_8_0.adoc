@@ -9,6 +9,18 @@ As part of ongoing secure-by-default improvements to impersonation, token lifecy
 
 Additionally, tokens issued from impersonation sessions now include the `act` (actor) claim (https://datatracker.ietf.org/doc/html/rfc8693#section-4.1[RFC 8693 Section 4.1]) in both access tokens and ID tokens. This allows downstream resource servers to identify the impersonator for audit purposes. The claim is always present and cannot be disabled.
 
+== Secure client cluster node registration
+
+A new client policy executor, `secure-client-node-hostname`, is available to protect against server-side request forgery (SSRF) via the legacy adapter cluster node registration endpoint (`/clients-management/register-node`).
+A confidential client could previously register an attacker-chosen hostname, which {project_name} would later use as the destination for management callbacks such as logout propagation and push-revocation.
+
+When the executor is attached to a client policy, node hostnames are validated against an administrator-configured list of regex patterns before being persisted. Registrations that do not match any pattern are rejected.
+
+*This protection is opt-in and must be explicitly configured to take effect.*
+
+Administrators managing deployments that use the legacy adapter node registration feature should add the `secure-client-node-hostname` executor to a client policy and configure the allowed hostname patterns.
+Hostname patterns match against bare hostnames only; port suffixes and bare IPv6 addresses (without brackets) are rejected at the point of registration.
+
 = Administration
 
 == Client Secret Rotation (supported)
