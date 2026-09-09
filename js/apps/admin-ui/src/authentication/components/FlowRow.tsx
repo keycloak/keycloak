@@ -66,11 +66,7 @@ export const FlowRow = ({
 
   return (
     <>
-      <Draggable
-        key={`draggable-${execution.id}`}
-        hasNoWrapper
-        data-testid={`drag-handle-${execution.id}`}
-      >
+      <Draggable key={`draggable-${execution.id}`} hasNoWrapper>
         <TreeRowWrapper
           row={{ props: treeRow.props }}
           className="keycloak__authentication__flow-row"
@@ -79,6 +75,7 @@ export const FlowRow = ({
             draggableRow={{
               id: execution.id!,
             }}
+            data-testid={`drag-handle-${execution.id}`}
           />
           <Td treeRow={treeRow}>
             <FlowTitle

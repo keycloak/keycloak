@@ -2,26 +2,9 @@ import { type Locator, type Page, expect } from "@playwright/test";
 import { waitForLoadingComplete, waitForLoadingCycle } from "./loading.ts";
 
 const TABLE_LOAD_TIMEOUT_MS = 15_000;
-const ROW_CLICK_ATTEMPTS = 8;
-const ROW_LINK_TIMEOUT_MS = 2_000;
 
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-async function clickLinkWhenAvailable(link: Locator): Promise<boolean> {
-  const candidate = link.first();
-  if ((await candidate.count()) === 0) {
-    return false;
-  }
-
-  try {
-    await candidate.waitFor({ state: "visible", timeout: ROW_LINK_TIMEOUT_MS });
-    await candidate.click({ timeout: ROW_LINK_TIMEOUT_MS });
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 export async function searchItem(
@@ -48,48 +31,10 @@ export async function clickTableRowItem(page: Page, itemName: string) {
   await tableBody.waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
 
   const exactNameRegex = new RegExp(`^${escapeRegex(itemName)}$`, "i");
+  const link = tableBody.getByRole("link", { name: exactNameRegex }).first();
 
-  for (let attempt = 0; attempt < ROW_CLICK_ATTEMPTS; attempt++) {
-    if (attempt > 0) {
-      await waitForLoadingComplete(page);
-    }
-    if (
-      await clickLinkWhenAvailable(
-        tableBody.getByRole("link", { name: itemName, exact: true }),
-      )
-    ) {
-      return;
-    }
-
-    if (
-      await clickLinkWhenAvailable(
-        tableBody.getByRole("link", { name: exactNameRegex }),
-      )
-    ) {
-      return;
-    }
-
-    if (
-      await clickLinkWhenAvailable(
-        tableBody
-          .locator("tr")
-          .filter({ has: page.getByRole("link", { name: exactNameRegex }) })
-          .getByRole("link", { name: exactNameRegex }),
-      )
-    ) {
-      return;
-    }
-
-    if (
-      await clickLinkWhenAvailable(
-        tableBody.getByRole("link", { name: itemName }),
-      )
-    ) {
-      return;
-    }
-  }
-
-  throw new Error(`Table row item "${itemName}" not found`);
+  await expect(link).toBeVisible({ timeout: TABLE_LOAD_TIMEOUT_MS });
+  await link.click();
 }
 
 export function getRowByCellText(page: Page, cellText: string): Locator {
@@ -134,6 +79,7 @@ export async function clickTableToolbarItem(
   itemName: string,
   kebab = false,
 ) {
+  await waitForLoadingComplete(page);
   const toolbar = page.getByTestId("table-toolbar");
   if (kebab) {
     await toolbar.getByTestId("kebab").click();
@@ -153,7 +99,10 @@ export async function clickTableToolbarItem(
     .getByRole("button", { name: itemName, exact: true })
     .or(toolbar.getByRole("link", { name: itemName, exact: true }))
     .first();
-  await exactToolbarItem.waitFor({ state: "visible", timeout: 2_000 });
+  await exactToolbarItem.waitFor({
+    state: "visible",
+    timeout: TABLE_LOAD_TIMEOUT_MS,
+  });
   await exactToolbarItem.click();
 }
 
