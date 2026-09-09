@@ -246,7 +246,11 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, Root<?> root, Subquery<?> subquery) {
         if ("members".equals(attribute.getName())) {
             Root<UserGroupMembershipEntity> membership = subquery.from(UserGroupMembershipEntity.class);
-            subquery.where(cb.equal(membership.get("groupId"), root.get("id")));
+            // Service accounts are not exposed as SCIM group members, so exclude them from all member
+            // filters (eq, ne, pr, ...) to keep the filter path consistent with member serialization.
+            subquery.where(cb.and(
+                    cb.equal(membership.get("groupId"), root.get("id")),
+                    cb.isNull(membership.get("user").get("serviceAccountClientLink"))));
             return membership.get("user").get("id");
         }
         return null;
