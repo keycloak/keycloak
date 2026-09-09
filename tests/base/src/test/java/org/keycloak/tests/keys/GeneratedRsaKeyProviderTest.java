@@ -19,6 +19,7 @@ package org.keycloak.tests.keys;
 
 import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
+import java.util.Date;
 
 import jakarta.ws.rs.core.Response;
 
@@ -41,10 +42,13 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.utils.StringUtil;
 
+import org.apache.commons.lang3.time.DateUtils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -233,6 +237,175 @@ public class GeneratedRsaKeyProviderTest {
         Response response = realm.admin().components().add(rep);
         String expectedKeySizesDisplay = StringUtil.joinValuesWithLogicalCondition("or", Arrays.asList(cryptoHelper.getExpectedSupportedRsaKeySizes()));
         assertErrror(response, "'Key size' should be " + expectedKeySizesDisplay);
+    }
+
+    // testing custom validity periods
+
+    @Test
+    public void createSigWithCustomValidityDate() {
+        createKeyWithCustomValidityDate(GeneratedRsaKeyProviderFactory.ID, KeyUse.SIG);
+    }
+
+    @Test
+    public void createEncWithCustomValidityDate() {
+        createKeyWithCustomValidityDate(GeneratedRsaEncKeyProviderFactory.ID, KeyUse.ENC);
+    }
+
+    private void createKeyWithCustomValidityDate(String providerId, KeyUse keyUse) {
+        long priority = System.currentTimeMillis();
+
+        Response response = createKeyProviderComponentWithCustomValidityDate(priority, providerId, "10");
+        String id = ApiUtil.getCreatedId(response);
+        realm.cleanup().add(r -> r.components().component(id).remove());
+
+        ComponentRepresentation createdRep = realm.admin().components().component(id).toRepresentation();
+        assertEquals("10", createdRep.getConfig().getFirst("numberDaysValid"));
+
+        KeysMetadataRepresentation keys = realm.admin().keys().getKeyMetadata();
+
+        KeysMetadataRepresentation.KeyMetadataRepresentation key = keys.getKeys().get(0);
+
+        assertNotNull(key);
+        assertEquals(id, key.getProviderId());
+        assertEquals(AlgorithmType.RSA.name(), key.getType());
+        assertEquals(priority, key.getProviderPriority());
+
+        Date certNotAfter = PemUtils.decodeCertificate(key.getCertificate()).getNotAfter();
+
+        Long validTo = key.getValidTo();
+        assertNotNull(validTo);
+        assertEquals(certNotAfter.getTime(), validTo.longValue());
+
+        Date now = new Date();
+        Date lowerBound = DateUtils.addDays(now, 9);
+        Date upperBound = DateUtils.addDays(now, 11);
+        assertTrue(certNotAfter.after(lowerBound) && certNotAfter.before(upperBound));
+        Date validToDate = new Date(validTo);
+        assertTrue(validToDate.after(lowerBound) && validToDate.before(upperBound));
+
+        assertEquals(keyUse, key.getUse());
+    }
+
+
+    private void createKeyProviderInvalidCustomDate(String providerId, String validDaysInput) {
+        long priority = System.currentTimeMillis();
+
+        Response response = createKeyProviderComponentWithCustomValidityDate(priority, providerId, validDaysInput);
+        try (response) {
+            assertEquals(400, response.getStatus());
+        }
+    }
+
+    @Test
+    public void createKeyWithInvalidNonNumberValidityDateForSig() {
+        createKeyProviderInvalidCustomDate(GeneratedRsaKeyProviderFactory.ID, "non_number_string");
+    }
+
+    @Test
+    public void createKeyWithInvalidNonNumberValidityDateForEnc() {
+        createKeyProviderInvalidCustomDate(GeneratedRsaEncKeyProviderFactory.ID, "non_number_string");
+    }
+
+    @Test
+    public void createKeyWithInvalidNonPositiveValidityDateForSig() {
+        createKeyProviderInvalidCustomDate(GeneratedRsaKeyProviderFactory.ID, "-1");
+        createKeyProviderInvalidCustomDate(GeneratedRsaKeyProviderFactory.ID, "0");
+    }
+
+    @Test
+    public void createKeyWithInvalidNonPositiveValidityDateForEnc() {
+        createKeyProviderInvalidCustomDate(GeneratedRsaEncKeyProviderFactory.ID, "-1");
+        createKeyProviderInvalidCustomDate(GeneratedRsaEncKeyProviderFactory.ID, "0");
+    }
+
+    @Test
+    public void regenerateOnValidityDecreaseForSig() {
+        regenerateOnValidityDecrease(GeneratedRsaKeyProviderFactory.ID, KeyUse.SIG);
+    }
+
+    @Test
+    public void regenerateOnValidityDecreaseForEnc() {
+        regenerateOnValidityDecrease(GeneratedRsaEncKeyProviderFactory.ID, KeyUse.ENC);
+    }
+
+    private void regenerateOnValidityDecrease(String providerId, KeyUse keyUse) {
+        // test updating key validity with regeneration to smaller value
+        long priority = System.currentTimeMillis();
+
+        Response response = createKeyProviderComponentWithCustomValidityDate(priority, providerId, "100");
+        String id = ApiUtil.getCreatedId(response);
+        realm.cleanup().add(r -> r.components().component(id).remove());
+
+        KeysMetadataRepresentation.KeyMetadataRepresentation key100 = realm.admin().keys().getKeyMetadata().getKeys().get(0);
+
+        ComponentRepresentation createdRep = realm.admin().components().component(id).toRepresentation();
+        createdRep.getConfig().putSingle("numberDaysValid", String.valueOf(10));
+        realm.admin().components().component(id).update(createdRep);
+
+        KeysMetadataRepresentation.KeyMetadataRepresentation key10 = realm.admin().keys().getKeyMetadata().getKeys().get(0);
+
+        assertNotNull(key10);
+        assertNotNull(key100);
+        assertEquals(id, key10.getProviderId());
+        assertEquals(id, key100.getProviderId());
+
+        // check if new key has been generated
+        assertNotEquals(key10.getKid(), key100.getKid());
+
+        assertTrue(key100.getValidTo() > key10.getValidTo());
+        assertEquals(keyUse, key10.getUse());
+        assertEquals(keyUse, key100.getUse());
+    }
+
+    @Test
+    public void noRegenerateOnValidityIncreaseForSig() {
+        noRegenerateOnValidityIncrease(GeneratedRsaKeyProviderFactory.ID, KeyUse.SIG);
+    }
+
+
+    @Test
+    public void noRegenerateOnValidityIncreaseForEnc() {
+        noRegenerateOnValidityIncrease(GeneratedRsaEncKeyProviderFactory.ID, KeyUse.ENC);
+    }
+
+
+    private void noRegenerateOnValidityIncrease(String providerId, KeyUse keyUse) {
+        // test no regeneration on updating to larger validity period
+        long priority = System.currentTimeMillis();
+
+        Response response = createKeyProviderComponentWithCustomValidityDate(priority, providerId, "100");
+        String id = ApiUtil.getCreatedId(response);
+        realm.cleanup().add(r -> r.components().component(id).remove());
+
+        KeysMetadataRepresentation.KeyMetadataRepresentation key100 = realm.admin().keys().getKeyMetadata().getKeys().get(0);
+
+        ComponentRepresentation createdRep = realm.admin().components().component(id).toRepresentation();
+        createdRep.getConfig().putSingle("numberDaysValid", String.valueOf(200));
+        realm.admin().components().component(id).update(createdRep);
+
+        KeysMetadataRepresentation.KeyMetadataRepresentation key200 = realm.admin().keys().getKeyMetadata().getKeys().get(0);
+
+        assertNotNull(key200);
+        assertNotNull(key100);
+        assertEquals(id, key200.getProviderId());
+        assertEquals(id, key100.getProviderId());
+
+        // check if new key has been generated
+        assertEquals(key200.getKid(), key100.getKid());
+
+        assertEquals(key100.getValidTo(), key200.getValidTo());
+        assertEquals(keyUse, key200.getUse());
+        assertEquals(keyUse, key100.getUse());
+    }
+
+    private Response createKeyProviderComponentWithCustomValidityDate(long priority, String providerId, String validityDateInput) {
+        // make priority the current time
+        // this makes sure the provider gets the highest priority
+        ComponentRepresentation rep = createRep("customValidityDate", providerId);
+        rep.getConfig().putSingle("priority", Long.toString(priority));
+        rep.getConfig().putSingle("numberDaysValid", validityDateInput);
+
+        return realm.admin().components().add(rep);
     }
 
     protected void assertErrror(Response response, String error) {
