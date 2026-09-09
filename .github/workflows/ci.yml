@@ -685,7 +685,7 @@ jobs:
       - id: azure-init
         name: Initialize Azure environment
         run: |
-          AZURE_REGION=westeurope
+          AZURE_REGION=uksouth
           echo "AZURE Region: ${AZURE_REGION}"
 
           AZURE_CLUSTER_NAME="gh-action-$(git rev-parse --short HEAD)-${{ github.run_id }}-${{ github.run_attempt }}"

@@ -17,10 +17,7 @@ VM_SIZE="Standard_D2s_v5"
 IMAGE="Ubuntu2404"
 
 if [[ "$ACTION" == "create" ]]; then
-  # Pin Azure CLI to 2.82.0 (azure-core 1.38.0+ causes JSON parsing errors with az vm create)
-  sudo apt-get install -y -q --allow-downgrades azure-cli=2.82.0-1~noble
-
-  # 1. Resource group (created via idempotent command)
+  # 1. Resource group
   az group create --name "$CLUSTER" --location "$REGION"
 
   # 2. SSH key
@@ -28,45 +25,25 @@ if [[ "$ACTION" == "create" ]]; then
     ssh-keygen -t rsa -b 2048 -f "${SSH_KEY}" -N ""
   fi
 
-  # 3. Network security group
-  az network nsg create --resource-group "$CLUSTER" --name "$CLUSTER-nsg"
-  az network nsg rule create --resource-group "$CLUSTER" --nsg-name "$CLUSTER-nsg" --name Allow-SSH --protocol Tcp --priority 1000 --destination-port-range 22 --access Allow --direction Inbound
-
-  # 4. Public IP
-  az network public-ip create --resource-group "$CLUSTER" --name "$CLUSTER-pip" --allocation-method Static
-
-  # 5. Virtual network
-  az network vnet create --resource-group "$CLUSTER" --name "$CLUSTER-vnet" --address-prefix 10.0.0.0/16
-
-  # 6. Subnet
-  az network vnet subnet create --resource-group "$CLUSTER" --vnet-name "$CLUSTER-vnet" --name "$CLUSTER-subnet" --address-prefix 10.0.0.0/24
-
-  # 7. Network interface
-  az network nic create --resource-group "$CLUSTER" --name "$CLUSTER-nic" --vnet-name "$CLUSTER-vnet" --subnet "$CLUSTER-subnet" --network-security-group "$CLUSTER-nsg" --public-ip-address "$CLUSTER-pip"
-
-  # 8. VM
-  az vm create \
+  # 3. VM (networking resources are created automatically)
+  VM_IP=$(az vm create \
     --resource-group "$CLUSTER" \
     --name "$CLUSTER-vm" \
-    --nics "$CLUSTER-nic" \
     --image "$IMAGE" \
     --size "$VM_SIZE" \
     --admin-username "$ADMIN_USER" \
     --ssh-key-values "${SSH_KEY}.pub" \
     --authentication-type ssh \
-    --no-wait
+    --public-ip-address-allocation static \
+    --query publicIpAddress -o tsv)
 
-  # 9. Wait for VM IP
-  az vm wait --created --resource-group "$CLUSTER" --name "$CLUSTER-vm"
-  VM_IP=$(az network public-ip show --resource-group "$CLUSTER" --name "$CLUSTER-pip" --query ipAddress -o tsv)
-
-  # 10. Wait for SSH
+  # 4. Wait for SSH
   for i in {1..30}; do
     if nc -z "$VM_IP" 22; then break; fi
     sleep 5
   done
 
-  # 11. Create inventory file with both host and group
+  # 5. Create inventory file
   cat > "${CLUSTER}_${REGION}_inventory.yml" <<EOF
 all:
   hosts:
