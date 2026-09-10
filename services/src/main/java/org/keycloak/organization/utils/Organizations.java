@@ -22,7 +22,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 
 import jakarta.ws.rs.ForbiddenException;
@@ -131,7 +130,7 @@ public class Organizations {
     }
 
     public static void stripOrganizationId(IdentityProviderRepresentation representation) {
-        representation.setOrganizationIds(Set.of());
+        representation.setOrganizationLinks(null);
         if (representation.getConfig() != null) {
             representation.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
         }

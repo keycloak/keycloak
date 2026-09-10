@@ -164,6 +164,20 @@ public interface OrganizationProvider extends Provider {
     boolean addMember(OrganizationModel organization, UserModel user);
 
     /**
+     * Updates the membership type of an existing member of the given {@link OrganizationModel}.
+     *
+     * <p>Returns {@code true} if the member exists and the operation was handled successfully,
+     * including the idempotent case where the membership type is already the requested value.
+     * Returns {@code false} only if the user is not a member of the organization.
+     *
+     * @param organization the organization
+     * @param member the member
+     * @param membershipType the new membership type
+     * @return {@code true} if the member exists and the operation succeeded. Otherwise, returns {@code false}
+     */
+    boolean updateMembershipType(OrganizationModel organization, UserModel member, MembershipType membershipType);
+
+    /**
      * Returns the members of a given {@link OrganizationModel} filtered according to the specified parameters.
      *
      * @param organization the organization
@@ -461,14 +475,16 @@ public interface OrganizationProvider extends Provider {
     long count();
 
     /**
-     * Returns an {@link OrganizationModel} with the given {@code alias}.
+     * <p>Returns an {@link OrganizationModel} with the given {@code alias}.
+     *
+     * <p>Like {@link #getById(String)} and {@link #getByDomainName(String)}, this is a lookup of a single, known
+     * organization and is not subject to fine-grained admin permissions. Callers running in an administrative context
+     * are expected to check access to the returned organization themselves.
      *
      * @param alias the alias
      * @return the organization
      */
-    default OrganizationModel getByAlias(String alias) {
-        return getAllStream(Map.of(OrganizationModel.ALIAS, alias), 0, 1).findAny().orElse(null);
-    }
+    OrganizationModel getByAlias(String alias);
 
     /**
      * Returns a {@link InvitationManager} for managing invitations

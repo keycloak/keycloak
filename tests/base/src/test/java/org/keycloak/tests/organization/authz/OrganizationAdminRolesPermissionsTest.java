@@ -18,7 +18,7 @@
 package org.keycloak.tests.organization.authz;
 
 
-import java.util.Set;
+import java.util.List;
 
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
@@ -31,6 +31,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.admin.AdminClientFactory;
@@ -968,7 +969,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             IdentityProviderRepresentation idpRep = new IdentityProviderRepresentation();
             idpRep.setAlias("genericOrgBoundIdp");
             idpRep.setProviderId("oidc");
-            idpRep.setOrganizationIds(Set.of(orgId));
+            idpRep.setOrganizationLinks(List.of(new OrganizationIdentityProviderLinkRepresentation(orgId)));
 
             try (Response response = viewOrgsManageIdpsResource.identityProviders().create(idpRep)) {
                 assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
@@ -977,17 +978,17 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
 
             IdentityProviderRepresentation created = viewOrgsManageIdpsResource
                     .identityProviders().get("genericOrgBoundIdp").toRepresentation();
-            assertTrue(created.getOrganizationIds() == null || created.getOrganizationIds().isEmpty(),
+            assertTrue(created.getOrganizationLinks() == null || created.getOrganizationLinks().isEmpty(),
                     "Generic IdP create should not bind the IdP to an organization");
 
-            // update the IdP via generic endpoint with organizationIds set — binding should still be stripped
-            created.setOrganizationIds(Set.of(orgId));
+            // update the IdP via generic endpoint with organizationLinks set — binding should still be stripped
+            created.setOrganizationLinks(List.of(new OrganizationIdentityProviderLinkRepresentation(orgId)));
             created.getConfig().put(OrganizationModel.ORGANIZATION_ATTRIBUTE, orgId);
             viewOrgsManageIdpsResource.identityProviders().get("genericOrgBoundIdp").update(created);
 
             IdentityProviderRepresentation updated = viewOrgsManageIdpsResource
                     .identityProviders().get("genericOrgBoundIdp").toRepresentation();
-            assertTrue(updated.getOrganizationIds() == null || updated.getOrganizationIds().isEmpty(),
+            assertTrue(updated.getOrganizationLinks() == null || updated.getOrganizationLinks().isEmpty(),
                     "Generic IdP update should not bind the IdP to an organization");
         }
 

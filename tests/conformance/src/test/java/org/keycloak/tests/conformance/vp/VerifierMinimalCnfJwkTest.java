@@ -28,6 +28,8 @@ import org.keycloak.testframework.conformance.runner.ConformanceResult;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 
+import static org.keycloak.tests.conformance.vp.VpConformanceRealmConfig.TEST_PLAN;
+
 /**
  * The verifier accepts a presentation whose credential carries a minimal holder cnf jwk.
  */
@@ -40,7 +42,7 @@ public class VerifierMinimalCnfJwkTest extends AbstractVpConformanceTest {
     @Override
     protected Stream<ConformanceModuleVariant> moduleVariants() {
         return discoverModuleVariants(
-                "oid4vp-1final-verifier-test-plan",
+                TEST_PLAN,
                 Map.of(
                         "vp_profile", "plain_vp",
                         "credential_format", "sd_jwt_vc",

@@ -392,7 +392,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
     private void assertPartialExportImport(boolean exportGroupsAndRoles, boolean exportClients) {
         RealmRepresentation export = managedRealm.admin().partialExport(exportGroupsAndRoles, exportClients);
         assertTrue(Optional.ofNullable(export.getOrganizations()).orElse(List.of()).isEmpty());
-        assertTrue(Optional.ofNullable(export.getIdentityProviders()).orElse(List.of()).stream().noneMatch(idp -> idp.getOrganizationIds() != null && !idp.getOrganizationIds().isEmpty()));
+        assertTrue(Optional.ofNullable(export.getIdentityProviders()).orElse(List.of()).stream().noneMatch(idp -> idp.getOrganizationLinks() != null && !idp.getOrganizationLinks().isEmpty()));
         PartialImportRepresentation rep = new PartialImportRepresentation();
         rep.setUsers(export.getUsers());
         rep.setClients(export.getClients());
