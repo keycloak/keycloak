@@ -63,6 +63,7 @@ public class IdentityProviderModel implements Serializable {
     public static final String FEDERATED_CLIENT_ASSERTION_MAX_EXPIRATION = "fedClientAssertionMaxExp";
     public static final String SHOW_IN_ACCOUNT_CONSOLE = "showInAccountConsole";
     public static final String STORE_TOKEN_IN_SESSION = "storeTokenInSession";
+    public static final String ALLOW_ADMIN_ROLE_MAPPING = "allowAdminRoleMapping";
     public static final int DEFAULT_MIN_VALIDITY_TOKEN = 5;
 
     private String internalId;
@@ -425,6 +426,14 @@ public class IdentityProviderModel implements Serializable {
         if (!(obj instanceof IdentityProviderModel)) return false;
         return Objects.equals(getInternalId(), ((IdentityProviderModel) obj).getInternalId()) &&
                Objects.equals(getAlias(), ((IdentityProviderModel) obj).getAlias());
+    }
+
+    public boolean isAllowAdminRoleMapping() {
+        return getBooleanConfig(ALLOW_ADMIN_ROLE_MAPPING);
+    }
+
+    public void setAllowAdminRoleMapping(boolean allow) {
+        setBooleanConfig(ALLOW_ADMIN_ROLE_MAPPING, allow);
     }
 
     private boolean getBooleanConfig(String key) {
