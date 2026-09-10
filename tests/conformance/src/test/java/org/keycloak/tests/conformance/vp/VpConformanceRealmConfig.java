@@ -34,7 +34,7 @@ import org.keycloak.keys.JavaKeystoreKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.testframework.conformance.OpenIdConformanceSuite;
+import org.keycloak.testframework.conformance.OpenIdConformanceServer;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -44,6 +44,7 @@ import org.keycloak.tests.conformance.ConformanceSigningKey;
 
 public class VpConformanceRealmConfig implements RealmConfig {
 
+    public static final String TEST_PLAN = "oid4vp-1final-verifier-test-plan";
     public static final String REALM = "oid4vp-verifier";
     public static final String CLIENT_ID = "wallet-mock";
     public static final String IDP_ALIAS = "oid4vp";
@@ -134,7 +135,7 @@ public class VpConformanceRealmConfig implements RealmConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config.features(Profile.Feature.OID4VC_VP)
-                    .option("hostname", OpenIdConformanceSuite.KEYCLOAK_BASE_URI.toString())
+                    .option("hostname", OpenIdConformanceServer.KEYCLOAK_BASE_URI.toString())
                     .spiOption("keys", "java-keystore", "keystores-path", ConformanceSigningKey.keystoresBaseDir());
         }
     }

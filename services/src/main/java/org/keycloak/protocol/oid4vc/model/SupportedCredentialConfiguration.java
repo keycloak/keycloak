@@ -20,20 +20,21 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.keycloak.VCFormat;
 import org.keycloak.mdoc.MdocAlgorithm;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
 
-import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY;
-import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_JWK;
 
 /**
  * A supported credential, as used in the Credentials Issuer Metadata in OID4VCI
@@ -129,9 +130,11 @@ public class SupportedCredentialConfiguration {
         // OID4VCI 1.0 Section 12.2.4 defines binding methods as the key-material representation in the issued
         // credential: "jwk" for JWK and "cose_key" for COSE_Key, which is the representation used by ISO mdoc.
         // Normalize configured values so unsupported admin/API configuration does not leak into issuer metadata.
-        List<String> allowedBindingMethods = VCFormat.MSO_MDOC.equals(format)
-                ? List.of(CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY)
-                : List.of(CRYPTOGRAPHIC_BINDING_METHOD_JWK);
+        CredentialBuilder credentialBuilder = keycloakSession.getProvider(CredentialBuilder.class, format);
+        Set<String> allowedBindingMethods = Optional.ofNullable(credentialBuilder)
+                .map(CredentialBuilder::getSupportedBindingMethods)
+                .orElse(Collections.emptySet());
+
         List<String> effectiveBindingMethods = Optional.ofNullable(configuredBindingMethods)
                 .orElse(Collections.emptyList())
                 .stream()
@@ -147,7 +150,7 @@ public class SupportedCredentialConfiguration {
                     configuredBindingMethods);
         }
 
-        List<String> allowedProofTypes = List.of(ProofType.JWT, ProofType.ATTESTATION);
+        Set<String> allowedProofTypes = keycloakSession.listProviderIds(ProofValidator.class);
         List<String> effectiveProofTypes = Optional.ofNullable(requiredProofTypes)
                 .orElse(Collections.emptyList())
                 .stream()

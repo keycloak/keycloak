@@ -97,6 +97,10 @@ public class UserLoginFailureAdapter implements UserLoginFailureModel {
 
     @Override
     public void clearFailures() {
+        if (entity.getFailedLoginNotBefore() == 0 && entity.getNumFailures() == 0 && entity.getNumTemporaryLockouts() == 0 && entity.getLastFailure() == 0 && entity.getLastIPFailure() == null) {
+            // Fast exit to avoid locking the database entry on successful logins
+            return;
+        }
         ensureLocked();
         entity.setFailedLoginNotBefore(0);
         entity.setNumFailures(0);
@@ -141,6 +145,11 @@ public class UserLoginFailureAdapter implements UserLoginFailureModel {
     @Override
     public void clearPrimaryAndSecondaryAuthFailures() {
         clearFailures();
+        if (entity.getNumSecondaryAuthFailures() == 0) {
+            // Fast exit to avoid locking the database entry on successful logins
+            return;
+        }
+        ensureLocked();
         entity.setNumSecondaryAuthFailures(0);
     }
 

@@ -113,6 +113,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
@@ -1010,7 +1011,12 @@ public class ModelToRepresentation {
         }
 
         if (!export) {
-            providerRep.setOrganizationId(identityProviderModel.getOrganizationId());
+            Set<String> orgIds = identityProviderModel.getOrganizationIds();
+            if (orgIds != null && !orgIds.isEmpty()) {
+                providerRep.setOrganizationLinks(orgIds.stream()
+                        .map(OrganizationIdentityProviderLinkRepresentation::new)
+                        .collect(Collectors.toList()));
+            }
         }
 
         List<IdentityProviderType> identityProviderTypes = IdentityProviderTypeUtil.listTypesFromFactory(session, identityProviderModel.getProviderId());

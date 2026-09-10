@@ -64,7 +64,7 @@ import org.hibernate.annotations.DynamicUpdate;
         @NamedQuery(
                 name = "insertRootAuthSessionIfAbsent",
                 query = "insert into RootAuthenticationSessionEntity (id, realmId, timestamp, version) values (:id, :realmId, :timestamp, 0)" +
-                        " on conflict do nothing"
+                        " on conflict (id) do nothing"
         )
 })
 @Entity

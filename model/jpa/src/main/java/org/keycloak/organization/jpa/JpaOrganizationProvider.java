@@ -48,6 +48,7 @@ import org.keycloak.models.MembershipMetadata;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -116,7 +117,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             throw new ModelDuplicateException("A organization with the same name already exists.");
         }
 
-        if (getAllStream(Map.of(OrganizationModel.ALIAS, alias), -1, -1).findAny().isPresent()) {
+        if (getByAliasEntity(alias) != null) {
             throw new ModelDuplicateException("A organization with the same alias already exists");
         }
 
@@ -196,9 +197,46 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         return addMember(organization, user, new MembershipMetadata(MembershipType.UNMANAGED));
     }
 
+    @Override
+    public boolean updateMembershipType(OrganizationModel organization, UserModel member, MembershipType membershipType) {
+        throwExceptionIfObjectIsNull(organization, "organization");
+        throwExceptionIfObjectIsNull(member, "member");
+        throwExceptionIfObjectIsNull(membershipType, "membershipType");
+
+        if (MembershipType.MANAGED.equals(membershipType)) {
+            throwIfManagedByAnotherOrg(organization, member);
+        }
+
+        UserEntity userEntity = em.find(UserEntity.class, member.getId());
+        if (userEntity == null) {
+            return false;
+        }
+
+        GroupModel organizationGroup = getOrganizationGroup(organization);
+        try {
+            UserGroupMembershipEntity membership = em.createNamedQuery("userMemberOf", UserGroupMembershipEntity.class)
+                    .setParameter("user", userEntity)
+                    .setParameter("groupId", organizationGroup.getId())
+                    .getSingleResult();
+
+            if (membershipType.equals(membership.getMembershipType())) {
+                return true;
+            }
+
+            membership.setMembershipType(membershipType);
+            return true;
+        } catch (NoResultException e) {
+            return false;
+        }
+    }
+
     private boolean addMember(OrganizationModel organization, UserModel user, MembershipMetadata metadata) {
         throwExceptionIfObjectIsNull(organization, "Organization");
         throwExceptionIfObjectIsNull(user, "User");
+
+        if (MembershipType.MANAGED.equals(metadata.getMembershipType())) {
+            throwIfManagedByAnotherOrg(organization, user);
+        }
 
         OrganizationEntity entity = getEntity(organization.getId());
         OrganizationModel current = Organizations.resolveOrganization(session);
@@ -230,9 +268,29 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         return true;
     }
 
+    private void throwIfManagedByAnotherOrg(OrganizationModel organization, UserModel user) {
+        boolean managedElsewhere = getByMember(user)
+                .filter(org -> !org.equals(organization))
+                .anyMatch(org -> isManagedMember(org, user));
+        if (managedElsewhere) {
+            throw new ModelException("User is already a managed member of another organization");
+        }
+    }
+
     @Override
     public OrganizationModel getById(String id) {
         OrganizationEntity entity = getEntity(id, false);
+        return entity == null ? null : new OrganizationAdapter(session, getRealm(), entity, this);
+    }
+
+    @Override
+    public OrganizationModel getByAlias(String alias) {
+        if (alias == null) {
+            return null;
+        }
+
+        OrganizationEntity entity = getByAliasEntity(alias);
+
         return entity == null ? null : new OrganizationAdapter(session, getRealm(), entity, this);
     }
 
@@ -552,9 +610,9 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             predicates.add(builder.equal(membership.get("userId"), member.getId()));
         }
 
-        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(
-                session, AdminPermissionsSchema.ORGANIZATIONS, getRealm(), builder, query, org));
-
+        // no authorization filters here: this resolves the memberships of a given user rather than answering an
+        // administrative query, and it also backs getMemberById, isMember and removeMember. Administrative callers
+        // are expected to check access themselves, as OrganizationMemberResource does.
         TypedQuery<OrganizationEntity> typedQuery = buildSearchQuery(builder, query, org, predicates);
 
         return closing(typedQuery.getResultStream()
@@ -692,13 +750,13 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider) {
+    public boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                       boolean autoMembership, MembershipType membershipType) {
         throwExceptionIfObjectIsNull(organization, "Organization");
         throwExceptionIfObjectIsNull(identityProvider, "Identity provider");
 
         OrganizationEntity organizationEntity = getEntity(organization.getId());
 
-        // check the identity provider and the organization belongs to the same realm
         if (!checkOrgIdpAndRealm(organizationEntity, identityProvider)) {
             return false;
         }
@@ -709,21 +767,53 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             return false;
         }
 
-        // TODO: remove this 1:1 check when M:N is fully supported
-        String existingOrgId = identityProvider.getOrganizationId();
-        if (existingOrgId != null) {
-            throw new ModelValidationException("Identity provider already associated with a different organization");
-        }
+        validateAssociationConfig(identityProvider, autoMembership, membershipType, null);
 
         OrganizationIdentityProviderEntity link = new OrganizationIdentityProviderEntity();
         link.setOrganization(organizationEntity);
         link.setIdentityProviderId(identityProvider.getInternalId());
-        link.setAutoMembership(true);
-        link.setMembershipType("MANAGED");
+        link.setAutoMembership(autoMembership);
+        link.setMembershipType(membershipType.name());
         em.persist(link);
         organizationEntity.getIdentityProviderLinks().add(link);
 
         return true;
+    }
+
+    @Override
+    public OrganizationIdentityProviderLinkModel getIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        throwExceptionIfObjectIsNull(identityProvider, "Identity provider");
+
+        OrganizationEntity organizationEntity = getEntity(organization.getId());
+
+        return organizationEntity.getIdentityProviderLinks().stream()
+                .filter(oip -> oip.getIdentityProviderId().equals(identityProvider.getInternalId()))
+                .findFirst()
+                .map(link -> new OrganizationIdentityProviderLinkModel(
+                        link.getIdentityProviderId(),
+                        link.isAutoMembership(),
+                        MembershipType.valueOf(link.getMembershipType())))
+                .orElse(null);
+    }
+
+    @Override
+    public void updateIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                           boolean autoMembership, MembershipType membershipType) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        throwExceptionIfObjectIsNull(identityProvider, "Identity provider");
+
+        OrganizationEntity organizationEntity = getEntity(organization.getId());
+
+        OrganizationIdentityProviderEntity link = organizationEntity.getIdentityProviderLinks().stream()
+                .filter(oip -> oip.getIdentityProviderId().equals(identityProvider.getInternalId()))
+                .findFirst()
+                .orElseThrow(() -> new ModelException("Identity provider is not associated with the organization"));
+
+        validateAssociationConfig(identityProvider, autoMembership, membershipType, link);
+
+        link.setAutoMembership(autoMembership);
+        link.setMembershipType(membershipType.name());
     }
 
     @Override
@@ -752,6 +842,8 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         }
 
         organizationEntity.getIdentityProviderLinks().remove(link);
+        em.remove(link);
+        em.flush();
 
         // clear domain routing for this org's domains that reference the removed IdP
         organizationEntity.getDomains().stream()
@@ -763,6 +855,27 @@ public class JpaOrganizationProvider implements OrganizationProvider {
                 });
 
         return true;
+    }
+
+    private void validateAssociationConfig(IdentityProviderModel identityProvider, boolean autoMembership,
+                                           MembershipType membershipType, OrganizationIdentityProviderEntity currentLink) {
+        if (!autoMembership && MembershipType.MANAGED == membershipType) {
+            throw new ModelValidationException("Auto-membership must be enabled when membership type is MANAGED");
+        }
+
+        if (MembershipType.MANAGED == membershipType) {
+            List<OrganizationIdentityProviderEntity> managedLinks = em.createNamedQuery("getLinksByIdpAndMembershipType", OrganizationIdentityProviderEntity.class)
+                    .setParameter("idpId", identityProvider.getInternalId())
+                    .setParameter("membershipType", MembershipType.MANAGED.name())
+                    .getResultList();
+
+            for (OrganizationIdentityProviderEntity existing : managedLinks) {
+                if (currentLink != null && existing.getOrganization().getId().equals(currentLink.getOrganization().getId())) {
+                    continue;
+                }
+                throw new ModelValidationException("Another organization already has MANAGED membership type for this identity provider");
+            }
+        }
     }
 
     @Override
@@ -964,6 +1077,19 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         TypedQuery<OrganizationEntity> query = em.createNamedQuery("getByOrgName", OrganizationEntity.class);
 
         query.setParameter("name", name);
+        query.setParameter("realmId", getRealm().getId());
+
+        try {
+            return query.getSingleResult();
+        } catch (NoResultException nre) {
+            return null;
+        }
+    }
+
+    private OrganizationEntity getByAliasEntity(String alias) {
+        TypedQuery<OrganizationEntity> query = em.createNamedQuery("getByOrgAlias", OrganizationEntity.class);
+
+        query.setParameter("alias", alias);
         query.setParameter("realmId", getRealm().getId());
 
         try {
