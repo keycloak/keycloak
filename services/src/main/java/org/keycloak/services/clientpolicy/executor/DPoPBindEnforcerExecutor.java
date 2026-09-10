@@ -122,7 +122,7 @@ public class DPoPBindEnforcerExecutor implements ClientPolicyExecutorProvider<DP
             case REGISTER, UPDATE -> {
                 ClientCRUDContext clientUpdateContext = (ClientCRUDContext)context;
                 autoConfigure(clientUpdateContext.getProposedClientRepresentation());
-                validate(clientUpdateContext.getProposedClientRepresentation());
+                validate(clientUpdateContext);
             }
             case AUTHORIZATION_REQUEST -> {
                 AuthorizationRequestContext authzRequestContext = (AuthorizationRequestContext) context;
@@ -159,10 +159,30 @@ public class DPoPBindEnforcerExecutor implements ClientPolicyExecutorProvider<DP
         }
     }
 
-    private void validate(ClientRepresentation rep) throws ClientPolicyException {
-        boolean isUseDPoP = OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).isUseDPoP();
+    private void validate(ClientCRUDContext context) throws ClientPolicyException {
+        boolean isPublicClient = getEffectivePublicClientConfiguration(context);
+        if (isPublicClient && configuration.getAllowOnlyRefreshTokenBinding() == Boolean.TRUE) {
+            // Public clients relying on refresh-token-only binding don't need to enable DPoP for access tokens as well.
+            return;
+        }
+        boolean isUseDPoP = OIDCAdvancedConfigWrapper.fromClientRepresentation(context.getProposedClientRepresentation()).isUseDPoP();
         if (!isUseDPoP) {
             throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid client metadata: DPoP token is disabled");
+        }
+    }
+
+    private boolean getEffectivePublicClientConfiguration(ClientCRUDContext context) {
+        Boolean isPublicClient = context.getProposedClientRepresentation().isPublicClient();
+        if (isPublicClient != null) {
+            return isPublicClient;
+        } else {
+            // The "publicClient" field is not filled in the representation, so it effectively has same value as before the update
+            if (context.getTargetClient() != null) {
+                return context.getTargetClient().isPublicClient();
+            } else {
+                // Registration of new client, default to false (confidential client)
+                return false;
+            }
         }
     }
 
