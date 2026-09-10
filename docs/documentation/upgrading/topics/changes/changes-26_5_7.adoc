@@ -1,0 +1,12 @@
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
+=== Maximum length of the parameters in the OIDC token endpoint
+
+When the OIDC token endpoint request (or OAuth2 token endpoint request) is sent, a new limit exists for the maximum length of every OIDC/OAuth2 parameter. The maximum length of each parameter is 4,000 characters,
+which is aligned with the same limit, which already exists for the parameters sent to OIDC/OAuth authentication request.
+
+If you want to increase or lower those numbers, start the server with the option `req-params-default-max-size` for the default maximum length of the
+OIDC/OAuth2 parameters or you can use something such as `req-params-max-size` for one specific parameter. For more details, see the `login-protocol` provider configuration in the link:{allproviderconfigguide_link}[{allproviderconfigguide_name}].

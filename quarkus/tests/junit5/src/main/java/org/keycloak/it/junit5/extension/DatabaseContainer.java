@@ -20,16 +20,16 @@ package org.keycloak.it.junit5.extension;
 import java.time.Duration;
 import java.util.logging.Logger;
 
-import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import org.jboss.logmanager.Level;
 import org.jboss.logmanager.LogManager;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.MSSQLServerContainer;
-import org.testcontainers.containers.MariaDBContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.mariadb.MariaDBContainer;
+import org.testcontainers.mssqlserver.MSSQLServerContainer;
+import org.testcontainers.mysql.MySQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.tidb.TiDBContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -53,26 +53,26 @@ public class DatabaseContainer {
         return container.isRunning();
     }
 
-    void configureDistribution(KeycloakDistribution dist) {
+    void configureDistribution(RawKeycloakDistribution dist) {
         dist.setProperty("db-username", getUsername());
         dist.setProperty("db-password", getPassword());
         dist.setProperty("db-url", getJdbcUrl());
     }
 
     private String getJdbcUrl() {
-        return ((JdbcDatabaseContainer)container).getJdbcUrl();
+        return ((JdbcDatabaseContainer<?>)container).getJdbcUrl();
     }
 
     String getUsername() {
         if (container instanceof MSSQLServerContainer) {
-            return ((JdbcDatabaseContainer) container).getUsername();
+            return ((JdbcDatabaseContainer<?>) container).getUsername();
         }
         return "keycloak";
     }
 
     String getPassword() {
         if (container instanceof MSSQLServerContainer) {
-            return ((JdbcDatabaseContainer) container).getPassword();
+            return ((JdbcDatabaseContainer<?>) container).getPassword();
         }
         return DEFAULT_PASSWORD;
     }
@@ -82,8 +82,9 @@ public class DatabaseContainer {
         container = null;
     }
 
-    private JdbcDatabaseContainer configureJdbcContainer(JdbcDatabaseContainer jdbcDatabaseContainer) {
+    private JdbcDatabaseContainer<?> configureJdbcContainer(JdbcDatabaseContainer<?> jdbcDatabaseContainer) {
         if (jdbcDatabaseContainer instanceof MSSQLServerContainer) {
+            jdbcDatabaseContainer.withEnv("MSSQL_COLLATION", "Latin1_General_100_CI_AS_SC_UTF8");
             return jdbcDatabaseContainer;
         }
 
@@ -104,13 +105,13 @@ public class DatabaseContainer {
         switch (alias) {
             case "postgres":
                 DockerImageName POSTGRES = DockerImageName.parse(POSTGRES_IMAGE).asCompatibleSubstituteFor("postgres");
-                return configureJdbcContainer(new PostgreSQLContainer<>(POSTGRES));
+                return configureJdbcContainer(new PostgreSQLContainer(POSTGRES));
             case "mariadb":
                 DockerImageName MARIADB = DockerImageName.parse(MARIADB_IMAGE).asCompatibleSubstituteFor("mariadb");
-                return configureJdbcContainer(new MariaDBContainer<>(MARIADB));
+                return configureJdbcContainer(new MariaDBContainer(MARIADB));
             case "mysql":
                 DockerImageName MYSQL = DockerImageName.parse(MYSQL_IMAGE).asCompatibleSubstituteFor("mysql");
-                return configureJdbcContainer(new MySQLContainer<>(MYSQL));
+                return configureJdbcContainer(new MySQLContainer(MYSQL));
             case "mssql":
                 DockerImageName MSSQL = DockerImageName.parse(MSSQL_IMAGE).asCompatibleSubstituteFor("sqlserver");
                 return configureJdbcContainer(new MSSQLServerContainer(MSSQL) {

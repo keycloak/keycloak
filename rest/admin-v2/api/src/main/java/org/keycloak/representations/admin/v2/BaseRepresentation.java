@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 public class BaseRepresentation {
 
+    // Hard requirement for all representations to support nullifying field in PATCH merge
     @JsonIgnore
     protected Map<String, Object> additionalFields = new LinkedHashMap<String, Object>();
 
@@ -27,5 +28,4 @@ public class BaseRepresentation {
     public void setAdditionalFields(Map<String, Object> additionalFields) {
         this.additionalFields = additionalFields;
     }
-
 }

@@ -17,6 +17,8 @@
 
 package org.keycloak.models.utils;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
@@ -94,7 +96,7 @@ public class TimeBasedOTP extends HmacOTP {
 
             String candidate = generateOTP(secret, steps, this.numberDigits, this.algorithm);
 
-            if (candidate.equals(token)) {
+            if (token != null && MessageDigest.isEqual(candidate.getBytes(StandardCharsets.UTF_8), token.getBytes(StandardCharsets.UTF_8))) {
                 return true;
             }
         }

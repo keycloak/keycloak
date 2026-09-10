@@ -105,7 +105,7 @@ See the link:{adminguide_link}#user-profile[User Profile Documentation] for the 
 Default user profile configuration comes with a set of default validations for the basic predefined fields. Those validations were not present in previous versions when the `declarative-user-profile` feature was disabled by default.
 If you have issues due to backward compatibility, you can change the default validators according to your needs. The default validators are as follows:
 
-* The`username`, `email`, `firstName` and `lastName` attributes have a maximum length of 255 characters. These validations were indirectly present in previous versions as well
+* The `username`, `email`, `firstName` and `lastName` attributes have a maximum length of 255 characters. These validations were indirectly present in previous versions as well
 because of the database constraint on the table `USER_ENTITY` for those fields with a maximum length of 255 characters. However, when using user storage providers, it might be possible before to use longer values.
 
 * The `username` attribute has a minimum length of three characters. Username has also `username-prohibited-characters` and `up-username-not-idn-homograph` validator by default, which were not present in previous versions.

@@ -10,7 +10,7 @@ import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
-import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.utils.io.IOUtil;
@@ -41,7 +41,7 @@ public class SamlConsentTest extends AbstractSamlTest {
         adminClient.realm(REALM_NAME)
                 .clients()
                 .get(client.getId())
-                .update(ClientBuilder.edit(client)
+                .update(ClientBuilder.update(client)
                         .consentRequired(true)
                         .attribute(SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME, "sales-post")
                         .attribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, SAML_ASSERTION_CONSUMER_URL_SALES_POST + "saml")

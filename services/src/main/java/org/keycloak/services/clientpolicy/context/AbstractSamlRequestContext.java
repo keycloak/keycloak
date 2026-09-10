@@ -30,7 +30,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
  * @author rmartinc
  * @param <T> The saml request type
  */
-public abstract class AbstractSamlRequestContext<T> implements ClientPolicyContext {
+public abstract class AbstractSamlRequestContext<T> implements ClientPolicyContext, ClientModelContext {
 
     protected final T request;
     protected final ClientModel client;
@@ -60,6 +60,7 @@ public abstract class AbstractSamlRequestContext<T> implements ClientPolicyConte
      * Getter for the client model doing the request.
      * @return The client model
      */
+    @Override
     public ClientModel getClient() {
         return client;
     }

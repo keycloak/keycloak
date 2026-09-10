@@ -91,11 +91,6 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
     }
 
     @Override
-    public boolean isOneTimeAction() {
-        return true;
-    }
-
-    @Override
     public InitiatedActionSupport initiatedActionSupport() {
         return InitiatedActionSupport.SUPPORTED;
     }

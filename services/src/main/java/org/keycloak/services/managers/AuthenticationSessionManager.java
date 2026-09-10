@@ -119,7 +119,7 @@ public class AuthenticationSessionManager {
      * @param authSessionId decoded authSessionId (without route info attached)
      */
     public void setAuthSessionIdHashCookie(String authSessionId) {
-        String authSessionIdHash = BASE_64_ENCODER_NO_PADDING.encodeToString(HashUtils.hash(JavaAlgorithm.SHA256, authSessionId.getBytes(StandardCharsets.UTF_8)));
+        String authSessionIdHash = BASE_64_ENCODER_NO_PADDING.encodeToString(HashUtils.hash(JavaAlgorithm.SHA384, authSessionId.getBytes(StandardCharsets.UTF_8)));
 
         session.getProvider(CookieProvider.class).set(CookieType.AUTH_SESSION_ID_HASH, authSessionIdHash);
 

@@ -32,6 +32,16 @@ public class DefaultKeyStoreTypesTest {
     }
 
     @Test
+    public void testTruststoreFormats() {
+        Set<KeystoreUtil.TruststoreFormat> supportedTruststoreFormats = CryptoIntegration.getProvider().getSupportedTrustStoreTypes().collect(Collectors.toSet());
+        assertThat(supportedTruststoreFormats, Matchers.containsInAnyOrder(
+                KeystoreUtil.TruststoreFormat.JKS,
+                KeystoreUtil.TruststoreFormat.PKCS12,
+                KeystoreUtil.TruststoreFormat.BCFKS));
+        Assert.assertEquals(KeystoreUtil.TruststoreFormat.PKCS12, CryptoIntegration.getProvider().getPreferredGeneratedTrustStoreType());
+    }
+
+    @Test
     public void testDefaultKeystoreType() {
         Assert.assertEquals("PKCS12", KeystoreUtil.getKeystoreType("PKCS12", "some/foo.jks", "JKS"));
         Assert.assertEquals("PKCS12", KeystoreUtil.getKeystoreType("PKCS12", "some/foo.pkcs12", "JKS"));

@@ -36,7 +36,7 @@ public class CachedPermissionTicket extends AbstractRevisioned implements InReso
     private Long grantedTimestamp;
     private String policy;
 
-    public CachedPermissionTicket(Long revision, PermissionTicket permissionTicket) {
+    public CachedPermissionTicket(long revision, PermissionTicket permissionTicket) {
         super(revision, permissionTicket.getId());
         this.owner = permissionTicket.getOwner();
         requester = permissionTicket.getRequester();

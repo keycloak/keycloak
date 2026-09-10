@@ -11,7 +11,7 @@ public class RefreshRequest extends AbstractHttpPostRequest<RefreshRequest, Acce
 
     private final String refreshToken;
 
-    RefreshRequest(String refreshToken, AbstractOAuthClient<?> client) {
+    public RefreshRequest(String refreshToken, AbstractOAuthClient<?> client) {
         super(client);
         this.refreshToken = refreshToken;
     }
@@ -23,6 +23,11 @@ public class RefreshRequest extends AbstractHttpPostRequest<RefreshRequest, Acce
 
     public RefreshRequest dpopProof(String dpopProof) {
         header(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
+        return this;
+    }
+
+    public RefreshRequest resource(String resource) {
+        parameter(OAuth2Constants.RESOURCE, resource);
         return this;
     }
 

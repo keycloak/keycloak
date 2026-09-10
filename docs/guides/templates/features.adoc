@@ -4,7 +4,7 @@
 | Feature | Description
 
 <#list features as feature>
-| [.features-name]#${feature.versionedKey}# | [.features-description]#${feature.description}#
+| [.features-name]#`${feature.versionedKey}`# | [.features-description]#${feature.description}#
 </#list>
 |===
 </#macro>
@@ -26,6 +26,25 @@ and is not fully supported. This feature is disabled by default.
 ifeval::[{project_community}==true]
 ${additionalCommunityText!""}
 endif::[]
+
+To enable start the server with <#if profileFeature.type != "PREVIEW_DISABLED_BY_DEFAULT">`--features=preview` or </#if>`--features=${profileFeature.name}`
+
+====
+</#macro>
+
+<#macro techpreviewdeprecated feature>
+<#assign profileFeature = ctx.features.getFeature(feature)>
+
+[WARNING]
+====
+${profileFeature.description} is
+ifeval::[{project_product}==true]
+*Technology Preview*
+endif::[]
+ifeval::[{project_community}==true]
+*Preview*
+endif::[]
+and *Deprecated*. This feature is not fully supported, disabled by default, and will be removed in future versions.
 
 To enable start the server with <#if profileFeature.type != "PREVIEW_DISABLED_BY_DEFAULT">`--features=preview` or </#if>`--features=${profileFeature.name}`
 

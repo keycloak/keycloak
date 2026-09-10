@@ -282,6 +282,8 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     @Test
     @RequireProvider(UserSessionPersisterProvider.class)
     public void testLazyClientSessionStatsFetching() {
+        // Disable test until https://github.com/infinispan/infinispan/issues/16761 is fixed
+        assumeTrue("Run only if Embedded Infinispan is used for storing/caching sessions.", InfinispanUtils.isEmbeddedInfinispan());
         List<String> clientIds = withRealm(realmId, (session, realm) -> IntStream.range(0, 5)
                 .mapToObj(cid -> session.clients().addClient(realm, "client-" + cid))
                 .map(ClientModel::getId)

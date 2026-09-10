@@ -220,13 +220,13 @@ public class ClaimsPathPointer {
                 // Optional claims that don't exist are simply not included
             } catch (IllegalArgumentException e) {
                 if (Boolean.TRUE.equals(claim.getMandatory())) {
-                    // Log error for mandatory claims before re-throwing
-                    logger.errorf("Failed to process mandatory claim path %s: %s", path, e.getMessage());
+                    // Log warning for mandatory claims before re-throwing
+                    logger.warnf("Failed to process mandatory claim path %s: %s", path, e.getMessage());
                     // Re-throw for mandatory claims
                     throw e;
                 }
-                // For optional claims, log warning and continue
-                logger.warnf("Failed to process optional claim path %s: %s", path, e.getMessage());
+                // For optional claims, log debug and continue
+                logger.debugf("Failed to process optional claim path %s: %s", path, e.getMessage());
             }
         }
 

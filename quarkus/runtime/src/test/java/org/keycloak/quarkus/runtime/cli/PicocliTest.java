@@ -18,28 +18,25 @@
 package org.keycloak.quarkus.runtime.cli;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.Properties;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.keycloak.common.Profile;
 import org.keycloak.config.LoggingOptions;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
-import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.AbstractConfigurationTest;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
+import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
+import org.keycloak.quarkus.runtime.configuration.mappers.ManagementPropertyMappers;
 
-import io.smallrye.config.SmallRyeConfig;
 import org.apache.commons.io.FileUtils;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -49,6 +46,7 @@ import picocli.CommandLine.Help;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -59,74 +57,18 @@ import static org.junit.Assert.assertTrue;
 
 public class PicocliTest extends AbstractConfigurationTest {
 
-    // TODO: could utilize CLIResult
-    private class NonRunningPicocli extends Picocli {
-
-        final StringWriter err = new StringWriter();
-        final StringWriter out = new StringWriter();
-        SmallRyeConfig config;
-        int exitCode = Integer.MAX_VALUE;
-        boolean reaug;
-        private Properties buildProps;
-
-        String getErrString() {
-            return normalize(err);
-        }
-
-        // normalize line endings - TODO: could also normalize non-printable chars
-        // but for now those are part of the expected output
-        String normalize(StringWriter writer) {
-            return System.lineSeparator().equals("\n") ? writer.toString()
-                    : writer.toString().replace(System.lineSeparator(), "\n");
-        }
-
-        String getOutString() {
-            return normalize(out);
-        }
-
-        @Override
-        public PrintWriter getErrWriter() {
-            return new PrintWriter(err, true);
-        }
-
-        @Override
-        public PrintWriter getOutWriter() {
-            return new PrintWriter(out, true);
-        }
-
-        @Override
-        public void exit(int exitCode) {
-            this.exitCode = exitCode;
-        }
-
-        @Override
-        public void start() {
-            // skip
-        }
-
-        @Override
-        public void initConfig(AbstractCommand command) {
-            KeycloakConfigSourceProvider.reload();
-            boolean checkBuild = Environment.isRebuildCheck();
-            super.initConfig(command);
-            if (!checkBuild && PersistedConfigSource.getInstance().getConfigValueProperties().isEmpty()) {
-                System.getProperties().remove(Environment.KC_CONFIG_REBUILD_CHECK);
-            }
-            config = Configuration.getConfig();
-        }
-
-        @Override
-        public void build() throws Throwable {
-            reaug = true;
-            this.buildProps = getNonPersistedBuildTimeOptions();
-        }
-
-    };
-
     NonRunningPicocli pseudoLaunch(String... args) {
-        NonRunningPicocli nonRunningPicocli = new NonRunningPicocli();
-        KeycloakMain.main(args, nonRunningPicocli);
-        return nonRunningPicocli;
+        return new NonRunningPicocli().launch(args);
+    }
+
+    private void assertError(NonRunningPicocli picocli, String message) {
+        assertThat(picocli.exitCode, is(CommandLine.ExitCode.USAGE));
+        assertThat(picocli.getErrString(), containsString(message));
+    }
+
+    private void assertNoError(NonRunningPicocli picocli) {
+        assertThat(picocli.getErrString(), is(emptyString()));
+        assertThat(picocli.exitCode, is(CommandLine.ExitCode.OK));
     }
 
     @Test
@@ -146,6 +88,8 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
         assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().toUpperCase().contains("WARN"));
         assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().toUpperCase().contains("ERROR"));
+        onAfter();
+        assertFalse(Environment.isDevProfile());
     }
 
     @Test
@@ -153,15 +97,15 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertEquals("1h",
-                nonRunningPicocli.config.getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
+                nonRunningPicocli.config.getConfigValue(HttpPropertyMappers.TLS_PREFIX + "reload-period").getValue());
         assertEquals("1h",
-                nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
+                nonRunningPicocli.config.getConfigValue(ManagementPropertyMappers.MGMT_TLS_PREFIX + "reload-period").getValue());
 
         onAfter();
         nonRunningPicocli = pseudoLaunch("start-dev", "--https-certificates-reload-period=-1");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertNull(nonRunningPicocli.config.getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
-        assertNull(nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
+        assertNull(nonRunningPicocli.config.getConfigValue(HttpPropertyMappers.TLS_PREFIX + "reload-period").getValue());
+        assertNull(nonRunningPicocli.config.getConfigValue(ManagementPropertyMappers.MGMT_TLS_PREFIX + "reload-period").getValue());
     }
 
     @Test
@@ -169,18 +113,165 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertEquals("1h",
-                nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
+                nonRunningPicocli.config.getConfigValue(ManagementPropertyMappers.MGMT_TLS_PREFIX + "reload-period").getValue());
 
         onAfter();
         nonRunningPicocli = pseudoLaunch("start-dev", "--https-management-certificates-reload-period=-1");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertNull(nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
+        assertNull(nonRunningPicocli.config.getConfigValue(ManagementPropertyMappers.MGMT_TLS_PREFIX + "reload-period").getValue());
 
         onAfter();
         nonRunningPicocli = pseudoLaunch("start-dev", "--https-certificates-reload-period=5m");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertEquals("5m",
-                nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
+                nonRunningPicocli.config.getConfigValue(ManagementPropertyMappers.MGMT_TLS_PREFIX + "reload-period").getValue());
+    }
+
+    @Test
+    public void testPemTakesPrecedenceOverKeystore() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev",
+                "--https-certificate-file=/cert.pem", "--https-certificate-key-file=/key.pem",
+                "--https-key-store-file=server.p12", "--https-key-store-password=pass");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals("/cert.pem",
+                nonRunningPicocli.config.getConfigValue(HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.cert").getValue());
+        assertNull(nonRunningPicocli.config.getConfigValue(HttpPropertyMappers.TLS_PREFIX + "key-store.p12.path").getValue());
+    }
+
+    @Test
+    public void testPemTakesPrecedenceOverKeystoreWithUnrecognizedExtension() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev",
+                "--https-certificate-file=/cert.pem", "--https-certificate-key-file=/key.pem",
+                "--https-key-store-file=legacy.ks", "--https-key-store-password=pass");
+        assertNoError(nonRunningPicocli);
+    }
+
+    @Test
+    public void testPemRejectedInFipsMode() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev",
+                "--https-certificate-file=/cert.pem", "--https-certificate-key-file=/key.pem",
+                "--fips-mode=strict");
+        assertError(nonRunningPicocli, "PEM certificates are not supported in strict FIPS mode");
+        assertError(nonRunningPicocli, "https-key-store-file");
+    }
+
+    @Test
+    public void testPemAcceptedInFipsNonStrictMode() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev",
+                "--https-certificate-file=/cert.pem", "--https-certificate-key-file=/key.pem",
+                "--fips-mode=non-strict");
+        assertNoError(nonRunningPicocli);
+    }
+
+    @Test
+    public void testValidationWorksWithEnvVars() {
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/cert.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/key.pem",
+                "KC_FIPS_MODE", "strict"
+        ));
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertError(nonRunningPicocli, "PEM certificates are not supported in strict FIPS mode");
+    }
+
+    @Test
+    public void testTrustStorePasswordRequiredForPkcs12() {
+        putEnvVar("KC_HTTPS_TRUST_STORE_FILE", "truststore.p12");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertError(nonRunningPicocli, "No trust store password provided");
+    }
+
+    @Test
+    public void testTrustStorePasswordNotRequiredForBcfks() {
+        putEnvVars(Map.of(
+                "KC_HTTPS_TRUST_STORE_FILE", "truststore.bcfks",
+                "KC_HTTPS_TRUST_STORE_TYPE", "BCFKS"
+        ));
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertNoError(nonRunningPicocli);
+    }
+
+    @Test
+    public void testManagementPemRejectedInFipsMode() {
+        putEnvVars(Map.of(
+                "KC_HTTPS_MANAGEMENT_CERTIFICATE_FILE", "/mgmt-cert.pem",
+                "KC_HTTPS_MANAGEMENT_CERTIFICATE_KEY_FILE", "/mgmt-key.pem",
+                "KC_FIPS_MODE", "strict"
+        ));
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertError(nonRunningPicocli, "PEM certificates are not supported in strict FIPS mode");
+        assertError(nonRunningPicocli, "https-management-key-store-file");
+    }
+
+    @Test
+    public void testManagementTrustStorePasswordRequired() {
+        putEnvVars(Map.of(
+                "KC_HEALTH_ENABLED", "true",
+                "KC_HTTPS_MANAGEMENT_TRUST_STORE_FILE", "mgmt-trust.p12"
+        ));
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertError(nonRunningPicocli, "No trust store password provided");
+        assertError(nonRunningPicocli, "https-management-trust-store-password");
+    }
+
+    @Test
+    public void testBcfksRequiresExplicitType() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev",
+                "--https-key-store-file=server.bcfks", "--https-key-store-password=pass");
+        assertError(nonRunningPicocli, "Unable to determine 'https-key-store-type' automatically");
+    }
+
+    @Test
+    public void testFipsStrictRejectsJksExtension() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev",
+                "--https-key-store-file=server.jks", "--https-key-store-password=pass",
+                "--fips-mode=strict");
+        assertError(nonRunningPicocli, "appears to be JKS based on its extension, but FIPS strict mode requires BCFKS");
+    }
+
+    @Test
+    public void testFipsStrictRejectsPkcs12Extension() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev",
+                "--https-key-store-file=server.p12", "--https-key-store-password=pass",
+                "--fips-mode=strict");
+        assertError(nonRunningPicocli, "appears to be PKCS12 based on its extension, but FIPS strict mode requires BCFKS");
+    }
+
+    @Test
+    public void testManagementKeystoreUnrecognizedExtension() {
+        putEnvVars(Map.of(
+                "KC_HEALTH_ENABLED", "true",
+                "KC_HTTPS_MANAGEMENT_KEY_STORE_FILE", "mgmt.ks"
+        ));
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertError(nonRunningPicocli, "Unable to determine 'https-management-key-store-type' automatically");
+    }
+
+    @Test
+    public void testKeystoreWithPemTypeRejected() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev",
+                "--https-key-store-file=server.p12", "--https-key-store-type=PEM", "--https-key-store-password=pass");
+        assertError(nonRunningPicocli, "'https-key-store-type' cannot be set to 'PEM'");
+    }
+
+    @Test
+    public void testOrphanedPemPasswordRejected() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev",
+                "--https-key-store-file=server.p12", "--https-key-store-password=pass",
+                "--https-certificate-key-file-password=orphaned");
+        assertError(nonRunningPicocli, "'https-certificate-key-file-password' is set, but no PEM certificate is configured");
+    }
+
+    @Test
+    public void testMgmtOrphanedPemPasswordRejected() {
+        putEnvVars(Map.of(
+                "KC_HEALTH_ENABLED", "true",
+                "KC_HTTPS_MANAGEMENT_KEY_STORE_FILE", "mgmt.p12",
+                "KC_HTTPS_MANAGEMENT_KEY_STORE_PASSWORD", "pass",
+                "KC_HTTPS_MANAGEMENT_CERTIFICATE_KEY_FILE_PASSWORD", "orphaned"
+        ));
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertError(nonRunningPicocli, "'https-management-certificate-key-file-password' is set, but no PEM certificate is configured");
     }
 
     @Test
@@ -265,6 +356,14 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(),
                 containsString("'xyz' is an unrecognized feature, it should be one of"));
+        onAfter();
+
+        // near-match should suggest similar features
+        nonRunningPicocli = pseudoLaunch("build", "--features", "tokn-exchang");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(),
+                containsString("'tokn-exchang' is an unrecognized feature. Did you mean:"));
+        assertThat(nonRunningPicocli.getErrString(), containsString("token-exchange"));
     }
 
     @Test
@@ -286,7 +385,7 @@ public class PicocliTest extends AbstractConfigurationTest {
                 containsString(Help.defaultColorScheme(nonRunningPicocli.getColorMode())
                         .errorText("Unknown option: '--db-pasword'").toString()));
         assertThat(nonRunningPicocli.getErrString(), containsString(
-                "Possible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-pool-max-lifetime, --db-debug-jpql, --db-log-slow-queries-threshold, --db-driver, --db"));
+                "--db-password, --db-password-<datasource>, --db-mtls-key-store-password, --db-tls-trust-store-password, --db-mtls-key-store-password-<datasource>, --db-tls-trust-store-password-<datasource>, --db"));
     }
 
     @Test
@@ -314,12 +413,33 @@ public class PicocliTest extends AbstractConfigurationTest {
             assertThat(nonRunningPicocli.getOutString(), not(containsString("kc.something")));
         });
     }
+    
+    @Test
+    public void testShowConfigCommandHidesSecondaryMappedVaultPassword() {
+        putEnvVar("KC_SPI_VAULT__KEYSTORE__PASS", "mapped-vault-secret");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("show-config");
+        assertThat(nonRunningPicocli.getOutString(), not(containsString("mapped-vault-secret")));
+    }
+    
+    @Test
+    public void testUnknownSpiOptionMasked() {
+        putEnvVar("KC_SPI_CUSTOM__ID__SECRET", "custom-secret");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("show-config");
+        assertThat(nonRunningPicocli.getOutString(), not(containsString("custom-secret")));
+    }
+    
+    @Test
+    public void testShowConfigCommandHidesSecondaryMappedVaultPasswordLegacyFormat() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("show-config", "--spi-vault-keystore-pass=mapped-vault-secret");
+        assertThat(nonRunningPicocli.getOutString(), not(containsString("mapped-vault-secret")));
+    }
 
     @Test
     public void testShowConfigDisplaysPrimaryValue() {
         build("build", "--db=postgres");
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("show-config");
         assertThat(nonRunningPicocli.getOutString(), containsString("postgres (Persisted)"));
+        assertThat(nonRunningPicocli.getOutString(), not(containsString("null")));
     }
 
     @Test
@@ -359,6 +479,27 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void failOptimizedBeforeCommand() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("--optimized", "export", "--dir=data");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--optimized'"));
+    }
+
+    @Test
+    public void failPropertyMapperBeforeCommand() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("--dir=data", "export");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--dir'"));
+    }
+
+    @Test
+    public void failUnknownOptionBeforeCommand() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("--foobar", "export", "--dir=data");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--foobar'"));
+    }
+
+    @Test
     public void failIfOptimizedUsedForFirstStartupExport() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--optimized", "--dir=data");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
@@ -387,7 +528,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=name", "--http-enabled=true");
         assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
-        assertEquals("dev", nonRunningPicocli.buildProps.getProperty(org.keycloak.common.util.Environment.PROFILE));
+        assertEquals("dev", nonRunningPicocli.getBuildProps().getProperty(org.keycloak.common.util.Environment.PROFILE));
     }
 
     /**
@@ -412,7 +553,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(nonRunningPicocli.getErrString(), code, nonRunningPicocli.exitCode);
         outChecker.accept(nonRunningPicocli.getOutString());
         onAfter();
-        addPersistedConfigValues((Map)nonRunningPicocli.buildProps);
+        addPersistedConfigValues((Map)nonRunningPicocli.getBuildProps());
         return nonRunningPicocli;
     }
 
@@ -468,7 +609,13 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--db=dev-file", "--file=file");
         assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
-        assertEquals("prod", nonRunningPicocli.buildProps.getProperty(org.keycloak.common.util.Environment.PROFILE));
+        assertEquals("prod", nonRunningPicocli.getBuildProps().getProperty(org.keycloak.common.util.Environment.PROFILE));
+    }
+
+    @Test
+    public void testSyntheticValidationSkipped() {
+        NonRunningPicocli nonRunningPicocli = build("build", "--db=postgres");
+        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("kc.db"));
     }
 
     @Test
@@ -568,7 +715,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-max-length=wrong");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString(
-                "Invalid value for option '--log-syslog-max-length': value wrong not in correct format (regular expression): [0-9]+[BbKkMmGgTtPpEeZzYy]?"));
+                "Invalid value for option '--log-syslog-max-length': No digits in memory size string"));
     }
 
     @Test
@@ -615,7 +762,7 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void warnProviderChanged() {
         build("build", "--db=dev-file");
 
-        putEnvVar("KC_RUN_IN_CONTAINER", "true");
+        putEnvVar(Environment.KC_RUN_IN_CONTAINER, "true");
         String key = PersistedConfigSource.getInstance().getConfigValueProperties().keySet().stream().filter(k -> k.startsWith(Picocli.KC_PROVIDER_FILE_PREFIX)).findAny().orElseThrow();
         addPersistedConfigValues(Map.of(key, "1")); // change to a fake timestamp
 
@@ -742,7 +889,26 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void derivedPropertyUsage() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=localhost", "--spi-hostname-v2-hostname=second-class");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getOutString(), containsString("Please use the first-class option `kc.hostname` instead of `kc.spi-hostname-v2-hostname`"));
+        assertThat(nonRunningPicocli.getOutString(), containsString("With the first-class option `kc.hostname` set, you should remove the usage of `kc.spi-hostname-v2-hostname`"));
+    }
+
+    @Test
+    public void quarkusPropertyInQuarkusPropertiesWarning() {
+        putEnvVar("QUARKUS_HTTP_PORT", "9090");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(),
+                containsString("Please use the first-class option `kc.http-port` instead of `quarkus.http.port`"));
+    }
+
+    @Test
+    public void quarkusPropertyInQuarkusPropertiesWarningWhenKcOptionSet() {
+        putEnvVar("QUARKUS_HTTP_PORT", "9090");
+        // When kc.http-port is explicitly set, should still warn about quarkus.http.port
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--http-port=7070");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(),
+                containsString("With the first-class option `kc.http-port` set, you should remove the usage of `quarkus.http.port`"));
     }
 
     @Test
@@ -907,24 +1073,11 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
-    public void updateCommandValidation(){
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("update-compatibility","check");
-        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(), containsString("Missing required argument: --file"));
-    }
-
-    @Test
     public void testNoKcDirWarning() {
         putEnvVar("KC_DIR", "dir");
         putEnvVar("KC_LOG_LEVEL", "debug");
         var picocli = build("build", "--db=dev-file");
         assertFalse(picocli.getOutString(), picocli.getOutString().contains("kc.dir"));
-    }
-
-    @Test
-    public void testUpdatesFileValidation() {
-        NonRunningPicocli picocli = pseudoLaunch("update-compatibility","check", "--file=not-found");
-        assertTrue(picocli.getErrString().contains("Incorrect argument --file."));
     }
 
     @Test
@@ -982,6 +1135,78 @@ public class PicocliTest extends AbstractConfigurationTest {
 
         nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-exclude='/realms/my-realm/.*");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        onAfter();
+
+        // masked headers and cookies - default
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig("quarkus.http.access-log.masked-headers", "Authorization");
+        assertExternalConfig("quarkus.http.access-log.masked-cookies", "AUTH_SESSION_ID,KC_AUTH_SESSION_HASH,KEYCLOAK_IDENTITY,KEYCLOAK_SESSION,AUTH_SESSION_ID_LEGACY,KEYCLOAK_IDENTITY_LEGACY,KEYCLOAK_SESSION_LEGACY");
+        onAfter();
+
+        // masked headers - custom
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-masked-headers=My-custom-header,Authorization");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig("quarkus.http.access-log.masked-headers", "Authorization,My-custom-header");
+        onAfter();
+
+        // masked cookies - custom
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-masked-cookies=MY_CUSTOM_COOKIE," + CookieType.AUTH_SESSION_ID.getName());
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig("quarkus.http.access-log.masked-cookies", "AUTH_SESSION_ID,KC_AUTH_SESSION_HASH,KEYCLOAK_IDENTITY,KEYCLOAK_SESSION,AUTH_SESSION_ID_LEGACY,KEYCLOAK_IDENTITY_LEGACY,KEYCLOAK_SESSION_LEGACY,MY_CUSTOM_COOKIE");
+        onAfter();
+
+        // log to file
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-file-enabled=true");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Available only when HTTP Access log is enabled"));
+        assertExternalConfigNull("quarkus.http.access-log.log-to-file");
+        onAfter();
+
+        // log to file defaults
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-file-enabled=true");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.http.access-log.log-to-file", "true",
+                "quarkus.http.access-log.base-file-name", "keycloak-http-access",
+                "quarkus.http.access-log.log-suffix", ".log",
+                "quarkus.http.access-log.rotate", "true"
+        ));
+        onAfter();
+
+        // name - disabled
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-file-name=something");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Available only when HTTP Access logging to file is enabled"));
+        assertExternalConfig("quarkus.http.access-log.log-to-file", "false");
+        assertExternalConfigNull("quarkus.http.access-log.base-file-name");
+        onAfter();
+
+        // name
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-file-enabled=true", "--http-access-log-file-name=something");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.http.access-log.log-to-file", "true",
+                "quarkus.http.access-log.base-file-name", "something")
+        );
+        onAfter();
+
+        // suffix
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-file-enabled=true", "--http-access-log-file-suffix=.txt");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.http.access-log.log-to-file", "true",
+                "quarkus.http.access-log.log-suffix", ".txt")
+        );
+        onAfter();
+
+        // rotate
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-file-enabled=true", "--http-access-log-file-rotate=false");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.http.access-log.log-to-file", "true",
+                "quarkus.http.access-log.rotate", "false")
+        );
     }
 
     @Test
@@ -1017,11 +1242,6 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--non-existing'"));
         onAfter();
 
-        nonRunningPicocli = pseudoLaunch("start-dev", "-Dsome.property=123", "-Dsome.property=456");
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getOutString(), containsString("WARNING: Duplicated options present in CLI: -Dsome.property"));
-        onAfter();
-
         nonRunningPicocli = pseudoLaunch("start-dev", "something-wrong=asdf", "something-wrong=not-here");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getOutString(), not(containsString("WARNING: Duplicated options present in CLI: something-wrong")));
@@ -1032,29 +1252,144 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void httpOptimizedSerializers() {
         var nonRunningPicocli = pseudoLaunch("start-dev");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertExternalConfigNull("quarkus.rest.jackson.optimization.enable-reflection-free-serializers");
+        assertExternalConfig("quarkus.rest.jackson.optimization.enable-reflection-free-serializers", "true");
         onAfter();
 
-        nonRunningPicocli = pseudoLaunch("start-dev", "--features=http-optimized-serializers");
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features-disabled=http-optimized-serializers");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertExternalConfig("quarkus.rest.jackson.optimization.enable-reflection-free-serializers", "true");
+        assertExternalConfig("quarkus.rest.jackson.optimization.enable-reflection-free-serializers", "false");
     }
 
     @Test
-    public void tracingHiddenParentHeaders() {
+    public void telemetryParentHeaders() {
+        // tracing enabled
+        var nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--telemetry-header-Authorization=Bearer asdlkfjadsflkj");
+        assertNoError(nonRunningPicocli);
+        assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Authorization=Bearer asdlkfjadsflkj");
+        onAfter();
+
+        Function<String, String[]> enableAll = (additional) -> new String[]{"start-dev", "--telemetry-header-Authorization=Bearer asdlkfjadsflkj", "--tracing-enabled=true", "--features=opentelemetry-logs,opentelemetry-metrics", "--telemetry-logs-enabled=true", "--telemetry-metrics-enabled=true", "--metrics-enabled=true", additional};
+
+        nonRunningPicocli = pseudoLaunch(enableAll.apply("--telemetry-header-Something=keycloak"));
+        assertNoError(nonRunningPicocli);
+        assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Authorization=Bearer asdlkfjadsflkj,Something=keycloak");
+        assertExternalConfig("quarkus.otel.exporter.otlp.logs.headers", "Authorization=Bearer asdlkfjadsflkj,Something=keycloak");
+        assertExternalConfig("quarkus.otel.exporter.otlp.metrics.headers", "Authorization=Bearer asdlkfjadsflkj,Something=keycloak");
+        onAfter();
+
+        // override logs headers
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--telemetry-header-Authorization=Bearer asdlkfjadsflkj", "--telemetry-header-Something=telemetry", "--telemetry-logs-header-Authorization=Bearer logging-token", "--telemetry-logs-header-Something=telemetry-logs");
+        assertNoError(nonRunningPicocli);
+        assertExternalConfig("quarkus.otel.exporter.otlp.logs.headers", "Authorization=Bearer logging-token,Something=telemetry-logs");
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch(enableAll.apply("--telemetry-logs-header-Authorization=Bearer logs-override"));
+        assertNoError(nonRunningPicocli);
+        assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Authorization=Bearer asdlkfjadsflkj");
+        assertExternalConfig("quarkus.otel.exporter.otlp.logs.headers", "Authorization=Bearer logs-override");
+        assertExternalConfig("quarkus.otel.exporter.otlp.metrics.headers", "Authorization=Bearer asdlkfjadsflkj");
+        onAfter();
+
+        // override metrics headers
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--telemetry-metrics-enabled=true", "--telemetry-header-Authorization=Bearer asdlkfjadsflkj", "--telemetry-header-Something=telemetry", "--telemetry-metrics-header-Authorization=Bearer metrics-token", "--telemetry-metrics-header-Something=telemetry-metrics");
+        assertNoError(nonRunningPicocli);
+        assertExternalConfig("quarkus.otel.exporter.otlp.metrics.headers", "Authorization=Bearer metrics-token,Something=telemetry-metrics");
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch(enableAll.apply("--telemetry-metrics-header-Authorization=Bearer metrics-override"));
+        assertNoError(nonRunningPicocli);
+        assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Authorization=Bearer asdlkfjadsflkj");
+        assertExternalConfig("quarkus.otel.exporter.otlp.logs.headers", "Authorization=Bearer asdlkfjadsflkj");
+        assertExternalConfig("quarkus.otel.exporter.otlp.metrics.headers", "Authorization=Bearer metrics-override");
+        onAfter();
+
+        // override traces headers
+        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--telemetry-header-Authorization=Bearer asdlkfjadsflkj", "--telemetry-header-Something=telemetry", "--tracing-header-Authorization=Bearer tracing-token", "--tracing-header-Something=telemetry-traces");
+        assertNoError(nonRunningPicocli);
+        assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Authorization=Bearer tracing-token,Something=telemetry-traces");
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch(enableAll.apply("--tracing-header-Authorization=Bearer tracing-override"));
+        assertNoError(nonRunningPicocli);
+        assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Authorization=Bearer tracing-override");
+        assertExternalConfig("quarkus.otel.exporter.otlp.logs.headers", "Authorization=Bearer asdlkfjadsflkj");
+        assertExternalConfig("quarkus.otel.exporter.otlp.metrics.headers", "Authorization=Bearer asdlkfjadsflkj");
+    }
+
+    @Test
+    public void otelLogsHeaders() {
+        // Otel Logs is disabled
+        var nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=false", "--telemetry-logs-header-Authorization=Bearer");
+        assertError(nonRunningPicocli, "Unknown option:"); //for some reason, the wildcard options does not respect the isEnabled() when disabled
+        onAfter();
+
+        // basic
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--telemetry-logs-header-Authorization=Bearer asdlkfjadsflkj");
+        assertNoError(nonRunningPicocli);
+        assertExternalConfig("quarkus.otel.exporter.otlp.logs.headers", "Authorization=Bearer asdlkfjadsflkj");
+        onAfter();
+
+        // multiple
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--telemetry-logs-header-Authorization=Bearer asdlkfjadsflkj", "--telemetry-logs-header-Host=localhost:8080");
+        assertNoError(nonRunningPicocli);
+        assertExternalConfig("quarkus.otel.exporter.otlp.logs.headers", "Authorization=Bearer asdlkfjadsflkj,Host=localhost:8080");
+        onAfter();
+
+        // other header
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--telemetry-logs-header-Content-length=300");
+        assertNoError(nonRunningPicocli);
+        assertExternalConfig("quarkus.otel.exporter.otlp.logs.headers", "Content-length=300");
+        onAfter();
+
+        // duplicated headers
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--telemetry-logs-header-Content-Language=en-US", "--telemetry-logs-header-Content-Language=de-DE");
+        assertNoError(nonRunningPicocli);
+        // the last is accepted
+        assertExternalConfig("quarkus.otel.exporter.otlp.logs.headers", "Content-Language=de-DE");
+    }
+
+    @Test
+    public void otelMetricsHeaders() {
+        // Otel Metrics is disabled
+        var nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--telemetry-metrics-enabled=false", "--telemetry-metrics-header-Authorization=Bearer");
+        assertError(nonRunningPicocli, "Unknown option:"); //for some reason, the wildcard options does not respect the isEnabled() when disabled
+        onAfter();
+
+        // basic
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--telemetry-metrics-enabled=true", "--metrics-enabled=true", "--telemetry-metrics-header-Authorization=Bearer asdlkfjadsflkj");
+        assertNoError(nonRunningPicocli);
+        assertExternalConfig("quarkus.otel.exporter.otlp.metrics.headers", "Authorization=Bearer asdlkfjadsflkj");
+        onAfter();
+
+        // multiple
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--telemetry-metrics-enabled=true", "--metrics-enabled=true", "--telemetry-metrics-header-Authorization=Bearer asdlkfjadsflkj", "--telemetry-metrics-header-Host=localhost:8080");
+        assertNoError(nonRunningPicocli);
+        assertExternalConfig("quarkus.otel.exporter.otlp.metrics.headers", "Authorization=Bearer asdlkfjadsflkj,Host=localhost:8080");
+        onAfter();
+
+        // other header
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--telemetry-metrics-enabled=true", "--metrics-enabled=true", "--telemetry-metrics-header-Content-length=300");
+        assertNoError(nonRunningPicocli);
+        assertExternalConfig("quarkus.otel.exporter.otlp.metrics.headers", "Content-length=300");
+        onAfter();
+
+        // duplicated headers
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--telemetry-metrics-enabled=true", "--metrics-enabled=true", "--telemetry-metrics-header-Content-Language=en-US", "--telemetry-metrics-header-Content-Language=de-DE");
+        assertNoError(nonRunningPicocli);
+        // the last is accepted
+        assertExternalConfig("quarkus.otel.exporter.otlp.metrics.headers", "Content-Language=de-DE");
+    }
+
+    @Test
+    public void tracingSyntheticParentHeaders() {
         var nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-headers=Authorization=Bearer asdlkfjadsflkj");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--tracing-headers'. Available only when Tracing is enabled"));
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--tracing-headers'"));
         onAfter();
 
         nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--tracing-headers=Authorization=Bearer asdlkfjadsflkj");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Authorization=Bearer asdlkfjadsflkj");
-        onAfter();
-
-        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--tracing-headers=Authorization=Bearer asdlkfjadsflkj,Host=localhost:8080");
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Authorization=Bearer asdlkfjadsflkj,Host=localhost:8080");
+        assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "");
     }
 
     @Test
@@ -1087,12 +1422,6 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         // the last is accepted
         assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Content-Language=de-DE");
-        onAfter();
-
-        // Hidden 'tracing-headers' takes precedence
-        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--tracing-headers=Overridden-by-me=yes", "--tracing-header-Authorization=Bearer asdlkfjadsflkj", "--tracing-header-Host=localhost:8080");
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Overridden-by-me=yes");
     }
 
     @Test
@@ -1161,7 +1490,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertThat(nonRunningPicocli.getErrString(), containsString("Missing value for feature 'spiffe'"));
         onAfter();
 
-        // Non-existing
+        // Non-existing - no close match, falls back to full list
         nonRunningPicocli = pseudoLaunch("start-dev", "--feature-not-here=enabled");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("'not-here' is an unrecognized feature, it should be one of"));
@@ -1178,6 +1507,13 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("'non-existing-feature' is an unrecognized feature, it should be one of"));
         assertThat(nonRunningPicocli.getErrString(), not(containsString("preview")));
+        onAfter();
+
+        // Near-match - should suggest similar features
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-impersonaton=enabled");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("'impersonaton' is an unrecognized feature. Did you mean:"));
+        assertThat(nonRunningPicocli.getErrString(), containsString("impersonation"));
         onAfter();
 
         // wrong value
@@ -1266,7 +1602,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), anyOf(
                 containsString("Disabled option: '--tracing-service-name'. Available only when Tracing is enabled"),
-                containsString("Disabled option: '--telemetry-service-name'. Available only when any of available OpenTelemetry components (Logs, Traces) is turned on")
+                containsString("Disabled option: '--telemetry-service-name'. Available only when any of available OpenTelemetry components (Logs, Metrics, Traces) is turned on")
         ));
         assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.enabled").getValue(), is("false"));
         assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.traces.enabled").getValue(), is("false"));
@@ -1276,7 +1612,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         // disabled tracing
         nonRunningPicocli = pseudoLaunch("start-dev", "--telemetry-service-name=service123");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--telemetry-service-name'. Available only when any of available OpenTelemetry components (Logs, Traces) is turned on"));
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--telemetry-service-name'. Available only when any of available OpenTelemetry components (Logs, Metrics, Traces) is turned on"));
         assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.enabled").getValue(), is("false"));
         assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.traces.enabled").getValue(), is("false"));
         assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.service.name").getValue(), is(nullValue()));
@@ -1496,4 +1832,289 @@ public class PicocliTest extends AbstractConfigurationTest {
                 "quarkus.otel.logs.level", "DEBUG"
         ));
     }
+
+    @Test
+    public void otelMetrics() {
+        // parent feature disabled
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--feature-opentelemetry=disabled", "--feature-opentelemetry-metrics=enabled");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("ERROR: Feature opentelemetry-metrics depends on disabled feature opentelemetry"));
+        onAfter();
+
+        // feature disabled
+        nonRunningPicocli = pseudoLaunch("start-dev", "--telemetry-metrics-enabled=true");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--telemetry-metrics-enabled'. Available only when metrics and feature 'opentelemetry-metrics:v1' are enabled"));
+        onAfter();
+
+        // export disabled
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--telemetry-metrics-enabled=true");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--telemetry-metrics-enabled'. Available only when metrics and feature 'opentelemetry-metrics:v1' are enabled"));
+        onAfter();
+
+        // export disabled
+        nonRunningPicocli = pseudoLaunch("start-dev", "--metrics-enabled=true", "--features=opentelemetry-metrics", "--telemetry-metrics-enabled=false", "--telemetry-metrics-endpoint=endpoint");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--telemetry-metrics-endpoint'. Available only when metrics ('metrics-enabled') and Telemetry Metrics functionality ('telemetry-metrics-enabled') are enabled"));
+        onAfter();
+
+        // check enabled
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--telemetry-metrics-enabled=true");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertConfig("metrics-enabled", "true");
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.metrics.enabled", "true"
+        ));
+        onAfter();
+
+        // multiple components enabled
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics,opentelemetry-logs", "--metrics-enabled=true", "--telemetry-metrics-enabled=true", "--telemetry-logs-enabled=false");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.metrics.enabled", "true",
+                "quarkus.otel.logs.enabled", "false"
+        ));
+        onAfter();
+
+        // wrong protocol
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--telemetry-metrics-enabled=true", "--telemetry-metrics-protocol=wrong");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--telemetry-metrics-protocol': wrong. Expected values are: grpc, http/protobuf"));
+        onAfter();
+
+        // otel protocol
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--telemetry-metrics-enabled=true", "--telemetry-metrics-protocol=http/protobuf");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.metrics.protocol", "http/protobuf"
+        ));
+        onAfter();
+
+        // parent + child protocol
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--telemetry-metrics-enabled=true", "--telemetry-metrics-protocol=http/protobuf", "--telemetry-protocol=grpc");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.protocol", "grpc",
+                "quarkus.otel.exporter.otlp.metrics.protocol", "http/protobuf"
+        ));
+        onAfter();
+
+        // parent protocol
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--telemetry-metrics-enabled=true", "--telemetry-protocol=http/protobuf");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.protocol", "http/protobuf",
+                "quarkus.otel.exporter.otlp.metrics.protocol", "http/protobuf"
+        ));
+        onAfter();
+
+        // wrong parent endpoint
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--telemetry-metrics-enabled=true", "--telemetry-endpoint=not-url");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Specified Endpoint URL is invalid"));
+        onAfter();
+
+        // wrong endpoint
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--telemetry-metrics-enabled=true", "--telemetry-metrics-endpoint=not-url");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Specified Endpoint URL is invalid"));
+        onAfter();
+
+        // otel endpoint
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--telemetry-metrics-enabled=true", "--telemetry-metrics-endpoint=http://keycloak.org");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.endpoint", "http://localhost:4317",
+                "quarkus.otel.exporter.otlp.metrics.endpoint", "http://keycloak.org"
+        ));
+        onAfter();
+
+        // parent + child endpoint
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--telemetry-metrics-enabled=true", "--telemetry-endpoint=http://keycloak-keycloak-keycloak.org:3455", "--telemetry-metrics-endpoint=http://keycloak.org");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.endpoint", "http://keycloak-keycloak-keycloak.org:3455",
+                "quarkus.otel.exporter.otlp.metrics.endpoint", "http://keycloak.org"
+        ));
+        onAfter();
+
+        // parent endpoint
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--telemetry-metrics-enabled=true", "--telemetry-endpoint=http://keycloak-keycloak-keycloak.org:3455");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.endpoint", "http://keycloak-keycloak-keycloak.org:3455",
+                "quarkus.otel.exporter.otlp.metrics.endpoint", "http://keycloak-keycloak-keycloak.org:3455"
+        ));
+        onAfter();
+
+        // wrong export interval
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--telemetry-metrics-enabled=true", "--telemetry-metrics-interval=qwerty");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Duration specified via 'telemetry-metrics-interval' is invalid."));
+        onAfter();
+
+        // negative export interval
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--telemetry-metrics-enabled=true", "--telemetry-metrics-interval=-12s");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Duration specified via 'telemetry-metrics-interval' is invalid."));
+        onAfter();
+
+        // zero export interval
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--telemetry-metrics-enabled=true", "--telemetry-metrics-interval=0");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Duration specified via 'telemetry-metrics-interval' is invalid."));
+        onAfter();
+
+        // interval minutes
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--telemetry-metrics-enabled=true", "--telemetry-metrics-interval=10m");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig("quarkus.otel.metric.export.interval","10m");
+        onAfter();
+
+        // interval hours
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--telemetry-metrics-enabled=true", "--telemetry-metrics-interval=12h");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig("quarkus.otel.metric.export.interval","12h");
+    }
+
+    @Test
+    public void otelAll() {
+        // tracing
+        pseudoLaunch("start-dev", "--tracing-enabled=true");
+        assertConfig("tracing-enabled", "true");
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.traces.enabled", "true"
+        ));
+        onAfter();
+
+        // logs
+        pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true");
+        assertConfig(Map.of("telemetry-logs-enabled", "true"));
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.logs.enabled", "true"
+        ));
+        onAfter();
+
+        // metrics - not enabled
+        pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--telemetry-metrics-enabled=true");
+        assertConfig(Map.of(
+                "telemetry-metrics-enabled", "true",
+                "metrics-enabled", "false"
+        ));
+        assertExternalConfigNull("quarkus.otel.metrics.enabled");
+        assertExternalConfig("quarkus.otel.enabled", "false");
+        onAfter();
+
+        // metrics
+        pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--telemetry-metrics-enabled=true", "--metrics-enabled=true");
+        assertConfig(Map.of(
+                "telemetry-metrics-enabled", "true",
+                "metrics-enabled", "true"
+        ));
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.metrics.enabled", "true"
+        ));
+        onAfter();
+
+        // all
+        pseudoLaunch("start-dev", "--features=opentelemetry-metrics,opentelemetry-logs", "--telemetry-metrics-enabled=true", "--metrics-enabled=true", "--tracing-enabled=true", "--telemetry-logs-enabled=true");
+        assertConfig(Map.of(
+                "telemetry-metrics-enabled", "true",
+                "metrics-enabled", "true",
+                "tracing-enabled", "true",
+                "telemetry-logs-enabled", "true"
+        ));
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.metrics.enabled", "true",
+                "quarkus.otel.traces.enabled", "true",
+                "quarkus.otel.logs.enabled", "true"
+        ));
+    }
+
+    @Test
+    public void testWindowsServiceOnWin() {
+        NonRunningPicocli nonRunningPicocli = new NonRunningPicocli() {
+            @Override
+            protected CommandMode getCommandMode() {
+                return CommandMode.WIN;
+            }
+        };
+        KeycloakMain.main(new String[] {"tools", "windows-service", "--help"}, nonRunningPicocli);
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getOutString().contains("install"));
+        onAfter();
+        KeycloakMain.main(new String[] {"tools", "windows-service"}, nonRunningPicocli);
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getErrString().contains("Missing required subcommand"));
+        onAfter();
+        KeycloakMain.main(new String[] {"tools", "windows-service", "uninstall", "--db=bar"}, nonRunningPicocli);
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+    }
+
+    @Test
+    public void testWindowsServiceOnUnix() {
+        NonRunningPicocli nonRunningPicocli = new NonRunningPicocli() {
+            @Override
+            protected CommandMode getCommandMode() {
+                return CommandMode.UNIX;
+            }
+        };
+        KeycloakMain.main(new String[] {"tools", "windows-service", "--help"}, nonRunningPicocli);
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertFalse(nonRunningPicocli.getOutString().contains("install"));
+        onAfter();
+        KeycloakMain.main(new String[] {"tools", "windows-service"}, nonRunningPicocli);
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getErrString().contains("Unknown option"));
+    }
+
+    @Test
+    public void failPoolMaxSizeTooLowForJdbcPing() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db=postgres", "--db-pool-max-size=3", "--cache=ispn");
+        assertError(nonRunningPicocli, "db-pool-max-size");
+    }
+
+    @Test
+    public void failPoolMaxSizeTooLowForExplicitJdbcPingStack() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db=postgres", "--db-pool-max-size=3", "--cache=ispn", "--cache-stack=jdbc-ping");
+        assertError(nonRunningPicocli, "db-pool-max-size");
+    }
+
+    @Test
+    public void poolMaxSizeLowAllowedWithoutJdbcPing() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db-pool-max-size=3", "--cache=local");
+        assertNoError(nonRunningPicocli);
+    }
+
+    @Test
+    public void poolMaxSizeLowAllowedWithKubernetesStack() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db-pool-max-size=3", "--cache=ispn", "--cache-stack=kubernetes");
+        assertNoError(nonRunningPicocli);
+    }
+    
+    @Test
+    public void commandSuggestions() {
+        NonRunningPicocli nonRunningPicocli = new NonRunningPicocli() {
+            @Override
+            protected CommandMode getCommandMode() {
+                return CommandMode.UNIX;
+            }
+        };
+        KeycloakMain.main(new String[] {"strt"}, nonRunningPicocli);
+        assertTrue(nonRunningPicocli.getErrString().contains("Did you mean: kc.sh start or kc.sh start-dev or kc.sh bootstrap-admin?"));
+    }
+
 }

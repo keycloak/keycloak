@@ -66,7 +66,7 @@ public class WebAuthnTransportsTest extends AbstractWebAuthnVirtualTest {
         registerDefaultUser();
         logout();
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent();
         loginPage.login(USERNAME, getPassword(USERNAME));
 

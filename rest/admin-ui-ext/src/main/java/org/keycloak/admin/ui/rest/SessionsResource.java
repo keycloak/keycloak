@@ -1,6 +1,5 @@
 package org.keycloak.admin.ui.rest;
 
-import java.util.Map;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -10,7 +9,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 
-import org.keycloak.admin.ui.rest.model.ClientIdSessionType;
 import org.keycloak.admin.ui.rest.model.ClientIdSessionType.SessionType;
 import org.keycloak.admin.ui.rest.model.SessionRepresentation;
 import org.keycloak.common.util.Time;
@@ -29,7 +27,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
-import static org.keycloak.admin.ui.rest.model.ClientIdSessionType.SessionType.ALL;
 import static org.keycloak.admin.ui.rest.model.ClientIdSessionType.SessionType.OFFLINE;
 import static org.keycloak.admin.ui.rest.model.ClientIdSessionType.SessionType.REGULAR;
 
@@ -67,36 +64,13 @@ public class SessionsResource {
                                                        @QueryParam("max") @DefaultValue("10") int max) {
         auth.realm().requireViewRealm();
 
-        Stream<ClientIdSessionType> sessionIdStream = Stream.<ClientIdSessionType>builder().build();
-        if (type == ALL || type == REGULAR) {
-            final Map<String, Long> clientSessionStats = session.sessions().getActiveClientSessionStats(realm, false);
-            sessionIdStream = Stream.concat(sessionIdStream, clientSessionStats
-                    .keySet().stream().map(i -> new ClientIdSessionType(i, REGULAR)));
-        }
-        if (type == ALL || type == OFFLINE) {
-            sessionIdStream = Stream.concat(sessionIdStream, session.sessions().getActiveClientSessionStats(realm, true)
-                    .keySet().stream().map(i -> new ClientIdSessionType(i, OFFLINE)));
-        }
+        var stream = switch (type) {
+            case OFFLINE -> streamOffline();
+            case REGULAR -> streamRegular();
+            case ALL -> Stream.concat(streamRegular(), streamOffline());
+        };
 
-        Stream<SessionRepresentation> result = sessionIdStream.flatMap((clientIdSessionType) -> {
-            ClientModel clientModel = realm.getClientById(clientIdSessionType.getClientId());
-            if (clientModel == null) {
-                // client has been removed in the meantime
-                return Stream.empty();
-            }
-            switch (clientIdSessionType.getType()) {
-                case REGULAR:
-                    return session.sessions().getUserSessionsStream(realm, clientModel)
-                            .map(s -> toRepresentation(s, REGULAR));
-                case OFFLINE:
-                    return session.sessions()
-                            .getOfflineUserSessionsStream(realm, clientModel, null, null)
-                            .map(s -> toRepresentation(s, OFFLINE));
-            }
-            return Stream.<SessionRepresentation>builder().build();
-        });
-
-        return applySearch(search, result).distinct().skip(first).limit(max);
+        return applySearch(search, stream).skip(first).limit(max);
     }
 
     @GET
@@ -125,18 +99,12 @@ public class SessionsResource {
         ClientModel clientModel = realm.getClientById(clientId);
         auth.clients().requireView(clientModel);
 
-        Stream<SessionRepresentation> result = Stream.<SessionRepresentation>builder().build();
-        if (type == ALL || type == REGULAR) {
-            result = Stream.concat(result, session.sessions()
-                    .getUserSessionsStream(clientModel.getRealm(), clientModel).map(s -> toRepresentation(s, REGULAR)));
-        }
-        if (type == ALL || type == OFFLINE) {
-            result = Stream.concat(result, session.sessions()
-                    .getOfflineUserSessionsStream(clientModel.getRealm(), clientModel, null, null)
-                    .map(s -> toRepresentation(s, OFFLINE)));
-        }
-
-        return applySearch(search, result).distinct().skip(first).limit(max);
+        var stream = switch (type) {
+            case OFFLINE -> streamOffline(clientModel);
+            case REGULAR -> streamRegular(clientModel);
+            case ALL -> Stream.concat(streamRegular(clientModel), streamOffline(clientModel));
+        };
+        return applySearch(search, stream).skip(first).limit(max);
     }
 
     private Stream<SessionRepresentation> applySearch(String search, Stream<SessionRepresentation> result) {
@@ -149,6 +117,26 @@ public class SessionsResource {
                     || s.getClients().values().stream().anyMatch(c -> c.contains(searchTrimmed)));
         }
         return result;
+    }
+
+    private Stream<SessionRepresentation> streamRegular() {
+        return session.sessions().readOnlyStreamUserSessions(realm)
+                .map(s -> toRepresentation(s, REGULAR));
+    }
+
+    private Stream<SessionRepresentation> streamOffline() {
+        return session.sessions().readOnlyStreamOfflineUserSessions(realm)
+                .map(s -> toRepresentation(s, OFFLINE));
+    }
+
+    private Stream<SessionRepresentation> streamRegular(ClientModel client) {
+        return session.sessions().readOnlyStreamUserSessions(realm, client, -1, -1)
+                .map(s -> toRepresentation(s, REGULAR));
+    }
+
+    private Stream<SessionRepresentation> streamOffline(ClientModel client) {
+        return session.sessions().readOnlyStreamOfflineUserSessions(realm, client, -1, -1)
+                .map(s -> toRepresentation(s, OFFLINE));
     }
 
     private static SessionRepresentation toRepresentation(UserSessionModel session, SessionType type) {

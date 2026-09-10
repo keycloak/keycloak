@@ -71,7 +71,6 @@ public class SAMLAssertionWriter extends BaseWriter {
     public void write(AssertionType assertion) throws ProcessingException {
         StaxUtil.writeStartElement(writer, ASSERTION_PREFIX, JBossSAMLConstants.ASSERTION.get(), ASSERTION_NSURI.get());
         StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ASSERTION_NSURI.get());
-        StaxUtil.writeDefaultNameSpace(writer, ASSERTION_NSURI.get());
 
         // Attributes
         StaxUtil.writeAttribute(writer, JBossSAMLConstants.ID.get(), assertion.getID());
@@ -194,7 +193,6 @@ public class SAMLAssertionWriter extends BaseWriter {
         StaxUtil.writeStartElement(writer, ASSERTION_PREFIX, JBossSAMLConstants.AUTHN_STATEMENT.get(), ASSERTION_NSURI.get());
         if (includeNamespace) {
             StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ASSERTION_NSURI.get());
-            StaxUtil.writeDefaultNameSpace(writer, ASSERTION_NSURI.get());
         }
 
         XMLGregorianCalendar authnInstant = authnStatement.getAuthnInstant();

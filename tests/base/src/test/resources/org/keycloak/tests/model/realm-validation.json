@@ -1,0 +1,9 @@
+{
+    "realm": "realm-validation",
+    "clients": [
+        {
+            "name": "my-client",
+            "baseUrl": "/product-portal"
+        }
+    ]
+}

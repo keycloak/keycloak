@@ -24,7 +24,7 @@ import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepres
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
-import org.keycloak.services.clientpolicy.context.JWTAuthorizationGrantContext;
+import org.keycloak.services.clientpolicy.context.IdentityProviderContext;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -64,15 +64,13 @@ public class IdentityProviderCondition extends AbstractClientPolicyConditionProv
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
-        return switch (context.getEvent()) {
-            case JWT_AUTHORIZATION_GRANT -> isIdentityProvider(((JWTAuthorizationGrantContext) context).getIdentityProvider().getAlias())
-                ? ClientPolicyVote.YES
-                : ClientPolicyVote.NO;
-            default ->  ClientPolicyVote.ABSTAIN;
-        };
+        if (context instanceof IdentityProviderContext idpContext) {
+            return isIdentityProvider(idpContext.getIdentityProviderAlias()) ? ClientPolicyVote.YES : ClientPolicyVote.NO;
+        }
+        return ClientPolicyVote.ABSTAIN;
     }
 
-    private boolean isIdentityProvider(String identityProviderAlias) throws ClientPolicyException {
-        return configuration.identityProviderAliases.contains(identityProviderAlias);
+    private boolean isIdentityProvider(String identityProviderAlias) {
+        return configuration.getIdentityProviderAliases().contains(identityProviderAlias);
     }
 }

@@ -65,9 +65,8 @@ export default function ClientProfileForm() {
 
   const {
     handleSubmit,
-    setValue,
     getValues,
-    formState: { isDirty },
+    formState: { isDirty, isValid },
     control,
   } = form;
 
@@ -95,6 +94,13 @@ export default function ClientProfileForm() {
   const editMode = profileName ? true : false;
   const [key, setKey] = useState(0);
   const reload = () => setKey(key + 1);
+  const setupForm = (profile?: ClientProfileRepresentation) => {
+    form.reset({
+      name: profile?.name ?? "",
+      description: profile?.description ?? "",
+      executors: profile?.executors ?? [],
+    });
+  };
 
   useFetch(
     () =>
@@ -109,15 +115,8 @@ export default function ClientProfileForm() {
       );
       const profile = profiles.profiles?.find((p) => p.name === profileName);
       setIsGlobalProfile(globalProfile !== undefined);
-      setValue("name", globalProfile?.name ?? profile?.name ?? "");
-      setValue(
-        "description",
-        globalProfile?.description ?? profile?.description ?? "",
-      );
-      setValue(
-        "executors",
-        globalProfile?.executors ?? profile?.executors ?? [],
-      );
+      const source = globalProfile ?? profile;
+      setupForm(source);
     },
     [key],
   );
@@ -138,7 +137,7 @@ export default function ClientProfileForm() {
         AlertVariant.success,
       );
 
-      navigate(toClientProfile({ realm, profileName: form.name }));
+      void navigate(toClientProfile({ realm, profileName: form.name }));
     } catch (error) {
       addError(
         editMode ? "updateClientProfileError" : "createClientProfileError",
@@ -170,7 +169,7 @@ export default function ClientProfileForm() {
             profiles: [...(profiles!.profiles || []), getValues()],
           });
           addAlert(t("deleteExecutorSuccess"), AlertVariant.success);
-          navigate(toClientProfile({ realm, profileName }));
+          void navigate(toClientProfile({ realm, profileName }));
         } catch (error) {
           addError("deleteExecutorError", error);
         }
@@ -178,7 +177,7 @@ export default function ClientProfileForm() {
         try {
           await adminClient.clientPolicies.createProfiles(profiles);
           addAlert(t("deleteClientSuccess"), AlertVariant.success);
-          navigate(toClientPolicies({ realm, tab: "profiles" }));
+          void navigate(toClientPolicies({ realm, tab: "profiles" }));
         } catch (error) {
           addError("deleteClientError", error);
         }
@@ -244,7 +243,7 @@ export default function ClientProfileForm() {
                   variant="primary"
                   onClick={() => handleSubmit(save)()}
                   data-testid="saveCreateProfile"
-                  isDisabled={!isDirty}
+                  isDisabled={!isValid}
                 >
                   {t("save")}
                 </Button>

@@ -18,6 +18,7 @@ public class TimeOffSetRealmResourceProvider implements RealmResourceProvider {
 
     private final KeycloakSession session;
     private final String KEY_OFFSET = "offset";
+    private final String CACHES = "caches";
 
     public TimeOffSetRealmResourceProvider(KeycloakSession session) {
         this.session = session;
@@ -46,11 +47,23 @@ public class TimeOffSetRealmResourceProvider implements RealmResourceProvider {
     @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response setTimeOffset(Map<String, Integer> time) {
+    public Response setTimeOffset(Map<String, Object> time) {
         if (!time.containsKey(KEY_OFFSET)) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
-        Time.setOffset(time.get(KEY_OFFSET));
+
+        int timeOffset = (Integer) time.get(KEY_OFFSET);
+        Time.setOffset(timeOffset);
+
+        boolean caches = time.containsKey(CACHES) ? (Boolean) time.get(CACHES) : false;
+        if (caches) {
+            if (timeOffset > 0) {
+                InfinispanTimeUtil.enableTestingTimeService(session);
+            } else {
+                InfinispanTimeUtil.disableTestingTimeService(session);
+            }
+        }
+
         return Response.ok().header("Content-Type", MediaType.APPLICATION_JSON).build();
     }
 }

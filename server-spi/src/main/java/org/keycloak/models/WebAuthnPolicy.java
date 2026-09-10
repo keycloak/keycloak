@@ -37,12 +37,14 @@ public class WebAuthnPolicy implements Serializable {
     protected String attestationConveyancePreference;
     protected String authenticatorAttachment;
     protected String requireResidentKey;
+    protected String residentKey;
     protected String userVerificationRequirement;
     protected int createTimeout = 0; // not specified as option
     protected boolean avoidSameAuthenticatorRegister = false;
     protected List<String> acceptableAaguids;
     protected List<String> extraOrigins;
     protected Boolean passkeysEnabled; // only used for passwordless
+    protected String mediation; // only used for passwordless
 
     public WebAuthnPolicy() {
     }
@@ -94,12 +96,31 @@ public class WebAuthnPolicy implements Serializable {
         this.authenticatorAttachment = authenticatorAttachment;
     }
 
+    /**
+     * @deprecated Use {@link #getResidentKey()} instead. Kept for backwards compatibility and planned to be removed in the future.
+     */
+    @Deprecated
     public String getRequireResidentKey() {
         return requireResidentKey;
     }
 
+    /**
+     * @deprecated Use {@link #setResidentKey(String)} instead. Kept for backwards compatibility and planned to be removed in the future.
+     */
+    @Deprecated
     public void setRequireResidentKey(String requireResidentKey) {
+        if ("Yes".equals(requireResidentKey) || "No".equals(requireResidentKey)) {
+            logger.warn("The WebAuthn policy option 'requireResidentKey' is deprecated and will be removed in the future. Use the 'residentKey' option instead.");
+        }
         this.requireResidentKey = requireResidentKey;
+    }
+
+    public String getResidentKey() {
+        return residentKey;
+    }
+
+    public void setResidentKey(String residentKey) {
+        this.residentKey = residentKey;
     }
 
     public String getUserVerificationRequirement() {
@@ -148,5 +169,13 @@ public class WebAuthnPolicy implements Serializable {
 
     public void setPasskeysEnabled(Boolean passkeysEnabled) {
         this.passkeysEnabled = passkeysEnabled;
+    }
+
+    public String getMediation() {
+        return mediation;
+    }
+
+    public void setMediation(String mediation) {
+        this.mediation = mediation;
     }
 }

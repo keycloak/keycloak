@@ -65,9 +65,19 @@ public class WebAuthnRealmAttributeUpdater extends AbstractWebAuthnRealmUpdater<
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #setWebAuthnPolicyResidentKey(String)} instead.
+     */
+    @Deprecated
     @Override
     public WebAuthnRealmAttributeUpdater setWebAuthnPolicyRequireResidentKey(String webAuthnPolicyRequireResidentKey) {
         rep.setWebAuthnPolicyRequireResidentKey(webAuthnPolicyRequireResidentKey);
+        return this;
+    }
+
+    @Override
+    public WebAuthnRealmAttributeUpdater setWebAuthnPolicyResidentKey(String webAuthnPolicyResidentKey) {
+        rep.setWebAuthnPolicyResidentKey(webAuthnPolicyResidentKey);
         return this;
     }
 

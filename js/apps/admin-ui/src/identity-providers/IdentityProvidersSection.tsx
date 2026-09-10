@@ -78,7 +78,7 @@ const OrganizationLink = (identityProvider: IdentityProviderRepresentation) => {
   const { t } = useTranslation();
   const { realm } = useRealm();
 
-  if (!identityProvider?.organizationId) {
+  if (!identityProvider.organizationId) {
     return "—";
   }
 
@@ -139,7 +139,7 @@ export default function IdentityProvidersSection() {
   };
 
   const navigateToCreate = (providerId: string) =>
-    navigate(
+    void navigate(
       toIdentityProviderCreate({
         realm,
         providerId,
@@ -156,7 +156,7 @@ export default function IdentityProvidersSection() {
             component="a"
             data-testid={provider.id}
             onClick={() =>
-              navigate(
+              void navigate(
                 toIdentityProviderCreate({
                   realm,
                   providerId: provider.id,

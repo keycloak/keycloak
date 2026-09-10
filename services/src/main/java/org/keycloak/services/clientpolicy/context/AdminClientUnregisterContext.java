@@ -21,7 +21,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.resources.admin.AdminAuth;
 
-public class AdminClientUnregisterContext extends AbstractAdminClientCRUDContext {
+public class AdminClientUnregisterContext extends AbstractAdminClientCRUDContext implements ClientCRUDClientAvailableContext {
 
     private final ClientModel targetClient;
 

@@ -29,3 +29,4 @@ org.keycloak.authentication.requiredactions.VerifyUserProfile
 org.keycloak.authentication.requiredactions.RecoveryAuthnCodesAction
 org.keycloak.authentication.requiredactions.UpdateEmail
 org.keycloak.broker.provider.IdpLinkAction
+org.keycloak.protocol.oid4vc.issuance.requiredactions.VerifiableCredentialOfferAction

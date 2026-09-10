@@ -1,5 +1,9 @@
 package org.keycloak.testframework.oauth;
 
+import java.util.List;
+
+import org.keycloak.testframework.injection.DependenciesBuilder;
+import org.keycloak.testframework.injection.Dependency;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
@@ -9,6 +13,11 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
 import com.sun.net.httpserver.HttpServer;
 
 public class OAuthIdentityProviderSupplier implements Supplier<OAuthIdentityProvider, InjectOAuthIdentityProvider> {
+
+    @Override
+    public List<Dependency> getDependencies(RequestedInstance<OAuthIdentityProvider, InjectOAuthIdentityProvider> instanceContext) {
+        return DependenciesBuilder.create(HttpServer.class).build();
+    }
 
     @Override
     public OAuthIdentityProvider getValue(InstanceContext<OAuthIdentityProvider, InjectOAuthIdentityProvider> instanceContext) {

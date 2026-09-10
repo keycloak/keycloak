@@ -23,7 +23,7 @@ import org.keycloak.it.storage.database.MssqlSQLTest;
 
 import org.junit.jupiter.api.Tag;
 
-@DistributionTest(removeBuildOptionsAfterBuild = true)
+@DistributionTest
 @WithDatabase(alias = "mssql")
 @Tag(DistributionTest.STORAGE)
 public class MssqlDistTest extends MssqlSQLTest {

@@ -48,6 +48,10 @@ public class RemoteInfinispanSingleUseObjectProvider implements SingleUseObjectP
 
     @Override
     public void put(String key, long lifespanSeconds, Map<String, String> notes) {
+        Objects.requireNonNull(key);
+        if (lifespanSeconds <= 0) {
+            throw new IllegalArgumentException("lifespanSeconds must be positive");
+        }
         if (key.endsWith(REVOKED_KEY)) {
             revokeToken(key, lifespanSeconds);
             return;
@@ -57,13 +61,24 @@ public class RemoteInfinispanSingleUseObjectProvider implements SingleUseObjectP
 
     @Override
     public Map<String, String> get(String key) {
+        Objects.requireNonNull(key);
         return unwrap(transaction.get(key));
     }
 
     @Override
     public Map<String, String> remove(String key) {
+        Objects.requireNonNull(key);
         try {
-            return unwrap(withReturnValue().remove(key));
+            // Using a get-before-remove allows us to return the value even in cases when a state transfer happens in Infinispan
+            // where it might not return the value in all cases.
+            // This workaround can be removed once https://github.com/infinispan/infinispan/issues/16703 is implemented.
+            var data = transaction.getCache().getWithMetadata(key);
+            if (data == null) {
+                return null;
+            }
+            return transaction.getCache().removeWithVersion(key, data.getVersion()) ?
+                    unwrap(data.getValue()) :
+                    null;
         } catch (HotRodClientException re) {
             // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
             // In case of lock conflict, we don't want to retry anyway as there was likely an attempt to remove the code from different place.
@@ -74,13 +89,22 @@ public class RemoteInfinispanSingleUseObjectProvider implements SingleUseObjectP
 
     @Override
     public boolean replace(String key, Map<String, String> notes) {
+        Objects.requireNonNull(key);
         return withReturnValue().replace(key, wrap(notes)) != null;
     }
 
     @Override
     public boolean putIfAbsent(String key, long lifespanInSeconds) {
+        Objects.requireNonNull(key);
+        if (lifespanInSeconds <= 0) {
+            throw new IllegalArgumentException("lifespanInSeconds must be positive");
+        }
         try {
-            return withReturnValue().putIfAbsent(key, wrap(null), lifespanInSeconds, TimeUnit.SECONDS) == null;
+            boolean result = withReturnValue().putIfAbsent(key, wrap(null), lifespanInSeconds, TimeUnit.SECONDS) == null;
+            if (key.endsWith(REVOKED_KEY)) {
+                revokeToken(key, lifespanInSeconds);
+            }
+            return result;
         } catch (HotRodClientException re) {
             // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
             // In case of lock conflict, we don't want to retry anyway as there was likely an attempt to use the token from different place.
@@ -91,6 +115,7 @@ public class RemoteInfinispanSingleUseObjectProvider implements SingleUseObjectP
 
     @Override
     public boolean contains(String key) {
+        Objects.requireNonNull(key);
         return transaction.getCache().containsKey(key);
     }
 

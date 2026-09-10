@@ -42,7 +42,7 @@ public class RecoveryAuthnCodesUtils {
     public static boolean verifyRecoveryCodeInput(String rawInputRecoveryCode, String hashedSavedRecoveryCode) {
         byte[] hashedInputBackupCode = hashRawCode(rawInputRecoveryCode);
         try {
-            byte[] savedCode = Base64.getDecoder().decode(hashedSavedRecoveryCode);
+            byte[] savedCode = Base64.getMimeDecoder().decode(hashedSavedRecoveryCode);
             return MessageDigest.isEqual(hashedInputBackupCode, savedCode);
         } catch (IllegalArgumentException iae) {
             logger.warnf("Error when decoding saved recovery code", iae);

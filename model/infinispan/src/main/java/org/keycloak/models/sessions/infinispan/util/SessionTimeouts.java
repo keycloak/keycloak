@@ -40,7 +40,7 @@ public class SessionTimeouts {
      */
     public static final long ENTRY_EXPIRED_FLAG = -2;
 
-    private static final long IMMORTAL_FLAG = -1;
+    public static final long IMMORTAL_FLAG = -1;
 
     /**
      * Get the maximum lifespan, which this userSession can remain in the infinispan cache.
@@ -243,5 +243,33 @@ public class SessionTimeouts {
 
     public static long getAuthSessionMaxIdleMS(RealmModel realm, ClientModel client, RootAuthenticationSessionEntity entity) {
         return IMMORTAL_FLAG;
+    }
+
+    /**
+     * Calculates the effective lifespan value to use when storing user and client session entries in the Infinispan
+     * cache.
+     * <p>
+     * This method optimizes Infinispan cache configuration by incorporating the max-idle timeout into the lifespan
+     * value. Since Infinispan's max-idle implementation is expensive (requires tracking last access time and additional
+     * overhead), this optimization avoids using max-idle directly and instead sets the lifespan to the minimum of
+     * max-idle and lifespan values. This ensures session entries expire at the correct time without the performance
+     * cost of max-idle tracking.
+     *
+     * @param maxIdle  the maximum idle time in milliseconds, or {@link #IMMORTAL_FLAG} for no idle timeout
+     * @param lifespan the maximum lifespan in milliseconds, or {@link #IMMORTAL_FLAG} for no lifespan timeout
+     * @return the effective lifespan to use for the session cache entry: returns {@code lifespan} if {@code maxIdle} is
+     * {@link #IMMORTAL_FLAG}, {@code maxIdle} if {@code lifespan} is {@link #IMMORTAL_FLAG}, otherwise returns
+     * {@code min(maxIdle, lifespan)}
+     */
+    public static long calculateEffectiveSessionLifespan(long maxIdle, long lifespan) {
+        // currently, max-idle is never IMMORTAL_FLAG; the jvm should be able to remove the check.
+        // keep it to be future-proof.
+        if (maxIdle == IMMORTAL_FLAG) {
+            return lifespan;
+        }
+        if (lifespan == IMMORTAL_FLAG) {
+            return maxIdle;
+        }
+        return Math.min(maxIdle, lifespan);
     }
 }

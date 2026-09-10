@@ -2,10 +2,13 @@
 
 == Preparing for an upgrade
 
+Starting with {project_name} 26.6.0 rolling updates of patch releases are supported.
+See the https://www.keycloak.org/server/update-compatibility[Rolling Updates Guide] to determine if a rolling update is possible.
+
 Perform the following steps before you upgrade the server.
 
 .Procedure
-. Shut down {project_name}.
+. Shut down {project_name} if no rolling update is supported, for example if you perform a minor or major upgrade.
 . Back up the old installation, such as configuration, themes, and so on.
 . If XA transactions are enabled, handle any open transactions and delete the `data/transaction-logs/` transaction directory.
 . Back up the database using the instructions in the documentation for your relational database.
@@ -20,10 +23,12 @@ The database schema will no longer be compatible with the old server after the u
 If the `persistent-user-sessions` feature is disabled in your current setup and the server is upgraded, all user sessions will be lost except for offline user sessions.
 Users with these sessions will have to log in again.
 Note that the `persistent-user-sessions` feature is disabled by default in {project_name} server releases prior to 26.0.0.
+Disabling `persistent-user-sessions` is deprecated since {project_name} 26.8 and will not be supported in a future release.
 ====
 
 [WARNING]
 ====
-Information about failed logins for brute force detection and currently ongoing authentication flows is only stored in the internal caches that are cleared when {project_name} is shut down.
+Information about failed logins for brute force detection is now stored in the database by default since {project_name} 26.8 and survives cluster restarts.
+Currently ongoing authentication flows are only stored in the internal caches that are cleared when {project_name} is shut down.
 Users currently authenticating, changing their passwords, or resetting their passwords will need to restart the authentication flow once {project_name} is up and running again.
 ====

@@ -1,6 +1,6 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
-import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import {
   HelpItem,
   TextControl,
@@ -52,8 +52,7 @@ export default function ResourceDetails() {
   const [client, setClient] = useState<ClientRepresentation>();
   const [resource, setResource] = useState<ResourceRepresentation>();
 
-  const [permissions, setPermission] =
-    useState<ResourceServerRepresentation[]>();
+  const [permissions, setPermission] = useState<PolicyRepresentation[]>();
 
   const { addAlert, addError } = useAlerts();
   const form = useForm<SubmittedResource>({
@@ -110,7 +109,9 @@ export default function ResourceDetails() {
           resource,
         );
         setResource(resource);
-        navigate(toResourceDetails({ realm, id, resourceId: result._id! }));
+        void navigate(
+          toResourceDetails({ realm, id, resourceId: result._id! }),
+        );
       }
       addAlert(
         t((resourceId ? "update" : "create") + "ResourceSuccess"),
@@ -153,7 +154,9 @@ export default function ResourceDetails() {
           resourceId: resourceId!,
         });
         addAlert(t("resourceDeletedSuccess"), AlertVariant.success);
-        navigate(toAuthorizationTab({ realm, clientId: id, tab: "resources" }));
+        void navigate(
+          toAuthorizationTab({ realm, clientId: id, tab: "resources" }),
+        );
       } catch (error) {
         addError("resourceDeletedError", error);
       }

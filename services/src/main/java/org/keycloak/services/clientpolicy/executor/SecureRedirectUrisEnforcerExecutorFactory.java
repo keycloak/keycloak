@@ -36,6 +36,7 @@ public class SecureRedirectUrisEnforcerExecutorFactory implements ClientPolicyEx
     public static final String ALLOW_HTTP_SCHEME = "allow-http-scheme";
     public static final String ALLOW_WILDCARD_CONTEXT_PATH = "allow-wildcard-context-path";
     public static final String ALLOW_PERMITTED_DOMAINS = "allow-permitted-domains";
+    public static final String OAUTH_2_0_COMPLIANT = "oauth-2-0-compliant";
     public static final String OAUTH_2_1_COMPLIANT = "oauth-2-1-compliant";
 
     public static final String ALLOW_OPEN_REDIRECT = "allow-open-redirect";
@@ -138,6 +139,16 @@ public class SecureRedirectUrisEnforcerExecutorFactory implements ClientPolicyEx
                 "For example use pattern like this '(.*)\\.example\\.org' if you want clients to register redirect-uris only from domain 'example.org'." +
                 "Don't forget to use escaping of special characters like dots as otherwise dot is interpreted as any character in regex!")
             .type(ProviderConfigProperty.MULTIVALUED_STRING_TYPE)
+            .add()
+
+            .property()
+            .name(OAUTH_2_0_COMPLIANT)
+            .label("OAuth 2.0 Compliant")
+            .helpText("If On, then the executor enforces OAuth 2.0 (RFC 6749) redirect URI rules. " +
+                "This means that URL fragments and wildcard redirect URIs are not allowed. " +
+                "This is less strict than 'OAuth 2.1 Compliant', which additionally disallows 'localhost' and requires HTTPS.")
+            .type(ProviderConfigProperty.BOOLEAN_TYPE)
+            .defaultValue(false)
             .add()
 
             .property()

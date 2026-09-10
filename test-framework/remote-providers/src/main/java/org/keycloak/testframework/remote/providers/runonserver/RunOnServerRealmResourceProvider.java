@@ -4,6 +4,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
 import org.keycloak.models.KeycloakSession;
@@ -13,11 +14,11 @@ import org.keycloak.util.JsonSerialization;
 public class RunOnServerRealmResourceProvider implements RealmResourceProvider {
 
     private final KeycloakSession session;
-    private final ClassLoader classLoader;
+    private final RunOnServerRealmResourceProviderFactory factory;
 
-    public RunOnServerRealmResourceProvider(KeycloakSession session, ClassLoader classLoader) {
+    public RunOnServerRealmResourceProvider(KeycloakSession session, RunOnServerRealmResourceProviderFactory factory) {
         this.session = session;
-        this.classLoader = classLoader;
+        this.factory = factory;
     }
 
     @Override
@@ -33,8 +34,9 @@ public class RunOnServerRealmResourceProvider implements RealmResourceProvider {
     @Path("/")
     @Consumes(MediaType.TEXT_PLAIN + ";charset=utf-8")
     @Produces(MediaType.TEXT_PLAIN + ";charset=utf-8")
-    public String runOnServer(String runOnServer) {
+    public String runOnServer(String runOnServer, @QueryParam("executionId") String executionId) {
         try {
+            ClassLoader classLoader = factory.getTestClassLoader(executionId);
             Object o = SerializationUtil.decode(runOnServer, classLoader);
             if (o instanceof FetchOnServer f) {
                 Object result = f.run(session);

@@ -252,16 +252,21 @@ public class SdJwt {
         }
 
         public SdJwt build() {
-            int numberOfDecoys = Optional.ofNullable(issuerSignedJwt.getDecoyClaims()).map(List::size).orElse(0);
-            if (useDefaultDecoys && numberOfDecoys == 0) {
-                List<DecoyClaim> decoyClaims = new ArrayList<>();
-                for (int i = 0; i < DEFAULT_NUMBER_OF_DECOYS; i++) {
-                    decoyClaims.add(DecoyClaim.builder().build());
-                }
-                issuerSignedJwt.setDisclosureClaims(issuerSignedJwt.getDisclosureSpec(),
-                                                    issuerSignedJwt.getDisclosureClaims(),
-                                                    decoyClaims);
-            }
+            List<DecoyClaim> decoyClaims = Optional.ofNullable(issuerSignedJwt.getDecoyClaims())
+                    .filter(list -> !list.isEmpty())
+                    .orElseGet(() -> {
+                        if (!useDefaultDecoys) {
+                            return Collections.emptyList();
+                        }
+                        List<DecoyClaim> defaults = new ArrayList<>();
+                        for (int i = 0; i < DEFAULT_NUMBER_OF_DECOYS; i++) {
+                            defaults.add(DecoyClaim.builder().build());
+                        }
+                        return defaults;
+                    });
+            issuerSignedJwt.setDisclosureClaims(issuerSignedJwt.getDisclosureSpec(),
+                                                issuerSignedJwt.getDisclosureClaims(),
+                                                decoyClaims);
 
             SdJwt sdJwt = new SdJwt(issuerSignedJwt, keyBindingJWT, nestedSdJwts);
             AtomicInteger signCounter = new AtomicInteger(0);
@@ -269,8 +274,9 @@ public class SdJwt {
             Optional.ofNullable(keyBindingJWT).ifPresent(keyBindJwt -> {
                 // get the hash-algorithm to use for keyBinding and set it if not present
                 String hashAlgorithm = getEffectiveHashAlgorithm(sdHashAlgorithm);
+                // Normalize to lowercase to comply with IANA registered hash algorithm names
                 issuerSignedJwt.getPayload().put(OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM,
-                                                 hashAlgorithm);
+                                                 hashAlgorithm.toLowerCase());
                 if (issuerSigningContext != null) {
                     issuerSignedJwt.sign(issuerSigningContext);
                 }

@@ -173,7 +173,7 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     }
 
     public void saveDryRunProperties() throws FileNotFoundException, IOException {
-        Path path = Environment.getHomePath().orElseThrow().resolve("lib").resolve("dryRun.properties");
+        Path path = Environment.getHomePath().orElseThrow().resolve("lib").resolve("quarkus").resolve("dryRun.properties");
         var properties = Picocli.getNonPersistedBuildTimeOptions();
         try (FileOutputStream fos = new FileOutputStream(path.toFile())) {
             properties.store(fos, null);
@@ -181,7 +181,7 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     }
 
     public void useDryRunProperties() {
-        Path path = Environment.getHomePath().orElseThrow().resolve("lib").resolve("dryRun.properties");
+        Path path = Environment.getHomePath().orElseThrow().resolve("lib").resolve("quarkus").resolve("dryRun.properties");
         if (Files.exists(path)) {
             Properties properties = new Properties();
             try (FileInputStream fis = new FileInputStream(path.toFile())) {

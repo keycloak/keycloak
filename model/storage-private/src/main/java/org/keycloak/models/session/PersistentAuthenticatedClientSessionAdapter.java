@@ -18,7 +18,6 @@
 package org.keycloak.models.session;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -240,7 +239,9 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
     @Override
     public Map<String, String> getNotes() {
         PersistentClientSessionData entity = getData();
-        if (entity.getNotes() == null || entity.getNotes().isEmpty()) return Collections.emptyMap();
+        if (entity.getNotes() == null) {
+            entity.setNotes(new HashMap<>());
+        }
         return entity.getNotes();
     }
 

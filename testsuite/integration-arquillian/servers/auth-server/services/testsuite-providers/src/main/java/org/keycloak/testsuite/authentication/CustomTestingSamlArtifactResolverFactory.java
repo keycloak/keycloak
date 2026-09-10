@@ -12,7 +12,7 @@ import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
  */
 public class CustomTestingSamlArtifactResolverFactory implements ArtifactResolverFactory {
 
-    public  static final byte[] TYPE_CODE = {0, 5};
+    public  static final byte[] TYPE_CODE_AND_INDEX = {0, 5, 0, 0}; // type code and endpoint index must be present, 2 bytes each
     public static final CustomTestingSamlArtifactResolver resolver = new CustomTestingSamlArtifactResolver();
     
     @Override
@@ -37,6 +37,6 @@ public class CustomTestingSamlArtifactResolverFactory implements ArtifactResolve
 
     @Override
     public String getId() {
-        return ArtifactBindingUtils.byteArrayToResolverProviderId(TYPE_CODE);
+        return ArtifactBindingUtils.byteArrayToResolverProviderId(TYPE_CODE_AND_INDEX);
     }
 }

@@ -69,19 +69,19 @@ public interface Cors extends Provider {
 
     Cors auth();
 
-    Cors failOnInvalidOrigin();
-
     Cors allowAllOrigins();
 
-    Cors allowedOrigins(KeycloakSession session, ClientModel client);
+    /**
+     * Sets the allowed origins from the client's configured web origins and checks the
+     * incoming Origin header against them. Throws {@link jakarta.ws.rs.ForbiddenException}
+     * (HTTP 403) on a mismatch so the request stops before any side effects. Preflight and
+     * same-origin requests pass through without a check.
+     */
+    Cors checkAllowedOrigins(KeycloakSession session, ClientModel client);
 
-    Cors allowedOrigins(AccessToken token);
+    Cors checkAllowedOrigins(AccessToken token);
 
-    Cors allowedOrigins(String... allowedOrigins);
-
-    Cors allowedOrigins(List<String> allowedOrigins);
-
-    Cors addAllowedOrigins(List<String> allowedOrigins);
+    Cors checkAllowedOrigins(List<String> allowedOrigins);
 
     Cors allowedMethods(String... allowedMethods);
 

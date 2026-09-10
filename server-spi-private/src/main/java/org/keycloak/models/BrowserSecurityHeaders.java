@@ -19,6 +19,7 @@ package org.keycloak.models;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public enum BrowserSecurityHeaders {
@@ -30,6 +31,13 @@ public enum BrowserSecurityHeaders {
     X_ROBOTS_TAG("xRobotsTag", "X-Robots-Tag", "none"),
     STRICT_TRANSPORT_SECURITY("strictTransportSecurity", "Strict-Transport-Security", "max-age=31536000; includeSubDomains"),
     REFERRER_POLICY("referrerPolicy", "Referrer-Policy", "no-referrer");
+
+    public static final List<BrowserSecurityHeaders> REDIRECT_HEADERS = List.of(
+            STRICT_TRANSPORT_SECURITY,
+            X_CONTENT_TYPE_OPTIONS,
+            REFERRER_POLICY,
+            X_ROBOTS_TAG
+    );
 
     private final String key;
     private final String headerName;

@@ -56,6 +56,8 @@ public class ServerInfoRepresentation {
 
     private Map<String, List<String>> enums;
 
+    private List<ParameterizedScopeTypeRepresentation> parameterizedScopeTypes;
+
     public SystemInfoRepresentation getSystemInfo() {
         return systemInfo;
     }
@@ -190,5 +192,13 @@ public class ServerInfoRepresentation {
 
     public void setComponentTypes(Map<String, List<ComponentTypeRepresentation>> componentTypes) {
         this.componentTypes = componentTypes;
+    }
+
+    public List<ParameterizedScopeTypeRepresentation> getParameterizedScopeTypes() {
+        return parameterizedScopeTypes;
+    }
+
+    public void setParameterizedScopeTypes(List<ParameterizedScopeTypeRepresentation> parameterizedScopeTypes) {
+        this.parameterizedScopeTypes = parameterizedScopeTypes;
     }
 }

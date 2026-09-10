@@ -17,6 +17,10 @@
 
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
+import java.util.Optional;
+
+import jakarta.enterprise.context.ContextNotActiveException;
+
 import org.keycloak.common.ClientConnection;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
@@ -34,23 +38,25 @@ public final class QuarkusKeycloakContext extends DefaultKeycloakContext {
     }
 
     @Override
-    protected HttpRequest createHttpRequest() {
-        return new QuarkusHttpRequest(getResteasyReactiveRequestContext());
+    protected Optional<HttpRequest> createHttpRequest() {
+        return getResteasyReactiveRequestContext().map(QuarkusHttpRequest::new);
     }
 
     @Override
-    protected HttpResponse createHttpResponse() {
-        return new QuarkusHttpResponse(getResteasyReactiveRequestContext());
+    protected Optional<HttpResponse> createHttpResponse() {
+        return getResteasyReactiveRequestContext().map(QuarkusHttpResponse::new);
     }
 
     @Override
-    protected ClientConnection createClientConnection() {
-        ResteasyReactiveRequestContext requestContext = getResteasyReactiveRequestContext();
-        HttpServerRequest serverRequest = requestContext.unwrap(HttpServerRequest.class);
-        return new QuarkusClientConnection(serverRequest);
+    protected Optional<ClientConnection> createClientConnection() {
+        return getResteasyReactiveRequestContext().map(c -> new QuarkusClientConnection(c.unwrap(HttpServerRequest.class)));
     }
 
-    private ResteasyReactiveRequestContext getResteasyReactiveRequestContext() {
-        return CurrentRequestManager.get();
+    private Optional<ResteasyReactiveRequestContext> getResteasyReactiveRequestContext() {
+        try {
+            return Optional.ofNullable(CurrentRequestManager.get());
+        } catch (ContextNotActiveException e) {
+            return Optional.empty();
+        }
     }
 }

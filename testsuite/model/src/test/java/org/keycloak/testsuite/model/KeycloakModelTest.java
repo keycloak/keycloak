@@ -53,6 +53,10 @@ import org.keycloak.authorization.DefaultAuthorizationProviderFactory;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.policy.provider.PolicySpi;
 import org.keycloak.authorization.store.StoreFactorySpi;
+import org.keycloak.cache.AlternativeLookupProviderFactory;
+import org.keycloak.cache.AlternativeLookupSPI;
+import org.keycloak.cache.LocalCacheProviderFactory;
+import org.keycloak.cache.LocalCacheSPI;
 import org.keycloak.cluster.ClusterSpi;
 import org.keycloak.common.Profile;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
@@ -123,6 +127,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * If no parameters are set via this property, the tests derived from this class are skipped.
  * @author hmlnarik
  */
+@Deprecated(forRemoval = true)
 public abstract class KeycloakModelTest {
     private static final Logger LOG = Logger.getLogger(KeycloakModelParameters.class);
     private static final AtomicInteger FACTORY_COUNT = new AtomicInteger();
@@ -254,7 +259,9 @@ public abstract class KeycloakModelTest {
             UserSessionSpi.class,
             UserSpi.class,
             DatastoreSpi.class,
-            CacheRemoteConfigProviderSpi.class);
+            CacheRemoteConfigProviderSpi.class,
+            AlternativeLookupSPI.class,
+            LocalCacheSPI.class);
 
     private static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = Set.of(
             ComponentFactoryProviderFactory.class,
@@ -264,7 +271,9 @@ public abstract class KeycloakModelTest {
             DeploymentStateProviderFactory.class,
             DatastoreProviderFactory.class,
             TracingProviderFactory.class,
-            CacheRemoteConfigProviderFactory.class);
+            CacheRemoteConfigProviderFactory.class,
+            AlternativeLookupProviderFactory.class,
+            LocalCacheProviderFactory.class);
 
     protected static final List<KeycloakModelParameters> MODEL_PARAMETERS;
     protected static final Config CONFIG = new Config(KeycloakModelTest::useDefaultFactory);
@@ -304,7 +313,7 @@ public abstract class KeycloakModelTest {
      * testing of several parallel session factories which can be used to simulate several servers
      * running in parallel.
      */
-    public static KeycloakSessionFactory createKeycloakSessionFactory() {
+    public static synchronized KeycloakSessionFactory createKeycloakSessionFactory() {
         int factoryIndex = FACTORY_COUNT.incrementAndGet();
         String threadName = Thread.currentThread().getName();
         CONFIG.reset();
@@ -544,11 +553,16 @@ public abstract class KeycloakModelTest {
 
     @After
     public final void cleanEnvironment() {
-        if (getFactory() == null) {
+        try {
+            if (getFactory() == null) {
+                reinitializeKeycloakSessionFactory();
+            }
+            setTimeOffset(0);
+            KeycloakModelUtils.runJobInTransaction(getFactory(), this::cleanEnvironment);
+        } catch (Exception e) {
+            LOG.warnf(e, "Failed to clean environment after test, reinitializing factory");
             reinitializeKeycloakSessionFactory();
         }
-        setTimeOffset(0);
-        KeycloakModelUtils.runJobInTransaction(getFactory(), this::cleanEnvironment);
     }
 
     protected static <T> Stream<T> getParameters(Class<T> clazz) {

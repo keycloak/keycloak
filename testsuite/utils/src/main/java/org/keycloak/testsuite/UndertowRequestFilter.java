@@ -26,7 +26,6 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 
-import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -47,51 +46,15 @@ public class UndertowRequestFilter implements Filter {
         servletRequest.setCharacterEncoding("UTF-8");
         final HttpServletRequest request = (HttpServletRequest) servletRequest;
 
-        ClientConnection connection = createClientConnection(request);
         KeycloakModelUtils.runJobInTransaction(factory, session -> {
             try {
                 ResteasyContext.pushContext(KeycloakSession.class, session);
-                session.getContext().setConnection(connection);
+                ResteasyContext.pushContext(HttpServletRequest.class, request);
                 filterChain.doFilter(servletRequest, servletResponse);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
-    }
-
-    private ClientConnection createClientConnection(HttpServletRequest request) {
-        return new ClientConnection() {
-            @Override
-            public String getRemoteAddr() {
-                String forwardedFor = request.getHeader("X-Forwarded-For");
-
-                if (forwardedFor != null) {
-                    return forwardedFor;
-                }
-
-                return request.getRemoteAddr();
-            }
-
-            @Override
-            public String getRemoteHost() {
-                return request.getRemoteHost();
-            }
-
-            @Override
-            public int getRemotePort() {
-                return request.getRemotePort();
-            }
-
-            @Override
-            public String getLocalAddr() {
-                return request.getLocalAddr();
-            }
-
-            @Override
-            public int getLocalPort() {
-                return request.getLocalPort();
-            }
-        };
     }
 
     @Override

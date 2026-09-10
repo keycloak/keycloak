@@ -1,5 +1,9 @@
 package org.keycloak.testframework.remote.timeoffset;
 
+import java.util.List;
+
+import org.keycloak.testframework.injection.DependenciesBuilder;
+import org.keycloak.testframework.injection.Dependency;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
@@ -13,13 +17,20 @@ import org.apache.http.client.HttpClient;
 public class TimeOffsetSupplier implements Supplier<TimeOffSet, InjectTimeOffSet> {
 
     @Override
+    public List<Dependency> getDependencies(RequestedInstance<TimeOffSet, InjectTimeOffSet> instanceContext) {
+        return DependenciesBuilder.create(HttpClient.class)
+                .add(RemoteProviders.class).add(KeycloakUrls.class).build();
+    }
+
+    @Override
     public TimeOffSet getValue(InstanceContext<TimeOffSet, InjectTimeOffSet> instanceContext) {
         var httpClient = instanceContext.getDependency(HttpClient.class);
         var remoteProviders = instanceContext.getDependency(RemoteProviders.class);
         KeycloakUrls keycloakUrls = instanceContext.getDependency(KeycloakUrls.class);
 
         int initOffset = instanceContext.getAnnotation().offset();
-        return new TimeOffSet(httpClient, keycloakUrls.getMasterRealm(), initOffset);
+        boolean caches = instanceContext.getAnnotation().enableForCaches();
+        return new TimeOffSet(httpClient, keycloakUrls.getMasterRealm(), initOffset, caches);
     }
 
     @Override

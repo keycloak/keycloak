@@ -12,9 +12,9 @@ const PermissionsConfigurationSection = lazy(
 export const PermissionsConfigurationRoute: AppRouteObject = {
   path: "/:realm/permissions",
   element: <PermissionsConfigurationSection />,
-  breadcrumb: (t) => t("titlePermissions"),
   handle: {
     access: ["view-realm", "view-clients", "view-users"],
+    breadcrumb: (t) => t("titlePermissions"),
   },
 };
 

@@ -45,8 +45,8 @@ import org.keycloak.validate.validators.LengthValidator;
 import org.keycloak.validate.validators.NotBlankValidator;
 import org.keycloak.validate.validators.ValidatorConfigValidator;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.validate.ValidatorConfig.configFromMap;
 
@@ -61,8 +61,8 @@ public class ValidatorsTest extends AbstractKeycloakTest {
 
         Validator validator = BuiltinValidators.notEmptyValidator();
 
-        Assert.assertTrue(validator.validate("a").isValid());
-        Assert.assertFalse(validator.validate("").isValid());
+        Assertions.assertTrue(validator.validate("a").isValid());
+        Assertions.assertFalse(validator.validate("").isValid());
     }
 
     @Test
@@ -75,7 +75,7 @@ public class ValidatorsTest extends AbstractKeycloakTest {
         validator.validate("a", "username", context);
         ValidationResult result = context.toResult();
 
-        Assert.assertTrue(result.isValid());
+        Assertions.assertTrue(result.isValid());
     }
 
     @Test
@@ -86,7 +86,7 @@ public class ValidatorsTest extends AbstractKeycloakTest {
 
         ValidationResult result = BuiltinValidators.lengthValidator().validate("a", "username", context).toResult();
 
-        Assert.assertTrue(result.isValid());
+        Assertions.assertTrue(result.isValid());
     }
 
     @Test
@@ -100,7 +100,7 @@ public class ValidatorsTest extends AbstractKeycloakTest {
         validator.validate("a", "username", context);
         ValidationResult result = context.toResult();
 
-        Assert.assertTrue(result.isValid());
+        Assertions.assertTrue(result.isValid());
     }
 
     @Test
@@ -116,25 +116,25 @@ public class ValidatorsTest extends AbstractKeycloakTest {
         validator.validate(input, inputHint, context, configFromMap(Collections.singletonMap("min", "2")));
         ValidationResult result = context.toResult();
 
-        Assert.assertFalse(result.isValid());
-        Assert.assertEquals(1, result.getErrors().size());
+        Assertions.assertFalse(result.isValid());
+        Assertions.assertEquals(1, result.getErrors().size());
 
         ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
         ValidationError error = errors[0];
-        Assert.assertNotNull(error);
-        Assert.assertEquals(LengthValidator.ID, error.getValidatorId());
-        Assert.assertEquals(inputHint, error.getInputHint());
-        Assert.assertEquals(LengthValidator.MESSAGE_INVALID_LENGTH_TOO_SHORT, error.getMessage());
-        Assert.assertEquals(Integer.valueOf(2), error.getMessageParameters()[0]);
+        Assertions.assertNotNull(error);
+        Assertions.assertEquals(LengthValidator.ID, error.getValidatorId());
+        Assertions.assertEquals(inputHint, error.getInputHint());
+        Assertions.assertEquals(LengthValidator.MESSAGE_INVALID_LENGTH_TOO_SHORT, error.getMessage());
+        Assertions.assertEquals(Integer.valueOf(2), error.getMessageParameters()[0]);
 
-        Assert.assertTrue(result.hasErrorsForValidatorId(LengthValidator.ID));
-        Assert.assertFalse(result.hasErrorsForValidatorId("unknown"));
+        Assertions.assertTrue(result.hasErrorsForValidatorId(LengthValidator.ID));
+        Assertions.assertFalse(result.hasErrorsForValidatorId("unknown"));
 
-        Assert.assertEquals(result.getErrors(), result.getErrorsForValidatorId(LengthValidator.ID));
-        Assert.assertEquals(result.getErrors(), result.getErrorsForInputHint(inputHint));
+        Assertions.assertEquals(result.getErrors(), result.getErrorsForValidatorId(LengthValidator.ID));
+        Assertions.assertEquals(result.getErrors(), result.getErrorsForInputHint(inputHint));
 
-        Assert.assertTrue(result.hasErrorsForInputHint(inputHint));
-        Assert.assertFalse(result.hasErrorsForInputHint("email"));
+        Assertions.assertTrue(result.hasErrorsForInputHint(inputHint));
+        Assertions.assertFalse(result.hasErrorsForInputHint("email"));
     }
 
     @Test
@@ -142,11 +142,11 @@ public class ValidatorsTest extends AbstractKeycloakTest {
 
         AtomicBoolean bool1 = new AtomicBoolean();
         BuiltinValidators.notEmptyValidator().validate("a").toResult().ifNotValidAccept(r -> bool1.set(true));
-        Assert.assertFalse(bool1.get());
+        Assertions.assertFalse(bool1.get());
 
         AtomicBoolean bool2 = new AtomicBoolean();
         BuiltinValidators.notEmptyValidator().validate("").toResult().ifNotValidAccept(r -> bool2.set(true));
-        Assert.assertTrue(bool2.get());
+        Assertions.assertTrue(bool2.get());
     }
 
     @Test
@@ -159,7 +159,7 @@ public class ValidatorsTest extends AbstractKeycloakTest {
             errors.add(e.getMessage());
         });
 
-        Assert.assertEquals(Arrays.asList(NotBlankValidator.MESSAGE_BLANK, NotBlankValidator.MESSAGE_BLANK), errors);
+        Assertions.assertEquals(Arrays.asList(NotBlankValidator.MESSAGE_BLANK, NotBlankValidator.MESSAGE_BLANK), errors);
     }
 
     @Test
@@ -176,7 +176,7 @@ public class ValidatorsTest extends AbstractKeycloakTest {
             errors.add(e.formatMessage((message, args) -> MessageFormat.format(miniResourceBundle.getOrDefault(message, message), args)));
         });
 
-        Assert.assertEquals(Arrays.asList("address.street is blank: <>", "address.zip is blank: <null>"), errors);
+        Assertions.assertEquals(Arrays.asList("address.street is blank: <>", "address.zip is blank: <null>"), errors);
     }
 
     @Test
@@ -193,7 +193,7 @@ public class ValidatorsTest extends AbstractKeycloakTest {
 
         ValidationResult result = context.toResult();
 
-        Assert.assertTrue(result.isValid());
+        Assertions.assertTrue(result.isValid());
     }
 
     @Test
@@ -210,18 +210,18 @@ public class ValidatorsTest extends AbstractKeycloakTest {
 
         ValidationResult result = context.toResult();
 
-        Assert.assertFalse(result.isValid());
-        Assert.assertEquals(2, result.getErrors().size());
+        Assertions.assertFalse(result.isValid());
+        Assertions.assertEquals(2, result.getErrors().size());
 
         ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
 
         ValidationError error1 = errors[1];
 
-        Assert.assertNotNull(error1);
-        Assert.assertEquals(NotBlankValidator.ID, error1.getValidatorId());
-        Assert.assertEquals(inputHint, error1.getInputHint());
-        Assert.assertEquals(NotBlankValidator.MESSAGE_BLANK, error1.getMessage());
-        Assert.assertEquals(input, error1.getMessageParameters()[0]);
+        Assertions.assertNotNull(error1);
+        Assertions.assertEquals(NotBlankValidator.ID, error1.getValidatorId());
+        Assertions.assertEquals(inputHint, error1.getInputHint());
+        Assertions.assertEquals(NotBlankValidator.MESSAGE_BLANK, error1.getMessage());
+        Assertions.assertEquals(input, error1.getMessageParameters()[0]);
     }
 
     @Test
@@ -230,12 +230,12 @@ public class ValidatorsTest extends AbstractKeycloakTest {
 
         SimpleValidator validator = LengthValidator.INSTANCE;
 
-        Assert.assertFalse(validator.validateConfig(session, null).isValid());
-        Assert.assertTrue(validator.validateConfig(session, configFromMap(Collections.singletonMap("min", 1))).isValid());
-        Assert.assertTrue(validator.validateConfig(session, configFromMap(Collections.singletonMap("max", 100))).isValid());
-        Assert.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap("min", null))).isValid());
-        Assert.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap("min", "a"))).isValid());
-        Assert.assertTrue(validator.validateConfig(session, configFromMap(Collections.singletonMap("min", "123"))).isValid());
+        Assertions.assertFalse(validator.validateConfig(session, null).isValid());
+        Assertions.assertTrue(validator.validateConfig(session, configFromMap(Collections.singletonMap("min", 1))).isValid());
+        Assertions.assertTrue(validator.validateConfig(session, configFromMap(Collections.singletonMap("max", 100))).isValid());
+        Assertions.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap("min", null))).isValid());
+        Assertions.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap("min", "a"))).isValid());
+        Assertions.assertTrue(validator.validateConfig(session, configFromMap(Collections.singletonMap("min", "123"))).isValid());
     }
 
     @Test
@@ -243,17 +243,17 @@ public class ValidatorsTest extends AbstractKeycloakTest {
     public void validateEmailValidator(KeycloakSession session) {
         SimpleValidator validator = BuiltinValidators.emailValidator();
 
-        Assert.assertTrue(validator.validateConfig(session, null).isValid());
-        Assert.assertTrue(validator.validateConfig(session, ValidatorConfig.EMPTY).isValid());
-        Assert.assertTrue(validator.validateConfig(session, configFromMap(Collections.singletonMap(
+        Assertions.assertTrue(validator.validateConfig(session, null).isValid());
+        Assertions.assertTrue(validator.validateConfig(session, ValidatorConfig.EMPTY).isValid());
+        Assertions.assertTrue(validator.validateConfig(session, configFromMap(Collections.singletonMap(
                 EmailValidator.MAX_LOCAL_PART_LENGTH_PROPERTY, 128))).isValid());
-        Assert.assertTrue(validator.validateConfig(session, configFromMap(Collections.singletonMap(
+        Assertions.assertTrue(validator.validateConfig(session, configFromMap(Collections.singletonMap(
                 EmailValidator.MAX_LOCAL_PART_LENGTH_PROPERTY, "128"))).isValid());
-        Assert.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap(
+        Assertions.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap(
                 EmailValidator.MAX_LOCAL_PART_LENGTH_PROPERTY, null))).isValid());
-        Assert.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap(
+        Assertions.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap(
                 EmailValidator.MAX_LOCAL_PART_LENGTH_PROPERTY, "a"))).isValid());
-        Assert.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap(
+        Assertions.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap(
                 EmailValidator.MAX_LOCAL_PART_LENGTH_PROPERTY, ""))).isValid());
     }
 
@@ -269,7 +269,7 @@ public class ValidatorsTest extends AbstractKeycloakTest {
 
         ValidatorConfig validatorConfig = configFromMap(config);
 
-        Assert.assertTrue(validator.validateConfig(session, validatorConfig).isValid());
+        Assertions.assertTrue(validator.validateConfig(session, validatorConfig).isValid());
     }
 
     @Test
@@ -284,17 +284,17 @@ public class ValidatorsTest extends AbstractKeycloakTest {
 
         ValidationResult result = validator.validateConfig(session, configFromMap(config));
 
-        Assert.assertFalse(result.isValid());
-        Assert.assertEquals(2, result.getErrors().size());
+        Assertions.assertFalse(result.isValid());
+        Assertions.assertEquals(2, result.getErrors().size());
 
         ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
         ValidationError error1 = errors[1];
 
-        Assert.assertNotNull(error1);
-        Assert.assertEquals(LengthValidator.ID, error1.getValidatorId());
-        Assert.assertEquals("max", error1.getInputHint());
-        Assert.assertEquals(ValidatorConfigValidator.MESSAGE_CONFIG_INVALID_NUMBER_VALUE, error1.getMessage());
-        Assert.assertEquals(new ArrayList<>(), error1.getMessageParameters()[0]);
+        Assertions.assertNotNull(error1);
+        Assertions.assertEquals(LengthValidator.ID, error1.getValidatorId());
+        Assertions.assertEquals("max", error1.getInputHint());
+        Assertions.assertEquals(ValidatorConfigValidator.MESSAGE_CONFIG_INVALID_NUMBER_VALUE, error1.getMessage());
+        Assertions.assertEquals(new ArrayList<>(), error1.getMessageParameters()[0]);
     }
 
     @Test
@@ -308,48 +308,48 @@ public class ValidatorsTest extends AbstractKeycloakTest {
         ValidatorConfig validatorConfig = configFromMap(config);
 
         ValidationResult result = Validators.validateConfig(session, LengthValidator.ID, validatorConfig);
-        Assert.assertEquals(2, result.getErrors().size());
+        Assertions.assertEquals(2, result.getErrors().size());
 
         ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
         ValidationError error1 = errors[1];
 
-        Assert.assertNotNull(error1);
-        Assert.assertEquals(LengthValidator.ID, error1.getValidatorId());
-        Assert.assertEquals("max", error1.getInputHint());
-        Assert.assertEquals(ValidatorConfigValidator.MESSAGE_CONFIG_INVALID_NUMBER_VALUE, error1.getMessage());
-        Assert.assertEquals(new ArrayList<>(), error1.getMessageParameters()[0]);
+        Assertions.assertNotNull(error1);
+        Assertions.assertEquals(LengthValidator.ID, error1.getValidatorId());
+        Assertions.assertEquals("max", error1.getInputHint());
+        Assertions.assertEquals(ValidatorConfigValidator.MESSAGE_CONFIG_INVALID_NUMBER_VALUE, error1.getMessage());
+        Assertions.assertEquals(new ArrayList<>(), error1.getMessageParameters()[0]);
     }
 
     @Test
     @ModelTest
     public void nestedValidation(KeycloakSession session) {
 
-        Assert.assertTrue(MockAddressValidator.INSTANCE.validate(
+        Assertions.assertTrue(MockAddressValidator.INSTANCE.validate(
                 new MockAddress("4848 Arcu St.", "Saint-Maur-des-Fossés", "02206", "Germany")
                 , "address", new ValidationContext(session)).isValid());
 
         ValidationResult result = MockAddressValidator.INSTANCE.validate(
                 new MockAddress("", "Saint-Maur-des-Fossés", null, "Germany")
                 , "address", new ValidationContext(session)).toResult();
-        Assert.assertFalse(result.isValid());
-        Assert.assertEquals(2, result.getErrors().size());
+        Assertions.assertFalse(result.isValid());
+        Assertions.assertEquals(2, result.getErrors().size());
 
         ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
 
         ValidationError error0 = errors[0];
 
-        Assert.assertNotNull(error0);
-        Assert.assertEquals(NotBlankValidator.ID, error0.getValidatorId());
-        Assert.assertEquals("address.street", error0.getInputHint());
-        Assert.assertEquals(NotBlankValidator.MESSAGE_BLANK, error0.getMessage());
-        Assert.assertEquals("", error0.getMessageParameters()[0]);
+        Assertions.assertNotNull(error0);
+        Assertions.assertEquals(NotBlankValidator.ID, error0.getValidatorId());
+        Assertions.assertEquals("address.street", error0.getInputHint());
+        Assertions.assertEquals(NotBlankValidator.MESSAGE_BLANK, error0.getMessage());
+        Assertions.assertEquals("", error0.getMessageParameters()[0]);
 
         ValidationError error1 = errors[1];
 
-        Assert.assertNotNull(error1);
-        Assert.assertEquals(NotBlankValidator.ID, error1.getValidatorId());
-        Assert.assertEquals("address.zip", error1.getInputHint());
-        Assert.assertEquals(NotBlankValidator.MESSAGE_BLANK, error1.getMessage());
+        Assertions.assertNotNull(error1);
+        Assertions.assertEquals(NotBlankValidator.ID, error1.getValidatorId());
+        Assertions.assertEquals("address.zip", error1.getInputHint());
+        Assertions.assertEquals(NotBlankValidator.MESSAGE_BLANK, error1.getMessage());
 
     }
 

@@ -19,11 +19,12 @@ package org.keycloak.it.cli.dist;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
-import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 
 import io.quarkus.test.junit.main.Launch;
@@ -40,7 +41,7 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.containsString;
 
-@DistributionTest(keepAlive = true, enableTls = true)
+@DistributionTest(stopServer = Mode.MANUAL, enableTls = true)
 @WithEnvVars({"KC_BOOTSTRAP_ADMIN_USERNAME", "admin123", "KC_BOOTSTRAP_ADMIN_PASSWORD", "admin123"})
 @RawDistOnly(reason = "Containers are immutable")
 public class ProxyHostnameV2DistTest {
@@ -66,14 +67,14 @@ public class ProxyHostnameV2DistTest {
     }
 
     @Test
-    void testTrustedProxiesWithoutProxyHeaders(KeycloakDistribution distribution) {
-        CLIResult result = distribution.run("start-dev", "--proxy-trusted-addresses=1.0.0.0");
+    void testTrustedProxiesWithoutProxyHeaders(KeycloakRunner runner) {
+        CLIResult result = runner.run("start-dev", "--proxy-trusted-addresses=1.0.0.0");
         result.assertError("proxy-trusted-addresses available only when proxy-headers is set");
     }
 
     @Test
-    void testTrustedProxiesWithInvalidAddress(KeycloakDistribution distribution) {
-        CLIResult result = distribution.run("start-dev", "--proxy-headers=xforwarded", "--proxy-trusted-addresses=1.0.0.0:8080");
+    void testTrustedProxiesWithInvalidAddress(KeycloakRunner runner) {
+        CLIResult result = runner.run("start-dev", "--proxy-headers=xforwarded", "--proxy-trusted-addresses=1.0.0.0:8080");
         result.assertError("1.0.0.0:8080 is not a valid IP address (IPv4 or IPv6) nor valid CIDR notation.");
     }
 
@@ -121,6 +122,14 @@ public class ProxyHostnameV2DistTest {
         assertXForwardedHeaders();
     }
 
+    @Test
+    @Launch({ "start-dev", "--hostname=fixed", "--proxy-headers=xforwarded" })
+    public void testXForwardedProxyHeadersWithHostname() {
+        given().header("X-Forwarded-Prefix", "/prefix").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://fixed:8080/prefix/admin"));
+        given().header("X-Forwarded-Host", "test:123").when().get("https://localhost:8443").then().header(HttpHeaders.LOCATION, containsString("https://fixed:123/admin"));
+        given().header("X-Forwarded-Proto", "https").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("https://fixed/admin"));
+    }
+
     private void assertForwardedHeader() {
         // trigger a login error
         assertForwardedHeader("http://mykeycloak.org:8080/realms/master/protocol/openid-connect/auth?client_id=security-admin-console", "https://test:1234/admin", ADDRESS);
@@ -139,6 +148,7 @@ public class ProxyHostnameV2DistTest {
     }
 
     private void assertXForwardedHeaders() {
+        given().header("X-Forwarded-Prefix", "/prefix").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://localhost:8080/prefix/admin"));
         given().header("X-Forwarded-Host", "test:123").when().get("http://mykeycloak.org:8080").then().header(HttpHeaders.LOCATION, containsString("http://test:123/admin"));
         given().header("X-Forwarded-Host", "test:123").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://test:123/admin"));
         given().header("X-Forwarded-Host", "test:123").when().get("https://localhost:8443").then().header(HttpHeaders.LOCATION, containsString("https://test:123/admin"));

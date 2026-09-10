@@ -1,0 +1,266 @@
+/*
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.broker.oid4vp;
+
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Stream;
+
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.broker.provider.AbstractIdentityProvider;
+import org.keycloak.broker.provider.AuthenticationRequest;
+import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.provider.TrustMaterialIdentityProvider;
+import org.keycloak.broker.provider.TrustMaterialRequest;
+import org.keycloak.broker.provider.TrustMaterialResolver;
+import org.keycloak.broker.provider.TrustMaterialSdJwtIssuerResolver;
+import org.keycloak.broker.provider.X509TrustMaterial;
+import org.keycloak.broker.trust.TrustKeyUtil;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.sdjwt.vp.TrustedSdJwtIssuerResolver;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.QRCodeUtils;
+import org.keycloak.utils.StringUtil;
+
+import org.jboss.logging.Logger;
+
+/**
+ * Identity provider that authenticates users with an OpenID4VP (OID4VP) wallet presentation.
+ *
+ * <p>Supports the same device and cross device flows with a single SD-JWT VC. {@link #performLogin}
+ * renders a page with an {@code openid4vp://} link for a wallet on this device and a QR code for a
+ * wallet on another device. The wallet fetches a signed request object and posts the presentation
+ * back to {@link OID4VPIdentityProviderEndpoint}, which verifies it and drives the normal broker
+ * machinery (existing or new user, first and post broker login). A remote wallet cannot redirect
+ * the browser, so the login page polls the endpoint until the presentation arrives.
+ *
+ * <p>The provider also acts as its own {@link TrustMaterialIdentityProvider}: the credential issuer
+ * signature is verified against the inline JWKS configured on this provider.
+ *
+ * @see <a href="https://openid.net/specs/openid-4-verifiable-presentations-1_0.html">OID4VP 1.0</a>
+ */
+public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdentityProviderConfig>
+        implements TrustMaterialIdentityProvider<OID4VPIdentityProviderConfig> {
+
+    private static final Logger logger = Logger.getLogger(OID4VPIdentityProvider.class);
+
+    // TODO the accepted presentation signature algorithms are hardcoded to match the advertised client
+    // metadata. Derive both from configuration or the available verification key material.
+    public static final List<String> ACCEPTED_ALGORITHMS = List.of(Algorithm.ES256);
+
+    // The request context is written when the login page is rendered and read while serving the request
+    // object and the presentation.
+    public static final String CONTEXT_PREFIX = "oid4vp.context.";
+    // The deferred object is written once the presentation is verified and read when the browser
+    // returns to complete-auth. It marks that verified credential claims, stored under
+    // VERIFIED_CLAIMS_NOTE in the authentication session, are waiting to finish the broker login.
+    public static final String DEFERRED_PREFIX = "oid4vp.deferred.";
+    public static final String VERIFIED_CLAIMS_NOTE = "OID4VP_VERIFIED_CLAIMS";
+    // Key in BrokeredIdentityContext#getContextData() holding the disclosed claims of the verified
+    // credential presentation, consumed by the OID4VP identity provider mappers.
+    public static final String CREDENTIAL_CLAIMS = "OID4VP_CREDENTIAL_CLAIMS";
+    public static final String KEY_ROOT_SESSION_ID = "rootSessionId";
+    public static final String KEY_TAB_ID = "tabId";
+    public static final String KEY_STATE = "state";
+    public static final String KEY_RESPONSE_CODE = "responseCode";
+    public static final String KEY_CROSS_DEVICE = "crossDevice";
+
+    public static final int QR_CODE_SIZE = 246;
+
+    public OID4VPIdentityProvider(KeycloakSession session, OID4VPIdentityProviderConfig config) {
+        super(session, config);
+    }
+
+    @Override
+    public Response performLogin(AuthenticationRequest request) {
+        try {
+            AuthenticationSessionModel authSession = request.getAuthenticationSession();
+            // The OID4VP state correlates the request object, the wallet's direct_post and complete-auth.
+            String state = UUID.randomUUID().toString();
+            String nonce = Base64Url.encode(SecretGenerator.getInstance().randomBytes(32));
+            String rootSessionId = authSession.getParentSession() != null
+                    ? authSession.getParentSession().getId()
+                    : null;
+
+            EphemeralKey encryptionKey = null;
+            if (getConfig().isEncryptedResponse()) {
+                // A fresh encryption key per authorization request, as HAIP requires. Its kid is the
+                // state, so the cleartext JWE kid resolves the context although the response seals
+                // the state inside the ciphertext. Assumes the one key per request HAIP mandates.
+                encryptionKey = EphemeralKey.generate(state);
+            }
+
+            RequestContext context = new RequestContext(
+                    rootSessionId != null ? rootSessionId : "",
+                    authSession.getTabId() != null ? authSession.getTabId() : "",
+                    nonce, encryptionKey);
+            session.singleUseObjects().put(CONTEXT_PREFIX + state, loginTimeoutSeconds(), context.toMap());
+
+            String clientId = clientId();
+            String sameDeviceWalletUrl = buildWalletUrl(clientId, requestUri(request, state, false));
+            String crossDeviceWalletUrl = buildWalletUrl(clientId, requestUri(request, state, true));
+
+            return session.getProvider(LoginFormsProvider.class)
+                    .setAuthenticationSession(authSession)
+                    .setAttribute("sameDeviceWalletUrl", sameDeviceWalletUrl)
+                    .setAttribute("crossDeviceWalletUrl", crossDeviceWalletUrl)
+                    .setAttribute("crossDeviceQrCode",
+                            QRCodeUtils.encodeAsQRString(crossDeviceWalletUrl, QR_CODE_SIZE, QR_CODE_SIZE))
+                    .setAttribute("crossDeviceStatusUrl", statusUrl(request, state))
+                    .createForm("login-oid4vp.ftl");
+        } catch (Exception e) {
+            logger.errorf(e, "Failed to initiate OID4VP login: %s", e.getMessage());
+            throw new IdentityBrokerException("Failed to initiate wallet login", e);
+        }
+    }
+
+    @Override
+    public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
+        return new OID4VPIdentityProviderEndpoint(session, realm, this, callback, event);
+    }
+
+    @Override
+    public Stream<JWK> resolveKeys(TrustMaterialRequest request) {
+        String trustMaterialIdps = getConfig().getTrustMaterialIdps();
+        if (StringUtil.isNotBlank(trustMaterialIdps)) {
+            return new TrustMaterialResolver().resolveKeys(session, trustMaterialIdps, request);
+        }
+        String jwksJson = getConfig().getTrustedIssuerJwks();
+        if (StringUtil.isBlank(jwksJson)) {
+            return Stream.empty();
+        }
+        try {
+            JSONWebKeySet jwks = JsonSerialization.readValue(jwksJson, JSONWebKeySet.class);
+            return TrustKeyUtil.filterKeys(Arrays.stream(jwks.getKeys()), request);
+        } catch (Exception e) {
+            logger.warnf("Failed to parse OID4VP trusted issuer JWKS: %s", e.getMessage());
+            return Stream.empty();
+        }
+    }
+
+    @Override
+    public Stream<X509TrustMaterial> resolveX509Trust(TrustMaterialRequest request) {
+        return new TrustMaterialResolver().resolveX509Trust(session, getConfig().getTrustMaterialIdps(), request);
+    }
+
+    // How trusted issuer material is resolved for a presented credential. The provider acts as its
+    // own trust material, either delegating to the configured trust material identity providers or
+    // serving the inline trusted issuer JWKS.
+    // TODO add a trust list backed resolver (e.g. ETSI), selected from configuration.
+    protected TrustedSdJwtIssuerResolver trustedIssuerResolver() {
+        return new TrustMaterialSdJwtIssuerResolver(this);
+    }
+
+    @Override
+    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
+        return null;
+    }
+
+    @Override
+    public Response retrieveToken(
+            KeycloakSession session, FederatedIdentityModel identity, UserSessionModel userSession, UserModel user) {
+        return null;
+    }
+
+    // The verifier signs request objects with a realm ES256 key, whose certificate also yields the
+    // client identifier. By default the realm's active key is used. Since the verifier certificate
+    // must be registered in the wallet ecosystem upfront and may need a lifecycle independent of
+    // realm keys, a dedicated key can be pinned by its kid. The pinned key may be passive or even
+    // disabled, so it can be reserved for the verifier without serving regular realm signing.
+    public KeyWrapper signingKey() {
+        RealmModel realm = session.getContext().getRealm();
+        String kid = getConfig().getSigningKeyId();
+        KeyWrapper key = StringUtil.isNotBlank(kid)
+                ? session.keys().getKeyIncludingDisabled(realm, kid, KeyUse.SIG, Algorithm.ES256)
+                : session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.ES256);
+        if (key == null) {
+            throw new IdentityBrokerException(StringUtil.isNotBlank(kid)
+                    ? "No ES256 realm key found for the configured OID4VP signing key id"
+                    : "No active ES256 realm signing key found for the OID4VP verifier");
+        }
+        if (key.getCertificate() == null) {
+            throw new IdentityBrokerException("The OID4VP verifier signing key has no certificate");
+        }
+        return key;
+    }
+
+    protected ClientIdentifier clientIdentifier() {
+        // TODO make the client identifier prefix configurable.
+        return ClientIdentifier.X509_HASH;
+    }
+
+    public String clientId() {
+        return clientIdentifier().forCertificate(signingKey().getCertificate());
+    }
+
+    protected URI requestUri(AuthenticationRequest request, String state, boolean crossDevice) {
+        UriBuilder uri = endpointUri(request)
+                .path(OID4VPIdentityProviderEndpoint.REQUEST_OBJECT_PATH).path(state);
+        if (crossDevice) {
+            uri.queryParam(OID4VPIdentityProviderEndpoint.FLOW_PARAM,
+                    OID4VPIdentityProviderEndpoint.FLOW_CROSS_DEVICE);
+        }
+        return uri.build();
+    }
+
+    protected String statusUrl(AuthenticationRequest request, String state) {
+        return endpointUri(request)
+                .path(OID4VPIdentityProviderEndpoint.STATUS_PATH)
+                .queryParam(OAuth2Constants.STATE, state)
+                .build().toString();
+    }
+
+    protected UriBuilder endpointUri(AuthenticationRequest request) {
+        return OID4VPIdentityProviderEndpoint.endpointBaseUri(
+                request.getUriInfo().getBaseUriBuilder(), request.getRealm().getName(), getConfig().getAlias());
+    }
+
+    protected String buildWalletUrl(String clientId, URI requestUri) {
+        String scheme = getConfig().getWalletScheme();
+        if (!scheme.endsWith("://")) {
+            scheme = scheme + "://";
+        }
+        return scheme + "?" + OAuth2Constants.CLIENT_ID + "=" + URLEncoder.encode(clientId, StandardCharsets.UTF_8)
+                + "&request_uri=" + URLEncoder.encode(requestUri.toString(), StandardCharsets.UTF_8);
+    }
+
+    protected int loginTimeoutSeconds() {
+        return session.getContext().getRealm().getAccessCodeLifespanLogin();
+    }
+}

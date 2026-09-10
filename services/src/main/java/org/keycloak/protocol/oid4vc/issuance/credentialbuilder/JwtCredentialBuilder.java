@@ -18,23 +18,30 @@
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 
+import org.keycloak.VCFormat;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.TimeClaimNormalizer;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
-import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.CredentialDefinition;
+import org.keycloak.protocol.oid4vc.model.CredentialSubject;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 
 public class JwtCredentialBuilder implements CredentialBuilder {
 
     private static final String VC_CLAIM_KEY = "vc";
-    private static final String ID_CLAIM_KEY = "id";
 
     private final TimeProvider timeProvider;
     private final UnaryOperator<Instant> issuanceTimeNormalizer;
@@ -58,7 +65,7 @@ public class JwtCredentialBuilder implements CredentialBuilder {
 
     @Override
     public String getSupportedFormat() {
-        return Format.JWT_VC;
+        return VCFormat.JWT_VC;
     }
 
     @Override
@@ -66,6 +73,8 @@ public class JwtCredentialBuilder implements CredentialBuilder {
             VerifiableCredential verifiableCredential,
             CredentialBuildConfig credentialBuildConfig
     ) throws CredentialBuilderException {
+        verifiableCredential.setType(getCredentialTypes(verifiableCredential.getType()));
+
         // Populate the issuer field of the VC
         verifiableCredential.setIssuer(credentialBuildConfig.getCredentialIssuer());
 
@@ -90,19 +99,32 @@ public class JwtCredentialBuilder implements CredentialBuilder {
         Optional.ofNullable(verifiableCredential.getExpirationDate())
                 .ifPresent(d -> jsonWebToken.exp(d.getEpochSecond()));
 
-        // subject id should only be set if the credential subject has an id.
-        Optional.ofNullable(
-                        verifiableCredential
-                                .getCredentialSubject()
-                                .getClaims()
-                                .get(ID_CLAIM_KEY))
+        // sub should only be set if the credential subject has an id.
+        CredentialSubject subject = verifiableCredential.getCredentialSubject();
+        Optional.ofNullable(subject.getClaims().get(CLAIM_NAME_SUBJECT_ID))
                 .map(Object::toString)
                 .ifPresent(jsonWebToken::subject);
 
-        JWSBuilder.EncodingBuilder jwsBuilder = new JWSBuilder()
-                .type(credentialBuildConfig.getTokenJwsType())
-                .jsonContent(jsonWebToken);
+        JWSBuilder jwsBuilder = new JWSBuilder()
+                .type(credentialBuildConfig.getTokenJwsType());
 
-        return new JwtCredentialBody(jwsBuilder);
+        return new JwtCredentialBody(jwsBuilder, jsonWebToken);
+    }
+
+    private static List<String> getCredentialTypes(List<String> credentialTypes) {
+        List<String> types = new ArrayList<>(Optional.ofNullable(credentialTypes).orElseGet(List::of));
+        if (!types.contains(CredentialDefinition.VERIFIABLE_CREDENTIAL_TYPE)) {
+            types.add(0, CredentialDefinition.VERIFIABLE_CREDENTIAL_TYPE);
+        }
+        return types;
+    }
+
+    @Override
+    public void contributeToMetadata(SupportedCredentialConfiguration credentialConfig, CredentialScopeModel credentialScope) {
+        CredentialDefinition credentialDefinition = CredentialDefinition.parse(credentialScope);
+        // @context must not be included for jwt_vc_json format per OID4VCI spec;
+        // it is only valid for ldp_vc format.
+        credentialDefinition.setContext(null);
+        credentialConfig.setCredentialDefinition(credentialDefinition);
     }
 }

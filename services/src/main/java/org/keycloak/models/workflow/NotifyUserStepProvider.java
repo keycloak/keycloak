@@ -57,10 +57,23 @@ public class NotifyUserStepProvider implements WorkflowStepProvider {
         String bodyTemplate = getBodyTemplate();
         Map<String, Object> bodyAttributes = getBodyAttributes(context);
         UserModel user = session.users().getUserById(realm, context.getResourceId());
+        
+        if (user != null) {
+            emailProvider.setUser(user);
+        }
 
-        if (user != null && user.getEmail() != null) {
+        String targetEmail = stepModel.getConfig().getFirst("to");
+
+        if (targetEmail != null && !targetEmail.trim().isEmpty()) {
             try {
-                emailProvider.setUser(user).send(subjectKey, bodyTemplate, bodyAttributes);
+                emailProvider.send(subjectKey, bodyTemplate, bodyAttributes, targetEmail);
+                log.debugv("Notification email sent to {0}", targetEmail);
+            } catch (EmailException e) {
+                log.errorv(e, "Failed to send notification email to {0}", targetEmail);
+            }
+        } else if (user != null && user.getEmail() != null) {
+            try {
+                emailProvider.send(subjectKey, bodyTemplate, bodyAttributes);
                 log.debugv("Notification email sent to user {0} ({1})", user.getUsername(), user.getEmail());
             } catch (EmailException e) {
                 log.errorv(e, "Failed to send notification email to user {0} ({1})", user.getUsername(), user.getEmail());

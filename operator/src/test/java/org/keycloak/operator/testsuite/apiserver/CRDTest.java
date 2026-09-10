@@ -17,13 +17,15 @@
 
 package org.keycloak.operator.testsuite.apiserver;
 
-import java.io.FileNotFoundException;
+import java.io.IOException;
 
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportBuilder;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClient;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImportBuilder;
 import org.keycloak.operator.testsuite.integration.BaseOperatorTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.update.UpdateStrategy;
@@ -48,8 +50,27 @@ public class CRDTest {
     static final ObjectMapper mapper = new ObjectMapper();
 
     @BeforeAll
-    public static void before() throws FileNotFoundException {
+    public static void before() throws IOException {
         BaseOperatorTest.createCRDs(client);
+    }
+
+    @Test
+    public void testOIDCCLientWithoutRequiredFields() {
+        KeycloakOIDCClient cr = new KeycloakOIDCClientBuilder()
+                .withNewMetadata()
+                    .withName("invalid-client")
+                .endMetadata()
+                .withNewSpec()
+                .endSpec()
+                .build();
+
+        var eMsg = assertThrows(KubernetesClientException.class, () -> client.resource(cr).create()).getMessage();
+        assertThat(eMsg).contains("spec.keycloakCRName: Required value", "spec.client: Required value", "spec.realm: Required value");
+    }
+
+    @Test
+    public void testOIDCCLient() {
+        roundTrip("/test-serialization-keycloak-oidc-client-cr.yml", KeycloakOIDCClient.class);
     }
 
     @Test
@@ -107,7 +128,7 @@ public class CRDTest {
                 .build();
 
         var eMsg = assertThrows(KubernetesClientException.class, () -> client.resource(cr).create()).getMessage();
-        assertThat(eMsg).contains("spec.update: Invalid value: \"object\": The 'revision' field is required when 'Explicit' strategy is used.");
+        assertThat(eMsg).contains("The 'revision' field is required when 'Explicit' strategy is used.");
     }
 
     private <T extends HasMetadata> void roundTrip(String resourceFile, Class<T> type) {

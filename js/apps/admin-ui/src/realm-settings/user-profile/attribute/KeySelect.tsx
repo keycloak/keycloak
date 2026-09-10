@@ -34,8 +34,8 @@ export const KeySelect = ({ selectItems, ...rest }: KeySelectProp) => {
           onSelect={(value) => {
             if (value) {
               setCustom(false);
+              field.onChange(value);
             }
-            field.onChange(value);
             toggle();
           }}
           selections={!custom ? [field.value] : ""}

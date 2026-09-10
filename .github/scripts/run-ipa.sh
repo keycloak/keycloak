@@ -1,17 +1,20 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -o pipefail
-DOCKER=podman
+DOCKER=docker
 
-if [ -f "$HOME/ipa-data.tar" ]; then
-  echo "Using data from previous execution"
-  sudo tar xpf "$HOME/ipa-data.tar" -C "$HOME"
-else
-  mkdir "$HOME/ipa-data"
-fi
+# use userns-remap default to map users for systemd
+sudo bash -c 'cat << EOF > /etc/docker/daemon.json
+{ "userns-remap": "default" }
+EOF'
+sudo systemctl restart docker
+
+# chown file system to the mapper user 100000
+sudo chown -R 100000 "$HOME/.m2"
+sudo chown -R 100000 "$1"
 
 echo "Starting ipa-server container"
-container=$($DOCKER run --detach --rm -h ipa.example.test --sysctl net.ipv6.conf.all.disable_ipv6=0 --workdir /github/workspace -v "$HOME/ipa-data":"/data":Z -v "$1":"/github/workspace" -v "$HOME/.m2":"/root/.m2" freeipa/freeipa-server:rocky-9 ipa-server-install --unattended --realm=EXAMPLE.TEST --ds-password=password --admin-password=password --idstart=60000)
+container=$($DOCKER run --detach --rm -h ipa.example.test --sysctl net.ipv6.conf.all.disable_ipv6=0 --workdir /github/workspace -v "$1":"/github/workspace" -v "$HOME/.m2":"/root/.m2" freeipa/freeipa-server:rocky-9 ipa-server-install --unattended --realm=EXAMPLE.TEST --ds-password=password --admin-password=password --idstart=60000)
 
 echo "Container $container started, waiting ipa-server configuration"
 sleep 30
@@ -34,11 +37,6 @@ $DOCKER exec $container .github/scripts/run-ipa-tests.sh $new_install
 result=$?
 
 $DOCKER stop $container
-
-if [ $result -eq 0 ]; then
-  echo "Doing a backup of the ipa-data directory for caching"
-  sudo tar cpf "$HOME/ipa-data.tar" -C "$HOME" ipa-data
-fi
 
 echo "Tests executed with result: $result"
 exit $result

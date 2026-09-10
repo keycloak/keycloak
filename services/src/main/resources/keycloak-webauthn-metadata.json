@@ -1,124 +1,1779 @@
 {
-  "ea9b8d66-4d01-1d21-3ce4-b6b48cb575d4": {
-    "name": "Google Password Manager"
+  "fcb1bcb4-f370-078c-6993-bc24d0ae3fbe": {
+    "name": "Ledger Nano X FIDO2 Authenticator",
+    "icon_light": "ledger-light.png",
+    "icon_dark": "ledger-light.png"
   },
-  "adce0002-35bc-c60a-648b-0b25f1f05503": {
-    "name": "Chrome on Mac"
+  "6e8d1eae-8d40-4c25-bcf8-4633959afc71": {
+    "name": "Veridium iOS SDK",
+    "icon_light": "veridium-light.png",
+    "icon_dark": "veridium-light.png"
+  },
+  "e8b7f4a2-c3d5-e6f7-890a-b1c2d3e4f567": {
+    "name": "Sherlocked",
+    "icon_light": "sherlocked-light.svg",
+    "icon_dark": "sherlocked-light.svg"
+  },
+  "9eb7eabc-9db5-49a1-b6c3-555a802093f4": {
+    "name": "YubiKey 5 Series with NFC KVZR57",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "4d41190c-7beb-4a84-8018-adf265a6352d": {
+    "name": "Thales IDPrime FIDO Bio",
+    "icon_light": "thales-light.png",
+    "icon_dark": "thales-light.png"
+  },
+  "2772ce93-eb4b-4090-8b73-330f48477d73": {
+    "name": "Security Key NFC by Yubico - Enterprise Edition Preview",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "6dae43be-af9c-417b-8b9f-1b611168ec60": {
+    "name": "Dapple Authenticator from Dapple Security Inc.",
+    "icon_light": "dapple-light.png",
+    "icon_dark": "dapple-light.png"
+  },
+  "5626bed4-e756-430b-a7ff-ca78c8b12738": {
+    "name": "VALMIDO PRO FIDO",
+    "icon_light": "valmido-light.png",
+    "icon_dark": "valmido-light.png"
+  },
+  "260e3021-482d-442d-838c-7edfbe153b7e": {
+    "name": "Feitian ePass FIDO2-NFC Plus Authenticator",
+    "icon_light": "feitian-light.png",
+    "icon_dark": "feitian-light.png"
+  },
+  "95e4d58c-056e-4a65-866d-f5a69659e880": {
+    "name": "TruU Windows Authenticator",
+    "icon_light": "truu-light.png",
+    "icon_dark": "truu-light.png"
+  },
+  "90636e1f-ef82-43bf-bdcf-5255f139d12f": {
+    "name": "YubiKey Bio Series - Multi-protocol Edition",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "9c835346-796b-4c27-8898-d6032f515cc5": {
+    "name": "Cryptnox FIDO2",
+    "icon_light": "cryptnox-light.png",
+    "icon_dark": "cryptnox-light.png"
+  },
+  "c3f47802-de73-4dfc-ba22-671fe3304f90": {
+    "name": "eToken Fusion NFC PIV Enterprise",
+    "icon_light": "thales-light.png",
+    "icon_dark": "thales-light.png"
+  },
+  "0d9b2e56-566b-c393-2940-f821b7f15d6d": {
+    "name": "Excelsecu eSecu FIDO2 Pro Security Key",
+    "icon_light": "excelsecu-light.png",
+    "icon_dark": "excelsecu-light.png"
+  },
+  "2bff89f2-323a-48fc-b7c8-9ff7fe87c07e": {
+    "name": "Feitian BioPass FIDO2 Pro (Enterprise Profile)",
+    "icon_light": "feitian-light.png",
+    "icon_dark": "feitian-light.png"
+  },
+  "c5ef55ff-ad9a-4b9f-b580-adebafe026d0": {
+    "name": "YubiKey 5 Series with Lightning",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "2194b428-9397-4046-8f39-007a1605a482": {
+    "name": "IDPrime 931 Fido",
+    "icon_light": "thales-light.png",
+    "icon_dark": "thales-light.png"
+  },
+  "39a5647e-1853-446c-a1f6-a79bae9f5bc7": {
+    "name": "IDmelon",
+    "icon_light": "idmelon-light.svg",
+    "icon_dark": "idmelon-light.svg"
+  },
+  "664d9f67-84a2-412a-9ff7-b4f7d8ee6d05": {
+    "name": "OpenSK authenticator",
+    "icon_light": "opensk-light.png",
+    "icon_dark": "opensk-light.png"
+  },
+  "3789da91-f943-46bc-95c3-50ea2012f03a": {
+    "name": "NEOWAVE Winkeo FIDO2",
+    "icon_light": "neowave-light.png",
+    "icon_dark": "neowave-light.png"
+  },
+  "fa2b99dc-9e39-4257-8f92-4a30d23c4118": {
+    "name": "YubiKey 5 Series with NFC",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "341e4da9-3c2e-8103-5a9f-aad887135200": {
+    "name": "Ledger Nano S FIDO2 Authenticator",
+    "icon_light": "ledger-light.png",
+    "icon_dark": "ledger-light.png"
+  },
+  "69700f79-d1fb-472e-bd9b-a3a3b9a9eda0": {
+    "name": "Pone Biometrics OFFPAD Authenticator",
+    "icon_light": "pone-light.png",
+    "icon_dark": "pone-light.png"
+  },
+  "8da0e4dc-164b-454e-972e-88f362b23d59": {
+    "name": "CardOS FIDO2 Token",
+    "icon_light": "cardos-light.png",
+    "icon_dark": "cardos-light.png"
+  },
+  "89b19028-256b-4025-8872-255358d950e4": {
+    "name": "Sentry Enterprises CTAP2 Authenticator",
+    "icon_light": "sentry-light.png",
+    "icon_dark": "sentry-light.png"
+  },
+  "4e768f2c-5fab-48b3-b300-220eb487752b": {
+    "name": "Hideez Key 4 FIDO2 SDK",
+    "icon_light": "hideez-light.png",
+    "icon_dark": "hideez-light.png"
+  },
+  "47ab2fb4-66ac-4184-9ae1-86be814012d5": {
+    "name": "Security Key NFC by Yubico - Enterprise Edition",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "931327dd-c89b-406c-a81e-ed7058ef36c6": {
+    "name": "Swissbit iShield Key FIDO2",
+    "icon_light": "swissbit-light.png",
+    "icon_dark": "swissbit-light.png"
+  },
+  "f8d5c4e9-e539-4c06-8662-ec2a4155a555": {
+    "name": "StarSign Key Fob",
+    "icon_light": "starsign-light.png",
+    "icon_dark": "starsign-light.png"
+  },
+  "b7d3f68e-88a6-471e-9ecf-2df26d041ede": {
+    "name": "Security Key NFC by Yubico",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "8d1b1fcb-3c76-49a9-9129-5515b346aa02": {
+    "name": "IDEMIA ID-ONE Card",
+    "icon_light": "idemia-light.png",
+    "icon_dark": "idemia-light.png"
+  },
+  "30b5035e-d297-4ff7-020b-addc96ba6a98": {
+    "name": "OneSpan DIGIPASS FX7",
+    "icon_light": "onespan-light.png",
+    "icon_dark": "onespan-light.png"
+  },
+  "454e5346-4944-4ffd-6c93-8e9267193e9a": {
+    "name": "Ensurity ThinC",
+    "icon_light": "ensurity-light.png",
+    "icon_dark": "ensurity-light.png"
+  },
+  "e1a96183-5016-4f24-b55b-e3ae23614cc6": {
+    "name": "ATKey.Pro CTAP2.0",
+    "icon_light": "atkey-light.png",
+    "icon_dark": "atkey-light.png"
+  },
+  "9ff4cc65-6154-4fff-ba09-9e2af7882ad2": {
+    "name": "Security Key NFC by Yubico - Enterprise Edition (Enterprise Profile)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "4599062e-6926-4fe7-9566-9e8fb1aedaa0": {
+    "name": "YubiKey 5 Series (Enterprise Profile)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "9d3df6ba-282f-11ed-a261-0242ac120002": {
+    "name": "Arculus FIDO2/U2F Key Card",
+    "icon_light": "arculus-light.png",
+    "icon_dark": "arculus-light.png"
+  },
+  "fbefdf68-fe86-0106-213e-4d5fa24cbe2e": {
+    "name": "Excelsecu eSecu FIDO2 NFC Security Key",
+    "icon_light": "excelsecu-light.png",
+    "icon_dark": "excelsecu-light.png"
+  },
+  "62e54e98-c209-4df3-b692-de71bb6a8528": {
+    "name": "YubiKey 5 FIPS Series with NFC Preview",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "ab32f0c6-2239-afbb-c470-d2ef4e254db7": {
+    "name": "TOKEN2 FIDO2 Security Key",
+    "icon_light": "token2-light.png",
+    "icon_dark": "token2-light.png"
+  },
+  "ce6bf97f-9f69-4ba7-9032-97adc6ca5cf1": {
+    "name": "YubiKey 5 FIPS Series with NFC (RC Preview)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "ad08c78a-4e41-49b9-86a2-ac15b06899e2": {
+    "name": "YubiKey Bio Series - FIDO Edition (Enterprise Profile)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "930b0c03-ef46-4ac4-935c-538dccd1fcdb": {
+    "name": "Chipwon Clife Key",
+    "icon_light": "chipwon-light.png",
+    "icon_dark": "chipwon-light.png"
+  },
+  "7787a482-13e8-4784-8a06-c7ed49a7aaf4": {
+    "name": "Swissbit iShield Key 2",
+    "icon_light": "swissbit-light.png",
+    "icon_dark": "swissbit-light.png"
+  },
+  "72c6b72d-8512-4c66-8359-9d3d10d9222f": {
+    "name": "Security Key NFC by Yubico - Enterprise Edition (Enterprise Profile)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "99ed6c29-4573-4847-816d-78ad8f1c75ef": {
+    "name": "VeroCard FIDO2 Authenticator",
+    "icon_light": "verocard-light.png",
+    "icon_dark": "verocard-light.png"
+  },
+  "973446ca-e21c-9a9b-99f5-9b985a67af0f": {
+    "name": "ACS FIDO Authenticator Card",
+    "icon_light": "acs-light.png",
+    "icon_dark": "acs-light.png"
+  },
+  "74820b05-a6c9-40f9-8fb0-9f86aca93998": {
+    "name": "SafeNet eToken Fusion",
+    "icon_light": "thales-light.png",
+    "icon_dark": "thales-light.png"
+  },
+  "1105e4ed-af1d-02ff-ffff-ffffffffffff": {
+    "name": "Egomet FIDO2 Authenticator for Android",
+    "icon_light": "egomet-light.png",
+    "icon_dark": "egomet-light.png"
   },
   "08987058-cadc-4b81-b6e1-30de50dcbe96": {
-    "name": "Windows Hello"
+    "name": "Windows Hello",
+    "icon_light": "windows-light.svg",
+    "icon_dark": "windows-light.svg"
+  },
+  "a4e9fc6d-4cbe-4758-b8ba-37598bb5bbaa": {
+    "name": "Security Key NFC by Yubico",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "0acf3011-bc60-f375-fb53-6f05f43154e0": {
+    "name": "Nymi FIDO2 Authenticator",
+    "icon_light": "nymi-light.png",
+    "icon_dark": "nymi-light.png"
+  },
+  "d91c5288-0ef0-49b7-b8ae-21ca0aa6b3f3": {
+    "name": "KEY-ID FIDO2 Authenticator",
+    "icon_light": "key-id-light.png",
+    "icon_dark": "key-id-light.png"
+  },
+  "8eec9bf9-486c-46da-9a67-1fbb4f66b9ed": {
+    "name": "HID Crescendo 4000 FIPS",
+    "icon_light": "hid-light.png",
+    "icon_dark": "hid-light.png"
+  },
+  "4c50ff10-1057-4fc6-b8ed-43a529530c3c": {
+    "name": "ImproveID Authenticator",
+    "icon_light": "idemia-light.png",
+    "icon_dark": "idemia-light.png"
+  },
+  "c611b55c-77b2-4527-8082-590e931b2f08": {
+    "name": "GoTrust Idem Key ",
+    "icon_light": "gotrust-light.png",
+    "icon_dark": "gotrust-light.png"
+  },
+  "ee041bce-25e5-4cdb-8f86-897fd6418464": {
+    "name": "Feitian ePass FIDO2-NFC Authenticator",
+    "icon_light": "feitian-light.png",
+    "icon_dark": "feitian-light.png"
+  },
+  "4b89f401-464e-4745-a520-486ddfc5d80e": {
+    "name": "IIST FIDO2 Authenticator",
+    "icon_light": "iist-light.png",
+    "icon_dark": "iist-light.png"
+  },
+  "2cd2f727-f6ca-44da-8f48-5c2e5da000a2": {
+    "name": "Nitrokey 3 AM",
+    "icon_light": "nitrokey-light.png",
+    "icon_dark": "nitrokey-light.png"
+  },
+  "10c70715-2a9a-4de1-b0aa-3cff6d496d39": {
+    "name": "eToken Fusion NFC FIPS",
+    "icon_light": "thales-light.png",
+    "icon_dark": "thales-light.png"
+  },
+  "efb96b10-a9ee-4b6c-a4a9-d32125ccd4a4": {
+    "name": "Safenet eToken FIDO",
+    "icon_light": "thales-light.png",
+    "icon_dark": "thales-light.png"
+  },
+  "24083bcb-3034-4867-99de-a3b52e1d426a": {
+    "name": "Enterprise Security Key Series with NFC (Consumer Profile)",
+    "icon_light": "enterprise-light.svg",
+    "icon_dark": "enterprise-light.svg"
+  },
+  "4b3f8944-d4f2-4d21-bb19-764a986ec160": {
+    "name": "KeyXentic FIDO2 Secp256R1 FIDO2 CTAP2 Authenticator",
+    "icon_light": "keyxentic-light.png",
+    "icon_dark": "keyxentic-light.png"
+  },
+  "4c0cf95d-2f40-43b5-ba42-4c83a11c04ba": {
+    "name": "Feitian BioPass FIDO2 Pro Authenticator",
+    "icon_light": "feitian-light.png",
+    "icon_dark": "feitian-light.png"
+  },
+  "5343502d-5343-5343-6172-644649444f32": {
+    "name": "ESS Smart Card Inc. Authenticator",
+    "icon_light": "ess-light.png",
+    "icon_dark": "ess-light.png"
+  },
+  "69e7c36f-f2f6-9e0d-07a6-bcc243262e6b": {
+    "name": "OneKey FIDO2 Authenticator",
+    "icon_light": "onekey-light.png",
+    "icon_dark": "onekey-light.png"
+  },
+  "524de2de-982f-49b4-a769-2b5e3b73ad79": {
+    "name": "YubiKey 5 Series (Enterprise Profile)",
+    "icon_light": "enterprise-light.svg",
+    "icon_dark": "enterprise-light.svg"
+  },
+  "09591fc6-9811-48f7-8f57-b9f23df6413f": {
+    "name": "Pone Biometrics OFFPAD Authenticator",
+    "icon_light": "pone-light.png",
+    "icon_dark": "pone-light.png"
+  },
+  "912435d9-4a88-42f3-972d-1244b0d51420": {
+    "name": "SI0X FIDO CL WRIST v1.0",
+    "icon_light": "starsign-light.png",
+    "icon_dark": "starsign-light.png"
+  },
+  "7e3f3d30-3557-4442-bdae-139312178b39": {
+    "name": "RSA DS100",
+    "icon_light": "rsa-light.png",
+    "icon_dark": "rsa-light.png"
+  },
+  "73bb0cd4-e502-49b8-9c6f-b59445bf720b": {
+    "name": "YubiKey 5 FIPS Series",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "39589099-9a75-49fc-afaa-801ca211c62a": {
+    "name": "Feitian ePass FIDO-NFC (Enterprise Profile) (CTAP2.1, CTAP2.0, U2F)",
+    "icon_light": "feitian-light.png",
+    "icon_dark": "feitian-light.png"
+  },
+  "dc5e949d-f939-43b3-9877-a85c7186b753": {
+    "name": "YubiKey Bio Multi-protocol Edition (Enterprise Profile)",
+    "icon_light": "enterprise-light.svg",
+    "icon_dark": "enterprise-light.svg"
+  },
+  "149a2021-8ef6-4133-96b8-81f8d5b7f1f5": {
+    "name": "Security Key by Yubico with NFC",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "5df66f62-5b47-43d3-aa1d-a6e31c8dbeb5": {
+    "name": "Securitag Assembly Group FIDO Authenticator NFC",
+    "icon_light": "securitag-light.png",
+    "icon_dark": "securitag-light.png"
+  },
+  "9a272558-5cfa-4424-be37-65509677b77d": {
+    "name": "SECORA ID Key S USB by Infineon Consumer Edition",
+    "icon_light": "secora-light.png",
+    "icon_dark": "secora-light.png"
+  },
+  "09619fbf-d75e-4a62-be1d-fe4d240864ae": {
+    "name": "VeriMark(TM) Guard 2.1 Fingerprint Security Key",
+    "icon_light": "verimark-light.png",
+    "icon_dark": "verimark-light.png"
+  },
+  "50cbf15a-238c-4457-8f16-812c43bf3c49": {
+    "name": "Ensurity AUTH TouchPro",
+    "icon_light": "ensurity1-light.png",
+    "icon_dark": "ensurity1-light.png"
+  },
+  "ee7fa1e0-9539-432f-bd43-9c2fc6d4f311": {
+    "name": "VeriMark NFC+ USB-C Security Key",
+    "icon_light": "verimark1-light.png",
+    "icon_dark": "verimark1-light.png"
+  },
+  "b90e7dc1-316e-4fee-a25a-56a666a670fe": {
+    "name": "YubiKey 5 Series with Lightning (Enterprise Profile)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "175cd298-83d2-4a26-b637-313c07a6434e": {
+    "name": "Chunghwa Telecom FIDO2 Smart Card Authenticator",
+    "icon_light": "chunghwa-light.png",
+    "icon_dark": "chunghwa-light.png"
+  },
+  "34744913-4f57-4e6e-a527-e9ec3c4b94e6": {
+    "name": "YubiKey Bio Series - Multi-protocol Edition",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "5ea308b2-7ac7-48b9-ac09-7e2da9015f8c": {
+    "name": "Veridium Android SDK",
+    "icon_light": "veridium-light.png",
+    "icon_dark": "veridium-light.png"
+  },
+  "3b1adb99-0dfe-46fd-90b8-7f7614a4de2a": {
+    "name": "GoTrust Idem Key",
+    "icon_light": "gotrust-light.png",
+    "icon_dark": "gotrust-light.png"
+  },
+  "46544d5d-8f5d-4db4-89ac-ea8977073fff": {
+    "name": "Foongtone FIDO Authenticator",
+    "icon_light": "foongtone-light.png",
+    "icon_dark": "foongtone-light.png"
+  },
+  "0a357157-9b18-4c8a-920e-d156e972b2f8": {
+    "name": "YubiKey 5 Series (Consumer Profile)",
+    "icon_light": "enterprise-light.svg",
+    "icon_dark": "enterprise-light.svg"
+  },
+  "998f358b-2dd2-4cbe-a43a-e8107438dfb3": {
+    "name": "OnlyKey Secp256R1 FIDO2 CTAP2 Authenticator",
+    "icon_light": "onlykey-light.png",
+    "icon_dark": "onlykey-light.png"
+  },
+  "30b5035e-d297-4ff2-010b-addc96ba6a98": {
+    "name": "OneSpan DIGIPASS FX2-A",
+    "icon_light": "onespan1-light.png",
+    "icon_dark": "onespan1-light.png"
+  },
+  "817cdab8-0d51-4de1-a821-e25b88519cf3": {
+    "name": "Swissbit iShield Key 2 FIPS",
+    "icon_light": "swissbit-light.png",
+    "icon_dark": "swissbit-light.png"
+  },
+  "61250591-b2bc-4456-b719-0b17be90bb30": {
+    "name": "eWBM eFPA FIDO2 Authenticator",
+    "icon_light": "ewbm-light.png",
+    "icon_dark": "ewbm-light.png"
+  },
+  "8c39ee86-7f9a-4a95-9ba3-f6b097e5c2ee": {
+    "name": "YubiKey Bio Series - FIDO Edition (Enterprise Profile)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "f8a011f3-8c0a-4d15-8006-17111f9edc7d": {
+    "name": "Security Key by Yubico",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "8976631b-d4a0-427f-5773-0ec71c9e0279": {
+    "name": "Solo Tap Secp256R1 FIDO2 CTAP2 Authenticator",
+    "icon_light": "solo-light.png",
+    "icon_dark": "solo-light.png"
+  },
+  "7dab85a5-d16d-4eaf-a7ef-4c1385b151c5": {
+    "name": "YubiKey 5 Series with NFC (Consumer Profile) KVZR57-2",
+    "icon_light": "enterprise-light.svg",
+    "icon_dark": "enterprise-light.svg"
+  },
+  "516d3969-5a57-5651-5958-4e7a49434167": {
+    "name": "SmartDisplayer BobeePass FIDO2 Authenticator",
+    "icon_light": "smartdisplayer-light.png",
+    "icon_dark": "smartdisplayer-light.png"
+  },
+  "8681a073-5f50-4d52-bce4-e21658d207b3": {
+    "name": "RSA Authenticator 4 for iOS",
+    "icon_light": "rsa-light.png",
+    "icon_dark": "rsa-light.png"
+  },
+  "30b5035e-d297-4ff7-030b-addc96ba6a98": {
+    "name": "OneSpan DIGIPASS FX7-C",
+    "icon_light": "onespan-light.png",
+    "icon_dark": "onespan-light.png"
+  },
+  "e41b42a3-60ac-4afb-8757-a98f2d7f6c9f": {
+    "name": "Deepnet SafeKey/Classic (FP)",
+    "icon_light": "deepnet-light.png",
+    "icon_dark": "deepnet-light.png"
+  },
+  "c89e6a38-6c00-5426-5aa5-c9cbf48f0382": {
+    "name": "ACS FIDO Authenticator NFC",
+    "icon_light": "acs-light.png",
+    "icon_dark": "acs-light.png"
+  },
+  "eb7ef748-cbe0-4b40-b8f6-07bd2d592d35": {
+    "name": "YubiKey 5 CCN Series with NFC (Consumer Profile)",
+    "icon_light": "enterprise-light.svg",
+    "icon_dark": "enterprise-light.svg"
+  },
+  "a02167b9-ae71-4ac7-9a07-06432ebb6f1c": {
+    "name": "YubiKey 5 Series with Lightning",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "82b0a720-127a-4788-b56d-d1d4b2d82eac": {
+    "name": "ID-One Key",
+    "icon_light": "id-one-light.png",
+    "icon_dark": "id-one-light.png"
+  },
+  "2c0df832-92de-4be1-8412-88a8f074df4a": {
+    "name": "Feitian FIDO Smart Card",
+    "icon_light": "feitian-light.png",
+    "icon_dark": "feitian-light.png"
+  },
+  "59f85fe7-faa5-4c92-9f52-697b9d4d5473": {
+    "name": "RSA Authenticator 4 for Android",
+    "icon_light": "rsa-light.png",
+    "icon_dark": "rsa-light.png"
+  },
+  "22682ee5-4f0e-4c19-be3e-797d5770ebfe": {
+    "name": "Precision InnaIT Key FIDO 2 Level 2 certified",
+    "icon_light": "precision-light.png",
+    "icon_dark": "precision-light.png"
+  },
+  "79f3c8ba-9e35-484b-8f47-53a5a0f5c630": {
+    "name": "YubiKey 5 FIPS Series with NFC (Enterprise Profile)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "6e34341a-88c7-483d-b777-a425c355be93": {
+    "name": "WebComm OETHenticator",
+    "icon_light": "webcomm-light.png",
+    "icon_dark": "webcomm-light.png"
+  },
+  "7a53c643-9dec-4219-b3a4-f9d24aca4e12": {
+    "name": "G+D StarKey FIDO2-NFC",
+    "icon_light": "starsign-light.png",
+    "icon_dark": "starsign-light.png"
+  },
+  "def8ab1a-9f91-44f1-a103-088d8dc7d681": {
+    "name": "IDEMIA SOLVO Fly 80 R3 FIDO Card e",
+    "icon_light": "id-one-light.png",
+    "icon_dark": "id-one-light.png"
+  },
+  "9955a1cd-564c-d388-ad68-9878a27be9f1": {
+    "name": "StarSign Chase FIDO Card",
+    "icon_light": "starsign-light.png",
+    "icon_dark": "starsign-light.png"
+  },
+  "9dd8d593-2213-438a-97f8-d6b813d51c27": {
+    "name": "YubiKey Bio Fido Edition (Consumer Profile)",
+    "icon_light": "enterprise-light.svg",
+    "icon_dark": "enterprise-light.svg"
+  },
+  "970c8d9c-19d2-46af-aa32-3f448db49e35": {
+    "name": "WinMagic FIDO Eazy - TPM",
+    "icon_light": "winmagic-light.png",
+    "icon_dark": "winmagic-light.png"
+  },
+  "c5703116-972b-4851-a3e7-ae1259843399": {
+    "name": "NEOWAVE Badgeo FIDO2",
+    "icon_light": "neowave-light.png",
+    "icon_dark": "neowave-light.png"
+  },
+  "c80dbd9a-533f-4a17-b941-1a2f1c7cedff": {
+    "name": "HID Crescendo C3000",
+    "icon_light": "hid-light.png",
+    "icon_dark": "hid-light.png"
+  },
+  "0b8b05a4-ebd4-4b0b-8f5f-33d7b6e606ab": {
+    "name": "HID Crescendo 4000",
+    "icon_light": "hid-light.png",
+    "icon_dark": "hid-light.png"
+  },
+  "5b0e46ba-db02-44ac-b979-ca9b84f5e335": {
+    "name": "YubiKey 5 FIPS Series with Lightning Preview",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "12755c32-8ad1-46eb-881c-e0b38d848b09": {
+    "name": "Feitian ePass FIDO Authenticator (CTAP2.1, CTAP2.0, U2F)",
+    "icon_light": "feitian-light.png",
+    "icon_dark": "feitian-light.png"
+  },
+  "2a55aee6-27cb-42c0-bc6e-04efe999e88a": {
+    "name": "HID Crescendo 4000",
+    "icon_light": "hid-light.png",
+    "icon_dark": "hid-light.png"
+  },
+  "820d89ed-d65a-409e-85cb-f73f0578f82a": {
+    "name": "IDmelon Authenticator",
+    "icon_light": "idmelon1-light.png",
+    "icon_dark": "idmelon1-light.png"
+  },
+  "019614a3-2703-7e35-a453-285fd06c5d24": {
+    "name": "ATLKey Authenticator",
+    "icon_light": "atlkey-light.png",
+    "icon_dark": "atlkey-light.png"
+  },
+  "3124e301-f14e-4e38-876d-fbeeb090e7bf": {
+    "name": "YubiKey 5 Series with Lightning Preview",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "b6ede29c-3772-412c-8a78-539c1f4c62d2": {
+    "name": "Feitian BioPass FIDO2 Plus Authenticator",
+    "icon_light": "feitian-light.png",
+    "icon_dark": "feitian-light.png"
+  },
+  "ed042a3a-4b22-4455-bb69-a267b652ae7e": {
+    "name": "Security Key NFC by Yubico - Enterprise Edition",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "b2c1a50b-dad8-4dc7-ba4d-0ce9597904bc": {
+    "name": "YubiKey 5 Series with NFC - Enhanced PIN (Enterprise Profile)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "85203421-48f9-4355-9bc8-8a53846e5083": {
+    "name": "YubiKey 5 FIPS Series with Lightning",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "fcc0118f-cd45-435b-8da1-9782b2da0715": {
+    "name": "YubiKey 5 FIPS Series with NFC",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "d821a7d4-e97c-4cb6-bd82-4237731fd4be": {
+    "name": "Hyper FIDO Bio Security Key",
+    "icon_light": "hyper-light.png",
+    "icon_dark": "hyper-light.png"
+  },
+  "9876631b-d4a0-427f-5773-0ec71c9e0279": {
+    "name": "Somu Secp256R1 FIDO2 CTAP2 Authenticator",
+    "icon_light": "solo-light.png",
+    "icon_dark": "solo-light.png"
+  },
+  "522a3f91-5f5d-480d-be37-6cecfad5a27b": {
+    "name": "Precision InnaIT Key FIDO 2 Level 2 certified",
+    "icon_light": "precision-light.png",
+    "icon_dark": "precision-light.png"
+  },
+  "f56f58b3-d711-4afc-ba7d-6ac05f88cb19": {
+    "name": "WinMagic FIDO Eazy - Phone",
+    "icon_light": "winmagic-light.png",
+    "icon_dark": "winmagic-light.png"
+  },
+  "6ec5cff2-a0f9-4169-945b-f33b563f7b99": {
+    "name": "YubiKey Bio Series - Multi-protocol Edition (Enterprise Profile)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "882adaf5-3aa9-4708-8e7d-3957103775b4": {
+    "name": "T-Shield TrustSec FIDO2 Bio and client PIN version",
+    "icon_light": "t-shield-light.png",
+    "icon_dark": "t-shield-light.png"
+  },
+  "49a15c1c-3f63-3f51-23a7-b9e00096edd1": {
+    "name": "IDEX CTAP2.1 Biometrics",
+    "icon_light": "idex-light.png",
+    "icon_dark": "idex-light.png"
+  },
+  "f4c63eff-d26c-4248-801c-3736c7eaa93a": {
+    "name": "FIDO KeyPass S3",
+    "icon_light": "fido-light.png",
+    "icon_dark": "fido-light.png"
+  },
+  "d384db22-4d50-ebde-2eac-5765cf1e2a44": {
+    "name": "Excelsecu eSecu FIDO2 Fingerprint Security Key",
+    "icon_light": "excelsecu-light.png",
+    "icon_dark": "excelsecu-light.png"
+  },
+  "0db01cd6-5618-455b-bb46-1ec203d3213e": {
+    "name": "GoldKey Security Token",
+    "icon_light": "goldkey-light.png",
+    "icon_dark": "goldkey-light.png"
+  },
+  "b93fd961-f2e6-462f-b122-82002247de78": {
+    "name": "Android Authenticator",
+    "icon_light": "android-light.png",
+    "icon_dark": "android-light.png"
+  },
+  "aa79f476-ea00-417e-9628-1e8365123922": {
+    "name": "HID Crescendo 4000 FIDO",
+    "icon_light": "hid-light.png",
+    "icon_dark": "hid-light.png"
+  },
+  "1e906e14-77af-46bc-ae9f-fe6ef18257e4": {
+    "name": "VeridiumID Passkey iOS SDK",
+    "icon_light": "veridium-light.png",
+    "icon_dark": "veridium-light.png"
+  },
+  "2fc0579f-8113-47ea-b116-bb5a8db9202a": {
+    "name": "YubiKey 5 Series with NFC",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "31c3f7ff-bf15-4327-83ec-9336abcbcd34": {
+    "name": "WinMagic FIDO Eazy - Software",
+    "icon_light": "winmagic-light.png",
+    "icon_dark": "winmagic-light.png"
+  },
+  "cb4f796c-a20a-af9e-d639-213c1ec247f3": {
+    "name": "ACS PocketKey+ Bio",
+    "icon_light": "acs-light.png",
+    "icon_dark": "acs-light.png"
   },
   "9ddd1817-af5a-4672-a2b9-3e3dd95000a9": {
-    "name": "Windows Hello"
+    "name": "Windows Hello",
+    "icon_light": "windows-light.svg",
+    "icon_dark": "windows-light.svg"
+  },
+  "d8522d9f-575b-4866-88a9-ba99fa02f35b": {
+    "name": "YubiKey Bio Series - FIDO Edition",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "050dd0bc-ff20-4265-8d5d-305c4b215192": {
+    "name": "eToken Fusion FIPS",
+    "icon_light": "thales-light.png",
+    "icon_dark": "thales-light.png"
+  },
+  "50a45b0c-80e7-f944-bf29-f552bfa2e048": {
+    "name": "ACS FIDO Authenticator",
+    "icon_light": "acs-light.png",
+    "icon_dark": "acs-light.png"
+  },
+  "f7c558a0-f465-11e8-b568-0800200c9a66": {
+    "name": "KONAI Secp256R1 FIDO2 Conformance Testing CTAP2 Authenticator",
+    "icon_light": "konai-light.png",
+    "icon_dark": "konai-light.png"
+  },
+  "3f59672f-20aa-4afe-b6f4-7e5e916b6d98": {
+    "name": "Arculus FIDO 2.1 Key Card [P71]",
+    "icon_light": "arculus-light.png",
+    "icon_dark": "arculus-light.png"
+  },
+  "42b4fb4a-2866-43b2-9bf7-6c6669c2e5d3": {
+    "name": "Google Titan Security Key v2",
+    "icon_light": "google-light.png",
+    "icon_dark": "google-light.png"
+  },
+  "361a3082-0278-4583-a16f-72a527f973e4": {
+    "name": "eWBM eFA500 FIDO2 Authenticator",
+    "icon_light": "ewbm-light.png",
+    "icon_dark": "ewbm-light.png"
+  },
+  "2ffd6452-01da-471f-821b-ea4bf6c8676a": {
+    "name": "IDPrime 941 Fido",
+    "icon_light": "thales-light.png",
+    "icon_dark": "thales-light.png"
+  },
+  "9806a2c8-c0da-478e-b4ca-620005d34182": {
+    "name": "YubiKey Bio Multi-protocol Edition (Consumer Profile) 1VDJSN-2",
+    "icon_light": "enterprise-light.svg",
+    "icon_dark": "enterprise-light.svg"
+  },
+  "03012cb7-4fb2-42e7-9e8d-a81f10e2a5e9": {
+    "name": "YubiKey 5 Series with Lightning (Consumer Profile)",
+    "icon_light": "enterprise-light.svg",
+    "icon_dark": "enterprise-light.svg"
+  },
+  "30b5035e-d297-4ff7-b00b-addc96ba6a98": {
+    "name": "OneSpan DIGIPASS FX7",
+    "icon_light": "onespan-light.png",
+    "icon_dark": "onespan-light.png"
+  },
+  "0f083f18-4105-43a8-ad69-24e812e38141": {
+    "name": "Security Key Series with NFC (Consumer Profile)",
+    "icon_light": "enterprise-light.svg",
+    "icon_dark": "enterprise-light.svg"
+  },
+  "5eaff75a-dd43-451f-af9f-87c9eeae293e": {
+    "name": "Swissbit iShield Key 2 FIPS Enterprise",
+    "icon_light": "swissbit-light.png",
+    "icon_dark": "swissbit-light.png"
+  },
+  "b415094c-49d3-4c8b-b3fe-7d0ad28a6bc4": {
+    "name": "ZTPass SmartAuth",
+    "icon_light": "ztpass-light.png",
+    "icon_dark": "ztpass-light.png"
+  },
+  "692db549-7ae5-44d5-a1e5-dd20a493b723": {
+    "name": "HID Crescendo Key",
+    "icon_light": "hid-light.png",
+    "icon_dark": "hid-light.png"
+  },
+  "0ebd9f2c-f685-441c-8c3e-a02a234a840a": {
+    "name": "YubiKey 5 Series with NFC Enhanced PIN (Consumer Profile)",
+    "icon_light": "enterprise-light.svg",
+    "icon_dark": "enterprise-light.svg"
+  },
+  "23315ad0-6aca-4ba1-952e-f044f1e36976": {
+    "name": "Clife Key 2 NFC",
+    "icon_light": "chipwon-light.png",
+    "icon_dark": "chipwon-light.png"
+  },
+  "1d1b4e33-76a1-47fb-97a0-14b10d0933f1": {
+    "name": "Cryptnox FIDO2.1",
+    "icon_light": "cryptnox-light.png",
+    "icon_dark": "cryptnox-light.png"
+  },
+  "bbf4b6a7-679d-f6fc-c4f2-8ac0ddf9015a": {
+    "name": "Excelsecu eSecu FIDO2 PRO Security Key",
+    "icon_light": "excelsecu-light.png",
+    "icon_dark": "excelsecu-light.png"
+  },
+  "3e22415d-7fdf-4ea4-8a0c-dd60c4249b9d": {
+    "name": "Feitian iePass FIDO Authenticator",
+    "icon_light": "feitian-light.png",
+    "icon_dark": "feitian-light.png"
+  },
+  "ab7d1767-3fa0-4388-b6c4-feef7a844809": {
+    "name": "Enterprise Security Key Series with NFC (Enterprise Profile)",
+    "icon_light": "enterprise-light.svg",
+    "icon_dark": "enterprise-light.svg"
+  },
+  "f4ce5fc0-57d3-46f5-a736-efb7d5bc63b5": {
+    "name": "YubiKey 5 Series with NFC (Consumer Profile)",
+    "icon_light": "enterprise-light.svg",
+    "icon_dark": "enterprise-light.svg"
+  },
+  "23786452-f02d-4344-87ed-aaf703726881": {
+    "name": "SafeNet eToken Fusion CC",
+    "icon_light": "thales-light.png",
+    "icon_dark": "thales-light.png"
+  },
+  "5e264d9d-28ef-4d34-95b4-5941e7a4faa8": {
+    "name": "Ideem ZSM FIDO2 Authenticator",
+    "icon_light": "ideem-light.png",
+    "icon_dark": "ideem-light.png"
+  },
+  "d2fbd093-ee62-488d-9dad-1e36389f8826": {
+    "name": "YubiKey 5 FIPS Series (RC Preview)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "234cd403-35a2-4cc2-8015-77ea280c77f5": {
+    "name": "Feitian ePass FIDO2-NFC Series (CTAP2.1, CTAP2.0, U2F)",
+    "icon_light": "feitian-light.png",
+    "icon_dark": "feitian-light.png"
+  },
+  "6999180d-630c-442d-b8f7-424b90a43fae": {
+    "name": "Hyper FIDO Pro (CTAP2.1, CTAP2.0, U2F)",
+    "icon_light": "hyper1-light.png",
+    "icon_dark": "hyper1-light.png"
+  },
+  "662ef48a-95e2-4aaa-a6c1-5b9c40375824": {
+    "name": "YubiKey 5 Series with NFC - Enhanced PIN",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "aeb6569c-f8fb-4950-ac60-24ca2bbe2e52": {
+    "name": "HID Crescendo C2300",
+    "icon_light": "hid-light.png",
+    "icon_dark": "hid-light.png"
+  },
+  "87dbc5a1-4c94-4dc8-8a47-97d800fd1f3c": {
+    "name": "eWBM eFA320 FIDO2 Authenticator",
+    "icon_light": "ewbm-light.png",
+    "icon_dark": "ewbm-light.png"
+  },
+  "58276709-bb4b-4bb3-baf1-60eea99282a7": {
+    "name": "YubiKey Bio Series - Multi-protocol Edition 1VDJSN",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "7d2afadd-bf6b-44a2-a66b-e831fceb8eff": {
+    "name": "Taglio CTAP2.1 EP",
+    "icon_light": "taglio-light.png",
+    "icon_dark": "taglio-light.png"
+  },
+  "30b5035e-d297-4ff1-020b-addc96ba6a98": {
+    "name": "OneSpan DIGIPASS FX1-C",
+    "icon_light": "onespan4-light.png",
+    "icon_dark": "onespan4-light.png"
+  },
+  "04a8fcf2-19c1-457b-911e-69219f17583f": {
+    "name": "Thales PAY GFCX13 authenticator",
+    "icon_light": "thales-light.png",
+    "icon_dark": "thales-light.png"
+  },
+  "20ac7a17-c814-4833-93fe-539f0d5e3389": {
+    "name": "YubiKey 5 Series (Enterprise Profile)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "9012593f-43e4-4461-a97a-d92777b55d74": {
+    "name": "VinCSS FIDO2 Fingerprint",
+    "icon_light": "vincss-light.png",
+    "icon_dark": "vincss-light.png"
+  },
+  "d7781e5d-e353-46aa-afe2-3ca49f13332a": {
+    "name": "YubiKey 5 Series with NFC",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "9f0d8150-baa5-4c00-9299-ad62c8bb4e87": {
+    "name": "GoTrust Idem Card",
+    "icon_light": "gotrust-light.png",
+    "icon_dark": "gotrust-light.png"
+  },
+  "12ded745-4bed-47d4-abaa-e713f51d6393": {
+    "name": "Feitian AllinOne FIDO2 Authenticator",
+    "icon_light": "feitian-light.png",
+    "icon_dark": "feitian-light.png"
+  },
+  "88bbd2f0-342a-42e7-9729-dd158be5407a": {
+    "name": "Precision InnaIT Key FIDO 2 Level 2 certified",
+    "icon_light": "precision2-light.png",
+    "icon_dark": "precision2-light.png"
+  },
+  "1d8cac46-47a1-3386-af50-e88ae46fe802": {
+    "name": "Ledger Flex FIDO2 Authenticator",
+    "icon_light": "ledger-light.png",
+    "icon_dark": "ledger-light.png"
+  },
+  "dd86a2da-86a0-4cbe-b462-4bd31f57bc6f": {
+    "name": "YubiKey Bio Series - FIDO Edition",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "773c30d9-5919-4e96-a4f5-db65e95cf890": {
+    "name": "GSTAG OAK FIDO2 Authenticator",
+    "icon_light": "gstag-light.png",
+    "icon_dark": "gstag-light.png"
+  },
+  "34f5766d-1536-4a24-9033-0e294e510fb0": {
+    "name": "YubiKey 5 Series with NFC Preview",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "83c47309-aabb-4108-8470-8be838b573cb": {
+    "name": "YubiKey Bio Series - FIDO Edition (Enterprise Profile)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "c1288a5c-d66b-495c-a68f-4e81f9ec5b53": {
+    "name": "Deepnet SafeKey/Classic (FP) XF",
+    "icon_light": "deepnet-light.png",
+    "icon_dark": "deepnet-light.png"
+  },
+  "4e2ddbc2-2687-4709-8551-cb66c9776bfe": {
+    "name": "SECORA ID V2 FIDO2.1 L1",
+    "icon_light": "secora1-light.png",
+    "icon_dark": "secora1-light.png"
+  },
+  "be727034-574a-f799-5c76-0929e0430973": {
+    "name": "Crayonic KeyVault K1 (USB-NFC-BLE FIDO2 Authenticator)",
+    "icon_light": "crayonic-light.png",
+    "icon_dark": "crayonic-light.png"
+  },
+  "092277e5-8437-46b5-b911-ea64b294acb7": {
+    "name": "Taglio CTAP2.1 CS",
+    "icon_light": "taglio-light.png",
+    "icon_dark": "taglio-light.png"
+  },
+  "ca87cb70-4c1b-4579-a8e8-4efdd7c007e0": {
+    "name": "FIDO Alliance TruU Sample FIDO2 Authenticator",
+    "icon_light": "fido1-light.png",
+    "icon_dark": "fido1-light.png"
+  },
+  "23195a52-62d9-40fa-8ee5-23b173f4fb52": {
+    "name": "Hyper FIDO Pro NFC",
+    "icon_light": "hyper1-light.png",
+    "icon_dark": "hyper1-light.png"
+  },
+  "ba0a9266-40d8-4048-9786-d710b5474752": {
+    "name": "YubiKey Bio Multi-protocol Edition (Consumer Profile)",
+    "icon_light": "enterprise-light.svg",
+    "icon_dark": "enterprise-light.svg"
+  },
+  "3e9db280-256a-4e17-b08e-19d79e9be166": {
+    "name": "SECORA ID V2 by Infineon Pay Edition",
+    "icon_light": "secora-light.png",
+    "icon_dark": "secora-light.png"
+  },
+  "a7fc3f84-86a3-4da4-a3d7-eb6485a066d8": {
+    "name": "NEOWAVE Badgeo FIDO2 (CTAP 2.1)",
+    "icon_light": "neowave-light.png",
+    "icon_dark": "neowave-light.png"
+  },
+  "1f8e43df-71ff-e11d-bea3-c4ee7003b232": {
+    "name": "Thetis Pro FIDO2 Key",
+    "icon_light": "thetis-light.png",
+    "icon_dark": "thetis-light.png"
+  },
+  "3ec9c8d3-a5a7-415b-a7b5-f1d606368d3f": {
+    "name": "YubiKey 5 CCN Series with NFC (Enterprise Profile)",
+    "icon_light": "enterprise-light.svg",
+    "icon_dark": "enterprise-light.svg"
+  },
+  "9e66c661-e428-452a-a8fb-51f7ed088acf": {
+    "name": "YubiKey 5 FIPS Series with Lightning (RC Preview)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "58b44d0b-0a7c-f33a-fd48-f7153c871352": {
+    "name": "Ledger Nano S Plus FIDO2 Authenticator",
+    "icon_light": "ledger-light.png",
+    "icon_dark": "ledger-light.png"
+  },
+  "9a3f2abd-a73d-439c-9ee7-1b53a857eaa7": {
+    "name": "YubiKey 5 Series with NFC Enhanced PIN (Enterprise Profile)",
+    "icon_light": "enterprise-light.svg",
+    "icon_dark": "enterprise-light.svg"
+  },
+  "454e5346-4944-4ffd-6c93-8e9267193e9b": {
+    "name": "Ensurity AUTH BioPro",
+    "icon_light": "ensurity2-light.png",
+    "icon_dark": "ensurity2-light.png"
+  },
+  "41e39911-c669-4811-b860-c6ad0b411b96": {
+    "name": "YubiKey 5 Series with NFC (Enterprise Profile)",
+    "icon_light": "enterprise-light.svg",
+    "icon_dark": "enterprise-light.svg"
+  },
+  "146e77ef-11eb-4423-b847-ce77864e9411": {
+    "name": "eToken Fusion NFC PIV",
+    "icon_light": "thales-light.png",
+    "icon_dark": "thales-light.png"
+  },
+  "13ac47cf-1d78-4fd5-9060-aedaabacf826": {
+    "name": "HID Crescendo Key V3 - Enterprise Edition",
+    "icon_light": "hid-light.png",
+    "icon_dark": "hid-light.png"
+  },
+  "e77e3c64-05e3-428b-8824-0cbeb04b829d": {
+    "name": "Security Key NFC by Yubico",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "33d6d7d0-279f-4ef3-96b3-2d3282f4bde6": {
+    "name": "Thales eToken Fusion BIO Enterprise",
+    "icon_light": "thales-light.png",
+    "icon_dark": "thales-light.png"
+  },
+  "8d4378b0-725d-4432-b3c2-01fcdaf46286": {
+    "name": "VeridiumID Passkey Android SDK",
+    "icon_light": "veridium-light.png",
+    "icon_dark": "veridium-light.png"
+  },
+  "7409272d-1ff9-4e10-9fc9-ac0019c124fd": {
+    "name": "YubiKey Bio Series - FIDO Edition",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "bb66c294-de08-47e4-b7aa-d12c2cd3fb20": {
+    "name": "Mettlesemi Vishwaas Hawk Authenticator using FIDO2",
+    "icon_light": "mettlesemi-light.png",
+    "icon_dark": "mettlesemi-light.png"
+  },
+  "c4ddaf11-3032-4e77-b3b9-3a340369b9ad": {
+    "name": "HID Crescendo Fusion",
+    "icon_light": "hid-light.png",
+    "icon_dark": "hid-light.png"
+  },
+  "add92433-0d69-4026-8166-29b25bce64e9": {
+    "name": "YubiKey Bio Fido Edition (Enterprise Profile)",
+    "icon_light": "enterprise-light.svg",
+    "icon_dark": "enterprise-light.svg"
+  },
+  "7d1351a6-e097-4852-b8bf-c9ac5c9ce4a3": {
+    "name": "YubiKey Bio Series - Multi-protocol Edition",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "07a9f89c-6407-4594-9d56-621d5f1e358b": {
+    "name": "NXP Semiconductros FIDO2 Conformance Testing CTAP2 Authenticator",
+    "icon_light": "nxp-light.png",
+    "icon_dark": "nxp-light.png"
+  },
+  "d61d3b87-3e7c-4aea-9c50-441c371903ad": {
+    "name": "KeyVault Secp256R1 FIDO2 CTAP2 Authenticator",
+    "icon_light": "keyvault-light.png",
+    "icon_dark": "keyvault-light.png"
+  },
+  "c62100de-759b-4bf8-b22b-63b3e3a80401": {
+    "name": "Token Ring 3 FIDO2 Authenticator",
+    "icon_light": "token-light.png",
+    "icon_dark": "token-light.png"
+  },
+  "5ca1ab1e-1337-fa57-f1d0-a117e71ca702": {
+    "name": "Allthenticator iOS App: roaming BLE FIDO2 Allthenticator for Windows, Mac, Linux, and Allthenticate door readers",
+    "icon_light": "allthenticator-light.png",
+    "icon_dark": "allthenticator-light.png"
+  },
+  "b92c3f9a-c014-4056-887f-140a2501163b": {
+    "name": "Security Key by Yubico",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "54d9fee8-e621-4291-8b18-7157b99c5bec": {
+    "name": "HID Crescendo Enabled",
+    "icon_light": "hid-light.png",
+    "icon_dark": "hid-light.png"
+  },
+  "72a2b5b1-95a5-4df9-a881-4192aff4f72e": {
+    "name": "GoTrust Idem Key mini",
+    "icon_light": "gotrust-light.png",
+    "icon_dark": "gotrust-light.png"
+  },
+  "a25342c0-3cdc-4414-8e46-f4807fca511c": {
+    "name": "YubiKey 5 Series with NFC",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "3a662962-c6d4-4023-bebb-98ae92e78e20": {
+    "name": "YubiKey 5 FIPS Series with Lightning (Enterprise Profile)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "20f0be98-9af9-986a-4b42-8eca4acb28e4": {
+    "name": "Excelsecu eSecu FIDO2 Fingerprint Security Key",
+    "icon_light": "excelsecu-light.png",
+    "icon_dark": "excelsecu-light.png"
+  },
+  "ca4cff1b-5a81-4404-8194-59aabcf1660b": {
+    "name": "IDPrime 3930 FIDO",
+    "icon_light": "thales-light.png",
+    "icon_dark": "thales-light.png"
+  },
+  "ab32f0c6-2239-afbb-c470-d2ef4e254db6": {
+    "name": "TEST (DUMMY RECORD)",
+    "icon_light": "token2-light.png",
+    "icon_dark": "token2-light.png"
+  },
+  "760eda36-00aa-4d29-855b-4012a182cdeb": {
+    "name": "Security Key NFC by Yubico Preview",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
   },
   "6028b017-b1d4-4c02-b4b3-afcdafc96bb2": {
-    "name": "Windows Hello"
+    "name": "Windows Hello",
+    "icon_light": "windows-light.svg",
+    "icon_dark": "windows-light.svg"
+  },
+  "b12eac35-586c-4809-a4b1-d81af6c305cf": {
+    "name": "Deepnet SafeKey/Classic (NFC)",
+    "icon_light": "deepnet-light.png",
+    "icon_dark": "deepnet-light.png"
+  },
+  "30b5035e-d297-4fc1-b00b-addc96ba6a97": {
+    "name": "OneSpan FIDO Touch",
+    "icon_light": "onespan5-light.png",
+    "icon_dark": "onespan5-light.png"
+  },
+  "560a780c-b6ae-4f03-b110-082f856425b4": {
+    "name": "KQC QuKey Bio FIDO2 Authenticator",
+    "icon_light": "kqc-light.png",
+    "icon_dark": "kqc-light.png"
+  },
+  "1ac71f64-468d-4fe0-bef1-0e5f2f551f18": {
+    "name": "YubiKey 5 Series with NFC (Enterprise Profile)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "6d44ba9b-f6ec-2e49-b930-0c8fe920cb73": {
+    "name": "Security Key by Yubico with NFC",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "6832d205-75f2-44c7-a864-e868c796d06e": {
+    "name": "Precision InnaIT Key FIDO 2 Level 2 certified",
+    "icon_light": "precision-light.png",
+    "icon_dark": "precision-light.png"
+  },
+  "9eb85bb6-9625-4a72-815d-0487830ccab2": {
+    "name": "Ensurity AUTH BioPro Desktop",
+    "icon_light": "ensurity3-light.png",
+    "icon_dark": "ensurity3-light.png"
+  },
+  "30b5035e-d297-4ff7-010b-addc96ba6a98": {
+    "name": "OneSpan DIGIPASS FX7-B",
+    "icon_light": "onespan-light.png",
+    "icon_dark": "onespan-light.png"
+  },
+  "5ca1ab1e-fa57-1337-f1d0-a117371ca702": {
+    "name": "Allthenticator Android App: roaming BLE FIDO2 Allthenticator for Windows, Mac, Linux, and Allthenticate door readers",
+    "icon_light": "allthenticator-light.png",
+    "icon_dark": "allthenticator-light.png"
+  },
+  "eabb46cc-e241-80bf-ae9e-96fa6d2975cf": {
+    "name": "TOKEN2 PIN Plus Security Key Series ",
+    "icon_light": "token2-light.png",
+    "icon_dark": "token2-light.png"
+  },
+  "53414d53-554e-4700-0000-000000000000": {
+    "name": "Samsung Pass",
+    "icon_light": "samsung-light.svg",
+    "icon_dark": "samsung-light.svg"
+  },
+  "e416201b-afeb-41ca-a03d-2281c28322aa": {
+    "name": "ATKey.Pro CTAP2.1",
+    "icon_light": "atkey-light.png",
+    "icon_dark": "atkey-light.png"
+  },
+  "905b4cb4-ed6f-4da9-92fc-45e0d4e9b5c7": {
+    "name": "YubiKey 5 FIPS Series (Enterprise Profile)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "cfcb13a2-244f-4b36-9077-82b79d6a7de7": {
+    "name": "USB/NFC Passcode Authenticator"
+  },
+  "76692dc1-c56a-48d9-8e7d-31b5ced430ac": {
+    "name": "VeriMark NFC+ USB-A Security Key",
+    "icon_light": "verimark1-light.png",
+    "icon_dark": "verimark1-light.png"
+  },
+  "91ad6b93-264b-4987-8737-3a690cad6917": {
+    "name": "Token Ring FIDO2 Authenticator"
+  },
+  "a02140b7-0cbd-42e1-a9b5-a39da2545114": {
+    "name": "Feitian BioPass FIDO2 Plus (Enterprise Profile)",
+    "icon_light": "feitian-light.png",
+    "icon_dark": "feitian-light.png"
+  },
+  "5753362b-4e6b-6345-7b2f-255438404c75": {
+    "name": "WiSECURE Blentity FIDO2 Authenticator",
+    "icon_light": "idemia-light.png",
+    "icon_dark": "idemia-light.png"
+  },
+  "9f77e279-a6e2-4d58-b700-31e5943c6a98": {
+    "name": "Hyper FIDO Pro",
+    "icon_light": "hyper-light.png",
+    "icon_dark": "hyper-light.png"
+  },
+  "b9f6b7b6-f929-4189-bca9-dd951240c132": {
+    "name": "Deepnet SafeKey/Classic (USB)",
+    "icon_light": "deepnet-light.png",
+    "icon_dark": "deepnet-light.png"
+  },
+  "cc45f64e-52a2-451b-831a-4edd8022a202": {
+    "name": "ToothPic Passkey Provider",
+    "icon_light": "toothpic-light.svg",
+    "icon_dark": "toothpic-dark.svg"
+  },
+  "0bb43545-fd2c-4185-87dd-feb0b2916ace": {
+    "name": "Security Key NFC by Yubico - Enterprise Edition",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "73402251-f2a8-4f03-873e-3cb6db604b03": {
+    "name": "uTrust FIDO2 Security Key",
+    "icon_light": "utrust-light.png",
+    "icon_dark": "utrust-light.png"
+  },
+  "c1f9a0bc-1dd2-404a-b27f-8e29047a43fd": {
+    "name": "YubiKey 5 FIPS Series with NFC",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "70e7c36f-f2f6-9e0d-07a6-bcc243262e6b": {
+    "name": "OneKey FIDO2 Bluetooth Authenticator",
+    "icon_light": "onekey-light.png",
+    "icon_dark": "onekey-light.png"
+  },
+  "4fc84f16-2545-4e53-b8fc-7bf4d7282a10": {
+    "name": "YubiKey 5 CCN Series with NFC (Enterprise Profile)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "6ab56fad-881f-4a43-acb2-0be065924522": {
+    "name": "YubiKey 5 Series with NFC (Enterprise Profile)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "504d7149-4e4c-3841-4555-55445a677357": {
+    "name": "WiSECURE AuthTron USB FIDO2 Authenticator",
+    "icon_light": "idemia-light.png",
+    "icon_dark": "idemia-light.png"
+  },
+  "2c2aeed8-8174-4159-814b-486e92a261d0": {
+    "name": "NEOWAVE WINKEO V2.0",
+    "icon_light": "neowave-light.png",
+    "icon_dark": "neowave-light.png"
+  },
+  "f2145e86-211e-4931-b874-e22bba7d01cc": {
+    "name": "ID-One Key",
+    "icon_light": "id-one-light.png",
+    "icon_dark": "id-one-light.png"
+  },
+  "53334693-4b3f-4198-8857-53772de2ab65": {
+    "name": "Precision InnaIT Key FIDO 2 Level 2 certified",
+    "icon_light": "precision-light.png",
+    "icon_dark": "precision-light.png"
+  },
+  "a3975549-b191-fd67-b8fb-017e2917fdb3": {
+    "name": "Excelsecu eSecu FIDO2 NFC Security Key",
+    "icon_light": "excelsecu-light.png",
+    "icon_dark": "excelsecu-light.png"
+  },
+  "19083c3d-8383-4b18-bc03-8f1c9ab2fd1b": {
+    "name": "YubiKey 5 Series",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "da1fa263-8b25-42b6-a820-c0036f21ba7f": {
+    "name": "ATKey.Card NFC",
+    "icon_light": "atkey2-light.png",
+    "icon_dark": "atkey2-light.png"
+  },
+  "6002f033-3c07-ce3e-d0f7-0ffe5ed42543": {
+    "name": "Excelsecu eSecu FIDO2 Fingerprint Key",
+    "icon_light": "excelsecu-light.png",
+    "icon_dark": "excelsecu-light.png"
+  },
+  "5fdb81b8-53f0-4967-a881-f5ec26fe4d18": {
+    "name": "VinCSS FIDO2 Authenticator",
+    "icon_light": "vincss-light.png",
+    "icon_dark": "vincss-light.png"
+  },
+  "78ba3993-d784-4f44-8d6e-cc0a8ad5230e": {
+    "name": "Feitian ePass FIDO-NFC(CTAP2.1, CTAP2.0, U2F)",
+    "icon_light": "feitian-light.png",
+    "icon_dark": "feitian-light.png"
+  },
+  "57f7de54-c807-4eab-b1c6-1c9be7984e92": {
+    "name": "YubiKey 5 FIPS Series",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "bb405265-40cf-4115-93e5-a332c1968d8c": {
+    "name": "ID-One Card",
+    "icon_light": "id-one-light.png",
+    "icon_dark": "id-one-light.png"
+  },
+  "2d3bec26-15ee-4f5d-88b2-53622490270b": {
+    "name": "HID Crescendo Key V2",
+    "icon_light": "hid-light.png",
+    "icon_dark": "hid-light.png"
+  },
+  "489ff376-b48d-6640-bb69-782a860ca795": {
+    "name": "Mettlesemi Vishwaas Eagle Authenticator using FIDO2",
+    "icon_light": "mettlesemi-light.png",
+    "icon_dark": "mettlesemi-light.png"
+  },
+  "3b24bf49-1d45-4484-a917-13175df0867b": {
+    "name": "YubiKey 5 Series with Lightning (Enterprise Profile)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "30b5035e-d297-4ff1-010b-addc96ba6a98": {
+    "name": "OneSpan DIGIPASS FX1a",
+    "icon_light": "onespan7-light.png",
+    "icon_dark": "onespan7-light.png"
+  },
+  "cb69481e-8ff7-4039-93ec-0a2729a154a8": {
+    "name": "YubiKey 5 Series",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "0076631b-d4a0-427f-5773-0ec71c9e0279": {
+    "name": "HYPR FIDO2 Authenticator",
+    "icon_light": "hypr-light.png",
+    "icon_dark": "hypr-light.png"
+  },
+  "d716019a-9f4e-4041-9750-17c78f8ae81a": {
+    "name": "eToken Fusion BIO",
+    "icon_light": "thales-light.png",
+    "icon_dark": "thales-light.png"
+  },
+  "57235694-51a5-4a4d-a81a-f42185df6502": {
+    "name": "SHALO AUTH",
+    "icon_light": "shalo-light.png",
+    "icon_dark": "shalo-light.png"
+  },
+  "24673149-6c86-42e7-98d9-433fb5b73296": {
+    "name": "YubiKey 5 Series with Lightning",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "357f2718-434f-4124-8a58-7e28c5e4a2fc": {
+    "name": "Deepnet SafeKey/Classic (NFC)",
+    "icon_light": "deepnet-light.png",
+    "icon_dark": "deepnet-light.png"
+  },
+  "42df17de-06ba-4177-a2bb-6701be1380d6": {
+    "name": "Feitian BioPass FIDO2 Plus Authenticator",
+    "icon_light": "feitian-light.png",
+    "icon_dark": "feitian-light.png"
+  },
+  "d7a423ad-3e19-4492-9200-78137dccc136": {
+    "name": "VivoKey Apex FIDO2",
+    "icon_light": "vivokey-light.png",
+    "icon_dark": "vivokey-light.png"
+  },
+  "b3315166-f36c-b05f-fea8-66a3dfdad171": {
+    "name": "Ledger Nano Gen5 FIDO2 Authenticator",
+    "icon_light": "ledger-light.png",
+    "icon_dark": "ledger-light.png"
+  },
+  "ba76a271-6eb6-4171-874d-b6428dbe3437": {
+    "name": "ATKey.ProS",
+    "icon_light": "atkey-light.png",
+    "icon_dark": "atkey-light.png"
+  },
+  "97e6a830-c952-4740-95fc-7c78dc97ce47": {
+    "name": "YubiKey Bio Series - Multi-protocol Edition (Enterprise Profile)",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "f573f209-b7fb-b261-671a-d7cf624cc812": {
+    "name": "Excelsecu eSecu FIDO2 PRO+ Security Key",
+    "icon_light": "excelsecu-light.png",
+    "icon_dark": "excelsecu-light.png"
+  },
+  "005b20e1-f146-4b87-8f3a-36848ff60ea6": {
+    "name": "SECORA ID V2 by Infineon Pay Edition M",
+    "icon_light": "secora-light.png",
+    "icon_dark": "secora-light.png"
+  },
+  "6e24d385-004a-16a0-7bfe-efd963845b34": {
+    "name": "Ledger Stax FIDO2 Authenticator",
+    "icon_light": "ledger-light.png",
+    "icon_dark": "ledger-light.png"
+  },
+  "ee882879-721c-4913-9775-3dfcce97072a": {
+    "name": "YubiKey 5 Series",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "8876631b-d4a0-427f-5773-0ec71c9e0279": {
+    "name": "Solo Secp256R1 FIDO2 CTAP2 Authenticator",
+    "icon_light": "solo-light.png",
+    "icon_dark": "solo-light.png"
+  },
+  "fec067a1-f1d0-4c5e-b4c0-cc3237475461": {
+    "name": "KX701 SmartToken FIDO",
+    "icon_light": "keyxentic-light.png",
+    "icon_dark": "keyxentic-light.png"
+  },
+  "30b5035e-d297-4ff1-b00b-addc96ba6a98": {
+    "name": "OneSpan DIGIPASS FX1 BIO",
+    "icon_light": "onespan7-light.png",
+    "icon_dark": "onespan7-light.png"
+  },
+  "b267239b-954f-4041-a01b-ee4f33c145b6": {
+    "name": "authenton1 - CTAP2.1",
+    "icon_light": "authenton1-light.png",
+    "icon_dark": "authenton1-light.png"
+  },
+  "b50d5e0a-7f81-4959-9b12-f45407407503": {
+    "name": "IDPrime 3940 FIDO",
+    "icon_light": "thales-light.png",
+    "icon_dark": "thales-light.png"
+  },
+  "8c97a730-3f7b-41a6-87d6-1e9b62bda6f0": {
+    "name": "FT-JCOS FIDO Fingerprint Card",
+    "icon_light": "feitian-light.png",
+    "icon_dark": "feitian-light.png"
+  },
+  "99bf4610-ec26-4252-b31f-7380ccd59db5": {
+    "name": "ZTPass SmartAuth",
+    "icon_light": "idemia-light.png",
+    "icon_dark": "idemia-light.png"
+  },
+  "a1f52be5-dfab-4364-b51c-2bd496b14a56": {
+    "name": "OCTATCO EzFinger2 FIDO2 AUTHENTICATOR",
+    "icon_light": "octatco-light.png",
+    "icon_dark": "octatco-light.png"
+  },
+  "c3479970-e58a-4f70-836f-853bf42fb063": {
+    "name": "YubiKey 5 Series with Lightning (Enterprise Profile)",
+    "icon_light": "enterprise-light.svg",
+    "icon_dark": "enterprise-light.svg"
+  },
+  "0f00cc22-4640-41e7-9585-384ec73ffe9b": {
+    "name": "Taglio CTAP2.1 BIO",
+    "icon_light": "taglio-light.png",
+    "icon_dark": "taglio-light.png"
+  },
+  "ff4dac45-ede8-4ec2-aced-cf66103f4335": {
+    "name": "YubiKey 5 Series",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "ba86dc56-635f-4141-aef6-00227b1b9af6": {
+    "name": "TruU Windows Authenticator",
+    "icon_light": "truu-light.png",
+    "icon_dark": "truu-light.png"
+  },
+  "3e078ffd-4c54-4586-8baa-a77da113aec5": {
+    "name": "Hideez Key 3 FIDO2",
+    "icon_light": "hideez-light.png",
+    "icon_dark": "hideez-light.png"
+  },
+  "fc5ca237-69a0-4f3c-afe4-1ebc66def6df": {
+    "name": "Clife Key 2",
+    "icon_light": "chipwon-light.png",
+    "icon_dark": "chipwon-light.png"
+  },
+  "ec31b4cc-2acc-4b8e-9c01-bade00ccbe26": {
+    "name": "KeyXentic FIDO2 Secp256R1 FIDO2 CTAP2 Authenticator",
+    "icon_light": "keyxentic-light.png",
+    "icon_dark": "keyxentic-light.png"
+  },
+  "5d629218-d3a5-11ed-afa1-0242ac120002": {
+    "name": "Swissbit iShield Key Pro",
+    "icon_light": "swissbit-light.png",
+    "icon_dark": "swissbit-light.png"
+  },
+  "bb878d7b-cf54-4784-b390-357030497043": {
+    "name": "TruU FIDO2 Authenticator",
+    "icon_light": "truu-light.png",
+    "icon_dark": "truu-light.png"
+  },
+  "d41f5a69-b817-4144-a13c-9ebd6d9254d6": {
+    "name": "ATKey.Card CTAP2.0",
+    "icon_light": "atkey4-light.png",
+    "icon_dark": "atkey4-light.png"
+  },
+  "e86addcd-7711-47e5-b42a-c18257b0bf61": {
+    "name": "IDCore 3121 Fido",
+    "icon_light": "thales-light.png",
+    "icon_dark": "thales-light.png"
+  },
+  "b113a455-cfb6-4c17-8cba-cd952feb7d48": {
+    "name": "eToken FIDO NFC",
+    "icon_light": "thales-light.png",
+    "icon_dark": "thales-light.png"
+  },
+  "95442b2e-f15e-4def-b270-efb106facb4e": {
+    "name": "eWBM eFA310 FIDO2 Authenticator",
+    "icon_light": "ewbm-light.png",
+    "icon_dark": "ewbm-light.png"
+  },
+  "dda9aa35-aaf1-4d3c-b6db-7902fd7dbbbf": {
+    "name": "IDEMIA SOLVO Fly 80 R3 FIDO Card c",
+    "icon_light": "id-one-light.png",
+    "icon_dark": "id-one-light.png"
+  },
+  "cdbdaea2-c415-5073-50f7-c04e968640b6": {
+    "name": "Excelsecu eSecu FIDO2 Security Key",
+    "icon_light": "excelsecu-light.png",
+    "icon_dark": "excelsecu-light.png"
+  },
+  "3aa78eb1-ddd8-46a8-a821-8f8ec57a7bd5": {
+    "name": "YubiKey 5 CCN Series with NFC",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "bc2fe499-0d8e-4ffe-96f3-94a82840cf8c": {
+    "name": "OCTATCO EzQuant FIDO2 AUTHENTICATOR",
+    "icon_light": "octatco-light.png",
+    "icon_dark": "octatco-light.png"
+  },
+  "eb3b131e-59dc-536a-d176-cb7306da10f5": {
+    "name": "ellipticSecure MIRkey USB Authenticator",
+    "icon_light": "ellipticsecure-light.png",
+    "icon_dark": "ellipticsecure-light.png"
+  },
+  "3fd410dc-8ab7-4b86-a1cb-c7174620b2dc": {
+    "name": "IDEMIA SOLVO Fly 80 R1 FIDO Card Draft",
+    "icon_light": "id-one-light.png",
+    "icon_dark": "id-one-light.png"
+  },
+  "a6c5f5d8-2ad0-48b6-8257-e502c8970931": {
+    "name": "eToken FIDO NFC Enterprise",
+    "icon_light": "thales-light.png",
+    "icon_dark": "thales-light.png"
+  },
+  "e400ef8c-711d-4692-af46-7f2cf7da23ad": {
+    "name": "Swissbit iShield Key 2 Enterprise",
+    "icon_light": "swissbit-light.png",
+    "icon_dark": "swissbit-light.png"
+  },
+  "87c13177-85d6-40ac-8c61-fe7ab3de9dfb": {
+    "name": "HID Crescendo Key V3",
+    "icon_light": "hid-light.png",
+    "icon_dark": "hid-light.png"
+  },
+  "1c086528-58d5-f211-823c-356786e36140": {
+    "name": "Atos CardOS FIDO2",
+    "icon_light": "atos-light.png",
+    "icon_dark": "atos-light.png"
+  },
+  "77010bd7-212a-4fc9-b236-d2ca5e9d4084": {
+    "name": "Feitian BioPass FIDO2 Authenticator",
+    "icon_light": "feitian-light.png",
+    "icon_dark": "feitian-light.png"
+  },
+  "d94a29d9-52dd-4247-9c2d-8b818b610389": {
+    "name": "VeriMark Guard Fingerprint Key",
+    "icon_light": "verimark-light.png",
+    "icon_dark": "verimark-light.png"
+  },
+  "7b96457d-e3cd-432b-9ceb-c9fdd7ef7432": {
+    "name": "YubiKey 5 FIPS Series with Lightning",
+    "icon_light": "yubikey-light.png",
+    "icon_dark": "yubikey-light.png"
+  },
+  "7991798a-a7f3-487f-98c0-3faf7a458a04": {
+    "name": "HID Crescendo Key V3",
+    "icon_light": "hid-light.png",
+    "icon_dark": "hid-light.png"
+  },
+  "833b721a-ff5f-4d00-bb2e-bdda3ec01e29": {
+    "name": "Feitian ePass FIDO2 Authenticator",
+    "icon_light": "feitian-light.png",
+    "icon_dark": "feitian-light.png"
+  },
+  "c89674e3-a765-4b07-888a-7c086fbdf04b": {
+    "name": "StarSign FIDO Card",
+    "icon_light": "starsign-light.png",
+    "icon_dark": "starsign-light.png"
+  },
+  "a11a5faa-9f32-4b8c-8c5d-2f7d13e8c942": {
+    "name": "AliasVault",
+    "icon_light": "aliasvault-light.svg",
+    "icon_dark": "aliasvault-light.svg"
+  },
+  "ea9b8d66-4d01-1d21-3ce4-b6b48cb575d4": {
+    "name": "Google Password Manager",
+    "icon_light": "google1-light.svg",
+    "icon_dark": "google1-light.svg"
+  },
+  "adce0002-35bc-c60a-648b-0b25f1f05503": {
+    "name": "Chrome on Mac",
+    "icon_light": "chrome-light.svg",
+    "icon_dark": "chrome-light.svg"
   },
   "dd4ec289-e01d-41c9-bb89-70fa845d4bf2": {
-    "name": "iCloud Keychain (Managed)"
+    "name": "iCloud Keychain (Managed)",
+    "icon_light": "icloud-light.svg",
+    "icon_dark": "icloud-dark.svg"
   },
   "531126d6-e717-415c-9320-3d9aa6981239": {
-    "name": "Dashlane"
+    "name": "Dashlane",
+    "icon_light": "dashlane-light.svg",
+    "icon_dark": "dashlane-dark.svg"
   },
   "bada5566-a7aa-401f-bd96-45619a55120d": {
-    "name": "1Password"
+    "name": "1Password",
+    "icon_light": "1password-light.svg",
+    "icon_dark": "1password-dark.svg"
   },
   "b84e4048-15dc-4dd0-8640-f4f60813c8af": {
-    "name": "NordPass"
+    "name": "NordPass",
+    "icon_light": "nordpass-light.svg",
+    "icon_dark": "nordpass-dark.svg"
   },
   "0ea242b4-43c4-4a1b-8b17-dd6d0b6baec6": {
-    "name": "Keeper"
+    "name": "Keeper",
+    "icon_light": "keeper-light.svg",
+    "icon_dark": "keeper-light.svg"
+  },
+  "891494da-2c90-4d31-a9cd-4eab0aed1309": {
+    "name": "S\u00e9same",
+    "icon_light": "sesame-light.svg",
+    "icon_dark": "sesame-light.svg"
   },
   "f3809540-7f14-49c1-a8b3-8f813b225541": {
-    "name": "Enpass"
+    "name": "Enpass",
+    "icon_light": "enpass-light.svg",
+    "icon_dark": "enpass-dark.svg"
   },
   "b5397666-4885-aa6b-cebf-e52262a439a2": {
     "name": "Chromium Browser"
   },
   "771b48fd-d3d4-4f74-9232-fc157ab0507a": {
-    "name": "Edge on Mac"
-  },
-  "39a5647e-1853-446c-a1f6-a79bae9f5bc7": {
-    "name": "IDmelon"
+    "name": "Edge on Mac",
+    "icon_light": "edge-light.svg",
+    "icon_dark": "edge-light.svg"
   },
   "d548826e-79b4-db40-a3d8-11116f7e8349": {
-    "name": "Bitwarden"
+    "name": "Bitwarden",
+    "icon_light": "bitwarden-light.svg",
+    "icon_dark": "bitwarden-light.svg"
   },
   "fbfc3007-154e-4ecc-8c0b-6e020557d7bd": {
-    "name": "iCloud Keychain"
-  },
-  "53414d53-554e-4700-0000-000000000000": {
-    "name": "Samsung Pass"
+    "name": "Apple Passwords",
+    "icon_light": "apple-light.svg",
+    "icon_dark": "apple-light.svg"
   },
   "66a0ccb3-bd6a-191f-ee06-e375c50b9846": {
-    "name": "Thales Bio iOS SDK"
+    "name": "Thales Bio iOS SDK",
+    "icon_light": "thales3-light.svg",
+    "icon_dark": "thales3-dark.svg"
   },
   "8836336a-f590-0921-301d-46427531eee6": {
-    "name": "Thales Bio Android SDK"
+    "name": "Thales Bio Android SDK",
+    "icon_light": "thales3-light.svg",
+    "icon_dark": "thales3-dark.svg"
   },
   "cd69adb5-3c7a-deb9-3177-6800ea6cb72a": {
-    "name": "Thales PIN Android SDK"
+    "name": "Thales PIN Android SDK",
+    "icon_light": "thales3-light.svg",
+    "icon_dark": "thales3-dark.svg"
   },
   "17290f1e-c212-34d0-1423-365d729f09d9": {
-    "name": "Thales PIN iOS SDK"
+    "name": "Thales PIN iOS SDK",
+    "icon_light": "thales3-light.svg",
+    "icon_dark": "thales3-dark.svg"
   },
-  "0bb43545-fd2c-4185-87dd-feb0b2916ace": {
-    "name": "Security Key NFC by Yubico - Enterprise Edition (5.4)"
+  "50726f74-6f6e-5061-7373-50726f746f6e": {
+    "name": "Proton Pass",
+    "icon_light": "proton-light.svg",
+    "icon_dark": "proton-light.svg"
   },
-  "149a2021-8ef6-4133-96b8-81f8d5b7f1f5": {
-    "name": "Security Key by Yubico with NFC (5.2, 5.4)"
+  "fdb141b2-5d84-443e-8a35-4698c205a502": {
+    "name": "KeePassXC",
+    "icon_light": "keepassxc-light.svg",
+    "icon_dark": "keepassxc-dark.svg"
   },
-  "2fc0579f-8113-47ea-b116-bb5a8db9202a": {
-    "name": "YubiKey 5 Series with NFC (5.2, 5.4)"
+  "eaecdef2-1c31-5634-8639-f1cbd9c00a08": {
+    "name": "KeePassDX",
+    "icon_light": "keepassdx-light.svg",
+    "icon_dark": "keepassdx-dark.svg"
   },
-  "6d44ba9b-f6ec-2e49-b930-0c8fe920cb73": {
-    "name": "Security Key by Yubico with NFC (5.1)"
+  "bfc748bb-3429-4faa-b9f9-7cfa9f3b76d0": {
+    "name": "iPasswords",
+    "icon_light": "ipasswords-light.svg",
+    "icon_dark": "ipasswords-light.svg"
   },
-  "73bb0cd4-e502-49b8-9c6f-b59445bf720b": {"name": "YubiKey 5 FIPS Series (5.4)"},
-  "85203421-48f9-4355-9bc8-8a53846e5083": {"name": "YubiKey 5Ci FIPS (5.4)"},
-  "a4e9fc6d-4cbe-4758-b8ba-37598bb5bbaa": {
-    "name": "Security Key by Yubico with NFC (5.4)"
+  "b35a26b2-8f6e-4697-ab1d-d44db4da28c6": {
+    "name": "Zoho Vault",
+    "icon_light": "zoho-light.svg",
+    "icon_dark": "zoho-light.svg"
   },
-  "b92c3f9a-c014-4056-887f-140a2501163b": {"name": "Security Key by Yubico (5.2)"},
-  "c1f9a0bc-1dd2-404a-b27f-8e29047a43fd": {
-    "name": "YubiKey 5 FIPS Series with NFC (5.4)"
+  "b78a0a55-6ef8-d246-a042-ba0f6d55050c": {
+    "name": "LastPass",
+    "icon_light": "lastpass-light.svg",
+    "icon_dark": "lastpass-dark.svg"
   },
-  "c5ef55ff-ad9a-4b9f-b580-adebafe026d0": {"name": "YubiKey 5Ci (5.2, 5.4)"},
-  "cb69481e-8ff7-4039-93ec-0a2729a154a8": {"name": "YubiKey 5 Series (5.1)"},
-  "d8522d9f-575b-4866-88a9-ba99fa02f35b": {"name": "YubiKey Bio Series (5.5, 5.6)"},
-  "ee882879-721c-4913-9775-3dfcce97072a": {"name": "YubiKey 5 Series (5.2, 5.4)"},
-  "f8a011f3-8c0a-4d15-8006-17111f9edc7d": {"name": "Security Key by Yubico (5.1)"},
-  "fa2b99dc-9e39-4257-8f92-4a30d23c4118": {"name": "YubiKey 5 Series with NFC (5.1)"},
-  "e77e3c64-05e3-428b-8824-0cbeb04b829d": {
-    "name": "Security Key by Yubico with NFC (5.7)"
+  "de503f9c-21a4-4f76-b4b7-558eb55c6f89": {
+    "name": "Devolutions",
+    "icon_light": "devolutions-light.svg",
+    "icon_dark": "devolutions-light.svg"
   },
-  "47ab2fb4-66ac-4184-9ae1-86be814012d5": {
-    "name": "Security Key by Yubico with NFC - Enterprise Edition (5.7)"
+  "22248c4c-7a12-46e2-9a41-44291b373a4d": {
+    "name": "LogMeOnce",
+    "icon_light": "logmeonce-light.svg",
+    "icon_dark": "logmeonce-dark.svg"
   },
-  "a25342c0-3cdc-4414-8e46-f4807fca511c": {"name": "YubiKey 5 Series with NFC (5.7)"},
-  "19083c3d-8383-4b18-bc03-8f1c9ab2fd1b": {"name": "YubiKey 5 Series (5.7)"},
-  "a02167b9-ae71-4ac7-9a07-06432ebb6f1c": {"name": "YubiKey 5Ci (5.7)"},
-  "7d1351a6-e097-4852-b8bf-c9ac5c9ce4a3": {
-    "name": "YubiKey Bio Series - Multi-protocol Edition (5.7)"
+  "a10c6dd9-465e-4226-8198-c7c44b91c555": {
+    "name": "Kaspersky Password Manager",
+    "icon_light": "kaspersky-light.svg",
+    "icon_dark": "kaspersky-light.svg"
   },
-  "30b5035e-d297-4ff1-b00b-addc96ba6a98": {"name": "DIGIPASS FX1 Bio"},
-  "30b5035e-d297-4ff1-010b-addc96ba6a98": {"name": "DIGIPASS FX1a Bio"},
-  "30b5035e-d297-4ff2-b00b-addc96ba6a98": {"name": "DIGIPASS FX2"},
-  "30b5035e-d297-4ff3-b00b-addc96ba6a98": {"name": "DIGIPASS FX3"},
-  "30b5035e-d297-4ff7-b00b-addc96ba6a98": {"name": "DIGIPASS FX7"},
-  "9ff4cc65-6154-4fff-ba09-9e2af7882ad2": {
-    "name": "Security Key by Yubico with NFC - Enterprise Edition (5.7, enterprise profile)"
+  "d350af52-0351-4ba2-acd3-dfeeadc3f764": {
+    "name": "pwSafe",
+    "icon_light": "pwsafe-light.svg",
+    "icon_dark": "pwsafe-light.svg"
   },
-  "1ac71f64-468d-4fe0-bef1-0e5f2f551f18": {
-    "name": "YubiKey 5 Series with NFC (5.7, enterprise profile)"
+  "d3452668-01fd-4c12-926c-83a4204853aa": {
+    "name": "Microsoft Password Manager",
+    "icon_light": "microsoft-light.svg",
+    "icon_dark": "microsoft-light.svg"
   },
-  "20ac7a17-c814-4833-93fe-539f0d5e3389": {
-    "name": "YubiKey 5 Series (5.7, enterprise profile)"
+  "6d212b28-a2c1-4638-b375-5932070f62e9": {
+    "name": "initial",
+    "icon_light": "initial-light.svg",
+    "icon_dark": "initial-light.svg"
   },
-  "b90e7dc1-316e-4fee-a25a-56a666a670fe": {
-    "name": "YubiKey 5Ci (5.7, enterprise profile)"
+  "d49b2120-b865-4191-8cea-be84a52b0485": {
+    "name": "Heimlane Vault",
+    "icon_light": "heimlane-light.svg",
+    "icon_dark": "heimlane-light.svg"
   },
-  "68167692-ff5a-4ac8-9fd7-0be292a1af68": {
-    "name": "YubiKey Bio Series - Multi-protocol Edition (5.7, enterprise profile)"
+  "d9be9d39-e6a6-4c28-a581-32b044d986e4": {
+    "name": "Sticky Password Manager",
+    "icon_light": "sticky-light.svg",
+    "icon_dark": "sticky-light.svg"
+  },
+  "70617373-7761-6c6c-6669-646f32303236": {
+    "name": "Passwall"
+  },
+  "c9cadfc9-89a9-489e-a25a-c7e86a4d5f15": {
+    "name": "Burp Suite Navigation Recorder",
+    "icon_light": "burp-light.svg",
+    "icon_dark": "burp-light.svg"
   }
 }

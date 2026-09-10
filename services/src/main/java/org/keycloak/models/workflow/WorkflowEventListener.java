@@ -10,6 +10,8 @@
 
 package org.keycloak.models.workflow;
 
+import java.util.Objects;
+
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
@@ -28,25 +30,30 @@ public class WorkflowEventListener implements EventListenerProvider, ProviderEve
 
     @Override
     public void onEvent(Event event) {
-        WorkflowEvent workflowEvent = ResourceType.USERS.toEvent(event);
-        trySchedule(workflowEvent);
+        session.getAllProviders(WorkflowEventProvider.class).stream()
+                .map(provider -> provider.create(event))
+                .filter(Objects::nonNull)
+                .forEach(this::trySchedule);
     }
 
     @Override
     public void onEvent(AdminEvent event, boolean includeRepresentation) {
-        WorkflowEvent workflowEvent = ResourceType.USERS.toEvent(event);
-        trySchedule(workflowEvent);
+        session.getAllProviders(WorkflowEventProvider.class).stream()
+                .map(provider -> provider.create(event))
+                .filter(Objects::nonNull)
+                .forEach(this::trySchedule);
     }
 
     @Override
     public void onEvent(ProviderEvent event) {
         RealmModel realm = session.getContext().getRealm();
-
         if (realm == null) {
             return;
         }
-
-        trySchedule(ResourceType.USERS.toEvent(event));
+        session.getAllProviders(WorkflowEventProvider.class).stream()
+                .map(provider -> provider.create(event))
+                .filter(Objects::nonNull)
+                .forEach(this::trySchedule);
     }
 
     private void trySchedule(WorkflowEvent event) {

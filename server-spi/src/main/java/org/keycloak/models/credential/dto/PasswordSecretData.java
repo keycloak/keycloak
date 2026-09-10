@@ -37,7 +37,7 @@ public class PasswordSecretData {
         }
         else {
             this.value = value;
-            this.salt = Base64.getDecoder().decode(salt);
+            this.salt = Base64.getMimeDecoder().decode(salt);
         }
     }
 

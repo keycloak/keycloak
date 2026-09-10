@@ -6,7 +6,12 @@ single-cluster/concepts-database-connections
 single-cluster/concepts-threads
 single-cluster/concepts-memory-and-cpu-sizing
 single-cluster/deploy-aurora
+single-cluster/deploy-cnpg
+single-cluster/deploy-cnpg-with-backup
+single-cluster/monitoring-cnpg
+single-cluster/deploy-cnpg-recovery
 single-cluster/deploy-keycloak
+single-cluster/operate-cnpg-switchover
 multi-cluster/introduction
 multi-cluster/concepts
 multi-cluster/building-blocks
@@ -23,3 +28,10 @@ multi-cluster/operate-site-offline
 multi-cluster/operate-site-online
 multi-cluster/operate-synchronize
 multi-cluster/health-checks
+multi-cluster/upgrades
+multi-cluster-v2/introduction
+multi-cluster-v2/concepts
+multi-cluster-v2/deploy-keycloak-kubernetes
+multi-cluster-v2/deploy-keycloak-bare-metal
+multi-cluster-v2/upgrades
+multi-cluster-v2/migrate-from-v1-to-v2

@@ -22,6 +22,15 @@ public class DefaultAnnotationProxyTest {
     }
 
     @Test
+    public void testEmptyRefConvertedToEmptyString() {
+        MockAnnotation proxy = DefaultAnnotationProxy.proxy(MockAnnotation.class, null);
+        Assertions.assertEquals(LifeCycle.CLASS, proxy.lifecycle());
+        Assertions.assertEquals(LinkedList.class, proxy.config());
+        Assertions.assertEquals("", proxy.ref());
+        Assertions.assertEquals("else", proxy.something());
+    }
+
+    @Test
     public void testCustomRef() {
         MockAnnotation proxy = DefaultAnnotationProxy.proxy(MockAnnotation.class, "myref");
         Assertions.assertEquals("myref", proxy.ref());

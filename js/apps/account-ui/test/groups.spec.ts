@@ -2,10 +2,12 @@ import { expect, test } from "@playwright/test";
 import groupsRealm from "./realms/groups-realm.json" with { type: "json" };
 import { login } from "./support/actions.ts";
 import { createTestBed } from "./support/testbed.ts";
+import { waitForRealmReady } from "./support/test-utils.ts";
 
 test.describe("Groups", () => {
   test("lists groups", async ({ page }) => {
     await using testBed = await createTestBed(groupsRealm);
+    await waitForRealmReady();
 
     await login(page, testBed.realm);
     await page.getByTestId("groups").click();
@@ -14,6 +16,7 @@ test.describe("Groups", () => {
 
   test("lists direct and indirect groups", async ({ page }) => {
     await using testBed = await createTestBed(groupsRealm);
+    await waitForRealmReady();
 
     await login(page, testBed.realm, "alice", "alice");
     await page.getByTestId("groups").click();

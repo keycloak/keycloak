@@ -20,9 +20,7 @@ package org.keycloak.authentication.authenticators.browser;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
@@ -117,7 +115,7 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
             return;
         }
 
-        if (tryConcludeBasedOn(voteForUserRole(context.getRealm(), context.getUser(), config), context)) {
+        if (tryConcludeBasedOn(voteForUserRole(context.getSession(), context.getRealm(), context.getUser(), config), context)) {
             return;
         }
 
@@ -138,46 +136,29 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
             return ABSTAIN;
         }
 
-        switch (config.get(DEFAULT_OTP_OUTCOME)) {
-            case SKIP:
-                return SKIP_OTP;
-            case FORCE:
-                return SHOW_OTP;
-            default:
-                return ABSTAIN;
-        }
+        return switch (config.get(DEFAULT_OTP_OUTCOME)) {
+            case SKIP -> SKIP_OTP;
+            case FORCE -> SHOW_OTP;
+            default -> ABSTAIN;
+        };
     }
 
     private boolean tryConcludeBasedOn(OtpDecision state, AuthenticationFlowContext context) {
-
-        switch (state) {
-
-            case SHOW_OTP:
+        return switch (state) {
+            case SHOW_OTP -> {
                 showOtpForm(context);
-                return true;
-
-            case SKIP_OTP:
+                yield true;
+            }
+            case SKIP_OTP -> {
                 context.success();
-                return true;
-
-            default:
-                return false;
-        }
+                yield true;
+            }
+            default -> false;
+        };
     }
 
-    private boolean tryConcludeBasedOn(OtpDecision state) {
-
-        switch (state) {
-
-            case SHOW_OTP:
-                return true;
-
-            case SKIP_OTP:
-                return false;
-
-            default:
-                return false;
-        }
+    private static boolean tryConcludeBasedOn(OtpDecision state) {
+        return state == SHOW_OTP;
     }
 
     private void showOtpForm(AuthenticationFlowContext context) {
@@ -195,19 +176,13 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
             return ABSTAIN;
         }
 
-        Optional<String> value = user.getAttributeStream(attributeName).findFirst();
-        if (!value.isPresent()) {
-            return ABSTAIN;
-        }
-
-        switch (value.get().trim()) {
-            case SKIP:
-                return SKIP_OTP;
-            case FORCE:
-                return SHOW_OTP;
-            default:
-                return ABSTAIN;
-        }
+        return user.getAttributeStream(attributeName)
+                .findFirst()
+                .map(s -> switch (s.trim()) {
+                    case SKIP -> SKIP_OTP;
+                    case FORCE -> SHOW_OTP;
+                    default -> ABSTAIN;
+                }).orElse(ABSTAIN);
     }
 
     private OtpDecision voteForHttpHeaderMatchesPattern(MultivaluedMap<String, String> requestHeaders, Map<String, String> config) {
@@ -257,30 +232,30 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
         return false;
     }
 
-    private OtpDecision voteForUserRole(RealmModel realm, UserModel user, Map<String, String> config) {
+    private OtpDecision voteForUserRole(KeycloakSession session, RealmModel realm, UserModel user, Map<String, String> config) {
 
         if (!config.containsKey(SKIP_OTP_ROLE) && !config.containsKey(FORCE_OTP_ROLE)) {
             return ABSTAIN;
         }
 
-        if (userHasRole(realm, user, config.get(SKIP_OTP_ROLE))) {
+        if (userHasRole(session, realm, user, config.get(SKIP_OTP_ROLE))) {
             return SKIP_OTP;
         }
 
-        if (userHasRole(realm, user, config.get(FORCE_OTP_ROLE))) {
+        if (userHasRole(session, realm, user, config.get(FORCE_OTP_ROLE))) {
             return SHOW_OTP;
         }
 
         return ABSTAIN;
     }
 
-    private boolean userHasRole(RealmModel realm, UserModel user, String roleName) {
+    private boolean userHasRole(KeycloakSession session, RealmModel realm, UserModel user, String roleName) {
 
         if (roleName == null) {
             return false;
         }
 
-        RoleModel role = getRoleFromString(realm, roleName);
+        RoleModel role = getRoleFromString(session, realm, roleName);
         if (role != null) {
             return user.hasRole(role);
         }
@@ -290,8 +265,8 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
     private boolean isOTPRequired(KeycloakSession session, RealmModel realm, UserModel user) {
         MultivaluedMap<String, String> requestHeaders = session.getContext().getRequestHeaders().getRequestHeaders();
         List<Map<String,String>> configs = realm.getAuthenticatorConfigsStream().map(AuthenticatorConfigModel::getConfig)
-                .filter(this::containsConditionalOtpConfig)
-                .collect(Collectors.toList());
+                .filter(ConditionalOtpFormAuthenticator::containsConditionalOtpConfig)
+                .toList();
         if (configs.isEmpty()) {
             // no configuration at all means it is configured
             return true;
@@ -300,7 +275,7 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
             if (tryConcludeBasedOn(voteForUserOtpControlAttribute(user, config))) {
                 return true;
             }
-            if (tryConcludeBasedOn(voteForUserRole(realm, user, config))) {
+            if (tryConcludeBasedOn(voteForUserRole(session, realm, user, config))) {
                 return true;
             }
             if (tryConcludeBasedOn(voteForHttpHeaderMatchesPattern(requestHeaders, config))) {
@@ -312,13 +287,13 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
                 return true;
             }
             return voteForUserOtpControlAttribute(user, config) == ABSTAIN
-                && voteForUserRole(realm, user, config) == ABSTAIN
+                && voteForUserRole(session, realm, user, config) == ABSTAIN
                 && voteForHttpHeaderMatchesPattern(requestHeaders, config) == ABSTAIN
                 && (voteForDefaultFallback(config) == SHOW_OTP || voteForDefaultFallback(config) == ABSTAIN);
         });
     }
 
-    private boolean containsConditionalOtpConfig(Map config) {
+    private static boolean containsConditionalOtpConfig(Map<?,?> config) {
         return config.containsKey(OTP_CONTROL_USER_ATTRIBUTE)
             || config.containsKey(SKIP_OTP_ROLE)
             || config.containsKey(FORCE_OTP_ROLE)

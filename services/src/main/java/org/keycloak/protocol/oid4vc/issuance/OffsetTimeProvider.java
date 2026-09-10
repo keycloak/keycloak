@@ -25,8 +25,8 @@ import org.keycloak.common.util.Time;
 public class OffsetTimeProvider implements TimeProvider {
 
     @Override
-    public int currentTimeSeconds() {
-        return Time.currentTime();
+    public long currentTimeSeconds() {
+        return Time.currentTimeSeconds();
     }
 
     @Override

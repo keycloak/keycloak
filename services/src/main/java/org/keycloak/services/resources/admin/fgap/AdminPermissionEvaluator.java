@@ -27,6 +27,7 @@ public interface AdminPermissionEvaluator {
 
     void requireAnyAdminRole();
     boolean hasOneAdminRole(String... adminRoles);
+    void requireRealmAdmin();
 
     AdminAuth adminAuth();
 
@@ -34,6 +35,9 @@ public interface AdminPermissionEvaluator {
     UserPermissionEvaluator users();
     ClientPermissionEvaluator clients();
     GroupPermissionEvaluator groups();
+    OrganizationPermissionEvaluator orgs();
+
+    boolean isRealmAdmin();
 
     /**
      * Useful as a function pointer, i.e. RoleMapperResource is reused bewteen GroupResource and UserResource to manage role mappings.

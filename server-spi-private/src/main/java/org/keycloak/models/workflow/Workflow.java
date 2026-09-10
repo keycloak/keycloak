@@ -17,12 +17,14 @@
 
 package org.keycloak.models.workflow;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import jakarta.ws.rs.BadRequestException;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
@@ -33,9 +35,10 @@ import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 
 import static java.util.Optional.ofNullable;
 
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ENABLED;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ERROR;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NAME;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SUPPORTS;
 
 public class Workflow {
 
@@ -61,6 +64,17 @@ public class Workflow {
         this.config = c;
     }
 
+    /**
+     * Create a new workflow instance based on the provided workflow but bound to a new session.
+     *
+     * @param workflow the workflow to copy
+     */
+    public Workflow(KeycloakSession session, Workflow workflow) {
+        this(session, workflow.getId(), workflow.getConfig());
+        this.notBefore = workflow.getNotBefore();
+    }
+
+
     public String getId() {
         return id;
     }
@@ -81,6 +95,16 @@ public class Workflow {
         return notBefore;
     }
 
+    public ResourceType getSupportedType() {
+        return Optional.ofNullable(config).map(c -> c.getFirst(CONFIG_SUPPORTS))
+                .map(ResourceType::valueOf)
+                .orElse(null);
+    }
+
+    public String getCondition() {
+        return config != null ? config.getFirst(CONFIG_CONDITIONS) : null;
+    }
+
     public void setNotBefore(String notBefore) {
         this.notBefore = notBefore;
     }
@@ -92,17 +116,18 @@ public class Workflow {
         config.putSingle(CONFIG_ENABLED, String.valueOf(enabled));
     }
 
-    public void setError(String message) {
+    public void setSupportedType(ResourceType resourceType) {
         if (config == null) {
             config = new MultivaluedHashMap<>();
         }
-        config.putSingle(CONFIG_ERROR, message);
+        config.putSingle(CONFIG_SUPPORTS, resourceType.name());
     }
 
     public void updateConfig(MultivaluedHashMap<String, String> config, List<WorkflowStepRepresentation> steps) {
         ComponentModel component = getWorkflowComponent(this.id, WorkflowProvider.class.getName());
         component.setConfig(config);
         realm.updateComponent(component);
+        this.config = config;
 
         // check if there are steps to be updated as well
         if (steps != null) {
@@ -144,6 +169,8 @@ public class Workflow {
     }
 
     public void addSteps(List<WorkflowStepRepresentation> steps) {
+        Set<ResourceType> allowedTypes = EnumSet.allOf(ResourceType.class);
+
         steps = ofNullable(steps).orElse(List.of());
         for (int i = 0; i < steps.size(); i++) {
             WorkflowStep step = toModel(steps.get(i));
@@ -153,14 +180,30 @@ public class Workflow {
 
             // persist the new step component.
             addStep(step);
+
+            // update allowed types
+            WorkflowStepProviderFactory<WorkflowStepProvider> stepProvider = Workflows.getStepProviderFactory(session, step);
+            allowedTypes.retainAll(stepProvider.getSupportedResourceTypes());
         }
+
+        if (allowedTypes.isEmpty()) {
+            throw new ModelValidationException("workflowStepsIncompatible");
+        }
+        else if (allowedTypes.size() > 1) {
+            String formattedTypes = allowedTypes.stream().map(Enum::name).collect(Collectors.joining(", "));
+            throw new ModelValidationException("workflowStepsSingleTypeRequired", formattedTypes);
+        }
+
+        ResourceType supported = allowedTypes.stream().findFirst().orElseThrow();
+        setSupportedType(supported);
+        updateConfig(config, null);
     }
 
     private void addStep(WorkflowStep step) {
         ComponentModel workflowModel = realm.getComponent(getId());
 
         if (workflowModel == null) {
-            throw new ModelValidationException("Workflow with id '%s' not found.".formatted(getId()));
+            throw new ModelValidationException("workflowNotFoundById", getId());
         }
 
         ComponentModel stepModel = new ComponentModel();
@@ -180,7 +223,7 @@ public class Workflow {
         ComponentModel component = realm.getComponent(id);
 
         if (component == null || !Objects.equals(providerType, component.getProviderType())) {
-            throw new BadRequestException("Not a valid resource workflow: " + id);
+            throw new WorkflowInvalidStateException("workflowInvalidResource", id);
         }
         return component;
     }

@@ -133,7 +133,7 @@ export default function PermissionDetails() {
           permission,
         );
         setPermission(result);
-        navigate(
+        void navigate(
           toPermissionDetails({
             realm,
             id,
@@ -166,7 +166,7 @@ export default function PermissionDetails() {
           permissionId: permissionId,
         });
         addAlert(t("permissionDeletedSuccess"), AlertVariant.success);
-        navigate(
+        void navigate(
           toAuthorizationTab({ realm, clientId: id, tab: "permissions" }),
         );
       } catch (error) {

@@ -41,7 +41,7 @@ public abstract class AbstractAttributeToRoleMapper extends AbstractIdentityProv
 
     @Override
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        RoleModel role = this.getRole(realm, mapperModel);
+        RoleModel role = this.getRole(session, realm, mapperModel);
         if (role == null) {
             return;
         }
@@ -53,7 +53,7 @@ public abstract class AbstractAttributeToRoleMapper extends AbstractIdentityProv
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        RoleModel role = this.getRole(realm, mapperModel);
+        RoleModel role = this.getRole(session, realm, mapperModel);
         if (role == null) {
             return;
         }
@@ -88,18 +88,18 @@ public abstract class AbstractAttributeToRoleMapper extends AbstractIdentityProv
 
     /**
      * Obtains the {@link RoleModel} corresponding the role configured in the specified
-     * {@link IdentityProviderMapperModel}.
-     * If the role doesn't correspond to one of the realm's client roles or to one of the realm's roles, this method
-     * returns {@code null}.
+     * {@link IdentityProviderMapperModel}. If the role doesn't correspond to one of the realm's client roles or to one
+     * of the realm's roles, this method returns {@code null}.
      *
-     * @param realm a reference to the realm.
+     * @param session     the {@link KeycloakSession}.
+     * @param realm       a reference to the realm.
      * @param mapperModel a reference to the {@link IdentityProviderMapperModel} containing the configured role.
      * @return the {@link RoleModel} that corresponds to the mapper model role or {@code null}, if the role could not be
-     *         found
+     * found
      */
-    private RoleModel getRole(final RealmModel realm, final IdentityProviderMapperModel mapperModel) {
+    private RoleModel getRole(KeycloakSession session, final RealmModel realm, final IdentityProviderMapperModel mapperModel) {
         String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
-        RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
+        RoleModel role = KeycloakModelUtils.getRoleFromString(session, realm, roleName);
         if (role == null) {
             LOG.warnf("Unable to find role '%s' for mapper '%s' on realm '%s'.", roleName, mapperModel.getName(),
                     realm.getName());

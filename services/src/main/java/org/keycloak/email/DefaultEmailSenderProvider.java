@@ -103,6 +103,10 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
     public void validate(Map<String, String> config) throws EmailException {
         // just static configuration checking here, not really testing email
         checkFromAddress(config.get("from"), isAllowUTF8(config));
+        String replyTo = config.get("replyTo");
+        if (isNotBlank(replyTo)) {
+            checkReplyToAddress(replyTo, isAllowUTF8(config));
+        }
     }
 
     Properties buildEmailProperties(Map<String, String> config, String from) throws EmailException {
@@ -176,7 +180,8 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             msg.setReplyTo(new Address[]{toInternetAddress(from, fromDisplayName)});
 
             if (isNotBlank(replyTo)) {
-                msg.setReplyTo(new Address[]{toInternetAddress(replyTo, replyToDisplayName)});
+                final String convertedReplyTo = checkReplyToAddress(replyTo, isAllowUTF8(config));
+                msg.setReplyTo(new Address[]{toInternetAddress(convertedReplyTo, replyToDisplayName)});
             }
 
             msg.setHeader("To", address);
@@ -259,12 +264,21 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
     }
 
     private static String checkFromAddress(String from, boolean allowutf8) throws EmailException {
-        final String covertedFrom = convertEmail(from, allowutf8);
-        if (from == null) {
+        final String convertedFrom = convertEmail(from, allowutf8);
+        if (convertedFrom == null) {
             throw new EmailException(String.format("Invalid sender address '%s'. If the address contains UTF-8 characters in the local part please ensure the SMTP server supports the SMTPUTF8 extension and enable 'Allow UTF-8' in the email realm configuration.",
                     from));
         }
-        return covertedFrom;
+        return convertedFrom;
+    }
+
+    private static String checkReplyToAddress(String replyTo, boolean allowutf8) throws EmailException {
+        final String convertedReplyTo = convertEmail(replyTo, allowutf8);
+        if (convertedReplyTo == null) {
+            throw new EmailException(String.format("Invalid reply-to address '%s'. If the address contains UTF-8 characters in the local part please ensure the SMTP server supports the SMTPUTF8 extension and enable 'Allow UTF-8' in the email realm configuration.",
+                    replyTo));
+        }
+        return convertedReplyTo;
     }
 
     private static String convertEmail(String email, boolean allowutf8) throws EmailException {

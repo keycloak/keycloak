@@ -34,6 +34,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -41,6 +42,7 @@ import org.keycloak.models.utils.FormMessage;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 
@@ -51,6 +53,13 @@ import org.keycloak.services.validation.Validation;
 public class RegistrationPassword implements FormAction, FormActionFactory {
     public static final String PROVIDER_ID = "registration-password-action";
 
+    // Configuration option
+    public static final String ALWAYS_SET_PASSWORD_ON_REGISTER_FORM = "always_set_password_on_register_form";
+
+    // Authentication note to signal that password fields should not be rendered on the registration page, but rather "update password" required action should be added
+    // to the user account
+    private static final String UPDATE_PASSWORD_AFTER_EMAIL_VERIFICATION_NOTE = "update_password_after_email_verification_note";
+
     @Override
     public String getHelpText() {
         return "Validates that password matches password confirmation field.  It also will store password in user's credential store.";
@@ -58,11 +67,25 @@ public class RegistrationPassword implements FormAction, FormActionFactory {
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return null;
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name(ALWAYS_SET_PASSWORD_ON_REGISTER_FORM)
+                .label("Always set password on register form")
+                .helpText("When this option is false and 'Verify Email' is enabled for the realm, then the password will not be set by the user on the registration form, but rather in the later stage once "
+                        + " user's email address is successfully verified. This is recommended for security reasons. When true, the password fields will be available directly on the registration form and can be set "
+                        + " by the user before his email is verified. This option is deprecated and might be removed in the future.")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .add()
+                .build();
     }
 
     @Override
     public void validate(ValidationContext context) {
+        if (isVerifyEmail(context)) {
+            context.success();
+            return;
+        }
+
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         List<FormMessage> errors = new ArrayList<>();
         context.getEvent().detail(Details.REGISTER_METHOD, "form");
@@ -90,11 +113,16 @@ public class RegistrationPassword implements FormAction, FormActionFactory {
 
     @Override
     public void success(FormContext context) {
-        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        String password = formData.getFirst(RegistrationPage.FIELD_PASSWORD);
         UserModel user = context.getUser();
+
+        if ("true".equals(context.getAuthenticationSession().getAuthNote(UPDATE_PASSWORD_AFTER_EMAIL_VERIFICATION_NOTE))) {
+            user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+            return;
+        }
+
+        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         try {
-            user.credentialManager().updateCredential(UserCredentialModel.password(formData.getFirst("password"), false));
+            user.credentialManager().updateCredential(UserCredentialModel.password(formData.getFirst(RegistrationPage.FIELD_PASSWORD), false));
         } catch (Exception me) {
             user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
         }
@@ -103,7 +131,22 @@ public class RegistrationPassword implements FormAction, FormActionFactory {
 
     @Override
     public void buildPage(FormContext context, LoginFormsProvider form) {
-        form.setAttribute("passwordRequired", true);
+        if (isVerifyEmail(context)) {
+            context.getAuthenticationSession().setAuthNote(UPDATE_PASSWORD_AFTER_EMAIL_VERIFICATION_NOTE, "true");
+        } else {
+            form.setAttribute("passwordRequired", true);
+        }
+    }
+
+    private boolean isVerifyEmail(FormContext context) {
+        String alwaysSetPasswordCfg = context.getAuthenticatorConfig() == null ? null : context.getAuthenticatorConfig().getConfig().get(ALWAYS_SET_PASSWORD_ON_REGISTER_FORM);
+        if ("true".equals(alwaysSetPasswordCfg)) return false;
+
+        if (context.getRealm().isVerifyEmail()) return true;
+
+        // Check if verifyEmail is set as default required action. In that case, newly registered users are also required to verify their emails
+        RequiredActionProviderModel verifyEmailAction = context.getRealm().getRequiredActionProviderByAlias(UserModel.RequiredAction.VERIFY_EMAIL.name());
+        return verifyEmailAction != null && verifyEmailAction.isDefaultAction();
     }
 
     @Override
@@ -118,7 +161,6 @@ public class RegistrationPassword implements FormAction, FormActionFactory {
 
     @Override
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
-
     }
 
     @Override
@@ -143,7 +185,7 @@ public class RegistrationPassword implements FormAction, FormActionFactory {
 
     @Override
     public boolean isConfigurable() {
-        return false;
+        return true;
     }
 
     private static AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {

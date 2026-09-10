@@ -1,0 +1,25 @@
+<saml:Assertion
+        xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion"
+        MajorVersion="1" MinorVersion="1"
+        AssertionID="buGxcG4gILg5NlocyLccDz6iXrUa"
+        Issuer="https://idp.example.org/saml"
+        IssueInstant="2002-06-19T17:05:37.795Z">
+    <saml:Conditions
+            NotBefore="2002-06-19T17:00:37.795Z"
+            NotOnOrAfter="2002-06-19T17:10:37.795Z"/>
+    <saml:AuthenticationStatement
+            AuthenticationMethod="urn:oasis:names:tc:SAML:1.0:am:password"
+            AuthenticationInstant="2002-06-19T17:05:17.706Z">
+        <saml:Subject>
+            <saml:NameIdentifier
+                    Format="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress">
+                user@idp.example.org
+            </saml:NameIdentifier>
+            <saml:SubjectConfirmation> problematic text
+            <saml:ConfirmationMethod>
+                urn:oasis:names:tc:SAML:1.0:cm:bearer
+            </saml:ConfirmationMethod>
+            </saml:SubjectConfirmation>
+        </saml:Subject>
+    </saml:AuthenticationStatement>
+</saml:Assertion>

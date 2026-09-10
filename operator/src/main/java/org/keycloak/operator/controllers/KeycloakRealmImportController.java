@@ -17,16 +17,16 @@
 package org.keycloak.operator.controllers;
 
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import jakarta.inject.Inject;
 
 import org.keycloak.operator.Config;
+import org.keycloak.operator.Constants;
 import org.keycloak.operator.ContextUtils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatus;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImportStatus;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImportStatusBuilder;
 
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
@@ -91,7 +91,7 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
         }
 
         if (!status.isDone()) {
-            updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
+            updateControl.rescheduleAfter(Constants.RETRY_DURATION);
         }
 
         return updateControl;
@@ -145,7 +145,7 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
         }
     }
 
-    private Integer getReadyReplicas(StatefulSet existingDeployment) {
+    static Integer getReadyReplicas(StatefulSet existingDeployment) {
         return Optional.ofNullable(existingDeployment.getStatus()).map(StatefulSetStatus::getReadyReplicas).orElse(0);
     }
 

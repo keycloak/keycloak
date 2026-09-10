@@ -106,9 +106,9 @@ public class CryptoKeyStore {
         if (file.exists()) {
             throw new RuntimeException("Keystore file already exists: " + file.getAbsolutePath());
         }
-        FileOutputStream fos = new FileOutputStream(file);
-        keyStore.store(fos, keystorePassword.trim().toCharArray());
-        fos.close();
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            keyStore.store(fos, keystorePassword.trim().toCharArray());
+        }
         return file;
     }
 

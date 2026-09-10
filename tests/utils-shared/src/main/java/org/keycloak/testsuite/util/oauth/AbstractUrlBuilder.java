@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.util.oauth;
 
-import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -33,12 +32,8 @@ public abstract class AbstractUrlBuilder {
     }
 
     protected void parameter(String name, Object value) {
-        try {
-            String encoded = URLEncoder.encode(JsonSerialization.writeValueAsString(value), StandardCharsets.UTF_8);
-            parameter(name, encoded);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        String encoded = URLEncoder.encode(JsonSerialization.valueAsString(value), StandardCharsets.UTF_8);
+        parameter(name, encoded);
     }
 
     public String build() {

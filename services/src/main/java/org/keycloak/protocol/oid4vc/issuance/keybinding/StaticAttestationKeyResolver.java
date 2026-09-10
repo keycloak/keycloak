@@ -17,9 +17,15 @@
 
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
+import java.util.List;
 import java.util.Map;
 
+import org.keycloak.broker.provider.TrustMaterialIdentityProvider;
+import org.keycloak.broker.provider.X509TrustMaterial;
+import org.keycloak.common.VerificationException;
 import org.keycloak.jose.jwk.JWK;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
+import org.keycloak.protocol.oid4vc.model.ErrorType;
 
 import org.jboss.logging.Logger;
 
@@ -31,9 +37,15 @@ import org.jboss.logging.Logger;
 public class StaticAttestationKeyResolver implements AttestationKeyResolver {
     private static final Logger logger = Logger.getLogger(StaticAttestationKeyResolver.class);
     private final Map<String, JWK> trustedKeys;
+    private final List<X509TrustMaterial> x509TrustMaterials;
 
     public StaticAttestationKeyResolver(Map<String, JWK> trustedKeys) {
+        this(trustedKeys, List.of());
+    }
+
+    public StaticAttestationKeyResolver(Map<String, JWK> trustedKeys, List<X509TrustMaterial> x509TrustMaterials) {
         this.trustedKeys = trustedKeys;
+        this.x509TrustMaterials = List.copyOf(x509TrustMaterials);
     }
 
     @Override
@@ -43,5 +55,15 @@ public class StaticAttestationKeyResolver implements AttestationKeyResolver {
             logger.warnf("Key with kid '%s' not found in trusted static key registry", kid);
         }
         return key;
+    }
+
+    @Override
+    public JWK resolveX5c(List<String> x5c, Map<String, Object> header, Map<String, Object> payload) {
+        String algorithm = header != null ? (String) header.get(JWK.ALGORITHM) : null;
+        try {
+            return TrustMaterialIdentityProvider.validateX509Chain(x509TrustMaterials, x5c, algorithm);
+        } catch (VerificationException e) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, e.getMessage(), e);
+        }
     }
 }

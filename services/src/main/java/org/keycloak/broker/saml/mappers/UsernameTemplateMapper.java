@@ -46,11 +46,15 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import org.jboss.logging.Logger;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class UsernameTemplateMapper extends AbstractIdentityProviderMapper {
+
+    private static final Logger logger = Logger.getLogger(UsernameTemplateMapper.class);
 
     public static final String[] COMPATIBLE_PROVIDERS = {SAMLIdentityProviderFactory.PROVIDER_ID};
 
@@ -162,6 +166,7 @@ public class UsernameTemplateMapper extends AbstractIdentityProviderMapper {
         String template = mapperModel.getConfig().get(TEMPLATE);
         Matcher m = SUBSTITUTION.matcher(template);
         StringBuffer sb = new StringBuffer();
+        boolean hasUnresolvedVariable = false;
         while (m.find()) {
             String variable = m.group(1);
             UnaryOperator<String> transformer = Optional.ofNullable(m.group(2)).map(TRANSFORMERS::get).orElse(UnaryOperator.identity());
@@ -177,7 +182,7 @@ public class UsernameTemplateMapper extends AbstractIdentityProviderMapper {
                 m.appendReplacement(sb, transformer.apply(subjectNameID.getValue()));
             } else if (variable.startsWith("ATTRIBUTE.")) {
                 String name = variable.substring("ATTRIBUTE.".length());
-                String value = "";
+                String value = null;
                 for (AttributeStatementType statement : assertion.getAttributeStatements()) {
                     for (AttributeStatementType.ASTChoiceType choice : statement.getAttributes()) {
                         AttributeType attr = choice.getAttribute();
@@ -190,7 +195,12 @@ public class UsernameTemplateMapper extends AbstractIdentityProviderMapper {
                         }
                     }
                 }
-                m.appendReplacement(sb, transformer.apply(value));
+                if (value == null) {
+                    hasUnresolvedVariable = true;
+                    m.appendReplacement(sb, "");
+                } else {
+                    m.appendReplacement(sb, transformer.apply(value));
+                }
             } else {
                 m.appendReplacement(sb, m.group(1));
             }
@@ -198,8 +208,13 @@ public class UsernameTemplateMapper extends AbstractIdentityProviderMapper {
         }
         m.appendTail(sb);
 
+        if (hasUnresolvedVariable) {
+            logger.warnf("Username template '%s' for identity provider '%s' contains unresolved attributes. Check that the identity provider is sending the expected SAML attributes.",
+                    template, context.getIdpConfig().getAlias());
+        }
+
         Target t = getTarget(mapperModel.getConfig().get(TARGET));
-        t.set(context, sb.toString());
+        t.set(context, hasUnresolvedVariable ? "" : sb.toString());
     }
 
     @Override

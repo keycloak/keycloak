@@ -40,15 +40,16 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
-import org.keycloak.testsuite.util.UserBuilder;
 
-import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.setUserProfileConfiguration;
@@ -58,10 +59,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  *
@@ -95,9 +97,9 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
             LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), john, "Password1");
         });
 
-        UPConfig cfg = testRealm().users().userProfile().getConfiguration();
+        UPConfig cfg = managedRealm.admin().users().userProfile().getConfiguration();
         cfg.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ENABLED);
-        testRealm().users().userProfile().update(cfg);
+        managedRealm.admin().users().userProfile().update(cfg);
     }
 
     @Test
@@ -127,7 +129,7 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         UserRepresentation user3 = UserBuilder.create()
                 .username("admintestuser3")
                 .password("userpass")
-                .addAttribute(LDAPConstants.LDAP_ID, "123456")
+                .attribute(LDAPConstants.LDAP_ID, "123456")
                 .enabled(true)
                 .build();
         createUserExpectError(user3);
@@ -136,7 +138,7 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         UserRepresentation user4 = UserBuilder.create()
                 .username("admintestuser4")
                 .password("userpass")
-                .addAttribute(LDAPConstants.LDAP_ENTRY_DN, "ou=users,dc=foo")
+                .attribute(LDAPConstants.LDAP_ENTRY_DN, "ou=users,dc=foo")
                 .enabled(true)
                 .build();
         createUserExpectError(user4);
@@ -144,13 +146,13 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
 
     @Test
     public void updateUserWithAdminRest() throws Exception {
-        UserResource userRes = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        UserResource userRes = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "johnkeycloak");
         UserRepresentation user = userRes.toRepresentation();
 
         List<String> origLdapId = new ArrayList<>(user.getAttributes().get(LDAPConstants.LDAP_ID));
         List<String> origLdapEntryDn = new ArrayList<>(user.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN));
-        Assert.assertEquals(1, origLdapId.size());
-        Assert.assertEquals(1, origLdapEntryDn.size());
+        Assertions.assertEquals(1, origLdapId.size());
+        Assertions.assertEquals(1, origLdapEntryDn.size());
         assertThat(user.getAttributes().keySet(), not(contains(KerberosFederationProvider.KERBEROS_PRINCIPAL)));
 
         // Trying to add KERBEROS_PRINCIPAL should fail (Adding attribute, which was not yet present)
@@ -203,26 +205,26 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
 
 
     private String createUserExpectSuccess(UserRepresentation user) {
-        Response response = testRealm().users().create(user);
+        Response response = managedRealm.admin().users().create(user);
         String newUserId = ApiUtil.getCreatedId(response);
         response.close();
 
-        UserRepresentation userRep = testRealm().users().get(newUserId).toRepresentation();
+        UserRepresentation userRep = managedRealm.admin().users().get(newUserId).toRepresentation();
         userRep.getAttributes().containsKey(LDAPConstants.LDAP_ID);
         userRep.getAttributes().containsKey(LDAPConstants.LDAP_ENTRY_DN);
         return newUserId;
     }
 
     private void createUserExpectError(UserRepresentation user) {
-        Response response = testRealm().users().create(user);
-        Assert.assertEquals(400, response.getStatus());
+        Response response = managedRealm.admin().users().create(user);
+        Assertions.assertEquals(400, response.getStatus());
         response.close();
     }
 
     private void updateUserExpectError(UserResource userRes, UserRepresentation user) {
         try {
             userRes.update(user);
-            Assert.fail("Not expected to successfully update user");
+            Assertions.fail("Not expected to successfully update user");
         } catch (BadRequestException e) {
             // Expected
         }
@@ -239,31 +241,33 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         String newUserId1 = createUserExpectSuccess(user1);
         getCleanup().addUserId(newUserId1);
 
-        String realmId = testRealm().toRepresentation().getId();
-        List<ComponentRepresentation> storageProviders = testRealm().components().query(realmId, UserStorageProvider.class.getName());
+        String realmId = managedRealm.admin().toRepresentation().getId();
+        List<ComponentRepresentation> storageProviders = managedRealm.admin().components().query(realmId, UserStorageProvider.class.getName());
         ComponentRepresentation ldapProvider = storageProviders.get(0);
         List<String> originalUrl = ldapProvider.getConfig().get(LDAPConstants.CONNECTION_URL);
 
         getCleanup().addCleanup(() -> {
             ldapProvider.getConfig().put(LDAPConstants.CONNECTION_URL, originalUrl);
-            testRealm().components().component(ldapProvider.getId()).update(ldapProvider);
+            managedRealm.admin().components().component(ldapProvider.getId()).update(ldapProvider);
         });
 
         ldapProvider.getConfig().put(LDAPConstants.CONNECTION_URL, List.of("ldap://invalid"));
-        testRealm().components().component(ldapProvider.getId()).update(ldapProvider);
+        managedRealm.admin().components().component(ldapProvider.getId()).update(ldapProvider);
 
-        List<UserRepresentation> search = testRealm().users().search("*", -1, -1, true);
+        List<UserRepresentation> search = managedRealm.admin().users().search("*", -1, -1, true);
         assertThat(search.isEmpty(), is(false));
         user1 = search.stream().filter(u -> u.getUsername().equals("admintestuser1")).findFirst().orElseThrow();
         assertThat(user1.getAttributes().containsKey(LDAPConstants.LDAP_ID), is(true));
         assertThat(user1.isEnabled(), is(false));
 
-        UserResource userResource = testRealm().users().get(newUserId1);
+        UserResource userResource = managedRealm.admin().users().get(newUserId1);
+        user1 = userResource.toRepresentation();
+        assertFalse(user1.isEnabled());
 
         try {
             user1.setFirstName(user1.getFirstName() + " updated");
             userResource.update(user1);
-            Assert.fail("Not expected to successfully update user");
+            Assertions.fail("Not expected to successfully update user");
         } catch (WebApplicationException expected) {
             Response response = expected.getResponse();
             ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
@@ -271,49 +275,58 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         }
 
         // fix the LDAP connection configuration and try again to update the user
-        storageProviders = testRealm().components().query(realmId, UserStorageProvider.class.getName());
+        storageProviders = managedRealm.admin().components().query(realmId, UserStorageProvider.class.getName());
         ComponentRepresentation ldapProviderValid = storageProviders.get(0);
         ldapProviderValid.getConfig().put(LDAPConstants.CONNECTION_URL, originalUrl);
-        testRealm().components().component(ldapProviderValid.getId()).update(ldapProviderValid);
+        managedRealm.admin().components().component(ldapProviderValid.getId()).update(ldapProviderValid);
         user1 = userResource.toRepresentation();
         user1.setLastName("changed");
         userResource.update(user1);
         user1 = userResource.toRepresentation();
         assertTrue(user1.isEnabled());
         assertEquals("changed", user1.getLastName());
+
+        ldapProvider.getConfig().put(LDAPConstants.CONNECTION_URL, List.of("ldap://invalid"));
+        managedRealm.admin().components().component(ldapProvider.getId()).update(ldapProvider);
+        user1 = userResource.toRepresentation();
+        assertFalse(user1.isEnabled());
+        ldapProviderValid.getConfig().put(LDAPConstants.CONNECTION_URL, originalUrl);
+        managedRealm.admin().components().component(ldapProviderValid.getId()).update(ldapProviderValid);
+        user1 = userResource.toRepresentation();
+        assertTrue(user1.isEnabled());
     }
 
     @Test
     public void testUpdateReadOnlyAttributeWhenNotSetToUser() throws Exception {
-        RealmRepresentation realmRep = testRealm().toRepresentation();
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         enableSyncRegistration(realmRep, Boolean.FALSE);
 
         UserRepresentation newUser = UserBuilder.create()
                 .username("admintestuser1")
                 .password("userpass")
-                .addAttribute("foo", "foo-value")
+                .attribute("foo", "foo-value")
                 .enabled(true)
                 .build();
 
-        UPConfig origUpConfig = testRealm().users().userProfile().getConfiguration();
+        UPConfig origUpConfig = managedRealm.admin().users().userProfile().getConfiguration();
 
-        try (Response response = testRealm().users().create(newUser)) {
+        try (Response response = managedRealm.admin().users().create(newUser)) {
             enableDynamicUserProfileConfig();
             String newUserId = ApiUtil.getCreatedId(response);
 
             getCleanup().addUserId(newUserId);
 
-            UserResource user = testRealm().users().get(newUserId);
+            UserResource user = managedRealm.admin().users().get(newUserId);
             UserRepresentation userRep = user.toRepresentation();
             assertNull(userRep.getAttributes());
 
             userRep.singleAttribute(LDAPConstants.LDAP_ID, "");
             user.update(userRep);
-            userRep = testRealm().users().get(newUserId).toRepresentation();
+            userRep = managedRealm.admin().users().get(newUserId).toRepresentation();
             assertNull(userRep.getAttributes());
             userRep.singleAttribute(LDAPConstants.LDAP_ID, null);
             user.update(userRep);
-            userRep = testRealm().users().get(newUserId).toRepresentation();
+            userRep = managedRealm.admin().users().get(newUserId).toRepresentation();
             assertNull(userRep.getAttributes());
 
             try {
@@ -324,12 +337,12 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
             }
         } finally {
             enableSyncRegistration(realmRep, Boolean.TRUE);
-            testRealm().users().userProfile().update(origUpConfig);
+            managedRealm.admin().users().userProfile().update(origUpConfig);
         }
     }
 
     private void enableDynamicUserProfileConfig() throws IOException {
-        UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
+        UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
         upConfig.setUnmanagedAttributePolicy(null);
 
         UPAttribute attribute = new UPAttribute();
@@ -344,13 +357,13 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
 
         upConfig.addOrReplaceAttribute(attribute);
 
-        setUserProfileConfiguration(testRealm(), writeValueAsString(upConfig));
+        setUserProfileConfiguration(managedRealm.admin(), writeValueAsString(upConfig));
     }
 
     private void enableSyncRegistration(RealmRepresentation realmRep, Boolean aFalse) {
-        ComponentRepresentation ldapStorage = testRealm().components()
+        ComponentRepresentation ldapStorage = managedRealm.admin().components()
                 .query(realmRep.getId(), UserStorageProvider.class.getName()).get(0);
         ldapStorage.getConfig().put(LDAPConstants.SYNC_REGISTRATIONS, Collections.singletonList(aFalse.toString()));
-        testRealm().components().component(ldapStorage.getId()).update(ldapStorage);
+        managedRealm.admin().components().component(ldapStorage.getId()).update(ldapStorage);
     }
 }

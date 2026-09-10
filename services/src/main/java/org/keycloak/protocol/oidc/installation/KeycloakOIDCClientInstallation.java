@@ -86,7 +86,7 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
     public static Map<String, Object> getClientCredentialsAdapterConfig(KeycloakSession session, ClientModel client) {
         String clientAuthenticator = client.getClientAuthenticatorType();
         ClientAuthenticatorFactory authenticator = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, clientAuthenticator);
-        return authenticator.getAdapterConfiguration(client);
+        return authenticator.getAdapterConfiguration(session, client);
     }
 
 

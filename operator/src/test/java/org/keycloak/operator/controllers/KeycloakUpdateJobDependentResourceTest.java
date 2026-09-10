@@ -17,8 +17,8 @@
 
 package org.keycloak.operator.controllers;
 
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakBuilder;
 
 import org.junit.jupiter.api.Test;
 

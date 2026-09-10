@@ -131,7 +131,7 @@ class ASN1Decoder {
         }
 
         if (length == 0x80) {
-            return -1;      // indefinite-length encoding
+            throw new IOException("Indefinite-length encoding not supported in DER");
         }
 
         if (length > 127) {

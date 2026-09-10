@@ -17,9 +17,9 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
 
 import org.hamcrest.Matchers;
 import org.junit.Before;

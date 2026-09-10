@@ -1,7 +1,7 @@
 import {
   ContinueCancelModal,
-  useEnvironment,
   label,
+  useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
@@ -29,6 +29,7 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { AccountEnvironment } from "..";
 import { deleteSession, getDevices } from "../api/methods";
 import {
   ClientRepresentation,
@@ -42,7 +43,7 @@ import { usePromise } from "../utils/usePromise";
 
 export const DeviceActivity = () => {
   const { t } = useTranslation();
-  const context = useEnvironment();
+  const context = useEnvironment<AccountEnvironment>();
   const { addAlert, addError } = useAccountAlerts();
 
   const [devices, setDevices] = useState<DeviceRepresentation[]>();
@@ -211,7 +212,10 @@ export const DeviceActivity = () => {
                             {t("lastAccessedOn")}
                           </DescriptionListTerm>
                           <DescriptionListDescription>
-                            {formatDate(new Date(session.lastAccess * 1000))}
+                            {formatDate(
+                              new Date(session.lastAccess * 1000),
+                              context.environment.locale,
+                            )}
                           </DescriptionListDescription>
                         </DescriptionListGroup>
                         <DescriptionListGroup>
@@ -227,7 +231,10 @@ export const DeviceActivity = () => {
                             {t("started")}
                           </DescriptionListTerm>
                           <DescriptionListDescription>
-                            {formatDate(new Date(session.started * 1000))}
+                            {formatDate(
+                              new Date(session.started * 1000),
+                              context.environment.locale,
+                            )}
                           </DescriptionListDescription>
                         </DescriptionListGroup>
                         <DescriptionListGroup>
@@ -235,7 +242,10 @@ export const DeviceActivity = () => {
                             {t("expires")}
                           </DescriptionListTerm>
                           <DescriptionListDescription>
-                            {formatDate(new Date(session.expires * 1000))}
+                            {formatDate(
+                              new Date(session.expires * 1000),
+                              context.environment.locale,
+                            )}
                           </DescriptionListDescription>
                         </DescriptionListGroup>
                       </DescriptionList>

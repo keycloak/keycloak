@@ -4,7 +4,7 @@ import org.keycloak.testframework.annotations.InjectTestDatabase;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
-public class OracleDatabaseSupplier extends AbstractDatabaseSupplier {
+public class OracleDatabaseSupplier extends AbstractContainerDatabaseSupplier {
 
     @Override
     public String getAlias() {

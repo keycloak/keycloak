@@ -14,12 +14,13 @@ import org.keycloak.testsuite.util.ReverseProxy;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public final class KcOidcBrokerFrontendUrlTest extends AbstractBrokerTest {
 
@@ -63,7 +64,7 @@ public final class KcOidcBrokerFrontendUrlTest extends AbstractBrokerTest {
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
         createUser(bc.consumerRealmName(), "consumer", "password", "FirstName", "LastName", "consumer@localhost.com");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         oauth.realm(bc.consumerRealmName());
         oauth.baseUrl(proxy.getUrl());
         oauth.openLoginForm();
@@ -78,7 +79,7 @@ public final class KcOidcBrokerFrontendUrlTest extends AbstractBrokerTest {
 
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
         waitForPage(driver, "AUTH_RESPONSE", true);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Ignore

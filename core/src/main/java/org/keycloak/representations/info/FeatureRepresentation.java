@@ -7,6 +7,7 @@ public class FeatureRepresentation {
     private String label;
     private FeatureType type;
     private boolean isEnabled;
+    private Boolean deprecated;
     private Set<String> dependencies;
 
     public FeatureRepresentation() {
@@ -34,6 +35,14 @@ public class FeatureRepresentation {
 
     public void setType(FeatureType type) {
         this.type = type;
+    }
+
+    public Boolean isDeprecated() {
+        return deprecated;
+    }
+
+    public void setDeprecated(Boolean deprecated) {
+        this.deprecated = Boolean.TRUE.equals(deprecated) ? deprecated : null;
     }
 
     public boolean isEnabled() {

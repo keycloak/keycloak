@@ -65,7 +65,7 @@ export const UsersInRoleTab = () => {
                   <Button
                     className="kc-groups-link"
                     variant="link"
-                    onClick={() => navigate(`/${realm}/groups`)}
+                    onClick={() => void navigate(`/${realm}/groups`)}
                   >
                     {t("groups")}
                   </Button>
@@ -73,7 +73,7 @@ export const UsersInRoleTab = () => {
                   <Button
                     className="kc-users-link"
                     variant="link"
-                    onClick={() => navigate(`/${realm}/users`)}
+                    onClick={() => void navigate(`/${realm}/users`)}
                   >
                     {t("users")}.
                   </Button>
@@ -102,7 +102,7 @@ export const UsersInRoleTab = () => {
                 <Button
                   className="kc-groups-link-empty-state"
                   variant="link"
-                  onClick={() => navigate(`/${realm}/groups`)}
+                  onClick={() => void navigate(`/${realm}/groups`)}
                 >
                   {t("groups")}
                 </Button>
@@ -110,7 +110,7 @@ export const UsersInRoleTab = () => {
                 <Button
                   className="kc-users-link-empty-state"
                   variant="link"
-                  onClick={() => navigate(`/${realm}/users`)}
+                  onClick={() => void navigate(`/${realm}/users`)}
                 >
                   {t("users")}
                 </Button>

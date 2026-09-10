@@ -124,9 +124,9 @@ public class HardcodedLDAPRoleStorageMapper extends AbstractLDAPStorageMapper {
 
     private RoleModel getRole(RealmModel realm) {
         String roleName = mapperModel.getConfig().getFirst(HardcodedLDAPRoleStorageMapper.ROLE);
-        RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
+        RoleModel role = KeycloakModelUtils.getRoleFromString(ldapProvider.getSession(), realm, roleName);
         if (role == null) {
-            logger.warnf("Hardcoded role '%s' configured in mapper '%s' is not available anymore");
+            logger.warnf("Hardcoded role '%s' configured in mapper '%s' is not available anymore", roleName, mapperModel.getName());
         }
         return role;
     }

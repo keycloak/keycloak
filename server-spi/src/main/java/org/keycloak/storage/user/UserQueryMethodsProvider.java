@@ -94,6 +94,8 @@ public interface UserQueryMethodsProvider {
      *     from idp with the given alias configured (case sensitive string)</li>
      *     <li>{@link UserModel#IDP_USER_ID} - search for users with federated identity with
      *     the given userId (case sensitive string)</li>
+     *     <li>{@link UserModel#CREATED_AFTER} - search only for users created after (inclusive) the given timestamp (epoch milliseconds)</li>
+     *     <li>{@link UserModel#CREATED_BEFORE} - search only for users created before (inclusive) the given timestamp (epoch milliseconds)</li>
      * </ul>
      * <p>
      * Any other parameters will be treated as custom user attributes.
@@ -126,6 +128,8 @@ public interface UserQueryMethodsProvider {
      *     from idp with the given alias configured (case sensitive string)</li>
      *     <li>{@link UserModel#IDP_USER_ID} - search for users with federated identity with
      *     the given userId (case sensitive string)</li>
+     *     <li>{@link UserModel#CREATED_AFTER} - search only for users created after (inclusive) the given timestamp (epoch milliseconds)</li>
+     *     <li>{@link UserModel#CREATED_BEFORE} - search only for users created before (inclusive) the given timestamp (epoch milliseconds)</li>
      * </ul>
      * <p>
      * Any other parameters will be treated as custom user attributes.

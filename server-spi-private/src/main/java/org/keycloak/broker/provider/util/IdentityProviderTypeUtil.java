@@ -10,6 +10,7 @@ import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.JWTAuthorizationGrantProvider;
+import org.keycloak.broker.provider.TrustMaterialIdentityProvider;
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.models.IdentityProviderCapability;
@@ -24,16 +25,18 @@ public class IdentityProviderTypeUtil {
     private IdentityProviderTypeUtil() {
     }
 
+    public static List<IdentityProviderType> listTypesFromProvider(KeycloakSession session, IdentityProvider provider) {
+        return listTypesFromClass(provider.getClass());
+    }
+
     public static List<IdentityProviderType> listTypesFromFactory(KeycloakSession session, String factoryId) {
         KeycloakSessionFactory sf = session.getKeycloakSessionFactory();
         ProviderFactory<?> factory = sf.getProviderFactory(IdentityProvider.class, factoryId);
         if (factory == null) {
             return List.of();
         }
-        Class<?> providerType = getType(factory);
-        return Arrays.stream(IdentityProviderType.values())
-                .filter(t -> !t.equals(IdentityProviderType.ANY) && toTypeClass(t).isAssignableFrom(providerType))
-                .collect(Collectors.toList());
+        Class<? extends IdentityProvider> providerType = getType(factory);
+        return listTypesFromClass(providerType);
     }
 
     public static List<String> listFactoriesByCapability(KeycloakSession session, IdentityProviderCapability capability) {
@@ -45,11 +48,17 @@ public class IdentityProviderTypeUtil {
         return listFactoriesByTypes(session, Set.of(type));
     }
 
+    private static List<IdentityProviderType> listTypesFromClass(Class<? extends IdentityProvider> providerType) {
+        return Arrays.stream(IdentityProviderType.values())
+                .filter(t -> !t.equals(IdentityProviderType.ANY) && toTypeClass(t).isAssignableFrom(providerType))
+                .collect(Collectors.toList());
+    }
+
     private static List<String> listFactoriesByTypes(KeycloakSession session, Set<IdentityProviderType> types) {
         KeycloakSessionFactory sf = session.getKeycloakSessionFactory();
 
         Stream<ProviderFactory> factories = sf.getProviderFactoriesStream(IdentityProvider.class);
-        if (types.contains(IdentityProviderType.ANY) || types.contains(IdentityProviderType.USER_AUTHENTICATION)) {
+        if (types.contains(IdentityProviderType.ANY) || types.contains(IdentityProviderType.USER_AUTHENTICATION) || types.contains(IdentityProviderType.JWT_AUTHORIZATION_GRANT)) {
             factories = Stream.concat(factories, sf.getProviderFactoriesStream(SocialIdentityProvider.class));
         }
 
@@ -60,9 +69,9 @@ public class IdentityProviderTypeUtil {
                 .toList();
     }
 
-    private static Class<?> getType(ProviderFactory<?> f) {
+    private static Class<? extends IdentityProvider> getType(ProviderFactory<?> f) {
         try {
-            return f.getClass().getMethod("create", KeycloakSession.class, IdentityProviderModel.class).getReturnType();
+            return (Class<? extends IdentityProvider>) f.getClass().getMethod("create", KeycloakSession.class, IdentityProviderModel.class).getReturnType();
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
@@ -72,6 +81,7 @@ public class IdentityProviderTypeUtil {
         return switch (type) {
             case USER_AUTHENTICATION -> UserAuthenticationIdentityProvider.class;
             case CLIENT_ASSERTION -> ClientAssertionIdentityProvider.class;
+            case TRUST_MATERIAL -> TrustMaterialIdentityProvider.class;
             case EXCHANGE_EXTERNAL_TOKEN -> ExchangeExternalToken.class;
             case JWT_AUTHORIZATION_GRANT -> JWTAuthorizationGrantProvider.class;
             case ANY -> IdentityProvider.class;

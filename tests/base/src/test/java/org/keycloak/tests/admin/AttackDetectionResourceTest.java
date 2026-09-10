@@ -18,6 +18,7 @@
 package org.keycloak.tests.admin;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.keycloak.admin.client.resource.AttackDetectionResource;
 import org.keycloak.events.admin.OperationType;
@@ -32,12 +33,13 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import org.junit.jupiter.api.Test;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -70,13 +72,27 @@ public class AttackDetectionResourceTest {
 
         assertBruteForce(detection.bruteForceUserStatus(testUser.getId()), 0, 0, false, false);
 
+        // Wait for each failure to be processed before sending the next request for the same user.
+        // DefaultBlockingBruteForceProtector blocks concurrent logins for the same user,
+        // and the blocked request won't increment the failure counter.
+        // These waits can be removed once brute force processing is synchronous and login-failures V1 is removed
+        // https://github.com/keycloak/keycloak/pull/52128
         oauthClient.doPasswordGrantRequest(testUser.getUsername(), "invalid");
+        awaitNumFailures(detection, testUser.getId(), 1);
+
         oauthClient.doPasswordGrantRequest(testUser.getUsername(), "invalid");
+        awaitNumFailures(detection, testUser.getId(), 2);
+
+        // Third attempt: user is now locked (failureFactor=2), won't increment numFailures
         oauthClient.doPasswordGrantRequest(testUser.getUsername(), "invalid");
 
         oauthClient.doPasswordGrantRequest(testUser2.getUsername(), "invalid");
+        awaitNumFailures(detection, testUser2.getId(), 1);
+
         oauthClient.doPasswordGrantRequest(testUser2.getUsername(), "invalid");
         oauthClient.doPasswordGrantRequest("nosuchuser", "invalid");
+
+        awaitNumFailures(detection, testUser2.getId(), 2);
 
         assertBruteForce(detection.bruteForceUserStatus(testUser.getId()), 2, 1, true, true);
         assertBruteForce(detection.bruteForceUserStatus(testUser2.getId()), 2, 1, true, true);
@@ -96,7 +112,7 @@ public class AttackDetectionResourceTest {
     }
 
     private void assertBruteForce(Map<String, Object> status, Integer expectedNumFailures, Integer expectedNumTemporaryLockouts, Boolean expectedFailure, Boolean expectedDisabled) {
-        assertEquals(6, status.size());
+        assertEquals(7, status.size());
         assertEquals(expectedNumFailures, status.get("numFailures"));
         assertEquals(expectedNumTemporaryLockouts, status.get("numTemporaryLockouts"));
         assertEquals(expectedDisabled, status.get("disabled"));
@@ -112,10 +128,16 @@ public class AttackDetectionResourceTest {
         }
     }
 
+    private void awaitNumFailures(AttackDetectionResource detection, String userId, int expected) {
+        await().atMost(5, TimeUnit.SECONDS)
+                .pollInterval(100, TimeUnit.MILLISECONDS)
+                .untilAsserted(() -> assertEquals(expected, detection.bruteForceUserStatus(userId).get("numFailures")));
+    }
+
     private static class AttackDetectionResourceRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.bruteForceProtected(true);
             realm.failureFactor(2);
 

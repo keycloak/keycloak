@@ -1,0 +1,11 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== Legacy client-initiated account linking endpoint disabled by default
+
+The deprecated link:{developerguide_link}#_legacy-client-initiated-account-linking[legacy client-initiated account linking] endpoint (`/realms/{realm}/broker/{provider}/link`) is now disabled by default. Migrate to link:{adminguide_link}#con-aia_server_administration_guide[Application Initiated Actions (AIA)] with `kc_action=idp_link`. See link:{developerguide_link}#_client-initiated-account-linking[Client initiated account linking] for details.
+
+To temporarily restore the previous behavior, see link:https://www.keycloak.org/server/all-provider-config#_openid_connect[OpenID Connect provider configuration] and enable `allow-client-initiated-account-linking` server option. This option is deprecated and will be removed in a future release.

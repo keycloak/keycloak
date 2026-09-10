@@ -1,27 +1,42 @@
 package org.keycloak.jgroups.protocol;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.infinispan.health.impl.JdbcPingClusterHealthImpl;
 
+import org.hamcrest.CoreMatchers;
 import org.infinispan.util.concurrent.WithinThreadExecutor;
 import org.jboss.logging.Logger;
 import org.jgroups.Address;
 import org.jgroups.JChannel;
+import org.jgroups.PhysicalAddress;
 import org.jgroups.conf.ClassConfigurator;
+import org.jgroups.logging.Log;
+import org.jgroups.protocols.PingData;
+import org.jgroups.protocols.relay.SiteUUID;
+import org.jgroups.stack.IpAddress;
+import org.jgroups.util.NameCache;
+import org.jgroups.util.Responses;
 import org.jgroups.util.ThreadFactory;
 import org.jgroups.util.UUID;
 import org.jgroups.util.Util;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -111,6 +126,13 @@ public class JdbcPing2Test {
         assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.UNHEALTHY, ping.healthStatus());
         clusterHealth.triggerClusterHealthCheck();
         assertFalse(clusterHealth.isHealthy());
+
+        // test more members in a partition win
+        // coordinator a[0] and a[1] in the table, and we belong to view with the coordinator a[1]
+        ping.setPingData(List.of(addresses[1], addresses[0]), Map.of(addresses[0], 1, addresses[1], 2));
+        assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, ping.healthStatus());
+        clusterHealth.triggerClusterHealthCheck();
+        assertTrue(clusterHealth.isHealthy());
     }
 
     @SuppressWarnings("resource")
@@ -148,9 +170,138 @@ public class JdbcPing2Test {
         }
     }
 
+    @Test
+    public void testClearing() throws Exception {
+        JChannel channel = createChannel("0");
+        try (channel) {
+            channel.connect("ISPN");
+            KEYCLOAK_JDBC_PING2_FOR_TESTING jdbcPing = (KEYCLOAK_JDBC_PING2_FOR_TESTING) channel.getProtocolStack().getProtocols().stream().filter(protocol -> protocol instanceof KEYCLOAK_JDBC_PING2).findFirst().orElseThrow(() -> new RuntimeException("Didn't find JDBC_PING"));
+            try (Connection con = jdbcPing.getConnection()) {
+                // Insert an entry of a second coordinator
+                PingData data = new PingData(new UUID(), false, "old", new IpAddress("127.0.0.1:9999")).coord(true);
+                try (PreparedStatement ps = con.prepareStatement(jdbcPing.getInsertSingleSql())) {
+                    Address address = data.getAddress();
+                    String addr = Util.addressToString(address);
+                    String name = address instanceof SiteUUID ? ((SiteUUID) address).getName() : NameCache.get(address);
+                    PhysicalAddress ip_addr = data.getPhysicalAddr();
+                    String ip = ip_addr.toString();
+                    ps.setString(1, addr);
+                    ps.setString(2, name);
+                    ps.setString(3, jdbcPing.getClusterName());
+                    ps.setString(4, ip);
+                    ps.setBoolean(5, data.isCoord());
+                    ps.setLong(6, Time.currentTime());
+                    ps.setString(7, Util.addressToString(data.getAddress()));
+                    ps.executeUpdate();
+                }
+
+                // See that the second coordinator is still there
+                Responses responses = new Responses(false);
+                jdbcPing.findMembers(null, false, responses);
+                assertThat(responses.size(), CoreMatchers.equalTo(2));
+
+                // Advance the time beyond the timeout. See the entry is not returned.
+                Time.setOffset(120);
+                responses.clear();
+                jdbcPing.writeAll();
+                jdbcPing.findMembers(null, false, responses);
+                assertThat(responses.size(), CoreMatchers.equalTo(1));
+                // The entry is still in the database though as it will only be cleared on view change
+                try (PreparedStatement ps= con.prepareStatement(jdbcPing.getSelectAllPingdataSql())) {
+                    ps.setString(1, jdbcPing.getClusterName());
+                    try (ResultSet resultSet = ps.executeQuery()) {
+                        resultSet.last();
+                        assertThat(resultSet.getRow(), CoreMatchers.equalTo(2));
+                    }
+                }
+
+                // Simulate a row change to trigger a cleanup of the table.
+                jdbcPing.handleView(jdbcPing.getTransport().view(), jdbcPing.getTransport().view(), true);
+                try (PreparedStatement ps= con.prepareStatement(jdbcPing.getSelectAllPingdataSql())) {
+                    ps.setString(1, jdbcPing.getClusterName());
+                    try (ResultSet resultSet = ps.executeQuery()) {
+                        resultSet.last();
+                        assertThat(resultSet.getRow(), CoreMatchers.equalTo(1));
+                    }
+                }
+            }
+        } finally {
+            Time.setOffset(0);
+        }
+    }
+
     @SuppressWarnings("resource")
     protected static JChannel createChannel(String name) throws Exception {
         return new JChannel(JdbcPing2Test.PROTOCOL_STACK).name(name);
+    }
+
+    @Test
+    public void testRunHealthCheck() {
+        var ping = new ControlledJdbcPing();
+        var capturingLog = new CapturingLog();
+
+        // Seed the view so runHealthCheck doesn't bail out early.
+        ping.setView(new org.jgroups.util.UUID(0, 0));
+
+        // Initial state is HEALTHY — no log on first call.
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(0, capturingLog.errors.get());
+        assertEquals(0, capturingLog.infos.get());
+
+        // ERROR transition: one warning logged immediately (ERROR is a warn-level event, not an error).
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(1, capturingLog.warns.get());
+
+        // Stays ERROR: no additional log on the next cycle.
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(1, capturingLog.warns.get());
+
+        // Recovery to HEALTHY: one info logged.
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(1, capturingLog.infos.get());
+
+        // Stays HEALTHY: no further log.
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(1, capturingLog.infos.get());
+    }
+
+    /** Minimal {@link Log} that counts error and info calls; everything else is a no-op. */
+    static class CapturingLog implements Log {
+        final AtomicInteger errors = new AtomicInteger();
+        final AtomicInteger warns  = new AtomicInteger();
+        final AtomicInteger infos  = new AtomicInteger();
+
+        @Override public void error(String msg, Object... args) { errors.incrementAndGet(); }
+        @Override public void error(String msg) { errors.incrementAndGet(); }
+        @Override public void error(String msg, Throwable t) { errors.incrementAndGet(); }
+        @Override public void info(String msg, Object... args) { infos.incrementAndGet(); }
+        @Override public void info(String msg) { infos.incrementAndGet(); }
+        @Override public void warn(String msg, Object... args) { warns.incrementAndGet(); }
+        @Override public void warn(String msg) { warns.incrementAndGet(); }
+        @Override public void warn(String msg, Throwable t) { warns.incrementAndGet(); }
+        @Override public void debug(String msg, Object... args) {}
+        @Override public void debug(String msg) {}
+        @Override public void debug(String msg, Throwable t) {}
+        @Override public void trace(Object msg) {}
+        @Override public void trace(String msg) {}
+        @Override public void trace(String msg, Object... args) {}
+        @Override public void trace(String msg, Throwable t) {}
+        @Override public void fatal(String msg) {}
+        @Override public void fatal(String msg, Object... args) {}
+        @Override public void fatal(String msg, Throwable t) {}
+        @Override public void setLevel(String level) {}
+        @Override public String getLevel() { return "info"; }
+        @Override public boolean isFatalEnabled() { return false; }
+        @Override public boolean isErrorEnabled() { return true; }
+        @Override public boolean isWarnEnabled()  { return true; }
+        @Override public boolean isInfoEnabled()  { return true; }
+        @Override public boolean isDebugEnabled() { return false; }
+        @Override public boolean isTraceEnabled() { return false; }
     }
 
     protected record Connector(CountDownLatch latch, JChannel ch) implements Runnable {

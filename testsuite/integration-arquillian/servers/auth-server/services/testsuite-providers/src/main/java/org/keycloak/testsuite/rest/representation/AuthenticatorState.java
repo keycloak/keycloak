@@ -17,10 +17,12 @@
 
 package org.keycloak.testsuite.rest.representation;
 
+import java.io.Serializable;
+
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public class AuthenticatorState {
+public class AuthenticatorState implements Serializable {
     private String clientId;
     private String username;
 

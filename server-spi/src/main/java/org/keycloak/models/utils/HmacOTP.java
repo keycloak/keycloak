@@ -18,6 +18,8 @@
 package org.keycloak.models.utils;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -82,7 +84,7 @@ public class HmacOTP {
         int newCounter = counter;
         for (newCounter = counter; newCounter <= counter + lookAroundWindow; newCounter++) {
             String candidate = generateHOTP(key, newCounter);
-            if (candidate.equals(token)) {
+            if (token != null && MessageDigest.isEqual(candidate.getBytes(StandardCharsets.UTF_8), token.getBytes(StandardCharsets.UTF_8))) {
                 return newCounter + 1;
             }
 

@@ -31,7 +31,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.Profile;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -50,19 +49,20 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorManager;
+import org.keycloak.protocol.oidc.rar.InvalidAuthorizationDetailsException;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
-import org.keycloak.rar.AuthorizationRequestContext;
+import org.keycloak.protocol.oidc.utils.ClientHostUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.cors.Cors;
-import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
@@ -111,13 +111,13 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         this.tokenManager = (TokenManager) context.tokenManager;
     }
 
-    protected Response createTokenResponse(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,
-        String scopeParam, boolean code, Function<TokenManager.AccessTokenResponseBuilder, ClientPolicyContext> clientPolicyContextGenerator) {
+    protected TokenManager.AccessTokenResponseBuilder createTokenResponseBuilder(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,  String scopeParam, Function<TokenManager.AccessTokenResponseBuilder, ClientPolicyContext> clientPolicyContextGenerator) {
         clientSessionCtx.setAttribute(Constants.GRANT_TYPE, context.getGrantType());
-        AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
+        clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, formParams.getFirst(OAuth2Constants.RESOURCE));
+        AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx, clientSessionCtx.isOfflineTokenRequested());
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
-            .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).accessToken(token);
+                .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).accessToken(token);
         boolean useRefreshToken = useRefreshToken();
         if (useRefreshToken) {
             responseBuilder.generateRefreshToken();
@@ -125,6 +125,13 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
                     && clientSessionCtx.getClientSession().getNote(AuthenticationProcessor.FIRST_OFFLINE_ACCESS) != null) {
                 // the online session can be removed if first created for offline access
                 session.sessions().removeUserSession(realm, userSession);
+                // also remove the root authentication session to prevent AUTH_SESSION_ID cookie reuse by a different user
+                // consistent with backchannel logout and logout endpoint which both clean up root auth sessions
+                logger.tracef("Removing root authentication session '%s' after first offline access", userSession.getId());
+                RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, userSession.getId());
+                if (rootAuthSession != null) {
+                    session.authenticationSessions().removeRootAuthenticationSession(realm, rootAuthSession);
+                }
             }
         } else {
             TokenContextEncoderProvider encoder = session.getProvider(TokenContextEncoderProvider.class);
@@ -153,14 +160,18 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
             }
         }
 
-        AccessTokenResponse res = null;
+        return responseBuilder;
+    }
+
+    protected Response createTokenResponse(TokenManager.AccessTokenResponseBuilder responseBuilder, ClientSessionContext clientSessionCtx, boolean code) {
+        AccessTokenResponse res;
         if (code) {
             try {
                 res = responseBuilder.build();
             } catch (RuntimeException re) {
                 if ("can not get encryption KEK".equals(re.getMessage())) {
                     throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
-                        "can not get encryption KEK", Response.Status.BAD_REQUEST);
+                            "can not get encryption KEK", Response.Status.BAD_REQUEST);
                 } else {
                     throw re;
                 }
@@ -172,9 +183,20 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         // Extension point for subclasses to add custom claims
         addCustomTokenResponseClaims(res, clientSessionCtx);
 
+        // Sanitize authorization details before they are sent as part of the Token Response
+        var authDetailsProcessor = new AuthorizationDetailsProcessorManager(session);
+        authDetailsProcessor.sanitizeBeforeSendingTokenResponse(res);
+
         event.success();
 
         return cors.add(Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE));
+    }
+
+    protected Response createTokenResponse(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,
+                                           String scopeParam, boolean code, Function<TokenManager.AccessTokenResponseBuilder, ClientPolicyContext> clientPolicyContextGenerator) {
+        TokenManager.AccessTokenResponseBuilder responseBuilder = createTokenResponseBuilder(user, userSession,
+                clientSessionCtx, scopeParam, clientPolicyContextGenerator);
+        return createTokenResponse(responseBuilder, clientSessionCtx, code);
     }
 
     protected void checkAndBindMtlsHoKToken(TokenManager.AccessTokenResponseBuilder responseBuilder, boolean useRefreshToken) {
@@ -197,7 +219,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         }
     }
 
-    protected void updateClientSession(AuthenticatedClientSessionModel clientSession) {
+    public void updateClientSession(AuthenticatedClientSessionModel clientSession) {
 
         if(clientSession == null) {
             ServicesLogger.LOGGER.clientSessionNull();
@@ -207,21 +229,34 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         String adapterSessionId = formParams.getFirst(AdapterConstants.CLIENT_SESSION_STATE);
         if (adapterSessionId != null) {
             String adapterSessionHost = formParams.getFirst(AdapterConstants.CLIENT_SESSION_HOST);
-            logger.debugf("Adapter Session '%s' saved in ClientSession for client '%s'. Host is '%s'", adapterSessionId, client.getClientId(), adapterSessionHost);
+            logger.debugf("Adapter Session '%s' saved in ClientSession '%s' for client '%s'. Host is '%s'",
+                    adapterSessionId, clientSession.getId(), client.getClientId(), adapterSessionHost);
 
             String oldClientSessionState = clientSession.getNote(AdapterConstants.CLIENT_SESSION_STATE);
             if (!adapterSessionId.equals(oldClientSessionState)) {
                 clientSession.setNote(AdapterConstants.CLIENT_SESSION_STATE, adapterSessionId);
             }
 
-            String oldClientSessionHost = clientSession.getNote(AdapterConstants.CLIENT_SESSION_HOST);
-            if (!Objects.equals(adapterSessionHost, oldClientSessionHost)) {
-                clientSession.setNote(AdapterConstants.CLIENT_SESSION_HOST, adapterSessionHost);
+            if ((adapterSessionHost != null) && (!adapterSessionHost.trim().isEmpty())) {
+                // CVE-2026-4874 - client_session_host requires validation as an external field that is stored in client
+                // session and can be used to generate logout callback URL.
+                if (!ClientHostUtils.isHostAllowedForClient(adapterSessionHost, client, session)) {
+                    logger.warnf("Adapter Session '%s' not valid in ClientSession for client '%s'. Host is '%s' and has been removed.",
+                            adapterSessionId, client.getClientId(), adapterSessionHost);
+                    return;
+                }
+
+                String oldClientSessionHost = clientSession.getNote(AdapterConstants.CLIENT_SESSION_HOST);
+                if (!Objects.equals(adapterSessionHost, oldClientSessionHost)) {
+                    clientSession.setNote(AdapterConstants.CLIENT_SESSION_HOST, adapterSessionHost);
+                    logger.debugf("Adapter Session '%s' saved in ClientSession for client '%s'. Host is '%s'",
+                            adapterSessionId, client.getClientId(), adapterSessionHost);
+                }
             }
         }
     }
 
-    protected void updateUserSessionFromClientAuth(UserSessionModel userSession) {
+    public void updateUserSessionFromClientAuth(UserSessionModel userSession) {
         for (Map.Entry<String, String> attr : clientAuthAttributes.entrySet()) {
             userSession.setNote(attr.getKey(), attr.getValue());
         }
@@ -230,15 +265,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
     protected String getRequestedScopes() {
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
 
-        boolean validScopes;
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            AuthorizationRequestContext authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, scope);
-            validScopes = TokenManager.isValidScope(session, scope, authorizationRequestContext, client, null);
-        } else {
-            validScopes = TokenManager.isValidScope(session, scope, client, null);
-        }
-
-        if (!validScopes) {
+        if (!TokenManager.isValidScope(session, scope, client)) {
             String errorMessage = "Invalid scopes: " + scope;
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
@@ -254,7 +281,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         clientAuthAttributes = clientAuth.getClientAuthAttributes();
         clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
 
-        cors.allowedOrigins(session, client);
+        cors.checkAllowedOrigins(session, client);
 
         if (client.isBearerOnly()) {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
@@ -273,16 +300,17 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      * Hook method called after authorization_details are processed and before the token response is created.
      * This allows authorization details processors to perform post-processing actions (e.g., creating state objects).
      * Processors can store information in session notes during processing, and this hook allows them to act on it.
-     * Default implementation does nothing.
      *
      * @param userSession                  the user session
      * @param clientSessionCtx             the client session context
      * @param authorizationDetailsResponse the processed authorization details response
      */
     protected void afterAuthorizationDetailsProcessed(UserSessionModel userSession, ClientSessionContext clientSessionCtx,
-                                                      List<AuthorizationDetailsResponse> authorizationDetailsResponse) {
-        // Default: do nothing
-        // Subclasses or processors can override/extend this to perform post-processing
+                                                      List<AuthorizationDetailsJSONRepresentation> authorizationDetailsResponse) {
+        if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
+            new AuthorizationDetailsProcessorManager(session)
+                    .afterAuthorizationDetailsProcessed(userSession, clientSessionCtx, authorizationDetailsResponse);
+        }
     }
 
     /**
@@ -293,26 +321,17 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      * @param clientSessionCtx the client session context
      * @return the authorization details response if processing was successful, null otherwise
      */
-    protected List<AuthorizationDetailsResponse> processAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+    protected List<AuthorizationDetailsJSONRepresentation> processAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         String authorizationDetailsParam = formParams.getFirst(AUTHORIZATION_DETAILS);
         if (authorizationDetailsParam != null) {
             try {
-                return session.getKeycloakSessionFactory()
-                        .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
-                        .sorted((f1, f2) -> f2.order() - f1.order())
-                        .map(f -> session.getProvider(AuthorizationDetailsProcessor.class, f.getId()))
-                        .map(authzDetailsProcessor -> authzDetailsProcessor.process(userSession, clientSessionCtx, authorizationDetailsParam))
-                        .filter(authzDetailsResponse -> authzDetailsResponse != null)
-                        .findFirst()
-                        .orElse(null);
-            } catch (RuntimeException e) {
-                if (e.getMessage() != null && e.getMessage().contains("Invalid authorization_details")) {
-                    logger.warnf(e, "Error when processing authorization_details");
-                    event.error(Errors.INVALID_REQUEST);
-                    throw new CorsErrorResponseException(cors, "invalid_request", "Error when processing authorization_details", Response.Status.BAD_REQUEST);
-                } else {
-                    throw e;
-                }
+                return new AuthorizationDetailsProcessorManager(session)
+                        .processAuthorizationDetails(userSession, clientSessionCtx, authorizationDetailsParam);
+            } catch (InvalidAuthorizationDetailsException e) {
+                logger.warnf(e, "Error when processing authorization_details");
+                event.detail(Details.REASON, e.getMessage());
+                event.error(Errors.INVALID_AUTHORIZATION_DETAILS);
+                throw new CorsErrorResponseException(cors, Errors.INVALID_AUTHORIZATION_DETAILS, "Error when processing authorization_details: " + e.getMessage(), Response.Status.BAD_REQUEST);
             }
         }
         return null;
@@ -326,20 +345,15 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      * @param clientSessionCtx the client session context
      * @return the authorization details response if generation was successful, null otherwise
      */
-    protected List<AuthorizationDetailsResponse> handleMissingAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+    protected List<AuthorizationDetailsJSONRepresentation> handleMissingAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         try {
-            var result = session.getKeycloakSessionFactory()
-                    .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
-                    .sorted((f1, f2) -> f2.order() - f1.order())
-                    .map(f -> session.getProvider(AuthorizationDetailsProcessor.class, f.getId()))
-                    .map(processor -> processor.handleMissingAuthorizationDetails(userSession, clientSessionCtx))
-                    .filter(authzDetailsResponse -> authzDetailsResponse != null)
-                    .findFirst()
-                    .orElse(null);
-            return result;
+            return new AuthorizationDetailsProcessorManager(session)
+                    .handleMissingAuthorizationDetails(userSession, clientSessionCtx);
         } catch (RuntimeException e) {
             logger.warnf(e, "Error when handling missing authorization_details");
-            return null;
+            event.detail(Details.REASON, e.getMessage());
+            event.error(Errors.INVALID_AUTHORIZATION_DETAILS);
+            throw new CorsErrorResponseException(cors, Errors.INVALID_AUTHORIZATION_DETAILS, e.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -352,30 +366,19 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      * @param clientSessionCtx the client session context
      * @return the authorization details response if processing was successful, null otherwise
      */
-    protected List<AuthorizationDetailsResponse> processStoredAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) throws CorsErrorResponseException {
+    protected List<AuthorizationDetailsJSONRepresentation> processStoredAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) throws CorsErrorResponseException {
         // Check if authorization_details was stored during authorization request (e.g., from PAR)
         String storedAuthDetails = clientSessionCtx.getClientSession().getNote(AUTHORIZATION_DETAILS);
         if (storedAuthDetails != null) {
             logger.debugf("Found authorization_details in client session, processing it");
             try {
-                return session.getKeycloakSessionFactory()
-                        .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
-                        .sorted((f1, f2) -> f2.order() - f1.order())
-                        .map(f -> session.getProvider(AuthorizationDetailsProcessor.class, f.getId()))
-                        .map(processor -> {
-                            try {
-                                return processor.processStoredAuthorizationDetails(userSession, clientSessionCtx, storedAuthDetails);
-                            } catch (OAuthErrorException e) {
-                                // Wrap OAuthErrorException in CorsErrorResponseException for proper HTTP response
-                                throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
-                            }
-                        })
-                        .filter(authzDetailsResponse -> authzDetailsResponse != null)
-                        .findFirst()
-                        .orElse(null);
-            } catch (RuntimeException e) {
+                return new AuthorizationDetailsProcessorManager(session)
+                        .processStoredAuthorizationDetails(userSession, clientSessionCtx, storedAuthDetails);
+            } catch (InvalidAuthorizationDetailsException e) {
                 logger.warnf(e, "Error when processing stored authorization_details");
-                throw e;
+                event.detail(Details.REASON, e.getMessage());
+                event.error(Errors.INVALID_AUTHORIZATION_DETAILS);
+                throw new CorsErrorResponseException(cors, Errors.INVALID_AUTHORIZATION_DETAILS, e.getMessage(), Response.Status.BAD_REQUEST);
             }
         }
         return null;

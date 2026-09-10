@@ -32,6 +32,7 @@ public class MetricsEnabledProfile implements QuarkusTestProfile {
                 "kc.health-enabled","true",
                 "kc.metrics-enabled", "true",
                 "kc.cache", "local",
+                "kc.server-async-bootstrap", "false",
                 "quarkus.micrometer.export.prometheus.path", "/prom/metrics",
                 "quarkus.class-loading.removed-artifacts", "io.quarkus:quarkus-jdbc-oracle,io.quarkus:quarkus-jdbc-oracle-deployment"); // config works a bit odd in unit tests, so this is to ensure we exclude Oracle to avoid ClassNotFound ex
     }

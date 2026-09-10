@@ -14,9 +14,9 @@ const WorkflowDetailForm = lazy(() => import("../WorkflowDetailForm"));
 export const WorkflowDetailRoute: AppRouteObject = {
   path: "/:realm/workflows/:mode/:id",
   element: <WorkflowDetailForm />,
-  breadcrumb: (t) => t("workflowDetails"),
   handle: {
-    access: "manage-realm",
+    access: ({ hasAny }) => hasAny("realm-admin", "admin"),
+    breadcrumb: (t) => t("workflowDetails"),
   },
 };
 

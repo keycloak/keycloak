@@ -33,6 +33,9 @@ For details on how to package and deploy a custom provider, refer to the <<_prov
 
 NOTE: While it is possible to install other JAX-RS components via the providers extension mechanism, such as filters and interceptors, these are not officially supported.
 
+NOTE: To align with Keycloak's built-in transaction per request lifecycle, you should use only blocking, synchronous endpoints. Examples of asynchronous endpoints include
+the usage of `AsyncResponse`, or returning `CompletableFuture` or `CompletionStage`.  
+
 [[_extensions_spi]]
 === Add your own custom SPI
 
@@ -81,6 +84,12 @@ ExampleSpi
 . Create the interfaces `ExampleServiceProviderFactory`, which extends from `ProviderFactory` and `ExampleService`, which extends from `Provider`.
 The `ExampleService` will usually contain the business methods you need for your use case. Note that the `ExampleServiceProviderFactory` instance
 is always scoped per application, however `ExampleService` is scoped per-request (or more accurately per `KeycloakSession` lifecycle).
+. Create the file `META-INF/services/com.acme.ExampleServiceProviderFactory` and add the factory implementation class to it. For example:
++
+[source]
+----
+com.acme.ExampleServiceProviderFactoryImpl
+----
 
 . Finally you need to implement your providers in the same manner as described in the <<_providers,Service Provider Interfaces>> chapter.
 

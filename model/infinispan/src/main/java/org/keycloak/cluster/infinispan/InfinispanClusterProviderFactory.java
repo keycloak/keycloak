@@ -153,7 +153,8 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return InfinispanUtils.isEmbeddedInfinispan();
+        return InfinispanUtils.isEmbeddedInfinispan() &&
+                !Profile.isFeatureEnabled(Profile.Feature.STATELESS);
     }
 
     @Listener

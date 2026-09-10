@@ -1,0 +1,14 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+
+=== OIDC parameters in redirect URIs rejected by default
+
+Redirect URIs (`redirect_uri` and `post_logout_redirect_uri`) containing OIDC response parameters such as `state`, `code`, or `session_state` are now rejected by default. These parameters conflict with the parameters that {project_name} attaches to the redirect URI after authentication or logout, potentially causing HTTP Parameter Pollution. This check also covers parameters in the URI fragment (used with `response_mode=fragment`).
+
+If you used `post_logout_redirect_uri` pointing directly to the {project_name} OIDC login page (for example `post_logout_redirect_uri=\https://mykchost/realms/myrealm/protocol/openid-connect/auth?response_type=code&client_id=myclient...`), replace it with a callback URL pointing to your application (for example `post_logout_redirect_uri=\https://myapp/logout-callback`) and ensure that opening that callback URL in your application redirects to {project_name} OIDC login.
+
+To temporarily allow the previous behavior, enable the `allow-oidc-params-in-redirect-uris` server option in the link:https://www.keycloak.org/server/all-provider-config#_openid_connect[OpenID Connect provider configuration]. A per-client override is also available via the `allow.oidc.params.in.redirect.uris` client attribute, allowing gradual migration of individual clients. Both options are deprecated and will be removed in {project_name} 27.

@@ -10,7 +10,6 @@ import org.keycloak.Config;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import io.smallrye.config.SmallRyeConfig;
@@ -37,9 +36,9 @@ public class PersistenceXmlDatasourcesTest {
                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                          xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
                          version="3.0">
-                         
+
                          %s
-                         
+
             </persistence>
             """;
 
@@ -230,7 +229,6 @@ public class PersistenceXmlDatasourcesTest {
     // inspired in AbstractConfigurationTest in quarkus/runtime
     private static SmallRyeConfig createConfig() {
         Configuration.resetConfig();
-        KeycloakConfigSourceProvider.reload();
         Environment.getCurrentOrCreateFeatureProfile();
         return Configuration.getConfig();
     }

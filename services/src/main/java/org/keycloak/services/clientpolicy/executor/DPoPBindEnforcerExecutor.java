@@ -18,6 +18,7 @@
 package org.keycloak.services.clientpolicy.executor;
 
 import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -36,6 +37,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
+import org.keycloak.services.clientpolicy.context.PreTokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
@@ -43,6 +45,8 @@ import org.keycloak.services.util.DPoPUtil;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
+
+import static org.keycloak.OAuth2Constants.DPOP_HTTP_HEADER;
 
 public class DPoPBindEnforcerExecutor implements ClientPolicyExecutorProvider<DPoPBindEnforcerExecutor.Configuration> {
 
@@ -115,36 +119,37 @@ public class DPoPBindEnforcerExecutor implements ClientPolicyExecutorProvider<DP
 
         HttpRequest request = session.getContext().getHttpRequest();
         switch (context.getEvent()) {
-            case REGISTER:
-            case UPDATE:
+            case REGISTER, UPDATE -> {
                 ClientCRUDContext clientUpdateContext = (ClientCRUDContext)context;
                 autoConfigure(clientUpdateContext.getProposedClientRepresentation());
                 validate(clientUpdateContext.getProposedClientRepresentation());
-                break;
-            case AUTHORIZATION_REQUEST:
+            }
+            case AUTHORIZATION_REQUEST -> {
                 AuthorizationRequestContext authzRequestContext = (AuthorizationRequestContext) context;
-                checkOnAuthorizationRequest(authzRequestContext);
-                break;
-            case TOKEN_REQUEST:
-                TokenRequestContext authorizationRequestContext = (TokenRequestContext) context;
-                validateAndBindOnlyRefreshToken(authorizationRequestContext.getClient());
-                break;
-            case TOKEN_REFRESH:
+                checkAuthorizationRequest(authzRequestContext);
+            }
+            case PRE_TOKEN_REQUEST -> {
+                PreTokenRequestContext tokenRequestContext = (PreTokenRequestContext) context;
+                checkPreTokenRequest(tokenRequestContext.getClient(), request);
+            }
+            case TOKEN_REQUEST -> {
+                TokenRequestContext tokenRequestContext = (TokenRequestContext) context;
+                validateAndBindOnlyRefreshToken(tokenRequestContext.getClient());
+            }
+            case TOKEN_REFRESH -> {
                 TokenRefreshContext tokenRefreshContext = (TokenRefreshContext) context;
                 validateAndBindOnlyRefreshToken(tokenRefreshContext.getClient());
-                break;
-            case USERINFO_REQUEST:
-            case BACKCHANNEL_TOKEN_REQUEST:
+            }
+            case TOKEN_REVOKE -> {
+                checkTokenRevoke((TokenRevokeContext) context, request);
+            }
+            case USERINFO_REQUEST, BACKCHANNEL_TOKEN_REQUEST -> {
                 // Codes for processing these requests verifies DPoP.
                 // If this verification is done twice, DPoPReplayCheck fails. Therefore, the executor only checks existence of DPoP Proof
                 if (request.getHttpHeaders().getHeaderString(OAuth2Constants.DPOP_HTTP_HEADER) == null) {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_DPOP_PROOF, "DPoP proof is missing");
                 }
-                break;
-            case TOKEN_REVOKE:
-                checkTokenRevoke((TokenRevokeContext) context, request);
-            default:
-                return;
+            }
         }
     }
 
@@ -155,9 +160,28 @@ public class DPoPBindEnforcerExecutor implements ClientPolicyExecutorProvider<DP
     }
 
     private void validate(ClientRepresentation rep) throws ClientPolicyException {
-        boolean useDPoPToken = OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).isUseDPoP();
-        if (!useDPoPToken) {
-            throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid client metadata: DPoP token in disabled");
+        boolean isUseDPoP = OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).isUseDPoP();
+        if (!isUseDPoP) {
+            throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid client metadata: DPoP token is disabled");
+        }
+    }
+
+    private void checkAuthorizationRequest(AuthorizationRequestContext authzRequestContext) throws ClientPolicyException {
+        if (configuration.getEnforceAuthorizationCodeBindingToDpop() == Boolean.TRUE && authzRequestContext.getAuthorizationEndpointRequest().getDpopJkt() == null) {
+            // Checking only the presence of the parameter here. As long as parameter is present, it is automatically saved to authenticationSession and checked later in token request
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Missing parameter: dpop_jkt");
+        }
+    }
+
+    private void checkPreTokenRequest(ClientModel client, HttpRequest request) throws ClientPolicyException {
+        // Require reliable client reference (depends on grant type / request shape)
+        if (client != null) {
+            boolean isUseDPoP = OIDCAdvancedConfigWrapper.fromClientModel(client).isUseDPoP();
+            String dpopHeader = request.getHttpHeaders().getHeaderString(DPOP_HTTP_HEADER);
+            boolean hasDPoPHeader = dpopHeader != null && !dpopHeader.isBlank();
+            if (isUseDPoP && !hasDPoPHeader) {
+                throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "DPoP proof is missing", Response.Status.BAD_REQUEST);
+            }
         }
     }
 
@@ -177,11 +201,10 @@ public class DPoPBindEnforcerExecutor implements ClientPolicyExecutorProvider<DP
     }
 
     private void validateAndBindOnlyRefreshToken(ClientModel client) throws ClientPolicyException {
-        boolean useDPoPToken = OIDCAdvancedConfigWrapper.fromClientModel(client).isUseDPoP();
-        if (useDPoPToken || configuration.getAllowOnlyRefreshTokenBinding() == null || !configuration.getAllowOnlyRefreshTokenBinding() || !client.isPublicClient()) {
+        boolean isUseDPoP = OIDCAdvancedConfigWrapper.fromClientModel(client).isUseDPoP();
+        if (isUseDPoP || !client.isPublicClient() || configuration.getAllowOnlyRefreshTokenBinding() != Boolean.TRUE) {
             return;
         }
-
         DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
         if (dPoP == null) {
             throw new ClientPolicyException(OAuthErrorException.INVALID_DPOP_PROOF, "DPoP proof is missing");
@@ -189,15 +212,8 @@ public class DPoPBindEnforcerExecutor implements ClientPolicyExecutorProvider<DP
         session.setAttribute(DPoPUtil.DPOP_BINDING_ONLY_REFRESH_TOKEN_SESSION_ATTRIBUTE, true);
     }
 
-    private void checkOnAuthorizationRequest(AuthorizationRequestContext authzRequestContext) throws ClientPolicyException {
-        if (configuration.getEnforceAuthorizationCodeBindingToDpop() != null && configuration.getEnforceAuthorizationCodeBindingToDpop() && (authzRequestContext.getAuthorizationEndpointRequest().getDpopJkt() == null)) {
-            // Checking only the presence of the parameter here. As long as parameter is present, it is automatically saved to authenticationSession and checked later in token request
-            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Missing parameter: dpop_jkt");
-        }
-    }
-
     private DPoP retrieveAndVerifyDPoP(HttpRequest request) throws ClientPolicyException {
-        DPoP dPoP = null;
+        DPoP dPoP;
         try {
             dPoP = new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).validate();
         } catch (VerificationException ex) {

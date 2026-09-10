@@ -36,6 +36,15 @@ import org.keycloak.saml.common.constants.GeneralConstants;
 public class DeflateUtil {
 
     /**
+     * Maximum size for inflating. Default is 128KB like quarkus.http.limits.max-form-attribute-size.
+     */
+    public static long DEFAULT_MAX_INFLATING_SIZE = 131072;
+
+    private DeflateUtil() {
+        // utility class
+    }
+
+    /**
      * Apply DEFLATE encoding
      *
      * @param message
@@ -75,7 +84,90 @@ public class DeflateUtil {
      * @return
      */
     public static InputStream decode(byte[] msgToDecode) {
+        return decode(msgToDecode, DEFAULT_MAX_INFLATING_SIZE);
+    }
+
+    /**
+     * DEFLATE decoding
+     *
+     * @param msgToDecode the message that needs decoding
+     * @param maxInflatingSize the maximum size to inflate, IOExceptio is thrown if more data is inflated
+     *
+     * @return
+     */
+    public static InputStream decode(byte[] msgToDecode, long maxInflatingSize) {
         ByteArrayInputStream bais = new ByteArrayInputStream(msgToDecode);
-        return new InflaterInputStream(bais, new Inflater(true));
+        return new LimitedInflaterInputStream(bais, maxInflatingSize);
+    }
+
+    private static class LimitedInflaterInputStream extends InputStream {
+
+        private final InflaterInputStream is;
+        private final Inflater inflater;
+        private final long maxInflatingSize;
+
+        private LimitedInflaterInputStream(InputStream is, long maxInflatingSize) {
+            this.inflater = new Inflater(true);
+            this.is = new InflaterInputStream(is, inflater);
+            this.maxInflatingSize = maxInflatingSize;
+        }
+
+        private void checkMaxInflatingsize() throws IOException {
+            if (inflater.getBytesWritten() > maxInflatingSize) {
+                throw new IOException(String.format("Maximum inflating size %d reached. Total bytes witten %d.",
+                        maxInflatingSize, inflater.getTotalOut()));
+            }
+        }
+
+        @Override
+        public int read() throws IOException {
+            int result = is.read();
+            checkMaxInflatingsize();
+            return result;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            int result = is.read(b, off, len);
+            checkMaxInflatingsize();
+            return result;
+        }
+
+        @Override
+        public int read(byte[] b) throws IOException {
+            int result = is.read(b);
+            checkMaxInflatingsize();
+            return result;
+        }
+
+        @Override
+        public boolean markSupported() {
+            return false;
+        }
+
+        @Override
+        public void reset() throws IOException {
+            throw new IOException("mark/reset not supported");
+        }
+
+        @Override
+        public void mark(int readlimit) {
+            // nothing
+        }
+
+        @Override
+        public void close() throws IOException {
+            is.close();
+        }
+
+        @Override
+        public int available() throws IOException {
+            return is.available();
+        }
+
+        @Override
+        public long skip(long n) throws IOException {
+            return is.skip(n);
+        }
     }
 }

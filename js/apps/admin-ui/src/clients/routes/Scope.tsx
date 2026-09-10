@@ -14,10 +14,10 @@ const ScopeDetails = lazy(() => import("../authorization/ScopeDetails"));
 export const ScopeDetailsRoute: AppRouteObject = {
   path: "/:realm/clients/:id/authorization/scope",
   element: <ScopeDetails />,
-  breadcrumb: (t) => t("authorizationScopeDetails"),
   handle: {
     access: (accessChecker) =>
       accessChecker.hasAny("manage-clients", "view-authorization"),
+    breadcrumb: (t) => t("authorizationScopeDetails"),
   },
 };
 

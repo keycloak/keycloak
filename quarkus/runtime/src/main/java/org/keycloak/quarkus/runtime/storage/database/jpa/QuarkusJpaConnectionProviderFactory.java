@@ -26,15 +26,20 @@ import java.sql.Statement;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import jakarta.enterprise.inject.Instance;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 
 import org.keycloak.ServerStartupError;
+import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
+import org.keycloak.common.util.Environment;
 import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.TransactionOptions;
 import org.keycloak.config.database.Database;
+import org.keycloak.connections.jpa.AsyncCommitIntegrator;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModelManager;
@@ -43,16 +48,17 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
-import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import io.quarkus.arc.Arc;
 import io.quarkus.runtime.configuration.DurationConverter;
 import org.jboss.logging.Logger;
 
+import static org.keycloak.config.TransactionOptions.MIGRATION_TRANSACTION_TIMEOUT;
 import static org.keycloak.connections.jpa.util.JpaUtils.configureNamedQuery;
 import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
 import static org.keycloak.quarkus.runtime.storage.database.liquibase.QuarkusJpaUpdaterProvider.VERIFY_AND_RUN_MASTER_CHANGELOG;
@@ -66,6 +72,7 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
     public static final String DEFAULT_PERSISTENCE_UNIT = "keycloak-default";
     private static final Logger logger = Logger.getLogger(QuarkusJpaConnectionProviderFactory.class);
     private static final String SQL_GET_LATEST_VERSION = "SELECT ID, VERSION FROM %sMIGRATION_MODEL ORDER BY UPDATE_TIME DESC";
+    private static final String MIGRATION_TRANSACTION_TIMEOUT_KEY = "migrationTransactionTimeout";
 
     enum MigrationStrategy {
         UPDATE, VALIDATE, MANUAL
@@ -97,15 +104,27 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         super.postInit(factory);
+        if (config.getBoolean("asyncCommit", true)) {
+            boolean xaEnabled = Configuration.isKcPropertyTrue(TransactionOptions.TRANSACTION_XA_ENABLED.getKey());
+            AsyncCommitIntegrator.registerListeners(entityManagerFactory, xaEnabled);
+        }
 
         checkMySQLWaitTimeout();
+        checkMySQLBinlogFormat();
+        checkGaleraSyncWait();
         checkMSSQLIsolationLevel();
+        checkUtf8Encoding();
 
         String id = null;
         String version = null;
         String schema = getSchema();
         boolean schemaChanged;
 
+        try {
+            KeycloakModelUtils.setTransactionLimit(factory, getMigrationTransactionTimeout());
+        } catch (Exception e) {
+            logErrorSettingMigrationTransactionTimeout(e);
+        }
         try (Connection connection = getConnection(); KeycloakSession session = factory.create()) {
             try {
                 try (Statement statement = connection.createStatement()) {
@@ -131,6 +150,15 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
         } else {
             Version.RESOURCES_VERSION = id;
         }
+        // don't need to put this in a finally block as any exception thrown here will stop the server.
+        try {
+            // 0 means to revert to the default timeout.
+            KeycloakModelUtils.setTransactionLimit(factory, 0);
+        } catch (Exception e) {
+            logErrorSettingMigrationTransactionTimeout(e);
+        }
+
+        checkMissingIndexes(factory);
     }
 
     @Override
@@ -153,6 +181,18 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
                 .name("migrationExport")
                 .type("string")
                 .helpText("Path for where to write manual database initialization/migration file.")
+                .add()
+                .property()
+                .name("asyncCommit")
+                .type("boolean")
+                .helpText("If enabled, transactions that only modify ephemeral entities (such as authentication sessions or events) use asynchronous commit on PostgreSQL, skipping the WAL fsync wait. This improves throughput but means the last few milliseconds of such transactions may be lost on a crash. Automatically disabled on Aurora PostgreSQL when logical replication is active.")
+                .defaultValue(true)
+                .add()
+                .property()
+                .name("autoCreateMissingIndexes")
+                .type("boolean")
+                .helpText("If enabled, missing database indexes are automatically created using online/concurrent DDL after startup on databases that support it (PostgreSQL, Oracle, MySQL/MariaDB, and MSSQL Enterprise/Developer/Azure SQL). If disabled, missing indexes are only logged for manual creation.")
+                .defaultValue(true)
                 .add()
                 .build();
     }
@@ -222,10 +262,9 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
         try {
             operationalInfo = new LinkedHashMap<>();
             DatabaseMetaData md = connection.getMetaData();
-            operationalInfo.put("databaseUrl", md.getURL());
-            operationalInfo.put("databaseUser", md.getUserName());
             operationalInfo.put("databaseProduct", md.getDatabaseProductName() + " " + md.getDatabaseProductVersion());
             operationalInfo.put("databaseDriver", md.getDriverName() + " " + md.getDriverVersion());
+            operationalInfo.put("migrationTimeout", getMigrationTransactionTimeout() + " seconds");
             logger.debugf("Database info: %s", operationalInfo.toString());
         } catch (SQLException e) {
             logger.warn("Unable to prepare operational info due database exception: " + e.getMessage());
@@ -303,8 +342,9 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
     private void checkMySQLWaitTimeout() {
         String db = Configuration.getConfigValue(DatabaseOptions.DB).getValue();
         Database.Vendor vendor = Database.getVendor(db).orElseThrow();
-        if (!(Database.Vendor.MYSQL == vendor || Database.Vendor.MARIADB == vendor))
+        if (!(Database.Vendor.MYSQL == vendor || Database.Vendor.MARIADB == vendor)) {
             return;
+        }
 
         try (Connection connection = getConnection();
              Statement statement = connection.createStatement();
@@ -321,6 +361,57 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
             }
         } catch (SQLException e) {
             logger.warnf(e, "Unable to validate %s 'wait_timeout' due to database exception", vendor);
+        }
+    }
+
+    private void checkMySQLBinlogFormat() {
+        if (!Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
+            // Only when we switch on stateless, the transaction isolation level for MySQL is set to READ COMMITTED,
+            // and only then we need to check the binlog format.
+            return;
+        }
+        String db = Configuration.getConfigValue(DatabaseOptions.DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElseThrow();
+        if (!(Database.Vendor.MYSQL == vendor || Database.Vendor.MARIADB == vendor)) {
+            return;
+        }
+
+        try (Connection connection = getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery("SHOW VARIABLES LIKE 'binlog_format'")) {
+            if (rs.next() && "STATEMENT".equalsIgnoreCase(rs.getString(2))) {
+                logger.errorf("%s 'binlog_format' is set to 'STATEMENT', which is incompatible with the READ COMMITTED transaction isolation level used by the stateless feature. "
+                        + "Change it to 'ROW' or 'MIXED' by running: SET GLOBAL binlog_format = 'ROW'", vendor);
+            }
+        } catch (SQLException e) {
+            logger.warnf(e, "Unable to validate %s 'binlog_format' due to database exception", vendor);
+        }
+    }
+
+    private void checkGaleraSyncWait() {
+        String db = Configuration.getConfigValue(DatabaseOptions.DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElseThrow();
+        if (!(Database.Vendor.MYSQL == vendor || Database.Vendor.MARIADB == vendor)) {
+            return;
+        }
+
+        try (Connection connection = getConnection();
+             Statement statement = connection.createStatement()) {
+            try (ResultSet rs = statement.executeQuery("SHOW VARIABLES LIKE 'wsrep_on'")) {
+                if (!rs.next() || !"ON".equalsIgnoreCase(rs.getString(2))) {
+                    // not a Galera node, no further checks needed
+                    return;
+                }
+            }
+            try (ResultSet rs = statement.executeQuery("SHOW VARIABLES LIKE 'wsrep_sync_wait'")) {
+                if (rs.next() && "0".equals(rs.getString(2))) {
+                    logger.errorf("Galera Cluster detected with 'wsrep_sync_wait = 0'. "
+                            + "This will cause stale reads when requests are routed to different nodes. "
+                            + "Set 'wsrep_sync_wait = 1' on all Galera nodes to enable causal reads.");
+                }
+            }
+        } catch (SQLException e) {
+            logger.warnf(e, "Unable to validate Galera 'wsrep_sync_wait' due to database exception");
         }
     }
 
@@ -348,5 +439,78 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
         } catch (SQLException e) {
             logger.warnf(e, "Unable to validate %s 'isolation level' due to database exception", vendor);
         }
+    }
+
+    public int getMigrationTransactionTimeout() {
+        var value = config.get(MIGRATION_TRANSACTION_TIMEOUT_KEY, MIGRATION_TRANSACTION_TIMEOUT);
+        var duration =  DurationConverter.parseDuration(value);
+        // already validated by TransactionPropertyMappers
+        assert duration != null;
+        assert !duration.isZero();
+        assert !duration.isNegative();
+        return Math.toIntExact(duration.toSeconds());
+    }
+
+    private static void logErrorSettingMigrationTransactionTimeout(Exception e) {
+        logger.debug("Unable to set the transaction timeout for migration task. Using the default timeout.", e);
+    }
+
+    private void checkUtf8Encoding() {
+        String db = Configuration.getConfigValue(DatabaseOptions.DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElseThrow();
+        switch (vendor) {
+            case TIDB, MARIADB, MYSQL -> checkMySQLUtf8(vendor);
+            case POSTGRES -> checkPostgresEncoding();
+            case MSSQL -> checkMSSQLEncoding();
+            case ORACLE -> checkOracleEncoding();
+            //H2 do we care?
+        }
+    }
+
+    private void checkOracleEncoding() {
+        checkEncoding(Database.Vendor.ORACLE, "AL32UTF8"::equals, "'AL32UTF8' encoding", "SELECT value FROM nls_database_parameters WHERE parameter = 'NLS_CHARACTERSET'");
+    }
+
+    private void checkMSSQLEncoding() {
+        checkEncoding(Database.Vendor.MSSQL, s -> s.endsWith("_UTF8"), "any UTF-8 collation (ending with `_UTF8`)", "SELECT DATABASEPROPERTYEX(DB_NAME(), 'Collation') AS DatabaseCollation");
+    }
+
+    private void checkPostgresEncoding() {
+        checkEncoding(Database.Vendor.POSTGRES, "UTF8"::equals, "'UFT8' encoding", "SELECT pg_encoding_to_char(encoding) FROM pg_database WHERE datname = current_database()");
+    }
+
+    private void checkMySQLUtf8(Database.Vendor vendor) {
+        checkEncoding(vendor, "utf8mb4"::equals, "'utf8mb4' encoding", "SELECT default_character_set_name FROM information_schema.SCHEMATA WHERE schema_name = DATABASE()");
+    }
+
+    /**
+     * Check if the database is running against a database with a valid UTF-8 character encoding.
+     * <p>
+     * Non-UTF-8-character encodings have been deprecated in 26.6.
+     */
+    private void checkEncoding(Database.Vendor vendor, Predicate<String> isValid, String recommendation, String query) {
+        try (var connection = getConnection();
+             var statement = connection.createStatement();
+             var rs = statement.executeQuery(query)) {
+            rs.next();
+            var encoding = rs.getString(1);
+            if (isValid.test(encoding)) {
+                return;
+            }
+            logInvalidEncoding(vendor, encoding, recommendation);
+        } catch (SQLException e) {
+            logger.warnf(e, "Unable to validate %s encoding due to database exception", vendor);
+        }
+    }
+
+    private static void logInvalidEncoding(Database.Vendor vendor, String encoding, String recommendedEncoding) {
+        logger.warnf("Invalid %s charset encoding '%s'. It is recommended to use %s", vendor, encoding, recommendedEncoding);
+    }
+
+    private void checkMissingIndexes(KeycloakSessionFactory factory) {
+        boolean autoCreate = getMigrationStrategy() == MigrationStrategy.UPDATE && config.getBoolean("autoCreateMissingIndexes", true);
+        var thread = new Thread(new DatabaseIndexChecker(this::getConnection, factory, getSchema(), autoCreate, getMigrationTransactionTimeout()), "db-index-checker");
+        thread.setDaemon(true);
+        thread.start();
     }
 }

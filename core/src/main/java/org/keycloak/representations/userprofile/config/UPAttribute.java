@@ -78,6 +78,11 @@ public class UPAttribute implements Cloneable {
         setMultivalued(multivalued);
     }
 
+    public UPAttribute(String name, Map<String, Object> annotations) {
+        this(name);
+        this.annotations = annotations;
+    }
+
     public String getName() {
         return name;
     }

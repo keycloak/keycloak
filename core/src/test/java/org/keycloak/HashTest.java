@@ -49,4 +49,22 @@ public class HashTest {
         String hash1 = HashUtils.sha256UrlEncodedHash(codeVerifier, charset);
         Assert.assertEquals(hash1, expectedHash);
     }
+
+    @Test
+    public void testSha384Hash() throws Exception {
+        testSha384Hash("myCodeVerifier", StandardCharsets.ISO_8859_1, "FR9XKX1Hj0Ch30EY5yjwuk6k6XYF0r222aJT252YCwgVyjs-OzRZfzfRTtkccnRf");
+        testSha384Hash("myCodeVerifier", StandardCharsets.UTF_8, "FR9XKX1Hj0Ch30EY5yjwuk6k6XYF0r222aJT252YCwgVyjs-OzRZfzfRTtkccnRf");
+
+        testSha384Hash("Some1[^&*$#", StandardCharsets.ISO_8859_1, "ecnvzy92VQYCMWkJfmCjaV9IJEH8dOKvMWQXUcbd1nShOKLoTaX7P63-y3sdNKeu");
+        testSha384Hash("Some1[^&*$#", StandardCharsets.UTF_8, "ecnvzy92VQYCMWkJfmCjaV9IJEH8dOKvMWQXUcbd1nShOKLoTaX7P63-y3sdNKeu");
+
+        // This will differ between ISO-8859-1 and UTF8 due the special character
+        testSha384Hash("krák", StandardCharsets.ISO_8859_1, "UPCWowTLOiw_D6TAzfg8zWF0TJMFa_8WTdHplEHVwe97H8uAR83jEUFNxmDYvlIr");
+        testSha384Hash("krák", StandardCharsets.UTF_8, "m4rJEhnndCOd2i98y6ii6ETK8Qek-h4hKXixEzHGrlZiohINl6ev3QLRf3TvToOP");
+    }
+
+    private void testSha384Hash(String codeVerifier, Charset charset, String expectedHash) {
+        String hash1 = HashUtils.sha384UrlEncodedHash(codeVerifier, charset);
+        Assert.assertEquals(hash1, expectedHash);
+    }
 }

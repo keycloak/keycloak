@@ -22,7 +22,9 @@ export const convertToOrg = (
   org: OrganizationFormType,
 ): OrganizationRepresentation => ({
   ...org,
-  domains: org.domains?.map((d) => ({ name: d, verified: false })),
+  domains: org.domains
+    ?.filter((d) => d.trim() !== "")
+    .map((d) => ({ name: d.trim(), verified: false })),
   attributes: keyValueToArray(org.attributes),
 });
 
@@ -75,7 +77,7 @@ export const OrganizationForm = ({
           aria-label={t("domain")}
           addButtonLabel="addDomain"
         />
-        {errors?.["domains"]?.message && (
+        {errors["domains"]?.message && (
           <FormErrorText message={errors["domains"].message.toString()} />
         )}
       </FormGroup>

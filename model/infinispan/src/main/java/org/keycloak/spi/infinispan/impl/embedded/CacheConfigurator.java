@@ -18,29 +18,39 @@
 package org.keycloak.spi.infinispan.impl.embedded;
 
 import java.lang.invoke.MethodHandles;
+import java.time.Duration;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.DurationConverter;
 import org.keycloak.config.CachingOptions;
+import org.keycloak.config.OptionsUtil;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.RemoteAuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RemoteUserSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import org.infinispan.commons.dataconversion.MediaType;
+import org.infinispan.commons.util.TimeQuantity;
 import org.infinispan.configuration.cache.AbstractStoreConfiguration;
 import org.infinispan.configuration.cache.BackupConfiguration;
 import org.infinispan.configuration.cache.BackupFailurePolicy;
 import org.infinispan.configuration.cache.CacheMode;
+import org.infinispan.configuration.cache.ClusteringConfiguration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.ExpirationConfiguration;
 import org.infinispan.configuration.cache.HashConfiguration;
 import org.infinispan.configuration.cache.HashConfigurationBuilder;
+import org.infinispan.configuration.cache.LockingConfiguration;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.transaction.LockingMode;
@@ -89,9 +99,12 @@ public final class CacheConfigurator {
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
     private static final String MAX_COUNT_SUFFIX = "MaxCount";
+    private static final String LIFESPAN_SUFFIX = "Lifespan";
     private static final String OWNER_SUFFIX = "Owners";
     private static final int STATE_TRANSFER_CHUNK_SIZE = 16;
     private static final int MIN_NUM_OWNERS_REMOTE_CACHE = 2;
+    private static final long DEFAULT_LIFESPAN = Duration.ofHours(1).toMillis();
+    private static final int DISABLED_LIFESPAN = -1;
 
     private CacheConfigurator() {
     }
@@ -253,6 +266,8 @@ public final class CacheConfigurator {
             builder.clustering().hash().numOwners(1);
             if (sessionCaches.contains(name)) {
                 configureSessionExpirationReaper(builder);
+                // Disable state-transfer to reduce the overhead of new nodes joining
+                builder.clustering().stateTransfer().fetchInMemoryState(false);
             }
         }
     }
@@ -304,6 +319,8 @@ public final class CacheConfigurator {
                 builder.clustering().hash().numOwners(1);
             }
             configureSessionExpirationReaper(builder);
+            // Disable state-transfer to reduce the overhead of new nodes joining
+            builder.clustering().stateTransfer().fetchInMemoryState(false);
         }
     }
 
@@ -331,6 +348,28 @@ public final class CacheConfigurator {
             if (owners < 2) {
                 logger.infof("Setting num_owners=2 (configured value is %s) for cache '%s' to prevent data loss.", owners, name);
                 hashConfig.numOwners(2);
+            }
+        }
+    }
+
+    /**
+     * Validates that lock-timeout &lt; remote-timeout for distributed synchronous caches.
+     * <p>
+     * The remote-timeout is the outer timeout for the entire remote RPC, which includes lock acquisition
+     * on the remote node. If lock-timeout &ge; remote-timeout, the remote call times out before lock
+     * acquisition can complete, causing spurious {@code TimeoutException}s.
+     */
+    public static void ensureTimeoutOrdering(ConfigurationBuilderHolder holder) {
+        for (var entry : holder.getNamedConfigurationBuilders().entrySet()) {
+            var builder = entry.getValue();
+            if (!builder.clustering().cacheMode().isDistributed() || !builder.clustering().cacheMode().isSynchronous()) {
+                continue;
+            }
+            long remoteTimeout = builder.clustering().attributes().attribute(ClusteringConfiguration.REMOTE_TIMEOUT).get().longValue();
+            long lockTimeout = builder.locking().attributes().attribute(LockingConfiguration.LOCK_ACQUISITION_TIMEOUT).get().longValue();
+            if (lockTimeout >= remoteTimeout) {
+                logger.errorf("Cache '%s': lock-timeout (%d ms) must be less than remote-timeout (%d ms). "
+                        + "Current values will cause spurious remote timeouts during lock acquisition.", entry.getKey(), lockTimeout, remoteTimeout);
             }
         }
     }
@@ -383,6 +422,38 @@ public final class CacheConfigurator {
         };
     }
 
+    /**
+     * Configures the entry lifespan for the local caches (realm, user, and authorization).
+     * <p>
+     * When the {@link Profile.Feature#STATELESS} feature is enabled, the default lifespan is set to
+     * {@link #DEFAULT_LIFESPAN} milliseconds; otherwise, entries are immortal by default.
+     *
+     * @param holder The {@link ConfigurationBuilderHolder} where the caches are configured.
+     * @param config The Keycloak configuration, which may provide per-cache lifespan overrides.
+     * @throws IllegalStateException if a cache is not defined in the {@code holder}.
+     */
+    public static void configureLocalCachesExpiration(ConfigurationBuilderHolder holder, Config.Scope config) {
+        var defaultLifespan = Profile.isFeatureEnabled(Profile.Feature.STATELESS) ? DEFAULT_LIFESPAN : DISABLED_LIFESPAN;
+        Stream.of(AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME)
+                .forEach(name -> setExpiration(holder, config, name, defaultLifespan));
+    }
+
+    /**
+     * Adds the lifespan configuration properties for the local caches (realm, user, and authorization) to the given
+     * provider configuration builder.
+     *
+     * @param builder The {@link ProviderConfigurationBuilder} to add the properties to.
+     */
+    public static void addExpirationConfiguration(ProviderConfigurationBuilder builder) {
+        Stream.of(AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME)
+                .forEach(name -> builder.property()
+                        .name(CacheConfigurator.lifespanConfigKey(name))
+                        .helpText("Sets the lifespan of stored objects for cache %s. A zero or negative value makes the entries immortal, i.e., they never expire. %s".formatted(name, OptionsUtil.DURATION_DESCRIPTION))
+                        .label("lifespan")
+                        .type(ProviderConfigProperty.STRING_TYPE)
+                        .add());
+    }
+
     // private methods below
 
     private static void configureSessionExpirationReaper(ConfigurationBuilder builder) {
@@ -390,13 +461,17 @@ public final class CacheConfigurator {
     }
 
     private static ConfigurationBuilder remoteCacheConfigurationBuilder(String name, Config.Scope config, String[] sites, Class<?> indexedEntity, long expirationWakeupPeriodMillis) {
+        return remoteCacheConfigurationBuilder(name, config, sites, indexedEntity, TimeQuantity.valueOf(expirationWakeupPeriodMillis));
+    }
+
+    private static ConfigurationBuilder remoteCacheConfigurationBuilder(String name, Config.Scope config, String[] sites, Class<?> indexedEntity, TimeQuantity expirationWakeupPeriod) {
         var builder = new ConfigurationBuilder();
         builder.clustering().cacheMode(CacheMode.DIST_SYNC);
         builder.clustering().hash().numOwners(Math.max(MIN_NUM_OWNERS_REMOTE_CACHE, config.getInt(numOwnerConfigKey(name), MIN_NUM_OWNERS_REMOTE_CACHE)));
         builder.clustering().stateTransfer().chunkSize(STATE_TRANSFER_CHUNK_SIZE);
         builder.encoding().mediaType(MediaType.APPLICATION_PROTOSTREAM);
         builder.statistics().enable();
-        builder.expiration().enableReaper().wakeUpInterval(expirationWakeupPeriodMillis);
+        builder.expiration().enableReaper().wakeUpInterval(expirationWakeupPeriod.longValue());
 
         if (indexedEntity != null) {
             builder.indexing().enable().addIndexedEntities(Marshalling.protoEntity(indexedEntity));
@@ -441,6 +516,16 @@ public final class CacheConfigurator {
 
     public static String maxCountConfigKey(String name) {
         return name + MAX_COUNT_SUFFIX;
+    }
+
+    /**
+     * Returns the SPI configuration key for the lifespan of the given cache.
+     *
+     * @param name The cache name.
+     * @return The configuration key, e.g. {@code "realmLifespan"}.
+     */
+    public static String lifespanConfigKey(String name) {
+        return name + LIFESPAN_SUFFIX;
     }
 
     public static String numOwnerConfigKey(String name) {
@@ -514,7 +599,15 @@ public final class CacheConfigurator {
             case AUTHENTICATION_SESSIONS_CACHE_NAME:
             case LOGIN_FAILURE_CACHE_NAME:
                 if (clustered) {
-                    builder.clustering().cacheMode(CacheMode.DIST_SYNC);
+                    // lock-timeout < remote-timeout < retry budget in AbstractRefreshTokenProvider (12s).
+                    // Infinispan defaults (15s remote, 10s lock) are too high for a setup like Keycloak.
+                    builder.clustering().cacheMode(CacheMode.DIST_SYNC)
+                            // 5s remote-timeout is 10x the worst-case G1GC pause for in-memory caches.
+                            .remoteTimeout(5, TimeUnit.SECONDS);
+                    builder.locking()
+                            // 3s lock-timeout is the inner timeout; must be less than remote-timeout.
+                            .lockAcquisitionTimeout(3, TimeUnit.SECONDS);
+                    // 12s retry budget in AbstractRefreshTokenProvider allows 2 retries at ~5s each.
                 }
                 builder.encoding().mediaType(MediaType.APPLICATION_OBJECT_TYPE);
                 return builder;
@@ -547,5 +640,17 @@ public final class CacheConfigurator {
 
     private static boolean isClustered(ConfigurationBuilderHolder holder) {
         return holder.getGlobalConfigurationBuilder().transport().getTransport() != null;
+    }
+
+    private static void setExpiration(ConfigurationBuilderHolder holder, Config.Scope config, String cacheName, long defaultLifespan) {
+        var builder = holder.getNamedConfigurationBuilders().get(cacheName);
+        if (builder == null) {
+            throw cacheNotFound(cacheName);
+        }
+        var lifespan = Optional.ofNullable(DurationConverter.parseDuration(config.get(lifespanConfigKey(cacheName))))
+                .map(Duration::toMillis)
+                .map(value -> value <= 0 ? DISABLED_LIFESPAN : value)
+                .orElse(defaultLifespan);
+        builder.expiration().lifespan(lifespan, TimeUnit.MILLISECONDS);
     }
 }

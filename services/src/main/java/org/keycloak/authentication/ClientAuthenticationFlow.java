@@ -77,7 +77,8 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
             if (client != null) {
                 String expectedClientAuthType = client.getClientAuthenticatorType();
 
-                // Fallback to secret just in case (for backwards compatibility). Also for public clients, ignore the "clientAuthenticatorType", which is set to them and stick to the
+                // Fallback to secret just in case (for backwards compatibility).
+                // Also for public clients, ignore the "clientAuthenticatorType", which is set to them and stick to the
                 // default, which set the client just based on "client_id" parameter
                 if (expectedClientAuthType == null || client.isPublicClient()) {
                     if (expectedClientAuthType == null) {
@@ -143,7 +144,7 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
         AuthenticationExecutionModel execution = result.getExecution();
         FlowStatus status = result.getStatus();
 
-        logger.debugv("client authenticator {0}: {1}", status.toString(), execution.getAuthenticator());
+        logger.debugv("client authenticator {0}: {1}", status, execution.getAuthenticator());
 
         if (status == FlowStatus.SUCCESS) {
             return null;
@@ -166,6 +167,9 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
             return sendChallenge(result, execution);
         } else if (status == FlowStatus.FAILURE_CHALLENGE) {
             return sendChallenge(result, execution);
+        } else if (status == FlowStatus.ATTEMPTED) {
+            logger.warnv("Client authentication was attempted did not complete for {0}", execution.getAuthenticator());
+            throw new AuthenticationFlowException(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR);
         } else {
             ServicesLogger.LOGGER.unknownResultStatus();
             throw new AuthenticationFlowException(AuthenticationFlowError.INTERNAL_ERROR);

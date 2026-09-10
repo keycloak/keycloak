@@ -29,6 +29,7 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.infinispan.LazyModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 
 public class OrganizationAdapter implements OrganizationModel {
 
@@ -159,6 +160,7 @@ public class OrganizationAdapter implements OrganizationModel {
     @Override
     public void setDomains(Set<OrganizationDomainModel> domains) {
         getDelegateForUpdate();
+        invalidateDomains(domains);
         updated.setDomains(domains);
     }
 
@@ -192,5 +194,24 @@ public class OrganizationAdapter implements OrganizationModel {
     @Override
     public int hashCode() {
         return getId().hashCode();
+    }
+
+    CachedOrganization getCached() {
+        return cached;
+    }
+
+    private void invalidateDomains(Set<OrganizationDomainModel> domains) {
+        for (OrganizationDomainModel domain : domains) {
+            String name = domain.getName();
+            OrganizationModel org = organizationCache.getByDomainName(name);
+
+            if (org == null && name.startsWith("*.")) {
+                org = Organizations.resolveOrganization(session, null, name);
+            }
+
+            if (org != null && !this.equals(org)) {
+                organizationCache.registerOrganizationInvalidation(org);
+            }
+        }
     }
 }

@@ -39,6 +39,7 @@ import org.keycloak.exportimport.ExportOptions;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -61,6 +62,9 @@ import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
 import com.fasterxml.jackson.core.JsonEncoding;
@@ -212,7 +216,7 @@ public class ExportUtils {
 
         // Finally users if needed
         if (options.isUsersIncluded()) {
-            List<UserRepresentation> users = session.users().searchForUserStream(realm, Collections.emptyMap())
+            List<UserRepresentation> users = UserStoragePrivateUtil.userLocalStorage(session).searchForUserStream(realm, Collections.emptyMap())
                     .map(user -> exportUser(session, realm, user, options, internal))
                     .collect(Collectors.toList());
 
@@ -264,6 +268,12 @@ public class ExportUtils {
                             member.setUsername(user.getUsername());
                             member.setMembershipType(orgProvider.isManagedMember(model, user) ? MembershipType.MANAGED : MembershipType.UNMANAGED);
 
+                            // Export organization group memberships
+                            List<String> groupIds = orgProvider.getOrganizationGroupsByMember(model, user).map(GroupModel::getId).collect(Collectors.toList());
+                            if (!groupIds.isEmpty()) {
+                                member.setGroups(groupIds);
+                            }
+
                             org.addMember(member);
                         });
 
@@ -273,6 +283,10 @@ public class ExportUtils {
                             broker.setAlias(b.getAlias());
                             return broker;
                         }).forEach(org::addIdentityProvider);
+
+                orgProvider.getTopLevelGroups(model, null, null)
+                        .map(group -> ModelToRepresentation.toGroupHierarchy(group, true))
+                        .forEach(org::addGroup);
 
                 return org;
             }).forEach(rep::addOrganization);
@@ -429,6 +443,22 @@ public class ExportUtils {
         // Not Before
         int notBefore = session.users().getNotBeforeOfUser(realm, user);
         userRep.setNotBefore(notBefore);
+
+        // Verifiable credentials
+        List<UserVerifiableCredentialRepresentation> verifiableCredentialReps = session.users().getVerifiableCredentialsByUser(user.getId())
+                .map(model -> ModelToRepresentation.toRepresentation(model, realm))
+                .toList();
+        if (!verifiableCredentialReps.isEmpty()) {
+            userRep.setVerifiableCredentials(verifiableCredentialReps);
+        }
+
+        // Issued verifiable credentials
+        List<IssuedVerifiableCredentialRepresentation> issuedCredentialReps = session.users().getIssuedVerifiableCredentialsStreamByUser(user.getId())
+                .map(model -> ModelToRepresentation.toRepresentation(model, session, realm))
+                .toList();
+        if (!issuedCredentialReps.isEmpty()) {
+            userRep.setIssuedVerifiableCredentials(issuedCredentialReps);
+        }
 
         // Service account
         if (user.getServiceAccountClientLink() != null) {

@@ -37,10 +37,6 @@ export default function CreateUser() {
   useFetch(
     () => adminClient.users.getProfileMetadata({ realm: realmName }),
     (userProfileMetadata) => {
-      if (!userProfileMetadata) {
-        throw new Error(t("notFound"));
-      }
-
       setUserProfileMetadata(userProfileMetadata);
     },
     [],
@@ -55,7 +51,7 @@ export default function CreateUser() {
       });
 
       addAlert(t("userCreated"), AlertVariant.success);
-      navigate(
+      void navigate(
         toUser({ id: createdUser.id, realm: realmName, tab: "settings" }),
       );
     } catch (error) {
@@ -68,7 +64,7 @@ export default function CreateUser() {
     }
   };
 
-  if (!realm || !userProfileMetadata) {
+  if (!userProfileMetadata) {
     return <KeycloakSpinner />;
   }
 

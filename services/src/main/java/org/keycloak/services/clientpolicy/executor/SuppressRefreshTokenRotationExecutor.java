@@ -53,7 +53,7 @@ public class SuppressRefreshTokenRotationExecutor implements ClientPolicyExecuto
             case TOKEN_REFRESH_RESPONSE:
                 TokenRefreshResponseContext tokenRefreshResponseContext = (TokenRefreshResponseContext)context;
                 TokenManager.AccessTokenResponseBuilder builder = tokenRefreshResponseContext.getAccessTokenResponseBuilder();
-                builder.refreshToken(null); // drop rotated refresh token before building a response of a token refresh request
+                builder.removeRefreshToken(); // drop rotated refresh token before building a response of a token refresh request
                 logger.trace("A rorated refresh token was suppressed.");
                 break;
             default :

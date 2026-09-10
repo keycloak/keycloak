@@ -31,6 +31,7 @@ import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -71,8 +72,10 @@ public class VerifiableCredential {
      */
     @JsonDeserialize(using = IssuerDeserializer.class)
     private Object issuer;
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Instant issuanceDate;
     private URI id;
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Instant expirationDate;
     private CredentialSubject credentialSubject = new CredentialSubject();
     @JsonIgnore

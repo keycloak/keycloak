@@ -45,6 +45,9 @@ import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
 import { RequiredActionMultiSelect } from "./user-credentials/RequiredActionMultiSelect";
 import { useNavigate } from "react-router-dom";
 import { CopyToClipboardButton } from "../components/copy-to-clipboard-button/CopyToClipboardButton";
+import { GroupResourceContext } from "../context/group-resource/GroupResourceContext";
+
+const TERMS_AND_CONDITIONS_ATTRIBUTE = "terms_and_conditions";
 
 export type BruteForced = {
   isBruteForceProtected?: boolean;
@@ -84,6 +87,10 @@ export const UserForm = ({
   const isManager = hasAccess("manage-users");
   const canViewFederationLink = hasAccess("view-realm");
   const { whoAmI } = useWhoAmI();
+
+  const termsAndConditionsAcceptedDate = toTermsAndConditionsAcceptedDate(
+    user?.attributes?.[TERMS_AND_CONDITIONS_ATTRIBUTE],
+  );
 
   const { handleSubmit, setValue, control, reset, formState } = form;
   const { errors } = formState;
@@ -145,14 +152,14 @@ export const UserForm = ({
     if (user?.id) {
       reset(toUserFormFields(user));
     } else {
-      navigate(toUsers({ realm: realm.realm! }));
+      void navigate(toUsers({ realm: realm.realm! }));
     }
   };
 
   const allFieldsReadOnly = () =>
     user?.userProfileMetadata?.attributes &&
-    !user?.userProfileMetadata?.attributes
-      ?.map((a) => a.readOnly)
+    !user.userProfileMetadata.attributes
+      .map((a) => a.readOnly)
       .reduce((p, c) => p && c, true);
 
   const handleEmailVerificationReset = async () => {
@@ -187,25 +194,27 @@ export const UserForm = ({
     >
       <FormProvider {...form}>
         {open && (
-          <GroupPickerDialog
-            type="selectMany"
-            text={{
-              title: "selectGroups",
-              ok: "join",
-            }}
-            canBrowse={isManager}
-            onConfirm={async (groups) => {
-              if (user?.id) {
-                await addGroups(groups || []);
-              } else {
-                await addChips(groups || []);
-              }
+          <GroupResourceContext value={adminClient.groups}>
+            <GroupPickerDialog
+              type="selectMany"
+              text={{
+                title: "selectGroups",
+                ok: "join",
+              }}
+              canBrowse={isManager}
+              onConfirm={async (groups) => {
+                if (user?.id) {
+                  await addGroups(groups || []);
+                } else {
+                  await addChips(groups || []);
+                }
 
-              setOpen(false);
-            }}
-            onClose={() => setOpen(false)}
-            filterGroups={selectedGroups}
-          />
+                setOpen(false);
+              }}
+              onClose={() => setOpen(false)}
+              filterGroups={selectedGroups}
+            />
+          </GroupResourceContext>
         )}
         {user?.id && (
           <>
@@ -267,6 +276,19 @@ export const UserForm = ({
               label={t("emailVerified")}
               labelIcon={t("emailVerifiedHelp")}
             />
+            {termsAndConditionsAcceptedDate && (
+              <FormGroup
+                label={t("termsAndConditionsUserAttribute")}
+                fieldId={TERMS_AND_CONDITIONS_ATTRIBUTE}
+              >
+                <span
+                  id={TERMS_AND_CONDITIONS_ATTRIBUTE}
+                  data-testid={TERMS_AND_CONDITIONS_ATTRIBUTE}
+                >
+                  {formatDate(termsAndConditionsAcceptedDate)}
+                </span>
+              </FormGroup>
+            )}
             {user?.attributes?.["kc.email.pending"] && (
               <Alert
                 variant={AlertVariant.warning}
@@ -295,7 +317,11 @@ export const UserForm = ({
                 ...userProfileMetadata,
                 attributes: userProfileMetadata.attributes?.filter(
                   (attribute: UserProfileAttributeMetadata) => {
-                    return attribute.name !== "kc.email.pending";
+                    return (
+                      attribute.name !== "kc.email.pending" &&
+                      (attribute.name !== TERMS_AND_CONDITIONS_ATTRIBUTE ||
+                        !termsAndConditionsAcceptedDate)
+                    );
                   },
                 ),
               }}
@@ -427,3 +453,15 @@ export const UserForm = ({
     </FormAccess>
   );
 };
+
+function toTermsAndConditionsAcceptedDate(value: unknown): Date | undefined {
+  const timestamp = Number(Array.isArray(value) ? value[0] : value);
+
+  if (!Number.isFinite(timestamp) || timestamp <= 0) {
+    return undefined;
+  }
+
+  const date = new Date(timestamp * 1000);
+
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}

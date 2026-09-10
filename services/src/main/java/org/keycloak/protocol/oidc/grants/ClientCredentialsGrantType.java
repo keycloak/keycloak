@@ -17,6 +17,9 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.Collections;
+import java.util.Set;
+
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuthErrorException;
@@ -148,6 +151,11 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
     @Override
     public EventType getEventType() {
         return EventType.CLIENT_LOGIN;
+    }
+
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Collections.emptySet();
     }
 
     @Override

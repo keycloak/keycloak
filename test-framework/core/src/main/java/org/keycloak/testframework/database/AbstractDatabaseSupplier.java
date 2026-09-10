@@ -1,14 +1,12 @@
 package org.keycloak.testframework.database;
 
 import org.keycloak.testframework.annotations.InjectTestDatabase;
-import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.injection.SupplierHelpers;
 import org.keycloak.testframework.injection.SupplierOrder;
-import org.keycloak.testframework.server.KeycloakServer;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfigInterceptor;
 
@@ -47,17 +45,7 @@ public abstract class AbstractDatabaseSupplier implements Supplier<TestDatabase,
 
     @Override
     public KeycloakServerConfigBuilder intercept(KeycloakServerConfigBuilder serverConfig, InstanceContext<TestDatabase, InjectTestDatabase> instanceContext) {
-        String kcServerType = Config.getSelectedSupplier(KeycloakServer.class);
-        TestDatabase database = instanceContext.getValue();
-
-        // If both KeycloakServer and TestDatabase run in container, we need to configure Keycloak with internal
-        // url that is accessible within docker network
-        if ("cluster".equals(kcServerType) &&
-                database instanceof AbstractContainerTestDatabase containerDatabase) {
-            return serverConfig.options(containerDatabase.serverConfig(true));
-        }
-
-        return serverConfig.options(database.serverConfig());
+        return serverConfig.options(instanceContext.getValue().serverConfig());
     }
 
     @Override

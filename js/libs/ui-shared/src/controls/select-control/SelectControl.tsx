@@ -7,6 +7,7 @@ import {
 } from "react-hook-form";
 import { SingleSelectControl } from "./SingleSelectControl";
 import { TypeaheadSelectControl } from "./TypeaheadSelectControl";
+import { ReactNode } from "react";
 
 type Variant = `${SelectVariant}`;
 
@@ -19,6 +20,7 @@ export enum SelectVariant {
 export type SelectControlOption = {
   key: string;
   value: string;
+  description?: string;
 };
 
 export type OptionType = string[] | SelectControlOption[];
@@ -42,11 +44,12 @@ export type SelectControlProps<
     label?: string;
     options: OptionType;
     selectedOptions?: OptionType;
-    labelIcon?: string;
+    labelIcon?: string | ReactNode;
     controller: Omit<ControllerProps, "name" | "render">;
     onFilter?: (value: string) => void;
     variant?: Variant;
     isDisabled?: boolean;
+    isFullWidth?: boolean;
     menuAppendTo?: string;
     placeholderText?: string;
     chipGroupProps?: ChipGroupProps;

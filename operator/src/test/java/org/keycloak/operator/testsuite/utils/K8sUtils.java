@@ -18,6 +18,7 @@
 package org.keycloak.operator.testsuite.utils;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
@@ -33,10 +34,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.operator.Constants;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HttpManagementSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.NetworkPolicySpecBuilder;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.PodBuilder;
@@ -69,12 +70,26 @@ public final class K8sUtils {
         deployKeycloak(client, kc, waitUntilReady, true);
     }
 
+    /**
+     * @param stream will be closed by this operation
+     */
     public static List<HasMetadata> set(KubernetesClient client, InputStream stream) {
         return set(client, stream, Function.identity());
     }
 
+    /**
+     * @param stream will be closed by this operation
+     */
     public static List<HasMetadata> set(KubernetesClient client, InputStream stream, Function<HasMetadata, HasMetadata> modifier) {
-        return client.load(stream).items().stream().map(modifier).filter(Objects::nonNull).map(i -> set(client, i)).collect(Collectors.toList());
+        try {
+            return client.load(stream).items().stream().map(modifier).filter(Objects::nonNull).map(i -> set(client, i)).collect(Collectors.toList());
+        } finally {
+            try {
+                stream.close();
+            } catch (IOException e) {
+                Log.warn("Could not close stream", e);
+            }
+        }
     }
 
     public static <T extends HasMetadata> T set(KubernetesClient client, T hasMetadata) {
@@ -181,7 +196,7 @@ public final class K8sUtils {
     private static void createCurlContainer(PodBuilder builder) {
         builder.withNewSpec()
                 .addNewContainer()
-                .withImage("curlimages/curl:8.1.2")
+                .withImage("quay.io/curl/curl:8.1.2")
                 .withCommand("sh")
                 .withName("curl")
                 .withStdin()

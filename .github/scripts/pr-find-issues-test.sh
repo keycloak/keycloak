@@ -1,4 +1,5 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
+set -e
 # Use this script to test different variants of a PR body.
 
 source ./pr-find-issues.sh

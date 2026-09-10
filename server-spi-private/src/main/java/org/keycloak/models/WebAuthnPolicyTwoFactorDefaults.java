@@ -40,12 +40,14 @@ public class WebAuthnPolicyTwoFactorDefaults extends WebAuthnPolicy {
         this.attestationConveyancePreference = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
         this.authenticatorAttachment = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
         this.requireResidentKey = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        this.residentKey = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
         this.userVerificationRequirement = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
         this.createTimeout = 0;
         this.avoidSameAuthenticatorRegister = false;
         this.acceptableAaguids = Collections.emptyList();
         this.extraOrigins = Collections.emptyList();
         this.passkeysEnabled = null;
+        this.mediation = null;
     }
 
     @Override
@@ -79,6 +81,11 @@ public class WebAuthnPolicyTwoFactorDefaults extends WebAuthnPolicy {
     }
 
     @Override
+    public void setResidentKey(String residentKey) {
+        throwReadOnlyException();
+    }
+
+    @Override
     public void setUserVerificationRequirement(String userVerificationRequirement) {
         throwReadOnlyException();
     }
@@ -105,6 +112,11 @@ public class WebAuthnPolicyTwoFactorDefaults extends WebAuthnPolicy {
 
     @Override
     public void setPasskeysEnabled(Boolean passkeysEnabled) {
+        throwReadOnlyException();
+    }
+
+    @Override
+    public void setMediation(String mediation) {
         throwReadOnlyException();
     }
 

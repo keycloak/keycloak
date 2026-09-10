@@ -6,8 +6,10 @@ import java.util.Properties;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DefaultEmailSenderProviderTest {
 
@@ -50,5 +52,34 @@ class DefaultEmailSenderProviderTest {
         assertThat(properties.getProperty("mail.smtp.timeout"), is("20000"));
         assertThat(properties.getProperty("mail.smtp.connectiontimeout"), is("30000"));
         assertThat(properties.getProperty("mail.smtp.writetimeout"), is("40000"));
+    }
+
+    @Test
+    void testValidateWithInvalidFromAddressThrowsException() {
+        // given
+        DefaultEmailSenderProvider provider = new DefaultEmailSenderProvider(null, null);
+        Map<String, String> config = new HashMap<>();
+        config.put("from", "invalid-email");
+
+        // when
+        EmailException exception = assertThrows(EmailException.class, () -> provider.validate(config));
+
+        // then
+        assertThat(exception.getMessage(), containsString("Invalid sender address"));
+    }
+
+    @Test
+    void testValidateWithInvalidReplyToAddressThrowsException() {
+        // given
+        DefaultEmailSenderProvider provider = new DefaultEmailSenderProvider(null, null);
+        Map<String, String> config = new HashMap<>();
+        config.put("from", "valid@example.com");
+        config.put("replyTo", "invalid-replyto");
+
+        // when
+        EmailException exception = assertThrows(EmailException.class, () -> provider.validate(config));
+
+        // then
+        assertThat(exception.getMessage(), containsString("Invalid reply-to address"));
     }
 }

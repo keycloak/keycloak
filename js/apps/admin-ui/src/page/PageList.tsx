@@ -58,12 +58,16 @@ export default function PageList() {
 
   const page = pages?.find((p) => p.id === providerId)!;
 
-  const loader = async () => {
-    const params: ComponentQuery = {
-      parent: realm?.id,
-      type: PAGE_PROVIDER,
-    };
-    return await adminClient.components.find({ ...params });
+  const loader = {
+    signal: { providerId },
+    loader: async () => {
+      const params: ComponentQuery = {
+        parent: realm.id,
+        type: PAGE_PROVIDER,
+        providerId,
+      };
+      return await adminClient.components.find({ ...params });
+    },
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -138,7 +142,9 @@ export default function PageList() {
             instructions={t("noItemsInstructions")}
             primaryActionText={t("createItem")}
             onPrimaryAction={() =>
-              navigate(addDetailPage({ realm: realmName, providerId: page.id }))
+              void navigate(
+                addDetailPage({ realm: realmName, providerId: page.id }),
+              )
             }
           />
         }

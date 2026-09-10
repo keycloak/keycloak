@@ -17,6 +17,7 @@
 
 package org.keycloak.models.jpa;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -30,10 +31,10 @@ import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+import jakarta.persistence.OptimisticLockException;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
@@ -42,6 +43,7 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.jpa.support.EntityManagers;
@@ -52,6 +54,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
@@ -63,20 +66,29 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
+import org.keycloak.models.jpa.entities.IssuedVerifiableCredentialEntity;
 import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserConsentClientScopeEntity;
 import org.keycloak.models.jpa.entities.UserConsentEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
+import org.keycloak.models.jpa.entities.UserVerifiableCredentialEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.jpa.JpaHashUtils;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.storage.jpa.JpaHashUtils.predicateForFilteringUsersByAttributes;
@@ -98,7 +110,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     private static final char ESCAPE_BACKSLASH = '\\';
 
     private final KeycloakSession session;
-    protected EntityManager em;
+    protected final EntityManager em;
     private final JpaUserCredentialStore credentialStore;
 
     public JpaUserProvider(KeycloakSession session, EntityManager em) {
@@ -115,7 +127,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         UserEntity entity = new UserEntity();
         entity.setId(id);
-        entity.setCreatedTimestamp(System.currentTimeMillis());
+        long now = Time.currentTimeMillis();
+        entity.setCreatedTimestamp(now);
+        entity.setLastModifiedTimestamp(now);
         entity.setUsername(username.toLowerCase());
         entity.setRealmId(realm.getId());
         em.persist(entity);
@@ -156,11 +170,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     }
 
     private void removeUser(UserEntity user) {
-        String id = user.getId();
         em.createNamedQuery("deleteUserRoleMappingsByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserGroupMembershipsByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserConsentClientScopesByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserConsentsByUser").setParameter("user", user).executeUpdate();
+        em.createNamedQuery("deleteIssuedVcsByUser").setParameter("userId", user.getId()).executeUpdate();
+        em.createNamedQuery("deleteVerifiableCredentialsByUser").setParameter("user", user).executeUpdate();
 
         em.remove(user);
         em.flush();
@@ -183,6 +198,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     @Override
     public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
         FederatedIdentityEntity federatedIdentity = findFederatedIdentity(federatedUser, federatedIdentityModel.getIdentityProvider(), LockModeType.PESSIMISTIC_WRITE);
+        if (federatedIdentity == null) {
+            return;
+        }
 
         federatedIdentity.setUserName(federatedIdentityModel.getUserName());
         federatedIdentity.setToken(federatedIdentityModel.getToken());
@@ -319,7 +337,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
             for (UserConsentClientScopeEntity grantedClientScope : grantedClientScopeEntities) {
                 ClientScopeModel grantedClientScopeModel = KeycloakModelUtils.findClientScopeById(realm, client, grantedClientScope.getScopeId());
                 if (grantedClientScopeModel != null) {
-                    model.addGrantedClientScope(grantedClientScopeModel);
+                    model.addGrantedClientScope(grantedClientScopeModel,
+                            ClientScopeModel.isParameterizedScope(grantedClientScopeModel)
+                                    ? grantedClientScope.getParameter().orElse(null)
+                                    : null);
                 }
             }
         }
@@ -333,17 +354,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         Collection<UserConsentClientScopeEntity> scopesToRemove = new HashSet<>(grantedClientScopeEntities);
 
         for (ClientScopeModel clientScope : consentModel.getGrantedClientScopes()) {
-            UserConsentClientScopeEntity grantedClientScopeEntity = new UserConsentClientScopeEntity();
-            grantedClientScopeEntity.setUserConsent(consentEntity);
-            grantedClientScopeEntity.setScopeId(clientScope.getId());
-
-            // Check if it's already there
-            if (!grantedClientScopeEntities.contains(grantedClientScopeEntity)) {
-                em.persist(grantedClientScopeEntity);
-                em.flush();
-                grantedClientScopeEntities.add(grantedClientScopeEntity);
+            if (ClientScopeModel.isParameterizedScope(clientScope)) {
+                consentModel.getParameters(clientScope).forEach(p -> createUserConsentClientScopeEntity(
+                        consentEntity, clientScope, p, grantedClientScopeEntities, scopesToRemove));
             } else {
-                scopesToRemove.remove(grantedClientScopeEntity);
+                createUserConsentClientScopeEntity(consentEntity, clientScope, null, grantedClientScopeEntities, scopesToRemove);
             }
         }
         // Those client scopes were no longer on consentModel and will be removed
@@ -357,6 +372,174 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         em.flush();
     }
 
+    private void createUserConsentClientScopeEntity(
+            UserConsentEntity consentEntity, ClientScopeModel clientScope, String parameter,
+            Collection<UserConsentClientScopeEntity> grantedClientScopeEntities,
+            Collection<UserConsentClientScopeEntity> scopesToRemove) {
+        UserConsentClientScopeEntity grantedClientScopeEntity = new UserConsentClientScopeEntity();
+        grantedClientScopeEntity.setUserConsent(consentEntity);
+        grantedClientScopeEntity.setScopeId(clientScope.getId());
+        grantedClientScopeEntity.setParameter(parameter);
+
+        // Check if it's already there
+        if (!grantedClientScopeEntities.contains(grantedClientScopeEntity)) {
+            em.persist(grantedClientScopeEntity);
+            em.flush();
+            grantedClientScopeEntities.add(grantedClientScopeEntity);
+        } else {
+            scopesToRemove.remove(grantedClientScopeEntity);
+        }
+    }
+
+    @Override
+    public UserVerifiableCredentialModel addVerifiableCredential(String userId, UserVerifiableCredentialModel verifCredentialModel) {
+        if (verifCredentialModel.getClientScopeId() == null) {
+            throw new ModelException("Credential scope not specified");
+        }
+
+        UserVerifiableCredentialEntity vcEntity = new UserVerifiableCredentialEntity();
+        String id = KeycloakModelUtils.generateId();
+        vcEntity.setId(id);
+        vcEntity.setUser(em.getReference(UserEntity.class, userId));
+
+        String revision = verifCredentialModel.getRevision() == null ? SecretGenerator.getInstance().generateSecureID() : verifCredentialModel.getRevision();
+        vcEntity.setRevision(revision);
+
+        long createdDate = verifCredentialModel.getCreatedDate() == null ? Time.currentTimeMillis() : verifCredentialModel.getCreatedDate();
+        vcEntity.setCreatedDate(createdDate);
+
+        long updatedDate = verifCredentialModel.getUpdatedDate() == null ? createdDate : verifCredentialModel.getUpdatedDate();
+        vcEntity.setUpdatedDate(updatedDate);
+
+        vcEntity.setClientScopeId(verifCredentialModel.getClientScopeId());
+
+        Map<String, List<String>> userAttributes;
+        if (verifCredentialModel.getUserAttributes() != null) {
+            userAttributes = verifCredentialModel.getUserAttributes();
+        } else {
+            UserModel user = getUserById(session.getContext().getRealm(), userId);
+            // Filter attributes using UserProfile with admin context to include only admin-visible attributes
+            UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
+            UserProfile profile = profileProvider.create(UserProfileContext.USER_API, user);
+            userAttributes = profile.getAttributes().getReadable();
+        }
+
+        try {
+            String attributesJson = JsonSerialization.writeValueAsString(userAttributes);
+            vcEntity.setUserAttributes(attributesJson);
+        } catch (IOException e) {
+            throw new ModelException("Failed to serialize user attributes", e);
+        }
+        em.persist(vcEntity);
+        em.flush();
+
+        return toVerifiableCredentialModel(vcEntity);
+    }
+
+    @Override
+    public boolean removeVerifiableCredential(String userId, String clientScopeId) {
+        UserVerifiableCredentialEntity found = getVerifiableCredentialsEntitiesByUser(userId)
+                .filter(vcEnt -> vcEnt.getClientScopeId().equals(clientScopeId))
+                .findFirst()
+                .orElse(null);
+
+        if (found == null) return false;
+
+        // Delete issued VCs first, then the VC itself (FK constraint)
+        em.createNamedQuery("deleteIssuedVcsByUserAndType")
+                .setParameter("userId", userId)
+                .setParameter("verifiableCredentialId", found.getId())
+                .executeUpdate();
+
+        em.remove(found);
+        em.flush();
+        return true;
+    }
+
+    @Override
+    public Stream<UserVerifiableCredentialModel> getVerifiableCredentialsByUser(String userId) {
+        return getVerifiableCredentialsEntitiesByUser(userId)
+                .map(this::toVerifiableCredentialModel)
+                .sorted(Comparator.comparing(UserVerifiableCredentialModel::getClientScopeId));
+    }
+
+    @Override
+    public UserVerifiableCredentialModel getVerifiableCredentialById(String id) {
+        UserVerifiableCredentialEntity entity = em.find(UserVerifiableCredentialEntity.class, id);
+        return entity != null ? toVerifiableCredentialModel(entity) : null;
+    }
+
+    @Override
+    public UserVerifiableCredentialModel getVerifiableCredentialByClientScope(String userId, String clientScopeId) {
+        return getVerifiableCredentialsEntitiesByUser(userId)
+                .filter(vc -> clientScopeId.equals(vc.getClientScopeId()))
+                .findFirst()
+                .map(this::toVerifiableCredentialModel)
+                .orElse(null);
+    }
+
+    @Override
+    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String clientScopeId) {
+        UserEntity userEntity = em.find(UserEntity.class, userId);
+        if (userEntity == null || !session.getContext().getRealm().getId().equals(userEntity.getRealmId())) {
+            throw new ModelException("User not found: " + userId);
+        }
+        UserModel user = new UserAdapter(session, session.getContext().getRealm(), em, userEntity);
+
+        UserVerifiableCredentialEntity entity = getVerifiableCredentialsEntitiesByUser(userId)
+                .filter(vc -> clientScopeId.equals(vc.getClientScopeId()))
+                .findFirst()
+                .orElseThrow(() -> new ModelException(
+                        "Verifiable credential not found: " + clientScopeId));
+
+
+        // Filter attributes using UserProfile with admin context to include only admin-visible attributes
+        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
+        UserProfile profile = profileProvider.create(UserProfileContext.USER_API, user);
+        Map<String, List<String>> userAttributes = profile.getAttributes().getReadable();
+
+        try {
+            String attributesJson = JsonSerialization.writeValueAsString(userAttributes);
+            entity.setUserAttributes(attributesJson);
+        } catch (IOException e) {
+            throw new ModelException("Failed to serialize user attributes", e);
+        }
+
+        String newRevision = SecretGenerator.getInstance().generateSecureID();
+        entity.setRevision(newRevision);
+        entity.setUpdatedDate(Time.currentTimeMillis());
+        try {
+            UserVerifiableCredentialEntity mergedEntity = em.merge(entity);
+            em.flush();
+            return toVerifiableCredentialModel(mergedEntity);
+        } catch (OptimisticLockException e) {
+            throw new ModelException( "Verifiable credential was concurrently modified. Please retry the operation.", e);
+        }
+    }
+
+    private Stream<UserVerifiableCredentialEntity> getVerifiableCredentialsEntitiesByUser(String userId) {
+        TypedQuery<UserVerifiableCredentialEntity> query = em.createNamedQuery("verifiableCredentialsByUser", UserVerifiableCredentialEntity.class);
+        query.setParameter("userId", userId);
+        return closing(query.getResultStream());
+    }
+
+    private UserVerifiableCredentialModel toVerifiableCredentialModel(UserVerifiableCredentialEntity entity) {
+        UserVerifiableCredentialModel model = new UserVerifiableCredentialModel(entity.getId(), entity.getClientScopeId());
+        model.setRevision(entity.getRevision());
+        model.setCreatedDate(entity.getCreatedDate());
+        model.setUpdatedDate(entity.getUpdatedDate());
+
+        if (entity.getUserAttributes() != null) {
+            try {
+                TypeReference<Map<String, List<String>>> typeRef = new TypeReference<>() {};
+                Map<String, List<String>> attrs = JsonSerialization.readValue(entity.getUserAttributes(), typeRef);
+                model.setUserAttributes(attrs);
+            } catch (IOException e) {
+                throw new ModelException("Failed to deserialize user attributes", e);
+            }
+        }
+        return model;
+    }
 
     @Override
     public void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore) {
@@ -378,7 +561,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
     @Override
     public void grantToAllUsers(RealmModel realm, RoleModel role) {
-        if (realm.equals(role.isClientRole() ? ((ClientModel)role.getContainer()).getRealm() : (RealmModel)role.getContainer())) {
+        if (realm.equals(role.isClientRole() ? ((ClientModel)role.getContainer()).getRealm() : role.getContainer())) {
             em.createNamedQuery("grantRoleToAllUsers")
                 .setParameter("realmId", realm.getId())
                 .setParameter("roleId", role.getId())
@@ -391,6 +574,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         em.createNamedQuery("deleteUserConsentClientScopesByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("deleteUserConsentsByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
+        em.createNamedQuery("deleteIssuedVcsByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
+        em.createNamedQuery("deleteVerifiableCredentialsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("deleteUserRoleMappingsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
@@ -471,6 +658,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
             em.createNamedQuery("deleteUserConsentsByClient")
                     .setParameter("clientId", client.getId())
                     .executeUpdate();
+            em.createNamedQuery("deleteIssuedVcsByClient")
+                    .setParameter("clientId", client.getId())
+                    .executeUpdate();
         } else {
             em.createNamedQuery("deleteUserConsentClientScopesByExternalClient")
                     .setParameter("clientStorageProvider", clientStorageId.getProviderId())
@@ -492,6 +682,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     @Override
     public void preRemove(ClientScopeModel clientScope) {
         em.createNamedQuery("deleteUserConsentClientScopesByClientScope")
+                .setParameter("scopeId", clientScope.getId())
+                .executeUpdate();
+        em.createNamedQuery("deleteIssuedVcsByClientScope")
+                .setParameter("scopeId", clientScope.getId())
+                .executeUpdate();
+        em.createNamedQuery("deleteVerifiableCredentialsByClientScope")
                 .setParameter("scopeId", clientScope.getId())
                 .executeUpdate();
     }
@@ -596,7 +792,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         }
 
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, cb, query, root));
-        query.select(cb.count(root)).where(predicates.toArray(Predicate[]::new));
+        query.select(cb.count(root)).where(predicates);
 
         return em.createQuery(query).getSingleResult().intValue();
     }
@@ -621,21 +817,13 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         CriteriaQuery<Long> queryBuilder = builder.createQuery(Long.class);
         Root<UserEntity> root = queryBuilder.from(UserEntity.class);
 
-        queryBuilder.select(builder.countDistinct(root));
-
         List<Predicate> predicates = new ArrayList<>();
 
         predicates.add(builder.equal(root.get("realmId"), realm.getId()));
-
-        for (String stringToSearch : search.trim().split("\\s+")) {
-            predicates.add(builder.or(getSearchOptionPredicateArray(stringToSearch, builder, root)));
-        }
-
+        addSearchPredicates(search, builder, root, predicates);
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, builder, queryBuilder, root));
 
-        queryBuilder.where(predicates.toArray(Predicate[]::new));
-
-        return em.createQuery(queryBuilder).getSingleResult().intValue();
+        return em.createQuery(countQuery(queryBuilder, builder, root, predicates)).getSingleResult().intValue();
     }
 
     @Override
@@ -650,21 +838,13 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         Root<UserGroupMembershipEntity> groupMembership = queryBuilder.from(UserGroupMembershipEntity.class);
         Join<UserGroupMembershipEntity, UserEntity> userJoin = groupMembership.join("user");
 
-        queryBuilder.select(builder.countDistinct(userJoin));
-
         List<Predicate> predicates = new ArrayList<>();
 
         predicates.add(builder.equal(userJoin.get("realmId"), realm.getId()));
-
-        for (String stringToSearch : search.trim().split("\\s+")) {
-            predicates.add(builder.or(getSearchOptionPredicateArray(stringToSearch, builder, userJoin)));
-        }
-
+        addSearchPredicates(search, builder, userJoin, predicates);
         predicates.add(groupMembership.get("groupId").in(groupIds));
 
-        queryBuilder.where(predicates.toArray(Predicate[]::new));
-
-        return em.createQuery(queryBuilder).getSingleResult().intValue();
+        return em.createQuery(countQuery(queryBuilder, builder, userJoin, predicates)).getSingleResult().intValue();
     }
 
     @Override
@@ -672,15 +852,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         CriteriaBuilder qb = em.getCriteriaBuilder();
         CriteriaQuery<Long> userQuery = qb.createQuery(Long.class);
         Root<UserEntity> from = userQuery.from(UserEntity.class);
-        Expression<Long> count = qb.countDistinct(from);
 
-        userQuery = userQuery.select(count);
         List<Predicate> restrictions = predicates(params, from, Map.of());
         restrictions.add(qb.equal(from.get("realmId"), realm.getId()));
         restrictions.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, qb, userQuery, from));
 
-        userQuery = userQuery.where(restrictions.toArray(Predicate[]::new));
-        TypedQuery<Long> query = em.createQuery(userQuery);
+        TypedQuery<Long> query = em.createQuery(countQuery(userQuery, qb, from, restrictions));
         Long result = query.getSingleResult();
 
         return result.intValue();
@@ -706,7 +883,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         restrictions.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, cb, countQuery, root));
 
-        countQuery.where(restrictions.toArray(Predicate[]::new));
+        countQuery.where(restrictions);
         TypedQuery<Long> query = em.createQuery(countQuery);
         Long result = query.getSingleResult();
 
@@ -728,7 +905,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, builder, queryBuilder, userPath));
 
-        queryBuilder.where(predicates.toArray(Predicate[]::new)).orderBy(builder.asc(userPath.get(UserModel.USERNAME)));
+        queryBuilder.where(predicates).orderBy(builder.asc(userPath.get(UserModel.USERNAME)));
 
         return closing(paginateQuery(em.createQuery(queryBuilder), firstResult, maxResults).getResultStream().map(user -> new UserAdapter(session, realm, em, user)));
     }
@@ -772,7 +949,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, builder, queryBuilder, userPath));
 
-        queryBuilder.where(predicates.toArray(Predicate[]::new)).orderBy(builder.asc(userPath.get(UserModel.USERNAME)));
+        queryBuilder.where(predicates).orderBy(builder.asc(userPath.get(UserModel.USERNAME)));
 
         return closing(paginateQuery(em.createQuery(queryBuilder), first, max).getResultStream().map(user -> new UserAdapter(session, realm, em, user)));
     }
@@ -790,7 +967,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, cb, cq, user));
 
         cq.select(user)
-            .where(predicates.toArray(Predicate[]::new))
+            .where(predicates)
             .orderBy(cb.asc(user.get("username")));
 
         TypedQuery<UserEntity> query = em.createQuery(cq);
@@ -824,7 +1001,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, builder, queryBuilder, root));
 
-        queryBuilder.distinct(true).where(predicates.toArray(Predicate[]::new)).orderBy(builder.asc(root.get(UserModel.USERNAME)));
+        queryBuilder.distinct(true).where(predicates).orderBy(builder.asc(root.get(UserModel.USERNAME)));
 
         TypedQuery<UserEntity> query = em.createQuery(queryBuilder);
 
@@ -970,6 +1147,68 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         return new org.keycloak.credential.UserCredentialManager(session, session.getContext().getRealm(), user);
     }
 
+    @Override
+    public IssuedVerifiableCredentialModel addIssuedVerifiableCredential(IssuedVerifiableCredentialModel model) {
+
+        String revision;
+        if (model.getRevision() != null) {
+            revision = model.getRevision();
+        } else {
+            UserVerifiableCredentialEntity userVerifiableCredentialEntity = em.find(UserVerifiableCredentialEntity.class, model.getVerifiableCredentialId());
+            if (userVerifiableCredentialEntity == null) {
+                throw new ModelException("Verifiable credential not found: " + model.getVerifiableCredentialId());
+            }
+            revision = userVerifiableCredentialEntity.getRevision();
+        }
+
+        IssuedVerifiableCredentialEntity issuedVerifiableCredentialEntity = new IssuedVerifiableCredentialEntity();
+
+        issuedVerifiableCredentialEntity.setId(SecretGenerator.getInstance().generateSecureID());
+        issuedVerifiableCredentialEntity.setUser(em.getReference(UserEntity.class, model.getUserId()));
+        issuedVerifiableCredentialEntity.setVerifiableCredentialId(model.getVerifiableCredentialId());
+        issuedVerifiableCredentialEntity.setClientId(model.getClientId());
+        issuedVerifiableCredentialEntity.setRevision(revision);
+
+        long issuedAt = model.getIssuedAt() != null ? model.getIssuedAt() : Time.currentTimeMillis();
+        issuedVerifiableCredentialEntity.setIssuedAt(issuedAt);
+
+        issuedVerifiableCredentialEntity.setExpiresAt(model.getExpiresAt());
+
+        em.persist(issuedVerifiableCredentialEntity);
+        em.flush();
+
+        return toIssuedVcModel(issuedVerifiableCredentialEntity);
+    }
+
+    @Override
+    public Stream<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsStreamByUser(String userId) {
+        TypedQuery<IssuedVerifiableCredentialEntity> query = em.createNamedQuery("issuedVcsByUser", IssuedVerifiableCredentialEntity.class);
+        query.setParameter("userId", userId);
+        return closing(query.getResultStream()).map(this::toIssuedVcModel);
+    }
+
+    @Override
+    public boolean removeIssuedVerifiableCredential(String credentialId) {
+        IssuedVerifiableCredentialEntity entity = em.find(IssuedVerifiableCredentialEntity.class, credentialId, LockModeType.PESSIMISTIC_WRITE);
+        if (entity == null) {
+            return false;
+        }
+        em.remove(entity);
+        em.flush();
+        return true;
+    }
+
+    @Override
+    public boolean removeIssuedVerifiableCredential(String userId, String credentialId) {
+        IssuedVerifiableCredentialEntity entity = em.find(IssuedVerifiableCredentialEntity.class, credentialId, LockModeType.PESSIMISTIC_WRITE);
+        if (entity == null || !userId.equals(entity.getUser().getId())) {
+            return false;
+        }
+        em.remove(entity);
+        em.flush();
+        return true;
+    }
+
     // Could override this to provide a custom behavior.
     protected void ensureEmailConstraint(List<UserEntity> users, RealmModel realm) {
         UserEntity user = users.get(0);
@@ -992,7 +1231,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         }
     }
 
-    private Predicate[] getSearchOptionPredicateArray(String value, CriteriaBuilder builder, From<?, UserEntity> from) {
+    private static Predicate getSearchOptionPredicate(String value, CriteriaBuilder builder, From<?, UserEntity> from) {
         value = value.toLowerCase();
 
         List<Predicate> orPredicates = new ArrayList<>();
@@ -1006,9 +1245,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
             orPredicates.add(builder.equal(builder.lower(from.get(FIRST_NAME)), value));
             orPredicates.add(builder.equal(builder.lower(from.get(LAST_NAME)), value));
         } else {
+            boolean endsWithWildcard = value.endsWith("*");
             value = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
             value = value.replace("*", "%");
-            if (value.isEmpty() || value.charAt(value.length() - 1) != '%') value += "%";
+            if (value.isEmpty() || !endsWithWildcard) value += "%";
 
             orPredicates.add(builder.like(from.get(USERNAME), value, ESCAPE_BACKSLASH));
             orPredicates.add(builder.like(from.get(EMAIL), value, ESCAPE_BACKSLASH));
@@ -1016,7 +1256,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
             orPredicates.add(builder.like(builder.lower(from.get(LAST_NAME)), value, ESCAPE_BACKSLASH));
         }
 
-        return orPredicates.toArray(Predicate[]::new);
+        return builder.or(orPredicates);
     }
 
     private UserEntity userInEntityManagerContext(String id) {
@@ -1042,9 +1282,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
             switch (key) {
                 case UserModel.SEARCH:
-                    for (String stringToSearch : value.trim().split("\\s+")) {
-                        predicates.add(builder.or(getSearchOptionPredicateArray(stringToSearch, builder, root)));
-                    }
+                    addSearchPredicates(value, builder, root, predicates);
                     break;
                 case FIRST_NAME:
                 case LAST_NAME:
@@ -1082,8 +1320,21 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
                     break;
                 case UserModel.EXACT:
                     break;
-                // All unknown attributes will be assumed as custom attributes
+                case UserModel.INCLUDE_SERVICE_ACCOUNT: {
+                    if (!attributes.containsKey(UserModel.INCLUDE_SERVICE_ACCOUNT)
+                            || !Boolean.parseBoolean(attributes.get(UserModel.INCLUDE_SERVICE_ACCOUNT))) {
+                        predicates.add(root.get("serviceAccountClientLink").isNull());
+                    }
+                    break;
+                }
+                case UserModel.CREATED_AFTER:
+                    predicates.add(builder.greaterThanOrEqualTo(root.get("createdTimestamp"), Long.parseLong(value)));
+                    break;
+                case UserModel.CREATED_BEFORE:
+                    predicates.add(builder.lessThanOrEqualTo(root.get("createdTimestamp"), Long.parseLong(value)));
+                    break;
                 default:
+                    // All unknown attributes will be assumed as custom attributes
                     Join<UserEntity, UserAttributeEntity> attributesJoin = root.join("attributes", JoinType.LEFT);
                     if (value.length() > 255) {
                         customLongValueSearchAttributes.put(key, value);
@@ -1102,18 +1353,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
                         }
                     }
                     break;
-                case UserModel.INCLUDE_SERVICE_ACCOUNT: {
-                    if (!attributes.containsKey(UserModel.INCLUDE_SERVICE_ACCOUNT)
-                            || !Boolean.parseBoolean(attributes.get(UserModel.INCLUDE_SERVICE_ACCOUNT))) {
-                        predicates.add(root.get("serviceAccountClientLink").isNull());
-                    }
-                    break;
-                }
             }
         }
 
         if (!attributePredicates.isEmpty()) {
-            predicates.add(builder.and(attributePredicates.toArray(Predicate[]::new)));
+            predicates.add(builder.and(attributePredicates));
         }
 
         return predicates;
@@ -1127,5 +1371,43 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     @Override
     public EntityManager getEntityManager() {
         return em;
+    }
+
+    private static void addSearchPredicates(String search, CriteriaBuilder builder, From<?, UserEntity> from, List<Predicate> predicates) {
+        if (search == null) {
+            return;
+        }
+        for (String stringToSearch : search.trim().split("\\s+")) {
+            predicates.add(getSearchOptionPredicate(stringToSearch, builder, from));
+        }
+    }
+
+    private static CriteriaQuery<Long> countQuery(CriteriaQuery<Long> query, CriteriaBuilder builder, From<?, UserEntity> from, List<Predicate> predicates) {
+        // When joining multiple tables, issuing a "distinct" is required to get the correct result.
+        // At the same time it is more expensive than a regular count as it would need to sort/keep all keys in memory at the database for the duration of the query.
+        // Therefore, we use a standard count where possible.
+        return query.select(from.getJoins().isEmpty() ? builder.count(from) : builder.countDistinct(from))
+                .where(predicates);
+    }
+
+    @Override
+    public void removeExpiredIssuedVerifiableCredentials() {
+        long currentTimeMillis = Time.currentTimeMillis();
+        em.createNamedQuery("deleteExpiredIssuedVcs")
+            .setParameter("currentTime", currentTimeMillis)
+            .executeUpdate();
+    }
+
+    private IssuedVerifiableCredentialModel toIssuedVcModel(IssuedVerifiableCredentialEntity entity) {
+        IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel();
+        model.setId(entity.getId());
+        model.setUserId(entity.getUser().getId());
+        model.setVerifiableCredentialId(entity.getVerifiableCredentialId());
+        model.setRevision(entity.getRevision());
+        model.setIssuedAt(entity.getIssuedAt());
+        model.setExpiresAt(entity.getExpiresAt());
+        model.setClientId(entity.getClientId());
+
+        return model;
     }
 }

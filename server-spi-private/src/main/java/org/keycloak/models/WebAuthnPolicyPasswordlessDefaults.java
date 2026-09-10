@@ -30,7 +30,7 @@ public class WebAuthnPolicyPasswordlessDefaults extends WebAuthnPolicyTwoFactorD
 
     WebAuthnPolicyPasswordlessDefaults() {
         super();
-        this.requireResidentKey = Constants.WEBAUTHN_POLICY_OPTION_YES;
+        this.residentKey = Constants.WEBAUTHN_POLICY_OPTION_REQUIRED;
         this.userVerificationRequirement = Constants.WEBAUTHN_POLICY_OPTION_REQUIRED;
     }
 }

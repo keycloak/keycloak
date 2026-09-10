@@ -1,12 +1,13 @@
 package org.keycloak.operator.testsuite.integration;
 
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.operator.controllers.KeycloakServiceMonitorDependentResource;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.ServiceMonitorSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.ServiceMonitorSpecBuilder;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(BaseOperatorTest.SLOW)
 @QuarkusTest
@@ -103,6 +105,8 @@ public class ServiceMonitorTest extends BaseOperatorTest {
               new ServiceMonitorSpecBuilder()
                     .withInterval("1s")
                     .withScrapeTimeout("2s")
+                    .withAnnotations(Map.of("foo","bar", "a", "b"))
+                    .withLabels(Map.of("foo","bar", "c", "d"))
                     .build()
         );
         K8sUtils.deployKeycloak(k8sclient, kc, true);
@@ -113,6 +117,10 @@ public class ServiceMonitorTest extends BaseOperatorTest {
             assertThat(sm.getSpec().getEndpoints()).hasSize(1);
             assertThat(sm.getSpec().getEndpoints().get(0).getInterval()).isEqualTo("1s");
             assertThat(sm.getSpec().getEndpoints().get(0).getScrapeTimeout()).isEqualTo("2s");
+            assertEquals("bar", sm.getMetadata().getAnnotations().get("foo"));
+            assertEquals("b", sm.getMetadata().getAnnotations().get("a"));
+            assertEquals("bar", sm.getMetadata().getLabels().get("foo"));
+            assertEquals("d", sm.getMetadata().getLabels().get("c"));
         });
     }
 

@@ -128,7 +128,7 @@ public abstract class PemUtilsProvider {
     public byte[] pemToDer(String pem) {
         try {
             pem = removeBeginEnd(pem);
-            return Base64.getDecoder().decode(pem);
+            return Base64.getMimeDecoder().decode(pem);
         } catch (IllegalArgumentException e) {
             throw new PemException(e);
         }

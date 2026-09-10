@@ -19,7 +19,6 @@ package org.keycloak.jgroups.certificates;
 
 import java.io.File;
 import java.time.Duration;
-import java.util.List;
 import java.util.Set;
 
 import org.keycloak.Config;
@@ -28,8 +27,6 @@ import org.keycloak.config.Option;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
 import org.keycloak.spi.infinispan.JGroupsCertificateProviderFactory;
 import org.keycloak.storage.configuration.ServerConfigStorageProvider;
@@ -46,8 +43,11 @@ public class DefaultJGroupsCertificateProviderFactory implements JGroupsCertific
 
     public static final String PROVIDER_ID = "default";
 
-    // config
+    // for metadata compatibility
     public static final String ENABLED = "enabled";
+
+    // config
+    public static final String ACTIVATED = "activated";
     private static final String ROTATION = "rotation";
     private static final String KEYSTORE_PATH = "keystoreFile";
     private static final String KEYSTORE_PASSWORD = "keystorePassword";
@@ -94,20 +94,8 @@ public class DefaultJGroupsCertificateProviderFactory implements JGroupsCertific
         return Set.of(ServerConfigStorageProvider.class);
     }
 
-    @Override
-    public List<ProviderConfigProperty> getConfigMetadata() {
-        var builder = ProviderConfigurationBuilder.create();
-        addEnabledOption(builder);
-        addRotationOption(builder);
-        addPropertyForFile(builder, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE, KEYSTORE_PATH);
-        addPropertyForFile(builder, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE, TRUSTSTORE_PATH);
-        addPropertyForPassword(builder, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD, KEYSTORE_PASSWORD);
-        addPropertyForPassword(builder, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD, TRUSTSTORE_PASSWORD);
-        return builder.build();
-    }
-
     private JGroupsCertificateProvider createProvider(KeycloakSessionFactory factory) {
-        if (!configuration.getBoolean(ENABLED, Boolean.FALSE)) {
+        if (!configuration.getBoolean(ACTIVATED, Boolean.FALSE)) {
             return JGroupsCertificateProvider.DISABLED;
         }
         if (isKeystoreOrTruststoreConfigured()) {
@@ -149,43 +137,4 @@ public class DefaultJGroupsCertificateProviderFactory implements JGroupsCertific
         return value;
     }
 
-    private static void addEnabledOption(ProviderConfigurationBuilder builder) {
-        propertyForOption(builder, CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED)
-                .name(ENABLED)
-                .type(ProviderConfigProperty.BOOLEAN_TYPE)
-                .label("enabled")
-                .add();
-    }
-
-    private static void addRotationOption(ProviderConfigurationBuilder builder) {
-        propertyForOption(builder, CachingOptions.CACHE_EMBEDDED_MTLS_ROTATION)
-                .name(ROTATION)
-                .type(ProviderConfigProperty.INTEGER_TYPE)
-                .label("days")
-                .add();
-    }
-
-    private static void addPropertyForFile(ProviderConfigurationBuilder builder, Option<?> option, String name) {
-        propertyForOption(builder, option)
-                .name(name)
-                .type(ProviderConfigProperty.STRING_TYPE)
-                .label("file")
-                .add();
-    }
-
-    private static void addPropertyForPassword(ProviderConfigurationBuilder builder, Option<?> option, String name) {
-        propertyForOption(builder, option)
-                .name(name)
-                .type(ProviderConfigProperty.PASSWORD)
-                .label("password")
-                .secret(true)
-                .add();
-    }
-
-    private static ProviderConfigurationBuilder.ProviderConfigPropertyBuilder propertyForOption(ProviderConfigurationBuilder builder, Option<?> option) {
-        var property = builder.property();
-        option.getDefaultValue().ifPresent(property::defaultValue);
-        property.helpText(option.getDescription());
-        return property;
-    }
 }

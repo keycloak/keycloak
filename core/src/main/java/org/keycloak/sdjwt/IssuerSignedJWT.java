@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.keycloak.OID4VCConstants;
+import org.keycloak.VCFormat;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.JWK;
@@ -169,7 +170,8 @@ public class IssuerSignedJWT extends JwsToken {
         }
         if (sdArray.size() > 0 || nestedDisclosures) {
             // add sd alg only if ay disclosure.
-            payload.put(CLAIM_NAME_SD_HASH_ALGORITHM, hashAlg);
+            // Normalize to lowercase to comply with IANA registered hash algorithm names
+            payload.put(CLAIM_NAME_SD_HASH_ALGORITHM, hashAlg.toLowerCase());
         }
 
         // then put all other claims in the paypload
@@ -394,7 +396,7 @@ public class IssuerSignedJWT extends JwsToken {
         public IssuerSignedJWT build() {
             // Preinitialize hashAlg to sha-256 if not provided
             hashAlg = hashAlg == null ? OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM : hashAlg;
-            jwsHeader.setType(jwsHeader.getType() == null ? OID4VCConstants.SD_JWT_VC_FORMAT : jwsHeader.getType());
+            jwsHeader.setType(jwsHeader.getType() == null ? VCFormat.SD_JWT_VC : jwsHeader.getType());
             disclosureSpec = Optional.ofNullable(disclosureSpec).orElseGet(() -> DisclosureSpec.builder().build());
             // send an empty lise if claims not set.
             decoyClaims = decoyClaims == null ? disclosureSpec.createDecoyClaims() : decoyClaims;

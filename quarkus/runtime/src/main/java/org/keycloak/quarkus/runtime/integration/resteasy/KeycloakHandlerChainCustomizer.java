@@ -25,6 +25,7 @@ import org.jboss.resteasy.reactive.common.model.ResourceClass;
 import org.jboss.resteasy.reactive.server.handlers.FormBodyHandler;
 import org.jboss.resteasy.reactive.server.model.HandlerChainCustomizer;
 import org.jboss.resteasy.reactive.server.model.ServerResourceMethod;
+import org.jboss.resteasy.reactive.server.spi.EndpointInvoker;
 import org.jboss.resteasy.reactive.server.spi.ServerRestHandler;
 
 import static jakarta.ws.rs.HttpMethod.PATCH;
@@ -33,9 +34,12 @@ import static jakarta.ws.rs.HttpMethod.PUT;
 
 public final class KeycloakHandlerChainCustomizer implements HandlerChainCustomizer {
 
-    private final TransactionalSessionHandler TRANSACTIONAL_SESSION_HANDLER = new TransactionalSessionHandler();
-
     private final FormBodyHandler formBodyHandler = new FormBodyHandler(true, () -> Runnable::run, Set.of());
+    
+    @Override
+    public ServerRestHandler alternateInvocationHandler(EndpointInvoker invoker) {
+        return new TransactionalSessionHandler(invoker);
+    }
 
     @Override
     public List<ServerRestHandler> handlers(Phase phase, ResourceClass resourceClass,
@@ -50,7 +54,6 @@ public final class KeycloakHandlerChainCustomizer implements HandlerChainCustomi
                      PUT.equalsIgnoreCase(resourceMethod.getHttpMethod()))) {
                     handlers.add(formBodyHandler);
                 }
-                handlers.add(TRANSACTIONAL_SESSION_HANDLER);
                 break;
             case AFTER_METHOD_INVOKE:
                 handlers.add(new SetResponseContentTypeHandler(resourceMethod.getProduces()));

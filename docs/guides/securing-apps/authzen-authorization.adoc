@@ -1,0 +1,476 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="AuthZEN Authorization"
+priority=160
+summary="Using {project_name} as an AuthZEN Policy Decision Point (PDP) to evaluate authorization requests.">
+
+<#include "/templates/experimental-feature.adoc">
+
+https://openid.net/specs/authorization-api-1_0.html[The OpenID AuthZEN Authorization API 1.0] defines a standard protocol
+for communication between Policy Decision Points (PDPs) and Policy Enforcement Points (PEPs), enabling applications to
+request authorization decisions without being tightly coupled to the internal details of the authorization engine.
+
+{project_name} is an AuthZEN compatible PDP that implements the Evaluation and Evaluations APIs.
+
+== Enabling AuthZEN
+
+AuthZEN is an experimental feature and must be explicitly enabled when starting {project_name}:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --features=authzen
+----
+
+== Prerequisites
+
+AuthZEN exposes {project_name}'s existing authorization services. Before using AuthZEN, you must configure the following in your realm:
+
+. link:{authorizationguide_link}#_resource_server_enable_authorization[A client with authorization enabled]-- The client whose access token is used to authenticate AuthZEN requests must have *Authorization Enabled* in its settings.
+. link:{authorizationguide_link}#_resource_create[Resources] -- Define resources in the client's *Authorization* -> *Resources* section. The resource name maps to the `resource.id` in AuthZEN requests, and the resource type maps to `resource.type`.
+. link:{authorizationguide_link}#_resource_create[Scopes] -- Define scopes in the client's *Authorization* -> *Scopes* section. Scope names map to the `action.name` in AuthZEN requests.
+. link:{authorizationguide_link}#_policy_overview[Policies] and link:{authorizationguide_link}#_permissions_overview[Permissions] -- Create policies and permissions that associate resources and scopes with authorization decisions.
+
+== PDP discovery metadata
+
+When AuthZEN is enabled, {project_name} exposes a `.well-known` endpoint that allows PEPs to discover the available AuthZEN endpoints:
+
+[source,bash]
+----
+GET /realms/{realm}/.well-known/authzen-configuration
+----
+
+For example, a realm called `myrealm` will return the following metadata:
+
+[source,json]
+----
+{
+  "policy_decision_point": "https://keycloak.example.com/realms/myrealm",
+  "access_evaluation_endpoint": "https://keycloak.example.com/realms/myrealm/authzen/access/v1/evaluation",
+  "access_evaluations_endpoint": "https://keycloak.example.com/realms/myrealm/authzen/access/v1/evaluations"
+}
+----
+
+== Authentication
+
+All AuthZEN endpoints require a valid bearer token in the `Authorization` header and the token must be issued for a
+client that has authorization services enabled.
+
+[source,bash]
+----
+POST /realms/{realm}/authzen/access/v1/evaluation
+Authorization: Bearer <access-token>
+Content-Type: application/json
+----
+
+If no valid token is provided, the server returns a `401 Unauthorized` response.
+
+== Evaluation API
+
+The Evaluation API is the core AuthZEN endpoint. It accepts a single authorization request and returns a boolean decision.
+
+=== Endpoint
+
+[source]
+----
+POST /realms/{realm}/authzen/access/v1/evaluation
+----
+
+=== Request format
+
+An evaluation request has three required fields and one optional field:
+
+[cols="1,1,3",options="header"]
+|===
+|Field |Required |Description
+
+|`subject`
+|Yes
+|The entity requesting access. Contains `type`, `id`, and optional `properties`.
+
+|`resource`
+|Yes
+|The resource being accessed. Contains `type`, `id`, and optional `properties`.
+
+|`action`
+|Yes
+|The action being performed. Contains `name`.
+
+|`context`
+|No
+|Additional context for policy evaluation as a map of key-value pairs.
+|===
+
+==== Subject
+
+The `subject` object identifies who is requesting access:
+
+[cols="1,1,3",options="header"]
+|===
+|Field |Required |Description
+
+|`type`
+|Yes
+|Either `user` or `client`.
+
+|`id`
+|Yes
+|Identifies the subject.
+
+|`properties`
+|No
+|Additional attributes to include in the evaluation context.
+|===
+
+==== Resource
+
+The `resource` object identifies what is being accessed:
+
+[cols="1,1,3",options="header"]
+|===
+|Field |Required |Description
+
+|`type`
+|Yes
+|Must match the resource type configured in {project_name}'s authorization settings.
+
+|`id`
+|Yes
+|Must match the resource name configured in {project_name}'s authorization settings.
+
+|`properties`
+|No
+|Additional attributes included in the evaluation context.
+|===
+
+==== Action
+
+The `action` object identifies the operation being performed:
+
+[cols="1,1,3",options="header"]
+|===
+|Field |Required |Description
+
+|`name`
+|Yes
+|Must match a scope name configured in {project_name}'s authorization settings.
+|===
+
+=== Example request
+
+[source,json]
+----
+{
+  "subject": {
+    "type": "user",
+    "id": "alice"
+  },
+  "resource": {
+    "type": "document",
+    "id": "quarterly-report"
+  },
+  "action": {
+    "name": "read"
+  }
+}
+----
+
+=== Response format
+
+The response contains a boolean `decision` field:
+
+[source,json]
+----
+{
+  "decision": true
+}
+----
+
+A `decision` of `true` means the subject is permitted to perform the action on the resource. A `decision` of `false` means the request is denied.
+
+The response may also include a `context` map with additional information about the decision.
+
+== Evaluations API
+
+The Evaluations API allows PEPs to batch multiple authorization queries into a single request.
+
+=== Endpoint
+
+[source]
+----
+POST /realms/{realm}/authzen/access/v1/evaluations
+----
+
+=== Request format
+
+An Evaluations request supports top-level default values for `subject`, `resource`, `action`, and `context`.
+Individual evaluation items in the `evaluations` array will override any of the specified defaults.
+
+[cols="1,1,3",options="header"]
+|===
+|Field |Required |Description
+
+|`subject`
+|No
+|Default subject applied to evaluation items that do not specify their own.
+
+|`resource`
+|No
+|Default resource applied to evaluation items that do not specify their own.
+
+|`action`
+|No
+|Default action applied to evaluation items that do not specify their own.
+
+|`context`
+|No
+|Default context applied to evaluation items that do not specify their own.
+
+|`options`
+|No
+|Controls evaluation semantics (see <<evaluation-semantics, Evaluation semantics>>).
+
+|`evaluations`
+|No
+|Array of individual evaluation items. If absent or empty, the request behaves as a single evaluation using the top-level fields.
+|===
+
+=== Example request
+
+[source,json]
+----
+{
+  "subject": {
+    "type": "user",
+    "id": "alice"
+  },
+  "action": {
+    "name": "read"
+  },
+  "evaluations": [
+    {
+      "resource": {
+        "type": "document",
+        "id": "quarterly-report"
+      }
+    },
+    {
+      "resource": {
+        "type": "document",
+        "id": "annual-report"
+      }
+    },
+    {
+      "resource": {
+        "type": "image",
+        "id": "logo"
+      },
+      "action": {
+        "name": "write"
+      }
+    }
+  ]
+}
+----
+
+In this example, the first two items inherit the top-level `subject` and `action`. The third item inherits the `subject` but overrides the `action`.
+
+=== Response format
+
+The response contains an `evaluations` array with one decision per item, in the same order as the request:
+
+[source,json]
+----
+{
+  "evaluations": [
+    { "decision": true },
+    { "decision": true },
+    { "decision": false }
+  ]
+}
+----
+
+[[evaluation-semantics]]
+=== Evaluation semantics
+
+The `options.evaluations_semantic` field controls how {project_name} processes the batch. Three semantics are supported:
+
+[cols="1,3",options="header"]
+|===
+|Semantic |Behavior
+
+|`execute_all`
+|Evaluates all items and returns all decisions. This is the default.
+
+|`deny_on_first_deny`
+|Stops processing on the first denied item. The response includes decisions up to and including the denial, with a
+`context` containing `"reason": "deny_on_first_deny"` on the denied item.
+
+|`permit_on_first_permit`
+|Stops processing on the first permitted item. The response includes decisions up to and including the permit.
+|===
+
+The example request below shows the expected response when `deny_on_first_deny` semantics are requested.
+
+[source,json]
+----
+{
+  "subject": {
+    "type": "user",
+    "id": "alice"
+  },
+  "options": {
+    "evaluations_semantic": "deny_on_first_deny"
+  },
+  "evaluations": [
+    {
+      "resource": { "type": "document", "id": "public-doc" },
+      "action": { "name": "read" }
+    },
+    {
+      "resource": { "type": "document", "id": "restricted-doc" },
+      "action": { "name": "read" }
+    }
+  ]
+}
+----
+
+If the second item is denied, the response stops there:
+
+[source,json]
+----
+{
+  "evaluations": [
+    { "decision": true },
+    { "decision": false, "context": { "reason": "deny_on_first_deny" } }
+  ]
+}
+----
+
+[[subject-lookup]]
+== Subject lookup semantics
+
+The `subject.type` can be one of two types:
+
+- `user`: Query if the specified user is authorized to perform an action on a resource
+- `client`: Query if the specified client is authorized to perform an action on a resource
+
+If a `subject.id` does not resolve to an existing user or client, the evaluation returns `{"decision": false}` with an
+HTTP `200 OK` status.
+
+=== User subject type
+
+When the `subject.type` is `user`, {project_name} supports several strategies for resolving the user identity from the
+`subject.id` field.
+
+When no namespace prefix is present, {project_name} defaults to the following lookup strategy:
+
+* If the `subject.id` value is a valid UUID, lookup up by {project_name} internal user ID.
+* Otherwise, attempt to lookup a user with the `subject.id` username.
+
+=== Namespace prefixes
+
+Use a namespace prefix to explicitly specify the lookup strategy:
+
+[cols="1,2,2",options="header"]
+|===
+|Prefix |Lookup |Example
+
+|`id:`
+|By {project_name} internal user ID (UUID)
+|`id:f81d4fae-7dec-11d0-a765-00a0c91e6bf6`
+
+|`username:`
+|By username
+|`username:alice`
+
+|`email:`
+|By email address
+|`email:alice@example.com`
+|===
+
+NOTE: The `email:` namespace cannot be used when the realm is configured to allow duplicate emails as the lookup would
+not be unique. Using the `email:` namespace with duplicate emails results in a `400 Bad Request` response.
+
+=== Client subject type
+
+When the `subject.type` is `client`, the `subject.id` must match the `client_id` of the client that the bearer token was
+issued for. If they do not match, the evaluation returns a `false` decision.
+
+== Error responses
+
+AuthZEN endpoints return standard HTTP error codes for invalid requests:
+
+[cols="1,3",options="header"]
+|===
+|Status Code |Condition
+
+|`400 Bad Request`
+|The request body is missing a required field (`subject`, `resource`, or `action`), contains an invalid `subject.type`
+value, uses an empty namespace prefix (e.g., `id:` with no value), or contains malformed JSON.
+
+|`401 Unauthorized`
+|The request does not include a valid bearer token in the `Authorization` header.
+|===
+
+== Request tracing
+
+As recommended by the AuthZEN specification, {project_name} propagates the `X-Request-ID` header from requests to responses.
+If a PEP includes an `X-Request-ID` header in its request, the same header and value will appear in the response.
+This applies to all response status codes, including error responses.
+
+[source,bash]
+----
+POST /realms/myrealm/authzen/access/v1/evaluation
+Authorization: Bearer <access-token>
+Content-Type: application/json
+X-Request-ID: req-abc-123
+
+{
+  "subject": { "type": "user", "id": "alice" },
+  "resource": { "type": "document", "id": "report" },
+  "action": { "name": "read" }
+}
+----
+
+The response includes the same header:
+
+[source]
+----
+HTTP/1.1 200 OK
+X-Request-ID: req-abc-123
+Content-Type: application/json
+
+{ "decision": true }
+----
+
+== Context and Properties
+
+Both the `resource.properties` and the top-level `context` maps are merged into the evaluation context available to
+{project_name}'s authorization policies. This allows policies to make decisions based on additional attributes beyond
+the resource, scope, and subject identity.
+
+For example, a policy could use the request context to enforce time-based or location-based access:
+
+[source,json]
+----
+{
+  "subject": { "type": "user", "id": "alice" },
+  "resource": {
+    "type": "document",
+    "id": "quarterly-report",
+    "properties": {
+      "classification": "confidential"
+    }
+  },
+  "action": { "name": "read" },
+  "context": {
+    "ip_address": "192.168.1.100"
+  }
+}
+----
+
+Subject properties specified in `subject.properties` are also merged into the subject's identity attributes for policy evaluation.
+
+</@tmpl.guide>

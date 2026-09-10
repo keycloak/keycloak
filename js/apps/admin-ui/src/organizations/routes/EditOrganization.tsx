@@ -7,6 +7,7 @@ export type OrganizationTab =
   | "settings"
   | "attributes"
   | "members"
+  | "groups"
   | "identityProviders"
   | "events";
 
@@ -19,11 +20,11 @@ export type EditOrganizationParams = {
 const DetailOrganization = lazy(() => import("../DetailOrganization"));
 
 export const EditOrganizationRoute: AppRouteObject = {
-  path: "/:realm/organizations/:id/:tab",
+  path: "/:realm/organizations/:id/:tab/*",
   element: <DetailOrganization />,
-  breadcrumb: (t) => t("organizationDetails"),
   handle: {
-    access: "manage-users",
+    access: "view-organizations",
+    breadcrumb: (t) => t("organizationDetails"),
   },
 };
 

@@ -118,11 +118,11 @@ public class LDAPCountQueryTest extends AbstractLDAPTest {
 
     @Test
     public void testFirstResultWithMultipleProviders() {
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().list(6, null), hasSize(4));
+        assertThat(managedRealm.admin().users().list(6, null), hasSize(4));
     }
 
     @Test
     public void testFirstResultWithMultipleProvidersMaxResultSet() {
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().list(6, 20), hasSize(4));
+        assertThat(managedRealm.admin().users().list(6, 20), hasSize(4));
     }
 }

@@ -29,4 +29,9 @@ public class OrganizationAttributeUpdater extends ServerResourceUpdater<Organiza
         this.rep.setRedirectUrl(redirectUrl);
         return this;
     }
+
+    public OrganizationAttributeUpdater setEnabled(boolean enabled) {
+        this.rep.setEnabled(enabled);
+        return this;
+    }
 }

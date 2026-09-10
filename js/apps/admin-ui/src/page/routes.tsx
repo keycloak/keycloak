@@ -11,27 +11,27 @@ const Page = lazy(() => import("./Page"));
 const PageListRoute: AppRouteObject = {
   path: "/:realm?/page-section/:providerId",
   element: <PageList />,
-  breadcrumb: (t) => t("page"),
   handle: {
     access: "view-realm",
+    breadcrumb: (t) => t("page"),
   },
 };
 
 const PageDetailRoute: AppRouteObject = {
   path: "/:realm/page-section/:providerId/:id",
   element: <Page />,
-  breadcrumb: (t) => t("details"),
   handle: {
     access: "view-realm",
+    breadcrumb: (t) => t("details"),
   },
 };
 
 const AddPageDetailRoute: AppRouteObject = {
   path: "/:realm/page-section/:providerId/add",
   element: <Page />,
-  breadcrumb: (t) => t("add"),
   handle: {
     access: "view-realm",
+    breadcrumb: (t) => t("add"),
   },
 };
 

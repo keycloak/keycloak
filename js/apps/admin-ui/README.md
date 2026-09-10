@@ -14,21 +14,22 @@ npm i @keycloak/keycloak-admin-ui
 
 ## Usage
 
-To use these pages you'll need to add `KeycloakProvider` in your component hierarchy to setup what client, realm and url to use.
+Wrap your app with `KeycloakProvider` from `@keycloak/keycloak-ui-shared` so the realm, client, and server URLs are available. Any subtree that calls `useAdminClient()` (or otherwise needs the Keycloak Admin Client) must also be wrapped with `AdminClientProvider` from this package, **inside** `KeycloakProvider`. `AdminClientProvider` initializes the admin client from the authenticated Keycloak instance and exposes it through `AdminClientContext`.
 
 ```jsx
 import { KeycloakProvider } from "@keycloak/keycloak-ui-shared";
+import { AdminClientProvider } from "@keycloak/keycloak-admin-ui";
 
 //...
 
-<KeycloakProvider environment={{
-      authServerUrl: "http://localhost:8080",
-      realm: "master",
-      clientId: "security-admin-console"
-  }}>
-  {/* rest of you application */}
+<KeycloakProvider environment={environment}>
+  <AdminClientProvider>
+    {/* components that use useAdminClient() */}
+  </AdminClientProvider>
 </KeycloakProvider>
 ```
+
+The `environment` object must include the admin console fields expected by this library (see `AdminEnvironment` in the package), not only `BaseEnvironment`.
 
 ### Translation
 
@@ -49,6 +50,16 @@ backend: {
 },
 ```
 to the `i18next` config object.
+
+## Playwright Test Environment
+
+The Playwright tests under `js/apps/admin-ui/test` accept these environment variables:
+
+- `KEYCLOAK_SERVER_URL` (default: `http://localhost:8080`)
+- `KEYCLOAK_ADMIN_USER` and `KEYCLOAK_ADMIN_PASSWORD` (default: `admin` / `admin`)
+- `KEYCLOAK_REQUIRE_OID4VCI=true` to fail OID4VCI tests when the server feature is missing instead of skipping them
+
+These test-only variables are different from server bootstrap variables such as `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD`.
 
 ## Building
 

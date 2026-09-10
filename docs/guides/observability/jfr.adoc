@@ -1,0 +1,147 @@
+<#import "/templates/guide.adoc" as tmpl>
+
+<@tmpl.guide
+title="Troubleshooting performance issues using Java Flight Recorder (JFR)"
+summary="Create Java Flight Recorder (JFR) recordings of a {project_name} server to diagnose performance issues"
+>
+
+== What is Java Flight Recorder
+
+Java Flight Recorder (JFR) is a standard monitoring tool for collecting diagnostic and profiling data about a running Java application. It is built into the JVM and designed to have a low performance impact.
+
+The most common way to run JFR for {project_name} is a fixed-time recording.
+This guide demonstrates creating a fixed-time flight recording using the `jcmd` tool.
+Collecting data continuously is outside the scope of this guide.
+
+[WARNING]
+====
+Some of the diagnostic data collected by Java Flight Recorder is security-sensitive, such as confidential environment variables, network information or messages from exceptions.
+
+Do not share it outside your trust boundary.
+
+Sanitizing it using the `jfr scrub` command or disabling the collection of certain types of data at the time of collection is outside the scope of this guide.
+====
+
+== Find the {project_name} server process
+
+The `jcmd` tool can use a PID or a main class to identify the target process:
+[source]
+----
+jcmd <PID|main-class> <diagnostic-command> ...
+----
+
+Running the `jcmd` command without any arguments will list all Java processes on the system with their PIDs and main classes:
+[source]
+----
+jcmd
+----
+
+Example output:
+[source]
+----
+897052 jdk.jcmd/sun.tools.jcmd.JCmd
+896224 io.quarkus.bootstrap.runner.QuarkusEntryPoint start ... #<1>
+----
+<1> Assuming {project_name} is the only Quarkus-based application running on the system, its PID is `896224`. It is also possible to use the main class `QuarkusEntryPoint` instead of the PID.
+
+Example: Running a `JFR.check` diagnostic command using the PID:
+[source]
+----
+jcmd 896224 JFR.check
+----
+
+Example: Running a `JFR.check` diagnostic command using the main class:
+[source]
+----
+jcmd QuarkusEntryPoint JFR.check
+----
+
+Example output:
+[source]
+----
+896224:
+No available recordings.
+
+Use jcmd 896224 JFR.start to start a recording.
+----
+
+[[create-a-fixed-time-recording]]
+== Create a fixed-time recording
+
+A fixed-time recording can be created by executing the `JFR.start` command with the `duration` parameter. After the requested interval elapses, the recording will be stopped and its data automatically dumped into a file.
+
+[source]
+----
+jcmd QuarkusEntryPoint JFR.start \
+  duration=2m \ #<1>
+  settings=profile \ #<2>
+  filename=recording.jfr #<3>
+----
+<1> Intended duration of the recording. A 2-minute recording is usually sufficient for diagnosing most performance issues.
+<2> Name of a JFR configuration file. For fixed-time recordings, we recommend `profile`, which has an overhead of about 2%. With the `profile` configuration, expect roughly 1-5 MB per minute under load.
+<3> The `filename` parameter is optional. If not provided, the name will be generated automatically based on PID and timestamp. If an absolute path is not provided, the file will be created in the current working directory of the target application.
+
+Use the `JFR.check` command shortly after to verify that the recording was started:
+[source]
+----
+jcmd QuarkusEntryPoint JFR.check
+----
+
+Example output:
+[source]
+----
+896224:
+Recording 1: name=1 duration=2m (running)
+----
+
+== View a recording
+
+Once the recording is dumped into a file, it can be viewed and manipulated using the standard `jfr` tool.
+
+Analyzing {project_name}'s behavior based on the recording is outside of scope for this guide.
+
+To print the content of a recording in a human-readable form, use the `jfr print` command:
+[source]
+----
+jfr print recording.jfr
+----
+
+To get a general overview of the content, use the `jfr summary` command:
+[source]
+----
+jfr summary recording.jfr
+----
+
+Example output:
+[source]
+----
+
+ Version: 2.1
+ Chunks: 1
+ Start: YYYY-MM-DD HH:mm:ss (UTC)
+ Duration: 120 s
+
+ Event Type                              Count  Size (bytes)
+=============================================================
+ jdk.NativeMethodSample                   5919         82597
+ jdk.ModuleExport                         2134         27601
+ jdk.ThreadPark                           2082         73000
+ jdk.JavaMonitorWait                       781         22715
+ jdk.BooleanFlag                           494         16124
+ jdk.ActiveSetting                         376         10893
+ jdk.Checkpoint                            168        136675
+ jdk.ModuleRequire                         160          1920
+ jdk.LongFlag                              137          4674
+ jdk.ThreadAllocationStatistics            122          1604
+ jdk.CPULoad                               120          2520
+ jdk.ClassLoadingStatistics                120          1560
+ jdk.CompilerStatistics                    120          3840
+ jdk.ExceptionStatistics                   120          1440
+ jdk.JavaThreadStatistics                  120          1560
+ ...
+----
+
+To display aggregated content of the recording in a tabular form, use the `jfr view` command.
+
+
+</@tmpl.guide>

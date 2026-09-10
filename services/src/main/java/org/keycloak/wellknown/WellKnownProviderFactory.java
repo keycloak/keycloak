@@ -44,4 +44,17 @@ public interface WellKnownProviderFactory extends ProviderFactory<WellKnownProvi
     default int getPriority() {
         return 1;
     }
+
+    /**
+     * Controls if the {@link WellKnownProvider} is available via server metadata endpoint.
+     * If this method returns true, then the provider will be available under {@code /.well-known/{alias}/realms/{realm}},
+     * where {@code {alias}} is the well-known alias returned by {@link #getAlias()}.
+     *
+     * Default implementation returns false.
+     *
+     * @return true if this provider may be exposed via ServerMetadataResource
+     */
+    default boolean isAvailableViaServerMetadata() {
+        return false;
+    }
 }

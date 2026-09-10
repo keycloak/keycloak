@@ -58,6 +58,7 @@ export { UserProfileFields } from "./user-profile/UserProfileFields";
 export {
   beerify,
   debeerify,
+  isBundleKey,
   isUserProfileError,
   label,
   setUserProfileServerError,
@@ -84,6 +85,7 @@ export type {
   Field,
   DetailField,
   LoaderFunction,
+  SignaledLoader,
 } from "./controls/table/KeycloakDataTable";
 export { PaginatingTableToolbar } from "./controls/table/PaginatingTableToolbar";
 export { TableToolbar } from "./controls/table/TableToolbar";

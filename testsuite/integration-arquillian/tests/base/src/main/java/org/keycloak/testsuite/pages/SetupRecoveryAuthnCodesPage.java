@@ -6,9 +6,7 @@ import java.util.Scanner;
 
 import org.keycloak.testsuite.util.UIUtils;
 
-import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -64,16 +62,8 @@ public class SetupRecoveryAuthnCodesPage extends LogoutSessionsPage {
     }
 
     @Override
-    public boolean isCurrent() {
-
-        // Check the backup code text box and label available
-        try {
-            driver.findElement(By.id("kc-recovery-codes-list"));
-            driver.findElement(By.id("saveRecoveryAuthnCodesBtn"));
-        } catch (NoSuchElementException nfe) {
-            return false;
-        }
-        return true;
+    public String getExpectedPageId() {
+        return "login-login-recovery-authn-code-config";
     }
 
 }

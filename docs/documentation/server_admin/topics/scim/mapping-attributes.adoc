@@ -1,0 +1,246 @@
+[id="scim-mapping-attributes_{context}"]
+
+[[_scim_mapping_attributes_]]
+= Mapping user attributes to SCIM schemas
+[role="_abstract"]
+
+{project_name} uses the User Profile configuration to define how user attributes are mapped to SCIM schema attributes.
+A set of core attributes are mapped by default, and additional attributes can be mapped by configuring user profile
+attributes with a SCIM schema attribute mapping.
+
+== Default attribute mappings
+
+The following attributes are automatically mapped to the SCIM core user schema (`urn:ietf:params:scim:schemas:core:2.0:User`)
+without any additional configuration:
+
+[cols="1,1",options="header"]
+|===
+| {project_name} Attribute | SCIM Attribute
+
+| `username`
+| `userName`
+
+| `email`
+| `emails`
+
+| `firstName`
+| `name.givenName`
+
+| `lastName`
+| `name.familyName`
+
+| `enabled`
+| `active`
+
+| `createdTimestamp`
+| `meta.created`
+
+| `locale`
+| `locale` (only when internationalization is enabled)
+|===
+
+== Adding custom attribute mappings
+
+To map additional user attributes to SCIM schema attributes, you need to create a user profile attribute and
+configure its SCIM schema attribute mapping, setting the value to the SCIM attribute path that the user profile
+attribute should be mapped to.
+
+=== Using the Admin Console
+
+.Procedure
+. Click *Realm settings* in the menu, then select the *User profile* tab.
+. Click *Create attribute*.
+. Enter the *Name* for the attribute (for example, `middleName`).
+. In the *SCIM* section, select or enter the *SCIM attribute* to map to (for example, `name.middleName`). Attributes
+  from the core User and Enterprise User schemas are available for selection. You can also enter custom values
+  for attributes from other schemas by typing the full URN-prefixed value (for example,
+  `urn:my:params:scim:schemas:extension:custom:1.0:User:memberOf`).
+  See <<_scim_managing_schema_extensions_,Managing schema extensions>> for more details on custom schemas.
+. Configure the attribute permissions as needed. At minimum, grant *admin* view access for the attribute
+  to appear in SCIM responses, and *admin* edit access for the attribute to be writable. See
+  <<Attribute permissions and SCIM>> for details.
+. Click *Save*.
+
+.Configuring a SCIM attribute mapping in User Profile
+image:images/scim-user-profile-mapping.png[alt="Configuring a SCIM attribute mapping"]
+
+== Attribute permissions and SCIM
+
+SCIM operates as an admin-level API and uses the same User Profile permission model as the Admin API. The
+permissions configured on a user profile attribute determine whether the attribute is visible and writable
+through SCIM.
+
+=== Visibility
+
+Custom attributes are only included in SCIM responses if they have admin *view* permissions. Attributes without
+any view roles configured are not exposed through SCIM - they will not appear in GET responses, schema discovery,
+or search results.
+
+=== Mutability
+
+Custom attributes are only writable through SCIM if they have admin *edit* permissions. If an attribute has
+admin view permissions but no edit permissions, it is treated as read-only:
+
+* *PUT requests* - read-only attribute values are silently ignored, as required by
+  https://datatracker.ietf.org/doc/html/rfc7644#section-3.5.1[RFC 7644, Section 3.5.1]. The response reflects
+  the actual stored value, not the value sent in the request.
+* *PATCH requests* - read-only attribute values are silently ignored. The attribute retains its existing value.
+
+=== Core SCIM attributes
+
+Core SCIM attributes such as `userName`, `displayName`, `name.givenName`, and `name.familyName` are always
+readable and writable through SCIM, regardless of User Profile permission settings. These attributes are governed
+by the SCIM protocol specification (https://datatracker.ietf.org/doc/html/rfc7643[RFC 7643]) and SCIM clients
+expect to be able to read and set them.
+
+== Mapping additional name attributes
+
+To support the full SCIM name attributes, you can map:
+
+[cols="1,1",options="header"]
+|===
+| User Profile Attribute Name | SCIM Attribute Value
+
+| `middleName`
+| `name.middleName`
+
+| `honorificPrefix`
+| `name.honorificPrefix`
+
+| `honorificSuffix`
+| `name.honorificSuffix`
+|===
+
+Once configured, creating a user with these attributes via SCIM works as expected:
+
+[source,bash]
+----
+curl -X POST <scheme>://<host>:<port>/realms/myrealm/scim/v2/Users \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+    "userName": "jdoe",
+    "name": {
+      "givenName": "John",
+      "middleName": "Michael",
+      "familyName": "Doe",
+      "honorificPrefix": "Mr.",
+      "honorificSuffix": "Jr."
+    }
+  }'
+----
+
+The `name.formatted` attribute is automatically generated from the name components and is read-only.
+
+== Mapping the externalId attribute
+
+To support the SCIM `externalId` attribute, which allows external systems to store their own identifier for a user:
+
+*   User Profile attribute name: `myExternalId` (or any name of your choice)
+*   SCIM attribute value: `externalId`
+
+Once configured, you can set the external ID when creating or updating users:
+
+[source,bash]
+----
+curl -X POST <scheme>://<host>:<port>/realms/myrealm/scim/v2/Users \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+    "userName": "jdoe",
+    "externalId": "ext-12345"
+  }'
+----
+
+== Mapping multivalued attributes
+
+When a user profile attribute is configured as multivalued, its values can be exposed through SCIM as an array.
+There are two representations, depending on how the SCIM attribute mapping is configured.
+
+=== Flat array
+
+Map a multivalued user profile attribute directly to a SCIM attribute (without a sub-attribute suffix).
+The values are represented as a JSON array of strings:
+
+[cols="1,1",options="header"]
+|===
+| User Profile Attribute Name | SCIM Attribute Value
+
+| `affiliation`
+| `urn:my:params:scim:schemas:extension:custom:1.0:User:affiliation`
+|===
+
+The user profile attribute must be configured as multivalued. The resulting SCIM representation is:
+
+[source,json]
+----
+{
+  "urn:my:params:scim:schemas:extension:custom:1.0:User": {
+    "affiliation": ["member", "faculty"]
+  }
+}
+----
+
+=== Complex object array
+
+Map a multivalued user profile attribute to a `.value` sub-attribute of a SCIM complex attribute.
+Each value is wrapped in an object with a `value` field, following the SCIM convention for multivalued
+complex attributes:
+
+[cols="1,1",options="header"]
+|===
+| User Profile Attribute Name | SCIM Attribute Value
+
+| `assurance`
+| `urn:my:params:scim:schemas:extension:custom:1.0:User:assurance.value`
+|===
+
+The user profile attribute must be configured as multivalued. The resulting SCIM representation is:
+
+[source,json]
+----
+{
+  "urn:my:params:scim:schemas:extension:custom:1.0:User": {
+    "assurance": [
+      {"value": "https://refeds.org/assurance/ID/unique"},
+      {"value": "https://refeds.org/assurance/IAP/low"}
+    ]
+  }
+}
+----
+
+NOTE: A multivalued `.value` sub-attribute cannot be combined with sibling sub-attributes under the same parent
+attribute. For example, you cannot map both `assurance.value` as multivalued and `assurance.type` as a sibling
+because the multivalued `.value` mapping produces an array of objects, which is incompatible with the single
+complex object expected when sibling sub-attributes are present.
+
+=== Filtering multivalued attributes
+
+You can filter users by multivalued attributes using standard SCIM filter operators. The filter matches
+if any of the attribute's values satisfies the condition.
+
+For flat array attributes:
+
+[source,bash]
+----
+curl "<scheme>://<host>:<port>/realms/myrealm/scim/v2/Users?filter=urn:my:params:scim:schemas:extension:custom:1.0:User:affiliation+eq+\"member\"" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+For complex object array attributes, filter on the `.value` sub-attribute:
+
+[source,bash]
+----
+curl "<scheme>://<host>:<port>/realms/myrealm/scim/v2/Users?filter=urn:my:params:scim:schemas:extension:custom:1.0:User:assurance.value+eq+\"https://refeds.org/assurance/ID/unique\"" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+== Schema discovery
+
+Any attribute configured with a SCIM attribute mapping is automatically reflected in the schema
+discovery endpoints (`/Schemas` and `/ResourceTypes`). For more details on schema discovery, including how to
+use extension schemas beyond the core User schema, see <<_scim_managing_schema_extensions_,Managing schema extensions>>.

@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
-import java.util.stream.Stream;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -53,7 +52,6 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.platform.Platform;
 import org.keycloak.protocol.ProtocolMapperSpi;
 import org.keycloak.protocol.oidc.mappers.DeployedScriptOIDCProtocolMapper;
 import org.keycloak.protocol.saml.mappers.DeployedScriptSAMLProtocolMapper;
@@ -79,6 +77,7 @@ import io.undertow.servlet.api.DefaultServletConfig;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
 import io.undertow.servlet.api.InstanceHandle;
+import org.apache.commons.io.FileUtils;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.core.ResteasyDeploymentImpl;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
@@ -322,24 +321,28 @@ public class KeycloakServer {
         }
 
         // we generate a dynamic jboss.server.data.dir and remove it at the end.
-        try {
-          File tempKeycloakFolder = Platform.getPlatform().getTmpDirectory();
-          File tmpDataDir = new File(tempKeycloakFolder, "/data");
-
-          if (tmpDataDir.mkdirs()) {
-            tmpDataDir.deleteOnExit();
-          } else try (Stream<Path> dir = Files.list(tmpDataDir.toPath())) {
-            if (dir.findAny().isPresent()) {    // Works well if directory is empty
-              throw new IOException("Could not create directory " + tmpDataDir);
+        return initTempDirectory("keycloak-data").toFile().getAbsolutePath();
+    }
+  
+    public static Path initTempDirectory(String name) {
+        String buildDir = System.getProperty("project.build.directory");
+        if (buildDir == null) {
+            try {
+                Path tempDirectory = Files.createTempDirectory(name);
+                tempDirectory.toFile().deleteOnExit();
+                return tempDirectory.toAbsolutePath();
+            } catch (IOException e) {
+                throw new RuntimeException("Could not create temporary directory", e);
             }
-          }
-
-          dataPath = tmpDataDir.getAbsolutePath();
-        } catch (IOException ioe){
-          throw new RuntimeException("Could not create temporary " + JBOSS_SERVER_DATA_DIR, ioe);
+        } else {
+            Path tempDirectory = Path.of(buildDir, name);
+            try {
+                FileUtils.deleteDirectory(tempDirectory.toFile());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return tempDirectory;
         }
-
-        return dataPath;
     }
 
     private KeycloakServerConfig config;
@@ -458,7 +461,7 @@ public class KeycloakServer {
 
             server.deploy(di);
 
-            sessionFactory = (DefaultKeycloakSessionFactory) KeycloakApplication.getSessionFactory();
+            sessionFactory = KeycloakApplication.getSessionFactory();
 
             registerScriptProviders(sessionFactory);
 

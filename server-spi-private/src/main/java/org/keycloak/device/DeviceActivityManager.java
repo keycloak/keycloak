@@ -48,7 +48,7 @@ public class DeviceActivityManager {
         }
 
         try {
-            return JsonSerialization.readValue(Base64.getDecoder().decode(deviceInfo), DeviceRepresentation.class);
+            return JsonSerialization.readValue(Base64.getMimeDecoder().decode(deviceInfo), DeviceRepresentation.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

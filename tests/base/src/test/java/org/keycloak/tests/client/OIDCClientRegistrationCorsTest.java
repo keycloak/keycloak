@@ -26,7 +26,7 @@ import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 
 import org.junit.jupiter.api.Assertions;
@@ -74,7 +74,7 @@ public class OIDCClientRegistrationCorsTest {
     public void testWithServiceAccount() throws IOException {
         String realmManagementId = realm.admin().clients().findByClientId("realm-management").get(0).getId();
         RoleRepresentation createClientRoleRep = realm.admin().clients().get(realmManagementId).roles().get("create-client").toRepresentation();
-        Response response = realm.admin().clients().create(ClientConfigBuilder.create().clientId("testWithServiceAccount").secret("secret").serviceAccountsEnabled(true).webOrigins("https://origin1").build());
+        Response response = realm.admin().clients().create(ClientBuilder.create().clientId("testWithServiceAccount").secret("secret").serviceAccountsEnabled(true).webOrigins("https://origin1").build());
         String clientUuid = CreatedResponseUtil.getCreatedId(response);
         String serviceAccountUuid = realm.admin().clients().get(clientUuid).getServiceAccountUser().getId();
         realm.admin().users().get(serviceAccountUuid).roles().clientLevel(realmManagementId).add(List.of(createClientRoleRep));
@@ -89,12 +89,12 @@ public class OIDCClientRegistrationCorsTest {
     public void testAnonymous() throws IOException {
         List<ComponentRepresentation> components = realm.admin().components().query(null, ClientRegistrationPolicy.class.getCanonicalName()).stream().filter(c -> c.getProviderId().equals(RegistrationWebOriginsPolicyFactory.PROVIDER_ID)).toList();
         for (ComponentRepresentation component : components) {
-            realm.updateComponentWithCleanup(component.getId(), c -> c.getConfig().put(RegistrationWebOriginsPolicyFactory.WEB_ORIGINS, List.of("https://origin3")));
+            realm.updateComponent(component.getId(), c -> c.getConfig().put(RegistrationWebOriginsPolicyFactory.WEB_ORIGINS, List.of("https://origin3")));
         }
 
         components = realm.admin().components().query(null, ClientRegistrationPolicy.class.getCanonicalName()).stream().filter(c -> c.getProviderId().equals(TrustedHostClientRegistrationPolicyFactory.PROVIDER_ID)).toList();
         for (ComponentRepresentation component : components) {
-            realm.updateComponentWithCleanup(component.getId(), c -> {
+            realm.updateComponent(component.getId(), c -> {
                 c.getConfig().put(TrustedHostClientRegistrationPolicyFactory.TRUSTED_HOSTS, List.of("127.0.0.1"));
             });
         }
@@ -106,7 +106,7 @@ public class OIDCClientRegistrationCorsTest {
     public void testWithClientPolicy() throws IOException {
         List<ComponentRepresentation> components = realm.admin().components().query(null, ClientRegistrationPolicy.class.getCanonicalName()).stream().filter(c -> c.getProviderId().equals(RegistrationWebOriginsPolicyFactory.PROVIDER_ID)).toList();
         for (ComponentRepresentation component : components) {
-            realm.updateComponentWithCleanup(component.getId(), c -> c.getConfig().put(RegistrationWebOriginsPolicyFactory.WEB_ORIGINS, List.of("https://origin3")));
+            realm.updateComponent(component.getId(), c -> c.getConfig().put(RegistrationWebOriginsPolicyFactory.WEB_ORIGINS, List.of("https://origin3")));
         }
 
         OIDCClientRepresentation client = createClient(createInitialAccessToken(), "testWithClientPolicy1", "https://origin3", true);

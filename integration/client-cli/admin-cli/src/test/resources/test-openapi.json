@@ -1,0 +1,84 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Test API",
+    "version": "1.0.0-test"
+  },
+  "paths": {
+    "/admin/api/{realmName}/things/{version}": {
+      "get": {
+        "summary": "List all things",
+        "operationId": "getThings",
+        "parameters": [
+          { "name": "fields", "in": "query", "description": "Fields to include", "explode": false,
+            "schema": { "type": "array", "items": { "type": "string" } } },
+          { "name": "q", "in": "query", "description": "Filter expression",
+            "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "description": "Max results",
+            "schema": { "type": "integer" } },
+          { "name": "offset", "in": "query", "description": "Start index",
+            "schema": { "type": "integer" } },
+          { "name": "sortBy", "in": "query", "description": "Sort field",
+            "schema": { "$ref": "#/components/schemas/SortField" } },
+          { "name": "sortOrder", "in": "query", "description": "Sort direction",
+            "schema": { "$ref": "#/components/schemas/SortOrder" } }
+        ]
+      },
+      "post": {
+        "summary": "Create a thing",
+        "operationId": "createThing",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "priority": {
+                    "$ref": "#/components/schemas/Priority",
+                    "description": "Priority level"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        { "name": "realmName", "in": "path" },
+        { "name": "version", "in": "path" }
+      ]
+    },
+    "/admin/api/{realmName}/things/{version}/{id}": {
+      "get": {
+        "operationId": "getThing"
+      },
+      "patch": {
+        "operationId": "patchThing"
+      },
+      "delete": {
+        "operationId": "deleteThing"
+      },
+      "parameters": [
+        { "name": "realmName", "in": "path" },
+        { "name": "version", "in": "path" },
+        { "name": "id", "in": "path" }
+      ]
+    }
+  },
+  "components": {
+    "schemas": {
+      "Priority": {
+        "type": "string",
+        "enum": ["low", "medium", "high"]
+      },
+      "SortField": {
+        "type": "string",
+        "enum": ["name", "priority"]
+      },
+      "SortOrder": {
+        "type": "string",
+        "enum": ["asc", "desc"]
+      }
+    }
+  }
+}

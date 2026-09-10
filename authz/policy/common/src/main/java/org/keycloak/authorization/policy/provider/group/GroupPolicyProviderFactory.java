@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.BadRequestException;
+
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
@@ -197,7 +199,14 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
         GroupProvider groups = session.groups();
 
         if (definition.getId() != null) {
-            return realm.getGroupById(definition.getId());
+            GroupModel group = realm.getGroupById(definition.getId());
+
+            // Validate that only REALM groups can be used in authorization policies
+            if (group != null && GroupModel.Type.ORGANIZATION.equals(group.getType())) {
+                throw new BadRequestException("Organization groups cannot be used. Only realm groups are allowed.");
+            }
+
+            return group;
         }
 
         GroupModel group = null;

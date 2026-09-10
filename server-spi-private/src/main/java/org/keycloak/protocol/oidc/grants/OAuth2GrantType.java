@@ -38,6 +38,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.provider.Provider;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.cors.Cors;
 
 /**
@@ -63,12 +65,44 @@ public interface OAuth2GrantType extends Provider {
     }
 
     /**
+     * Name of the "token" parameters, which this grant type supports. As 'token' parameter is considered a parameter containing possibly long
+     * token (for example big JWT or SAML assertion) with unbounded data (For example possibly big amount of roles inside JWT).
+     * Example of such parameter is for example 'subject_token' parameter case of token exchange grant.
+     *
+     * @return set of strings with the "token" parameters supported by this grant type
+     */
+    Set<String> getTokenParameterNames();
+
+    /**
+     * Pre-process client policies for the given grant
+     */
+    default void preProcess(KeycloakSession session, MultivaluedMap<String, String> formParams) throws ClientPolicyException {
+        // do nothing
+    }
+
+    /**
      * Processes grant request.
      * @param context grant request context
      *
      * @return token response
      */
     Response process(Context context);
+
+    /**
+     * Check if the token issued from this grant type is allowed for the current request.
+     * This allows grant types to restrict token usage to specific endpoints or contexts.
+     * The default implementation returns {@code true}, meaning tokens are allowed at all endpoints.
+     * Grant types that need to restrict token usage (e.g., pre-authorized code tokens that should
+     * only be accepted at the credential endpoint) should override this method to implement
+     * specific endpoint restrictions.
+     *
+     * @param session the Keycloak session
+     * @param token   the access token
+     * @return true if the token is allowed for the current request, false otherwise
+     */
+    default boolean isTokenAllowed(KeycloakSession session, AccessToken token) {
+        return true;
+    }
 
     public static class Context {
         protected KeycloakSession session;

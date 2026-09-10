@@ -24,9 +24,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
@@ -130,17 +130,13 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
 
 
     protected List<String> getTrustedHosts() {
-        List<String> trustedHostsConfig = componentModel.getConfig().getList(TrustedHostClientRegistrationPolicyFactory.TRUSTED_HOSTS);
-        return trustedHostsConfig.stream().filter((String hostname) -> {
-
-            return !hostname.startsWith("*.");
-
-        }).collect(Collectors.toList());
+        List<String> trustedHostsConfig = componentModel.getConfig().getOrDefault(TrustedHostClientRegistrationPolicyFactory.TRUSTED_HOSTS, Collections.emptyList());
+        return trustedHostsConfig.stream().filter((String hostname) -> !hostname.startsWith("*.")).toList();
     }
 
 
     protected List<String> getTrustedDomains() {
-        return componentModel.getConfig().getList(TrustedHostClientRegistrationPolicyFactory.TRUSTED_HOSTS);
+        return componentModel.getConfig().getOrDefault(TrustedHostClientRegistrationPolicyFactory.TRUSTED_HOSTS, Collections.emptyList());
     }
 
     protected String verifyHostInTrustedHosts(String hostAddress, List<String> trustedHosts) {

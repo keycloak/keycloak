@@ -85,7 +85,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
 
         if (authSession.getAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME) != null) {
-            return sendEmailAlreadyVerified(session, event, user);
+            return sendLinkConfirmedAlready(session, event, user, token);
         }
 
         AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
@@ -96,7 +96,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
             AuthenticationSessionModel origAuthSession = asm.getAuthenticationSessionByIdAndClient(realm,
                     compoundId.getRootSessionId(), originalClient, compoundId.getTabId());
             if (origAuthSession == null || origAuthSession.getAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME) != null) {
-                return sendEmailAlreadyVerified(session, event, user);
+                return sendLinkConfirmedAlready(session, event, user, token);
             }
 
             token.setOriginalCompoundAuthenticationSessionId(token.getCompoundAuthenticationSessionId());
@@ -115,8 +115,6 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
                     .createInfoPage();
         }
 
-        // verify user email as we know it is valid as this entry point would never have gotten here.
-        user.setEmailVerified(true);
         event.success();
 
         if (token.getOriginalCompoundAuthenticationSessionId() != null) {
@@ -134,6 +132,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
+                    .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_SUCCESS_HEADER)
                     .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, token.getIdentityProviderAlias(), token.getIdentityProviderUsername())
                     .setAttribute(Constants.SKIP_LINK, true)
                     .createInfoPage();
@@ -148,16 +147,16 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         int singleObjectLifespan = realm.getActionTokenGeneratedByUserLifespan();
         String userId = user.getId();
         String idpAlias = token.getIdentityProviderAlias();
-        session.singleUseObjects().put(getUserVerifiedSingleObjectKey(userId, idpAlias), singleObjectLifespan, Map.of());
+        session.singleUseObjects().put(getUserVerifiedSingleObjectKey(userId, idpAlias, token.getExternalId()), singleObjectLifespan, Map.of());
     }
 
-    public static boolean runIfUserVerified(KeycloakSession session, UserModel user, IdentityProviderModel broker, Runnable runnable) {
+    public static boolean runIfUserVerified(KeycloakSession session, UserModel user, IdentityProviderModel broker, String externalId, Runnable runnable) {
         if (user == null) {
             return false;
         }
 
         SingleUseObjectProvider singleObjects = session.singleUseObjects();
-        String singleObjectKey = getUserVerifiedSingleObjectKey(user.getId(), broker.getAlias());
+        String singleObjectKey = getUserVerifiedSingleObjectKey(user.getId(), broker.getAlias(), externalId);
         boolean isUserVerified = singleObjects.remove(singleObjectKey) != null;
 
         if (isUserVerified) {
@@ -167,15 +166,16 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         return isUserVerified;
     }
 
-    private static String getUserVerifiedSingleObjectKey(String userId, String idpAlias) {
-        return "kc.brokering.user.verified." + userId  + "." + idpAlias;
+    private static String getUserVerifiedSingleObjectKey(String userId, String idpAlias, String externalId) {
+        return "kc.brokering.user.verified." + userId  + "." + idpAlias + "." + externalId;
     }
 
-    private Response sendEmailAlreadyVerified(KeycloakSession session, EventBuilder event, UserModel user) {
-        event.user(user).error(Errors.EMAIL_ALREADY_VERIFIED);
+    private Response sendLinkConfirmedAlready(KeycloakSession session, EventBuilder event, UserModel user, IdpVerifyAccountLinkActionToken token) {
+        event.user(user).error(Errors.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY);
         return session.getProvider(LoginFormsProvider.class)
                 .setAuthenticationSession(session.getContext().getAuthenticationSession())
-                .setInfo(Messages.EMAIL_VERIFIED_ALREADY, user.getEmail())
+                .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY_HEADER)
+                .setInfo(Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY, token.getIdentityProviderAlias(), token.getIdentityProviderUsername())
                 .createInfoPage();
     }
 }

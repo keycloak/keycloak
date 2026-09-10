@@ -209,19 +209,32 @@ public class SdJwtVP {
         return issuerSignedJWT.getCnfClaim().orElse(null);
     }
 
+    /**
+     * Create new Sd-JWT presentation from this Sd-JWT
+     *
+     * @param disclosureDigests Disclosure digests (hashes) of the claims to disclose.
+     * @param discloseAllClaims When the parameter is true, then disclosureDigests parameter is ignored and everything is presented. When false, then only claims specified
+     *                         by disclosureDigests are presented
+     * @param keyBindingClaims Key binding claims. When omitted, created presentation may not contain key-binding
+     * @param holdSignatureSignerContext Useful for signing the key-binding JWT
+     * @return String with new Sd-JWT presentation with added key-binding and selected disclosed claims
+     */
     public String present(List<String> disclosureDigests,
+                          boolean discloseAllClaims,
                           ObjectNode keyBindingClaims,
                           SignatureSignerContext holdSignatureSignerContext) {
         StringBuilder sb = new StringBuilder();
-        if (disclosureDigests == null || disclosureDigests.isEmpty()) {
+        if (discloseAllClaims) {
             // disclose everything
             sb.append(sdJwtVpString);
         } else {
             sb.append(issuerSignedJWT.getJws());
             sb.append(SDJWT_DELIMITER);
-            for (String disclosureDigest : disclosureDigests) {
-                sb.append(disclosures.get(disclosureDigest));
-                sb.append(SDJWT_DELIMITER);
+            if (disclosureDigests != null) {
+                for (String disclosureDigest : disclosureDigests) {
+                    sb.append(disclosures.get(disclosureDigest));
+                    sb.append(SDJWT_DELIMITER);
+                }
             }
         }
         String unboundPresentation = sb.toString();
@@ -236,6 +249,42 @@ public class SdJwtVP {
                 .build();
         sb.append(keyBindingJWT.getJws());
         return sb.toString();
+    }
+
+
+    /**
+     * Create new Sd-JWT presentation from this Sd-JWT. It works same like {@link #present(List, boolean, ObjectNode, SignatureSignerContext)} but it allows
+     * to specify the names of the claims to present (EG. given_name, family_name) instead of specifying disclosureDigests
+     *
+     * @param claimsToDisclose Names of the claims to disclose (EG. given_name, family_name)
+     * @param discloseAllClaims Used in case that claimsToDisclose is empty or null. In case this is true, all the claims from this SdJWT will be disclosed.
+     *                          If it is false, then only claims specified by claimsToDisclose parameter would be disclosed
+     * @param keyBindingClaims Key binding claims. When omitted, created presentation may not contain key-binding
+     * @param holdSignatureSignerContext Useful for signing the key-binding JWT
+     * @return String with new Sd-JWT presentation with added key-binding and selected disclosed claims
+     */
+    public String presentWithSpecifiedClaims(List<String> claimsToDisclose,
+                                             boolean discloseAllClaims,
+                                             ObjectNode keyBindingClaims,
+                                             SignatureSignerContext holdSignatureSignerContext) {
+        if (discloseAllClaims) {
+            return present(null, true, keyBindingClaims, holdSignatureSignerContext);
+        } else {
+            List<String> digests = getClaims().entrySet().stream()
+                    .filter(entry -> {
+                        ArrayNode node = entry.getValue();
+                        if (node.size() >= 2) {
+                            String claimName = node.get(1).asText();
+                            return (claimsToDisclose.contains(claimName));
+                        }
+                        return false;
+                    })
+                    .map(Map.Entry::getKey)
+                    .sorted()
+                    .collect(Collectors.toList());
+
+            return present(digests, false, keyBindingClaims, holdSignatureSignerContext);
+        }
     }
 
     /**

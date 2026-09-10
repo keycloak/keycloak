@@ -26,9 +26,9 @@ import java.util.stream.Collectors;
 
 import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
-import org.keycloak.operator.crds.v2alpha1.CRDUtils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2beta1.CRDUtils;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.update.UpdateLogic;
 import org.keycloak.operator.update.UpdateType;
 

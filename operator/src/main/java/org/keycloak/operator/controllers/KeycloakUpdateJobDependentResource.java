@@ -31,10 +31,10 @@ import jakarta.enterprise.context.ApplicationScoped;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.CRDUtils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
+import org.keycloak.operator.crds.v2beta1.CRDUtils;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.UpdateSpec;
 
 import io.fabric8.kubernetes.api.model.ContainerFluent;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -49,11 +49,10 @@ import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.JobSpecFluent;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 
 @ApplicationScoped
-public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentResource<Job, Keycloak> {
+public class KeycloakUpdateJobDependentResource extends VersionTolerantCRUDKubernetesDependentResource<Job, Keycloak> {
 
     // shared volume configuration
     private static final String WORK_DIR_VOLUME_NAME = "keycloak-update-job-temporary-workdir"; // unlikely to conflict

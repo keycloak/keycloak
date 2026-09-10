@@ -76,7 +76,9 @@ export default function UserFederationSection() {
         <DropdownItem
           key={p.id}
           onClick={() =>
-            navigate(toNewCustomUserFederation({ realm, providerId: p.id! }))
+            void navigate(
+              toNewCustomUserFederation({ realm, providerId: p.id! }),
+            )
           }
         >
           {p.id.toUpperCase() == "LDAP"
@@ -210,7 +212,7 @@ export default function UserFederationSection() {
                 <ClickableCard
                   key={p.id}
                   onClick={() =>
-                    navigate(
+                    void navigate(
                       toNewCustomUserFederation({ realm, providerId: p.id! }),
                     )
                   }

@@ -29,6 +29,7 @@ import org.keycloak.util.JsonSerialization;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.jboss.logging.Logger;
 
 /**
  * See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-proof-types
@@ -37,6 +38,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProofTypesSupported {
+
+    private static final Logger LOGGER = Logger.getLogger(ProofTypesSupported.class);
 
     protected Map<String, SupportedProofTypeData> supportedProofTypes = new HashMap<>();
 
@@ -51,6 +54,27 @@ public class ProofTypesSupported {
             proofTypesSupported.getSupportedProofTypes().put(type, supportedProofTypeData);
         });
         return proofTypesSupported;
+    }
+
+    /**
+     * Returns a new {@link ProofTypesSupported} instance that only contains the given proof types.
+     * Types that are not present in this instance are ignored.
+     */
+    public ProofTypesSupported filterByTypes(List<String> types) {
+        ProofTypesSupported filtered = new ProofTypesSupported();
+        if (types == null || types.isEmpty() || supportedProofTypes == null || supportedProofTypes.isEmpty()) {
+            return filtered;
+        }
+        for (String type : types) {
+            SupportedProofTypeData data = supportedProofTypes.get(type);
+            if (data != null) {
+                filtered.supportedProofTypes.put(type, data);
+            } else {
+                LOGGER.warnf("Ignoring unknown proof type '%s' in credential configuration. Supported types are: %s",
+                        type, supportedProofTypes.keySet());
+            }
+        }
+        return filtered;
     }
 
     public static ProofTypesSupported fromJsonString(String jsonString) {

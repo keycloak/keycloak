@@ -1,14 +1,18 @@
 package org.keycloak.authorization.policy.provider.js;
 
 import org.keycloak.Config;
+import org.keycloak.Config.Scope;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.ScriptModel;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.scripting.EvaluatableScriptAdapter;
@@ -17,7 +21,7 @@ import org.keycloak.scripting.ScriptingProvider;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRepresentation> {
+public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRepresentation>, EnvironmentDependentProviderFactory {
 
     private final JSPolicyProvider provider = new JSPolicyProvider(this::getEvaluatableScript);
     private ScriptCache scriptCache;
@@ -128,5 +132,10 @@ public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRe
         if (!authorization.getKeycloakSession().getAttributeOrDefault("ALLOW_CREATE_POLICY", false) && !isDeployed()) {
             throw new RuntimeException("Script upload is disabled");
         }
+    }
+
+    @Override
+    public boolean isSupported(Scope config) {
+        return Profile.isFeatureEnabled(Feature.SCRIPTS);
     }
 }

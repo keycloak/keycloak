@@ -15,8 +15,14 @@ public @interface InjectUser {
 
     Class<? extends UserConfig> config() default DefaultUserConfig.class;
 
+    /**
+     * Controls the lifecycle of the resource
+     */
     LifeCycle lifecycle() default LifeCycle.CLASS;
 
+    /**
+     * A ref must be set if a test requires multiple instances
+     */
     String ref() default "";
 
     String realmRef() default "";

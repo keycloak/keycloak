@@ -1,0 +1,120 @@
+<#import "/templates/guide.adoc" as tmpl>
+
+<@tmpl.guide
+title="Protocol Mappers"
+summary="Discover all built-in protocol mappers and how to use these to define token claims and assertion attributes.">
+
+Protocol mappers provide a flexible way to define claims used in OAuth 2.0 tokens and endpoints, and attributes in SAML 2.0 assertions. For example adding user attributes or role mappings.
+
+This page includes a list of all built-in protocol mappers, but {project_name} also supports defining custom protocol mappers through the `ProtocolMapper` SPI.
+
+Protocol mappers can be created and managed via the {project_name} REST API using the
+link:https://www.keycloak.org/docs-api/latest/rest-api/index.html#_post_adminrealmsrealmclient_scopesclient_scope_idprotocol_mappersmodels[create protocol mapper] endpoint.
+When creating a `ProtocolMapperRepresentation`, the `config` field is a key-value map whose available entries
+depend on the specific mapper type. This page serves as a reference for the expected configuration options
+available in `ProtocolMapperRepresentation.config` for each `ProtocolMapper` implementation.
+
+For example, to create a protocol mapper that maps a user attribute into an OIDC token claim, you would send a `ProtocolMapperRepresentation` using the following JSON:
+
+[source,json]
+----
+{
+  "name": "my-user-attribute-mapper",
+  "protocol": "openid-connect",
+  "protocolMapper": "oidc-usermodel-attribute-mapper",
+  "config": {
+    "user.attribute": "phone_number",
+    "claim.name": "phone",
+    "jsonType.label": "String"
+  }
+}
+----
+
+The `protocolMapper` field corresponds to the "ID" listed in the tables below, and the `config` entries are described in each mapper's configuration table.
+
+The same mapper can be created programmatically using the {project_name} Java admin client:
+
+[source,java]
+----
+ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
+mapper.setName("my-user-attribute-mapper");
+mapper.setProtocol("openid-connect");
+mapper.setProtocolMapper("oidc-usermodel-attribute-mapper");
+mapper.setConfig(Map.of(
+        "user.attribute", "phone_number",
+        "claim.name", "phone",
+        "jsonType.label", "String"
+));
+
+Keycloak.getInstance(...)
+        .realm("my-realm")
+        .clientScopes()
+        .get("my-client-scope-id")
+        .getProtocolMappers()
+        .createMapper(mapper);
+----
+
+[discrete]
+== Overview
+
+The below table is an index of all available `ProtocolMapper` implementations provided by {project_name},
+grouped by the associated protocol.
+
+
+[cols="1,2",options="header"]
+|===
+|ID |Description
+<#list ctx.protocolMappers.getMappersByProtocol(["openid-connect", "oid4vc", "saml", "docker-v2"]) as protocol, categoryMap>
+
+2+a|**${protocol}**
+<#list categoryMap as category, mapperList>
+<#list mapperList as mapper>
+|<<${mapper.id()},${mapper.id()}>>
+|${(mapper.helpText())!"_No description available._"}
+</#list>
+</#list>
+</#list>
+
+|===
+
+<#assign mappers = ctx.protocolMappers.getMappersByProtocol(["openid-connect", "oid4vc", "saml", "docker-v2"]) />
+<#list mappers as protocol, categoryMap>
+
+== ${protocol}
+
+The following section contains all `ProtocolMapper` implementations associated with the ${protocol} protocol. For each
+implementation we provide the "ID" of the `ProtocolMapper` and a table describing the supported configuration properties.
+
+<#list categoryMap as category, mapperList>
+<#list mapperList as mapper>
+
+[#${mapper.id()}]
+=== ${mapper.displayType()}
+
+${(mapper.helpText())!"_No description available._"}
+
+*ID*: `${mapper.id()}`
+
+<#if mapper.configProperties()?has_content>
+[cols="1,1,1,1,2",options="header"]
+|===
+|Name |Property |Type |Default |Description
+
+<#list mapper.configProperties() as prop>
+<#if prop.getName()??>
+|${ctx.protocolMappers.resolveLabel(prop.getLabel()!prop.getName())}
+|`${prop.getName()}`
+|`${prop.getType()!"String"}`
+|<#if prop.getDefaultValue()??>`${prop.getDefaultValue()?string}`<#else>_None_</#if>
+|${ctx.protocolMappers.resolveTooltip((prop.getHelpText())!"")}
+
+</#if>
+</#list>
+|===
+</#if>
+
+</#list>
+</#list>
+</#list>
+
+</@tmpl.guide>

@@ -54,7 +54,7 @@ public class OrganizationsResource {
     public Response getOrganizations() {
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
         return Cors.builder().auth()
-                .allowedOrigins(auth.getToken())
+                .checkAllowedOrigins(auth.getToken())
                 .add(Response.ok(session.getProvider(OrganizationProvider.class)
                         .getByMember(user)
                         .map(this::toRepresentation))

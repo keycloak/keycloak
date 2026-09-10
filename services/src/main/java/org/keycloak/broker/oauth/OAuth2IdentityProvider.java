@@ -31,7 +31,6 @@ import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.TokenExchangeContext;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -96,13 +95,6 @@ public class OAuth2IdentityProvider extends AbstractOAuth2IdentityProvider<OAuth
         return identity;
     }
 
-    @Override
-    protected BrokeredIdentityContext exchangeExternalTokenV2Impl(TokenExchangeContext tokenExchangeContext) {
-        // Supporting only introspection-endpoint validation for now
-        validateExternalTokenWithIntrospectionEndpoint(tokenExchangeContext);
-
-        return exchangeExternalUserInfoValidationOnly(tokenExchangeContext.getEvent(), tokenExchangeContext.getFormParams());
-    }
 
     private JsonNode fetchUserProfile(String accessToken) {
         String userInfoUrl = getConfig().getUserInfoUrl();

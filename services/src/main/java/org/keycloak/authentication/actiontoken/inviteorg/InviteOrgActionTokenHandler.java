@@ -42,6 +42,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.InvitationManager;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -77,6 +78,11 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
     @Override
     public Response preHandleToken(InviteOrgActionToken token, ActionTokenContext<InviteOrgActionToken> tokenContext) {
         KeycloakSession session = tokenContext.getSession();
+
+        if (!Organizations.isEnabled(session)) {
+            return disabledOrganizationResponse(tokenContext, token);
+        }
+
         OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
         OrganizationModel organization = orgProvider.getById(token.getOrgId());
 
@@ -84,14 +90,27 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
             return invalidOrganizationResponse(tokenContext, token);
         }
 
-        session.getContext().setOrganization(organization);
+        if (!organization.isEnabled()) {
+            return disabledOrganizationResponse(tokenContext, token);
+        }
 
         InvitationManager invitationManager = orgProvider.getInvitationManager();
         OrganizationInvitationModel invitation = invitationManager.getById(token.getId());
+        AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
 
         if (invitation == null || invitation.isExpired()) {
-            return invalidTokenResponse(tokenContext, token);
+            String orgId = authSession == null ? null : authSession.getAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+
+            if (orgId == null || !orgId.equals(token.getOrgId())) {
+                return invalidTokenResponse(tokenContext, token);
+            }
         }
+
+        if (authSession != null) {
+            authSession.setAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
+        }
+
+        session.getContext().setOrganization(organization);
 
         return super.preHandleToken(token, tokenContext);
     }
@@ -100,16 +119,27 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
     public Response handleToken(InviteOrgActionToken token, ActionTokenContext<InviteOrgActionToken> tokenContext) {
         UserModel user = tokenContext.getAuthenticationSession().getAuthenticatedUser();
         KeycloakSession session = tokenContext.getSession();
+
+        if (!Organizations.isEnabled(session)) {
+            return disabledOrganizationResponse(tokenContext, token);
+        }
+
         OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
         EventBuilder event = tokenContext.getEvent();
 
-        event.event(EventType.INVITE_ORG).detail(Details.USERNAME, user.getUsername());
+        event.event(EventType.INVITE_ORG)
+                .detail(Details.USERNAME, user.getUsername())
+                .detail(Details.ORG_ID, token.getOrgId());
 
         OrganizationModel organization = orgProvider.getById(token.getOrgId());
 
         if (organization == null) {
             return invalidOrganizationResponse(tokenContext, token);
+        }
+
+        if (!organization.isEnabled()) {
+            return disabledOrganizationResponse(tokenContext, token);
         }
 
         if (organization.isMember(user)) {
@@ -173,6 +203,7 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
                 .detail(Details.ORG_ID, token.getOrgId())
                 .error(Errors.INVALID_TOKEN);
         return session.getProvider(LoginFormsProvider.class)
+                .setStatus(Status.BAD_REQUEST)
                 .setAuthenticationSession(authSession)
                 .setAttribute("messageHeader", Messages.EXPIRED_ACTION)
                 .setInfo(Messages.STALE_INVITE_ORG_LINK)
@@ -189,9 +220,27 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
                 .detail(Details.ORG_ID, token.getOrgId())
                 .error(Errors.ORG_NOT_FOUND);
         return session.getProvider(LoginFormsProvider.class)
+                .setStatus(Status.BAD_REQUEST)
                 .setAuthenticationSession(authSession)
                 .setAttribute("messageHeader", Messages.EXPIRED_ACTION)
                 .setInfo(Messages.ORG_NOT_FOUND, token.getOrgId())
+                .createInfoPage();
+    }
+
+    private Response disabledOrganizationResponse(ActionTokenContext<InviteOrgActionToken> tokenContext, InviteOrgActionToken token) {
+        EventBuilder event = tokenContext.getEvent();
+        KeycloakSession session = tokenContext.getSession();
+        AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
+
+        event.detail(Details.TOKEN_ID, token.getId())
+                .detail(Details.EMAIL, token.getEmail())
+                .detail(Details.ORG_ID, token.getOrgId())
+                .error(Errors.ORG_DISABLED);
+        return session.getProvider(LoginFormsProvider.class)
+                .setStatus(Status.BAD_REQUEST)
+                .setAuthenticationSession(authSession)
+                .setAttribute("messageHeader", Messages.STALE_INVITE_ORG_LINK)
+                .setInfo(Messages.ORG_DISABLED)
                 .createInfoPage();
     }
 
@@ -205,6 +254,7 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
                 .detail(Details.ORG_ID, token.getOrgId())
                 .error(Errors.USER_ORG_MEMBER_ALREADY);
         return session.getProvider(LoginFormsProvider.class)
+                .setStatus(Status.BAD_REQUEST)
                 .setAuthenticationSession(authSession)
                 .setAttribute("messageHeader", Messages.EXPIRED_ACTION)
                 .setInfo(Messages.ORG_MEMBER_ALREADY, user.getUsername(), organization.getName())

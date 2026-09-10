@@ -44,6 +44,8 @@ public class AdvancedMessageFormatterMethod implements TemplateMethodModelEx {
             if (key.startsWith("${") && key.endsWith("}")) {
                 key = key.substring(2, key.length() - 1);
                 return new MessageFormat(messages.getProperty(key, key), locale).format(list.subList(1, list.size()).toArray());
+            } else if (list.size() > 1) {
+                return new MessageFormat(key, locale).format(list.subList(1, list.size()).toArray());
             } else {
                 return key;
             }

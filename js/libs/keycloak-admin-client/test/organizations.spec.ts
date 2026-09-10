@@ -57,4 +57,21 @@ describe("Organizations", () => {
     expect(allOrganizations).to.be.ok;
     expect(allOrganizations).to.be.empty;
   });
+
+  it("crud a group for organizations", async () => {
+    const org = await kcAdminClient.organizations.create({
+      name: "orgG",
+      enabled: true,
+      domains: [{ name: "orgg.com" }],
+    });
+
+    const group = await kcAdminClient.organizations.groups(org.id).create({
+      name: "cool-group",
+    });
+    expect(group.id).to.be.ok;
+
+    await kcAdminClient.organizations.groups(org.id).del({
+      id: group.id!,
+    });
+  });
 });

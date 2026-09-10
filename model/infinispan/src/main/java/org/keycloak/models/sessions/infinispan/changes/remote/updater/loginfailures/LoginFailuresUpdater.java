@@ -150,6 +150,22 @@ public class LoginFailuresUpdater extends BaseUpdater<LoginFailureKey, LoginFail
     }
 
     @Override
+    public int getNumSecondaryAuthFailures() {
+        return getValue().getNumSecondaryAuthFailures();
+    }
+
+    @Override
+    public void incrementSecondaryAuthFailures() {
+        addAndApplyChange(INCREMENT_SECONDARY_AUTH_FAILURES);
+    }
+
+    @Override
+    public void clearPrimaryAndSecondaryAuthFailures() {
+        changes.clear();
+        addAndApplyChange(CLEAR_PRIMARY_AND_SECONDARY_AUTH_FAILURES);
+    }
+
+    @Override
     protected boolean isUnchanged() {
         return changes.isEmpty();
     }
@@ -160,6 +176,8 @@ public class LoginFailuresUpdater extends BaseUpdater<LoginFailureKey, LoginFail
     }
 
     private static final Consumer<LoginFailureEntity> CLEAR = LoginFailureEntity::clearFailures;
+    private static final Consumer<LoginFailureEntity> CLEAR_PRIMARY_AND_SECONDARY_AUTH_FAILURES = LoginFailureEntity::clearPrimaryAndSecondaryAuthFailures;
     private static final Consumer<LoginFailureEntity> INCREMENT_FAILURES = e -> e.setNumFailures(e.getNumFailures() + 1);
+    private static final Consumer<LoginFailureEntity> INCREMENT_SECONDARY_AUTH_FAILURES = e -> e.setNumSecondaryAuthFailures(e.getNumSecondaryAuthFailures() + 1);
     private static final Consumer<LoginFailureEntity> INCREMENT_LOCK_OUTS = e -> e.setNumTemporaryLockouts(e.getNumTemporaryLockouts() + 1);
 }

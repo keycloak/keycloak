@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.Objects;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 
@@ -53,23 +54,16 @@ public final class QuarkusHttpRequest implements HttpRequest {
     private MultivaluedMap<String, String> decodedFormParameters;
 
     public <R> QuarkusHttpRequest(ResteasyReactiveRequestContext context) {
-        this.context = context;
+        this.context = Objects.requireNonNull(context);
     }
 
     @Override
     public String getHttpMethod() {
-        if (context == null) {
-            return null;
-        }
         return context.getMethod();
     }
 
     @Override
     public MultivaluedMap<String, String> getDecodedFormParameters() {
-        if (context == null) {
-            return null;
-        }
-
         if (decodedFormParameters == null) {
             FormData parameters = context.getFormData();
 
@@ -97,9 +91,6 @@ public final class QuarkusHttpRequest implements HttpRequest {
 
     @Override
     public MultivaluedMap<String, FormPartValue> getMultiPartFormParameters() {
-        if (context == null) {
-            return null;
-        }
         FormData formData = context.getFormData();
 
         if (formData == null) {
@@ -135,9 +126,6 @@ public final class QuarkusHttpRequest implements HttpRequest {
 
     @Override
     public HttpHeaders getHttpHeaders() {
-        if (context == null) {
-            return null;
-        }
         return context.getHttpHeaders();
     }
 
@@ -166,9 +154,6 @@ public final class QuarkusHttpRequest implements HttpRequest {
 
     @Override
     public UriInfo getUri() {
-        if (context == null) {
-            return null;
-        }
         return context.getUriInfo();
     }
 

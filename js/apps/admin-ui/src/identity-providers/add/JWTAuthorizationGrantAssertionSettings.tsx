@@ -4,13 +4,16 @@ import { FormGroup } from "@patternfly/react-core";
 import { useFormContext, Controller } from "react-hook-form";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { SelectControl, HelpItem } from "@keycloak/keycloak-ui-shared";
-import { sortProviders } from "../../util";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 
 export const JWTAuthorizationGrantAssertionSettings = () => {
   const { t } = useTranslation();
-  const providers = useServerInfo().providers!.signature.providers;
+  const { cryptoInfo } = useServerInfo();
   const { control } = useFormContext();
+
+  const asymmetricAlgorithms =
+    cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? [];
+
   return (
     <>
       <DefaultSwitchControl
@@ -28,17 +31,17 @@ export const JWTAuthorizationGrantAssertionSettings = () => {
             helpText={t(
               "jwtAuthorizationGrantMaxAllowedAssertionExpirationHelp",
             )}
-            fieldLabelId="jwtAuthorizationGrantMaxAllowedAssertionExpirationHelp"
+            fieldLabelId="jwtAuthorizationGrantMaxAllowedAssertionExpiration"
           />
         }
       >
         <Controller
-          name="config.jwtAuthorizationGrantMaxAllowedAssertionExpirationHelp"
+          name="config.jwtAuthorizationGrantMaxAllowedAssertionExpiration"
           defaultValue={300}
           control={control}
           render={({ field }) => (
             <TimeSelector
-              data-testid="jwtAuthorizationGrantMaxAllowedAssertionExpirationHelp"
+              data-testid="jwtAuthorizationGrantMaxAllowedAssertionExpiration"
               value={field.value!}
               onChange={field.onChange}
               units={["second", "minute", "hour"]}
@@ -52,11 +55,20 @@ export const JWTAuthorizationGrantAssertionSettings = () => {
         labelIcon={t("jwtAuthorizationGrantAssertionSignatureAlgHelp")}
         options={[
           { key: "", value: t("algorithmNotSpecified") },
-          ...sortProviders(providers).map((p) => ({ key: p, value: p })),
+          ...asymmetricAlgorithms.sort().map((alg) => ({
+            key: alg,
+            value: alg,
+          })),
         ]}
         controller={{
           defaultValue: "",
         }}
+      />
+      <DefaultSwitchControl
+        name="config.jwtAuthorizationGrantLimitAccessTokenExp"
+        label={t("jwtAuthorizationGrantLimitAccessTokenExp")}
+        labelIcon={t("jwtAuthorizationGrantLimitAccessTokenExpHelp")}
+        stringify
       />
     </>
   );

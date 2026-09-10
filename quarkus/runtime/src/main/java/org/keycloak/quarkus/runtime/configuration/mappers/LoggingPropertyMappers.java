@@ -54,6 +54,12 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                         .build(),
                 fromOption(LoggingOptions.LOG_ASYNC)
                         .build(),
+                fromOption(LoggingOptions.LOG_SERVICE_NAME)
+                        .paramLabel("name")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SERVICE_ENVIRONMENT)
+                        .paramLabel("environment")
+                        .build(),
                 // Console
                 fromOption(LoggingOptions.LOG_CONSOLE_OUTPUT)
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
@@ -77,6 +83,14 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                         .isEnabled(LoggingPropertyMappers::isConsoleJsonEnabled, "%s and output is set to 'json'".formatted(CONSOLE_ENABLED_MSG))
                         .to("quarkus.log.console.json.log-format")
                         .paramLabel("format")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SERVICE_NAME).mapFrom(LoggingOptions.LOG_SERVICE_NAME)
+                        .isEnabled(LoggingPropertyMappers::isConsoleJsonEnabled, "%s and output is set to 'json'".formatted(CONSOLE_ENABLED_MSG))
+                        .to("quarkus.log.console.json.additional-field.\"service.name\".value")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SERVICE_ENVIRONMENT).mapFrom(LoggingOptions.LOG_SERVICE_ENVIRONMENT)
+                        .isEnabled(LoggingPropertyMappers::isConsoleJsonEnabled, "%s and output is set to 'json'".formatted(CONSOLE_ENABLED_MSG))
+                        .to("quarkus.log.console.json.additional-field.\"service.environment\".value")
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_INCLUDE_TRACE)
                         .isEnabled(() -> LoggingPropertyMappers.isConsoleEnabled() && TracingPropertyMappers.isTracingEnabled(),
@@ -134,6 +148,14 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                         .to("quarkus.log.file.json.log-format")
                         .paramLabel("format")
                         .build(),
+                fromOption(LoggingOptions.LOG_SERVICE_NAME).mapFrom(LoggingOptions.LOG_SERVICE_NAME)
+                        .isEnabled(LoggingPropertyMappers::isFileJsonEnabled, FILE_ENABLED_MSG + " and output is set to 'json'")
+                        .to("quarkus.log.file.json.additional-field.\"service.name\".value")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SERVICE_ENVIRONMENT).mapFrom(LoggingOptions.LOG_SERVICE_ENVIRONMENT)
+                        .isEnabled(LoggingPropertyMappers::isFileJsonEnabled, FILE_ENABLED_MSG + " and output is set to 'json'")
+                        .to("quarkus.log.file.json.additional-field.\"service.environment\".value")
+                        .build(),
                 fromOption(LoggingOptions.LOG_FILE_INCLUDE_TRACE)
                         .isEnabled(() -> LoggingPropertyMappers.isFileEnabled() && TracingPropertyMappers.isTracingEnabled(),
                                 "File log handler and Tracing is activated")
@@ -158,6 +180,30 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                         .isEnabled(LoggingPropertyMappers::isFileAsyncEnabled, "%s and asynchronous logging is enabled".formatted(FILE_ENABLED_MSG))
                         .to("quarkus.log.file.async.queue-length")
                         .paramLabel("queue-length")
+                        .build(),
+                // File rotation
+                fromOption(LoggingOptions.LOG_FILE_ROTATION_ENABLED)
+                        .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
+                        .to("quarkus.log.file.rotation.enabled")
+                        .build(),
+                fromOption(LoggingOptions.LOG_FILE_ROTATION_MAX_FILE_SIZE)
+                        .isEnabled(LoggingPropertyMappers::isFileRotationEnabled, "%s and log file rotation is enabled".formatted(FILE_ENABLED_MSG))
+                        .to("quarkus.log.file.rotation.max-file-size")
+                        .paramLabel("size")
+                        .build(),
+                fromOption(LoggingOptions.LOG_FILE_ROTATION_MAX_BACKUP_INDEX)
+                        .isEnabled(LoggingPropertyMappers::isFileRotationEnabled, "%s and log file rotation is enabled".formatted(FILE_ENABLED_MSG))
+                        .to("quarkus.log.file.rotation.max-backup-index")
+                        .paramLabel("index")
+                        .build(),
+                fromOption(LoggingOptions.LOG_FILE_ROTATION_FILE_SUFFIX)
+                        .isEnabled(LoggingPropertyMappers::isFileRotationEnabled, "%s and log file rotation is enabled".formatted(FILE_ENABLED_MSG))
+                        .to("quarkus.log.file.rotation.file-suffix")
+                        .paramLabel("suffix")
+                        .build(),
+                fromOption(LoggingOptions.LOG_FILE_ROTATION_ROTATE_ON_BOOT)
+                        .isEnabled(LoggingPropertyMappers::isFileRotationEnabled, "%s and log file rotation is enabled".formatted(FILE_ENABLED_MSG))
+                        .to("quarkus.log.file.rotation.rotate-on-boot")
                         .build(),
                 // Log level
                 fromOption(LoggingOptions.LOG_LEVEL)
@@ -221,6 +267,14 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                         .isEnabled(LoggingPropertyMappers::isSyslogJsonEnabled, SYSLOG_ENABLED_MSG + " and output is set to 'json'")
                         .to("quarkus.log.syslog.json.log-format")
                         .paramLabel("format")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SERVICE_NAME).mapFrom(LoggingOptions.LOG_SERVICE_NAME)
+                        .isEnabled(LoggingPropertyMappers::isSyslogJsonEnabled, SYSLOG_ENABLED_MSG + " and output is set to 'json'")
+                        .to("quarkus.log.syslog.json.additional-field.\"service.name\".value")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SERVICE_ENVIRONMENT).mapFrom(LoggingOptions.LOG_SERVICE_ENVIRONMENT)
+                        .isEnabled(LoggingPropertyMappers::isSyslogJsonEnabled, SYSLOG_ENABLED_MSG + " and output is set to 'json'")
+                        .to("quarkus.log.syslog.json.additional-field.\"service.environment\".value")
                         .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_INCLUDE_TRACE)
                         .isEnabled(() -> LoggingPropertyMappers.isSyslogEnabled() && TracingPropertyMappers.isTracingEnabled(),
@@ -292,6 +346,10 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
 
     public static boolean isFileJsonEnabled() {
         return isFileEnabled() && isTrue("quarkus.log.file.json.enabled");
+    }
+
+    public static boolean isFileRotationEnabled() {
+        return isFileEnabled() && isTrue(LoggingOptions.LOG_FILE_ROTATION_ENABLED);
     }
 
     public static boolean isSyslogEnabled() {

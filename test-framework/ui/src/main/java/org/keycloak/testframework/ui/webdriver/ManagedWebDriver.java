@@ -2,6 +2,8 @@ package org.keycloak.testframework.ui.webdriver;
 
 import java.net.URL;
 
+import org.keycloak.testframework.injection.ManagedTestResource;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -9,7 +11,7 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
-public class ManagedWebDriver {
+public class ManagedWebDriver extends ManagedTestResource {
 
     private WebDriver driver;
 
@@ -18,9 +20,11 @@ public class ManagedWebDriver {
     private PageUtils pageUtils = new PageUtils(this);
     private NavigateUtils  navigateUtils = new NavigateUtils(this);
     private WaitUtils waitUtils = new WaitUtils(this);
+    private final BrowserTabUtils tabUtils;
 
     public ManagedWebDriver(WebDriver driver) {
         this.driver = driver;
+        this.tabUtils = new BrowserTabUtils(this);
     }
 
     public WebDriver driver() {
@@ -70,8 +74,16 @@ public class ManagedWebDriver {
         return navigateUtils;
     }
 
+    public BrowserTabUtils tabs() {
+        return tabUtils;
+    }
+
     public WaitUtils waiting() {
         return waitUtils;
     }
 
+    @Override
+    public void runCleanup() {
+        tabUtils.closeTabs();
+    }
 }

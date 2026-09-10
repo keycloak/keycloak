@@ -55,7 +55,6 @@ public class KeycloakOIDCJbossSubsystemClientInstallation implements ClientInsta
             buffer.append("    <verify-token-audience>true</verify-token-audience>\n");
         }
 
-        String cred = client.getSecret();
         if (KeycloakOIDCClientInstallation.showClientCredentialsAdapterConfig(client)) {
             Map<String, Object> adapterConfig = KeycloakOIDCClientInstallation.getClientCredentialsAdapterConfig(session, client);
             for (Map.Entry<String, Object> entry : adapterConfig.entrySet()) {

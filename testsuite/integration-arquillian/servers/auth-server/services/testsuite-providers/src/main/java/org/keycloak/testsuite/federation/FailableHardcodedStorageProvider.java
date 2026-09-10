@@ -57,11 +57,13 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     protected ComponentModel model;
     protected KeycloakSession session;
     protected boolean componentFail;
+    private boolean failOnValidation;
 
-    public FailableHardcodedStorageProvider(ComponentModel model, KeycloakSession session) {
+    public FailableHardcodedStorageProvider(ComponentModel model, KeycloakSession session, boolean failOnValidation) {
         this.model = model;
         this.session = session;
         componentFail = isInFailMode(model);
+        this.failOnValidation = failOnValidation;
     }
 
     public static boolean isInFailMode(ComponentModel model) {
@@ -169,6 +171,9 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     @Override
     public UserModel validate(RealmModel realm, UserModel user) {
         checkForceFail();
+        if (failOnValidation) {
+            throw new RuntimeException("Forcing validation failure");
+        }
         return new Delegate(user);
     }
 

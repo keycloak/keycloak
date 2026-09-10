@@ -85,13 +85,13 @@ export default function CustomProviderSettings() {
       ),
       providerId,
       providerType: "org.keycloak.storage.UserStorageProvider",
-      parentId: realm?.id,
+      parentId: realm.id,
     });
 
     try {
       if (!id) {
         await adminClient.components.create(saveComponent);
-        navigate(toUserFederation({ realm: realmName }));
+        void navigate(toUserFederation({ realm: realmName }));
       } else {
         await adminClient.components.update({ id }, saveComponent);
       }

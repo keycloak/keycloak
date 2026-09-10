@@ -71,16 +71,22 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
+        if (config.getCASubjectDN().isEmpty()) {
+            logger.warnf("[ValidateX509CertificateUsername:authenticate] Option '%s' is empty, this configuration is deprecated, please configure it for the authenticator in realm '%s'",
+                    CERTIFICATE_CA_SUBJECT_DN, context.getRealm().getName());
+        }
+
         // Validate X509 client certificate
         try {
             CertificateValidator.CertificateValidatorBuilder builder = certificateValidationParameters(context.getSession(), config);
             CertificateValidator validator = builder.build(certs);
-            validator.checkRevocationStatus()
-                    .validateTrust()
+            validator.validateTrust()
+                    .validateCASubjectDN()
+                    .validateTimestamps()
                     .validateKeyUsage()
                     .validateExtendedKeyUsage()
-                    .validateTimestamps()
-                    .validatePolicy();
+                    .validatePolicy()
+                    .checkRevocationStatus();
         } catch(Exception e) {
             logger.error(e.getMessage(), e);
             // TODO use specific locale to load error messages
@@ -121,7 +127,7 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
         }
         if (user == null) {
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
+            Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Invalid user credentials");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }

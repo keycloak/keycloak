@@ -35,6 +35,7 @@ type AddRoleMappingModalProps = {
   onClose: () => void;
   title?: string;
   actionLabel?: string;
+  groupsResource?: any;
 };
 
 export type FilterType = "roles" | "clients";
@@ -124,6 +125,7 @@ export const AddRoleMappingModal = ({
   onClose,
   title,
   actionLabel,
+  groupsResource,
 }: AddRoleMappingModalProps) => {
   const { adminClient } = useAdminClient();
 
@@ -147,7 +149,12 @@ export const AddRoleMappingModal = ({
       params.search = search;
     }
 
-    const roles = await getAvailableRoles(adminClient, type, { ...params, id });
+    const roles = await getAvailableRoles(
+      adminClient,
+      type,
+      { ...params, id },
+      groupsResource,
+    );
     const sorted = localeSort(roles, compareRow);
     return sorted.map((row) => {
       return {

@@ -1,6 +1,5 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import {
-  AlertVariant,
   Button,
   Checkbox,
   Divider,
@@ -16,12 +15,9 @@ import {
   TreeViewDataItem,
 } from "@patternfly/react-core";
 
-import {
-  PaginatingTableToolbar,
-  useAlerts,
-  useFetch,
-} from "@keycloak/keycloak-ui-shared";
+import { PaginatingTableToolbar, useFetch } from "@keycloak/keycloak-ui-shared";
 import { AngleRightIcon, EllipsisVIcon } from "@patternfly/react-icons";
+import { useGroupResource } from "../../context/group-resource/GroupResourceContext";
 import { unionBy } from "lodash-es";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -42,6 +38,7 @@ import "./group-tree.css";
 
 type ExtendedTreeViewDataItem = TreeViewDataItem & {
   access?: Record<string, boolean>;
+  group?: GroupRepresentation;
 };
 
 type GroupTreeContextMenuProps = {
@@ -72,6 +69,7 @@ const GroupTreeContextMenu = ({
   const [deleteOpen, toggleDeleteOpen] = useToggle();
   const navigate = useNavigate();
   const { realm } = useRealm();
+  const orgId = useGroupResource().getOrgId();
 
   return (
     <>
@@ -80,7 +78,7 @@ const GroupTreeContextMenu = ({
           id={group.id}
           rename={group}
           refresh={() => {
-            navigate(toGroups({ realm }));
+            void navigate(toGroups({ realm, orgId }));
             refresh();
           }}
           handleModalToggle={toggleRenameOpen}
@@ -101,7 +99,7 @@ const GroupTreeContextMenu = ({
         toggleDialog={toggleDeleteOpen}
         selectedRows={[group]}
         refresh={() => {
-          navigate(toGroups({ realm }));
+          void navigate(toGroups({ realm, orgId }));
           refresh();
         }}
       />
@@ -170,21 +168,23 @@ export const GroupTree = ({
   canViewDetails,
 }: GroupTreeProps) => {
   const { adminClient } = useAdminClient();
+  const isOrgGroups = useGroupResource().isOrgGroups();
+  const orgId = useGroupResource().getOrgId();
 
   const { t } = useTranslation();
   const { realm } = useRealm();
   const navigate = useNavigate();
-  const { addAlert } = useAlerts();
   const { hasAccess } = useAccess();
 
   const [data, setData] = useState<ExtendedTreeViewDataItem[]>();
-  const { subGroups, clear } = useSubGroups();
+  const { subGroups, setSubGroups, clear } = useSubGroups();
 
   const [search, setSearch] = useState("");
   const [max, setMax] = useState(20);
   const [first, setFirst] = useState(0);
   const prefFirst = useRef(0);
   const prefMax = useRef(20);
+  const prefSearch = useRef("");
   const [count, setCount] = useState(0);
   const [exact, setExact] = useState(false);
   const [activeItem, setActiveItem] = useState<ExtendedTreeViewDataItem>();
@@ -206,12 +206,22 @@ export const GroupTree = ({
       id: group.id,
       name: (
         <Tooltip content={group.name}>
-          <span>{group.name}</span>
+          <span
+            className={
+              !canViewDetails && !isOrgGroups && !group.access?.view
+                ? "keycloak-groups-tree__non-viewable"
+                : undefined
+            }
+          >
+            {group.name}
+          </span>
         </Tooltip>
       ),
+      group,
       access: group.access || {},
       children: hasSubGroups
-        ? search.length === 0
+        ? search.length === 0 &&
+          (!group.subGroups || group.subGroups.length === 0)
           ? LOADING_TREE
           : group.subGroups?.map((g) => mapGroup(g, refresh))
         : undefined,
@@ -224,15 +234,24 @@ export const GroupTree = ({
 
   useFetch(
     async () => {
+      const groupsEndpoint = isOrgGroups
+        ? `organizations/${orgId}/groups`
+        : "groups";
       const groups = await fetchAdminUI<GroupRepresentation[]>(
         adminClient,
-        "groups",
+        groupsEndpoint,
         Object.assign(
           {
             first: `${first}`,
             max: `${max + 1}`,
             exact: `${exact}`,
             global: `${search !== ""}`,
+            ...(isOrgGroups
+              ? {
+                  subGroupsCount: "true",
+                  ...(search && { populateHierarchy: "true" }),
+                }
+              : {}),
           },
           search === "" ? null : { search },
         ),
@@ -241,10 +260,11 @@ export const GroupTree = ({
       if (activeItem) {
         subGroups = await fetchAdminUI<GroupRepresentation[]>(
           adminClient,
-          `groups/${activeItem.id}/children`,
+          `${groupsEndpoint}/${activeItem.id}/children`,
           {
             first: `${firstSub}`,
             max: `${SUBGROUP_COUNT}`,
+            ...(isOrgGroups ? { subGroupsCount: "true" } : {}),
           },
         );
       }
@@ -276,7 +296,12 @@ export const GroupTree = ({
           ];
         }
       }
-      if (search || prefFirst.current !== first || prefMax.current !== max) {
+      if (
+        search ||
+        prefSearch.current !== search ||
+        prefFirst.current !== first ||
+        prefMax.current !== max
+      ) {
         setData(groups.map((g) => mapGroup(g, refresh)));
       } else {
         setData(
@@ -290,6 +315,7 @@ export const GroupTree = ({
       setCount(countGroups(groups));
       prefFirst.current = first;
       prefMax.current = max;
+      prefSearch.current = search;
     },
     [key, first, firstSub, max, search, exact, activeItem],
   );
@@ -319,25 +345,28 @@ export const GroupTree = ({
 
   const nav = (item: TreeViewDataItem, data: ExtendedTreeViewDataItem[]) => {
     if (item.id === "next") return;
-    setActiveItem(item);
 
     const path = findGroup(data, item.id!, []);
-    if (!subGroups.every(({ id }) => path.find((t) => t.id === id))) clear();
-    if (
-      canViewDetails ||
-      path.at(-1)?.access?.view ||
-      subGroups.at(-1)?.access?.view
-    ) {
-      navigate(
-        toGroups({
-          realm,
-          id: path.map((g) => g.id).join("/"),
-        }),
-      );
-    } else {
-      addAlert(t("noViewRights"), AlertVariant.warning);
-      navigate(toGroups({ realm }));
+    if (!(canViewDetails || isOrgGroups || path.at(-1)?.access?.view)) {
+      return;
     }
+
+    setActiveItem(item);
+    const groups = path
+      .map((p) => p.group)
+      .filter((g): g is GroupRepresentation => g !== undefined);
+    if (groups.length === path.length) {
+      setSubGroups(groups);
+    } else if (!subGroups.every(({ id }) => path.find((t) => t.id === id))) {
+      clear();
+    }
+    void navigate(
+      toGroups({
+        realm,
+        id: path.map((g) => g.id).join("/"),
+        orgId,
+      }),
+    );
   };
 
   return data ? (

@@ -58,7 +58,7 @@ export const Header = ({
       try {
         await adminClient.components.del({ id: id! });
         addAlert(t("userFedDeletedSuccess"), AlertVariant.success);
-        navigate(toUserFederation({ realm }), { replace: true });
+        void navigate(toUserFederation({ realm }), { replace: true });
       } catch (error) {
         addError("userFedDeleteError", error);
       }

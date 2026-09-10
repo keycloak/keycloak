@@ -27,9 +27,9 @@ import org.keycloak.representations.idm.authorization.PermissionTicketRepresenta
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class PermissionTicketInvalidationClusterTest extends AbstractInvalidationClusterTestWithTestRealm<PermissionTicketRepresentation, Object> {
 

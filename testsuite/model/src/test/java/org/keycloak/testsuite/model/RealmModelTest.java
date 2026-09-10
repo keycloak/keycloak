@@ -41,6 +41,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 @RequireProvider(RealmProvider.class)
 public class RealmModelTest extends KeycloakModelTest {
@@ -151,6 +152,52 @@ public class RealmModelTest extends KeycloakModelTest {
         });
 
         assertThat(resourceServer, notNullValue());
+    }
+
+    @Test
+    public void testRealmAttributeUpdateEvents() {
+        ProviderEventListener providerEventListener = null;
+        try {
+            List<RealmModel.RealmAttributeUpdateEvent> attributeUpdateEvents = new ArrayList<>();
+            providerEventListener = event -> {
+                if (event instanceof RealmModel.RealmAttributeUpdateEvent attributeUpdateEvent
+                        && "attr-a".equals(attributeUpdateEvent.getAttributeName())) {
+                    attributeUpdateEvents.add(attributeUpdateEvent);
+                }
+            };
+            getFactory().register(providerEventListener);
+
+            withRealm(realmId, (session, realm) -> {
+                // creating an attribute publishes an event
+                realm.setAttribute("attr-a", "value-1");
+                assertThat(attributeUpdateEvents, hasSize(1));
+                assertThat(attributeUpdateEvents.get(0).getAttributeValue(), equalTo("value-1"));
+
+                // setting the same value again is a no-op and publishes nothing
+                realm.setAttribute("attr-a", "value-1");
+                assertThat(attributeUpdateEvents, hasSize(1));
+
+                // changing the value publishes an event
+                realm.setAttribute("attr-a", "value-2");
+                assertThat(attributeUpdateEvents, hasSize(2));
+                assertThat(attributeUpdateEvents.get(1).getAttributeValue(), equalTo("value-2"));
+
+                // removing the attribute publishes an event with a null value
+                realm.removeAttribute("attr-a");
+                assertThat(attributeUpdateEvents, hasSize(3));
+                assertThat(attributeUpdateEvents.get(2).getAttributeValue(), nullValue());
+
+                // removing an absent attribute publishes nothing
+                realm.removeAttribute("attr-a");
+                assertThat(attributeUpdateEvents, hasSize(3));
+
+                return null;
+            });
+        } finally {
+            if (providerEventListener != null) {
+                getFactory().unregister(providerEventListener);
+            }
+        }
     }
 
     @Test

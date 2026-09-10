@@ -8,7 +8,7 @@ Notable changes may include internal behavior changes that prevent common miscon
 LDAP referrals now by default are only allowed to include LDAP URLs.
 This change enhances security and aligns with best practices for LDAP configurations.
 
-This also prevents other JDNI references from being used in case you have written custom extensions.
+This also prevents other JNDI references from being used in case you have written custom extensions.
 To restore the original behavior, set the option `spi-storage--ldap--secure-referral` to `false`.
 When doing this, we recommend to disable LDAP referrals in all LDAP providers.
 

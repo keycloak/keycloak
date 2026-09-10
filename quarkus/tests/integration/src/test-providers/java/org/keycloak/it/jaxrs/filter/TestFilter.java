@@ -17,6 +17,8 @@
 
 package org.keycloak.it.jaxrs.filter;
 
+import io.quarkus.vertx.http.runtime.filters.QuarkusRequestWrapper;
+import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
 
@@ -62,6 +64,14 @@ public class TestFilter implements ContainerRequestFilter {
         } catch (RuntimeException e) {
             // should say something like Normal scoped producer method may not return null: org.keycloak.quarkus.runtime.integration.cdi.KeycloakBeanProducer.getKeycloakSession()
         }
+        
+        // add a handler that will run after the access logging
+        QuarkusRequestWrapper.get(request).addRequestDoneHandler(new Handler<Void>() {
+            @Override
+            public void handle(Void event) {
+                LOG.infof("TestFilter Request %s %s is done", method, path);
+            }
+        });
 
         LOG.infof("Request %s %s has context request %s has keycloaksession %s", method, path, address != null, s != null);
     }

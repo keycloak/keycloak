@@ -29,6 +29,7 @@ import org.keycloak.connections.infinispan.TopologyInfo;
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
+import org.infinispan.commons.marshall.Marshaller;
 import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.infinispan.factories.GlobalComponentRegistry;
 import org.infinispan.factories.KnownComponentNames;
@@ -90,6 +91,11 @@ public record RemoteInfinispanConnectionProvider(EmbeddedCacheManager embeddedCa
     @Override
     public BlockingManager getBlockingManager() {
         return GlobalComponentRegistry.componentOf(embeddedCacheManager, BlockingManager.class);
+    }
+
+    @Override
+    public Marshaller getMarshaller() {
+        return GlobalComponentRegistry.of(embeddedCacheManager).getComponent(Marshaller.class, KnownComponentNames.USER_MARSHALLER);
     }
 
     @Override

@@ -165,7 +165,7 @@ The `MigrationTest` test will:
 - Perform a couple of tests to verify data after the update are correct.
 - Stop MariaDB docker container. In case of a test failure, the MariaDB container is not stopped, so you can manually inspect the database.
 
-The first version of Keycloak on Quarkus is version `17.0.0`, but the initial versions have a complete different set of boot options that make co-existance impossible.
+The first version of Keycloak on Quarkus is version `17.0.0`, but the initial versions have a complete different set of boot options that make co-existence impossible.
 Therefore the first version that can be tested is `19.0.3`.
 You can execute those tests as follows:
 ```
@@ -661,26 +661,4 @@ For running testsuite with server using BCFIPS approved mode, those additional p
 The log should contain `KeycloakFipsSecurityProvider` mentioning "Approved mode". Something like:
 ```
 KC(BCFIPS version 1.000203 Approved Mode, FIPS-JVM: enabled) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider,
-```
-
-## Aurora DB Tests
-To run the Aurora DB tests on a local machine, do the following:
-
-1. Provision an Aurora DB:
-```bash
-AURORA_CLUSTER="example-cluster"
-AURORA_REGION=eu-west-1
-AURORA_PASSWORD=TODO
-source ./.github/scripts/aws/rds/aurora_create.sh
-```
-
-2. Execute the store integration tests:
-```bash
-TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
-mvn test -Pauth-server-quarkus -Pdb-aurora-postgres -Dtest=$TESTS  -Dauth.server.db.host=$AURORA_ENDPOINT -Dkeycloak.connectionsJpa.password=$AURORA_PASSWORD -pl testsuite/integration-arquillian/tests/base
-```
-
-3. Teardown Aurora DB instance:
-```bash
-./.github/scripts/aws/rds/aurora_delete.sh
 ```

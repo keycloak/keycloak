@@ -60,4 +60,9 @@ public class OID4VCIssuerWellKnownProviderFactory implements WellKnownProviderFa
     public String getId() {
         return PROVIDER_ID;
     }
+
+    @Override
+    public boolean isAvailableViaServerMetadata() {
+        return true;
+    }
 }

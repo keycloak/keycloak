@@ -65,5 +65,5 @@ backend: {
 
 == Using the pages
 
-To see how to further integrate the pages, we recommend that you take a look at the output of the tool in the <<creating-your-own-console,Creating your own Console>> chapter.
+To see how to further integrate the pages, we recommend that you take a look at the output of the tool in the <@links.uicustomization id="creating-your-own-console"/> {section}.
 </@tmpl.guide>

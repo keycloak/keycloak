@@ -17,19 +17,19 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
-import org.keycloak.testsuite.util.RealmBuilder;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  *
@@ -136,21 +136,21 @@ public class ComponentExportImportTest extends AbstractAuthTest {
 
         try {
             testRealmResource().toRepresentation();
-            Assert.fail("Realm wasn't expected to be found");
+            Assertions.fail("Realm wasn't expected to be found");
         } catch (NotFoundException nfe) {
             // Expected
         }
 
         // import 
         testingClient.server().run(session -> {
-            Assert.assertNull(session.realms().getRealmByName(REALM_NAME));
+            Assertions.assertNull(session.realms().getRealmByName(REALM_NAME));
             try (Closeable c = ExportImportConfig.setAction(ExportImportConfig.ACTION_IMPORT)) {
                 new ExportImportManager(session).runImport();
             }
         });
 
         // Assert realm was imported
-        Assert.assertNotNull(testRealmResource().toRepresentation());
+        Assertions.assertNotNull(testRealmResource().toRepresentation());
 
         try {
             parentComponent = testRealmResource().components().component(parentComponentId).toRepresentation();
@@ -159,19 +159,19 @@ public class ComponentExportImportTest extends AbstractAuthTest {
             fail("Components not found after import.");
         }
 
-        Assert.assertEquals(parentComponent.getParentId(), realmId);
-        Assert.assertEquals(parentComponent.getName(), "parent");
-        Assert.assertEquals(parentComponent.getSubType(), "subtype");
-        Assert.assertEquals(parentComponent.getProviderId(), UserMapStorageFactory.PROVIDER_ID);
-        Assert.assertEquals(parentComponent.getProviderType(), UserStorageProvider.class.getName());
-        Assert.assertEquals(parentComponent.getConfig().getFirst("attr"), "value");
+        Assertions.assertEquals(parentComponent.getParentId(), realmId);
+        Assertions.assertEquals(parentComponent.getName(), "parent");
+        Assertions.assertEquals(parentComponent.getSubType(), "subtype");
+        Assertions.assertEquals(parentComponent.getProviderId(), UserMapStorageFactory.PROVIDER_ID);
+        Assertions.assertEquals(parentComponent.getProviderType(), UserStorageProvider.class.getName());
+        Assertions.assertEquals(parentComponent.getConfig().getFirst("attr"), "value");
 
-        Assert.assertEquals(subcomponent.getParentId(), parentComponent.getId());
-        Assert.assertEquals(subcomponent.getName(), "child");
-        Assert.assertEquals(subcomponent.getSubType(), "subtype2");
-        Assert.assertEquals(subcomponent.getProviderId(), UserMapStorageFactory.PROVIDER_ID);
-        Assert.assertEquals(subcomponent.getProviderType(), UserStorageProvider.class.getName());
-        Assert.assertEquals(subcomponent.getConfig().getFirst("attr"), "value2");
+        Assertions.assertEquals(subcomponent.getParentId(), parentComponent.getId());
+        Assertions.assertEquals(subcomponent.getName(), "child");
+        Assertions.assertEquals(subcomponent.getSubType(), "subtype2");
+        Assertions.assertEquals(subcomponent.getProviderId(), UserMapStorageFactory.PROVIDER_ID);
+        Assertions.assertEquals(subcomponent.getProviderType(), UserStorageProvider.class.getName());
+        Assertions.assertEquals(subcomponent.getConfig().getFirst("attr"), "value2");
 
     }
 

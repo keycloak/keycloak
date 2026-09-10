@@ -10,9 +10,9 @@ const ClientScopesSection = lazy(() => import("../ClientScopesSection"));
 export const ClientScopesRoute: AppRouteObject = {
   path: "/:realm/client-scopes",
   element: <ClientScopesSection />,
-  breadcrumb: (t) => t("clientScopeList"),
   handle: {
     access: "view-clients",
+    breadcrumb: (t) => t("clientScopeList"),
   },
 };
 

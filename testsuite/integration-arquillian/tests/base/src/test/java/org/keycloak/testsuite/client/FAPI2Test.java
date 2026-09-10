@@ -36,7 +36,6 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.MutualTLSUtils;
@@ -45,11 +44,12 @@ import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test for the FAPI 2 specifications (still implementer's draft):
@@ -145,6 +145,7 @@ public class FAPI2Test extends AbstractFAPI2Test {
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
             clientConfig.setTlsClientAuthSubjectDn(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
+            clientConfig.setTlsClientAuthCASubjectDn(MutualTLSUtils.CA_CERTIFICATE_SUBJECT_DN);
             clientConfig.setAllowRegexPatternComparison(false);
         });
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(clientUUID);
@@ -161,15 +162,15 @@ public class FAPI2Test extends AbstractFAPI2Test {
 
         // without PAR request - should fail
         oauth.openLoginForm();
-        assertBrowserWithError("request_uri not included.");
+        assertBrowserWithError("PAR request_uri not included.");
 
         pkceGenerator = PkceGenerator.s256();
 
         // requiring hybrid request - should fail
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN);
         ParResponse pResp = oauth.pushedAuthorizationRequest().nonce("123456").codeChallenge(pkceGenerator).send();
-        assertEquals(401, pResp.getStatusCode());
-        assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, pResp.getError());
+        assertEquals(400, pResp.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, pResp.getError());
 
         // authorization request does not match PAR request - should fail
         oauth.responseType(OIDCResponseType.CODE);
@@ -189,11 +190,11 @@ public class FAPI2Test extends AbstractFAPI2Test {
         assertEquals(201, pResp.getStatusCode());
         requestUri = pResp.getRequestUri();
         oauth.loginForm().requestUri(requestUri).state("testFAPI2SecurityProfileLoginWithMTLS").open();
-        assertBrowserWithError("PAR request did not include necessary parameters");
+        assertBrowserWithError("PAR request did not include query parameter");
 
         // duplicated usage of a PAR request - should fail
         oauth.loginForm().requestUri(requestUri).state("testFAPI2SecurityProfileLoginWithMTLS").codeChallenge(pkceGenerator).open();
-        assertBrowserWithError("PAR not found. not issued or used multiple times.");
+        assertBrowserWithError("PAR not found, not issued or used multiple times.");
 
         // send a pushed authorization request
         pResp = oauth.pushedAuthorizationRequest().nonce("123456").codeChallenge(pkceGenerator).send();
@@ -244,6 +245,7 @@ public class FAPI2Test extends AbstractFAPI2Test {
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
             clientConfig.setTlsClientAuthSubjectDn(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
+            clientConfig.setTlsClientAuthCASubjectDn(MutualTLSUtils.CA_CERTIFICATE_SUBJECT_DN);
             clientConfig.setAllowRegexPatternComparison(false);
             clientConfig.setRequestObjectRequired("request or request_uri");
             clientConfig.setAuthorizationSignedResponseAlg(Algorithm.PS256);
@@ -447,26 +449,30 @@ public class FAPI2Test extends AbstractFAPI2Test {
         // Try to register client with "client-jwt" - should pass
         String clientUUID = createClientByAdmin("client-jwt", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID));
         ClientRepresentation client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Try to register client with "client-x509" - should pass
-        clientUUID = createClientByAdmin("client-x509", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID));
+        clientUUID = createClientByAdmin("client-x509", (ClientRepresentation clientRep) -> {
+            clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
+            clientRep.getAttributes().put(X509ClientAuthenticator.ATTR_SUBJECT_DN, "CN=localhost");
+            clientRep.getAttributes().put(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN, "CN=ca");
+        });
         client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Try to register client with default authenticator - should pass. Client authenticator should be "client-jwt"
         clientUUID = createClientByAdmin("client-jwt-2", (ClientRepresentation clientRep) -> {
         });
         client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Check the Consent is enabled, Holder-of-key is enabled, fullScopeAllowed disabled and default signature algorithm.
-        Assert.assertTrue(client.isConsentRequired());
+        Assertions.assertTrue(client.isConsentRequired());
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
-        Assert.assertTrue(clientConfig.isUseMtlsHokToken());
-        Assert.assertEquals(Algorithm.PS256, clientConfig.getIdTokenSignedResponseAlg());
-        Assert.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg());
-        Assert.assertFalse(client.isFullScopeAllowed());
+        Assertions.assertTrue(clientConfig.isUseMtlsHokToken());
+        Assertions.assertEquals(Algorithm.PS256, clientConfig.getIdTokenSignedResponseAlg());
+        Assertions.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg());
+        Assertions.assertFalse(client.isFullScopeAllowed());
     }
 
     protected void testFAPI2OIDCClientRegistration(String profile) throws Exception {
@@ -486,8 +492,8 @@ public class FAPI2Test extends AbstractFAPI2Test {
             clientRep.setJwksUri("https://foo");
         });
         ClientRepresentation client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
-        Assert.assertFalse(client.isFullScopeAllowed());
+        Assertions.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertFalse(client.isFullScopeAllowed());
 
         // Set new initialToken for register new clients
         setInitialAccessTokenForDynamicClientRegistration();
@@ -495,11 +501,11 @@ public class FAPI2Test extends AbstractFAPI2Test {
         // Try to register client with "client-x509" - should pass
         clientUUID = createClientDynamically("client-x509", (OIDCClientRepresentation clientRep) -> clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.TLS_CLIENT_AUTH));
         client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Check the Consent is enabled, PKCS set to S256
-        Assert.assertTrue(client.isConsentRequired());
-        Assert.assertEquals(OAuth2Constants.PKCE_METHOD_S256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getPkceCodeChallengeMethod());
+        Assertions.assertTrue(client.isConsentRequired());
+        Assertions.assertEquals(OAuth2Constants.PKCE_METHOD_S256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getPkceCodeChallengeMethod());
 
     }
 

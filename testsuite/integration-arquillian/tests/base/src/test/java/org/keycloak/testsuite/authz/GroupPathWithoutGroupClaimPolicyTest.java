@@ -16,25 +16,19 @@
  */
 package org.keycloak.testsuite.authz;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
-import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.GroupBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
-import org.keycloak.testsuite.util.RolesBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -55,31 +49,20 @@ public class GroupPathWithoutGroupClaimPolicyTest extends GroupPathPolicyTest {
         groupProtocolMapper.setConfig(config);
 
         testRealms.add(RealmBuilder.create().name("authz-test")
-                .roles(RolesBuilder.create()
-                        .realmRole(RoleBuilder.create().name("uma_authorization").build())
-                )
-                .group(GroupBuilder.create().name("Group A")
-                    .subGroups(Arrays.asList("Group B", "Group D").stream().map(name -> {
-                        if ("Group B".equals(name)) {
-                            return GroupBuilder.create().name(name).subGroups(Arrays.asList("Group C", "Group E").stream().map(new Function<String, GroupRepresentation>() {
-                                @Override
-                                public GroupRepresentation apply(String name) {
-                                    return GroupBuilder.create().name(name).build();
-                                }
-                            }).collect(Collectors.toList())).build();
-                        }
-                        return GroupBuilder.create().name(name).build();
-                    }).collect(Collectors.toList())).build())
-                .group(GroupBuilder.create().name("Group E").build())
-                .user(UserBuilder.create().username("marta").password("password").addRoles("uma_authorization").addGroups("Group A"))
-                .user(UserBuilder.create().username("alice").password("password").addRoles("uma_authorization"))
-                .user(UserBuilder.create().username("kolo").password("password").addRoles("uma_authorization"))
-                .client(ClientBuilder.create().clientId("resource-server-test")
+                .realmRoles("uma_authorization")
+                .groups(GroupBuilder.create().name("Group A")
+                    .subGroups(GroupBuilder.create("Group B").subGroups("Group C", "Group E"))
+                    .subGroups("Group D"))
+                .groups(GroupBuilder.create().name("Group E"))
+                .users(UserBuilder.create().username("marta").password("password").realmRoles("uma_authorization").groups("Group A"))
+                .users(UserBuilder.create().username("alice").password("password").realmRoles("uma_authorization"))
+                .users(UserBuilder.create().username("kolo").password("password").realmRoles("uma_authorization"))
+                .clients(ClientBuilder.create().clientId("resource-server-test")
                     .secret("secret")
                     .authorizationServicesEnabled(true)
                     .redirectUris("http://localhost/resource-server-test")
                     .defaultRoles("uma_protection")
-                    .directAccessGrants())
+                    .directAccessGrantsEnabled())
                 .build());
     }
 }

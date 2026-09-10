@@ -46,7 +46,7 @@ public class AuthorizationDetailsProcessorSpi implements Spi {
     }
 
     @Override
-    public Class<? extends ProviderFactory<AuthorizationDetailsProcessor>> getProviderFactoryClass() {
+    public Class<? extends ProviderFactory<AuthorizationDetailsProcessor<?>>> getProviderFactoryClass() {
         return AuthorizationDetailsProcessorFactory.class;
     }
 }

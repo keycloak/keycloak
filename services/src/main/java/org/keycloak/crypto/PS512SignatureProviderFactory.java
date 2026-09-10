@@ -16,6 +16,8 @@
  */
 package org.keycloak.crypto;
 
+import java.util.Set;
+
 import org.keycloak.models.KeycloakSession;
 
 public class PS512SignatureProviderFactory implements SignatureProviderFactory {
@@ -30,6 +32,11 @@ public class PS512SignatureProviderFactory implements SignatureProviderFactory {
     @Override
     public SignatureProvider create(KeycloakSession session) {
         return new AsymmetricSignatureProvider(session, Algorithm.PS512);
+    }
+
+    @Override
+    public Set<String> getJwkPrivateKeyClaims() {
+        return RSA_PRIVATE_JWK_CLAIMS;
     }
 
 }

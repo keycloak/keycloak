@@ -22,7 +22,10 @@ import java.util.List;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
+import org.keycloak.broker.provider.util.IdentityProviderTypeUtil;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderType;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
 
@@ -58,5 +61,17 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
      */
     default boolean reloadKeys() {
         return false;
+    }
+
+    /**
+     * Returns if this Identity Provider is of the passed type. By default it just returns
+     * true when it implements the correct interface. Sub-classes like the OIDC
+     * provider can check specific configuration options.
+     * @param session The helper session
+     * @param type The type to check
+     * @return true if the provider is of the passed type, false otherwise
+     */
+    default boolean isType(KeycloakSession session, IdentityProviderType type) {
+        return IdentityProviderTypeUtil.listTypesFromProvider(session, this).contains(type);
     }
 }

@@ -43,10 +43,6 @@ class RestartWorkflowTask extends RunWorkflowTask {
 
             log.debugf("Restarting workflow '%s' for resource %s (execution id: %s) at step %s", workflow.getName(), resourceId, executionId, currentStep.getProviderId());
         }
-        try {
-            super.run(session);
-        } finally {
-            context.complete();
-        }
+        super.run(session);
     }
 }

@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 PGSETUP_INITDB_OPTIONS="-E UTF-8" ./initdb -A md5 -U $PGUSER --pwfile=<(echo "$PGPASSWORD")

@@ -17,11 +17,10 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -32,6 +31,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CredentialIssuer {
 
     @JsonProperty("credential_issuer")
@@ -126,7 +126,8 @@ public class CredentialIssuer {
         if (credentialsSupported == null) {
             throw new IllegalArgumentException("credentialsSupported cannot be null");
         }
-        this.credentialsSupported = Collections.unmodifiableMap(new HashMap<>(credentialsSupported));
+        credentialsSupported.forEach((k, v) -> v.setId(k));
+        this.credentialsSupported = Map.copyOf(credentialsSupported);
         return this;
     }
 

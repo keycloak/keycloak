@@ -65,7 +65,7 @@ export default function AddIdentityProvider() {
         alias: provider.alias!,
       });
       addAlert(t("createIdentityProviderSuccess"), AlertVariant.success);
-      navigate(
+      void navigate(
         toIdentityProvider({
           realm,
           providerId,

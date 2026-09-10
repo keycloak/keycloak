@@ -446,6 +446,11 @@ public class ClientModelLazyDelegate implements ClientModel {
     }
 
     @Override
+    public ClientScopeModel getParameterizedClientScope(String scope) {
+        return getDelegate().getParameterizedClientScope(scope);
+    }
+
+    @Override
     public int getNotBefore() {
         return getDelegate().getNotBefore();
     }
@@ -511,18 +516,18 @@ public class ClientModelLazyDelegate implements ClientModel {
     }
 
     @Override
-    public boolean isDynamicScope() {
-        return getDelegate().isDynamicScope();
+    public boolean isParameterizedScope() {
+        return getDelegate().isParameterizedScope();
     }
 
     @Override
-    public void setIsDynamicScope(boolean isDynamicScope) {
-        getDelegate().setIsDynamicScope(isDynamicScope);
+    public void setIsParameterizedScope(boolean isParameterizedScope) {
+        getDelegate().setIsParameterizedScope(isParameterizedScope);
     }
 
     @Override
-    public String getDynamicScopeRegexp() {
-        return getDelegate().getDynamicScopeRegexp();
+    public String getParameterizedScopeRegexp() {
+        return getDelegate().getParameterizedScopeRegexp();
     }
 
     @Override
@@ -633,6 +638,16 @@ public class ClientModelLazyDelegate implements ClientModel {
     @Override
     public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
         return getDelegate().getProtocolMapperByName(protocol, name);
+    }
+
+    @Override
+    public Long getCreatedTimestamp() {
+        return getDelegate().getCreatedTimestamp();
+    }
+
+    @Override
+    public Long getLastModifiedTimestamp() {
+        return getDelegate().getLastModifiedTimestamp();
     }
 
 }

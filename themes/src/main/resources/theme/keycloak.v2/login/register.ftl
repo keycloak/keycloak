@@ -8,7 +8,7 @@
 
     <#if section = "header">
         <#if messageHeader??>
-            ${kcSanitize(msg("${messageHeader}"))?no_esc}
+            ${msg(messageHeader)}
         <#else>
             ${msg("registerTitle")}
         </#if>

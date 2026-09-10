@@ -1,11 +1,17 @@
 import type { Page } from "@playwright/test";
-import { selectItem, assertSelectValue, switchToggle } from "../utils/form.ts";
+import {
+  selectItem,
+  assertSelectValue,
+  switchToggle,
+  switchOn,
+} from "../utils/form.ts";
 
 function getKeyForCodeExchangeInput(page: Page) {
   return page.locator("#keyForCodeExchange");
 }
 
 export async function selectKeyForCodeExchangeInput(page: Page, value: string) {
+  await switchOn(page, page.getByTestId("pkce-required"));
   await selectItem(page, getKeyForCodeExchangeInput(page), value);
 }
 

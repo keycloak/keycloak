@@ -70,7 +70,6 @@ public class SAMLMetadataWriter extends BaseWriter {
     public void writeEntitiesDescriptor(EntitiesDescriptorType entities) throws ProcessingException {
         StaxUtil.writeStartElement(writer, METADATA_PREFIX, JBossSAMLConstants.ENTITIES_DESCRIPTOR.get(), JBossSAMLURIConstants.METADATA_NSURI.get());
 
-        StaxUtil.writeDefaultNameSpace(writer, JBossSAMLURIConstants.METADATA_NSURI.get());
         StaxUtil.writeNameSpace(writer, "md", JBossSAMLURIConstants.METADATA_NSURI.get());
         StaxUtil.writeNameSpace(writer, "saml", JBossSAMLURIConstants.ASSERTION_NSURI.get());
         StaxUtil.writeNameSpace(writer, "ds", JBossSAMLURIConstants.XMLDSIG_NSURI.get());
@@ -112,7 +111,6 @@ public class SAMLMetadataWriter extends BaseWriter {
 
     public void writeEntityDescriptor(EntityDescriptorType entityDescriptor) throws ProcessingException {
         StaxUtil.writeStartElement(writer, METADATA_PREFIX, JBossSAMLConstants.ENTITY_DESCRIPTOR.get(), JBossSAMLURIConstants.METADATA_NSURI.get());
-        StaxUtil.writeDefaultNameSpace(writer, JBossSAMLURIConstants.METADATA_NSURI.get());
         StaxUtil.writeNameSpace(writer, "md", JBossSAMLURIConstants.METADATA_NSURI.get());
         StaxUtil.writeNameSpace(writer, "saml", JBossSAMLURIConstants.ASSERTION_NSURI.get());
         StaxUtil.writeNameSpace(writer, "ds", JBossSAMLURIConstants.XMLDSIG_NSURI.get());

@@ -77,7 +77,6 @@ public class SAML11AssertionWriter extends BaseSAML11Writer {
     public void write(SAML11AssertionType assertion) throws ProcessingException {
         StaxUtil.writeStartElement(writer, ASSERTION_PREFIX, JBossSAMLConstants.ASSERTION.get(), ns);
         StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ns);
-        StaxUtil.writeDefaultNameSpace(writer, ns);
 
         // Attributes
         // StaxUtil.writeAttribute(writer, JBossSAMLConstants.ID.get(), assertion.getID());

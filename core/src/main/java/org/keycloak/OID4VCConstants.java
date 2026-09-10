@@ -5,13 +5,14 @@ package org.keycloak;
  */
 public class OID4VCConstants {
 
+    public static final String OID4VCI_ENABLED_ATTRIBUTE_KEY = "oid4vci.enabled";
+
     // Sd-JWT constants
     public static final String SDJWT_DELIMITER = "~";
     public static final String SD_HASH = "sd_hash";
     /**
      * SD-JWT-Credentials {@see https://drafts.oauth.net/oauth-sd-jwt-vc/draft-ietf-oauth-sd-jwt-vc.html}
      */
-    public static final String SD_JWT_VC_FORMAT = "dc+sd-jwt";
     public static final String CLAIM_NAME_SD = "_sd";
     public static final String CLAIM_NAME_SD_HASH_ALGORITHM = "_sd_alg";
     public static final String CLAIM_NAME_SD_UNDISCLOSED_ARRAY = "...";
@@ -22,6 +23,22 @@ public class OID4VCConstants {
     public static final String CLAIM_NAME_ISSUER = "iss";
     public static final String CLAIM_NAME_CNF = "cnf";
     public static final String CLAIM_NAME_JWK = "jwk";
+    public static final String CLAIM_NAME_SUB = "sub";
+    public static final String CLAIM_NAME_VC = "vc";
+    public static final String CLAIM_NAME_VCT = "vct";
+
+    // The JWT identifier uniquely identifies a SD_JWT credential
+    // It is useful for:
+    //   * replay protection of the SD-JWT
+    //   * introspection caches
+    //   * deduplication
+    //   * credential revocation tracking (optional)
+    public static final String CLAIM_NAME_JTI = "jti";
+
+    // The credential subject identifier
+    //   * A stable identifier for the VC subject
+    //   * Can be mapped to user attributes
+    public static final String CLAIM_NAME_SUBJECT_ID = "id";
 
     public static final String KEYBINDING_JWT_TYP = "kb+jwt";
 
@@ -47,6 +64,30 @@ public class OID4VCConstants {
     public static final String WELL_KNOWN_OPENID_CREDENTIAL_ISSUER = "openid-credential-issuer";
     public static final String RESPONSE_TYPE_IMG_PNG = "image/png";
     public static final String CREDENTIAL_OFFER_URI_CODE_SCOPE = "credential-offer";
+
+    // OID4VCI - https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html
+    public static final String OPENID_CREDENTIAL = "openid_credential";
+    public static final String CREDENTIAL_IDENTIFIERS = "credential_identifiers";
+    public static final String CREDENTIAL_CONFIGURATION_ID = "credential_configuration_id";
+    public static final String CRYPTOGRAPHIC_BINDING_METHOD_JWK = "jwk";
+    public static final String CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY = "cose_key";
+
+    // OID4VP - https://openid.net/specs/openid-4-verifiable-presentations-1_0.html
+    public static final String VP_TOKEN = "vp_token";
+    public static final String RESPONSE_CODE = "response_code";
+    public static final String VP_FORMATS_SUPPORTED = "vp_formats_supported";
+    public static final String SD_JWT_ALG_VALUES = "sd-jwt_alg_values";
+    public static final String KB_JWT_ALG_VALUES = "kb-jwt_alg_values";
+    public static final String RESPONSE_MODE_DIRECT_POST = "direct_post";
+    public static final String RESPONSE_MODE_DIRECT_POST_JWT = "direct_post.jwt";
+    // client_metadata parameters advertising the verifier's ephemeral response encryption key material.
+    public static final String JWKS = "jwks";
+    public static final String JWKS_KEYS = "keys";
+    public static final String ENCRYPTED_RESPONSE_ENC_VALUES_SUPPORTED = "encrypted_response_enc_values_supported";
+    public static final String FORMAT_SD_JWT_VC = "dc+sd-jwt";
+    public static final String SELF_ISSUED_V2 = "https://self-issued.me/v2";
+    public static final String REQUEST_OBJECT_TYPE = "oauth-authz-req+jwt";
+    public static final String REQUEST_OBJECT_MEDIA_TYPE = "application/oauth-authz-req+jwt";
 
     private OID4VCConstants() {
     }

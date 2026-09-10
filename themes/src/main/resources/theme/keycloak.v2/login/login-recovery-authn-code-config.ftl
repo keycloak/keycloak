@@ -78,6 +78,7 @@
     </form>
 
     <script>
+        <#outputformat "JavaScript">
         /* copy recovery codes  */
         function copyRecoveryCodes() {
             const tmpTextarea = document.createElement("textarea");
@@ -130,10 +131,10 @@
             };
 
             return fileBodyContent =
-                "${msg("recovery-codes-download-file-header")}\n\n" +
+                ${msg("recovery-codes-download-file-header")?c} + "\n\n" +
                 recoveryCodeList + "\n" +
-                "${msg("recovery-codes-download-file-description")}\n\n" +
-                "${msg("recovery-codes-download-file-date")} " + formatCurrentDateTime();
+                ${msg("recovery-codes-download-file-description")?c} + "\n\n" +
+                ${msg("recovery-codes-download-file-date")?c} + " " + formatCurrentDateTime();
         }
 
         function setUpDownloadLinkAndDownload(filename, text) {
@@ -162,10 +163,10 @@
             return printFileContent =
                 "<html><style>" + styles + "</style><body>" +
                 "<title>kc-download-recovery-codes</title>" +
-                "<p>${msg("recovery-codes-download-file-header")}</p>" +
+                "<p>" + ${msg("recovery-codes-download-file-header")?c} + "</p>" +
                 "<div>" + recoveryCodeListHTML + "</div>" +
-                "<p>${msg("recovery-codes-download-file-description")}</p>" +
-                "<p>${msg("recovery-codes-download-file-date")} " + formatCurrentDateTime() + "</p>" +
+                "<p>" + ${msg("recovery-codes-download-file-description")?c} + "</p>" +
+                "<p>" + ${msg("recovery-codes-download-file-date")?c} + " " + formatCurrentDateTime() + "</p>" +
                 "</body></html>";
         }
 
@@ -175,6 +176,7 @@
             w.print();
             w.close();
         }
+        </#outputformat>
     </script>
 </#if>
 </@layout.registrationLayout>

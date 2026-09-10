@@ -28,7 +28,6 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.dto.OTPCredentialData;
-import org.keycloak.models.credential.dto.OTPSecretData;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.TimeBasedOTP;
 
@@ -98,7 +97,6 @@ public class OTPCredentialProvider implements CredentialProvider<OTPCredentialMo
 
         CredentialModel credential = user.credentialManager().getStoredCredentialById(credentialInput.getCredentialId());
         OTPCredentialModel otpCredentialModel = OTPCredentialModel.createFromCredentialModel(credential);
-        OTPSecretData secretData = otpCredentialModel.getOTPSecretData();
         OTPCredentialData credentialData = otpCredentialModel.getOTPCredentialData();
         OTPPolicy policy = realm.getOTPPolicy();
 

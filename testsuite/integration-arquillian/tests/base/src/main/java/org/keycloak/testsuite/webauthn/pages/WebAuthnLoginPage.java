@@ -18,14 +18,12 @@
 package org.keycloak.testsuite.webauthn.pages;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -48,13 +46,8 @@ public class WebAuthnLoginPage extends LanguageComboboxAwarePage {
         UIUtils.clickLink(authenticateButton);
     }
 
-    public boolean isCurrent() {
-        try {
-            authenticateButton.getText();
-            return driver.findElement(By.id("authenticateWebAuthnButton")).isDisplayed();
-        } catch (NoSuchElementException e) {
-            return false;
-        }
+    public String getExpectedPageId() {
+        return "login-webauthn-authenticate";
     }
 
     public WebAuthnAuthenticatorsList getAuthenticators() {

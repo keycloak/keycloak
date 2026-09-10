@@ -107,7 +107,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     }
 
     protected static RequestToken base64DecodeRequestToken(String serialized) throws IOException, ClassNotFoundException {
-        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(Base64.getDecoder().decode(serialized)))) {
+        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(Base64.getMimeDecoder().decode(serialized)))) {
             return (RequestToken) in.readObject();
         }
     }
@@ -169,7 +169,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     }
 
     protected Response exchangeSessionToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
-        String accessToken = tokenUserSession.getNote(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN);
+        String accessToken = getFederatedAccessToken(tokenUserSession);
         if (accessToken == null) {
             return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
@@ -289,9 +289,15 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     }
 
     @Override
-    public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context) {
-        authSession.setUserSessionNote(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN, (String) context.getContextData().get(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN));
+    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity, UserSessionModel userSession, UserModel user) {
+        // not supported, this way we can remove this insecure management when V1 is removed
+        return exchangeNotSupported();
+    }
 
+    @Override
+    public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context) {
+        String token = (String) context.getContextData().get(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN);
+        setFederatedAccessToken(authSession, token);
     }
 
 }

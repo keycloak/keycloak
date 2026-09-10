@@ -25,8 +25,8 @@ import org.openqa.selenium.support.FindBy;
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -50,11 +50,11 @@ public class ContinueCancelModal {
     }
 
     public void assertIsDisplayed() {
-        assertTrue("Modal dialog should be displayed", isDisplayed());
+        assertTrue(isDisplayed(), "Modal dialog should be displayed");
     }
 
     public void assertIsNotDisplayed() {
-        assertFalse("Modal dialog should not be displayed", isDisplayed());
+        assertFalse(isDisplayed(), "Modal dialog should not be displayed");
     }
 
     public void clickConfirm() {

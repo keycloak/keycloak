@@ -7,6 +7,7 @@ import java.security.KeyPair;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.Algorithm;
@@ -27,6 +28,9 @@ import com.sun.net.httpserver.HttpServer;
 
 import static org.keycloak.common.crypto.CryptoConstants.EC_KEY_SECP256R1;
 
+/**
+ * Mock identity provider that can be used to test various brokering flows
+ */
 public class OAuthIdentityProvider {
 
     private final HttpServer httpServer;
@@ -55,6 +59,10 @@ public class OAuthIdentityProvider {
 
     public String encodeToken(JsonWebToken token, OAuthIdentityProviderKeys keys) {
         return new JWSBuilder().type("JWT").jsonContent(token).sign(new ECDSASignatureSignerContext(keys.getKeyWrapper()));
+    }
+
+    public String encodeIDJAG(JsonWebToken token) {
+        return new JWSBuilder().type(OAuth2Constants.IDENTITY_ASSERTION_JWT_HEADER_TYPE).jsonContent(token).sign(new ECDSASignatureSignerContext(keys.getKeyWrapper()));
     }
 
     public OAuthIdentityProviderKeys createKeys() {

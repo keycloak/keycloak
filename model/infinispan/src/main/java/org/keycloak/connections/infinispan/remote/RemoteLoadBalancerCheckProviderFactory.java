@@ -205,7 +205,7 @@ public class RemoteLoadBalancerCheckProviderFactory implements LoadBalancerCheck
                 isDown = false;
             } catch (Exception e) {
                 if (!isDown) {
-                    logger.warnf("Remote cache '%' is down.", name);
+                    logger.warnf("Remote cache '%s' is down.", name);
                 }
                 isDown = true;
             }

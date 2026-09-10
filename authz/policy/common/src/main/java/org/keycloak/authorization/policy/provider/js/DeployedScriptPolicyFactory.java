@@ -22,6 +22,7 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.ScriptModel;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.provider.ScriptProviderMetadata;
 import org.keycloak.scripting.ScriptingProvider;
 
@@ -56,6 +57,16 @@ public final class DeployedScriptPolicyFactory extends JSPolicyProviderFactory {
     }
 
     @Override
+    public String getDescription() {
+        return metadata.getDescription();
+    }
+
+    @Override
+    public String getCode() {
+        return metadata.getCode();
+    }
+
+    @Override
     public boolean isInternal() {
         return false;
     }
@@ -87,7 +98,18 @@ public final class DeployedScriptPolicyFactory extends JSPolicyProviderFactory {
             representation.setDescription(metadata.getDescription());
             policy.setDescription(metadata.getDescription());
         }
+        if (representation.getCode() == null) {
+            representation.setCode(metadata.getCode());
+        }
         super.onCreate(policy, representation, authorization);
+    }
+
+    @Override
+    public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
+        if (policy.getDescription() == null) {
+            policy.setDescription(metadata.getDescription());
+        }
+        super.onImport(policy, representation, authorization);
     }
 
     public ScriptProviderMetadata getMetadata() {

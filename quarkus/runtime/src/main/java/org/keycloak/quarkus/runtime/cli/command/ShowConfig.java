@@ -92,10 +92,9 @@ public final class ShowConfig extends AbstractCommand {
                 if (!property.equals(from)) {
                     ConfigValue value = getConfigValue(from);
                     if (value.getValue() != null) {
-                        return;
+                        configValue = value;
+                        property = from;
                     }
-                    configValue = value;
-                    property = from;
                 }
             }
 
@@ -104,10 +103,8 @@ public final class ShowConfig extends AbstractCommand {
             }
 
             if (property.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX)) {
-                if (mapper == null) {
-                    quarkusValues.add(configValue);
-                    return;
-                }
+                quarkusValues.add(configValue);
+                return;
             } else if (!property.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
                 return;
             }
@@ -126,8 +123,15 @@ public final class ShowConfig extends AbstractCommand {
     private void printProperty(String property, PropertyMapper<?> mapper, ConfigValue configValue) {
         String sourceName = configValue.getConfigSourceName();
         String value = configValue.getValue();
-
-        value = maskValue(value, sourceName, mapper);
+        
+        if (property.startsWith(MicroProfileConfigProvider.SPI_PREFIX)) {
+            // could be marked as ProviderConfigProperty.isSecret, so the simplest option for now
+            // is to just mask all direct usage of spi options.
+            // the most straight-forward alternative is to move show-config to be run after the quarkus start
+            value = PropertyMappers.VALUE_MASK; 
+        } else {
+            value = maskValue(value, sourceName, mapper);
+        }
 
         spec.commandLine().getOut().printf("\t%s =  %s (%s)%n", property, value, KeycloakConfigSourceProvider.getConfigSourceDisplayName(sourceName));
     }

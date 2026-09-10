@@ -90,7 +90,13 @@ In the following cases, {project_name} will verify the client sending the access
 * A UserInfo request is sent to UserInfo endpoint with a holder-of-key access token.
 * A logout request is sent to non-OIDC compliant {project_name} proprietary Logout endpoint with a holder-of-key refresh token.
 
-See https://datatracker.ietf.org/doc/html/draft-ietf-oauth-mtls-08#section-3[Mutual TLS Client Certificate Bound Access Tokens] in the OAuth 2.0 Mutual TLS Client Authentication and Certificate Bound Access Tokens for more details.
+See https://datatracker.ietf.org/doc/rfc8705/[Mutual TLS Client Certificate Bound Access Tokens] in the OAuth 2.0 Mutual TLS Client Authentication and Certificate Bound Access Tokens for more details.
+
+[NOTE]
+====
+Sender-constrained tokens like X.509 certificate-bound tokens (mTLS tokens with the `x5t#S256` confirmation claim), cannot be used as the `subject_token` parameter in link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard Token Exchange].
+====
+
 
 [NOTE]
 ====

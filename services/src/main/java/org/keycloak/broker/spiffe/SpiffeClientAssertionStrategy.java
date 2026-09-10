@@ -27,6 +27,10 @@ public class SpiffeClientAssertionStrategy implements ClientAssertionIdentityPro
         ClientModel client = lookupProvider.lookupClientFromClientAttributes(
                 context.getSession(),
                 Map.of(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, federatedClientId));
+        if (client == null) {
+            return null;
+        }
+
         IdentityProviderModel identityProvider = context.getSession().identityProviders().getByAlias(
                 client.getAttribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY));
 

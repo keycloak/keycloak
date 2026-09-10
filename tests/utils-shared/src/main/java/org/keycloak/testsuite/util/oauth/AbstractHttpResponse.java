@@ -72,6 +72,10 @@ public abstract class AbstractHttpResponse {
         return errorDescription;
     }
 
+    public String setErrorDescription(String errorDescription) {
+        return errorDescription;
+    }
+
     protected String getContentType() {
         Header[] contentTypeHeaders = response.getHeaders("Content-Type");
         return contentTypeHeaders != null && contentTypeHeaders.length > 0 ? contentTypeHeaders[0].getValue() : null;

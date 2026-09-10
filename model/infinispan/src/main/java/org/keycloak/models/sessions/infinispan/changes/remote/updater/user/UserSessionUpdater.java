@@ -79,7 +79,7 @@ public class UserSessionUpdater extends BaseUpdater<String, RemoteUserSessionEnt
     public Expiration computeExpiration() {
         long maxIdle = SessionTimeouts.getUserSessionMaxIdleMs(realm, isOffline(), getValue().isRememberMe(), getValue().getLastSessionRefresh());
         long lifespan = SessionTimeouts.getUserSessionLifespanMs(realm, isOffline(), getValue().isRememberMe(), getValue().getStarted());
-        return new Expiration(maxIdle, lifespan);
+        return new Expiration(SessionTimeouts.IMMORTAL_FLAG, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan));
     }
 
     @Override

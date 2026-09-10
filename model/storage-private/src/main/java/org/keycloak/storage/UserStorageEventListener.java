@@ -39,6 +39,10 @@ public final class UserStorageEventListener implements ClusterListener, Provider
             RealmModel realm = session.realms().getRealm(realmId);
 
             if (realm == null) {
+                if (fedEvent.isRemoved()) {
+                    logger.debugf("Realm with id %s not found when handling user storage removal event, it may have been deleted already", realmId);
+                    return;
+                }
                 throw new RuntimeException("Failed to execute session task. Realm with id " + realmId + " not found.");
             }
 
@@ -69,12 +73,14 @@ public final class UserStorageEventListener implements ClusterListener, Provider
             });
         } else if (event instanceof StoreSyncEvent ev) {
             UserStorageProviderModel model = ev.getModel() == null ? null: new UserStorageProviderModel(ev.getModel());
-            KeycloakSession session = ev.getSession();
             boolean removed = ev.getRemoved();
-            RealmModel contextRealm = session.getContext().getRealm();
-            RealmModel realm = ev.getRealm();
+            String realmId = ev.getRealm().getId();
 
-            try {
+            runJobInTransaction(sessionFactory, session -> {
+                RealmModel realm = session.realms().getRealm(realmId);
+                if (realm == null) {
+                    return;
+                }
                 session.getContext().setRealm(realm);
 
                 if (model != null) {
@@ -86,9 +92,7 @@ public final class UserStorageEventListener implements ClusterListener, Provider
                         notifyStoreSyncClusterUpdate(session, realm, fedProvider, removed);
                     });
                 }
-            } finally {
-                session.getContext().setRealm(contextRealm);
-            }
+            });
         }
     }
 

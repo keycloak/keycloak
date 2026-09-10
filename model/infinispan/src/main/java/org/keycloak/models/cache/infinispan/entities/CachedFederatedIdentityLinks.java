@@ -34,7 +34,7 @@ public class CachedFederatedIdentityLinks extends AbstractRevisioned implements 
     private final String realmId;
     private final Set<FederatedIdentityModel> federatedIdentities = new HashSet<>();
 
-    public CachedFederatedIdentityLinks(Long revision, String id, RealmModel realm, Set<FederatedIdentityModel> federatedIdentities) {
+    public CachedFederatedIdentityLinks(long revision, String id, RealmModel realm, Set<FederatedIdentityModel> federatedIdentities) {
         super(revision, id);
         this.realmId = realm.getId();
         this.federatedIdentities.addAll(federatedIdentities);

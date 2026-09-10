@@ -6,18 +6,40 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Injects a {@link org.keycloak.admin.client.Keycloak} instance to access Keycloak Admin APIs
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface InjectAdminClient {
 
+    /**
+     * A ref must be set if a test requires multiple instances
+     */
     String ref() default "";
 
+    /**
+     * Set to attach to the non-default realm
+     */
     String realmRef() default "";
 
+    /**
+     * <code>BOOTSTRAP</code> attaches to the master realm and global test client, while <code>MANAGED_REALM</code>
+     * attaches to a managed realm using the specified client or user. When using <code>MANAGED_REALM</code> either
+     * client or user must be set in the {@link org.keycloak.testframework.realm.ManagedRealm} instance using the {@link org.keycloak.testframework.realm.RealmConfig} implementation
+     */
     Mode mode() default Mode.BOOTSTRAP;
 
+    /**
+     * The client to authenticate as
+     * The client must be configured within the {@link org.keycloak.testframework.realm.ManagedRealm} instance, {@link org.keycloak.testframework.realm.ManagedClient} is not supported
+     */
     String client() default "";
 
+    /**
+     * The user to authenticate as
+     * The user must be configured within the {@link org.keycloak.testframework.realm.ManagedRealm} instance, {@link org.keycloak.testframework.realm.ManagedUser} is not supported
+     */
     String user() default "";
 
     enum Mode {

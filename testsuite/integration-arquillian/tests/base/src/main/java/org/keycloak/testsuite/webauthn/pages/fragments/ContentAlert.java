@@ -27,8 +27,8 @@ import static org.keycloak.testsuite.util.UIUtils.doesElementClassContain;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElementIsNotPresent;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -58,7 +58,7 @@ public class ContentAlert {
     }
 
     public void assertIsDisplayed() {
-        assertTrue("Alert is not displayed", isDisplayed());
+        assertTrue(isDisplayed(), "Alert is not displayed");
     }
 
     public void assertIsNotDisplayed() {
@@ -79,7 +79,7 @@ public class ContentAlert {
     }
 
     protected void assertAlertType(String type) {
-        assertTrue("Alert is not " + type, doesElementClassContain(alertElementRoot, type));
+        assertTrue(doesElementClassContain(alertElementRoot, type), "Alert is not " + type);
     }
 
     protected void assertMessage(String expectedMessage) {

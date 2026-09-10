@@ -5,26 +5,27 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.json.MultivaluedHashMapValue;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SCHEDULED_AT;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STATUS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
 
-@JsonPropertyOrder({CONFIG_USES, CONFIG_AFTER, CONFIG_PRIORITY, CONFIG_WITH, CONFIG_SCHEDULED_AT})
+@JsonPropertyOrder({CONFIG_USES, CONFIG_AFTER, CONFIG_PRIORITY, CONFIG_WITH, CONFIG_SCHEDULED_AT, CONFIG_STATUS})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class WorkflowStepRepresentation extends AbstractWorkflowComponentRepresentation {
 
     private final String uses;
     private Long scheduledAt;
+    private StepExecutionStatus executionStatus;
 
     public static Builder create() {
         return new Builder();
@@ -48,17 +49,11 @@ public class WorkflowStepRepresentation extends AbstractWorkflowComponentReprese
         this.scheduledAt = scheduledAt;
     }
 
-    @JsonIgnore
-    public String getId() {
-        return super.getId();
-    }
-
     public String getUses() {
         return this.uses;
     }
 
-    @JsonSerialize(using = MultivaluedHashMapValueSerializer.class)
-    @JsonDeserialize(using = MultivaluedHashMapValueDeserializer.class)
+    @MultivaluedHashMapValue
     @JsonInclude(value=JsonInclude.Include.NON_EMPTY, content=JsonInclude.Include.NON_NULL)
     public MultivaluedHashMap<String, String> getConfig() {
         return super.getConfig();
@@ -72,6 +67,7 @@ public class WorkflowStepRepresentation extends AbstractWorkflowComponentReprese
         setConfig(CONFIG_AFTER, after);
     }
 
+    @JsonIgnore
     public String getPriority() {
         return getConfigValue(CONFIG_PRIORITY, String.class);
     }
@@ -87,6 +83,15 @@ public class WorkflowStepRepresentation extends AbstractWorkflowComponentReprese
 
     public void setScheduledAt(Long scheduledAt) {
         this.scheduledAt = scheduledAt;
+    }
+
+    @JsonProperty(CONFIG_STATUS)
+    public StepExecutionStatus getExecutionStatus() {
+        return this.executionStatus;
+    }
+
+    public void setExecutionStatus(StepExecutionStatus executionStatus) {
+        this.executionStatus = executionStatus;
     }
 
     @Override

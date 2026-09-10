@@ -82,7 +82,7 @@ public final class ImportPropertyMappers implements PropertyMapperGrouping {
             .category(OptionCategory.IMPORT)
             .description("Placeholder for determining import mode")
             .buildTime(false)
-            .hidden()
+            .synthetic()
             .build();
 
     private static boolean isSingleFileProvider() {

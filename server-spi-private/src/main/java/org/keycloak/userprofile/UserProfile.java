@@ -71,6 +71,18 @@ public interface UserProfile {
     UserModel create() throws ValidationException;
 
     /**
+     * Creates a new {@link UserModel} based on the attributes associated with this instance.
+     *
+     * @param validate if {@code true}, execute validations on create. Otherwise, validation should be done programmatically by calling {@link #validate()}
+     *
+     * @throws ValidationException in case validation fails
+     * @return the {@link UserModel} instance created from this profile
+     */
+    default UserModel create(boolean validate) throws ValidationException {
+        return create();
+    }
+
+    /**
      * <p>Updates the {@link UserModel} associated with this instance. If no {@link UserModel} is associated with this instance, this operation has no effect.
      *
      * <p>Before updating the {@link UserModel}, this method first checks whether the {@link #validate()} method was previously
@@ -117,4 +129,15 @@ public interface UserProfile {
      * @return the user representation
      */
     <R extends AbstractUserRepresentation> R toRepresentation(boolean full);
+
+    /**
+     * Returns the user representation with control over metadata inclusion.
+     *
+     * @param full if the full representation should be returned
+     * @param includeMetadata if user profile metadata should be included in the representation
+     * @return the user representation
+     */
+    default <R extends AbstractUserRepresentation> R toRepresentation(boolean full, boolean includeMetadata) {
+        return toRepresentation(full);
+    }
 }

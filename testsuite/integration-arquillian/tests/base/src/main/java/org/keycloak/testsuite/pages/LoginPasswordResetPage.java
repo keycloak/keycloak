@@ -62,8 +62,9 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
         UIUtils.clickLink(submitButton);
     }
 
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Forgot Your Password?");
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-reset-password";
     }
 
     public String getSuccessMessage() {

@@ -17,9 +17,9 @@
 
 package org.keycloak.testsuite.composites;
 
-import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 
 /**
  *
@@ -27,11 +27,9 @@ import org.keycloak.testsuite.admin.ApiUtil;
  */
 public abstract class AbstractCompositeKeycloakTest extends AbstractKeycloakTest {
 
-    protected RealmResource testRealm() {
-        return adminClient.realm("test");
-    }
+    protected ManagedRealm managedRealm = new ManagedRealm(this, "test");
 
     protected String getUserId(String username) {
-        return ApiUtil.findUserByUsername(testRealm(), username).getId();
+        return AdminApiUtil.findUserByUsername(managedRealm.admin(), username).getId();
     }
 }

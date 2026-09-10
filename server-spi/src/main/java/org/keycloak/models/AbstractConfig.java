@@ -17,7 +17,10 @@
 package org.keycloak.models;
 
 import java.io.Serializable;
+import java.util.Map;
 import java.util.function.Supplier;
+
+import org.keycloak.utils.StringUtil;
 
 public abstract class AbstractConfig implements Serializable {
 
@@ -38,6 +41,18 @@ public abstract class AbstractConfig implements Serializable {
         RealmModel realm = realmForWrite == null ? null : this.realmForWrite.get();
         if (realm != null) {
             realm.setAttribute(name, value);
+        }
+    }
+
+    protected static int getIntAttribute(Map<String, String> attributes, String name, int defaultValue) {
+        var value = attributes.get(name);
+        if (StringUtil.isBlank(value)) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return defaultValue;
         }
     }
 }

@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import { FormAccess } from "../../components/form/FormAccess";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
-import { DEFAULT_LOCALE } from "../../i18n/i18n";
+import { DEFAULT_LOCALE } from "../../i18n/constants";
 import { localeToDisplayName } from "../../util";
 import { EffectiveMessageBundles } from "./EffectiveMessageBundles";
 import { RealmOverrides } from "./RealmOverrides";

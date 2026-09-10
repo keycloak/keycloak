@@ -61,6 +61,9 @@ class ClientPermissionsV2 extends ClientPermissions {
 
     @Override
     public boolean canManage(ClientModel client) {
+        if (isInternal(client)) {
+            return false;
+        }
         if (root.hasOneAdminRole(AdminRoles.MANAGE_CLIENTS)) {
             return true;
         }
@@ -140,7 +143,9 @@ class ClientPermissionsV2 extends ClientPermissions {
 
     @Override
     public boolean canExchangeTo(ClientModel authorizedClient, ClientModel to, AccessToken token) {
-        throw new UnsupportedOperationException("Not supported in V2");
+        // V2 does not support configuring token-exchange permissions.
+        // Deny gracefully instead of failing with an uncaught exception.
+        return false;
     }
 
     @Override

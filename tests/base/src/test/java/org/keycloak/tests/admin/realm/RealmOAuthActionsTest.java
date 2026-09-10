@@ -27,8 +27,8 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.TestApp;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectTestApp;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
@@ -115,7 +115,7 @@ public class RealmOAuthActionsTest extends AbstractRealmTest {
     public void logoutAll() throws InterruptedException {
         setupTestAppAndUser();
 
-        Response response = managedRealm.admin().users().create(UserConfigBuilder.create().username("user").name("User", "Name").email("user@name").emailVerified(true).build());
+        Response response = managedRealm.admin().users().create(UserBuilder.create().username("user").name("User", "Name").email("user@name").emailVerified(true).build());
         String userId = ApiUtil.getCreatedId(response);
         response.close();
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.userResourcePath(userId), ResourceType.USER);
@@ -201,7 +201,7 @@ public class RealmOAuthActionsTest extends AbstractRealmTest {
     private void setupTestAppAndUser() {
         testApp.kcAdmin().clear();
 
-        ClientRepresentation client = ClientConfigBuilder.create()
+        ClientRepresentation client = ClientBuilder.create()
                 .id("test-app-new")
                 .clientId("test-app-new")
                 .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
@@ -218,7 +218,7 @@ public class RealmOAuthActionsTest extends AbstractRealmTest {
 
         oauth.client("test-app-new", "secret");
 
-        UserRepresentation userRep = UserConfigBuilder.create().username("testuser").name("Test", "User").email("test@user").emailVerified(true).build();
+        UserRepresentation userRep = UserBuilder.create().username("testuser").name("Test", "User").email("test@user").emailVerified(true).build();
         Response response = managedRealm.admin().users().create(userRep);
         String userId = ApiUtil.getCreatedId(response);
         response.close();
@@ -235,7 +235,7 @@ public class RealmOAuthActionsTest extends AbstractRealmTest {
     }
 
     private void setupTestSamlApp() {
-        ClientRepresentation client = ClientConfigBuilder.create()
+        ClientRepresentation client = ClientBuilder.create()
                 .id("test-saml-app")
                 .clientId("test-saml-app")
                 .protocol(SamlProtocol.LOGIN_PROTOCOL)

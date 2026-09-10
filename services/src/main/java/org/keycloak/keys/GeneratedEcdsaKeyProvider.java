@@ -54,11 +54,11 @@ public class GeneratedEcdsaKeyProvider extends AbstractEcKeyProvider {
                                                                .orElse(false);
 
         try {
-            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(privateEcdsaKeyBase64Encoded));
+            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.getMimeDecoder().decode(privateEcdsaKeyBase64Encoded));
             KeyFactory kf = KeyFactory.getInstance("EC");
             PrivateKey decodedPrivateKey = kf.generatePrivate(privateKeySpec);
 
-            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(publicEcdsaKeyBase64Encoded));
+            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getMimeDecoder().decode(publicEcdsaKeyBase64Encoded));
             PublicKey decodedPublicKey = kf.generatePublic(publicKeySpec);
 
             KeyPair keyPair = new KeyPair(decodedPublicKey, decodedPrivateKey);

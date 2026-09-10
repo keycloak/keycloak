@@ -10,6 +10,15 @@ public class WelcomePage extends AbstractPage {
     @FindBy(id = "username")
     private WebElement usernameInput;
 
+    @FindBy(id = "firstName")
+    private WebElement firstNameInput;
+
+    @FindBy(id = "lastName")
+    private WebElement lastNameInput;
+
+    @FindBy(id = "email")
+    private WebElement emailInput;
+
     @FindBy(id = "password")
     private WebElement passwordInput;
 
@@ -36,7 +45,20 @@ public class WelcomePage extends AbstractPage {
     }
 
     public void fillRegistration(String username, String password) {
+        fillRegistration(username, null, null, null, password);
+    }
+
+    public void fillRegistration(String username, String firstName, String lastName, String email, String password) {
         usernameInput.sendKeys(username);
+        if (firstName != null) {
+            firstNameInput.sendKeys(firstName);
+        }
+        if (lastName != null) {
+            lastNameInput.sendKeys(lastName);
+        }
+        if (email != null) {
+            emailInput.sendKeys(email);
+        }
         passwordInput.sendKeys(password);
         passwordConfirmationInput.sendKeys(password);
     }

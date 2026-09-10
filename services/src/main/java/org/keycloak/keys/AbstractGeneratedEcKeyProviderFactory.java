@@ -115,7 +115,7 @@ public abstract class AbstractGeneratedEcKeyProviderFactory<T extends KeyProvide
     protected String getCurveFromPublicKey(String publicEcKeyBase64Encoded) {
         try {
             KeyFactory kf = KeyFactory.getInstance("EC");
-            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(publicEcKeyBase64Encoded));
+            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getMimeDecoder().decode(publicEcKeyBase64Encoded));
             ECPublicKey ecKey = (ECPublicKey) kf.generatePublic(publicKeySpec);
             return "P-" + ecKey.getParams().getCurve().getField().getFieldSize();
         } catch (Throwable t) {

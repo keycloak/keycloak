@@ -35,6 +35,12 @@ export const SearchInputComponent = ({
           onChange={(event: React.FormEvent<HTMLInputElement>) =>
             onChange(event.currentTarget.value)
           }
+          onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              onSearch(value);
+            }
+          }}
           placeholder={placeholder}
           aria-label={ariaLabel}
           data-testid="search-input"

@@ -29,19 +29,19 @@ public abstract class AbstractWorkflowTest {
     protected static final String DEFAULT_REALM_NAME = "default";
 
     @InjectRunOnServer(permittedPackages = {"org.keycloak.tests", "org.hamcrest"}, realmRef = DEFAULT_REALM_NAME)
-    RunOnServerClient runOnServer;
+    protected RunOnServerClient runOnServer;
 
     @InjectRealm(lifecycle = LifeCycle.METHOD, ref = DEFAULT_REALM_NAME)
-    ManagedRealm managedRealm;
+    protected ManagedRealm managedRealm;
 
     @InjectWebDriver
-    ManagedWebDriver driver;
+    protected ManagedWebDriver driver;
 
     @InjectPage
-    LoginPage loginPage;
+    protected LoginPage loginPage;
 
     @InjectOAuthClient(realmRef = DEFAULT_REALM_NAME)
-    OAuthClient oauth;
+    protected OAuthClient oauth;
 
     protected void create(WorkflowRepresentation workflow) {
         try (Response response = managedRealm.admin().workflows().create(workflow)) {

@@ -32,11 +32,11 @@ public class StoreSyncEvent implements ProviderEvent {
     private final boolean removed;
     private final ComponentModel model;
 
-    private StoreSyncEvent(KeycloakSession session, RealmModel realm, boolean removed) {
+    public StoreSyncEvent(KeycloakSession session, RealmModel realm, boolean removed) {
         this(session, realm, null, removed);
     }
 
-    private StoreSyncEvent(KeycloakSession session, RealmModel realm, ComponentModel model, boolean removed) {
+    public StoreSyncEvent(KeycloakSession session, RealmModel realm, ComponentModel model, boolean removed) {
         this.session = session;
         this.realm = realm;
         this.model = model;

@@ -230,6 +230,7 @@ public class ScopeMappedResource {
             if (roleModel == null) {
                 throw new NotFoundException("Role not found");
             }
+            auth.roles().requireMapClientScope(roleModel);
             scopeContainer.addScopeMapping(roleModel);
         }
 
@@ -255,6 +256,7 @@ public class ScopeMappedResource {
 
         if (roles == null) {
             roles = scopeContainer.getRealmScopeMappingsStream()
+                    .filter(auth.roles()::canMapClientScope)
                     .peek(scopeContainer::deleteScopeMapping)
                     .map(ModelToRepresentation::toBriefRepresentation)
                     .collect(Collectors.toList());
@@ -264,6 +266,7 @@ public class ScopeMappedResource {
                 if (roleModel == null) {
                     throw new NotFoundException("Role not found");
                 }
+                auth.roles().requireMapClientScope(roleModel);
                 scopeContainer.deleteScopeMapping(roleModel);
             }
         }

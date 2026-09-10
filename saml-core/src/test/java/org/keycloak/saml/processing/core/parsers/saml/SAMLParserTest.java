@@ -218,7 +218,7 @@ public class SAMLParserTest {
         assertNull(rtChoiceType.getAssertion());
         assertNotNull(rtChoiceType.getEncryptedAssertion());
 
-        PrivateKey privateKey = DerUtils.decodePrivateKey(Base64.getDecoder().decode(PRIVATE_KEY));
+        PrivateKey privateKey = DerUtils.decodePrivateKey(Base64.getMimeDecoder().decode(PRIVATE_KEY));
         AssertionUtil.decryptAssertion(resp, privateKey);
 
         rtChoiceType = resp.getAssertions().get(0);
@@ -761,6 +761,27 @@ public class SAMLParserTest {
         thrown.expectMessage(containsString("NameIDFormat"));
 
         assertParsed("saml20-entity-descriptor-idp-invalid-end-element.xml", EntityDescriptorType.class);
+    }
+
+    @Test(expected = ParsingException.class)
+    public void testSaml11AssertionsNotWellFormed() throws Exception {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("saml11-assertion-not-wellformed.xml")) {
+            parser.parse(st);
+        }
+    }
+
+    @Test(expected = ParsingException.class)
+    public void testSaml11AthorizationDecisionQueryNotWellFormed() throws Exception {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("saml11-authorizatiodecisionquery-not-wellformed.xml")) {
+            parser.parse(st);
+        }
+    }
+
+    @Test(expected = ParsingException.class)
+    public void testSaml11AuthenticationQueryNotWellFormed() throws Exception {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("saml11-authenticationquery-not-wellformed.xml")) {
+            parser.parse(st);
+        }
     }
 
     @Test

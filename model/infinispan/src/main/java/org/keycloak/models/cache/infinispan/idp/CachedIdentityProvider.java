@@ -26,7 +26,7 @@ public class CachedIdentityProvider extends AbstractRevisioned implements InReal
     private final String realm;
     private final IdentityProviderModel idp;
 
-    public CachedIdentityProvider(Long revision, RealmModel realm, String cacheKey, IdentityProviderModel idp) {
+    public CachedIdentityProvider(long revision, RealmModel realm, String cacheKey, IdentityProviderModel idp) {
         super(revision, cacheKey);
         this.realm = realm.getId();
         this.idp = idp;

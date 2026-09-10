@@ -25,7 +25,7 @@ public class CachedCount extends AbstractRevisioned implements InRealm {
     private final String realm;
     private final long count;
 
-    public CachedCount(Long revision, RealmModel realm, String cacheKey, long count) {
+    public CachedCount(long revision, RealmModel realm, String cacheKey, long count) {
         super(revision, cacheKey);
         this.realm = realm.getId();
         this.count = count;

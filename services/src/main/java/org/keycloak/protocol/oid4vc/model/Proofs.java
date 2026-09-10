@@ -42,15 +42,6 @@ public class Proofs {
     @JsonProperty("attestation")
     private List<String> attestation;
 
-    public Proofs() {
-    }
-
-    public Proofs(List<String> jwt, List<DiVpProof> diVp, List<String> attestation) {
-        this.jwt = jwt;
-        this.diVp = diVp;
-        this.attestation = attestation;
-    }
-
     public List<String> getJwt() {
         return jwt;
     }
@@ -79,6 +70,36 @@ public class Proofs {
     }
 
     /**
+     * Create proofs based on the proof type.
+     * Sets the appropriate field (JWT or Attestation) depending on the proof type.
+     *
+     * @param proofType   the proof type (ProofType.JWT or ProofType.ATTESTATION)
+     * @param proofValues the proof values to set
+     */
+    public static Proofs create(String proofType, String... proofValues) {
+        if (proofType == null) {
+            throw new IllegalArgumentException("proofType cannot be null");
+        }
+        if (proofValues == null || proofValues.length == 0) {
+            throw new IllegalArgumentException("proofValues cannot be null or empty");
+        }
+        for (String proof : proofValues) {
+            if (proof == null || proof.isBlank()) {
+                throw new IllegalArgumentException("Null or blank proof value");
+            }
+        }
+        Proofs proofs = new Proofs();
+        switch (proofType) {
+            case ProofType.JWT ->
+                    proofs.setJwt(List.of(proofValues));
+            case ProofType.ATTESTATION ->
+                    proofs.setAttestation(List.of(proofValues));
+            default -> throw new IllegalArgumentException("Unknown proof type: " + proofType);
+        }
+        return proofs;
+    }
+
+    /**
      * Determines the proof type based on which field is populated.
      * Checks JWT first, then Attestation.
      *
@@ -92,23 +113,6 @@ public class Proofs {
             return ProofType.ATTESTATION;
         }
         return null;
-    }
-
-    /**
-     * Sets the proof value based on the proof type.
-     * Sets the appropriate field (JWT or Attestation) depending on the proof type.
-     *
-     * @param proofType the proof type (ProofType.JWT or ProofType.ATTESTATION)
-     * @param proof     the proof value to set
-     * @return this instance for method chaining
-     */
-    public Proofs setProofByType(String proofType, String proof) {
-        if (ProofType.JWT.equals(proofType)) {
-            setJwt(List.of(proof));
-        } else if (ProofType.ATTESTATION.equals(proofType)) {
-            setAttestation(List.of(proof));
-        }
-        return this;
     }
 
     /**

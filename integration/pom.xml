@@ -31,7 +31,9 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>admin-client-core</module>
         <module>admin-client</module>
+        <module>admin-client-jackson3</module>
         <module>client-registration</module>
         <module>client-cli</module>
     </modules>

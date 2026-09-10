@@ -66,6 +66,7 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
@@ -74,6 +75,7 @@ import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RequiredActionConfigInfoRepresentation;
@@ -379,7 +381,8 @@ public class AuthenticationManagementResource {
                 () -> {}, // allow deleting even with missing references
                 () -> {
                     throw new BadRequestException("Can't delete built in flow");
-                }
+                },
+                flow.isBuiltIn()
         );
 
         // Use just one event for top-level flow. Using separate events won't work properly for flows of depth 2 or bigger
@@ -409,6 +412,7 @@ public class AuthenticationManagementResource {
         auth.realm().requireManageRealm();
 
         String newName = data.get("newName");
+        ReservedCharValidator.validate(newName);
         if (realm.getFlowByAlias(newName) != null) {
             throw ErrorResponse.exists("New flow alias name already exists");
         }
@@ -1034,7 +1038,8 @@ public class AuthenticationManagementResource {
                 () -> {}, // allow deleting even with missing references
                 () -> {
                     throw new BadRequestException("It is illegal to remove execution from a built in flow");
-                }
+                },
+                parentFlow.isBuiltIn()
         );
 
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.AUTH_EXECUTION).resourcePath(session.getContext().getUri()).success();
@@ -1122,7 +1127,7 @@ public class AuthenticationManagementResource {
             throw new NotFoundException("Could not find authenticator config");
 
         }
-        return ModelToRepresentation.toRepresentation(config);
+        return StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(config));
     }
 
     /**
@@ -1619,7 +1624,7 @@ public class AuthenticationManagementResource {
             throw new NotFoundException("Could not find authenticator config");
 
         }
-        return ModelToRepresentation.toRepresentation(config);
+        return StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(config));
     }
 
     /**
@@ -1678,7 +1683,16 @@ public class AuthenticationManagementResource {
         }
 
         exists.setAlias(rep.getAlias());
-        exists.setConfig(RepresentationToModel.removeEmptyString(rep.getConfig()));
+        Map<String, String> newConfig = RepresentationToModel.removeEmptyString(rep.getConfig());
+        if (newConfig != null && exists.getConfig() != null) {
+            newConfig.entrySet().removeIf(e ->
+                    ComponentRepresentation.SECRET_VALUE.equals(e.getValue()) && !exists.getConfig().containsKey(e.getKey()));
+            newConfig.replaceAll((key, value) ->
+                    ComponentRepresentation.SECRET_VALUE.equals(value)
+                            ? exists.getConfig().get(key)
+                            : value);
+        }
+        exists.setConfig(newConfig);
         realm.updateAuthenticatorConfig(exists);
         adminEvent.operation(OperationType.UPDATE).resource(ResourceType.AUTHENTICATOR_CONFIG).resourcePath(session.getContext().getUri()).representation(rep).success();
     }

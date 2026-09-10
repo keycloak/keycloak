@@ -43,8 +43,8 @@ public class LoginExpiredPage extends LanguageComboboxAwarePage {
     }
 
     @Override
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Page has expired");
+    public String getExpectedPageId() {
+        return "login-login-page-expired";
     }
 
 }

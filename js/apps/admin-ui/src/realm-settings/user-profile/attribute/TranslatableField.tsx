@@ -15,7 +15,6 @@ import { useEffect } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
 import { useRealm } from "../../../context/realm-context/RealmContext";
-import { i18n } from "../../../i18n/i18n";
 import { beerify, debeerify } from "../../../util";
 import useToggle from "../../../utils/useToggle";
 import { AddTranslationsDialog } from "./AddTranslationsDialog";
@@ -60,7 +59,6 @@ export const saveTranslations = async ({
       )
       .flat(),
   );
-  await i18n.reloadResources();
 };
 
 type TranslatableFieldProps = {
@@ -95,7 +93,7 @@ export const TranslatableField = ({
     if (predefinedAttributes?.includes(value)) {
       return;
     }
-    if (realm?.internationalizationEnabled && value) {
+    if (realm.internationalizationEnabled && value) {
       setValue(fieldName, `\${${prefix}.${value}}`);
     }
   }, [value]);
@@ -133,11 +131,11 @@ export const TranslatableField = ({
           <TextInput
             id={`kc-attribute-${fieldName}`}
             data-testid={`attributes-${fieldName}`}
-            isDisabled={realm?.internationalizationEnabled}
+            isDisabled={realm.internationalizationEnabled}
             {...register(fieldName)}
           />
         </InputGroupItem>
-        {realm?.internationalizationEnabled && (
+        {realm.internationalizationEnabled && (
           <InputGroupItem>
             <Button
               variant="link"
@@ -150,7 +148,7 @@ export const TranslatableField = ({
           </InputGroupItem>
         )}
       </InputGroup>
-      {realm?.internationalizationEnabled && (
+      {realm.internationalizationEnabled && (
         <FormHelperText>
           <Alert
             variant="info"

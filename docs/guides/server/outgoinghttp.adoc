@@ -24,6 +24,9 @@ The following are the command options:
 *establish-connection-timeout-millis*::
 Maximum time in milliseconds until establishing a connection times out. Default: Not set.
 
+*connection-request-timeout-millis*::
+Maximum time in milliseconds to obtain a connection for a request. Default: 5000ms
+
 *socket-timeout-millis*::
 Maximum time of inactivity between two data packets until a socket connection times out, in milliseconds. Default: 5000ms
 
@@ -41,6 +44,11 @@ Maximum time an idle connection stays in the connection pool, in milliseconds. I
 
 *disable-cookies*::
 Enable or disable caching of cookies. Default: true.
+
+*allow-redirects*::
+Whether to allow following HTTP redirects. Default: false.
+This option is deprecated, only provided for backwards compatibility, and will be removed in a future release.
+It is recommended to be `false` to avoid redirects that could lead for example to server-side request forgery (SSRF).
 
 *client-keystore*::
 File path to a Java keystore file. This keystore contains client certificates for mTLS.

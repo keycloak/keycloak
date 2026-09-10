@@ -11,17 +11,23 @@ import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/def
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata.js";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation.js";
 import type { Credentials } from "@keycloak/keycloak-admin-client/lib/utils/auth.js";
+import {
+  ADMIN_PASSWORD,
+  ADMIN_USER,
+  DEFAULT_REALM,
+  SERVER_URL,
+} from "./constants.ts";
 
 class AdminClient {
   readonly #client = new KeycloakAdminClient({
-    baseUrl: "http://localhost:8080",
-    realmName: "master",
+    baseUrl: SERVER_URL,
+    realmName: DEFAULT_REALM,
   });
 
   #login() {
     return this.#client.auth({
-      username: "admin",
-      password: "admin",
+      username: ADMIN_USER,
+      password: ADMIN_PASSWORD,
       grantType: "password",
       clientId: "admin-cli",
     });
@@ -63,14 +69,24 @@ class AdminClient {
     return await this.#client.clients.create(client);
   }
 
-  async deleteClient(clientName: string) {
+  async getClient(clientName: string, realmName?: string) {
     await this.#login();
-    const client = (
-      await this.#client.clients.find({ clientId: clientName })
-    )[0];
+    return (
+      await this.#client.clients.find({
+        clientId: clientName,
+        ...(realmName !== undefined && { realm: realmName }),
+      })
+    ).at(0);
+  }
 
+  async deleteClient(
+    clientName: string,
+    realmName: string = this.#client.realmName,
+  ) {
+    const client = await this.getClient(clientName, realmName);
     if (client) {
-      await this.#client.clients.del({ id: client.id! });
+      await this.#login();
+      await this.#client.clients.del({ id: client.id!, realm: realmName });
     }
   }
 
@@ -97,11 +113,11 @@ class AdminClient {
     return createdGroups;
   }
 
-  async deleteGroups() {
+  async deleteGroups(realm: string = this.#client.realmName) {
     await this.#login();
-    const groups = await this.#client.groups.find();
+    const groups = await this.#client.groups.find({ realm });
     for (const group of groups) {
-      await this.#client.groups.del({ id: group.id! });
+      await this.#client.groups.del({ id: group.id!, realm });
     }
   }
 
@@ -333,6 +349,25 @@ class AdminClient {
     });
   }
 
+  async isFeatureEnabled(
+    featureName: string,
+    realm: string = this.#client.realmName,
+  ): Promise<boolean> {
+    await this.#login();
+    const features = (await this.#client.serverInfo.find({ realm })).features;
+    const normalizeServerFeatureName = (name?: string) =>
+      name?.replace(/_V\d+$/, "");
+
+    return (
+      features?.some(
+        (feature) =>
+          feature.enabled &&
+          (feature.name === featureName ||
+            normalizeServerFeatureName(feature.name) === featureName),
+      ) ?? false
+    );
+  }
+
   async deleteIdentityProvider(idpAlias: string) {
     await this.#login();
     await this.#client.identityProviders.del({
@@ -351,6 +386,17 @@ class AdminClient {
       { realm, selectedLocale: locale, key: key },
       value,
     );
+  }
+
+  async getLocalizationTexts(
+    locale: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    return await this.#client.realms.getRealmLocalizationTexts({
+      realm,
+      selectedLocale: locale,
+    });
   }
 
   async removeAllLocalizationTexts() {
@@ -387,6 +433,105 @@ class AdminClient {
     if (found.length !== 0) {
       await this.#client.organizations.delById({ id: found[0].id!, realm });
     }
+  }
+
+  async #withRealm<T>(realm: string, fn: () => Promise<T>): Promise<T> {
+    const savedRealm = this.#client.realmName;
+    this.#client.realmName = realm;
+    try {
+      return await fn();
+    } finally {
+      this.#client.realmName = savedRealm;
+    }
+  }
+
+  async #findOrgId(orgName: string): Promise<string> {
+    const found = await this.#client.organizations.find({ search: orgName });
+    if (found.length === 0)
+      throw new Error(`Organization not found: ${orgName}`);
+    return found[0].id!;
+  }
+
+  async addOrgMember(
+    orgName: string,
+    userId: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    await this.#withRealm(realm, async () => {
+      const orgId = await this.#findOrgId(orgName);
+      await this.#client.organizations.addMember({ orgId, userId });
+    });
+  }
+
+  async createOrgGroup(
+    orgName: string,
+    groupName: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    return this.#withRealm(realm, async () => {
+      const orgId = await this.#findOrgId(orgName);
+      return this.#client.organizations
+        .groups(orgId)
+        .create({ name: groupName });
+    });
+  }
+
+  async createOrgSubGroups(
+    orgName: string,
+    groups: string[],
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    return this.#withRealm(realm, async () => {
+      const orgId = await this.#findOrgId(orgName);
+      const groupsResource = this.#client.organizations.groups(orgId);
+      let parentGroup: { id: string } | undefined;
+      const createdGroups: { id: string }[] = [];
+      for (const group of groups) {
+        if (!parentGroup) {
+          parentGroup = await groupsResource.create({ name: group });
+        } else {
+          parentGroup = await groupsResource.createChildGroup(
+            { id: parentGroup.id },
+            { name: group },
+          );
+        }
+        createdGroups.push(parentGroup);
+      }
+      return createdGroups;
+    });
+  }
+
+  async deleteOrgGroups(
+    orgName: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    await this.#withRealm(realm, async () => {
+      const orgId = await this.#findOrgId(orgName);
+      const groupsResource = this.#client.organizations.groups(orgId);
+      const groups = await groupsResource.find({});
+      for (const group of groups) {
+        await groupsResource.del({ id: group.id! });
+      }
+    });
+  }
+
+  async addUserToOrgGroup(
+    userId: string,
+    groupId: string,
+    orgName: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    await this.#withRealm(realm, async () => {
+      const orgId = await this.#findOrgId(orgName);
+      await this.#client.organizations
+        .groups(orgId)
+        .addMemberToOrgGroup({ groupId, userId });
+    });
   }
 
   async copyFlow(
@@ -505,6 +650,7 @@ class AdminClient {
 
     const client = (await this.#client.clients.find({ clientId, realm }))[0];
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- find()[0] is undefined when client does not exist
     if (!client?.id) {
       throw new Error(`Client ${clientId} not found in realm ${realm}`);
     }
@@ -513,6 +659,37 @@ class AdminClient {
       { id: client.id, realm },
       payload,
     );
+  }
+
+  async deleteResource(
+    clientId: string,
+    resource: { name: string; realm?: string },
+  ) {
+    await this.#login();
+    const { realm = this.#client.realmName, name } = resource;
+
+    const client = (await this.#client.clients.find({ clientId, realm }))[0];
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- find()[0] is undefined when client does not exist
+    if (!client?.id) {
+      throw new Error(`Client ${clientId} not found in realm ${realm}`);
+    }
+
+    const resources = await this.#client.clients.listResources({
+      id: client.id,
+      realm,
+      name,
+    });
+
+    const foundResource = resources.find((r) => r.name === name);
+
+    if (foundResource?._id) {
+      await this.#client.clients.delResource({
+        id: client.id,
+        realm,
+        resourceId: foundResource._id,
+      });
+    }
   }
 
   async findUserByUsername(

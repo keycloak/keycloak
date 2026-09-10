@@ -1,6 +1,7 @@
 package org.keycloak.models.workflow;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -13,6 +14,7 @@ public abstract class WorkflowTransactionalTask implements Runnable, KeycloakSes
 
     private final KeycloakSessionFactory sessionFactory;
     private final KeycloakContext context;
+    protected AtomicReference<Throwable> futureCancelled = new AtomicReference<Throwable>(null);
 
     public WorkflowTransactionalTask(KeycloakSession session) {
         Objects.requireNonNull(session, "KeycloakSession must not be null");
@@ -23,5 +25,9 @@ public abstract class WorkflowTransactionalTask implements Runnable, KeycloakSes
     @Override
     public void run() {
         runJobInTransaction(sessionFactory, context, this);
+    }
+
+    public void cancel(Throwable error) {
+        futureCancelled.compareAndSet(null, error);
     }
 }

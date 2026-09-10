@@ -26,7 +26,7 @@ export default function CreateUserFederationLdapSettings() {
     try {
       await adminClient.components.create(serializeFormData(formData));
       addAlert(t("createUserProviderSuccess"), AlertVariant.success);
-      navigate(toUserFederation({ realm }));
+      void navigate(toUserFederation({ realm }));
     } catch (error) {
       addError("createUserProviderError", error);
     }

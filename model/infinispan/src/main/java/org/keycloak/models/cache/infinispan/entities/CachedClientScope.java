@@ -40,7 +40,7 @@ public class CachedClientScope extends AbstractCachedClientScope<ClientScopeMode
     private Set<String> scope = new HashSet<>();
     private Map<String, String> attributes = new HashMap<>();
 
-    public CachedClientScope(Long revision, RealmModel realm, ClientScopeModel model) {
+    public CachedClientScope(long revision, RealmModel realm, ClientScopeModel model) {
         super(revision, model);
         name = model.getName();
         description = model.getDescription();

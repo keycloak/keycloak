@@ -495,6 +495,23 @@ public class XMLSignatureUtil {
             return true;
         }
 
+        if (JBossSAMLConstants.from(signedDoc.getDocumentElement()) == JBossSAMLConstants.ARTIFACT_RESPONSE) {
+            Element singlePayload = null;
+            for (Node child = signedDoc.getDocumentElement().getFirstChild(); child != null; child = child.getNextSibling()) {
+                if (JBossSAMLConstants.ARTIFACT_SIGNED_ELEMENTS.contains(JBossSAMLConstants.from(child))) {
+                    if (singlePayload != null) {
+                        logger.debug("ArtifactResponse contains multiple protocol payloads; signature validation will fail");
+                        return false;
+                    }
+                    singlePayload = (Element) child;
+                }
+            }
+            if (singlePayload != null && signedNodes.contains(singlePayload)) {
+                logger.trace("ArtifactResponse not signed at root but its single protocol payload is signed OK");
+                return true;
+            }
+        }
+
         NodeList assertions = signedDoc.getElementsByTagNameNS(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ASSERTION.get());
 
         if (assertions.getLength() > 0) {

@@ -40,7 +40,7 @@ Log level for Syslog log handler can be specified by `--log-syslog-level` proper
 
 <@kc.start parameters="--log-syslog-level=warn"/>
 
-For more information, see <<Specify log level for each handler>>.
+For more information, see <@links.server id="logging" anchor="specify-log-level-each-handler"/>.
 
 == Configuring the protocol
 Syslog uses TCP as the default protocol for communication.

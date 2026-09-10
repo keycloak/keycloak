@@ -86,10 +86,13 @@ If the user is unauthenticated in the IDP, the client still receives a `login_re
 to forward are any non OpenID Connect/OAuth standard parameter or standard parameters that are available as a client note from the authentication session.
 
 |Supports client assertions
-|This setting enables support for using client assertions issued by the provider to authenticate clients. Validate Signatures must be enabled as well.
+|This setting enables support for using client assertions issued by the provider to authenticate clients. This requires to set Issuer and keys of this Identity provider. Keys can be set by setup of 'JWKS URL' or 'Validating public key' option.
 
 |Allows client assertions to be re-used
 |By default, a client assertion can not be used multiple times. If the client is not able to retrieve a new client assertion for each request this option can be enabled to allow re-use of the same client assertion.
+
+|Allows Client ID as audience for assertions
+|If enabled, the Client ID configured in the Identity Provider is the only valid audience for assertions used in Federated client authentication and in JWT Authorization Grants (Client Assertions and JWT Authorization Grant). The client ID is used instead of the token-url/issuer-url defined in the respective specifications. Note this behavior is not covered by any standard.
 
 |===
 

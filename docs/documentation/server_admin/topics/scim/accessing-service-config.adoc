@@ -1,0 +1,57 @@
+[id="accessing-scim-service-provider-config_{context}"]
+
+[[_accessing_scim_service_provider_config_]]
+= Accessing the SCIM service provider configuration
+
+As per the SCIM specification, the Service Provider Configuration endpoint (`/ServiceProviderConfig`) provides metadata
+about the capabilities available from the SCIM API.
+
+[source,bash]
+----
+curl http://localhost:8080/realms/myrealm/scim/v2/ServiceProviderConfig \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+A successful response returns the capabilities of the SCIM API, including supported operations such as
+`patch`, `filter`, and the authentication schemes:
+
+[source,json]
+----
+{
+  "schemas": ["urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig"],
+  "patch": {
+    "supported": true
+  },
+  "bulk": {
+    "supported": false,
+    "maxOperations": 0,
+    "maxPayloadSize": 0
+  },
+  "filter": {
+    "supported": true,
+    "maxResults": 100
+  },
+  "changePassword": {
+    "supported": false
+  },
+  "sort": {
+    "supported": false
+  },
+  "etag": {
+    "supported": false
+  },
+  "authenticationSchemes": [
+    {
+      "type": "oauthbearertoken",
+      "name": "OAuth Bearer Token",
+      "description": "Authentication scheme using the OAuth Bearer Token standard"
+    }
+  ]
+}
+----
+
+At the moment, the Service Provider Configuration is read-only and cannot be modified.
+
+Future releases may allow customization of certain capabilities, such as supported authentication schemes or maximum filter results.
+For now, the configuration reflects the default capabilities of the SCIM API as implemented in {project_name}.

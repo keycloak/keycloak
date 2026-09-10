@@ -53,7 +53,7 @@ public class CachedPolicy extends AbstractRevisioned implements InResourceServer
     private final LazyLoader<Policy, Map<String, String>> config;
     private final String owner;
 
-    public CachedPolicy(Long revision, Policy policy) {
+    public CachedPolicy(long revision, Policy policy) {
         super(revision, policy.getId());
         this.type = policy.getType();
         this.decisionStrategy = policy.getDecisionStrategy();

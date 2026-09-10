@@ -29,6 +29,10 @@ The `claim_token` parameter expects a BASE64 encoded JSON with a format similar 
 
 The format expects one or more claims where the value for each claim must be an array of strings.
 
-== Pushing claims Using UMA
+Claims with the `kc.` prefix are reserved for server-controlled evaluation context attributes (such as `kc.time.date_time`, `kc.client.id`, and `kc.realm.name`) and are filtered out from user-supplied claims. Do not use the `kc.` prefix for custom claims.
 
-For more details about how to push claims when using UMA and permission tickets, please take a look at <<_service_protection_permission_api_papi, Permission API>>
+== Pushing claims using UMA
+
+For more details about how to push claims when using UMA and permission tickets, please take a look at <<_service_protection_permission_api_papi, Permission API>>.
+
+When a UMA permission ticket contains claims and the authorization request also includes a `claim_token`, both sets of claims are merged. If the same claim key exists in both sources, the ticket claim takes precedence over the `claim_token` claim.

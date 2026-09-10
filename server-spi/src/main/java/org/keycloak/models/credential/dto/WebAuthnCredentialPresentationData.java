@@ -11,6 +11,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class WebAuthnCredentialPresentationData extends WebAuthnCredentialData {
 
     private final String authenticatorProvider;
+    private final String iconLight;
+    private final String iconDark;
 
     @JsonCreator
     public WebAuthnCredentialPresentationData(@JsonProperty("aaguid") String aaguid,
@@ -20,12 +22,24 @@ public class WebAuthnCredentialPresentationData extends WebAuthnCredentialData {
                                               @JsonProperty("credentialPublicKey") String credentialPublicKey,
                                               @JsonProperty("attestationStatementFormat") String attestationStatementFormat,
                                               @JsonProperty("transports") Set<String> transports,
-                                              @JsonProperty("authenticatorProvider") String authenticatorProvider) {
+                                              @JsonProperty("authenticatorProvider") String authenticatorProvider,
+                                              @JsonProperty("iconLight") String iconLight,
+                                              @JsonProperty("iconDark") String iconDark) {
         super(aaguid, credentialId, counter, attestationStatement, credentialPublicKey, attestationStatementFormat, transports);
         this.authenticatorProvider = authenticatorProvider;
+        this.iconLight = iconLight;
+        this.iconDark = iconDark;
     }
 
     public String getAuthenticatorProvider() {
         return authenticatorProvider;
+    }
+
+    public String getIconLight() {
+        return iconLight;
+    }
+
+    public String getIconDark() {
+        return iconDark;
     }
 }
