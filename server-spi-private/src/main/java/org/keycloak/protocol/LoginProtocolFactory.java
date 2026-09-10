@@ -52,10 +52,11 @@ public interface LoginProtocolFactory extends ProviderFactory<LoginProtocol> {
     /**
      * Called when new realm is created
      *
+     * @param session Keycloak session
      * @param newRealm
      * @param addScopesToExistingClients If true, then existing realm clients will be updated (created realm default scopes will be added to them)
      */
-    void createDefaultClientScopes(RealmModel newRealm, boolean addScopesToExistingClients);
+    void createDefaultClientScopes(KeycloakSession session, RealmModel newRealm, boolean addScopesToExistingClients);
 
 
     /**

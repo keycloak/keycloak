@@ -71,7 +71,6 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -81,7 +80,6 @@ import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderException;
-import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderFactory;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
@@ -206,27 +204,13 @@ public class OID4VCIssuerEndpoint {
     // lifespan of credential offers in seconds
     private final int credentialOfferLifespan;
 
-    /**
-     * Credential builders are responsible for initiating the production of
-     * credentials in a specific format. Their output is an appropriate credential
-     * representation to be signed by a credential signer of the same format.
-     * <p></p>
-     * Due to technical constraints, we explicitly load credential builders into
-     * this map for they are configurable components. The key of the map is the
-     * credential {@link VCFormat} associated with the builder. The matching credential
-     * signer is directly loaded from the Keycloak container.
-     */
-    private final Map<String, CredentialBuilder> credentialBuilders;
-
     public OID4VCIssuerEndpoint(KeycloakSession session,
-                                Map<String, CredentialBuilder> credentialBuilders,
                                 AppAuthManager.BearerTokenAuthenticator authenticator,
                                 TimeProvider timeProvider,
                                 int credentialOfferLifespan) {
         this.session = session;
         this.bearerTokenAuthenticator = authenticator;
         this.timeProvider = timeProvider;
-        this.credentialBuilders = credentialBuilders;
         this.credentialOfferLifespan = credentialOfferLifespan;
     }
 
@@ -234,9 +218,6 @@ public class OID4VCIssuerEndpoint {
         this.session = keycloakSession;
         this.bearerTokenAuthenticator = new AppAuthManager.BearerTokenAuthenticator(keycloakSession);
         this.timeProvider = new OffsetTimeProvider();
-
-        this.credentialBuilders = loadCredentialBuilders(session);
-
         this.credentialOfferLifespan = getCredentialOfferLifespan(keycloakSession.getContext().getRealm());
     }
 
@@ -255,20 +236,6 @@ public class OID4VCIssuerEndpoint {
                     configuredLifespan, realm.getName(), DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S);
             return DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
         }
-    }
-
-    /**
-     * Create credential builders from configured component models in Keycloak.
-     *
-     * @return a map of the created credential builders with their supported formats as keys.
-     */
-    private Map<String, CredentialBuilder> loadCredentialBuilders(KeycloakSession keycloakSession) {
-        KeycloakSessionFactory keycloakSessionFactory = keycloakSession.getKeycloakSessionFactory();
-        return keycloakSessionFactory.getProviderFactoriesStream(CredentialBuilder.class)
-                .map(factory -> (CredentialBuilderFactory) factory)
-                .map(factory -> factory.create(keycloakSession, null))
-                .collect(Collectors.toMap(CredentialBuilder::getSupportedFormat,
-                        credentialBuilder ->  credentialBuilder));
     }
 
     /**
@@ -1912,7 +1879,7 @@ public class OID4VCIssuerEndpoint {
         // Build format-specific credential
         CredentialBody credentialBody;
         try {
-            credentialBody = this.findCredentialBuilder(credentialConfig)
+            credentialBody = this.findCredentialBuilder(session, credentialConfig)
                     .buildCredentialBody(vc, credentialConfig.getCredentialBuildConfig());
         } catch (CredentialBuilderException e) {
             throw badRequestException(ErrorType.INVALID_CREDENTIAL_REQUEST,
@@ -1973,9 +1940,9 @@ public class OID4VCIssuerEndpoint {
         }
     }
 
-    private CredentialBuilder findCredentialBuilder(SupportedCredentialConfiguration credentialConfig) {
+    private CredentialBuilder findCredentialBuilder(KeycloakSession session, SupportedCredentialConfiguration credentialConfig) {
         String format = credentialConfig.getFormat();
-        CredentialBuilder credentialBuilder = credentialBuilders.get(format);
+        CredentialBuilder credentialBuilder = session.getProvider(CredentialBuilder.class, format);
 
         if (credentialBuilder == null) {
             String message = String.format("No credential builder found for format %s", format);

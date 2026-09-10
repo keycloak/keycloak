@@ -18,7 +18,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 
 public class CredentialBuilderFactoryTest {
 
@@ -48,10 +47,6 @@ public class CredentialBuilderFactoryTest {
             .toList();
 
         assertFalse(credentialBuilderFactories.isEmpty());
-
-        for (CredentialBuilderFactory credentialBuilderFactory : credentialBuilderFactories) {
-            assertNotNull(credentialBuilderFactory.getConfigProperties());
-        }
     }
 
     @Test

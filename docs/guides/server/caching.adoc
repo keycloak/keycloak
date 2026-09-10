@@ -90,8 +90,12 @@ to the node where their sessions were initially created. By doing that, you are 
 CPU, memory, and network utilization.
 
 .Password brute force detection
-The `loginFailures` distributed cache is used to track data about failed login attempts.
-This cache is needed for the Brute Force Protection feature to work in a multi-node {project_name} setup.
+Login failure data for brute force detection is stored in the database by default.
+Deployments using the `multi-site` or `clusterless` features continue to store login failures in the external Infinispan `loginFailures` cache.
+The embedded `loginFailures` distributed cache is available as a fallback when the deprecated `login-failures:v1` feature is explicitly enabled, but this mode will be removed in a future release.
+When switching between storage modes (for example, from database to external Infinispan or vice versa), stale login failure entries may remain in the previous store.
+These entries are not cleaned up automatically and can resurface if the deployment reverts to the previous storage mode.
+Administrators should manually remove stale login failure data from the previous store after switching.
 
 .Action tokens
 Action tokens are used for scenarios when a user needs to confirm an action asynchronously, for example in the emails sent by the forgot password flow.

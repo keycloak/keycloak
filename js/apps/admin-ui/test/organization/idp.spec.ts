@@ -46,7 +46,7 @@ test.describe.serial("Identity providers", () => {
   test("should add idp", async ({ page }) => {
     await assertEmptyTable(page);
     await clickAddIdentityProvider(page);
-    await fillForm(page, { name: "bitbucket", domain: "o.com" });
+    await fillForm(page, { name: "bitbucket" });
     await confirmModal(page);
     await assertNotificationMessage(
       page,
