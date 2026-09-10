@@ -89,12 +89,37 @@ export async function assertNoResults(page: Page) {
   ).toBeVisible();
 }
 
+async function resolveTableToolbar(page: Page): Promise<Locator> {
+  const activeTabPanel = page.getByRole("tabpanel").filter({ visible: true });
+  const tabPanelToolbar = activeTabPanel.getByTestId("table-toolbar");
+  if ((await tabPanelToolbar.count()) > 0) {
+    return tabPanelToolbar.first();
+  }
+
+  const toolbars = page.getByTestId("table-toolbar").filter({ visible: true });
+  const toolbarCount = await toolbars.count();
+  for (let index = 0; index < toolbarCount; index++) {
+    const toolbar = toolbars.nth(index);
+    const followingGrid = toolbar.locator(
+      "xpath=following::*[@role='grid' or @role='treegrid'][1]",
+    );
+    const selectedRow = followingGrid.locator(
+      'tbody tr input[type="checkbox"]:checked',
+    );
+    if ((await selectedRow.count()) > 0) {
+      return toolbar;
+    }
+  }
+
+  return toolbars.first();
+}
+
 export async function clickTableToolbarItem(
   page: Page,
   itemName: string,
   kebab = false,
 ) {
-  const toolbar = page.getByTestId("table-toolbar");
+  const toolbar = await resolveTableToolbar(page);
   await expect(toolbar).toBeVisible({ timeout: TABLE_LOAD_TIMEOUT_MS });
 
   if (kebab) {
