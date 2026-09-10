@@ -148,9 +148,9 @@ public class GroupResource {
         }
 
         if (!Objects.equals(groupName, group.getName())) {
-            boolean exists = siblings().filter(s -> !Objects.equals(s.getId(), group.getId()))
-                    .anyMatch(s -> Objects.equals(s.getName(), groupName));
-            if (exists) {
+            var realm = session.getContext().getRealm();
+            var existingGroup = session.groups().getGroupByName(realm, group.getParent(), groupName);
+            if (existingGroup != null && !Objects.equals(existingGroup.getId(), group.getId())) {
                 throw ErrorResponse.exists("Sibling group named '" + groupName + "' already exists.");
             }
         }
