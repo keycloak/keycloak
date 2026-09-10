@@ -27,6 +27,7 @@ import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.storage.UserStorageProviderFactory;
 
@@ -46,6 +47,12 @@ public class UserMapStorageFactory implements UserStorageProviderFactory<UserMap
                 "This is some attribute",
                 ProviderConfigProperty.STRING_TYPE, null);
         configProperties.add(attr);
+
+        ProviderConfigProperty syncRegistrations = new ProviderConfigProperty(LDAPConstants.SYNC_REGISTRATIONS, "Sync Registrations",
+                "Whether new users should be added to this provider's backing store. When disabled, user creation falls "
+                        + "through to local storage, mirroring LDAPStorageProvider.synchronizeRegistrations().",
+                ProviderConfigProperty.BOOLEAN_TYPE, true);
+        configProperties.add(syncRegistrations);
     }
 
     private final Map<String, String> userPasswords = new ConcurrentHashMap<>();

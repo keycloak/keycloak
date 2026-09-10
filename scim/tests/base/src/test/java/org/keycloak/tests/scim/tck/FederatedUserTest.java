@@ -5,17 +5,21 @@ import java.util.stream.Collectors;
 
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.scim.client.ResourceFilter;
+import org.keycloak.scim.client.ScimClientException;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.user.User;
+import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
@@ -25,13 +29,27 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests that verify SCIM search behavior with non-imported federated users.
+ * Tests that verify SCIM behavior with users backed by a user storage (federation) provider.
+ *
+ * SCIM read operations (GET, list, search) only ever consider locally stored users - see
+ * {@link org.keycloak.scim.model.user.UserResourceTypeProvider}. Write operations (POST /Users),
+ * however, go through the same {@code UserProfile.create()} -&gt; {@code session.users().addUser()}
+ * path used by the regular Admin REST API, so a user storage provider that intercepts registration
+ * (a "sync registration" provider, such as LDAP with write-back enabled) may end up creating the
+ * user outside of local storage. If that provider also does not import users into the local
+ * database, the newly created user becomes unreachable via any subsequent SCIM operation, even
+ * though the initial POST succeeded. This is a documented limitation of this version of the SCIM
+ * API - see the "Creating a user" and "Deleting a user" sections of the SCIM server admin guide.
  *
  * @see <a href="https://github.com/keycloak/keycloak/issues/51343">Issue 51343</a>
+ * @see <a href="https://github.com/keycloak/keycloak/issues/51735">Issue 51735</a>
  */
 @KeycloakIntegrationTest(config = FederatedUserTest.FederatedUserServerConfig.class)
 public class FederatedUserTest extends AbstractScimTest {
@@ -95,6 +113,81 @@ public class FederatedUserTest extends AbstractScimTest {
         }
     }
 
+    /**
+     * When the federation provider does not intercept registration (sync registration disabled),
+     * SCIM user creation must behave exactly as if no federation provider was configured: the user
+     * is created locally and is fully manageable (found via GET/search, and deletable) regardless
+     * of the provider's import setting.
+     */
+    @Test
+    public void testCreateWithoutSyncRegistration() {
+        String federationComponentId = registerFederationProvider(false, false);
+        try {
+            User created = createScimUser("no-sync-user");
+            assertNotNull(created);
+            assertTrue(StorageId.isLocalStorage(created.getId()),
+                    "User should be created in local storage when the federation provider does not synchronize registrations");
+
+            assertNotNull(client.users().get(created.getId()), "Locally created user should be retrievable via GET");
+            assertThat(toUserNames(client.users().getAll()), hasItem("no-sync-user"));
+
+            client.users().delete(created.getId());
+            assertNull(client.users().get(created.getId()), "User should no longer be found after deletion");
+        } finally {
+            realm.admin().components().component(federationComponentId).remove();
+        }
+    }
+
+    /**
+     * When the federation provider synchronizes registrations and imports users, the local database
+     * row is created synchronously as part of the same call - there is no separate sync step - so the
+     * created user is immediately visible, searchable, and deletable via SCIM.
+     */
+    @Test
+    public void testCreateWithSyncRegistrationAndImportEnabled() {
+        String federationComponentId = registerFederationProvider(true, true);
+        try {
+            User created = createScimUser("sync-import-user");
+            assertNotNull(created);
+
+            User fetched = client.users().get(created.getId());
+            assertNotNull(fetched, "Federated user should be immediately visible via GET when import is enabled");
+            assertEquals("sync-import-user", fetched.getUserName());
+            assertThat(toUserNames(client.users().getAll()), hasItem("sync-import-user"));
+
+            client.users().delete(created.getId());
+            assertNull(client.users().get(created.getId()), "User should no longer be found after deletion");
+        } finally {
+            realm.admin().components().component(federationComponentId).remove();
+        }
+    }
+
+    /**
+     * When the federation provider synchronizes registrations but does not import users, SCIM user
+     * creation still succeeds (mirroring the regular Admin API), but the user is stored only in the
+     * external provider. As a result, the created user is unreachable via any subsequent SCIM
+     * operation: GET and search do not find it, and DELETE returns 404 - since the local-storage-only
+     * lookup used to resolve the user for deletion cannot find it either.
+     */
+    @Test
+    public void testCreateWithSyncRegistrationAndImportDisabled() {
+        String federationComponentId = registerFederationProvider(true, false);
+        try {
+            User created = createScimUser("sync-no-import-user");
+            assertNotNull(created, "Creation succeeds even though the user is not imported locally");
+            assertFalse(StorageId.isLocalStorage(created.getId()));
+
+            assertNull(client.users().get(created.getId()), "GET should not find a non-imported federated user");
+            assertThat(toUserNames(client.users().getAll()), not(hasItem("sync-no-import-user")));
+
+            ScimClientException exception = assertThrows(ScimClientException.class, () -> client.users().delete(created.getId()));
+            assertEquals(HttpStatus.SC_NOT_FOUND, exception.getError().getStatusInt(),
+                    "DELETE should return 404 for a non-imported federated user");
+        } finally {
+            realm.admin().components().component(federationComponentId).remove();
+        }
+    }
+
     private List<String> toUserNames(ListResponse<User> response) {
         return response.getResources().stream()
                 .map(User::getUserName)
@@ -109,14 +202,26 @@ public class FederatedUserTest extends AbstractScimTest {
         assertNotNull(user);
     }
 
+    private User createScimUser(String username) {
+        User user = new User();
+        user.setUserName(username);
+        user.setActive(true);
+        return client.users().create(user);
+    }
+
     private String registerFederationProvider() {
+        return registerFederationProvider(true, false);
+    }
+
+    private String registerFederationProvider(boolean syncRegistrations, boolean importEnabled) {
         ComponentRepresentation provider = new ComponentRepresentation();
         provider.setName("test-user-federation");
         provider.setProviderId(PROVIDER_ID);
         provider.setProviderType(UserStorageProvider.class.getName());
         provider.setConfig(new MultivaluedHashMap<String, String>());
         provider.getConfig().putSingle("priority", Integer.toString(0));
-        provider.getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(false));
+        provider.getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(importEnabled));
+        provider.getConfig().putSingle(LDAPConstants.SYNC_REGISTRATIONS, Boolean.toString(syncRegistrations));
 
         return ApiUtil.getCreatedId(realm.admin().components().add(provider));
     }
