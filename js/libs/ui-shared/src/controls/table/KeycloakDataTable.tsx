@@ -438,7 +438,7 @@ export function KeycloakDataTable<T>({
 
   const [key, setKey] = useState(0);
   const prevKey = useRef<number>();
-  const refresh = () => setKey(key + 1);
+  const refresh = () => setKey((current) => current + 1);
   const id = useId();
 
   // A different search term yields a different result set, so the current page
@@ -544,7 +544,8 @@ export function KeycloakDataTable<T>({
             ? loader.loader
             : async () => loader;
       try {
-        return await loaderFn(first, max + 1, search);
+        const data = await loaderFn(first, max + 1, search);
+        return { generation, data };
       } catch (error) {
         if (generation === fetchGeneration.current) {
           setLoading(false);
@@ -552,7 +553,11 @@ export function KeycloakDataTable<T>({
         throw error;
       }
     },
-    (data) => {
+    ({ generation, data }) => {
+      if (generation !== fetchGeneration.current) {
+        return;
+      }
+
       prevKey.current = key;
       if (!isPaginated) {
         setUnPaginatedData(data);
