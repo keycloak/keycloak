@@ -28,7 +28,7 @@ For major or minor version upgrades:
 == Database upgrades
 
 Follow your database vendor's zero-downtime upgrade procedure, and possibly combine it with a {project_name} upgrade.
-Ensure that synchronous replication remains configured after the upgrade, as losing synchronous replication can lead to data loss during failover.
+Ensure that synchronous replication remains configured after the upgrade, as disabling synchronous replication can lead to data loss during failover.
 Verify that the <@links.ha id="multi-cluster-v2-introduction" anchor="multi-cluster-v2-infrastructure-requirements" /> continue to be met after the upgrade.
 
 </@tmpl.guide>
