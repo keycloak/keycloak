@@ -277,75 +277,78 @@ export const AddScopeDialog = ({
         />
       </ModalBody>
       <ModalFooter>
-        isClientScopesConditionType ? [
-        <Button
-          id="modal-add"
-          data-testid="confirm"
-          key="add"
-          variant={ButtonVariant.primary}
-          onClick={() => {
-            const scopes = rows.map((scope) => ({ scope }));
-            onAdd(scopes);
-            toggleDialog();
-          }}
-          isDisabled={rows.length === 0}
-        >
-          {t("add")}
-        </Button>
-        <Button
-          id="modal-cancel"
-          data-testid="cancel"
-          key="cancel"
-          variant={ButtonVariant.link}
-          onClick={() => {
-            setRows([]);
-            toggleDialog();
-          }}
-        >
-          {t("cancel")}
-        </Button>
-        , ] : [
-        <Dropdown
-          popperProps={{
-            direction: "up",
-            appendTo: () => document.body,
-          }}
-          onOpenChange={(isOpen) => setAddToggle(isOpen)}
-          className="keycloak__client-scopes-add__add-dropdown"
-          key="add-dropdown"
-          isOpen={addToggle}
-          toggle={(ref) => (
-            <MenuToggle
-              ref={ref}
+        {isClientScopesConditionType ? (
+          <>
+            <Button
+              id="modal-add"
+              data-testid="confirm"
+              key="add"
+              variant={ButtonVariant.primary}
+              onClick={() => {
+                const scopes = rows.map((scope) => ({ scope }));
+                onAdd(scopes);
+                toggleDialog();
+              }}
               isDisabled={rows.length === 0}
-              onClick={() => setAddToggle(!addToggle)}
-              isExpanded={addToggle}
-              variant="primary"
-              id="add-dropdown"
-              data-testid="add-dropdown"
-              statusIcon={<CaretUpIcon />}
             >
               {t("add")}
-            </MenuToggle>
-          )}
-        >
-          <DropdownList>
-            {clientScopeTypesDropdown(t, action, rows)}
-          </DropdownList>
-        </Dropdown>
-        ,
-        <Button
-          id="modal-cancel"
-          key="cancel"
-          variant={ButtonVariant.link}
-          onClick={() => {
-            setRows([]);
-            toggleDialog();
-          }}
-        >
-          {t("cancel")}
-        </Button>
-        , ]
+            </Button>
+            <Button
+              id="modal-cancel"
+              data-testid="cancel"
+              key="cancel"
+              variant={ButtonVariant.link}
+              onClick={() => {
+                setRows([]);
+                toggleDialog();
+              }}
+            >
+              {t("cancel")}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Dropdown
+              popperProps={{
+                direction: "up",
+                appendTo: () => document.body,
+              }}
+              onOpenChange={(isOpen) => setAddToggle(isOpen)}
+              className="keycloak__client-scopes-add__add-dropdown"
+              key="add-dropdown"
+              isOpen={addToggle}
+              toggle={(ref) => (
+                <MenuToggle
+                  ref={ref}
+                  isDisabled={rows.length === 0}
+                  onClick={() => setAddToggle(!addToggle)}
+                  isExpanded={addToggle}
+                  variant="primary"
+                  id="add-dropdown"
+                  data-testid="add-dropdown"
+                  statusIcon={<CaretUpIcon />}
+                >
+                  {t("add")}
+                </MenuToggle>
+              )}
+            >
+              <DropdownList>
+                {clientScopeTypesDropdown(t, action, rows)}
+              </DropdownList>
+            </Dropdown>
+            <Button
+              id="modal-cancel"
+              key="cancel"
+              variant={ButtonVariant.link}
+              onClick={() => {
+                setRows([]);
+                toggleDialog();
+              }}
+            >
+              {t("cancel")}
+            </Button>
+          </>
+        )}
       </ModalFooter>
     </Modal>
   );
