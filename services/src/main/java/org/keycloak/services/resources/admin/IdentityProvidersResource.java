@@ -33,10 +33,13 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
+import org.jboss.logging.Logger;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
@@ -85,6 +88,8 @@ import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class IdentityProvidersResource {
+
+    protected static final Logger logger = Logger.getLogger(IdentityProvidersResource.class);
 
     private final RealmModel realm;
     private final KeycloakSession session;
@@ -190,9 +195,37 @@ public class IdentityProvidersResource {
 
         String providerId = data.get("providerId").toString();
         String from = data.get("fromUrl").toString();
-        String file = session.getProvider(HttpClientProvider.class).getString(from);
+
+        String file;
+        try {
+            file = session.getProvider(HttpClientProvider.class).getString(from);
+        } catch (IOException e) {
+            // The URL is the caller's, so the failure is theirs to fix. Without this the
+            // IOException escapes as an uncaught 500 and every cause looks the same.
+            logger.debugf(e, "Failed to fetch identity provider metadata from %s", from);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST,
+                    "Cannot fetch identity provider metadata from " + from + ": " + e.getMessage(),
+                    Response.Status.BAD_REQUEST);
+        }
+
         IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
-        Map<String, String> config = providerFactory.parseConfig(session, file);
+
+        Map<String, String> config;
+        try {
+            config = providerFactory.parseConfig(session, file);
+        } catch (WebApplicationException e) {
+            // A factory that already reported properly keeps its own status.
+            throw e;
+        } catch (RuntimeException e) {
+            // parseConfig wraps a JSON failure in a RuntimeException, which the error
+            // handler only reads deeply enough to label invalid_request while still
+            // answering 500.
+            logger.debugf(e, "Failed to parse identity provider metadata from %s", from);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST,
+                    "Cannot parse identity provider metadata from " + from,
+                    Response.Status.BAD_REQUEST);
+        }
+
         // add the URL just if needed by the identity provider
         config.put(IdentityProviderModel.METADATA_DESCRIPTOR_URL, from);
         return config;

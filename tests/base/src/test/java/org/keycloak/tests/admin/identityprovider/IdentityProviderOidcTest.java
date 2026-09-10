@@ -17,7 +17,11 @@
 
 package org.keycloak.tests.admin.identityprovider;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
+
+import jakarta.ws.rs.BadRequestException;
 
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
@@ -49,6 +53,8 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
@@ -67,6 +73,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -87,6 +94,9 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
 
     @InjectEvents
     Events events;
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
 
     @Test
     public void testCreateWithReservedCharacterForAlias() {
@@ -582,6 +592,30 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
 
         oauth.logoutRequest().idTokenHint(tokenResponse.getIdToken()).send();
         oauth.logoutRequest().send();
+    }
+
+    @Test
+    public void importConfigShouldReportAMetadataUrlThatCannotBeFetched() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("providerId", "oidc");
+        data.put("fromUrl", "http://localhost:1/.well-known/openid-configuration");
+
+        BadRequestException error = assertThrows(BadRequestException.class,
+                () -> managedRealm.admin().identityProviders().importFrom(data));
+
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), error.getResponse().getStatus());
+    }
+
+    @Test
+    public void importConfigShouldReportAUrlThatIsNotMetadata() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("providerId", "oidc");
+        data.put("fromUrl", keycloakUrls.getBase());
+
+        BadRequestException error = assertThrows(BadRequestException.class,
+                () -> managedRealm.admin().identityProviders().importFrom(data));
+
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), error.getResponse().getStatus());
     }
 
     public static class ExternalRealmConfig implements RealmConfig {
