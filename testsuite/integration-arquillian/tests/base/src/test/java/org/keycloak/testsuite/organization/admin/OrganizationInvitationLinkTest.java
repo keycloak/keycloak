@@ -32,6 +32,7 @@ import java.util.function.Predicate;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.admin.client.resource.OrganizationResource;
@@ -46,6 +47,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
@@ -80,6 +82,7 @@ import org.openqa.selenium.By;
 
 import static org.keycloak.representations.idm.OrganizationInvitationRepresentation.Status.EXPIRED;
 import static org.keycloak.representations.idm.OrganizationInvitationRepresentation.Status.PENDING;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -652,6 +655,100 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         } finally {
             timeOffSet.set(0);
         }
+    }
+
+    @Test
+    public void testInviteNewUserWhoSignsUpWithRealmIdentityProvider() throws IOException, MessagingException {
+        OrganizationResource organization = createOrganizationWithoutBroker();
+        String email = bc.getUserEmail();
+        organization.members().inviteUser(email, "Homer", "Simpson").close();
+
+        UserRepresentation user = acceptInvitationWithBroker(createRealmBroker(), email);
+
+        // Unmanaged, matching how an existing user joins through InviteOrgActionTokenHandler.
+        MemberRepresentation member = organization.members().member(user.getId()).toRepresentation();
+        assertThat(member.getMembershipType(), equalTo(MembershipType.UNMANAGED));
+        assertThat(organization.invitations().list(), empty());
+        assertInviteOrgEvent(user.getId(), organization.toRepresentation().getId());
+    }
+
+    private void assertInviteOrgEvent(String userId, String orgId) {
+        for (EventRepresentation event = events.poll(); event != null; event = events.poll()) {
+            if (EventType.INVITE_ORG.name().equals(event.getType())) {
+                assertThat(event.getUserId(), equalTo(userId));
+                assertThat(event.getDetails().get(Details.ORG_ID), equalTo(orgId));
+                return;
+            }
+        }
+        throw new AssertionError("no INVITE_ORG event was fired");
+    }
+
+    @Test
+    public void testInviteNewUserWhoSignsUpWithRealmIdentityProviderUsingAnotherEmail() throws IOException, MessagingException {
+        OrganizationResource organization = createOrganizationWithoutBroker();
+        // The invitation is for somebody else, so no broker may consume it.
+        organization.members().inviteUser("someoneelse@email", "Homer", "Simpson").close();
+
+        acceptInvitationWithBroker(createRealmBroker(), bc.getUserEmail());
+
+        assertThat(organization.members().list(-1, -1), empty());
+        assertThat(organization.invitations().list(), Matchers.hasSize(1));
+        assertThat(organization.invitations().list().get(0).getStatus(), equalTo(PENDING));
+    }
+
+    @Test
+    public void testInviteNewUserWhoSignsUpWithOrganizationIdentityProvider() throws IOException, MessagingException {
+        IdentityProviderRepresentation orgBroker = brokerConfigFunction.apply(organizationName).setUpIdentityProvider();
+        orgBroker.setHideOnLogin(false);
+        OrganizationResource organization = managedRealm.admin().organizations()
+                .get(createOrganization(managedRealm.admin(), getCleanup(), organizationName, orgBroker).getId());
+        String email = bc.getUserEmail();
+        organization.members().inviteUser(email, "Homer", "Simpson").close();
+
+        UserRepresentation user = acceptInvitationWithBroker(orgBroker, email);
+
+        // Consumed rather than left pending, even though this broker is one the org would accept anyway.
+        assertThat(organization.invitations().list(), empty());
+        MemberRepresentation member = organization.members().member(user.getId()).toRepresentation();
+        assertThat(member.getMembershipType(), equalTo(MembershipType.UNMANAGED));
+    }
+
+    // A broker on the realm, not an organization: how a shared social login has to be modelled.
+    private IdentityProviderRepresentation createRealmBroker() {
+        IdentityProviderRepresentation realmBroker = brokerConfigFunction.apply("realmbroker").setUpIdentityProvider();
+        realmBroker.setAlias("realmbroker");
+        realmBroker.setHideOnLogin(false);
+        managedRealm.admin().identityProviders().create(realmBroker).close();
+        getCleanup().addCleanup(managedRealm.admin().identityProviders().get(realmBroker.getAlias())::remove);
+        return realmBroker;
+    }
+
+    // No linked broker and no domains, so nothing else can resolve the organization.
+    private OrganizationResource createOrganizationWithoutBroker() {
+        String orgId;
+        try (Response response = managedRealm.admin().organizations().create(createRepresentation(organizationName))) {
+            assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+            orgId = ApiUtil.getCreatedId(response);
+        }
+        getCleanup().addCleanup(() -> managedRealm.admin().organizations().get(orgId).delete().close());
+        return managedRealm.admin().organizations().get(orgId);
+    }
+
+    private UserRepresentation acceptInvitationWithBroker(IdentityProviderRepresentation broker, String brokeredEmail) throws IOException, MessagingException {
+        // The invitee has no account yet, so the invitation is a registration link.
+        driver.navigate().to(getInvitationLinkFromEmail());
+        registerPage.assertCurrent();
+        // No password wanted, so back to sign-in, which lists the brokers, and pick one there.
+        registerPage.clickBackToLogin();
+        loginPage.clickSocial(broker.getAlias());
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), brokeredEmail, "Homer", "Simpson");
+
+        List<UserRepresentation> users = managedRealm.admin().users().searchByEmail(brokeredEmail, true);
+        users.forEach(u -> getCleanup().addCleanup(() -> managedRealm.admin().users().get(u.getId()).remove()));
+        return users.isEmpty() ? null : users.get(0);
     }
 
     private void registerUser(OrganizationResource organization, String email) throws MessagingException, IOException {
