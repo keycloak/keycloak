@@ -18,6 +18,7 @@
 package org.keycloak.tests.admin.identityprovider;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -43,7 +44,7 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
-import org.keycloak.testframework.annotations.InjectKeycloakUrls;
+import org.keycloak.testframework.annotations.InjectHttpServer;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
@@ -56,13 +57,14 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.util.HttpServerUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.testsuite.util.broker.OIDCIdentityProviderConfigRep;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
+import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -96,8 +98,8 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
     @InjectEvents
     Events events;
 
-    @InjectKeycloakUrls
-    KeycloakUrls keycloakUrls;
+    @InjectHttpServer
+    HttpServer httpServer;
 
     @Test
     public void testCreateWithReservedCharacterForAlias() {
@@ -618,13 +620,22 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
 
     @Test
     public void importConfigShouldReportAUrlThatIsNotMetadata() {
-        String url = keycloakUrls.getBase();
+        String path = "/not-a-discovery-document";
+        httpServer.createContext(path, exchange -> HttpServerUtil.sendResponse(exchange, 200,
+                Map.of("Content-Type", List.of("text/html")), "<html>not metadata</html>"));
 
-        OAuth2ErrorRepresentation error = assertImportConfigFails(url);
+        try {
+            String url = "http://" + httpServer.getAddress().getHostString() + ":"
+                    + httpServer.getAddress().getPort() + path;
 
-        assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
-        assertThat(error.getErrorDescription(), containsString("Cannot parse"));
-        assertThat(error.getErrorDescription(), containsString(url));
+            OAuth2ErrorRepresentation error = assertImportConfigFails(url);
+
+            assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
+            assertThat(error.getErrorDescription(), containsString("Cannot parse"));
+            assertThat(error.getErrorDescription(), containsString(url));
+        } finally {
+            httpServer.removeContext(path);
+        }
     }
 
     private OAuth2ErrorRepresentation assertImportConfigFails(String fromUrl) {
