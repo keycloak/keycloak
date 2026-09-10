@@ -62,7 +62,14 @@ import {
   IndexChange,
   LevelChange,
 } from "./execution-model";
-import { nextHoverLevel, shouldPruneExpandedFlows } from "./drag-hover";
+import {
+  hasMovedToDeeperLevel,
+  isWithinAutoExpandedContext,
+  keepExpandedIdsForHoveredRow,
+  nextHoverLevel,
+  shouldPruneExpandedFlows,
+  shouldPruneOnHoverMove,
+} from "./drag-hover";
 import { toAuthentication } from "./routes/Authentication";
 import { toFlow, type FlowParams } from "./routes/Flow";
 
@@ -536,16 +543,17 @@ export default function FlowDetails() {
   );
 
   const keepExpandedForHoveredRow = useCallback(
-    (hoveredRow: HoveredRow | null): Set<string> => {
+    (hoveredRow: HoveredRow | null, isDropIntoTarget: boolean): Set<string> => {
       if (!executionList || !hoveredRow) {
         return new Set();
       }
 
-      const keepExpanded = executionList.ancestorPathIds(hoveredRow.hoverId);
-      if (hoveredRow.isSubflow) {
-        keepExpanded.add(hoveredRow.hoverId);
-      }
-      return keepExpanded;
+      return keepExpandedIdsForHoveredRow(
+        hoveredRow.hoverId,
+        hoveredRow.isSubflow,
+        isDropIntoTarget,
+        (id) => executionList.ancestorPathIds(id),
+      );
     },
     [executionList],
   );
@@ -655,30 +663,14 @@ export default function FlowDetails() {
       pointerY,
     );
     const hoveredLevel = hoveredRow?.level;
-    const movedUp = shouldPruneExpandedFlows(
-      hoverLevelRef.current,
-      hoveredLevel,
-    );
-    hoverLevelRef.current = nextHoverLevel(hoverLevelRef.current, hoveredLevel);
-    const pruneForDifferentFlow = switchedToDifferentFlow(
-      flowContextIdForHoveredRow(hoveredRow),
-    );
-    const shouldPrune = movedUp || pruneForDifferentFlow;
-
-    const collapseExpandedOnMoveUp = () => {
-      if (!shouldPrune) {
-        return;
-      }
-      const changed = pruneAutoExpandedFlows(
-        keepExpandedForHoveredRow(hoveredRow),
-      );
-      if (changed) {
-        commitDragTreeChanges();
-      }
-    };
+    const previousHoverLevel = hoverLevelRef.current;
+    const movedUp = shouldPruneExpandedFlows(previousHoverLevel, hoveredLevel);
+    const movedDeeper = hasMovedToDeeperLevel(previousHoverLevel, hoveredLevel);
+    hoverLevelRef.current = nextHoverLevel(previousHoverLevel, hoveredLevel);
 
     let hoverId: string | null = null;
     let vertical: DropVertical = "after";
+    let isDropIntoTarget = false;
 
     if (hoveredRow) {
       hoverId = hoveredRow.hoverId;
@@ -689,14 +681,55 @@ export default function FlowDetails() {
 
       if (relativeY < edgeZone) {
         vertical = "before";
-        clearExpandTimer();
-        collapseExpandedOnMoveUp();
       } else if (relativeY > rowHeight - edgeZone) {
         vertical = "after";
+      } else if (isSubflow) {
+        vertical = "into";
+        isDropIntoTarget = true;
+      } else {
+        vertical = "after";
+      }
+    }
+
+    const hoveredFlowContextId = flowContextIdForHoveredRow(hoveredRow);
+    const withinAutoExpandedContext = isWithinAutoExpandedContext(
+      hoveredRow?.hoverId ?? null,
+      hoveredFlowContextId,
+      autoExpandedIdsRef.current,
+      (id) => executionList.ancestorPathIds(id),
+      {
+        pendingExpandId: pendingExpandIdRef.current,
+        isDropIntoTarget,
+      },
+    );
+    const pruneForDifferentFlow = switchedToDifferentFlow(hoveredFlowContextId);
+    const shouldPrune = shouldPruneOnHoverMove(
+      movedUp,
+      movedDeeper,
+      pruneForDifferentFlow,
+      autoExpandedIdsRef.current,
+      withinAutoExpandedContext,
+    );
+
+    const collapseExpandedOnMoveUp = () => {
+      if (!shouldPrune) {
+        return;
+      }
+      const changed = pruneAutoExpandedFlows(
+        keepExpandedForHoveredRow(hoveredRow, isDropIntoTarget),
+      );
+      if (changed) {
+        commitDragTreeChanges();
+      }
+    };
+
+    if (hoveredRow) {
+      const { isSubflow } = hoveredRow;
+
+      if (vertical === "before" || vertical === "after") {
         clearExpandTimer();
         collapseExpandedOnMoveUp();
       } else if (isSubflow) {
-        vertical = "into";
         const subflow = findExecutionById(hoveredRow.hoverId);
         if (subflow?.isCollapsed) {
           scheduleSubflowExpand(hoveredRow.hoverId, shouldPrune);
@@ -708,7 +741,6 @@ export default function FlowDetails() {
           });
         }
       } else {
-        vertical = "after";
         clearExpandTimer();
         collapseExpandedOnMoveUp();
       }
