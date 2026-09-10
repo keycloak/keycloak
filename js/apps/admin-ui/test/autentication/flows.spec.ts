@@ -340,7 +340,10 @@ test.describe("Authentication flow details", () => {
     await startExecutionDrag(page, nestedChildRow);
     await assertFlowRowExpanded(page, nestedParent, true);
     await hoverExecutionDuringDrag(page, differentFlowRow, { yRatio: 0.5 });
-    await assertFlowRowExpanded(page, nestedParent, false);
+    // Moving to a different flow collapses the auto-expanded branch (forms), not
+    // individual nested subflows — children are hidden with the parent row.
+    await assertFlowRowExpanded(page, parentSubflow, false);
+    await assertRowExists(page, nestedParent, false);
     await releaseExecutionDrag(page);
   });
 
