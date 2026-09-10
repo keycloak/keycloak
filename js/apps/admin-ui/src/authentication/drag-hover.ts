@@ -84,3 +84,21 @@ export const keepExpandedIdsForHoveredRow = (
   }
   return keepExpanded;
 };
+
+/** Keeps ancestor subflows visible when leaving the dragged flow context. */
+export const keepExpandedIdsForPrune = (
+  hoveredKeepExpanded: ReadonlySet<string>,
+  pruneForDifferentFlow: boolean,
+  draggedFlowContextId: string | null,
+  ancestorPathIds: (id: string) => Set<string>,
+): Set<string> => {
+  const keepExpanded = new Set(hoveredKeepExpanded);
+
+  if (pruneForDifferentFlow && draggedFlowContextId) {
+    for (const id of ancestorPathIds(draggedFlowContextId)) {
+      keepExpanded.add(id);
+    }
+  }
+
+  return keepExpanded;
+};

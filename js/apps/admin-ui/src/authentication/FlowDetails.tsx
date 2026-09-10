@@ -66,6 +66,7 @@ import {
   hasMovedToDeeperLevel,
   isWithinAutoExpandedContext,
   keepExpandedIdsForHoveredRow,
+  keepExpandedIdsForPrune,
   nextHoverLevel,
   shouldPruneExpandedFlows,
   shouldPruneOnHoverMove,
@@ -716,7 +717,12 @@ export default function FlowDetails() {
         return;
       }
       const changed = pruneAutoExpandedFlows(
-        keepExpandedForHoveredRow(hoveredRow, isDropIntoTarget),
+        keepExpandedIdsForPrune(
+          keepExpandedForHoveredRow(hoveredRow, isDropIntoTarget),
+          pruneForDifferentFlow,
+          draggedFlowContextIdRef.current,
+          (id) => executionList.ancestorPathIds(id),
+        ),
       );
       if (changed) {
         commitDragTreeChanges();

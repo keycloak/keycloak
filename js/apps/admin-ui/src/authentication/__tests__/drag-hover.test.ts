@@ -3,6 +3,7 @@ import {
   hasMovedToDeeperLevel,
   isWithinAutoExpandedContext,
   keepExpandedIdsForHoveredRow,
+  keepExpandedIdsForPrune,
   nextHoverLevel,
   shouldPruneExpandedFlows,
   shouldPruneOnHoverMove,
@@ -184,6 +185,48 @@ describe("drag-hover helpers", () => {
       expect(
         keepExpandedIdsForHoveredRow("child", false, false, ancestorPathIds),
       ).toEqual(new Set(["parent"]));
+    });
+  });
+
+  describe("keepExpandedIdsForPrune", () => {
+    const ancestorPathIds = (id: string) => {
+      if (id === "nested-parent") {
+        return new Set(["forms"]);
+      }
+      return new Set<string>();
+    };
+
+    it("keeps dragged flow ancestors when leaving the flow context", () => {
+      expect(
+        keepExpandedIdsForPrune(
+          new Set(),
+          true,
+          "nested-parent",
+          ancestorPathIds,
+        ),
+      ).toEqual(new Set(["forms"]));
+    });
+
+    it("does not keep the dragged flow context itself expanded", () => {
+      const keepExpanded = keepExpandedIdsForPrune(
+        new Set(),
+        true,
+        "nested-parent",
+        ancestorPathIds,
+      );
+
+      expect(keepExpanded.has("nested-parent")).toBe(false);
+    });
+
+    it("returns hovered keep-expanded ids when not leaving the flow context", () => {
+      expect(
+        keepExpandedIdsForPrune(
+          new Set(["target"]),
+          false,
+          "nested-parent",
+          ancestorPathIds,
+        ),
+      ).toEqual(new Set(["target"]));
     });
   });
 });
