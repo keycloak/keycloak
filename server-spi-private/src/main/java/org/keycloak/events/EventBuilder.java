@@ -234,7 +234,8 @@ public class EventBuilder {
     }
 
     public void success() {
-        send(this.storeImmediately == null ? false : this.storeImmediately);
+        // Clone the event to make it immutable, so asynchronous processors are not confused.
+        send(event.clone(), this.storeImmediately == null ? false : this.storeImmediately);
     }
 
     public void error(String error) {
@@ -242,11 +243,14 @@ public class EventBuilder {
             throw new IllegalStateException("Attempted to define event error without first setting the event type");
         }
 
+        // Clone the event to make it immutable, so type is not modified for the builder,
+        // and asynchronous processors are not confused.
+        Event event = this.event.clone();
         if (!event.getType().name().endsWith("_ERROR")) {
             event.setType(EventType.valueOf(event.getType().name() + "_ERROR"));
         }
         event.setError(error);
-        send(this.storeImmediately == null ? true : this.storeImmediately);
+        send(event, this.storeImmediately == null ? true : this.storeImmediately);
     }
 
     @Override
@@ -254,7 +258,13 @@ public class EventBuilder {
         return new EventBuilder(session, store, listeners, realm, event.clone());
     }
 
-    private void send(boolean sendImmediately) {
+    /**
+     * Send the event.
+     *
+     * @param event Always call with a cloned event that the caller will no longer modify
+     * @param sendImmediately if set to true, will send it in a new transaction so it is persisted even if this transaction rolls back
+     */
+    private void send(Event event, boolean sendImmediately) {
         event.setTime(Time.currentTimeMillis());
         event.setId(UUID.randomUUID().toString());
 
@@ -264,14 +274,14 @@ public class EventBuilder {
                 EventStoreProvider store = this.isEventsEnabled ? getEventStoreProvider(innerSession) : null;
                 List<EventListenerProvider> listeners = getEventListeners(innerSession, realm);
 
-                sendNow(store, eventTypes, listeners);
+                sendNow(store, event, eventTypes, listeners);
             });
         } else {
-            sendNow(this.store, eventTypes, this.listeners);
+            sendNow(this.store, event, eventTypes, this.listeners);
         }
     }
 
-    private void sendNow(EventStoreProvider targetStore, Set<String> eventTypes, List<EventListenerProvider> targetListeners) {
+    private void sendNow(EventStoreProvider targetStore, Event event, Set<String> eventTypes, List<EventListenerProvider> targetListeners) {
         if (targetStore != null) {
             if (eventTypes.isEmpty() && event.getType().isSaveByDefault() || eventTypes.contains(event.getType().name())) {
                 targetStore.onEvent(event);
@@ -282,7 +292,7 @@ public class EventBuilder {
 
         for (EventListenerProvider l : targetListeners) {
             try {
-                l.onEvent(event.clone());
+                l.onEvent(event);
             } catch (Throwable t) {
                 log.error("Failed to send type to " + l, t);
             }
