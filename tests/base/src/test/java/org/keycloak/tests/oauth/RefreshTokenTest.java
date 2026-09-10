@@ -89,6 +89,7 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AbstractHttpPostRequest;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.keycloak.util.DPoPGenerator;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -750,6 +751,39 @@ public class RefreshTokenTest {
             oauth.scope(null);
             oauth.clientResource().removeOptionalClientScope(phoneScope.getId());
             oauth.clientResource().removeOptionalClientScope(addressScope.getId());
+        }
+    }
+
+    @Test
+    public void refreshTokenRetainsOpenidScopeWhenOmittedInRefreshRequest() {
+        try {
+            oauth.scope("openid profile");
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.parseLoginResponse().getCode();
+
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+            assertEquals(200, tokenResponse.getStatusCode());
+            assertScopes("openid email profile", tokenResponse.getScope());
+
+            RefreshToken initialRefreshToken = oauth.parseRefreshToken(tokenResponse.getRefreshToken());
+            assertNotNull(initialRefreshToken);
+
+            timeOffSet.set(2);
+
+            oauth.scope("profile");
+            AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
+            assertEquals(200, refreshResponse.getStatusCode());
+
+            assertScopes("openid profile", refreshResponse.getScope());
+
+            UserInfoResponse userInfoResponse = oauth.doUserInfoRequest(refreshResponse.getAccessToken());
+            assertEquals(200, userInfoResponse.getStatusCode());
+
+            RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshResponse.getRefreshToken());
+            assertNotNull(refreshedRefreshToken);
+        } finally {
+            oauth.scope(null);
         }
     }
 
