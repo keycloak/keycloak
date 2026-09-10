@@ -22,10 +22,10 @@ import java.util.Map;
 import java.util.UUID;
 
 import jakarta.ws.rs.BadRequestException;
-
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
@@ -41,7 +41,9 @@ import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
@@ -53,9 +55,8 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.server.KeycloakUrls;
-import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
@@ -596,26 +597,46 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
 
     @Test
     public void importConfigShouldReportAMetadataUrlThatCannotBeFetched() {
-        Map<String, Object> data = new HashMap<>();
-        data.put("providerId", "oidc");
-        data.put("fromUrl", "http://localhost:1/.well-known/openid-configuration");
+        String url = "http://localhost:1/.well-known/openid-configuration";
 
-        BadRequestException error = assertThrows(BadRequestException.class,
-                () -> managedRealm.admin().identityProviders().importFrom(data));
+        OAuth2ErrorRepresentation error = assertImportConfigFails(url);
 
-        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), error.getResponse().getStatus());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
+        assertThat(error.getErrorDescription(), containsString("Cannot fetch"));
+        assertThat(error.getErrorDescription(), containsString(url));
+    }
+
+    @Test
+    public void importConfigShouldReportAMetadataUrlThatDoesNotParse() {
+        String url = "http://localhost:1/ .well-known";
+
+        OAuth2ErrorRepresentation error = assertImportConfigFails(url);
+
+        assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
+        assertThat(error.getErrorDescription(), containsString("Cannot fetch"));
     }
 
     @Test
     public void importConfigShouldReportAUrlThatIsNotMetadata() {
+        String url = keycloakUrls.getBase();
+
+        OAuth2ErrorRepresentation error = assertImportConfigFails(url);
+
+        assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
+        assertThat(error.getErrorDescription(), containsString("Cannot parse"));
+        assertThat(error.getErrorDescription(), containsString(url));
+    }
+
+    private OAuth2ErrorRepresentation assertImportConfigFails(String fromUrl) {
         Map<String, Object> data = new HashMap<>();
         data.put("providerId", "oidc");
-        data.put("fromUrl", keycloakUrls.getBase());
+        data.put("fromUrl", fromUrl);
 
         BadRequestException error = assertThrows(BadRequestException.class,
                 () -> managedRealm.admin().identityProviders().importFrom(data));
 
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), error.getResponse().getStatus());
+        return error.getResponse().readEntity(OAuth2ErrorRepresentation.class);
     }
 
     public static class ExternalRealmConfig implements RealmConfig {

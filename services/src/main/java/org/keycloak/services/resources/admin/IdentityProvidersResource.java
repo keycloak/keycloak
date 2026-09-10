@@ -38,7 +38,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
@@ -78,6 +77,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
@@ -199,9 +199,10 @@ public class IdentityProvidersResource {
         String file;
         try {
             file = session.getProvider(HttpClientProvider.class).getString(from);
-        } catch (IOException e) {
-            // The URL is the caller's, so the failure is theirs to fix. Without this the
-            // IOException escapes as an uncaught 500 and every cause looks the same.
+        } catch (IOException | IllegalArgumentException e) {
+            // The URL is the caller's, so the failure is theirs to fix. IOException covers a
+            // network error or a non-2xx status, IllegalArgumentException a URL that does not
+            // parse; both escaped uncaught and every cause reached the client alike.
             logger.debugf(e, "Failed to fetch identity provider metadata from %s", from);
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST,
                     "Cannot fetch identity provider metadata from " + from + ": " + e.getMessage(),
@@ -217,9 +218,15 @@ public class IdentityProvidersResource {
             // A factory that already reported properly keeps its own status.
             throw e;
         } catch (RuntimeException e) {
-            // parseConfig wraps a JSON failure in a RuntimeException, which the error
-            // handler only reads deeply enough to label invalid_request while still
-            // answering 500.
+            if (e.getCause() == null) {
+                // Both metadata parsers wrap the underlying failure. A factory raising on its
+                // own account, such as one that does not implement import at all, is reporting
+                // about itself rather than about the document, and stays a server error.
+                throw e;
+            }
+            // The wrapper leaves KeycloakErrorHandler able to label the response
+            // invalid_request while still answering 500, because getResponseStatus only maps a
+            // JsonProcessingException thrown directly.
             logger.debugf(e, "Failed to parse identity provider metadata from %s", from);
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST,
                     "Cannot parse identity provider metadata from " + from,
