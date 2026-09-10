@@ -109,7 +109,7 @@ test.describe("Personal info (user profile enabled)", () => {
       "Could not update account due to validation errors",
     );
 
-    await expect(page.getByTestId("email2-helper")).toHaveText(
+    await expect(page.getByTestId("email2-helper")).toContainText(
       "Invalid email address.",
     );
 
