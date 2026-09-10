@@ -441,21 +441,26 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     private static void testNonAsciiEmailValidator(KeycloakSession session, boolean success) {
         RealmModel realm = session.getContext().getRealm();
-        Map<String, String> smtpConfig = realm.getSmtpConfig() == null ? new HashMap<>() : new HashMap<>(realm.getSmtpConfig());
-        smtpConfig.put(EmailSenderProvider.CONFIG_ALLOW_UTF8, Boolean.toString(success));
-        realm.setSmtpConfig(smtpConfig);
+        Map<String, String> originalSmtpConfig = realm.getSmtpConfig();
+        try {
+            Map<String, String> smtpConfig = originalSmtpConfig == null ? new HashMap<>() : new HashMap<>(originalSmtpConfig);
+            smtpConfig.put(EmailSenderProvider.CONFIG_ALLOW_UTF8, Boolean.toString(success));
+            realm.setSmtpConfig(smtpConfig);
 
-        Map<String, Object> attributes = new HashMap<>();
-        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-        List<ValidationError> errors = new ArrayList<>();
-        attributes.put(UserModel.USERNAME, "diego");
-        attributes.put(UserModel.EMAIL, "diegø@foo.com");
-        UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
-        if (success) {
-            assertTrue(profile.getAttributes().validate(UserModel.EMAIL, errors::add));
-        } else {
-            assertFalse(profile.getAttributes().validate(UserModel.EMAIL, errors::add));
-            assertTrue(containsErrorMessage(errors, EmailValidator.MESSAGE_NON_ASCII_LOCAL_PART_EMAIL));
+            Map<String, Object> attributes = new HashMap<>();
+            UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+            List<ValidationError> errors = new ArrayList<>();
+            attributes.put(UserModel.USERNAME, "diego");
+            attributes.put(UserModel.EMAIL, "diegø@foo.com");
+            UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+            if (success) {
+                assertTrue(profile.getAttributes().validate(UserModel.EMAIL, errors::add));
+            } else {
+                assertFalse(profile.getAttributes().validate(UserModel.EMAIL, errors::add));
+                assertTrue(containsErrorMessage(errors, EmailValidator.MESSAGE_NON_ASCII_LOCAL_PART_EMAIL));
+            }
+        } finally {
+            realm.setSmtpConfig(originalSmtpConfig);
         }
     }
 
