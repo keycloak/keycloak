@@ -74,10 +74,12 @@ public class KeycloakRecorderTest {
         Map<String, Object> reapplied = reappliedRuntimeProperties(Map.of(
                 "jakarta.persistence.create-database-schemas", "true",
                 "jakarta.persistence.schema-generation.scripts.action", "create",
-                "org.hibernate.flushMode", "COMMIT"));
+                "org.hibernate.flushMode", "COMMIT",
+                "hibernate.hbm2ddl.schema-generation.script.append", "true"));
         assertEquals("true", reapplied.get("jakarta.persistence.create-database-schemas"));
         assertEquals("create", reapplied.get("jakarta.persistence.schema-generation.scripts.action"));
         assertEquals("COMMIT", reapplied.get("org.hibernate.flushMode"));
+        assertEquals("true", reapplied.get("hibernate.hbm2ddl.schema-generation.script.append"));
     }
 
     @Test
