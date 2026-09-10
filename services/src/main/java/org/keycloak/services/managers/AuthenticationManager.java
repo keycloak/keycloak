@@ -1084,6 +1084,20 @@ public class AuthenticationManager {
         throw new ErrorPageException(session, null, Response.Status.BAD_REQUEST, errorMessage == null ? Messages.INVALID_CODE : errorMessage);
     }
 
+    /**
+     * Invalidates the action token by revoking it via {@link KeycloakSession#revokedTokens()}.
+     * This is used to prevent replay of the same action token.
+     *
+     * @return true if the token was successfully invalidated, false if it was already invalidated or the key is invalid
+     */
+    public static boolean invalidateActionToken(KeycloakSession session, String actionTokenKeyToInvalidate, long skewSeconds) {
+        SingleUseObjectKeyModel actionTokenKey = DefaultActionTokenKey.from(actionTokenKeyToInvalidate);
+        if (actionTokenKey == null) {
+            return false;
+        }
+        long lifespanSeconds = Math.max(1L, actionTokenKey.getExp() - Time.currentTimeSeconds() + skewSeconds);
+        return session.revokedTokens().put(actionTokenKeyToInvalidate, lifespanSeconds);
+    }
 
     public static Response finishedRequiredActions(KeycloakSession session, AuthenticationSessionModel authSession, UserSessionModel userSession,
                                                    ClientConnection clientConnection, HttpRequest request, UriInfo uriInfo, EventBuilder event) {
@@ -1096,8 +1110,7 @@ public class AuthenticationManager {
                     handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
                 }
 
-                var revokedTokens = session.revokedTokens();
-                if (!revokedTokens.put(actionTokenKeyToInvalidate, actionTokenKey.getExp() - Time.currentTime() + CLOCK_SKEW_SECONDS)) {
+                if (!invalidateActionToken(session, actionTokenKeyToInvalidate, CLOCK_SKEW_SECONDS)) {
                     handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
                 }
             }
