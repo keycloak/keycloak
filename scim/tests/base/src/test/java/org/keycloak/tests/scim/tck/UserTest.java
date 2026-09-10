@@ -1799,6 +1799,71 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testGroupFilterMultivaluedConjunctionAndNegationBugs() {
+        // Covers the bugs tracked by https://github.com/keycloak/keycloak/issues/51805: correlated
+        // EXISTS subqueries (rather than a shared JOIN) are required to correctly express conjunction
+        // across independent values and negation for multivalued attributes (here, groups).
+        GroupRepresentation groupA = createGroup("MultiValued Group A");
+        GroupRepresentation groupB = createGroup("MultiValued Group B");
+
+        User user = createUser();
+        user.addGroup(groupA.getId());
+        user.addGroup(groupB.getId());
+        User created = client.users().create(user);
+
+        // Conjunction: the user belongs to BOTH groupA and groupB, so a filter requiring
+        // "some value = A" AND "some value = B" should match. Each side is evaluated as an
+        // independent EXISTS subquery, so a different group membership row can satisfy each side.
+        boolean matchesConjunction = client.users().search(
+                        "(groups.value eq \"" + groupA.getId() + "\") and (groups.value eq \"" + groupB.getId() + "\")")
+                .getResources().stream()
+                .anyMatch(u -> u.getId().equals(created.getId()));
+        assertTrue(matchesConjunction, "user belongs to both groups and should match the conjunction filter");
+
+        // Negation: the user DOES belong to groupA, so "not (groups.value eq A)" must NOT match.
+        // The NOT applies to the correlated EXISTS as a whole (i.e. per resource), not per joined row,
+        // so a resource is excluded only if it truly has no group matching groupA.
+        User noGroupsUser = client.users().create(createUser());
+        ListResponse<User> negationResults = client.users().search(
+                "not (groups.value eq \"" + groupA.getId() + "\")");
+        assertFalse(negationResults.getResources().stream().anyMatch(u -> u.getId().equals(created.getId())),
+                "user belongs to groupA and must not match the negated filter");
+        // a resource with no values at all for the attribute must still match the negated filter
+        assertTrue(negationResults.getResources().stream().anyMatch(u -> u.getId().equals(noGroupsUser.getId())),
+                "user has no groups at all and should match the negated filter");
+    }
+
+    @Test
+    public void testGroupFilterValuePathAndOperatorRejected() {
+        // Unlike "(groups.value eq A) and (groups.value eq B)" above - two independent top-level
+        // comparisons, each with its own EXISTS - a bracketed value path requires every condition
+        // inside it to be satisfied by the SAME group membership. Since groups only exposes a single
+        // "value" sub-attribute, no single membership can equal two different values at once, so this
+        // filter shape is rejected with 400 rather than silently evaluated as two independent EXISTS
+        // subqueries (which would incorrectly match a user belonging to both groups separately).
+        GroupRepresentation groupA = createGroup("ValuePath Group A");
+        GroupRepresentation groupB = createGroup("ValuePath Group B");
+
+        User user = createUser();
+        user.addGroup(groupA.getId());
+        user.addGroup(groupB.getId());
+        client.users().create(user);
+
+        try {
+            client.users().search(
+                    "groups[value eq \"" + groupA.getId() + "\" and value eq \"" + groupB.getId() + "\"]");
+            fail("Should have thrown an exception - AND operator is not supported within a value path for multivalued attributes");
+        } catch (ScimClientException e) {
+            ErrorResponse error = e.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt(),
+                    "AND operator within a value path for a multivalued attribute should return 400, got " + error.getStatusInt());
+            assertTrue(error.getDetail().contains("'and' operator is not supported within a value path filter for multivalued or non-complex attributes"),
+                    "Error should mention 'and' operator not supported within a value path, got: " + error.getDetail());
+        }
+    }
+
+    @Test
     public void testGetWithAttributes() {
         User expected = client.users().create(createUser());
 

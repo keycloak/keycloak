@@ -4,12 +4,14 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.scim.client.ResourceFilter;
 import org.keycloak.scim.client.ScimClientException;
@@ -18,6 +20,7 @@ import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.user.EnterpriseUser;
 import org.keycloak.scim.resource.user.User;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.userprofile.config.UPConfigUtils;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.scim.filter.FilterUtils.MAX_FILTER_DEPTH;
 import static org.keycloak.scim.filter.FilterUtils.MAX_FILTER_LENGTH;
+import static org.keycloak.scim.model.user.AbstractUserModelSchema.ANNOTATION_SCIM_SCHEMA_ATTRIBUTE;
 import static org.keycloak.scim.resource.Scim.ENTERPRISE_USER_SCHEMA;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,8 +38,10 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Comprehensive integration tests for SCIM filter functionality covering all operators and complex combinations.
@@ -531,6 +537,73 @@ public class FilterTest extends AbstractScimTest {
 
         filter = ResourceFilter.filter().eq("externalId", "EXT-Bob-01").build();
         assertSingleResult(client.users().getAll(filter), user.getUserName());
+    }
+
+    @Test
+    public void testFilterConjunctionAcrossDifferentCustomAttributes() {
+        // Regression test for https://github.com/keycloak/keycloak/issues/51805: predicate generation
+        // for collection-backed custom attributes used to share a single cached JOIN across every
+        // custom-attribute predicate in the filter, so ANDing two DIFFERENT custom attributes could
+        // never match (both conditions were forced onto the same joined row, which cannot have two
+        // different attribute names at once).
+        String customSchema = "urn:test:custom:" + KeycloakModelUtils.generateId();
+        addOrReplaceUPAttribute(customSchema, "attrOne");
+        addOrReplaceUPAttribute(customSchema, "attrTwo");
+
+        User user = createUser("bob");
+        UserRepresentation rep = realm.admin().users().get(user.getId()).toRepresentation();
+        rep.setAttributes(Map.of(
+                "scim.attrOne", List.of("value-one"),
+                "scim.attrTwo", List.of("value-two")));
+        realm.admin().users().get(user.getId()).update(rep);
+
+        String filter = ResourceFilter.filter()
+                .eq(customSchema + ":attrOne", "value-one")
+                .and()
+                .eq(customSchema + ":attrTwo", "value-two")
+                .build();
+        assertSingleResult(client.users().getAll(filter), user.getUserName());
+    }
+
+    @Test
+    public void testFilterMultivaluedCustomAttributeConjunctionAndNegation() {
+        // Regression test for https://github.com/keycloak/keycloak/issues/51805: JOIN-based predicate
+        // generation for collection-backed attributes could not correctly express conjunction across
+        // independent values of the same multivalued attribute, nor negation (NOT was applied per
+        // joined row instead of per resource, so a resource holding a matching value could still slip
+        // through via one of its other, non-matching rows).
+        String customSchema = "urn:test:custom:" + KeycloakModelUtils.generateId();
+        String attrPath = customSchema + ":multiValuedAttr";
+
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        UPAttribute upAttribute = new UPAttribute("scim.multiValuedAttr", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, attrPath));
+        upAttribute.setMultivalued(true);
+        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(upAttribute);
+        realm.admin().users().userProfile().update(upConfig);
+
+        User user = createUser("bob");
+        UserRepresentation rep = realm.admin().users().get(user.getId()).toRepresentation();
+        rep.setAttributes(Map.of("scim.multiValuedAttr", List.of("value-a", "value-b")));
+        realm.admin().users().get(user.getId()).update(rep);
+
+        // conjunction: the user has BOTH "value-a" and "value-b"
+        String filter = ResourceFilter.filter()
+                .eq(attrPath, "value-a")
+                .and()
+                .eq(attrPath, "value-b")
+                .build();
+        assertSingleResult(client.users().getAll(filter), user.getUserName());
+
+        // control user with no value at all for the attribute
+        User controlUser = createUser("alice");
+
+        // negation: "user" DOES have "value-a", so negating that eq must not match it, while "controlUser"
+        // (no value at all for the attribute) must still match the negated filter
+        filter = ResourceFilter.filter().not().lparen().eq(attrPath, "value-a").rparen().build();
+        ListResponse<User> negationResults = client.users().getAll(filter);
+        assertFalse(negationResults.getResources().stream().anyMatch(u -> u.getId().equals(user.getId())));
+        assertTrue(negationResults.getResources().stream().anyMatch(u -> u.getId().equals(controlUser.getId())));
     }
 
     @Test

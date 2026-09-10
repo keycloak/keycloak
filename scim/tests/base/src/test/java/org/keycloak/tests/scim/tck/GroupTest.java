@@ -608,6 +608,56 @@ public class GroupTest extends AbstractScimTest {
     }
 
     @Test
+    public void testGroupFilterMembersConjunctionAndNegation() {
+        // Regression test for https://github.com/keycloak/keycloak/issues/51805: JOIN-based predicate
+        // generation for the "members" relation could not correctly express conjunction across
+        // independent values, nor negation (NOT was applied per joined row instead of per resource).
+        User userA = createScimUser();
+        User userB = createScimUser();
+
+        Group groupA = new Group();
+        groupA.setDisplayName(KeycloakModelUtils.generateId());
+        groupA = client.groups().create(groupA);
+
+        Group groupB = new Group();
+        groupB.setDisplayName(KeycloakModelUtils.generateId());
+        groupB = client.groups().create(groupB);
+        adminEvents.clear();
+
+        client.groups().patch(groupA.getId(), PatchRequest.create()
+                .add("members", userA.getId())
+                .build());
+        client.groups().patch(groupB.getId(), PatchRequest.create()
+                .add("members", userA.getId())
+                .add("members", userB.getId())
+                .build());
+
+        Group emptyGroup = new Group();
+        emptyGroup.setDisplayName(KeycloakModelUtils.generateId());
+        emptyGroup = client.groups().create(emptyGroup);
+        String emptyGroupId = emptyGroup.getId();
+
+        // conjunction: groupB has BOTH userA and userB as members
+        String filter = ResourceFilter.filter()
+                .eq("members.value", userA.getId())
+                .and()
+                .eq("members.value", userB.getId())
+                .build();
+        ListResponse<Group> response = client.groups().getAll(filter);
+        String groupBId = groupB.getId();
+        assertTrue(response.getResources().stream().anyMatch(g -> g.getId().equals(groupBId)));
+        String groupAId = groupA.getId();
+        assertFalse(response.getResources().stream().anyMatch(g -> g.getId().equals(groupAId)));
+
+        // negation: groupB DOES have userA as a member, so negating that eq must not match it, while a group
+        // with no members at all must still match the negated filter
+        filter = ResourceFilter.filter().not().lparen().eq("members.value", userA.getId()).rparen().build();
+        response = client.groups().getAll(filter);
+        assertFalse(response.getResources().stream().anyMatch(g -> g.getId().equals(groupBId)));
+        assertTrue(response.getResources().stream().anyMatch(g -> g.getId().equals(emptyGroupId)));
+    }
+
+    @Test
     public void testGroupMembersOnCreate() {
         // create users via SCIM
         User userA = createScimUser();

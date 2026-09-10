@@ -51,7 +51,7 @@ public final class ClientJpaQueryExecutor {
         ClientResourceTypeProvider provider = new ClientResourceTypeProvider(session);
 
         ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(
-                provider, provider.getSchemas(), cb, root);
+                provider, provider.getSchemas(), cb, query, root);
         if (filterContext != null) {
             predicates.add(evaluator.visit(filterContext).predicate());
         }
