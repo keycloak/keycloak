@@ -270,6 +270,7 @@ public class KeycloakRecorder {
             reapply(originalProps, propertyCollector, AvailableSettings.JAKARTA_HBM2DDL_CREATE_SCHEMAS, "javax.persistence.create-database-schemas");
             reapply(originalProps, propertyCollector, HibernateHints.HINT_FLUSH_MODE);
             reapply(originalProps, propertyCollector, AvailableSettings.JAKARTA_HBM2DDL_SCRIPTS_ACTION, "javax.persistence.schema-generation.scripts.action");
+            reapply(originalProps, propertyCollector, AvailableSettings.HBM2DDL_SCRIPTS_CREATE_APPEND);
         };
     }
 
