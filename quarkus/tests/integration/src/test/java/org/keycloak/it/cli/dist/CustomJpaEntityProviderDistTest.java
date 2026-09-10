@@ -28,6 +28,10 @@ import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
 @Tag(DistributionTest.SMOKE)
@@ -71,7 +75,21 @@ public class CustomJpaEntityProviderDistTest {
     @Test
     @Launch({"start-dev", "--db=dev-file", "--log-level=org.hibernate.orm.jpa:debug", "--db-kind-new-user-store=dev-mem", "--db-kind-client-store=dev-file", "--db-kind-pu-without-dialect-store=dev-mem"})
     void implicitOrmXmlMappingApplied(CLIResult cliResult) {
-        cliResult.assertMessage("com.acme.provider.legacy.jpa.entity.OrmMappedEntity");
+        String output = cliResult.getOutput();
+        String defaultPuBlock = extractPersistenceUnitBlock(output, "<default>");
+        String newUserStorePuBlock = extractPersistenceUnitBlock(output, "new-user-store");
+
+        assertNotNull(defaultPuBlock, "'<default>' PU info block should be present in Hibernate debug output");
+        assertNotNull(newUserStorePuBlock, "'new-user-store' PU info block should be present in Hibernate debug output");
+
+        assertTrue(newUserStorePuBlock.contains("com.acme.provider.legacy.jpa.entity.OrmMappedEntity"),
+                "OrmMappedEntity (from provider's META-INF/orm.xml) must be assigned to 'new-user-store' "
+                        + "persistence unit, not left unassigned");
+
+        assertFalse(defaultPuBlock.contains("com.acme.provider.legacy.jpa.entity.OrmMappedEntity"),
+                "OrmMappedEntity (from provider's META-INF/orm.xml) must NOT leak into "
+                        + "Keycloak's '<default>' persistence unit");
+
         cliResult.assertStartedDevMode();
     }
 
@@ -99,6 +117,39 @@ public class CustomJpaEntityProviderDistTest {
         cliResult.assertMessageWasShownExactlyNumberOfTimes("jakarta.persistence.validation.mode: NONE", 1);
         cliResult.assertMessage("Persistence unit 'client-store' declares <jar-file> ([file:lib/does-not-exist.jar]), which is not supported; entities from a referenced jar are not added to this unit. List them with <class> or package them in the unit's own jar.");
 
+        String output = cliResult.getOutput();
+        String defaultPuBlock = extractPersistenceUnitBlock(output, "<default>");
+        String newUserStorePuBlock = extractPersistenceUnitBlock(output, "new-user-store");
+        assertNotNull(defaultPuBlock, "'<default>' PU info block should be present");
+        assertNotNull(newUserStorePuBlock, "'new-user-store' PU info block should be present");
+
+        // Realm is listed as <class> in persistence.xml — it should be in new-user-store only.
+        assertTrue(newUserStorePuBlock.contains("com.acme.provider.legacy.jpa.entity.Realm"),
+                "Realm entity must be in 'new-user-store' PU (from <class> in persistence.xml)");
+        assertFalse(defaultPuBlock.contains("com.acme.provider.legacy.jpa.entity.Realm"),
+                "Realm entity must NOT leak into '<default>' PU");
+
+        // OrmMappedEntity is in META-INF/orm.xml inside the provider JAR — it must stay in new-user-store.
+        assertTrue(newUserStorePuBlock.contains("com.acme.provider.legacy.jpa.entity.OrmMappedEntity"),
+                "OrmMappedEntity (from orm.xml) must be in 'new-user-store' PU");
+        assertFalse(defaultPuBlock.contains("com.acme.provider.legacy.jpa.entity.OrmMappedEntity"),
+                "OrmMappedEntity (from orm.xml) must NOT leak into '<default>' PU");
+
         cliResult.assertStartedDevMode();
+    }
+
+    private static String extractPersistenceUnitBlock(String output, String puName) {
+        String marker = "HHH008541: PersistenceUnitInfo [";
+        String nameToken = "name: " + puName;
+        int idx = 0;
+        while ((idx = output.indexOf(marker, idx)) != -1) {
+            int nextBlock = output.indexOf(marker, idx + marker.length());
+            String block = nextBlock == -1 ? output.substring(idx) : output.substring(idx, nextBlock);
+            if (block.contains(nameToken)) {
+                return block;
+            }
+            idx += marker.length();
+        }
+        return null;
     }
 }

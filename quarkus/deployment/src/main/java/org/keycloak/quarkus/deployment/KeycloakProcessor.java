@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -144,7 +145,9 @@ import io.quarkus.deployment.builditem.StaticInitConfigBuilderBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationRuntimeConfiguredBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationStaticConfiguredBuildItem;
 import io.quarkus.hibernate.orm.deployment.spi.AdditionalPersistenceUnitBuildItem;
+import io.quarkus.hibernate.orm.deployment.xml.QuarkusMappingFileParser;
 import io.quarkus.hibernate.orm.runtime.PersistenceUnitUtil;
+import io.quarkus.hibernate.orm.runtime.boot.xml.RecordableXmlMapping;
 import io.quarkus.narayana.jta.runtime.TransactionManagerBuildTimeConfig;
 import io.quarkus.narayana.jta.runtime.TransactionManagerBuildTimeConfig.UnsafeMultipleLastResourcesMode;
 import io.quarkus.resteasy.reactive.server.spi.MethodScannerBuildItem;
@@ -160,6 +163,10 @@ import io.quarkus.vertx.http.deployment.VertxWebRouterBuildItem;
 import io.quarkus.vertx.http.runtime.security.SecurityHandlerPriorities;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.health.Readiness;
+import org.hibernate.boot.jaxb.mapping.spi.JaxbEmbeddable;
+import org.hibernate.boot.jaxb.mapping.spi.JaxbEntity;
+import org.hibernate.boot.jaxb.mapping.spi.JaxbEntityMappingsImpl;
+import org.hibernate.boot.jaxb.mapping.spi.JaxbMappedSuperclass;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.cfg.JdbcSettings;
 import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
@@ -533,6 +540,7 @@ class KeycloakProcessor {
             for (String mappingFile : descriptor.getMappingFileNames()) {
                 builder.mappingFile(mappingFile);
             }
+            enlistMappingFileEntities(builder, descriptor);
             String resolvedDialect = resolveUserDefinedDialect(descriptor, datasourceName);
             if (resolvedDialect != null) {
                 builder.dialect(resolvedDialect);
@@ -560,6 +568,55 @@ class KeycloakProcessor {
             }
             producer.produce(builder.build());
         }
+    }
+
+    private static void enlistMappingFileEntities(AdditionalPersistenceUnitBuildItem.Builder builder, PersistenceUnitDescriptor descriptor) {
+        Set<String> mappingFiles = new LinkedHashSet<>(descriptor.getMappingFileNames());
+        if (mappingFiles.isEmpty()) {
+            if (!descriptor.getManagedClassNames().isEmpty()) {
+                mappingFiles.add("META-INF/orm.xml");
+            } else {
+                builder.mappingFile("no-file");
+            }
+        }
+        try (QuarkusMappingFileParser parser = QuarkusMappingFileParser.create()) {
+            for (String mappingFile : mappingFiles) {
+                logger.debugf("Parsing mapping file '%s' for PU '%s' with root URL '%s'",
+                        mappingFile, descriptor.getName(), descriptor.getPersistenceUnitRootUrl());
+                Optional<RecordableXmlMapping> mappingOptional = parser.parse(
+                        descriptor.getName(), descriptor.getPersistenceUnitRootUrl(), mappingFile);
+                logger.debugf("Parsed mapping file result present: %s", mappingOptional.isPresent());
+                if (mappingOptional.isPresent() && mappingOptional.get().getOrmXmlRoot() != null) {
+                    JaxbEntityMappingsImpl mapping = mappingOptional.get().getOrmXmlRoot();
+                    String packagePrefix = mapping.getPackage() == null ? "" : mapping.getPackage() + ".";
+                    for (JaxbEntity entity : mapping.getEntities()) {
+                        String className = qualifyClassName(packagePrefix, entity.getClazz());
+                        if (className != null) {
+                            builder.managedClass(className);
+                        }
+                    }
+                    for (JaxbMappedSuperclass mappedSuperclass : mapping.getMappedSuperclasses()) {
+                        String className = qualifyClassName(packagePrefix, mappedSuperclass.getClazz());
+                        if (className != null) {
+                            builder.managedClass(className);
+                        }
+                    }
+                    for (JaxbEmbeddable embeddable : mapping.getEmbeddables()) {
+                        String className = qualifyClassName(packagePrefix, embeddable.getClazz());
+                        if (className != null) {
+                            builder.managedClass(className);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static String qualifyClassName(String packagePrefix, String name) {
+        if (name == null) {
+            return null;
+        }
+        return name.indexOf('.') < 0 ? packagePrefix + name : name;
     }
 
     static String resolveUserDefinedDialect(PersistenceUnitDescriptor descriptor, String datasourceName) {
