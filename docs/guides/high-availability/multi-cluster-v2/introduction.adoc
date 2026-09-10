@@ -44,7 +44,7 @@ A commit latency of less than 5 ms is suggested, and below 10 ms is required.
 With synchronous replication, each commit includes a round-trip from the database primary to its replica to transfer the write-ahead log.
 High commit latency slows every write operation, including login and token requests, and can cause cascading timeouts and low throughput.
 
-* *An external load balancer to balance requests between the clusters and probes their availability.*
+* *An external load balancer to balance requests between the clusters and probe their availability.*
 +
 Without a load balancer that actively probes the {project_name} health endpoints, site failures are not detected automatically, and traffic continues to be routed to a failed site or split-brain partitions until manual intervention.
 
