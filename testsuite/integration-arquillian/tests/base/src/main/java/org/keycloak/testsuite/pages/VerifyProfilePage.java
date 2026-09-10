@@ -49,7 +49,7 @@ public class VerifyProfilePage extends AbstractPage {
     @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
+    @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
     private WebElement loginAlertErrorMessage;
 
 
