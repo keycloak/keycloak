@@ -3,11 +3,13 @@ import { expect, type Locator, type Page } from "@playwright/test";
 const LOADING_TIMEOUT_MS = 15_000;
 const LOADING_APPEAR_TIMEOUT_MS = 2_000;
 
-function tableLoadingOverlays(root: Locator): Locator {
+type LoadingScope = Page | Locator;
+
+function tableLoadingOverlays(root: LoadingScope): Locator {
   return root.getByTestId("table-loading-overlay").filter({ visible: true });
 }
 
-function pageLoadingSpinners(root: Locator): Locator {
+function pageLoadingSpinners(root: LoadingScope): Locator {
   return root.getByTestId("page-loading-spinner").filter({ visible: true });
 }
 

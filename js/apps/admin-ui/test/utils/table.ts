@@ -1,5 +1,5 @@
 import { type Locator, type Page, expect } from "@playwright/test";
-import { waitForLoadingCycle } from "./loading.ts";
+import { waitForLoadingCycle, waitForTableIdle } from "./loading.ts";
 
 const TABLE_LOAD_TIMEOUT_MS = 15_000;
 
@@ -11,8 +11,8 @@ function getTableRowLink(tableBody: Locator, itemName: string): Locator {
   const exactNameRegex = new RegExp(`^${escapeRegex(itemName)}$`, "i");
 
   return tableBody
-    .getByRole("link", { name: itemName })
-    .or(tableBody.getByRole("link", { name: exactNameRegex }))
+    .getByRole("link", { name: exactNameRegex })
+    .or(tableBody.getByRole("link", { name: itemName }))
     .or(
       tableBody.getByTestId("provider-name-link").filter({ hasText: itemName }),
     )
@@ -73,6 +73,8 @@ export async function assertRowExists(
   itemName: string,
   exist = true,
 ) {
+  await waitForTableIdle(page);
+
   const row = page.locator("table tbody").getByRole("row", { name: itemName });
   if (exist) {
     await expect(row.first()).toBeVisible({ timeout: TABLE_LOAD_TIMEOUT_MS });
@@ -113,7 +115,22 @@ export async function clickTableToolbarItem(
     .getByRole("button", { name: itemName, exact: true })
     .or(toolbar.getByRole("link", { name: itemName, exact: true }))
     .first();
-  await exactToolbarItem.click();
+
+  if (await exactToolbarItem.isVisible()) {
+    await exactToolbarItem.click();
+    return;
+  }
+
+  await toolbar.getByTestId("kebab").click();
+  const exactMenuItem = page.getByRole("menuitem", {
+    name: itemName,
+    exact: true,
+  });
+  if ((await exactMenuItem.count()) > 0) {
+    await exactMenuItem.first().click();
+    return;
+  }
+  await page.getByRole("menuitem", { name: itemName }).first().click();
 }
 
 export async function getTableData(page: Page, name: string) {
