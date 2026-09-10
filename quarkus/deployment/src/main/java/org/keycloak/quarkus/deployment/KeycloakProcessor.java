@@ -572,13 +572,16 @@ class KeycloakProcessor {
 
     private static void enlistMappingFileEntities(AdditionalPersistenceUnitBuildItem.Builder builder, PersistenceUnitDescriptor descriptor) {
         Set<String> mappingFiles = new LinkedHashSet<>(descriptor.getMappingFileNames());
-        if (mappingFiles.isEmpty()) {
+        boolean implicitOrmXml = mappingFiles.isEmpty();
+        if (implicitOrmXml) {
             if (!descriptor.getManagedClassNames().isEmpty()) {
                 mappingFiles.add("META-INF/orm.xml");
             } else {
                 builder.mappingFile("no-file");
+                return;
             }
         }
+        boolean anyMappingFound = false;
         try (QuarkusMappingFileParser parser = QuarkusMappingFileParser.create()) {
             for (String mappingFile : mappingFiles) {
                 logger.debugf("Parsing mapping file '%s' for PU '%s' with root URL '%s'",
@@ -587,6 +590,10 @@ class KeycloakProcessor {
                         descriptor.getName(), descriptor.getPersistenceUnitRootUrl(), mappingFile);
                 logger.debugf("Parsed mapping file result present: %s", mappingOptional.isPresent());
                 if (mappingOptional.isPresent() && mappingOptional.get().getOrmXmlRoot() != null) {
+                    anyMappingFound = true;
+                    if (implicitOrmXml) {
+                        builder.mappingFile(mappingFile);
+                    }
                     JaxbEntityMappingsImpl mapping = mappingOptional.get().getOrmXmlRoot();
                     String packagePrefix = mapping.getPackage() == null ? "" : mapping.getPackage() + ".";
                     for (JaxbEntity entity : mapping.getEntities()) {
@@ -609,6 +616,9 @@ class KeycloakProcessor {
                     }
                 }
             }
+        }
+        if (implicitOrmXml && !anyMappingFound) {
+            builder.mappingFile("no-file");
         }
     }
 
