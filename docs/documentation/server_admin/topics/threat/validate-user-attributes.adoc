@@ -8,4 +8,4 @@ Administrators should not allow unmanaged attributes for users to prevent attack
 Attributes should have a validation that restricts the amount of data entered by attackers.
 
 When using regular expressions to validate user attributes, avoid regular expressions that use an excessive amount of memory or CPU.
-See https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS[OWASP's Regular expression Denial of Service] for details.
+See https://cheatsheetseries.owasp.org/cheatsheets/Denial_of_Service_Cheat_Sheet.html[OWASP's Denial of Service cheat sheet] for details.

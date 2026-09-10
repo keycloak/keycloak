@@ -313,6 +313,7 @@ export const AddScopeDialog = ({
                 direction: "up",
                 appendTo: () => document.body,
               }}
+              zIndex={9999}
               onOpenChange={(isOpen) => setAddToggle(isOpen)}
               className="keycloak__client-scopes-add__add-dropdown"
               key="add-dropdown"
@@ -321,8 +322,8 @@ export const AddScopeDialog = ({
                 <MenuToggle
                   ref={ref}
                   isDisabled={rows.length === 0}
-                  onClick={() => setAddToggle(!addToggle)}
                   isExpanded={addToggle}
+                  isInForm
                   variant="primary"
                   id="add-dropdown"
                   data-testid="add-dropdown"

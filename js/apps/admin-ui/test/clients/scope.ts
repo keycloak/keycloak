@@ -41,9 +41,7 @@ export async function clickAddScope(page: Page, option: string) {
   // Retry: the add-scope dropdown can fail to stay open due to rendering races under CI load.
   await expect(async () => {
     await addDropdown.click();
-    const menuItem = page
-      .getByRole("menuitem", { name: option, exact: true })
-      .last();
+    const menuItem = page.getByTestId(`add-scope-type-${option.toLowerCase()}`);
     await expect(menuItem).toBeVisible({ timeout: 2_000 });
     await menuItem.click({ timeout: 2_000 });
   }).toPass({ timeout: 15_000 });
