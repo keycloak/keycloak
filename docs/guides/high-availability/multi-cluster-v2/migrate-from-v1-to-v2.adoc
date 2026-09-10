@@ -81,6 +81,11 @@ See the <@links.ha id="multi-cluster-concepts-database-connections" /> {section}
 * Network latency between database nodes that meets the requirements.
 +
 include::../partials/network-latency.adoc[]
++
+Additionally, the commit latency on the database must be low.
+With synchronous replication, each commit includes a round-trip from the database primary to its replica to transfer the write-ahead log.
+A commit latency of less than 5 ms is suggested, and below 10 ms is required.
+See the <@links.ha id="multi-cluster-v2-introduction" anchor="multi-cluster-v2-infrastructure-requirements" /> for the full set of requirements.
 
 == Impact on volatile data
 
@@ -93,7 +98,7 @@ Users who are mid-login need to restart their login flow.
 
 Login failure counters::
 Brute-force detection counters are reset.
-Any ongoing lockouts are cleared.
+Any ongoing temporary lockouts are cleared.
 
 OAuth authorization codes::
 OAuth authorization codes that were stored in {jdgserver_name} are lost.
