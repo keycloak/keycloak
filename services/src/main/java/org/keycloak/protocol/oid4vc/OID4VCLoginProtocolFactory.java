@@ -230,7 +230,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         if (clientScope.getAttributes() == null) {
             clientScope.setAttributes(new HashMap<>());
         }
-        
+
         clientScope.getAttributes().computeIfAbsent(VC_FORMAT, k -> getFormatFromScope(scopeName));
         String format = clientScope.getAttributes().get(VC_FORMAT);
 
@@ -445,37 +445,39 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
      *
      * @param session Keycloak session
      * @param clientScope the client scope representation to validate
-     * @throws ErrorResponseException if binding is required and not provided OR the binding or proof-type configuration is invalid
+     * @throws ErrorResponseException if the credential format has no builder, binding is required and not provided,
+     * or the binding or proof-type configuration is invalid
      */
-    private void validateBindingConfiguration(KeycloakSession session,  ClientScopeRepresentation clientScope) throws ErrorResponseException {
+    private void validateBindingConfiguration(KeycloakSession session, ClientScopeRepresentation clientScope) throws ErrorResponseException {
         if (clientScope.getAttributes() == null) {
             return;
         }
 
         boolean bindingRequired = Boolean.parseBoolean(clientScope.getAttributes().get(VC_BINDING_REQUIRED));
-String format = Objects.requireNonNullElseGet(
-        clientScope.getAttributes().get(VC_FORMAT),
-        () -> getFormatFromScope(clientScope.getName()));
+        String format = Objects.requireNonNullElseGet(
+                clientScope.getAttributes().get(VC_FORMAT),
+                () -> getFormatFromScope(clientScope.getName()));
 
         CredentialBuilder credentialBuilder = session.getProvider(CredentialBuilder.class, format);
-        if (credentialBuilder != null) {
-            Set<String> allowedBindingMethods = credentialBuilder.getSupportedBindingMethods();
+        if (credentialBuilder == null) {
+            throw ErrorResponse.error(
+                    String.format("No credential builder found for format '%s' of credential scope '%s'", format, clientScope.getName()),
+                    Response.Status.BAD_REQUEST);
+        }
 
-            String bindingMethodsAttr = clientScope.getAttributes().get(VC_CRYPTOGRAPHIC_BINDING_METHODS);
-            if (bindingRequired || !StringUtil.isBlank(bindingMethodsAttr)) {
-                List<String> effectiveBindingMethods = parseCommaSeparated(bindingMethodsAttr);
+        Set<String> allowedBindingMethods = credentialBuilder.getSupportedBindingMethods();
 
-                if (effectiveBindingMethods.isEmpty() || !allowedBindingMethods.containsAll(effectiveBindingMethods)) {
-                    throw ErrorResponse.error(
-                            String.format("When vc.binding_required is true, vc.cryptographic_binding_methods_supported must " +
-                                            "contain at least one valid value. Supported values for format '%s': %s",
-                                    format, allowedBindingMethods),
-                            Response.Status.BAD_REQUEST);
-                }
+        String bindingMethodsAttr = clientScope.getAttributes().get(VC_CRYPTOGRAPHIC_BINDING_METHODS);
+        if (bindingRequired || !StringUtil.isBlank(bindingMethodsAttr)) {
+            List<String> effectiveBindingMethods = parseCommaSeparated(bindingMethodsAttr);
+
+            if (effectiveBindingMethods.isEmpty() || !allowedBindingMethods.containsAll(effectiveBindingMethods)) {
+                throw ErrorResponse.error(
+                        String.format("When vc.binding_required is true, vc.cryptographic_binding_methods_supported must " +
+                                        "contain at least one valid value. Supported values for format '%s': %s",
+                                format, allowedBindingMethods),
+                        Response.Status.BAD_REQUEST);
             }
-        } else {
-            // Skip the binding for unsupported formats as such client scope cannot be used in runtime to build any credentials. Might happen in some corner case scenarios (EG. when realm with MDOC credential scope is imported when OID4VC_MDOC feature is disabled)
-            LOGGER.warnf("Not able to obtain credential builder for the format '%s' of credential scope '%s'. Skip validation of binding methods",  format, clientScope.getName());
         }
 
         Set<String> allowedProofTypes = session.listProviderIds(ProofValidator.class);
