@@ -124,6 +124,7 @@ export const AdvancedSettings = ({
     defaultValue: "false",
   });
   const claimFilterRequired = filteredByClaim === "true";
+  const { hasAccess } = useAccess();
   const isFeatureEnabled = useIsFeatureEnabled();
   const isTransientUsersEnabled = isFeatureEnabled(Feature.TransientUsers);
   const isClientAuthFederatedEnabled = isFeatureEnabled(
@@ -371,6 +372,12 @@ export const AdvancedSettings = ({
         field="config.caseSensitiveOriginalUsername"
         label="caseSensitiveOriginalUsername"
       />
+      {hasAccess("realm-admin") && (
+        <SwitchField
+          field="config.allowAdminRoleMapping"
+          label="allowAdminRoleMapping"
+        />
+      )}
       {isClientAuthFederatedEnabled && isOIDC && (
         <SwitchField
           field="config.supportsClientAssertions"

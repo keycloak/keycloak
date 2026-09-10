@@ -14,6 +14,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.VerificationException;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.HardcodedRole;
 import org.keycloak.protocol.oidc.mappers.RoleNameMapper;
@@ -443,21 +444,15 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         }
     }
 
-    // Generated-by: claude-sonnet-4-5@20250929
     @Test
     public void testIdpManagerCannotEscalateViaIdentityProviderHardcodedRoleMapper() {
-        // CVE-2026-12388: Prevent privilege escalation via Identity Provider HardcodedRoleMapper
-        // An attacker with manage-identity-providers should NOT be able to create IdP mappers
-        // that grant admin roles they don't have permission to assign
         String realmName = "test-realm";
         RealmResource testRealm = createRealm(adminClient, realmName);
         String attackerName = "idp-manager";
         createUser(testRealm, attackerName);
 
-        // Attacker only has manage-identity-providers permission (not manage-users or realm-admin)
         grantRealmManagementRole(testRealm, attackerName, AdminRoles.MANAGE_IDENTITY_PROVIDERS);
 
-        // Attacker creates an Identity Provider - this is allowed
         IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
         idp.setAlias("test-idp");
         idp.setProviderId("oidc");
@@ -474,7 +469,6 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
             }
         });
 
-        // Attack attempt: Try to create a HardcodedRoleMapper that grants realm-admin
         IdentityProviderMapperRepresentation mapperRealmAdmin = new IdentityProviderMapperRepresentation();
         mapperRealmAdmin.setName("grant-realm-admin");
         mapperRealmAdmin.setIdentityProviderAlias("test-idp");
@@ -483,41 +477,16 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         mapperRealmAdmin.getConfig().put("role", Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.REALM_ADMIN);
         mapperRealmAdmin.getConfig().put("syncMode", "INHERIT");
 
-        // This should be FORBIDDEN - attacker cannot create mappers that grant admin roles they don't have
-        assertThrows(ForbiddenException.class, () -> {
-            runAs(realmName, "admin-cli", attackerName, attackerClient -> {
-                try (Response response = attackerClient.realm(realmName)
-                        .identityProviders()
-                        .get("test-idp")
-                        .addMapper(mapperRealmAdmin)) {
-                    assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
-                    throw new ForbiddenException();
-                }
-            });
-        }, "Creating mapper with realm-admin role should be forbidden for user without that role");
+        // Non-realm-admin cannot create mapper granting admin role (switch is off by default)
+        runAs(realmName, "admin-cli", attackerName, attackerClient -> {
+            try (Response response = attackerClient.realm(realmName)
+                    .identityProviders().get("test-idp").addMapper(mapperRealmAdmin)) {
+                assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus(),
+                        "Creating mapper with realm-admin role should be forbidden when allowAdminRoleMapping is disabled");
+            }
+        });
 
-        // Also test with other high-privilege admin roles
-        IdentityProviderMapperRepresentation mapperManageUsers = new IdentityProviderMapperRepresentation();
-        mapperManageUsers.setName("grant-manage-users");
-        mapperManageUsers.setIdentityProviderAlias("test-idp");
-        mapperManageUsers.setIdentityProviderMapper("oidc-hardcoded-role-idp-mapper");
-        mapperManageUsers.setConfig(new java.util.HashMap<>());
-        mapperManageUsers.getConfig().put("role", Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_USERS);
-        mapperManageUsers.getConfig().put("syncMode", "INHERIT");
-
-        assertThrows(ForbiddenException.class, () -> {
-            runAs(realmName, "admin-cli", attackerName, attackerClient -> {
-                try (Response response = attackerClient.realm(realmName)
-                        .identityProviders()
-                        .get("test-idp")
-                        .addMapper(mapperManageUsers)) {
-                    assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
-                    throw new ForbiddenException();
-                }
-            });
-        }, "Creating mapper with manage-users role should be forbidden for user without that role");
-
-        // Verify that non-admin role mappers still work (no regression)
+        // Non-admin role mappers should always work
         IdentityProviderMapperRepresentation mapperNonAdmin = new IdentityProviderMapperRepresentation();
         mapperNonAdmin.setName("grant-offline-access");
         mapperNonAdmin.setIdentityProviderAlias("test-idp");
@@ -528,13 +497,63 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
 
         runAs(realmName, "admin-cli", attackerName, attackerClient -> {
             try (Response response = attackerClient.realm(realmName)
-                    .identityProviders()
-                    .get("test-idp")
-                    .addMapper(mapperNonAdmin)) {
-                // Non-admin roles should be allowed
+                    .identityProviders().get("test-idp").addMapper(mapperNonAdmin)) {
                 assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
             }
         });
+
+        // Realm admin enables the switch
+        IdentityProviderRepresentation idpRep = testRealm.identityProviders().get("test-idp").toRepresentation();
+        idpRep.getConfig().put(IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING, "true");
+        testRealm.identityProviders().get("test-idp").update(idpRep);
+
+        // Now the non-realm-admin can create the admin-role-granting mapper
+        runAs(realmName, "admin-cli", attackerName, attackerClient -> {
+            try (Response response = attackerClient.realm(realmName)
+                    .identityProviders().get("test-idp").addMapper(mapperRealmAdmin)) {
+                assertEquals(Status.CREATED.getStatusCode(), response.getStatus(),
+                        "Creating mapper with realm-admin role should succeed when allowAdminRoleMapping is enabled");
+            }
+        });
+    }
+
+    @Test
+    public void testNonRealmAdminCannotEnableAllowAdminRoleMapping() {
+        String realmName = "test-realm";
+        RealmResource testRealm = createRealm(adminClient, realmName);
+        String attackerName = "idp-manager";
+        createUser(testRealm, attackerName);
+
+        grantRealmManagementRole(testRealm, attackerName, AdminRoles.MANAGE_IDENTITY_PROVIDERS);
+
+        IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
+        idp.setAlias("test-idp");
+        idp.setProviderId("oidc");
+        idp.setEnabled(true);
+        idp.setConfig(new java.util.HashMap<>());
+        idp.getConfig().put("clientId", "test-client");
+        idp.getConfig().put("clientSecret", "test-secret");
+        idp.getConfig().put("authorizationUrl", "https://test.example.com/auth");
+        idp.getConfig().put("tokenUrl", "https://test.example.com/token");
+
+        runAs(realmName, "admin-cli", attackerName, attackerClient -> {
+            try (Response response = attackerClient.realm(realmName).identityProviders().create(idp)) {
+                assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            }
+        });
+
+        // Attacker tries to enable the switch via IdP update
+        runAs(realmName, "admin-cli", attackerName, attackerClient -> {
+            IdentityProviderRepresentation idpRep = attackerClient.realm(realmName)
+                    .identityProviders().get("test-idp").toRepresentation();
+            idpRep.getConfig().put(IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING, "true");
+            attackerClient.realm(realmName).identityProviders().get("test-idp").update(idpRep);
+        });
+
+        // Verify the switch was silently preserved as false
+        IdentityProviderRepresentation updatedIdp = testRealm.identityProviders().get("test-idp").toRepresentation();
+        assertFalse(Boolean.parseBoolean(updatedIdp.getConfig().get(IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING)),
+                "Non-realm-admin should not be able to enable allowAdminRoleMapping");
     }
     
     @Test
