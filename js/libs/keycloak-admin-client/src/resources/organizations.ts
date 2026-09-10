@@ -2,7 +2,6 @@ import type { KeycloakAdminClient } from "../client.js";
 import IdentityProviderRepresentation from "../defs/identityProviderRepresentation.js";
 import type OrganizationRepresentation from "../defs/organizationRepresentation.js";
 import type OrganizationInvitationRepresentation from "../defs/organizationInvitationRepresentation.js";
-import UserRepresentation from "../defs/userRepresentation.js";
 import Resource from "./resource.js";
 import { Groups } from "./groups.js";
 import OrganizationMemberRepresentation from "../defs/organizationMemberRepresentation.js";
@@ -21,6 +20,8 @@ interface MemberQuery extends PaginatedQuery {
   orgId: string; //Id of the organization to get the members of
   membershipType?: string;
 }
+
+export type MembershipType = "MANAGED" | "UNMANAGED";
 
 interface InvitationQuery extends PaginatedQuery {
   orgId: string; //Id of the organization to get the invitations of
@@ -85,7 +86,10 @@ export class Organizations extends Resource<{ realm?: string }> {
     urlParamKeys: ["id"],
   });
 
-  public listMembers = this.makeRequest<MemberQuery, UserRepresentation[]>({
+  public listMembers = this.makeRequest<
+    MemberQuery,
+    OrganizationMemberRepresentation[]
+  >({
     method: "GET",
     path: "/{orgId}/members",
     urlParamKeys: ["orgId"],
@@ -116,6 +120,16 @@ export class Organizations extends Resource<{ realm?: string }> {
   >({
     method: "GET",
     path: "/{orgId}/members/{userId}",
+    urlParamKeys: ["orgId", "userId"],
+  });
+
+  public updateMembershipType = this.makeUpdateRequest<
+    { orgId: string; userId: string },
+    MembershipType,
+    void
+  >({
+    method: "PUT",
+    path: "/{orgId}/members/{userId}/membership-type",
     urlParamKeys: ["orgId", "userId"],
   });
 

@@ -1,3 +1,4 @@
+import OrganizationMemberRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationMemberRepresentation";
 import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   Action,
@@ -6,6 +7,7 @@ import {
   useAlerts,
 } from "@keycloak/keycloak-ui-shared";
 import { Button, ToolbarItem } from "@patternfly/react-core";
+import { cellWidth } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -15,16 +17,12 @@ import { SearchInputComponent } from "../components/dynamic/SearchInputComponent
 import { useRealm } from "../context/realm-context/RealmContext";
 import { MemberModal } from "../groups/MembersModal";
 import { toUser } from "../user/routes/User";
-import { translationFormatter } from "../utils/translationFormatter";
 import { useParams } from "../utils/useParams";
 import useToggle from "../utils/useToggle";
 import { EditOrganizationParams } from "./routes/EditOrganization";
+import { MembershipTypeToggle } from "./MembershipTypeToggle";
 import { MembershipsModal } from "../groups/MembershipsModal";
 import { GroupResourceContext } from "../context/group-resource/GroupResourceContext";
-
-type MembershipTypeRepresentation = UserRepresentation & {
-  membershipType?: string;
-};
 
 const UserDetailLink = (user: any) => {
   const { realm } = useRealm();
@@ -83,7 +81,7 @@ export const Members = () => {
           ? filteredMembershipTypes[0]
           : undefined;
 
-      const memberships: MembershipTypeRepresentation[] =
+      const memberships: OrganizationMemberRepresentation[] =
         await adminClient.organizations.listMembers({
           orgId,
           first,
@@ -249,7 +247,17 @@ export const Members = () => {
           },
           {
             name: "membershipType",
-            cellFormatters: [translationFormatter(t)],
+            // Fixed so the preceding columns do not shift when the switch
+            // label changes between "Managed" and "Unmanaged".
+            transforms: [cellWidth(20)],
+            cellRenderer: (member) => (
+              <MembershipTypeToggle
+                orgId={orgId}
+                userId={member.id!}
+                name={member.username}
+                isManaged={member.membershipType === "MANAGED"}
+              />
+            ),
           },
         ]}
         emptyState={
