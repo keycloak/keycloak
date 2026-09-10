@@ -1,11 +1,13 @@
 package org.keycloak.testsuite.util.userprofile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
@@ -56,6 +58,13 @@ public class UserProfileUtil {
         } catch (IOException ioe) {
             throw new RuntimeException("Failed to read configuration", ioe);
         }
+    }
+
+    public static UserRepresentation getUserByUsername(RealmResource testRealm, String username) {
+        List<UserRepresentation> users = testRealm.users().search(username);
+        if (users != null && !users.isEmpty())
+            return users.get(0);
+        return null;
     }
 
     public static UPConfig enableUnmanagedAttributes(UserProfileResource upResource) {

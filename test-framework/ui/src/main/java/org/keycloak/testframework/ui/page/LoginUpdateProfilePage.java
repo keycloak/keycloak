@@ -119,8 +119,29 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
         });
     }
 
+    private void fillField(By locator, String value) {
+        driver.waiting().until(d -> {
+            try {
+                WebElement element = d.findElement(locator);
+                element.clear();
+                element.sendKeys(value);
+                return value.equals(element.getAttribute("value"));
+            } catch (StaleElementReferenceException e) {
+                return false;
+            }
+        });
+    }
+
     public boolean isDepartmentEnabled() {
         return departmentInput.isEnabled();
+    }
+
+    public boolean isUsernameEnabled() {
+        try {
+            return usernameInput.isEnabled();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
     }
 
     public UpdateProfileErrors getInputErrors() {
@@ -256,26 +277,21 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
 
         public void submit() {
             if (username != null) {
-                page.usernameInput.clear();
-                page.usernameInput.sendKeys(username);
+                page.fillField(By.id("username"), username);
             }
             if (firstName != null) {
-                page.firstNameInput.clear();
-                page.firstNameInput.sendKeys(firstName);
+                page.fillField(By.name("firstName"), firstName);
             }
             if (lastName != null) {
-                page.lastNameInput.clear();
-                page.lastNameInput.sendKeys(lastName);
+                page.fillField(By.name("lastName"), lastName);
             }
 
             if (department != null) {
-                page.departmentInput.clear();
-                page.departmentInput.sendKeys(department);
+                page.fillField(By.name("department"), department);
             }
 
             if (email != null) {
-                page.emailInput.clear();
-                page.emailInput.sendKeys(email);
+                page.fillField(By.name("email"), email);
             }
 
             for (Map.Entry<String, String> entry : other.entrySet()) {
