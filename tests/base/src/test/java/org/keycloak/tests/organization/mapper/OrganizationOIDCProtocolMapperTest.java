@@ -1209,6 +1209,58 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    public void testIncludeOrganizationName() throws Exception {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = realm.admin().organizations().get(orgRep.getId());
+
+        String organizationAlias = orgRep.getAlias();
+        String organizationDisplayName = "Organization Display Name";
+        orgRep.setName(organizationDisplayName);
+
+        try (Response updateResponse = organization.update(orgRep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), updateResponse.getStatus());
+        }
+
+        addMember(organization);
+        setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_NAME, Boolean.TRUE.toString());
+
+        oauth.client("direct-grant", "password");
+        oauth.scope("openid organization");
+
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+        assertThat(response.getScope(), containsString("organization"));
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        Map<String, Map<String, String>> organizations = (Map<String, Map<String, String>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations.keySet(), hasItem(organizationAlias));
+        assertThat(organizations.get(organizationAlias).keySet(), hasItem("name"));
+        assertThat(organizations.get(organizationAlias).get("name"), equalTo(organizationDisplayName));
+
+        // When the name is added to tokens, the claim type is JSON
+        // regardless of the value set in the mapper configuration.
+        setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_NAME, Boolean.TRUE.toString());
+        setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "boolean");
+        response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+        accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        organizations = (Map<String, Map<String, String>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations.keySet(), hasItem(organizationAlias));
+        assertThat(organizations.get(organizationAlias).keySet(), hasItem("name"));
+        assertThat(organizations.get(organizationAlias).get("name"), equalTo(organizationDisplayName));
+
+        // Disabling the option should result in no name in the claim.
+        setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_NAME, Boolean.FALSE.toString());
+        setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "JSON");
+        response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+        accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        organizations = (Map<String, Map<String, String>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations.keySet(), hasItem(organizationAlias));
+        assertThat(organizations.get(organizationAlias).keySet().isEmpty(), is(true));
+    }
+
+    @Test
     public void testOrganizationsClaimAsList() throws Exception {
         OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(realm.admin().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
