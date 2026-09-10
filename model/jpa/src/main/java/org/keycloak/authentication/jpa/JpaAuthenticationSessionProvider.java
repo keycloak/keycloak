@@ -76,14 +76,19 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
             return createRootAuthenticationSession(realm);
         }
         var em = getEntityManager();
-        em.createNamedQuery("insertRootAuthSessionIfAbsent")
-                .setParameter("id", id)
-                .setParameter("realmId", realm.getId())
-                .setParameter("timestamp", Time.currentTimeSeconds())
-                .executeUpdate();
-        var entity = em.find(RootAuthenticationSessionEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
-        if (entity == null) {
-            throw new ModelException("Unable to create or find root authentication session with id '" + id + "'");
+        // INSERT ON CONFLICT DO NOTHING does not lock the conflicting row, so a concurrent DELETE
+        // could remove it between the INSERT and the subsequent find. Retry if this happens.
+        RootAuthenticationSessionEntity entity;
+        for (;;) {
+            em.createNamedQuery("insertRootAuthSessionIfAbsent")
+                    .setParameter("id", id)
+                    .setParameter("realmId", realm.getId())
+                    .setParameter("timestamp", Time.currentTimeSeconds())
+                    .executeUpdate();
+            entity = em.find(RootAuthenticationSessionEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
+            if (entity != null) {
+                break;
+            }
         }
         if (!Objects.equals(realm.getId(), entity.getRealmId())) {
             throw new ModelException("Another root authentication session with id '" + id + "' already exists in other realm");
