@@ -19,7 +19,7 @@ Use this setup to provide {project_name} deployments that are able to tolerate c
 Multiple {project_name} clusters share a synchronously replicated database.
 
 Unlike the standard <@links.ha id="multi-cluster-concepts" />, this setup does not require an external {jdgserver_name} cluster.
-This simplifies the deployment architecture and removes the need for an external monitoring solution that reconfigures the external {jdgserver_name} on failover. It also eliminates operational procedures on failback.
+This simplifies the deployment architecture and removes the need for an external monitoring solution that reconfigures the external {jdgserver_name} on failover. It also reduces operational procedures on failback.
 
 == Deployment, data storage and caching
 
@@ -74,6 +74,7 @@ While this setup aims for high availability, the following situations can still 
 
 * Degraded setups can lead to service or data loss if additional components fail.
 Monitoring is necessary to detect degraded setups.
+Without monitoring, a degraded state may go unnoticed until a subsequent failure causes a full outage or data loss.
 
 == Failures which this setup can survive
 
@@ -133,6 +134,7 @@ It also ensures that the next request will not return stale data, independent of
 Why is a low-latency network between sites needed?::
 Synchronous replication defers the response to the caller until the data is received at the other site.
 A low latency is necessary as each request can potentially involve multiple interactions between the sites when data is updated, which would amplify the latency.
+See the <@links.ha id="multi-cluster-v2-introduction" anchor="multi-cluster-v2-infrastructure-requirements" /> for specific latency thresholds.
 
 Is a synchronous cluster less stable than an asynchronous cluster?::
 An asynchronous setup would handle network failures between the sites gracefully, while the synchronous setup would delay requests and throw errors to the caller where the asynchronous setup would have deferred the writes to the database on the other site.
