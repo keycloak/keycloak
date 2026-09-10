@@ -55,11 +55,6 @@ public class WaitUtils {
         return this;
     }
 
-        if (managed.getBrowserType().equals(BrowserType.HTML_UNIT)) {
-            action.run();
-            return this;
-        }
-
     public <V> V until(Function<WebDriver, V> isTrue) {
         return createDefaultWait().until(isTrue);
     }

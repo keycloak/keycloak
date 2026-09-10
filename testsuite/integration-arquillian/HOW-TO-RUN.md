@@ -442,21 +442,6 @@ The exact command line arguments depend on the operating system.
 
 ### General guidelines
 
-If docker daemon doesn't run locally, or if you're not running on Linux, you may need
- to determine the IP of the bridge interface or local interface that Docker daemon can use to connect to Keycloak Server.
- Then specify that IP as additional system property called *host.ip*, for example:
-
-    -Dhost.ip=192.168.64.1
-
-If using Docker for Mac, you can create an alias for your local network interface:
-
-    sudo ifconfig lo0 alias 10.200.10.1/24
-
-Then pass the IP as *host.ip*:
-
-    -Dhost.ip=10.200.10.1
-
-
 If you're running a Docker fork that always lists a host component of an image on `docker images` (e.g. Fedora / RHEL Docker)
 use `-Ddocker.io-prefix-explicit=true` argument when running the test.
 
@@ -488,10 +473,9 @@ You may also need to add an iptables rule to allow container to host traffic
 
 Then, run the test passing `-Ddocker.io-prefix-explicit=true`:
 
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
+    mvn -f tests/base/pom.xml \
         clean test \
         -Dtest=DockerClientTest \
-        -Dkeycloak.profile.feature.docker=enabled \
         -Ddocker.io-prefix-explicit=true
 
 
@@ -506,13 +490,11 @@ Be especially careful to restart Docker server after every sleep / suspend to en
 that of the host operating system - Docker for Mac runs inside a VM.
 
 
-Then, run the test passing `-Dhost.ip=IP` where IP corresponds to en0 interface or an alias for localhost:
+Then, run the test:
 
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
+    mvn -f tests/base/pom.xml \
         clean test \
-        -Dtest=DockerClientTest \
-        -Dkeycloak.profile.feature.docker=enabled \
-        -Dhost.ip=10.200.10.1
+        -Dtest=DockerClientTest
 
 
 
@@ -522,15 +504,11 @@ Make sure to build the distribution:
 
     mvn clean install -f distribution
 
-Then, before running the test, setup Keycloak Server distribution for the tests:
+Then run the test from the new test framework:
 
-    mvn -f testsuite/integration-arquillian/servers/pom.xml \
-        clean install \
-        -Pauth-server-quarkus
-
-When running the test, add the following arguments to the command line:
-
-    -Pauth-server-quarkus -Pauth-server-enable-disable-feature -Dfeature.name=docker -Dfeature.value=enabled
+    mvn -f tests/base/pom.xml \
+        clean test \
+        -Dtest=DockerClientTest
 
 ## Java 11 support
 Java 11 requires some arguments to be passed to JVM. Those can be activated using `-Pjava11-auth-server` and
