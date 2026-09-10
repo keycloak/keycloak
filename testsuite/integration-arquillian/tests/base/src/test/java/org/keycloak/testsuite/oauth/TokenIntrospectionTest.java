@@ -132,6 +132,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         ));
         noScopeApp.setOptionalClientScopes(List.of());
         noScopeApp.setDefaultClientScopes(List.of());
+        noScopeApp.setAttributes(Map.of(Constants.SUPPORT_JWT_CLAIM_IN_INTROSPECTION_RESPONSE_ENABLED, "true"));
 
         UserRepresentation user = new UserRepresentation();
         user.setUsername("no-permissions");
@@ -769,6 +770,24 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         oauth.client("no-scope", "password");
         IntrospectionResponse introspectionResponse = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken());
         assertFalse(introspectionResponse.asJsonNode().get("active").asBoolean());
+    }
+
+    @Test
+    public void testIntrospectionAudienceCheckDoesNotReturnJwt() throws Exception {
+        // The inactive response must not leak a signed JWT representation of the token to a client not in the audience
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        events.clear();
+
+        JsonNode introspectionResponse = oauth.introspectionRequest(tokenResponse.getAccessToken())
+                .tokenTypeHint("access_token")
+                .client("no-scope", "password")
+                .jwtResponse()
+                .send().asJsonNode();
+
+        assertFalse(introspectionResponse.get("active").asBoolean());
+        assertFalse(introspectionResponse.has("jwt"));
     }
 
     @Test
