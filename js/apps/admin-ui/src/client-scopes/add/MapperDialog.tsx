@@ -182,31 +182,33 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
         )}
       </ModalBody>
       <ModalFooter>
-        isBuiltIn ? [
-        <Button
-          id="modal-confirm"
-          data-testid="confirm"
-          key="confirm"
-          isDisabled={rows.length === 0 || selectedRows.length === 0}
-          onClick={() => {
-            props.onConfirm(selectedRows.map(({ item }) => item));
-            props.toggleDialog();
-          }}
-        >
-          {t("add")}
-        </Button>
-        <Button
-          id="modal-cancel"
-          data-testid="cancel"
-          key="cancel"
-          variant={ButtonVariant.link}
-          onClick={() => {
-            props.toggleDialog();
-          }}
-        >
-          {t("cancel")}
-        </Button>
-        , ] : []
+        {isBuiltIn ? (
+          <>
+            <Button
+              id="modal-confirm"
+              data-testid="confirm"
+              key="confirm"
+              isDisabled={rows.length === 0 || selectedRows.length === 0}
+              onClick={() => {
+                props.onConfirm(selectedRows.map(({ item }) => item));
+                props.toggleDialog();
+              }}
+            >
+              {t("add")}
+            </Button>
+            <Button
+              id="modal-cancel"
+              data-testid="cancel"
+              key="cancel"
+              variant={ButtonVariant.link}
+              onClick={() => {
+                props.toggleDialog();
+              }}
+            >
+              {t("cancel")}
+            </Button>
+          </>
+        ) : null}
       </ModalFooter>
     </Modal>
   );
