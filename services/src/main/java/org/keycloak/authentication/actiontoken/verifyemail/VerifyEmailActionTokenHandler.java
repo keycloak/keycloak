@@ -129,7 +129,7 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<Ve
             authSession.setClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, redirectUri);
         }
 
-        event.success();
+        event.clone().success();
 
         String nextAction = AuthenticationManager.nextRequiredAction(session, authSession, tokenContext.getRequest(), event);
 

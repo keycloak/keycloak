@@ -138,15 +138,16 @@ public class TokenRevocationEndpoint {
             event.detail(Details.TOKEN_ID, token.getId());
         }
 
-        event.success();
+        event.clone().success();
 
         try {
             session.clientPolicy().triggerOnEvent(new TokenRevokeResponseContext(client, formParams));
         } catch (ClientPolicyException cpe) {
-            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
-            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
-            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
-            event.error(cpe.getError());
+            event.clone()
+                    .detail(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                    .detail(Details.CLIENT_POLICY_ERROR, cpe.getError())
+                    .detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail())
+                    .error(cpe.getError());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
 

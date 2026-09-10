@@ -174,7 +174,7 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
             authSession.setClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, redirectUri);
         }
 
-        event.success();
+        event.clone().success();
 
         tokenContext.setEvent(event.clone().removeDetail(Details.EMAIL).event(EventType.LOGIN));
 
