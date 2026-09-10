@@ -23,6 +23,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.VCFormat;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientPoliciesPoliciesResource;
@@ -114,6 +116,7 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenRequest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -231,7 +234,6 @@ public abstract class OID4VCIssuerTestBase {
     protected CredentialScopeRepresentation jwtTypeCredentialScope;
     protected CredentialScopeRepresentation sdJwtTypeCredentialScope;
     protected CredentialScopeRepresentation keyAttestationCredentialScope;
-    protected CredentialScopeRepresentation mdocTypeCredentialScope;
     protected CredentialScopeRepresentation minimalJwtTypeCredentialScope;
     protected CredentialScopeRepresentation jwtNaturalPersonCredentialScope;
     protected CredentialScopeRepresentation sdJwtNaturalPersonCredentialScope;
@@ -259,23 +261,28 @@ public abstract class OID4VCIssuerTestBase {
             });
         });
 
-        // The natural person mdoc scope is created automatically on servers with the mdoc feature enabled. Since the
-        // realm representation cannot reference it upfront, attach it to the wallet clients and test users here.
+        // Mdoc scopes cannot be part of the initial realm representation because strict validation rejects them when
+        // the mdoc feature is disabled. Create and assign them only for test classes that explicitly enable mdoc.
         boolean isMdocEnabled = runOnServer.fetch(session -> Profile.isFeatureEnabled(Profile.Feature.OID4VC_MDOC), Boolean.class);
         if (isMdocEnabled) {
+            CredentialScopeRepresentation mdoc = createBaseMdocCredentialScope(realmResource);
             CredentialScopeRepresentation mdocNaturalPerson = requireExistingCredentialScope(mdocTypeNaturalPersonScopeName);
             for (String clientId : List.of(OID4VCI_CLIENT_ID, OID4VCI_ABCA_CLIENT_ID, OID4VCI_PUBLIC_CLIENT_ID)) {
                 ClientRepresentation clientRep = realmResource.clients().findByClientId(clientId).get(0);
-                realmResource.clients().get(clientRep.getId()).addOptionalClientScope(mdocNaturalPerson.getId());
+                for (CredentialScopeRepresentation scope : List.of(mdoc, mdocNaturalPerson)) {
+                    realmResource.clients().get(clientRep.getId()).addOptionalClientScope(scope.getId());
+                }
             }
             for (String username : List.of("john", "alice")) {
                 var credentialsResource = realmResource.users().get(requireExistingUser(username).getId()).verifiableCredentials();
-                boolean alreadyPresent = credentialsResource.getCredentials().stream()
-                        .anyMatch(cred -> mdocTypeNaturalPersonScopeName.equals(cred.getCredentialScopeName()));
-                if (!alreadyPresent) {
-                    UserVerifiableCredentialRepresentation cred = new UserVerifiableCredentialRepresentation();
-                    cred.setCredentialScopeName(mdocTypeNaturalPersonScopeName);
-                    credentialsResource.createCredential(cred);
+                for (String scopeName : List.of(mdocTypeCredentialScopeName, mdocTypeNaturalPersonScopeName)) {
+                    boolean alreadyPresent = credentialsResource.getCredentials().stream()
+                            .anyMatch(cred -> scopeName.equals(cred.getCredentialScopeName()));
+                    if (!alreadyPresent) {
+                        UserVerifiableCredentialRepresentation cred = new UserVerifiableCredentialRepresentation();
+                        cred.setCredentialScopeName(scopeName);
+                        credentialsResource.createCredential(cred);
+                    }
                 }
             }
         }
@@ -292,6 +299,30 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
+    private CredentialScopeRepresentation createBaseMdocCredentialScope(RealmResource realmResource) {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation(mdocTypeCredentialScopeName)
+                .setIncludeInTokenScope(true)
+                .setExpiryInSeconds(CREDENTIALS_EXPIRATION_IN_SECONDS)
+                .setCredentialConfigurationId(mdocTypeCredentialConfigurationIdName)
+                .setCredentialIdentifier(mdocTypeCredentialScopeName)
+                .setFormat(VCFormat.MSO_MDOC)
+                .setVct(mdocTypeCredentialDocType)
+                .setSigningAlg("ES256")
+                .setBindingRequired(true)
+                .setCryptographicBindingMethods(List.of(CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY));
+        scope.setProtocolMappers(List.of(
+                ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.iso.18013.5.1"),
+                ProtocolMapperUtils.getUserAttributeMapper("family_name", "lastName", "org.iso.18013.5.1"),
+                ProtocolMapperUtils.getSubjectIdMapper("id", UserModel.USERNAME, "org.iso.18013.5.1")
+        ));
+        scope.getAttributes().put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
+
+        try (Response response = realmResource.clientScopes().create(scope)) {
+            String scopeId = ApiUtil.getCreatedId(response);
+            return new CredentialScopeRepresentation(realmResource.clientScopes().get(scopeId).toRepresentation());
+        }
+    }
+
     @BeforeEach
     void beforeEachBase() {
 
@@ -302,7 +333,6 @@ public abstract class OID4VCIssuerTestBase {
         jwtTypeCredentialScope = requireExistingCredentialScope(jwtTypeCredentialScopeName);
         sdJwtTypeCredentialScope = requireExistingCredentialScope(sdJwtTypeCredentialScopeName);
         keyAttestationCredentialScope = requireExistingCredentialScope(keyAttestationCredentialScopeName);
-        mdocTypeCredentialScope = requireExistingCredentialScope(mdocTypeCredentialScopeName);
         minimalJwtTypeCredentialScope = requireExistingCredentialScope(minimalJwtTypeCredentialScopeName);
         jwtNaturalPersonCredentialScope = requireExistingCredentialScope(jwtTypeNaturalPersonScopeName);
         sdJwtNaturalPersonCredentialScope = requireExistingCredentialScope(sdJwtTypeNaturalPersonScopeName);
@@ -796,8 +826,6 @@ public abstract class OID4VCIssuerTestBase {
                     null
             ));
 
-            realm.clientScopes(createMdocCredentialScope());
-
             realm.users(createUser("John Doe", Map.of(), List.of(), Collections.emptyMap()));
             realm.users(createUser("Alice Wonderland", Map.of(), List.of(), Map.of()));
 
@@ -1034,27 +1062,6 @@ public abstract class OID4VCIssuerTestBase {
             return scope;
         }
 
-        private CredentialScopeRepresentation createMdocCredentialScope() {
-            CredentialScopeRepresentation cs = new CredentialScopeRepresentation(mdocTypeCredentialScopeName)
-                    .setIncludeInTokenScope(true)
-                    .setExpiryInSeconds(CREDENTIALS_EXPIRATION_IN_SECONDS)
-                    .setCredentialConfigurationId(mdocTypeCredentialConfigurationIdName)
-                    .setCredentialIdentifier(mdocTypeCredentialScopeName)
-                    .setFormat(VCFormat.MSO_MDOC)
-                    .setVct(mdocTypeCredentialDocType)
-                    .setSigningAlg("ES256")
-                    .setBindingRequired(true)
-                    .setCryptographicBindingMethods(List.of(CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY));
-            cs.setProtocolMappers(List.of(
-                    ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.iso.18013.5.1"),
-                    ProtocolMapperUtils.getUserAttributeMapper("family_name", "lastName", "org.iso.18013.5.1"),
-                    ProtocolMapperUtils.getSubjectIdMapper("id", UserModel.USERNAME, "org.iso.18013.5.1")
-            ));
-            cs.getAttributes().put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
-
-            return cs;
-        }
-
         private UserRepresentation createUser(
                 String fullName,
                 Map<String, String> attributes,
@@ -1082,8 +1089,7 @@ public abstract class OID4VCIssuerTestBase {
                     .verifiableCredential(sdJwtTypeCredentialScopeName)
                     .verifiableCredential(minimalJwtTypeCredentialScopeName)
                     .verifiableCredential(jwtTypeNaturalPersonScopeName)
-                    .verifiableCredential(sdJwtTypeNaturalPersonScopeName)
-                    .verifiableCredential(mdocTypeCredentialScopeName);
+                    .verifiableCredential(sdJwtTypeNaturalPersonScopeName);
 
             attributes.forEach(userBuilder::attribute);
 
@@ -1118,7 +1124,6 @@ public abstract class OID4VCIssuerTestBase {
                     minimalJwtTypeCredentialScopeName,
                     jwtTypeNaturalPersonScopeName,
                     sdJwtTypeNaturalPersonScopeName,
-                    mdocTypeCredentialScopeName,
                     "email"
             };
             client.clientId(OID4VCI_ABCA_CLIENT_ID)
@@ -1145,7 +1150,6 @@ public abstract class OID4VCIssuerTestBase {
                     minimalJwtTypeCredentialScopeName,
                     jwtTypeNaturalPersonScopeName,
                     sdJwtTypeNaturalPersonScopeName,
-                    mdocTypeCredentialScopeName,
                     "email"
             };
             client.clientId(OID4VCI_CLIENT_ID)
@@ -1170,7 +1174,6 @@ public abstract class OID4VCIssuerTestBase {
                     minimalJwtTypeCredentialScopeName,
                     jwtTypeNaturalPersonScopeName,
                     sdJwtTypeNaturalPersonScopeName,
-                    mdocTypeCredentialScopeName,
                     "email"
             };
             client.clientId(OID4VCI_PUBLIC_CLIENT_ID)
