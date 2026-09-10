@@ -37,7 +37,6 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.OAuthErrorException;
-import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -123,8 +122,7 @@ public class TokenEndpoint {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @POST
     public Response processGrantRequest() {
-        cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS,
-                AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_CHALLENGE_HEADER);
+        cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
         formParams = Optional.ofNullable(request.getDecodedFormParameters())
                 .map(this::sanitizeFormParameters)
