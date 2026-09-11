@@ -85,6 +85,7 @@ type HeaderProps = {
   value: boolean;
   save: () => void;
   toggleDeleteDialog: () => void;
+  provider?: IdentityProviderRepresentation;
 };
 
 type IdPWithMapperAttributes = IdentityProviderMapperRepresentation & {
@@ -95,12 +96,17 @@ type IdPWithMapperAttributes = IdentityProviderMapperRepresentation & {
   mapperId: string;
 };
 
-const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
+const Header = ({
+  onChange,
+  value,
+  save,
+  toggleDeleteDialog,
+  provider,
+}: HeaderProps) => {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
   const { alias: displayName } = useParams<{ alias: string }>();
-  const [provider, setProvider] = useState<IdentityProviderRepresentation>();
   const { addAlert, addError } = useAlerts();
   const { setValue, formState, control } = useFormContext();
 
@@ -118,17 +124,6 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
     control,
     name: "config.metadataDescriptorUrl",
   });
-
-  useFetch(
-    () => adminClient.identityProviders.findOne({ alias: displayName }),
-    (fetchedProvider) => {
-      if (!fetchedProvider) {
-        throw new Error(t("notFound"));
-      }
-      setProvider(fetchedProvider);
-    },
-    [],
-  );
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "disableProvider",
@@ -704,6 +699,7 @@ export default function DetailSettings() {
             onChange={field.onChange}
             save={save}
             toggleDeleteDialog={toggleDeleteDialog}
+            provider={provider}
           />
         )}
       />
