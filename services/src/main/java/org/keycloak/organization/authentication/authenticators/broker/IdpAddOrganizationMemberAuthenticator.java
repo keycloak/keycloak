@@ -19,7 +19,6 @@ package org.keycloak.organization.authentication.authenticators.broker;
 
 import java.util.List;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
@@ -35,6 +34,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.MembershipType;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganizationsPresent;
 
