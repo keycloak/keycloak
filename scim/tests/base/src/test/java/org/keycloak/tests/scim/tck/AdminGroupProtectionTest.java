@@ -18,7 +18,13 @@
 package org.keycloak.tests.scim.tck;
 
 import java.util.List;
+import java.util.Optional;
 
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.scim.client.ResourceFilter;
@@ -29,8 +35,10 @@ import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.group.Group;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
+import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Test;
 
@@ -44,6 +52,7 @@ import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.REGULA
 import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.REGULAR_USER;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -270,6 +279,94 @@ public class AdminGroupProtectionTest {
         } finally {
             realm.admin().users().get(adminUserId).leaveGroup(regularGroupId);
         }
+    }
+
+    @Test
+    public void testServiceAccountNotExposedInGroupMembers() {
+        ClientRepresentation confidentialClient = ClientBuilder.create()
+                .clientId("sa-test-client")
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        String clientDbId;
+        try (Response response = realm.admin().clients().create(confidentialClient)) {
+            clientDbId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clients().get(clientDbId).remove());
+
+        String regularGroupId = getGroupId(REGULAR_GROUP);
+        UserRepresentation serviceAccount = realm.admin().clients().get(clientDbId).getServiceAccountUser();
+        realm.admin().users().get(serviceAccount.getId()).joinGroup(regularGroupId);
+
+        Group group = client.groups().get(regularGroupId, List.of("members"));
+        List<org.keycloak.scim.resource.group.Member> members = group.getMembers();
+        if (members != null) {
+            boolean exposed = members.stream().anyMatch(m -> serviceAccount.getId().equals(m.getValue()));
+            assertFalse(exposed, "Service account must not appear in SCIM group members");
+        }
+    }
+
+    @Test
+    public void testCannotAddServiceAccountToGroupViaGroupPatch() {
+        ClientRepresentation confidentialClient = ClientBuilder.create()
+                .clientId("sa-patch-test-client")
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        String clientDbId;
+        try (Response response = realm.admin().clients().create(confidentialClient)) {
+            clientDbId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clients().get(clientDbId).remove());
+
+        String regularGroupId = getGroupId(REGULAR_GROUP);
+        UserRepresentation serviceAccount = realm.admin().clients().get(clientDbId).getServiceAccountUser();
+
+        try {
+            client.groups().patch(regularGroupId, PatchRequest.create()
+                    .add("members", serviceAccount.getId())
+                    .build());
+            fail("Should not be able to add a service account to a group via SCIM PATCH");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testCannotRemoveServiceAccountFromGroupViaGroupPatch() {
+        ClientRepresentation confidentialClient = ClientBuilder.create()
+                .clientId("sa-remove-test-client")
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        String clientDbId;
+        try (Response response = realm.admin().clients().create(confidentialClient)) {
+            clientDbId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clients().get(clientDbId).remove());
+
+        String regularGroupId = getGroupId(REGULAR_GROUP);
+        UserRepresentation serviceAccount = realm.admin().clients().get(clientDbId).getServiceAccountUser();
+
+        // Add service account to group via Admin API (bypassing SCIM protection)
+        realm.admin().users().get(serviceAccount.getId()).joinGroup(regularGroupId);
+
+        try {
+            client.groups().patch(regularGroupId, PatchRequest.create()
+                    .remove("members[value eq \"" + serviceAccount.getId() + "\"]")
+                    .build());
+            fail("Should not be able to remove a service account from a group via SCIM PATCH");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+
+        // Verify service account is still in the group (operation was rejected)
+        UserResource userResource = realm.admin().users().get(serviceAccount.getId());
+        List<String> groups = Optional.ofNullable(userResource.groups()).orElse(List.of()).stream().map(GroupRepresentation::getId).toList();
+        assertTrue(groups.contains(regularGroupId), "Service account should still be in group after failed PATCH");
     }
 
     private String getUserId(String username) {

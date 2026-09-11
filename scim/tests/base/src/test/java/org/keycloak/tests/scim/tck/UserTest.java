@@ -420,6 +420,83 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testUpdateServiceAccountIsRejected() {
+        String clientId = "service-account-update-" + KeycloakModelUtils.generateId();
+        ClientRepresentation targetClient = ClientBuilder.create()
+                .clientId(clientId)
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        try (Response response = realm.admin().clients().create(targetClient)) {
+            targetClient.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.clients().get(targetClient.getId()).remove());
+
+        UserRepresentation serviceAccount = realm.admin().clients().get(targetClient.getId()).getServiceAccountUser();
+        User update = new User();
+        update.setId(serviceAccount.getId());
+        update.setUserName(serviceAccount.getUsername());
+
+        try {
+            client.users().update(serviceAccount.getId(), update);
+            fail("Should not be able to update a service account via SCIM");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.NOT_FOUND.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testDeleteServiceAccountIsRejected() {
+        String clientId = "service-account-delete-" + KeycloakModelUtils.generateId();
+        ClientRepresentation targetClient = ClientBuilder.create()
+                .clientId(clientId)
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        try (Response response = realm.admin().clients().create(targetClient)) {
+            targetClient.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.clients().get(targetClient.getId()).remove());
+
+        UserRepresentation serviceAccount = realm.admin().clients().get(targetClient.getId()).getServiceAccountUser();
+
+        try {
+            client.users().delete(serviceAccount.getId());
+            fail("Should not be able to delete a service account via SCIM");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.NOT_FOUND.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testPatchServiceAccountIsRejected() {
+        String clientId = "service-account-patch-" + KeycloakModelUtils.generateId();
+        ClientRepresentation targetClient = ClientBuilder.create()
+                .clientId(clientId)
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        try (Response response = realm.admin().clients().create(targetClient)) {
+            targetClient.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.clients().get(targetClient.getId()).remove());
+
+        UserRepresentation serviceAccount = realm.admin().clients().get(targetClient.getId()).getServiceAccountUser();
+
+        try {
+            client.users().patch(serviceAccount.getId(), PatchRequest.create()
+                    .add("name.givenName", "modified")
+                    .build());
+            fail("Should not be able to patch a service account via SCIM");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.NOT_FOUND.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
     public void testGetExisting() {
         UserRepresentation existing = UserBuilder.create()
                 .username(KeycloakModelUtils.generateId())
