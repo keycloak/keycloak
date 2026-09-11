@@ -68,6 +68,7 @@ export const clientScopeTypesDropdown = (
   filterDefaultForParameterized(clientScopeTypes, scopes).map((type) => (
     <DropdownItem
       key={type}
+      component="button"
       data-testid={`add-scope-type-${type}`}
       onClick={() => onClick(type as ClientScopeType)}
     >
