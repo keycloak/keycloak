@@ -155,6 +155,11 @@ The {project_name} will eventually remove the unreachable pods from its local vi
 ^2^ Maximum Recovery Time observed. +
 ^3^ Assumes that the database is also replicated across multiple availability-zones
 
+For performance, {project_name} uses optimized database commit for ephemeral data such as sessions and events.
+On a database crash, in-flight session data within a sub-second window may be lost, requiring affected users to re-authenticate.
+Persistent data such as users, realms, and credentials always uses durable commit and is not affected.
+To disable the optimization, set `--spi-connections-jpa-default-async-commit=false`.
+
 == Known limitations
 
 . Downtime during rollouts of {project_name} upgrades
