@@ -230,7 +230,9 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         String addExecutionPath = authAddExecutionPath(DETECT_EXISTING_FLOW_ALIAS);
         assertNotNull(addExecutionPath);
 
-        authMgmtResource.addExecution(DETECT_EXISTING_FLOW_ALIAS, Map.of("provider", IdpEmailVerificationAuthenticatorFactory.PROVIDER_ID));
+        authMgmtResource.addExecution(DETECT_EXISTING_FLOW_ALIAS, Map.of(
+                "provider", IdpEmailVerificationAuthenticatorFactory.PROVIDER_ID,
+                "priority", 15));
 
         AuthenticationExecutionInfoRepresentation addedExecution = authMgmtResource.getExecutions(DETECT_EXISTING_FLOW_ALIAS).stream()
                 .filter(execution -> IdpEmailVerificationAuthenticatorFactory.PROVIDER_ID.equals(execution.getProviderId()))
