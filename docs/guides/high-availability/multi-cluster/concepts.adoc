@@ -95,6 +95,11 @@ Some requests might receive an error message until the loadbalancer detects the 
 
 The statement "`No data loss`" depends on the setup not being degraded from previous failures, which includes completing any pending manual operations to resynchronize the state between the sites.
 
+For performance, {project_name} uses optimized database commit for ephemeral data such as sessions and events.
+On a database crash, in-flight session data within a sub-second window may be lost, requiring affected users to re-authenticate.
+Persistent data such as users, realms, and credentials always uses durable commit and is not affected.
+To disable the optimization, set `--spi-connections-jpa-default-async-commit=false`.
+
 == Known limitations
 
 Site Failure::

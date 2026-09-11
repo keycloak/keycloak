@@ -115,6 +115,11 @@ Some requests might receive an error message until the load balancer detects the
 
 The statement "`No data loss`" depends on the setup not being degraded from previous failures, which includes completing any pending manual operations to resynchronize the state between the sites.
 
+For performance, {project_name} uses optimized database commit for ephemeral data such as sessions and events.
+On a database crash, in-flight session data within a sub-second window may be lost, requiring affected users to re-authenticate.
+Persistent data such as users, realms, and credentials always uses durable commit and is not affected.
+To disable the optimization, set `--spi-connections-jpa-default-async-commit=false`.
+
 To restore the service, restart any failed {project_name} node and restore its database connectivity. No other recovery operations are necessary for {project_name}.
 A standard load balancer configuration should detect the active {project_name} nodes automatically and route traffic to them.
 Recovery operations on the database side might depend on the database vendor.
