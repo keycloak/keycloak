@@ -18,4 +18,5 @@
 org.keycloak.models.workflow.conditions.GroupMembershipWorkflowConditionFactory
 org.keycloak.models.workflow.conditions.IdentityProviderWorkflowConditionFactory
 org.keycloak.models.workflow.conditions.UserAttributeWorkflowConditionFactory
+org.keycloak.models.workflow.conditions.ClientAttributeWorkflowConditionFactory
 org.keycloak.models.workflow.conditions.RoleWorkflowConditionFactory

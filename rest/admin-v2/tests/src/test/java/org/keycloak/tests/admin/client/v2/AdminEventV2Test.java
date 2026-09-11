@@ -46,6 +46,7 @@ import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
@@ -115,7 +116,7 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
 
             assertThat("V2 event should be present with apiVersion=v2 detail", v2Event, notNullValue());
             assertThat("V2 event should have CREATE operation", v2Event.getOperationType(), is(OperationType.CREATE.toString()));
-            assertThat("V2 event should have resource path relative to API v2", v2Event.getResourcePath(), is("clients/v2"));
+            assertThat("V2 event should have resource path relative to API v2", v2Event.getResourcePath(), startsWith("clients/v2"));
         } finally {
             deleteTestClient();
         }

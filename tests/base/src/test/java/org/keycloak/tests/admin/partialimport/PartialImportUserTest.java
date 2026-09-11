@@ -50,7 +50,7 @@ public class PartialImportUserTest extends AbstractPartialImportTest {
             Assertions.assertEquals(managedRealm.getId(), adminEvent.getRealmId());
             Assertions.assertEquals(OperationType.CREATE.name(), adminEvent.getOperationType());
             Assertions.assertTrue(adminEvent.getResourcePath().startsWith("users/"));
-            assertThat(adminEvent.getResourceType(), equalTo(org.keycloak.events.admin.ResourceType.REALM.name()));
+            assertThat(adminEvent.getResourceType(), equalTo(org.keycloak.events.admin.ResourceType.USER.name()));
             String userId = adminEvent.getResourcePath().substring(6);
             userIds.add(userId);
         }
@@ -89,7 +89,7 @@ public class PartialImportUserTest extends AbstractPartialImportTest {
             Assertions.assertEquals(managedRealm.getId(), adminEvent.getRealmId());
             Assertions.assertEquals(OperationType.CREATE.name(), adminEvent.getOperationType());
             Assertions.assertTrue(adminEvent.getResourcePath().startsWith("users/"));
-            assertThat(adminEvent.getResourceType(), equalTo(org.keycloak.events.admin.ResourceType.REALM.name()));
+            assertThat(adminEvent.getResourceType(), equalTo(org.keycloak.events.admin.ResourceType.USER.name()));
             String userId = adminEvent.getResourcePath().substring(6);
             userIds.add(userId);
             assertThat(userRepIds, hasItem(userId));

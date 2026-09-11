@@ -52,6 +52,7 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
         DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(session, client, this);
         client = create(context);
         validateClient(client, true);
+        event.client(client.getClientId()).success();
         URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
         return Response.created(uri).entity(client).build();
     }

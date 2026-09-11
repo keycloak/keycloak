@@ -418,7 +418,13 @@ public class DefaultClientService implements ClientService {
      * @param representation the v2 representation of the client
      */
     protected void fireAdminEvent(OperationType operationType, BaseClientRepresentation representation) {
-        if (Boolean.parseBoolean(System.getProperty("kc.admin-v2.client-service.events.enabled", "false"))) {
+        if (OperationType.CREATE.equals(operationType)) {
+            adminEventBuilder
+                    .operation(operationType)
+                    .resourcePath(session.getContext().getUri(), representation.getUuid())
+                    .representation(representation)
+                    .success();
+        } else if (Boolean.parseBoolean(System.getProperty("kc.admin-v2.client-service.events.enabled", "false"))) {
             adminEventBuilder
                     .operation(operationType)
                     .resourcePath(session.getContext().getUri())

@@ -41,3 +41,15 @@ The conditions are also based on the realm resource associated with the event.
 | `has-identity-provider-link` | If the user is linked to an identity provider. | The alias of the identity provider.
 | `is-member-of` | If the user is member of a specific group. | The name or path of the group.
 |===
+
+[[_workflow_client_functions_]]
+== Client functions
+
+[cols="3*", options="header"]
+|===
+|Condition
+|Description
+|Parameters
+| `has-client-attribute` | If the client has an attribute set. | The attribute name and optionally the single attribute value using a properties format (e.g. `key=value` or `key:value`). If the value is omitted, only the presence of the attribute is checked.
+|===
+
