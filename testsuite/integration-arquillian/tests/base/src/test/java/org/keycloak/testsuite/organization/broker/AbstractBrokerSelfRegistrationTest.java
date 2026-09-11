@@ -110,11 +110,11 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        Assertions.assertTrue(loginPage.isUsernameInputPresent());
+        Assertions.assertTrue(loginPage.isAttemptedUsernameInputPresent());
         // registration link shown
         Assertions.assertTrue(loginPage.isRegisterLinkPresent());
-        // no need for password because the user does not exist
-        Assertions.assertFalse(loginPage.isPasswordInputPresent());
+        // password field shown regardless of whether the user exists, to avoid leaking user/org existence
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
         Assertions.assertFalse(loginPage.isSocialButtonPresent(idpRep.getAlias()));
     }
 
@@ -128,9 +128,11 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        Assertions.assertEquals("Your email domain matches an organization but you don't have an account yet.", loginPage.getError());
-        Assertions.assertTrue(loginPage.isUsernameInputPresent());
-        Assertions.assertFalse(loginPage.isPasswordInputPresent());
+        // no leaking error message that would reveal whether the domain matches an organization
+        Assertions.assertNull(loginPage.getError());
+        Assertions.assertTrue(loginPage.isAttemptedUsernameInputPresent());
+        // password field shown regardless of whether the user exists, to avoid leaking user/org existence
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
         Assertions.assertTrue(loginPage.isSocialButtonPresent(idpRep.getAlias()));
 
         // no self-registration link because the user should register through the broker
@@ -144,11 +146,53 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
-        Assertions.assertTrue(loginPage.isUsernameInputPresent());
-        Assertions.assertFalse(loginPage.isPasswordInputPresent());
+        // no error message leaked at all (generic form, same as for an unmatched domain)
+        Assertions.assertNull(loginPage.getError());
+        Assertions.assertTrue(loginPage.isAttemptedUsernameInputPresent());
+        // password field shown regardless of whether the user exists, to avoid leaking user/org existence
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
         // self-registration link shown because there is no public broker and user can choose to register
         Assertions.assertTrue(loginPage.isRegisterLinkPresent());
+    }
+
+    @Test
+    public void testUnknownUserMatchingOrgDomainShowsGenericInvalidCredentialsError() {
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        clearDomainRouting(organization);
+
+        openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
+
+        // attempt to log in as a user that does not exist; the resulting error must be the same
+        // generic invalid-credentials message shown for a known user with a wrong password, so that
+        // submitting credentials does not reveal whether the account (or the organization) exists
+        loginPage.login("some-password");
+        Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
+    }
+
+    @Test
+    public void testKnownUserWrongPasswordShowsGenericInvalidCredentialsError() {
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
+
+        // set the user's credentials so that authenticating by password is offered
+        UserRepresentation user = managedRealm.admin().users().searchByEmail(bc.getUserEmail(), true).get(0);
+        AdminApiUtil.resetUserPassword(realmsResouce().realm(bc.consumerRealmName()).users().get(user.getId()), "updated-password", false);
+
+        // logout to force the user to authenticate again
+        UserRepresentation account = getUserRepresentation(bc.getUserEmail());
+        realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
+        realmsResouce().realm(bc.providerRealmName()).logoutAll();
+
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        loginPage.loginUsername(bc.getUserEmail());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
+
+        // attempt to log in with the wrong password; same generic error as for an unknown user
+        loginPage.login("wrong-password");
+        Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
     }
 
     @Test
@@ -822,14 +866,17 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage(bc.getUserEmail(), false, idp.getAlias(), false, false);
 
-        Assertions.assertFalse(loginPage.isPasswordInputPresent());
-        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
+        // password field shown regardless of whether the user exists, to avoid leaking user/org existence
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
+        // no error message leaked at all (generic form, same as for an unmatched domain)
+        Assertions.assertNull(loginPage.getError());
         Assertions.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
 
         openIdentityFirstLoginPage(bc.getUserEmail(), false, idp.getAlias(), false, false);
 
-        Assertions.assertFalse(loginPage.isPasswordInputPresent());
-        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
+        // no error message leaked at all (generic form, same as for an unmatched domain)
+        Assertions.assertNull(loginPage.getError());
         Assertions.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
     }
 
@@ -919,10 +966,10 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         // Test with subdomain - should NOT automatically redirect since wildcard is disabled
         // The subdomain email doesn't match the exact domain, so no redirect should occur
         String subdomainEmail = "user@sub.neworg.org";
-        
+
         // With exact match only, subdomain won't match, so user sees standard login
         openIdentityFirstLoginPage(subdomainEmail, false, null, false, false);
-        
+
         // Verify we're on the login page (no automatic redirect happened)
         assertTrue(driver.getCurrentUrl().contains("/realms/" + bc.consumerRealmName()));
     }
@@ -945,9 +992,9 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         // Test with exact domain match - should still work
         openIdentityFirstLoginPage(bc.getUserEmail(), true, idp.getAlias(), false, false);
-        
+
         loginOrgIdp(bc.getUserEmail(), bc.getUserEmail(), true, true);
-        
+
         assertIsMember(bc.getUserEmail(), organization);
     }
 
@@ -1008,14 +1055,16 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         oauth.realm(bc.consumerRealmName());
         oauth.openLoginForm();
         loginPage.loginUsername("user@org-0.org");
-        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
+        // no error message leaked at all (generic form, same as for an unmatched domain)
+        Assertions.assertNull(loginPage.getError());
         Assertions.assertTrue(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
         Assertions.assertFalse(loginPage.isSocialButtonPresent(org1Broker.getAlias()));
 
         oauth.realm(bc.consumerRealmName());
         oauth.openLoginForm();
         loginPage.loginUsername("user@org-1.org");
-        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
+        // no error message leaked at all (generic form, same as for an unmatched domain)
+        Assertions.assertNull(loginPage.getError());
         Assertions.assertTrue(loginPage.isSocialButtonPresent(org1Broker.getAlias()));
         Assertions.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
     }
@@ -1288,9 +1337,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         assertTrue(loginPage.isSocialButtonPresent(orgIdp.getAlias()));
         assertFalse(loginPage.isSocialButtonPresent(realmIdp.getAlias()));
 
-        driver.navigate().back();
-        // chrome requires refresh, otherwise Sign in button is not active
-        driver.navigate().refresh();
+        loginPage.resetLogin();
 
         loginPage.loginUsername("test");
         // both realm and org idps because the user does not map to any organization
