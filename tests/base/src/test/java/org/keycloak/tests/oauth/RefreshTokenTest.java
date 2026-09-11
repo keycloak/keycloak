@@ -89,6 +89,7 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AbstractHttpPostRequest;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.keycloak.util.DPoPGenerator;
 
@@ -776,6 +777,49 @@ public class RefreshTokenTest {
             AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
             assertEquals(200, refreshResponse.getStatusCode());
 
+            assertScopes("openid profile", refreshResponse.getScope());
+
+            UserInfoResponse userInfoResponse = oauth.doUserInfoRequest(refreshResponse.getAccessToken());
+            assertEquals(200, userInfoResponse.getStatusCode());
+
+            RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshResponse.getRefreshToken());
+            assertNotNull(refreshedRefreshToken);
+            assertScopes("openid basic email roles service_account web-origins acr profile", refreshedRefreshToken.getScope());
+        } finally {
+            oauth.scope(null);
+        }
+    }
+
+    @Test
+    public void refreshTokenRetainsOpenidScopeAfterClientSessionScopeNoteOverwritten() {
+        try {
+            AuthorizationEndpointResponse initialAuthResponse = oauth.loginForm()
+                    .scope("openid profile")
+                    .doLogin("test-user@localhost", "password");
+            assertNotNull(initialAuthResponse.getCode());
+
+            AccessTokenResponse initialTokenResponse = oauth.doAccessTokenRequest(initialAuthResponse.getCode());
+            assertEquals(200, initialTokenResponse.getStatusCode());
+            assertScopes("openid email profile", initialTokenResponse.getScope());
+
+            RefreshToken initialRefreshToken = oauth.parseRefreshToken(initialTokenResponse.getRefreshToken());
+            assertNotNull(initialRefreshToken);
+            assertScopes("openid basic email roles service_account web-origins acr profile", initialRefreshToken.getScope());
+
+            AuthorizationEndpointResponse laterAuthResponse = oauth.loginForm()
+                    .scope("profile")
+                    .doLoginWithCookie();
+            assertNotNull(laterAuthResponse.getCode());
+
+            AccessTokenResponse laterTokenResponse = oauth.doAccessTokenRequest(laterAuthResponse.getCode());
+            assertEquals(200, laterTokenResponse.getStatusCode());
+            assertScopes("email profile", laterTokenResponse.getScope());
+
+            timeOffSet.set(2);
+
+            oauth.scope("profile");
+            AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(initialTokenResponse.getRefreshToken());
+            assertEquals(200, refreshResponse.getStatusCode());
             assertScopes("openid profile", refreshResponse.getScope());
 
             UserInfoResponse userInfoResponse = oauth.doUserInfoRequest(refreshResponse.getAccessToken());

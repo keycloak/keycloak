@@ -41,6 +41,7 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
@@ -121,6 +122,7 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
             clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, oldRefreshToken.getNonce());
         }
         clientSessionCtx.setAttribute(Constants.GRANT_TYPE, OAuth2Constants.REFRESH_TOKEN);
+        clientSessionCtx.setAttribute(DefaultClientSessionContext.ORIGINAL_REFRESH_TOKEN_SCOPE, oldRefreshToken.getScope());
 
         // recreate token.
         AccessToken newToken = tokenManager.createClientAccessToken(session, realm, authorizedClient, user, userSession, clientSessionCtx, userSession.isOffline());
@@ -173,8 +175,7 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
             responseBuilder.getRefreshToken().setAuthorization(newToken.getAuthorization());
         }
 
-        String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
-        if (TokenUtil.isOIDCRequest(scopeParam)) {
+        if (TokenUtil.isOIDCRequest(oldRefreshToken.getScope())) {
             responseBuilder.generateIDToken().generateAccessTokenHash();
         }
 

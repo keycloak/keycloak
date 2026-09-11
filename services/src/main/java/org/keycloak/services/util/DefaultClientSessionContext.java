@@ -58,6 +58,7 @@ import org.jboss.logging.Logger;
 public class DefaultClientSessionContext implements ClientSessionContext {
 
     private static final Logger logger = Logger.getLogger(DefaultClientSessionContext.class);
+    public static final String ORIGINAL_REFRESH_TOKEN_SCOPE = "original_refresh_token_scope";
 
     private final AuthenticatedClientSessionModel clientSession;
     private final Set<ClientScopeModel> requestedScopes;
@@ -218,7 +219,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
             return true;
         }
         if (OAuth2Constants.REFRESH_TOKEN.equals(getAttribute(Constants.GRANT_TYPE, String.class))) {
-            return TokenUtil.isOIDCRequest(clientSession.getNote(OAuth2Constants.SCOPE));
+            return TokenUtil.isOIDCRequest(getAttribute(ORIGINAL_REFRESH_TOKEN_SCOPE, String.class));
         }
         return false;
     }
