@@ -71,6 +71,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     private volatile HealthStatus previousHealthStatus = HealthStatus.HEALTHY;
     private volatile int cyclesSinceLastLog = 0;
     private volatile Future<?> healthCheckTask;
+    private volatile Runnable onHealthRestored;
 
     @Property(description="Staleness timeout in milliseconds. The coordinator will update the entries once 50%-75% of the time has passed.", type= AttributeType.TIME)
     protected long staleness_timeout = 60000L;
@@ -273,6 +274,10 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
         if (status == HealthStatus.HEALTHY) {
             if (statusChanged) {
                 logger.info("Cluster health restored for cluster '%s'.", cluster_name);
+                Runnable callback = onHealthRestored;
+                if (callback != null) {
+                    callback.run();
+                }
             }
             return;
         }
@@ -306,6 +311,10 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
 
     public void setJpaConnectionProviderFactory(JpaConnectionProviderFactory factory) {
         this.factory = Objects.requireNonNull(factory);
+    }
+
+    public void setOnHealthRestored(Runnable onHealthRestored) {
+        this.onHealthRestored = onHealthRestored;
     }
 
     // Pick the largest partition first, then order by address to allow for a stable result
