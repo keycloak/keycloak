@@ -29,9 +29,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.Future;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.common.util.Time;
@@ -69,11 +69,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
             + "mechanism that makes multi-cluster setups safe.")
     protected boolean allow_multiple_clusters = false;
 
-    private static final Executor NETWORK_TIMEOUT_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
-        Thread t = new Thread(r, "jdbc-ping-network-timeout");
-        t.setDaemon(true);
-        return t;
-    });
+    private ExecutorService networkTimeoutExecutor;
 
     private JpaConnectionProviderFactory factory;
     private volatile HealthStatus previousHealthStatus = HealthStatus.HEALTHY;
@@ -91,7 +87,9 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     @Override
     protected Connection getConnection() throws SQLException {
         try {
-            return factory.getConnection();
+            Connection connection = factory.getConnection();
+            connection.setNetworkTimeout(networkTimeoutExecutor, (int) (staleness_timeout / 3));
+            return connection;
         } catch (Exception e) {
             var cause = e.getCause();
             if (cause instanceof SQLException sql) {
@@ -111,7 +109,18 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
         if (!remove_all_data_on_view_change) {
             throw new RuntimeException("Running this without remove_all_data_on_view_change is not safe");
         }
+        networkTimeoutExecutor = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "jdbc-ping-network-timeout");
+            t.setDaemon(true);
+            return t;
+        });
         super.init();
+    }
+
+    @Override
+    public void destroy() {
+        networkTimeoutExecutor.shutdown();
+        super.destroy();
     }
 
     protected void insert(Connection connection, PingData data, String clustername) throws SQLException {
@@ -191,39 +200,37 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     }
 
     protected List<PingData> readFromDB(String cluster) throws Exception {
-        try(Connection conn=getConnection()) {
-            conn.setNetworkTimeout(NETWORK_TIMEOUT_EXECUTOR, (int) (staleness_timeout / 3));
-            try(PreparedStatement ps=prepare(conn, select_all_pingdata_sql, TYPE_FORWARD_ONLY, CONCUR_UPDATABLE)) {
-                ps.setString(1, cluster);
-                if(log.isTraceEnabled())
-                    log.trace("%s: SQL for reading: %s", local_addr, ps);
-                try(ResultSet resultSet=ps.executeQuery()) {
-                    reads++;
-                    List<PingData> retval=new LinkedList<>();
-                    Map<Address, Set<Address>> members = new HashMap<>();
-                    while(resultSet.next()) {
-                        String uuid=resultSet.getString(1);
-                        String name=resultSet.getString(2);
-                        String ip=resultSet.getString(3);
-                        boolean coord=resultSet.getBoolean(4);
-                        String coordinated_by=resultSet.getString(5);
-                        long last_update=resultSet.getLong(6);
-                        if (last_update < getStalenessCutoff()) {
-                            continue;
-                        }
-                        Address addr=Util.addressFromString(uuid);
-                        IpAddress ip_addr=new IpAddress(ip);
-                        PingData data=new PingData(addr, true, name, ip_addr).coord(coord);
-                        retval.add(data);
-                        if (coordinated_by != null) {
-                            Address coordinate_by_address = Util.addressFromString(coordinated_by);
-                            members.computeIfAbsent(coordinate_by_address, address -> new HashSet<>())
-                                    .add(addr);
-                        }
+        try(Connection conn=getConnection();
+            PreparedStatement ps=prepare(conn, select_all_pingdata_sql, TYPE_FORWARD_ONLY, CONCUR_UPDATABLE)) {
+            ps.setString(1, cluster);
+            if(log.isTraceEnabled())
+                log.trace("%s: SQL for reading: %s", local_addr, ps);
+            try(ResultSet resultSet=ps.executeQuery()) {
+                reads++;
+                List<PingData> retval=new LinkedList<>();
+                Map<Address, Set<Address>> members = new HashMap<>();
+                while(resultSet.next()) {
+                    String uuid=resultSet.getString(1);
+                    String name=resultSet.getString(2);
+                    String ip=resultSet.getString(3);
+                    boolean coord=resultSet.getBoolean(4);
+                    String coordinated_by=resultSet.getString(5);
+                    long last_update=resultSet.getLong(6);
+                    if (last_update < getStalenessCutoff()) {
+                        continue;
                     }
-                    retval.forEach(a -> a.mbrs(members.get(a.getAddress())));
-                    return retval;
+                    Address addr=Util.addressFromString(uuid);
+                    IpAddress ip_addr=new IpAddress(ip);
+                    PingData data=new PingData(addr, true, name, ip_addr).coord(coord);
+                    retval.add(data);
+                    if (coordinated_by != null) {
+                        Address coordinate_by_address = Util.addressFromString(coordinated_by);
+                        members.computeIfAbsent(coordinate_by_address, address -> new HashSet<>())
+                                .add(addr);
+                    }
                 }
+                retval.forEach(a -> a.mbrs(members.get(a.getAddress())));
+                return retval;
             }
         }
     }
