@@ -23,6 +23,7 @@ import jakarta.persistence.EntityManager;
 
 import org.keycloak.cache.LocalCache;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.jpa.AsyncCommitIntegrator;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RevokedTokenProvider;
@@ -40,6 +41,7 @@ public class JpaRevokedTokenProvider implements RevokedTokenProvider {
     @Override
     public boolean put(String id, long lifespanSeconds) {
         var em = getEntityManager();
+        AsyncCommitIntegrator.requireSynchronousCommit(em);
         var currentTime = Time.currentTimeSeconds();
         var expire = currentTime + lifespanSeconds;
         var rows = em.createNamedQuery("insertRevokeTokenIfAbsent")
