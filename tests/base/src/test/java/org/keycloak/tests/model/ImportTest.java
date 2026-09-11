@@ -34,6 +34,7 @@ import org.keycloak.exportimport.Strategy;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.AcrUtils;
@@ -192,6 +193,35 @@ public class ImportTest {
             });
         } finally {
             adminClient.realms().realm("ldap-group-import-bug").remove();
+        }
+    }
+
+    // https://github.com/keycloak/keycloak/pull/51474#discussion_r-mtls-idp-import
+    // Full realm import of an mTLS (tls_client_auth) OIDC IdP referencing a key-provider component must not
+    // fail: identity providers are validated during import (validate(session, realm) resolves the referenced
+    // key provider), so the components have to be imported before the identity providers.
+    @Test
+    public void importMtlsIdentityProviderReferencingKeyProviderComponent() throws IOException {
+        RealmRepresentation testRealm = JsonSerialization.readValue(getClass().getResourceAsStream("mtls-idp-import-bug.json"), RealmRepresentation.class);
+        adminClient.realms().create(testRealm);
+
+        try {
+            runOnServer.run(session -> {
+                RealmModel realm = session.realms().getRealmByName("mtls-idp-import-bug");
+                // identityProviders() resolves against the realm in the session context, so it must be set
+                // before looking the imported provider up by alias.
+                session.getContext().setRealm(realm);
+
+                Assertions.assertNotNull(realm.getComponent("mtls-client-cert-key"),
+                        "Referenced key provider component should have been imported");
+
+                IdentityProviderModel idp = session.identityProviders().getByAlias("mtls-oidc");
+                Assertions.assertNotNull(idp, "mTLS identity provider should have been imported");
+                Assertions.assertEquals("mtls-client-cert-key",
+                        idp.getConfig().get("clientCertKeyProviderId"));
+            });
+        } finally {
+            adminClient.realms().realm("mtls-idp-import-bug").remove();
         }
     }
 
