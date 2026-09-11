@@ -112,6 +112,13 @@ description of the validation error.
 If a user with the same `userName` already exists, the API returns a `409 Conflict` response with
 `scimType: "uniqueness"`.
 
+NOTE: User creation through SCIM follows the same rules as user creation through the Admin REST API. If the realm
+has a user storage provider (for example, LDAP) configured to synchronize registrations, the new user may be created
+in that external provider instead of in the local {project_name} database. If the provider does not import users
+into the local database, the created user is not retrievable through subsequent SCIM `GET`, list, search, or
+`DELETE` requests, even though the `POST` request itself succeeds. This is a known limitation of the current
+version of the SCIM API - see the notes on federated users under "Listing users" and "Deleting a user" below.
+
 == Retrieving a user
 
 To retrieve a user by ID:
@@ -409,3 +416,7 @@ curl -X DELETE http://localhost:8080/realms/myrealm/scim/v2/Users/{id} \
 ----
 
 A successful deletion returns a `204 No Content` response with no body.
+
+NOTE: Like other SCIM operations, `DELETE` only operates on users that can be resolved from local storage. Deleting
+a user that was created in a federation provider but was never imported into the local {project_name} database
+returns a `404 Not Found` response, even if creation of that user through SCIM previously succeeded.

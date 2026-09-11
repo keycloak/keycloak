@@ -69,6 +69,7 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     protected KeycloakSession session;
     protected EditMode editMode;
     private transient Boolean importEnabled;
+    private transient Boolean syncRegistrationsEnabled;
 
     public static final AtomicInteger allocations = new AtomicInteger(0);
     public static final AtomicInteger closings = new AtomicInteger(0);
@@ -219,6 +220,12 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
+        if (!isSyncRegistrationsEnabled()) {
+            // let UserStorageManager fall back to creating the user in local storage,
+            // mirroring LDAPStorageProvider.synchronizeRegistrations() returning false
+            return null;
+        }
+
         if (editMode == EditMode.READ_ONLY) {
             throw new ReadOnlyException("Federated storage is not writable");
         }
@@ -264,6 +271,14 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     public void setImportEnabled(boolean flag) {
         importEnabled = flag;
         model.getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(flag));
+    }
+
+    public boolean isSyncRegistrationsEnabled() {
+        if (syncRegistrationsEnabled == null) {
+            String val = model.getConfig().getFirst(LDAPConstants.SYNC_REGISTRATIONS);
+            syncRegistrationsEnabled = val == null || Boolean.parseBoolean(val);
+        }
+        return syncRegistrationsEnabled;
     }
 
     @Override
