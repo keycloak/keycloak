@@ -37,6 +37,9 @@ import "./client-scopes.css";
 
 const ADD_SCOPE_MODAL_FOCUS_TRAP_ID = "add-scope-modal-focus-trap";
 
+const getModalFocusTrapElement = () =>
+  document.getElementById(ADD_SCOPE_MODAL_FOCUS_TRAP_ID) ?? document.body;
+
 export type AddScopeDialogProps = {
   clientScopes: ClientScopeRepresentation[];
   clientName?: string;
@@ -327,8 +330,7 @@ export const AddScopeDialog = ({
             <Dropdown
               popperProps={{
                 direction: "up",
-                appendTo: () =>
-                  document.getElementById(ADD_SCOPE_MODAL_FOCUS_TRAP_ID),
+                appendTo: getModalFocusTrapElement,
               }}
               onOpenChange={(isOpen) => setAddToggle(isOpen)}
               className="keycloak__client-scopes-add__add-dropdown"
