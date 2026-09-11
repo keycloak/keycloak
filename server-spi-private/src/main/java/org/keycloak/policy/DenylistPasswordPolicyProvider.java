@@ -1,5 +1,7 @@
 package org.keycloak.policy;
 
+import java.util.Locale;
+
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -45,7 +47,7 @@ public class DenylistPasswordPolicyProvider implements PasswordPolicyProvider {
 
     PasswordDenylist denylist = (FileBasedPasswordDenylist) policyConfig;
 
-    if (!denylist.contains(password.toLowerCase())) {
+    if (!denylist.contains(password.toLowerCase(Locale.ROOT))) {
       return null;
     }
 

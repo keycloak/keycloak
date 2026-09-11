@@ -472,7 +472,7 @@ public class DenylistPasswordPolicyProviderFactory implements PasswordPolicyProv
 
         protected void insertPasswordsInto(BloomFilter<String> filter) throws IOException {
             try (BufferedReader br = newReader(path)) {
-                br.lines().map(String::toLowerCase).forEach(filter::put);
+                br.lines().map(s -> s.toLowerCase(Locale.ROOT)).forEach(filter::put);
             }
         }
 
