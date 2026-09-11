@@ -51,7 +51,9 @@ public class OTPCredentialProvider implements CredentialProvider<OTPCredentialMo
         if (credentialModel.getCreatedDate() == null) {
             credentialModel.setCreatedDate(Time.currentTimeMillis());
         }
-        return user.credentialManager().createStoredCredential(credentialModel);
+        CredentialModel createdCredential = user.credentialManager().createStoredCredential(credentialModel);
+        credentialModel.setId(createdCredential.getId());
+        return createdCredential;
     }
 
     @Override
