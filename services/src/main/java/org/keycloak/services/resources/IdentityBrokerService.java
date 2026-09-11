@@ -98,6 +98,7 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -804,6 +805,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             boolean forwardedPassiveLogin = "true".equals(authenticationSession.getAuthNote(AuthenticationProcessor.FORWARDED_PASSIVE_LOGIN));
 
             String userRequestedLocale = authenticationSession.getAuthNote(LocaleSelectorProvider.USER_REQUEST_LOCALE);
+            String organizationId = authenticationSession.getAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE);
             // Redirect to firstBrokerLogin after successful login and ensure that previous authentication state removed
             AuthenticationProcessor.resetFlow(authenticationSession, LoginActionsService.FIRST_BROKER_LOGIN_PATH);
             if (userRequestedLocale != null) {
@@ -813,6 +815,10 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             // Set the FORWARDED_PASSIVE_LOGIN note (if needed) after resetting the session so it is not lost.
             if (forwardedPassiveLogin) {
                 authenticationSession.setAuthNote(AuthenticationProcessor.FORWARDED_PASSIVE_LOGIN, "true");
+            }
+
+            if (organizationId != null) {
+                authenticationSession.setAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organizationId);
             }
 
             SerializedBrokeredIdentityContext ctx = SerializedBrokeredIdentityContext.serialize(context);
