@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Locale;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.utils.RawDistRootPath;
@@ -36,6 +37,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static org.apache.commons.lang3.StringUtils.countMatches;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -93,6 +95,13 @@ public abstract class BasicDatabaseTest {
 
         assertThat(output, notNullValue());
         assertThat(output, containsString("Keycloak database creation script - apply this script to empty DB"));
+        assertThat(output, containsString("Create Database Change Log Table"));
+
+        // The script inserts into the changelog table, so it has to create it - once, or applying it fails
+        var outputLowerCase = output.toLowerCase(Locale.ROOT);
+        var count = countMatches(outputLowerCase, "create table public.databasechangelog (")
+                + countMatches(outputLowerCase, "create table keycloak.databasechangelog (");
+        assertThat(count, is(1));
         assertThat(output, containsString("Change Log: META-INF/jpa-changelog-master.xml"));
         assertThat(output, containsString("Changeset META-INF/jpa-changelog-26.2.6.xml"));
 

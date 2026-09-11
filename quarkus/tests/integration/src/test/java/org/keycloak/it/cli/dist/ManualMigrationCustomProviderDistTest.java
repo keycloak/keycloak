@@ -33,7 +33,9 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.number.OrderingComparison.lessThan;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DistributionTest
@@ -66,5 +68,14 @@ public class ManualMigrationCustomProviderDistTest {
         }
 
         assertThat(output, containsString("MIGRATION_TEST_ENTITY"));
+
+        // The custom provider gets its own changelog table, which the script inserts into, so it has to create
+        // it as well - exactly once, and before the first insert.
+        String createTable = "CREATE TABLE PUBLIC.DATABASECHANGELOG_MIGRATION_ (";
+        String insertInto = "INSERT INTO PUBLIC.DATABASECHANGELOG_MIGRATION_ (";
+        assertThat("custom changelog table must be created exactly once",
+                output.split(java.util.regex.Pattern.quote(createTable), -1).length - 1, is(1));
+        assertThat("custom changelog table must be created before it is inserted into",
+                output.indexOf(createTable), lessThan(output.indexOf(insertInto)));
     }
 }
