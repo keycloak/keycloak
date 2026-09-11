@@ -31,8 +31,10 @@ import org.keycloak.common.util.DurationConverter;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.NodeInfo;
 import org.keycloak.infinispan.util.InfinispanUtils;
+import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.cache.infinispan.ClearCacheEvent;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -41,6 +43,9 @@ import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.timer.TimerProvider;
 
 import org.infinispan.commons.marshall.Marshaller;
+import org.infinispan.factories.GlobalComponentRegistry;
+import org.infinispan.remoting.transport.Transport;
+import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.jboss.logging.Logger;
 
 /**
@@ -97,7 +102,37 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
     }
 
     @Override
+    protected ClusterProvider lazyInit(KeycloakSession session) {
+        if (clusterProvider != null)
+            return clusterProvider;
+
+        synchronized (this) {
+            if (clusterProvider != null)
+                return clusterProvider;
+
+            ClusterProvider cp = super.lazyInit(session);
+
+            // This can only be done after the caches have been started up, therefore add to lazyInit()
+            // In the future, consider moving to postInit(), but that would require all other caches
+            // to do the same, including declaring their dependsOn() dependencies.
+            InfinispanConnectionProvider ispnConnections = session.getProvider(InfinispanConnectionProvider.class);
+            var cm = ispnConnections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME).getCacheManager();
+            var jgrp = (JGroupsTransport) GlobalComponentRegistry.componentOf(cm, Transport.class);
+            if (jgrp == null) {
+                throw new IllegalStateException("Stateless mode must not run in cache=local mode as this will not allow health probes and cache clearing");
+            } else {
+                KEYCLOAK_JDBC_PING2 ping = jgrp.getChannel().getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2.class);
+                KeycloakSessionFactory keycloakSessionFactory = session.getKeycloakSessionFactory();
+                ping.setOnHealthRestored(() -> localExecutor.execute(() -> broadcastCacheClear(keycloakSessionFactory)));
+            }
+
+            return cp;
+        }
+    }
+
+    @Override
     public void postInit(KeycloakSessionFactory factory) {
+        super.postInit(factory);
         KeycloakModelUtils.runJobInTransaction(factory, session -> {
             InfinispanConnectionProvider ispnConnections = session.getProvider(InfinispanConnectionProvider.class);
             NodeInfo nodeInfo = ispnConnections.getNodeInfo();
@@ -113,6 +148,14 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
             }, pollInterval.toMillis(), pollInterval.toMillis());
             logger.infof("Scheduled cluster event poller with interval %s for cluster '%s'",
                     pollInterval, nodeInfo.clusterName());
+        });
+    }
+
+    private static void broadcastCacheClear(KeycloakSessionFactory factory) {
+        logger.info("Broadcasting cache clear to all cluster nodes after health recovery");
+        KeycloakModelUtils.runJobInTransaction(factory, session -> {
+            ClusterProvider cp = session.getProvider(ClusterProvider.class);
+            cp.notify(CLEAR_ALL_LOCAL_CACHES_EVENT, ClearCacheEvent.getInstance(), false);
         });
     }
 
