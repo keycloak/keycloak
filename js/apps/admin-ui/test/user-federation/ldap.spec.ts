@@ -209,3 +209,63 @@ test.describe.serial("User Federation LDAP tests", () => {
     });
   });
 });
+
+test.describe.serial("User Federation LDAP enabled toggle access", () => {
+  const realmName = `user-federation-ldap-access-${uuid()}`;
+  const viewOnlyUser = `ldap-view-only-${uuid()}`;
+  const password = "password";
+
+  test.beforeAll(async () => {
+    await adminClient.createRealm(realmName);
+    await adminClient.createUserFederation(realmName, {
+      providerId: provider,
+      name: firstLdapName,
+      config: {
+        vendor: [firstLdapVendor],
+        connectionUrl: [connectionUrlValid],
+        bindType: [bindTypeSimple],
+        bindDn: [bindDnCnDc],
+        bindCredential: [bindCredsValid],
+        editMode: [editModeReadOnly],
+        usersDn: [firstUsersDn],
+        usernameLDAPAttribute: [firstUserLdapAtt],
+        rdnLDAPAttribute: [firstRdnLdapAtt],
+      },
+    });
+    const user = await adminClient.createUser({
+      username: viewOnlyUser,
+      enabled: true,
+      credentials: [{ type: "password", value: password }],
+    });
+    await adminClient.addClientRoleToUser(user.id!, `${realmName}-realm`, [
+      "view-realm",
+    ]);
+  });
+
+  test.afterAll(async () => {
+    await adminClient.deleteUser(viewOnlyUser);
+    await adminClient.deleteRealm(realmName);
+  });
+
+  test("Should disable the enabled toggle for a view-realm only user", async ({
+    page,
+  }) => {
+    await login(page, { username: viewOnlyUser, password });
+    await goToRealm(page, realmName);
+    await goToUserFederation(page);
+    await clickLdapCard(page, firstLdapName);
+
+    await expect(page.getByTestId("LDAP-switch")).toBeDisabled();
+  });
+
+  test("Should enable the enabled toggle for a manage-realm user", async ({
+    page,
+  }) => {
+    await login(page);
+    await goToRealm(page, realmName);
+    await goToUserFederation(page);
+    await clickLdapCard(page, firstLdapName);
+
+    await expect(page.getByTestId("LDAP-switch")).toBeEnabled();
+  });
+});
