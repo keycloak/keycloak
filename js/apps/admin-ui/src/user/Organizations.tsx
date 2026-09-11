@@ -21,6 +21,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { MembershipTypeToggle } from "../organizations/MembershipTypeToggle";
 import { OrganizationModal } from "../organizations/OrganizationModal";
 import { toEditOrganization } from "../organizations/routes/EditOrganization";
 import useToggle from "../utils/useToggle";
@@ -235,6 +236,14 @@ export const Organizations = ({ user }: OrganizationProps) => {
           </Link>
         )}
         loader={userOrgs}
+        membershipTypeRenderer={(org) => (
+          <MembershipTypeToggle
+            orgId={org.id!}
+            userId={id!}
+            name={org.name}
+            isManaged={org.membershipType === "Managed"}
+          />
+        )}
         isSearching={
           searchTriggerText.length > 0 || filteredMembershipTypes.length > 0
         }
