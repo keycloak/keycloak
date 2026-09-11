@@ -80,19 +80,17 @@ public class JGroupsCertificateRotationClusterTest extends AbstractClusterTest {
         }
 
         assertTrue(coordinatorIdx >= 0);
-        ContainerInfo coordinatorNode = backendNode(coordinatorIdx);
-        killBackendNode(coordinatorNode);
-        failback();
+        killBackendNode(backendNode(coordinatorIdx));
         assertClusterSize();
 
-        boolean foundCoordinatorWithTask = false;
-        for (int i = 0; i < getClusterSize(); ++i) {
-            if (isCoordinator(i) && hasRotationTask(i)) {
-                foundCoordinatorWithTask = true;
-                break;
-            }
-        }
-        assertTrue(foundCoordinatorWithTask, "Expected a coordinator with scheduled rotation task after failback");
+        int survivorIdx = (coordinatorIdx + 1) % getClusterSize();
+        assertTrue(isCoordinator(survivorIdx));
+        assertTrue(hasRotationTask(survivorIdx));
+
+        failback();
+        assertClusterSize();
+        assertTrue(isCoordinator(survivorIdx));
+        assertTrue(hasRotationTask(survivorIdx));
     }
 
     private boolean isMtlsEnabled() {
