@@ -22,13 +22,11 @@ import org.keycloak.truststore.TruststoreProvider;
 
 import io.netty.handler.ssl.OpenSsl;
 import io.quarkus.arc.Arc;
-import io.vertx.core.http.HttpClient;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClient;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
-import io.vertx.core.net.ProxyOptions;
-import io.vertx.core.net.ProxyType;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import org.jboss.logging.Logger;
@@ -52,12 +50,13 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
     private double backoffMultiplier;
     private boolean useJitter;
     private double jitterFactor;
+    private ProxyMappings proxyMappings;
 
     @Override
     public HttpClientProvider create(KeycloakSession session) {
         lazyInit(session);
         return new VertxHttpClientProvider(webClient, httpClient, maxConsumedResponseSize, socketTimeoutMs,
-                maxRetries, initialBackoffMillis, backoffMultiplier, useJitter, jitterFactor);
+                maxRetries, initialBackoffMillis, backoffMultiplier, useJitter, jitterFactor, proxyMappings);
     }
 
     @Override
@@ -185,7 +184,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
         options.setDecompressionSupported(true);
 
         configureTls(session, options);
-        configureProxy(options);
+        configureProxy();
 
         return options;
     }
@@ -236,62 +235,45 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
         }
     }
 
-    private void configureProxy(WebClientOptions options) {
-        String noProxy = null;
-        ProxyMappings proxyMappings = ProxyMappings.valueOf(config.getArray("proxy-mappings"));
-        if (proxyMappings == null || proxyMappings.isEmpty()) {
+    private void configureProxy() {
+        ProxyMappings mappings = ProxyMappings.valueOf(config.getArray("proxy-mappings"));
+        if (mappings == null || mappings.isEmpty()) {
             logger.debug("Trying to use proxy mapping from env vars");
             String httpProxy = getEnvVarValue("https_proxy");
             if (isBlank(httpProxy)) {
                 httpProxy = getEnvVarValue("http_proxy");
             }
-            noProxy = getEnvVarValue("no_proxy");
+            String noProxy = normalizeNoProxy(getEnvVarValue("no_proxy"));
 
             if (!isBlank(httpProxy)) {
-                proxyMappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
+                mappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
             }
         }
 
-        if (proxyMappings == null || proxyMappings.isEmpty()) {
-            return;
+        if (mappings != null && !mappings.isEmpty()) {
+            this.proxyMappings = mappings;
+            logger.info("Proxy mappings configured — per-request proxy routing enabled");
         }
+    }
 
-        // Vert.x WebClient only supports a single global proxy — use the catch-all entry
-        ProxyMappings.ProxyMapping wildcard = proxyMappings.getProxyFor("this-host-should-match-wildcard-only.test");
-        if (wildcard == null || wildcard.getProxyHost() == null) {
-            logger.warn("proxy-mappings configured but no wildcard (.*) entry found. "
-                    + "Vert.x HTTP client only supports a single global proxy; per-host routing is not available.");
-            return;
+    static String normalizeNoProxy(String noProxy) {
+        if (isBlank(noProxy)) {
+            return noProxy;
         }
-
-        ProxyOptions proxyOptions = new ProxyOptions()
-                .setType(ProxyType.HTTP)
-                .setHost(wildcard.getProxyHost().getHostName())
-                .setPort(wildcard.getProxyHost().getPort());
-        if (wildcard.getProxyCredentials() != null) {
-            proxyOptions.setUsername(wildcard.getProxyCredentials().getUserName())
-                    .setPassword(wildcard.getProxyCredentials().getPassword());
-        }
-        options.setProxyOptions(proxyOptions);
-
-        // Apply no_proxy exclusions via Vert.x addNonProxyHost (glob: * → .*)
-        if (!isBlank(noProxy)) {
-            for (String host : noProxy.split(",")) {
-                host = host.trim();
-                if (host.startsWith(".")) {
-                    host = host.substring(1);
+        StringBuilder result = new StringBuilder();
+        for (String entry : noProxy.split(",")) {
+            String host = entry.trim();
+            if (host.startsWith(".")) {
+                host = host.substring(1);
+            }
+            if (!host.isEmpty()) {
+                if (result.length() > 0) {
+                    result.append(",");
                 }
-                if (!host.isEmpty()) {
-                    options.addNonProxyHost(host);
-                    if (!host.contains("*")) {
-                        options.addNonProxyHost("*." + host);
-                    }
-                }
+                result.append(host);
             }
         }
-
-        logger.infof("Proxy configured: %s:%d", wildcard.getProxyHost().getHostName(),
-                wildcard.getProxyHost().getPort());
+        return result.toString();
     }
 
     private String getEnvVarValue(String name) {
