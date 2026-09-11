@@ -85,6 +85,10 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         if (userLoginFailure == null) {
             userLoginFailure = session.loginFailures().addUserLoginFailure(realm, userId);
         }
+        // Trigger the pessimistic lock and entity refresh before reading lastFailure,
+        // so the delta-time check uses post-lock data and concurrent nodes cannot both
+        // decide to clear based on the same stale value.
+        userLoginFailure.setLastIPFailure(remoteAddr);
         long last = userLoginFailure.getLastFailure();
         long deltaTime = 0;
         if (last > 0) {
