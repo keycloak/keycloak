@@ -41,11 +41,29 @@ final class UiExtensionComponentStorage {
             String parent,
             String type,
             String providerId) {
-        ComponentStorageFactory storageFactory = getStorageFactory(session, type, providerId);
-        if (storageFactory == null) {
+        if (providerId != null) {
+            ComponentStorageFactory storageFactory = getStorageFactory(session, type, providerId);
+            if (storageFactory == null) {
+                return null;
+            }
+            return storageFactory.listComponents(session, realm, parent, providerId);
+        }
+        if (type == null) {
             return null;
         }
-        return storageFactory.listComponents(session, realm, parent, providerId);
+        try {
+            Class<? extends Provider> providerClass =
+                    (Class<? extends Provider>) session.getProviderClass(type);
+            return session.getKeycloakSessionFactory()
+                    .getProviderFactoriesStream(providerClass)
+                    .filter(factory -> factory instanceof ComponentStorageFactory)
+                    .filter(factory -> !(factory instanceof ComponentFactory<?, ?> componentFactory
+                            && componentFactory.isInternal()))
+                    .flatMap(factory -> ((ComponentStorageFactory) factory)
+                            .listComponents(session, realm, parent, factory.getId()));
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     static ComponentModel getComponent(KeycloakSession session, RealmModel realm, ComponentModel model) {

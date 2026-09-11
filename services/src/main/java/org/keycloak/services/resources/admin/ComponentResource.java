@@ -109,18 +109,23 @@ public class ComponentResource {
                                                        @QueryParam("providerId") String providerId) {
         requireViewForProviderType(type, providerId);
         Stream<ComponentModel> customComponents = UiExtensionComponentStorage.listComponents(session, realm, parent, type, providerId);
-        Stream<ComponentModel> components;
-        if (customComponents != null) {
-            components = customComponents;
-        } else if (parent == null && type == null) {
-            components = realm.getComponentsStream();
-
+        Stream<ComponentModel> realmComponents;
+        if (parent == null && type == null) {
+            realmComponents = realm.getComponentsStream();
         } else if (type == null) {
-            components = realm.getComponentsStream(parent);
+            realmComponents = realm.getComponentsStream(parent);
         } else if (parent == null) {
-            components = realm.getComponentsStream(realm.getId(), type);
+            realmComponents = realm.getComponentsStream(realm.getId(), type);
         } else {
-            components = realm.getComponentsStream(parent, type);
+            realmComponents = realm.getComponentsStream(parent, type);
+        }
+        Stream<ComponentModel> components;
+        if (providerId != null && customComponents != null) {
+            components = customComponents;
+        } else if (customComponents != null) {
+            components = Stream.concat(realmComponents, customComponents);
+        } else {
+            components = realmComponents;
         }
 
         return components
@@ -198,9 +203,22 @@ public class ComponentResource {
             rejectInternalComponent(model.getProviderType(), model.getProviderId());
             requireManageForProviderType(model.getProviderType(), model.getProviderId());
             ComponentModel oldModel = new ComponentModel(model);
+            String oldProviderType = model.getProviderType();
+            String oldProviderId = model.getProviderId();
             RepresentationToModel.updateComponent(session, rep, model, false);
             rejectInternalComponent(model.getProviderType(), model.getProviderId());
             requireManageForProviderType(model.getProviderType(), model.getProviderId());
+            if (!Objects.equals(oldProviderType, model.getProviderType())
+                    || !Objects.equals(oldProviderId, model.getProviderId())) {
+                boolean oldCustom = UiExtensionComponentStorage.usesCustomStorage(
+                        oldProviderType, oldProviderId, session);
+                boolean newCustom = UiExtensionComponentStorage.usesCustomStorage(
+                        model.getProviderType(), model.getProviderId(), session);
+                if (oldCustom || newCustom) {
+                    throw new BadRequestException(
+                            "Cannot change provider type or ID for components with custom storage");
+                }
+            }
             ComponentModel customModel = UiExtensionComponentStorage.updateComponent(session, realm, oldModel, model);
             if (customModel != null) {
                 model = customModel;
