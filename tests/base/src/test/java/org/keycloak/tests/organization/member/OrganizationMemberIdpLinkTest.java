@@ -7,6 +7,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.account.LinkedAccountRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -177,6 +178,12 @@ public class OrganizationMemberIdpLinkTest {
 
         consumerRealm.admin().organizations().get(orgId)
                 .identityProviders().addIdentityProvider(IDP_ALIAS).close();
+
+        OrganizationIdentityProviderLinkRepresentation link = new OrganizationIdentityProviderLinkRepresentation();
+        link.setAutoMembership(true);
+        link.setMembershipType("MANAGED");
+        consumerRealm.admin().organizations().get(orgId)
+                .identityProviders().get(IDP_ALIAS).update(link).close();
 
         org = consumerRealm.admin().organizations().get(orgId).toRepresentation();
         org.getDomains().stream()
