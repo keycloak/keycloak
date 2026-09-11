@@ -58,6 +58,7 @@ import org.jboss.logging.Logger;
 public class DefaultClientSessionContext implements ClientSessionContext {
 
     private static final Logger logger = Logger.getLogger(DefaultClientSessionContext.class);
+    public static final String ORIGINAL_REFRESH_TOKEN_SCOPE = "original_refresh_token_scope";
 
     private final AuthenticatedClientSessionModel clientSession;
     private final Set<ClientScopeModel> requestedScopes;
@@ -193,8 +194,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
             String scopeParam = buildScopesStringFromAuthorizationRequest(ignoreIncludeInTokenScope);
             logger.tracef("Generated scope param with Parameterized Scopes enabled: %1s", scopeParam);
-            String scopeSent = requestedScopeString;
-            if (TokenUtil.isOIDCRequest(scopeSent)) {
+            if (isOIDCRequest()) {
                 scopeParam = TokenUtil.attachOIDCScope(scopeParam);
             }
             return scopeParam;
@@ -207,12 +207,21 @@ public class DefaultClientSessionContext implements ClientSessionContext {
                 .collect(Collectors.joining(" "));
 
         // See if "openid" scope is requested
-        String scopeSent = requestedScopeString;
-        if (TokenUtil.isOIDCRequest(scopeSent)) {
+        if (isOIDCRequest()) {
             scopeParam = TokenUtil.attachOIDCScope(scopeParam);
         }
 
         return scopeParam;
+    }
+
+    private boolean isOIDCRequest() {
+        if (TokenUtil.isOIDCRequest(requestedScopeString)) {
+            return true;
+        }
+        if (OAuth2Constants.REFRESH_TOKEN.equals(getAttribute(Constants.GRANT_TYPE, String.class))) {
+            return TokenUtil.isOIDCRequest(getAttribute(ORIGINAL_REFRESH_TOKEN_SCOPE, String.class));
+        }
+        return false;
     }
 
     /**
