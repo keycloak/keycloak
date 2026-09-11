@@ -134,6 +134,30 @@ public class ClientDelegationTest {
         logout(res.getRefreshToken());
     }
 
+
+    @Test
+    public void standardExchangeRejectsDelegationSubjectTokenWithoutActorToken() {
+        AccessTokenResponse res = loginWithDelegation(AGENT_DELEGATION_SCOPE);
+        assertScopeContains(res.getScope(), AGENT_DELEGATION_SCOPE);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), getServiceAccountUserId(), AGENT_CLIENT_ID);
+
+        AccessTokenResponse exchange = oauth.client(AGENT_CLIENT_ID, AGENT_CLIENT_SECRET)
+                .scope(null)                               
+                .tokenExchangeRequest(res.getAccessToken()) 
+                .actorToken(null)                           // no actor_token so delegation provider declines
+                .send();
+
+        Assertions.assertFalse(exchange.isSuccess(),
+                "standard exchange must reject a subject_token carrying may_act/act");
+        EventAssertion.assertError(events.poll())
+                .type(EventType.TOKEN_EXCHANGE_ERROR)
+                .clientId(AGENT_CLIENT_ID)
+                .error(Errors.INVALID_REQUEST)
+                .details(Details.REASON, "subject_token with a 'may_act' or 'act' claim requires the delegation token exchange with an actor_token");
+
+        logout(res.getRefreshToken());
+    }
+
     @Test
     public void scopeReduction() {
         AccessTokenResponse res = loginWithDelegation(AGENT_DELEGATION_SCOPE);
