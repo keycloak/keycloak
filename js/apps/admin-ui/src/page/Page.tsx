@@ -44,6 +44,7 @@ export default function Page() {
   const [pageData, setPageData] = useState<ComponentRepresentation>();
 
   const page = pages?.find((p) => p.id === providerId);
+  const canView = page ? canViewUiExtension(page, access) : false;
   const detailTabPath = page?.metadata.detailTabPath as string | undefined;
   const supportsDetailTabs = Boolean(page?.metadata.supportsDetailTabs);
   const settingsTab = useRoutableTab(
@@ -58,9 +59,14 @@ export default function Page() {
   );
 
   useFetch(
-    async () => (id ? adminClient.components.findOne({ id }) : undefined),
+    async () => {
+      if (!canView || !id) {
+        return undefined;
+      }
+      return adminClient.components.findOne({ id });
+    },
     setPageData,
-    [id],
+    [id, canView],
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({

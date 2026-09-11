@@ -2,6 +2,7 @@ package org.keycloak.tests.admin;
 
 import java.util.List;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
@@ -80,6 +81,17 @@ public class UiExtensionComponentStorageTest {
 
         assertThrows(NotFoundException.class, () -> components.component(id).toRepresentation());
         assertThat(components.query(managedRealm.getId(), UiPageProvider.class.getName()), hasSize(0));
+    }
+
+    @Test
+    public void testRejectProviderChangeForCustomStorage() {
+        ComponentRepresentation created = createComponentRepresentation("custom-storage-item");
+        String id = createComponent(created);
+
+        ComponentRepresentation fetched = components.component(id).toRepresentation();
+        fetched.setProviderId("another-provider");
+
+        assertThrows(BadRequestException.class, () -> components.component(id).update(fetched));
     }
 
     private String createComponent(ComponentRepresentation rep) {
