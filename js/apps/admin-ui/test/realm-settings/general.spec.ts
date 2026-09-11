@@ -1,22 +1,27 @@
-import { expect, test } from "@playwright/test";
+import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
-import { clickSwitch, switchOff, switchOn } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
-import { confirmModal } from "../utils/modal.ts";
 import { goToClients, goToRealm, goToRealmSettings } from "../utils/sidebar.ts";
 import {
   assertDisplayName,
   assertFrontendURL,
+  assertOpenIdEndpointConfigurationLink,
+  assertOpenIdEndpointConfigurationReachable,
+  assertRequiredFieldMessage,
   assertRequireSSL,
+  clearRealmId,
   clickRevertButton,
   clickSaveRealm,
+  disableRealm,
+  disableUserManagedAccess,
+  enableRealm,
+  enableUserManagedAccess,
   fillDisplayName,
   fillFrontendURL,
   fillRequireSSL,
 } from "./general.ts";
-import { SERVER_URL } from "../utils/constants.ts";
 
 test.describe.serial("Realm settings general tab tests", () => {
   const realmName = `general-realm-settings-${uuid()}`;
@@ -33,51 +38,32 @@ test.describe.serial("Realm settings general tab tests", () => {
   test("Check Access Endpoints OpenID Endpoint Configuration link", async ({
     page,
   }) => {
-    const locator = page.getByRole("link", {
-      name: "OpenID Endpoint Configuration",
-    });
-
-    await expect(locator).toHaveAttribute(
-      "href",
-      `${SERVER_URL}/realms/${realmName}/.well-known/openid-configuration`,
-    );
-    await expect(locator).toHaveAttribute("target", "_blank");
-    await expect(locator).toHaveAttribute("rel", "noreferrer noopener");
-
-    const link = await page
-      .getByRole("link", { name: "OpenID Endpoint Configuration" })
-      .getAttribute("href");
-    const response = await page.request.get(link!);
-    expect(response.status()).toBe(200);
+    await assertOpenIdEndpointConfigurationLink(page, realmName);
+    await assertOpenIdEndpointConfigurationReachable(page);
   });
 
   test("all general tab switches", async ({ page }) => {
-    await switchOn(page, "#userManagedAccessAllowed");
+    await enableUserManagedAccess(page);
     await clickSaveRealm(page);
     await assertNotificationMessage(page, "Realm successfully updated");
 
-    await switchOff(page, "#userManagedAccessAllowed");
+    await disableUserManagedAccess(page);
     await clickSaveRealm(page);
     await assertNotificationMessage(page, "Realm successfully updated");
   });
 
   test("realm enable/disable switch", async ({ page }) => {
-    // Enable realm
-    const realmSwitch = page.locator(`#${realmName}-switch`);
-    await expect(realmSwitch).not.toBeChecked();
-    await switchOn(page, realmSwitch);
+    await enableRealm(page, realmName);
     await assertNotificationMessage(page, "Realm successfully updated");
 
-    // Disable realm
-    await clickSwitch(page, realmSwitch);
-    await confirmModal(page);
+    await disableRealm(page, realmName);
     await assertNotificationMessage(page, "Realm successfully updated");
   });
 
   test("Fail to set Realm ID to empty", async ({ page }) => {
-    await page.getByRole("textbox", { name: "Copyable input" }).fill("");
+    await clearRealmId(page);
     await clickSaveRealm(page);
-    await expect(page.getByText("Required field")).toBeVisible();
+    await assertRequiredFieldMessage(page);
   });
 
   test("Modify Display name", async ({ page }) => {
