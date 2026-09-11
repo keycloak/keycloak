@@ -90,8 +90,12 @@ to the node where their sessions were initially created. By doing that, you are 
 CPU, memory, and network utilization.
 
 .Password brute force detection
-The `loginFailures` distributed cache is used to track data about failed login attempts.
-This cache is needed for the Brute Force Protection feature to work in a multi-node {project_name} setup.
+Login failure data for brute force detection is stored in the database by default.
+Deployments using the `multi-site` or `clusterless` features continue to store login failures in the external Infinispan `loginFailures` cache.
+The embedded `loginFailures` distributed cache is available as a fallback when the deprecated `login-failures:v1` feature is explicitly enabled, but this mode will be removed in a future release.
+When switching between storage modes (for example, from database to external Infinispan or vice versa), stale login failure entries may remain in the previous store.
+These entries are not cleaned up automatically and can resurface if the deployment reverts to the previous storage mode.
+Administrators should manually remove stale login failure data from the previous store after switching.
 
 .Action tokens
 Action tokens are used for scenarios when a user needs to confirm an action asynchronously, for example in the emails sent by the forgot password flow.
@@ -137,7 +141,7 @@ This means all user sessions are lost when all {project_name} nodes are restarte
 
 When the feature `stateless` is enabled, {project_name} does not cache user entity data, and login failures, authentication sessions, and action tokens are persisted to the database. While realm and authorization data are still cached, session-related state is persisted and the database becomes the source of truth. The `work` cache is still used to invalidate realm and authorization data within the cluster.
 
-If you are running multiple independent {project_name} clusters against the same database, cache invalidation between clusters is performed via a database table (outbox). For that, each cluster needs to have a unique name specified via `+--spi-cache-embedded--default--cluster-name+`.
+If you are running multiple independent {project_name} clusters against the same database, cache invalidation between clusters is performed via a database table (outbox). For that, each cluster needs to have a unique name specified via `+--cache-embedded-cluster-name+`.
 
 This is the foundation for the multi-cluster (v2) setup that is covered in more detail in the high-availability guide at <@links.ha id="multi-cluster-v2-introduction" />.
 
@@ -197,26 +201,26 @@ If the {jdgserver_name} server has authentication enabled, {project_name} will f
 
 The following options allow you to identify the cluster and its nodes:
 
-Cluster name (experimental)::
+Cluster name::
 Defines the name of the cluster.
 Only nodes with the same cluster name can discover each other and form a cluster.
 Because {project_name} uses the database for node discovery via `jdbc-ping` by default, clusters that share the same database but should remain separate will merge unless they have distinct cluster names.
 The default cluster name is `ISPN`.
 +
-Use the SPI option `+spi-cache-embedded--default--cluster-name+` (or environment variable `+KC_SPI_CACHE_EMBEDDED__DEFAULT__CLUSTER_NAME+`).
+Use `+--cache-embedded-cluster-name+` (or environment variable `+KC_CACHE_EMBEDDED_CLUSTER_NAME+`).
 +
-For example: `+--spi-cache-embedded--default--cluster-name=my-cluster+`
+For example: `+--cache-embedded-cluster-name=my-cluster+`
 +
-WARNING: As invalidation of caches between clusters with distinct names will not work, this will lead to stale caches and incorrect behavior. Do not use in production environments. Use only together with the `stateless` feature.
+WARNING: As invalidation of caches between clusters with distinct names will not work, this will lead to stale caches and incorrect behavior. Use only together with the `stateless` feature.
 
 Node name::
 Sets a human-readable name for the current node, used in log messages and management tools.
 By default, a random name is generated on each start, which makes it difficult to correlate metrics and logs across restarts.
 Set this option to assign a stable name, which is especially useful for observability tools such as Grafana dashboards and log aggregation.
 +
-Use the SPI option `+spi-cache-embedded--default--node-name+` (or environment variable `+KC_SPI_CACHE_EMBEDDED__DEFAULT__NODE_NAME+`).
+Use `+--cache-embedded-node-name+` (or environment variable `+KC_CACHE_EMBEDDED_NODE_NAME+`).
 +
-For example: `+--spi-cache-embedded--default--node-name=node-1+`
+For example: `+--cache-embedded-node-name=node-1+`
 
 [[cache-topology]]
 == Topology aware data distribution

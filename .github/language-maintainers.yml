@@ -2,6 +2,9 @@
 # This file maps language codes to their responsible maintainers. It is used to notify them once a translation changes.
 # Format: language_code: [list of GitHub usernames]
 
+# Sort alphabetically by language code:
+# yq -i '.languages = (.languages | to_entries | sort_by(.key) | from_entries)' .github/language-maintainers.yml
+
 languages:
   ca:
     name: Catalan
@@ -28,16 +31,21 @@ languages:
     maintainers:
       - herver1971
       - anthieni
+  fa:
+    name: Persian
+    maintainers:
+      - nasermirzaei89
+      - Soltinator
   fr:
     name: French
     maintainers:
       - Dodouce
       - GitSpoon
-  it:
-    name: Italian
+  hu:
+    name: Hungarian
     maintainers:
-      - GioviQ
-      - EdoardoTona
+      - nkelemen18
+      - vilmosnagy
   hy:
     name: Armenian
     maintainers:
@@ -50,6 +58,11 @@ languages:
       - princeofgiri
       - syahmins
       - raniaamina
+  it:
+    name: Italian
+    maintainers:
+      - GioviQ
+      - EdoardoTona
   ja:
     name: Japanese
     maintainers:

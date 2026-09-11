@@ -257,12 +257,10 @@ public class LoginTest {
         loginPage.fillLogin("test-2-login", "invalid");
         loginPage.submit();
 
-        loginPage.assertCurrent();
+        loginPage.waitForUsernameInputError("Invalid username or password.");
 
         assertEquals("test-2-login", loginPage.getUsername());
         assertEquals("", driver.driver().findElement(By.id("password")).getDomProperty("value"));
-
-        assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
         assertTrue(loginPage.getPasswordInputError().isEmpty());
 
         EventAssertion.assertError(events.poll())
@@ -290,13 +288,11 @@ public class LoginTest {
         loginPage.fillLogin("login-test", "invalid");
         loginPage.submit();
 
-        loginPage.assertCurrent();
+        loginPage.waitForUsernameInputError("Invalid username or password.");
 
         // KEYCLOAK-1741 - assert form field values kept
         assertEquals("login-test", loginPage.getUsername());
         assertEquals("", driver.driver().findElement(By.id("password")).getDomProperty("value"));
-
-        assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
         assertTrue(loginPage.getPasswordInputError().isEmpty());
 
         EventAssertion.assertError(events.poll())
@@ -314,13 +310,11 @@ public class LoginTest {
         loginPage.fillLogin("login-test", "");
         loginPage.submit();
 
-        loginPage.assertCurrent();
+        loginPage.waitForUsernameInputError("Invalid username or password.");
 
         // KEYCLOAK-1741 - assert form field values kept
         assertEquals("login-test", loginPage.getUsername());
         assertEquals("", driver.driver().findElement(By.id("password")).getDomProperty("value"));
-
-        assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
         assertTrue(loginPage.getPasswordInputError().isEmpty());
 
         EventAssertion.assertError(events.poll())
@@ -341,14 +335,11 @@ public class LoginTest {
         loginPage.fillLogin("login-test", "invalid");
         loginPage.submit();
 
-        loginPage.assertCurrent();
+        loginPage.waitForUsernameInputError("Invalid username or password.");
 
         // KEYCLOAK-1741 - assert form field values kept
         assertEquals("login-test", loginPage.getUsername());
         assertEquals("", driver.driver().findElement(By.id("password")).getDomProperty("value"));
-
-        // KEYCLOAK-2024
-        assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
 
         EventAssertion.assertError(events.poll())
                 .type(EventType.LOGIN_ERROR)
@@ -414,13 +405,11 @@ public class LoginTest {
         loginPage.fillLogin("invalid", "invalid");
         loginPage.submit();
 
-        loginPage.assertCurrent();
+        loginPage.waitForUsernameInputError("Invalid username or password.");
 
         // KEYCLOAK-1741 - assert form field values kept
         assertEquals("invalid", loginPage.getUsername());
         assertEquals("", driver.driver().findElement(By.id("password")).getDomProperty("value"));
-
-        assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
 
         EventAssertion.assertError(events.poll())
                 .type(EventType.LOGIN_ERROR)
@@ -447,9 +436,7 @@ public class LoginTest {
         loginPage.fillLogin("", "");
         loginPage.submit();
 
-        loginPage.assertCurrent();
-
-        assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
+        loginPage.waitForUsernameInputError("Invalid username or password.");
 
         EventAssertion.assertError(events.poll())
                 .type(EventType.LOGIN_ERROR)
@@ -1154,9 +1141,7 @@ public class LoginTest {
         loginPage.fillLogin("a".repeat(Validation.MAX_USERNAME_LENGTH + 1), "invalid");
         loginPage.submit();
 
-        loginPage.assertCurrent();
-
-        assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
+        loginPage.waitForUsernameInputError("Invalid username or password.");
 
         EventAssertion.assertError(events.poll())
                 .type(EventType.LOGIN_ERROR)
@@ -1172,9 +1157,7 @@ public class LoginTest {
         loginPage.fillLogin("a".repeat(Validation.MAX_USERNAME_LENGTH), "invalid");
         loginPage.submit();
 
-        loginPage.assertCurrent();
-
-        assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
+        loginPage.waitForUsernameInputError("Invalid username or password.");
 
         EventAssertion.assertError(events.poll())
                 .type(EventType.LOGIN_ERROR)
@@ -1190,9 +1173,7 @@ public class LoginTest {
         loginPage.fillLogin("   ", "invalid");
         loginPage.submit();
 
-        loginPage.assertCurrent();
-
-        assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
+        loginPage.waitForUsernameInputError("Invalid username or password.");
 
         EventAssertion.assertError(events.poll())
                 .type(EventType.LOGIN_ERROR)

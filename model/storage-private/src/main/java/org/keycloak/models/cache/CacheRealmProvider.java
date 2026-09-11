@@ -30,6 +30,9 @@ import org.keycloak.models.RoleProvider;
  */
 public interface CacheRealmProvider extends RealmProvider, ClientProvider, ClientScopeProvider, GroupProvider, RoleProvider {
     void clear();
+
+    void clearManagedModels();
+
     RealmProvider getRealmDelegate();
 
     void registerRealmInvalidation(String id, String name);

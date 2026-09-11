@@ -18,8 +18,11 @@
 package org.keycloak.testframework.realm;
 
 import java.util.HashMap;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -89,8 +92,14 @@ public class IdentityProviderBuilder extends Builder<IdentityProviderRepresentat
         return this;
     }
 
-    public IdentityProviderBuilder organizationId(String organizationId) {
-        rep.setOrganizationId(organizationId);
+    public IdentityProviderBuilder organizationIds(Set<String> organizationIds) {
+        if (organizationIds == null || organizationIds.isEmpty()) {
+            rep.setOrganizationLinks(null);
+        } else {
+            rep.setOrganizationLinks(organizationIds.stream()
+                    .map(OrganizationIdentityProviderLinkRepresentation::new)
+                    .collect(Collectors.toList()));
+        }
         return this;
     }
 

@@ -29,6 +29,7 @@ import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -234,6 +235,52 @@ public class OrganizationMemberResource {
         UserModel member = getMember(memberId);
         auth.users().requireView(member);
         return toRepresentation(member, false);
+    }
+
+    @Path("{member-id}/membership-type")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Updates the membership type of the member with the specified id")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public Response updateMembershipType(@PathParam("member-id") String memberId, MembershipType membershipType) {
+        auth.orgs().requireManage(organization);
+        if (StringUtil.isBlank(memberId)) {
+            throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
+        }
+        if (membershipType == null) {
+            throw ErrorResponse.error("membershipType cannot be null", Status.BAD_REQUEST);
+        }
+
+        UserModel member = getMember(memberId);
+        auth.users().requireManage(member);
+
+        MembershipType currentType = provider.isManagedMember(organization, member) ? MembershipType.MANAGED : MembershipType.UNMANAGED;
+        if (membershipType.equals(currentType)) {
+            return Response.noContent().build();
+        }
+
+        try {
+            if (provider.updateMembershipType(organization, member, membershipType)) {
+                adminEvent.operation(OperationType.UPDATE)
+                        .representation(toRepresentation(member, false))
+                        .resourcePath(session.getContext().getUri())
+                        .detail(UserModel.USERNAME, member.getUsername())
+                        .detail(UserModel.EMAIL, member.getEmail())
+                        .detail(MembershipType.NAME, membershipType.name())
+                        .success();
+                return Response.noContent().build();
+            }
+        } catch (ModelException me) {
+            throw ErrorResponse.error(me.getMessage(), Status.BAD_REQUEST);
+        }
+
+        throw ErrorResponse.error("Not a member of the organization", Status.NOT_FOUND);
     }
 
     @Path("{member-id}")

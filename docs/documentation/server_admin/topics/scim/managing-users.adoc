@@ -295,7 +295,9 @@ curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Users/{id} \
   }'
 ----
 
-For multi-valued attributes, you can use a filter in the path to remove specific values:
+For multi-valued attributes, you can use a filter in the path to remove specific values.
+For complex multivalued attributes like `groups`, only filtering by the `value` sub-attribute is supported.
+See the "Filtering limitations in PATCH operations" section below for details.
 
 [source,bash]
 ----
@@ -307,11 +309,22 @@ curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Users/{id} \
     "Operations": [
       {
         "op": "remove",
-        "path": "emails[type eq \"work\"]"
+        "path": "groups[value eq \"<group-id>\"]"
       }
     ]
   }'
 ----
+
+=== Filtering limitations in PATCH operations
+
+Filtering in PATCH remove operations is supported only for multivalued attributes (both complex attributes like `groups` and custom scalar multivalued extension attributes).
+For complex multivalued attributes like `groups`, only the `value` sub-attribute (the unique identifier) is supported for filtering. You can use the `eq` (equal) comparison operator optionally combined with the `or` logical operator.
+
+For scalar multivalued attributes (extension attributes without a complex type), only the `eq` operator is supported, optionally combined with the `or` logical operator.
+
+NOTE: The `and` operator is not supported for any multivalued attributes because a single value cannot satisfy two conditions simultaneously. For example, `affiliation[value eq "member" and value eq "faculty"]` is logically impossible since one scalar value cannot equal both "member" AND "faculty" at the same time. For complex attributes, filtering is restricted to the `value` sub-attribute, making AND equally invalid. Use `or` to match multiple values instead: `affiliation[value eq "member" or value eq "faculty"]`.
+
+All other comparison operators are not supported.
 
 == Managing group membership
 

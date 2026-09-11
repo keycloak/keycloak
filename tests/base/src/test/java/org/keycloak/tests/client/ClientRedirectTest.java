@@ -17,38 +17,34 @@
 
 package org.keycloak.tests.client;
 
+import java.io.IOException;
 import java.net.URI;
-
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.events.EventType;
+import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectSimpleHttp;
+import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.injection.LifeCycle;
-import org.keycloak.testframework.oauth.OAuthClient;
-import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
-import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.tests.common.BasicUserConfig;
 
+import org.apache.http.client.config.RequestConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.keycloak.testsuite.util.Matchers.statusCodeIs;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -62,20 +58,23 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @KeycloakIntegrationTest
 public class ClientRedirectTest extends AbstractClientRegistrationTest {
 
-    @InjectRealm(ref = "redirect", config = ClientRedirectRealmConfig.class)
+    @InjectRealm(config = ClientRedirectRealmConfig.class)
     ManagedRealm managedRealm;
 
-    @InjectWebDriver
+    @InjectUser(config = BasicUserConfig.class)
+    ManagedUser managedUser;
+
+    @InjectWebDriver(lifecycle = LifeCycle.METHOD)
     ManagedWebDriver driver;
 
-    @InjectOAuthClient(ref = "redirect-oauth", realmRef = "redirect", lifecycle = LifeCycle.METHOD)
-    OAuthClient oauth;
-
-    @InjectEvents(realmRef = "redirect")
+    @InjectEvents
     Events events;
+    
+    @InjectSimpleHttp
+    SimpleHttp simpleHttp;
 
-    @Override
     @BeforeEach
+    @Override
     public void before() {
         // This class does not use dynamic client registration from the base class.
     }
@@ -83,78 +82,64 @@ public class ClientRedirectTest extends AbstractClientRegistrationTest {
     /**
      * Integration test for {@link org.keycloak.services.resources.RealmsResource#getRedirect(String, String)}.
      *
-     * @throws Exception
      */
     @Test
-    public void testClientRedirectEndpoint() throws Exception {
-        driver.driver().navigate().to(managedRealm.getBaseUrl());
-        driver.driver().manage().deleteAllCookies();
-        oauth.doLogin("test-user@localhost", "password");
-        String realmName = managedRealm.getName();
+    public void testClientRedirectEndpoint() {
+        oauth.doLogin(managedUser.getUsername(), managedUser.getPassword());
 
-        driver.driver().get(getAuthServerRoot().toString() + "realms/" + realmName + "/clients/launchpad-test/redirect");
+        driver.open(managedRealm.getBaseUrl() + "/clients/launchpad-test/redirect");
         assertEquals("http://example.org/launchpad", driver.getCurrentUrl());
 
-        driver.driver().get(getAuthServerRoot().toString() + "realms/" + realmName + "/clients/dummy-test/redirect");
+        driver.open(managedRealm.getBaseUrl() + "/clients/dummy-test/redirect");
         assertEquals("http://example.org/dummy/base-path", driver.getCurrentUrl());
     }
 
     @Test
-    public void testRedirectStatusCode() {
-        driver.driver().navigate().to(managedRealm.getBaseUrl());
-        driver.driver().manage().deleteAllCookies();
-        oauth.doLogin("test-user@localhost", "password");
+    public void testRedirectStatusCode() throws IOException {
+        oauth.doLogin(managedUser.getEmail(), managedUser.getPassword());
         String code = oauth.parseLoginResponse().getCode();
         String token = oauth.doAccessTokenRequest(code).getAccessToken();
-        String realmName = managedRealm.getName();
 
-        String redirectUrl = getAuthServerRoot().toString() + "realms/" + realmName + "/clients/launchpad-test/redirect";
-        try (Client client = AdminClientUtil.createResteasyClient();
-             Response response = client.target(redirectUrl).request().header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get()) {
-            assertEquals(303, response.getStatus());
-        }
+        String redirectUrl = managedRealm.getBaseUrl() + "/clients/launchpad-test/redirect";
+
+        int status = simpleHttp.withRequestConfig(RequestConfig.custom().setRedirectsEnabled(false).build())
+                .doGet(redirectUrl)
+                .auth(token)
+                .asStatus();
+        assertEquals(303, status);
     }
 
     // KEYCLOAK-7707
     @Test
     public void testRedirectToDisabledClientRedirectURI() throws Exception {
         log.debug("Creating disabled-client with redirect uri \"*\"");
-        String clientId;
         String realmName = managedRealm.getName();
-        try (Response create = adminClient.realm(realmName).clients().create(ClientBuilder.create().clientId("disabled-client").enabled(false).redirectUris("*").build())) {
-            clientId = ApiUtil.getCreatedId(create);
-            assertThat(create, statusCodeIs(Status.CREATED));
-        }
+        managedRealm.updateWithCleanup(r -> r.clients(ClientBuilder.create().clientId("disabled-client").enabled(false).redirectUris("*")));
 
-        try {
-            log.debug("log in");
-            driver.driver().navigate().to(managedRealm.getBaseUrl());
-            driver.driver().manage().deleteAllCookies();
-            oauth.doLogin("test-user@localhost", "password");
-            EventAssertion.expectLoginSuccess(events.poll());
+        log.debug("log in");
+        driver.open(managedRealm.getBaseUrl());
+        driver.cookies().deleteAll();
+        oauth.doLogin(managedUser.getEmail(), managedUser.getPassword());
+        EventAssertion.expectLoginSuccess(events.poll());
 
-            String code = oauth.parseLoginResponse().getCode();
-            String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
-            EventAssertion.assertSuccess(events.poll()).type(EventType.CODE_TO_TOKEN);
+        String code = oauth.parseLoginResponse().getCode();
+        String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CODE_TO_TOKEN);
 
-            URI logout = KeycloakUriBuilder.fromUri(getAuthServerRoot())
-                    .path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
-                    .queryParam(OIDCLoginProtocol.POST_LOGOUT_REDIRECT_URI_PARAM, "http://example.org/redirected")
-                    .queryParam(OIDCLoginProtocol.ID_TOKEN_HINT, idTokenHint)
-                    .build(realmName);
+        URI logout = KeycloakUriBuilder.fromUri(getAuthServerRoot())
+                .path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
+                .queryParam(OIDCLoginProtocol.POST_LOGOUT_REDIRECT_URI_PARAM, "http://example.org/redirected")
+                .queryParam(OIDCLoginProtocol.ID_TOKEN_HINT, idTokenHint)
+                .build(realmName);
 
-            log.debug("log out using: " + logout.toURL());
-            driver.driver().navigate().to(logout.toString());
-            log.debug("Current URL: " + driver.getCurrentUrl());
-            EventAssertion.assertError(events.poll())
-                    .type(EventType.LOGOUT_ERROR)
-                    .error(OAuthErrorException.INVALID_REDIRECT_URI)
-                    .clientId(oauth.getClientId());
-            assertThat(driver.getCurrentUrl(), is(not(equalTo("http://example.org/redirected"))));
-        } finally {
-            log.debug("removing disabled-client");
-            adminClient.realm(realmName).clients().get(clientId).remove();
-        }
+        log.debug("log out using: " + logout.toURL());
+        driver.open(logout.toString());
+        log.debug("Current URL: " + driver.getCurrentUrl());
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGOUT_ERROR)
+                .error(OAuthErrorException.INVALID_REDIRECT_URI)
+                .clientId(oauth.getClientId());
+        assertThat(driver.getCurrentUrl(), is(not(equalTo("http://example.org/redirected"))));
     }
 
     private static class ClientRedirectRealmConfig extends AbstractClientRegistrationTest.ClientRegistrationRealmConfig {

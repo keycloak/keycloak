@@ -32,5 +32,7 @@ public class Stateless extends KeycloakModelParameters {
     @Override
     public void updateConfig(Config cf) {
         System.getProperties().put(PropertiesProfileConfigResolver.getPropertyKey(Profile.Feature.STATELESS), "enabled");
+        // STATELESS depends on LOGIN_FAILURES_V2; remove any V1 override set by Infinispan parameters.
+        System.getProperties().remove(PropertiesProfileConfigResolver.getPropertyKey(Profile.Feature.LOGIN_FAILURES_V1));
     }
 }

@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -23,6 +24,7 @@ import org.jgroups.Address;
 import org.jgroups.JChannel;
 import org.jgroups.PhysicalAddress;
 import org.jgroups.conf.ClassConfigurator;
+import org.jgroups.logging.Log;
 import org.jgroups.protocols.PingData;
 import org.jgroups.protocols.relay.SiteUUID;
 import org.jgroups.stack.IpAddress;
@@ -231,6 +233,75 @@ public class JdbcPing2Test {
     @SuppressWarnings("resource")
     protected static JChannel createChannel(String name) throws Exception {
         return new JChannel(JdbcPing2Test.PROTOCOL_STACK).name(name);
+    }
+
+    @Test
+    public void testRunHealthCheck() {
+        var ping = new ControlledJdbcPing();
+        var capturingLog = new CapturingLog();
+
+        // Seed the view so runHealthCheck doesn't bail out early.
+        ping.setView(new org.jgroups.util.UUID(0, 0));
+
+        // Initial state is HEALTHY — no log on first call.
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(0, capturingLog.errors.get());
+        assertEquals(0, capturingLog.infos.get());
+
+        // ERROR transition: one warning logged immediately (ERROR is a warn-level event, not an error).
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(1, capturingLog.warns.get());
+
+        // Stays ERROR: no additional log on the next cycle.
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(1, capturingLog.warns.get());
+
+        // Recovery to HEALTHY: one info logged.
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(1, capturingLog.infos.get());
+
+        // Stays HEALTHY: no further log.
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(1, capturingLog.infos.get());
+    }
+
+    /** Minimal {@link Log} that counts error and info calls; everything else is a no-op. */
+    static class CapturingLog implements Log {
+        final AtomicInteger errors = new AtomicInteger();
+        final AtomicInteger warns  = new AtomicInteger();
+        final AtomicInteger infos  = new AtomicInteger();
+
+        @Override public void error(String msg, Object... args) { errors.incrementAndGet(); }
+        @Override public void error(String msg) { errors.incrementAndGet(); }
+        @Override public void error(String msg, Throwable t) { errors.incrementAndGet(); }
+        @Override public void info(String msg, Object... args) { infos.incrementAndGet(); }
+        @Override public void info(String msg) { infos.incrementAndGet(); }
+        @Override public void warn(String msg, Object... args) { warns.incrementAndGet(); }
+        @Override public void warn(String msg) { warns.incrementAndGet(); }
+        @Override public void warn(String msg, Throwable t) { warns.incrementAndGet(); }
+        @Override public void debug(String msg, Object... args) {}
+        @Override public void debug(String msg) {}
+        @Override public void debug(String msg, Throwable t) {}
+        @Override public void trace(Object msg) {}
+        @Override public void trace(String msg) {}
+        @Override public void trace(String msg, Object... args) {}
+        @Override public void trace(String msg, Throwable t) {}
+        @Override public void fatal(String msg) {}
+        @Override public void fatal(String msg, Object... args) {}
+        @Override public void fatal(String msg, Throwable t) {}
+        @Override public void setLevel(String level) {}
+        @Override public String getLevel() { return "info"; }
+        @Override public boolean isFatalEnabled() { return false; }
+        @Override public boolean isErrorEnabled() { return true; }
+        @Override public boolean isWarnEnabled()  { return true; }
+        @Override public boolean isInfoEnabled()  { return true; }
+        @Override public boolean isDebugEnabled() { return false; }
+        @Override public boolean isTraceEnabled() { return false; }
     }
 
     protected record Connector(CountDownLatch latch, JChannel ch) implements Runnable {

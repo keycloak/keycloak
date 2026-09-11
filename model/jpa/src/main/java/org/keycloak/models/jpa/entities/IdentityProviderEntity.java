@@ -81,9 +81,6 @@ public class IdentityProviderEntity {
     @Column(name="POST_BROKER_LOGIN_FLOW_ID")
     private String postBrokerLoginFlowId;
 
-    @Column(name="ORGANIZATION_ID")
-    private String organizationId;
-
     @ElementCollection
     @MapKeyColumn(name="NAME")
     @Column(name="VALUE", columnDefinition = "TEXT")
@@ -168,14 +165,6 @@ public class IdentityProviderEntity {
 
     public void setPostBrokerLoginFlowId(String postBrokerLoginFlowId) {
         this.postBrokerLoginFlowId = postBrokerLoginFlowId;
-    }
-
-    public String getOrganizationId() {
-        return this.organizationId;
-    }
-
-    public void setOrganizationId(String organizationId) {
-        this.organizationId = organizationId;
     }
 
     public Boolean isHideOnLogin() {

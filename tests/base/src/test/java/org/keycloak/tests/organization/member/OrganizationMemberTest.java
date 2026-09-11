@@ -37,6 +37,8 @@ import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
@@ -44,6 +46,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.AbstractUserRepresentation;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
@@ -56,9 +59,12 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
+import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
@@ -79,8 +85,6 @@ import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -127,6 +131,9 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
+
+    @InjectAdminEvents
+    AdminEvents adminEvents;
 
     @Test
     public void testUserProfileAttributePermissions() {
@@ -667,21 +674,22 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         }
 
         // assign IdP to the org
-        idpRep.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomain);
-        idpRep.getConfig().put(OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
-        realm.admin().identityProviders().get(idpRep.getAlias()).update(idpRep);
-
         try (Response response = realm.admin().organizations().get(id).identityProviders().addIdentityProvider(idpAlias)) {
             assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
         }
 
+        // set domain routing via the new API
+        orgRep = realm.admin().organizations().get(id).toRepresentation();
+        orgRep.getDomains().stream()
+                .filter(d -> d.getName().equals(orgDomain))
+                .findFirst()
+                .ifPresent(d -> {
+                    d.setIdentityProviderAlias(idpAlias);
+                    d.setAutoRedirect(true);
+                });
+        realm.admin().organizations().get(id).update(orgRep).close();
+
         //check the federated user is not a member
-        assertThat(realm.admin().organizations().get(id).members().list(-1, -1), hasSize(0));
-
-        // test again this time assigning any org domain to the identity provider
-
-        idpRep.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
-        realm.admin().identityProviders().get(idpRep.getAlias()).update(idpRep);
         assertThat(realm.admin().organizations().get(id).members().list(-1, -1), hasSize(0));
     }
 
@@ -924,6 +932,111 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         MemberRepresentation singleMember = organization.members().member(briefMember.getId()).toRepresentation();
         assertNotNull(singleMember.getAttributes(), "Single member GET should return full representation");
         assertTrue(singleMember.getAttributes().containsKey("testAttr"));
+    }
+
+    @Test
+    public void testUpdateMembershipType() {
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
+
+        // Change UNMANAGED -> MANAGED
+        MemberRepresentation member = addMember(organization);
+        assertEquals(MembershipType.UNMANAGED, member.getMembershipType());
+
+        adminEvents.clear();
+        try (Response response = organization.members().member(member.getId()).updateMembershipType(MembershipType.MANAGED)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        MemberRepresentation updated = organization.members().member(member.getId()).toRepresentation();
+        assertEquals(MembershipType.MANAGED, updated.getMembershipType());
+
+        // Verify admin event
+        AdminEventRepresentation event = adminEvents.poll();
+        AdminEventAssertion.assertSuccess(event)
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.ORGANIZATION_MEMBERSHIP);
+        assertEquals(MembershipType.MANAGED.name(), event.getDetails().get(MembershipType.NAME));
+
+        // Change MANAGED -> UNMANAGED
+        adminEvents.clear();
+        try (Response response = organization.members().member(member.getId()).updateMembershipType(MembershipType.UNMANAGED)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        updated = organization.members().member(member.getId()).toRepresentation();
+        assertEquals(MembershipType.UNMANAGED, updated.getMembershipType());
+
+        // Verify admin event for MANAGED -> UNMANAGED
+        event = adminEvents.poll();
+        AdminEventAssertion.assertSuccess(event)
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.ORGANIZATION_MEMBERSHIP);
+        assertEquals(MembershipType.UNMANAGED.name(), event.getDetails().get(MembershipType.NAME));
+
+        // No-op when setting same type — should succeed but not emit an event
+        adminEvents.clear();
+        try (Response response = organization.members().member(member.getId()).updateMembershipType(MembershipType.UNMANAGED)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        updated = organization.members().member(member.getId()).toRepresentation();
+        assertEquals(MembershipType.UNMANAGED, updated.getMembershipType());
+        assertNull(adminEvents.poll(), "No admin event should be emitted for no-op membership type change");
+
+        // 404 for non-member
+        UserRepresentation nonMember = UserBuilder.create()
+                .username("nonmember")
+                .email("nonmember@other.org")
+                .enabled(true)
+                .build();
+        try (Response response = realm.admin().users().create(nonMember)) {
+            nonMember.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(r -> r.users().get(nonMember.getId()).remove());
+
+        try (Response response = organization.members().member(nonMember.getId()).updateMembershipType(MembershipType.MANAGED)) {
+            assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
+        }
+
+        // Lifecycle: after UNMANAGED -> MANAGED, removing member deletes user from realm
+        MemberRepresentation lifecycleMember = addMember(organization, "lifecycle@neworg.org");
+        assertEquals(MembershipType.UNMANAGED, lifecycleMember.getMembershipType());
+
+        try (Response response = organization.members().member(lifecycleMember.getId()).updateMembershipType(MembershipType.MANAGED)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        organization.members().member(lifecycleMember.getId()).delete().close();
+
+        try {
+            realm.admin().users().get(lifecycleMember.getId()).toRepresentation();
+            fail("User should have been deleted when removing managed member");
+        } catch (NotFoundException expected) {
+        }
+    }
+
+    @Test
+    public void testUpdateMembershipTypeRejectsDoubleManagedAcrossOrgs() {
+        OrganizationResource org1 = realm.admin().organizations().get(createOrganization("org1").getId());
+        OrganizationResource org2 = realm.admin().organizations().get(createOrganization("org2").getId());
+
+        // Create a user and add as unmanaged member to both orgs
+        MemberRepresentation member = addMember(org1, "shared@org1.org");
+        org2.members().addMember(member.getId()).close();
+
+        // Make managed in org1
+        try (Response response = org1.members().member(member.getId()).updateMembershipType(MembershipType.MANAGED)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        // Attempt to make managed in org2 should fail
+        try (Response response = org2.members().member(member.getId()).updateMembershipType(MembershipType.MANAGED)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        // Verify org2 membership is still unmanaged
+        MemberRepresentation org2Member = org2.members().member(member.getId()).toRepresentation();
+        assertEquals(MembershipType.UNMANAGED, org2Member.getMembershipType());
     }
 
     private void loginViaNonOrgIdP(String idpAlias) {
