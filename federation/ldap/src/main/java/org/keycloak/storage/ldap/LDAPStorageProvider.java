@@ -123,6 +123,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
         UserProfileDecorator {
     private static final Logger logger = Logger.getLogger(LDAPStorageProvider.class);
     private static final int DEFAULT_MAX_RESULTS = Integer.MAX_VALUE >> 1;
+    private static final Set<String> MODEL_FILTERED_USER_QUERY_PARAMETERS = Set.of(
+            UserModel.EMAIL_VERIFIED,
+            UserModel.CREATED_AFTER,
+            UserModel.CREATED_BEFORE);
     public static final List<String> INTERNAL_ATTRIBUTES = List.of(UserModel.LOCALE);
 
     protected LDAPStorageProviderFactory factory;
@@ -398,19 +402,47 @@ public class LDAPStorageProvider implements UserStorageProvider,
      */
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults) {
-        String search = params.get(UserModel.SEARCH);
-        Stream<LDAPObject> result = search != null ?
-                searchLDAP(realm, search, firstResult, maxResults) :
-                searchLDAPByAttributes(realm, params, firstResult, maxResults);
+        Map<String, String> ldapParams = new HashMap<>(params);
+        Map<String, String> modelFilters = new HashMap<>();
+        MODEL_FILTERED_USER_QUERY_PARAMETERS.forEach(parameter -> {
+            String value = ldapParams.remove(parameter);
+            if (value != null) {
+                modelFilters.put(parameter, value);
+            }
+        });
+
+        Integer ldapFirstResult = modelFilters.isEmpty() ? firstResult : null;
+        Integer ldapMaxResults = modelFilters.isEmpty() ? maxResults : null;
+        Stream<LDAPObject> result = searchLDAPByAttributes(realm, ldapParams, ldapFirstResult, ldapMaxResults);
 
         if (model.isImportEnabled()) {
             result = result.filter(filterLocalUsers(realm));
         }
-        return StreamsUtil.paginatedStream(
+        Stream<UserModel> users = result
                 // search users but not force import returning null as they were returned before by the DB
-                result.map(ldapObject -> importUserFromLDAP(session, realm, ldapObject, ImportType.NOT_FORCED_RETURN_NULL))
-                        .filter(Objects::nonNull),
-                firstResult, maxResults);
+                .map(ldapObject -> importUserFromLDAP(session, realm, ldapObject, ImportType.NOT_FORCED_RETURN_NULL))
+                .filter(Objects::nonNull);
+        if (!modelFilters.isEmpty()) {
+            users = users.filter(user -> matchesModelFilters(user, modelFilters));
+        }
+        return StreamsUtil.paginatedStream(users, firstResult, maxResults);
+    }
+
+    private boolean matchesModelFilters(UserModel user, Map<String, String> filters) {
+        String emailVerified = filters.get(UserModel.EMAIL_VERIFIED);
+        if (emailVerified != null && user.isEmailVerified() != Boolean.parseBoolean(emailVerified)) {
+            return false;
+        }
+
+        Long createdTimestamp = user.getCreatedTimestamp();
+        String createdAfter = filters.get(UserModel.CREATED_AFTER);
+        if (createdAfter != null && (createdTimestamp == null || createdTimestamp < Long.parseLong(createdAfter))) {
+            return false;
+        }
+
+        String createdBefore = filters.get(UserModel.CREATED_BEFORE);
+        return createdBefore == null
+                || createdTimestamp != null && createdTimestamp <= Long.parseLong(createdBefore);
     }
 
     @Override
@@ -554,7 +586,9 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
             for (Map.Entry<String, String> entry : attributes.entrySet()) {
                 String attrName = entry.getKey();
-                if (LDAPConstants.LDAP_ID.equals(attrName)) {
+                if (UserModel.SEARCH.equals(attrName)) {
+                    addSearchConditions(ldapQuery, conditionsBuilder, entry.getValue());
+                } else if (LDAPConstants.LDAP_ID.equals(attrName)) {
                     String uuidLDAPAttributeName = this.ldapIdentityStore.getConfig().getUuidLDAPAttributeName();
                     Condition usernameCondition = conditionsBuilder.equal(uuidLDAPAttributeName, entry.getValue());
                     ldapQuery.addWhereCondition(usernameCondition);
@@ -599,45 +633,25 @@ public class LDAPStorageProvider implements UserStorageProvider,
         }
     }
 
-    /**
-     * Searches LDAP using logical disjunction of params. It supports
-     * <ul>
-     *     <li>{@link UserModel#FIRST_NAME}</li>
-     *     <li>{@link UserModel#LAST_NAME}</li>
-     *     <li>{@link UserModel#EMAIL}</li>
-     *     <li>{@link UserModel#USERNAME}</li>
-     * </ul>
-     *
-     * It uses multiple LDAP calls and results are combined together with respect to firstResult and maxResults
-     *
-     * This method serves for {@code search} param of {@link org.keycloak.services.resources.admin.UsersResource#getUsers}
-     */
-    private Stream<LDAPObject> searchLDAP(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
-
-        try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
-            LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
-
-            for (String s : search.split("\\s+")) {
-                boolean equals = false;
-                List<Condition> conditions = new LinkedList<>();
-                if (s.startsWith("\"") && s.endsWith("\"")) {
-                    // exact search
-                    s = s.substring(1, s.length() - 1);
-                    equals = true;
-                } else if (!s.endsWith("*")) {
-                    // default to prefix search
-                    s += "*";
-                }
-
-                conditions.add(createSearchCondition(conditionsBuilder, UserModel.USERNAME, equals, s));
-                conditions.add(createSearchCondition(conditionsBuilder, UserModel.EMAIL, equals, s));
-                conditions.add(createSearchCondition(conditionsBuilder, UserModel.FIRST_NAME, equals, s));
-                conditions.add(createSearchCondition(conditionsBuilder, UserModel.LAST_NAME, equals, s));
-
-                ldapQuery.addWhereCondition(conditionsBuilder.orCondition(conditions.toArray(Condition[]::new)));
+    private void addSearchConditions(LDAPQuery ldapQuery, LDAPQueryConditionsBuilder conditionsBuilder, String search) {
+        for (String s : search.split("\\s+")) {
+            boolean equals = false;
+            List<Condition> conditions = new LinkedList<>();
+            if (s.startsWith("\"") && s.endsWith("\"")) {
+                // exact search
+                s = s.substring(1, s.length() - 1);
+                equals = true;
+            } else if (!s.endsWith("*")) {
+                // default to prefix search
+                s += "*";
             }
 
-            return paginatedSearchLDAP(ldapQuery, firstResult, maxResults);
+            conditions.add(createSearchCondition(conditionsBuilder, UserModel.USERNAME, equals, s));
+            conditions.add(createSearchCondition(conditionsBuilder, UserModel.EMAIL, equals, s));
+            conditions.add(createSearchCondition(conditionsBuilder, UserModel.FIRST_NAME, equals, s));
+            conditions.add(createSearchCondition(conditionsBuilder, UserModel.LAST_NAME, equals, s));
+
+            ldapQuery.addWhereCondition(conditionsBuilder.orCondition(conditions.toArray(Condition[]::new)));
         }
     }
 
