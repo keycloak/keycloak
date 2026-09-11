@@ -43,6 +43,15 @@ import org.keycloak.connections.jpa.AsynchronousCommitAllowed;
 @IdClass(ClusterEventKey.class)
 public class ClusterEventEntity implements AsynchronousCommitAllowed {
 
+    // TODO: Once cluster events are persisted in the same transaction as the entity update
+    //  (instead of a separate transaction in DatabaseAwareClusterProvider.storeEvent()),
+    //  the non-async entity in the transaction would force synchronous commit automatically,
+    //  and this override could be removed.
+    @Override
+    public boolean isAsyncCommitAllowed(EntityOperationType operationType) {
+        return operationType != EntityOperationType.INSERT;
+    }
+
     @Id
     @Column(name = "ID", length = 36)
     private String id;
