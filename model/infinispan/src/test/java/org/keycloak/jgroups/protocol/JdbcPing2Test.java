@@ -76,11 +76,16 @@ public class JdbcPing2Test {
     public void testClusterHealth() {
         var ping = new ControlledJdbcPing();
         var clusterHealth = new JdbcPingClusterHealthImpl();
-        clusterHealth.init(ping, new WithinThreadExecutor());
         var addresses = IntStream.range(0, 2)
                 .mapToObj(operand -> new UUID(0, operand))
                 .sorted()
                 .toArray(Address[]::new);
+
+        // Set up initial healthy state before init, so the synchronous check in init() passes
+        ping.setView(addresses[0]);
+        ping.setPingData(List.of(addresses[0]));
+        clusterHealth.init(ping, new WithinThreadExecutor());
+        assertTrue(clusterHealth.isHealthy());
 
         // test exception
         ping.setException(new RuntimeException("Induced"));
@@ -93,7 +98,7 @@ public class JdbcPing2Test {
         ping.setException(null);
 
         // test empty table / no coordinator
-        ping.setView(addresses[0]);
+        ping.setPingData(List.of());
         assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.NO_COORDINATOR, ping.healthStatus());
         clusterHealth.triggerClusterHealthCheck();
         assertFalse(clusterHealth.isHealthy());
