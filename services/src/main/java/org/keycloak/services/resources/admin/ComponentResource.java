@@ -177,7 +177,8 @@ public class ComponentResource {
     @Operation()
     public ComponentRepresentation getComponent(@PathParam("id") String id) {
         ComponentModel model = resolveComponentModel(id);
-        if (model == null) {
+        if (model == null || isInternalComponent(model.getProviderType(), model.getProviderId())) {
+            requireViewForProviderType(null, null);
             throw new NotFoundException("Could not find component");
         }
         requireViewForProviderType(model.getProviderType(), model.getProviderId());
@@ -198,6 +199,7 @@ public class ComponentResource {
         try {
             ComponentModel model = resolveComponentModel(id);
             if (model == null) {
+                requireManageForProviderType(null, null);
                 throw new NotFoundException("Could not find component");
             }
             rejectInternalComponent(model.getProviderType(), model.getProviderId());
@@ -205,20 +207,22 @@ public class ComponentResource {
             ComponentModel oldModel = new ComponentModel(model);
             String oldProviderType = model.getProviderType();
             String oldProviderId = model.getProviderId();
-            RepresentationToModel.updateComponent(session, rep, model, false);
-            rejectInternalComponent(model.getProviderType(), model.getProviderId());
-            requireManageForProviderType(model.getProviderType(), model.getProviderId());
-            if (!Objects.equals(oldProviderType, model.getProviderType())
-                    || !Objects.equals(oldProviderId, model.getProviderId())) {
+            String newProviderType = rep.getProviderType() != null ? rep.getProviderType() : oldProviderType;
+            String newProviderId = rep.getProviderId() != null ? rep.getProviderId() : oldProviderId;
+            if (!Objects.equals(oldProviderType, newProviderType)
+                    || !Objects.equals(oldProviderId, newProviderId)) {
                 boolean oldCustom = UiExtensionComponentStorage.usesCustomStorage(
                         oldProviderType, oldProviderId, session);
                 boolean newCustom = UiExtensionComponentStorage.usesCustomStorage(
-                        model.getProviderType(), model.getProviderId(), session);
+                        newProviderType, newProviderId, session);
                 if (oldCustom || newCustom) {
                     throw new BadRequestException(
                             "Cannot change provider type or ID for components with custom storage");
                 }
             }
+            RepresentationToModel.updateComponent(session, rep, model, false);
+            rejectInternalComponent(model.getProviderType(), model.getProviderId());
+            requireManageForProviderType(model.getProviderType(), model.getProviderId());
             ComponentModel customModel = UiExtensionComponentStorage.updateComponent(session, realm, oldModel, model);
             if (customModel != null) {
                 model = customModel;
@@ -240,6 +244,7 @@ public class ComponentResource {
     public void removeComponent(@PathParam("id") String id) {
         ComponentModel model = resolveComponentModel(id);
         if (model == null) {
+            requireManageForProviderType(null, null);
             throw new NotFoundException("Could not find component");
         }
         rejectInternalComponent(model.getProviderType(), model.getProviderId());
@@ -324,7 +329,7 @@ public class ComponentResource {
 
     private ComponentModel resolveComponentModel(String id) {
         ComponentModel model = realm.getComponent(id);
-        if (model != null && !isInternalComponent(model.getProviderType(), model.getProviderId())) {
+        if (model != null) {
             return model;
         }
         return UiExtensionComponentStorage.getComponentById(session, realm, id);
