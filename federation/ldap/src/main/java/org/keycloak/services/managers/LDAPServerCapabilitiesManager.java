@@ -78,6 +78,10 @@ public class LDAPServerCapabilitiesManager {
                     bindCredential = ldapConfig.getBindCredential();
                 }
             }
+            if (ComponentRepresentation.SECRET_VALUE.equals(bindCredential)) {
+                throw new CredentialReentryRequiredException(
+                        "Bind credentials must be re-entered when the Connection URL or Bind DN is changed");
+            }
         }
         MultivaluedHashMap<String, String> configMap = new MultivaluedHashMap<>();
         configMap.putSingle(LDAPConstants.AUTH_TYPE, config.getAuthType());
@@ -134,6 +138,12 @@ public class LDAPServerCapabilitiesManager {
         }
     }
 
+    public static class CredentialReentryRequiredException extends RuntimeException {
+        public CredentialReentryRequiredException(String s) {
+            super(s);
+        }
+    }
+
     public static String getErrorCode(Throwable throwable) {
         String errorMsg = "UnknownError";
         if (throwable instanceof javax.naming.NamingException)
@@ -150,6 +160,8 @@ public class LDAPServerCapabilitiesManager {
              errorMsg = "ServiceUnavailable";
         if (throwable instanceof InvalidBindDNException)
              errorMsg = "InvalidBindDN";
+        if (throwable instanceof CredentialReentryRequiredException)
+             errorMsg = "CredentialReentryRequired";
         if (throwable instanceof javax.naming.NameNotFoundException)
              errorMsg = "NameNotFound";
         if (throwable instanceof GroupTreeResolver.GroupTreeResolveException) {

@@ -145,6 +145,7 @@ public class UserStorageRestTest extends AbstractUserStorageRestTest {
         ldapRep = managedRealm.admin().components().component(id).toRepresentation();
         ldapRep.getConfig().putSingle(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something2");
         ldapRep.getConfig().putSingle(LDAPConstants.BIND_DN, "cn=manager-updated");
+        ldapRep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, "password");
         try {
             managedRealm.admin().components().component(id).update(ldapRep);
             Assertions.fail("Not expected to successfull update");

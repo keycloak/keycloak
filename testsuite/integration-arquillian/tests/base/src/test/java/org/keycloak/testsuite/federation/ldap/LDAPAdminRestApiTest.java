@@ -248,10 +248,12 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
 
         getCleanup().addCleanup(() -> {
             ldapProvider.getConfig().put(LDAPConstants.CONNECTION_URL, originalUrl);
+            ldapProvider.getConfig().put(LDAPConstants.BIND_CREDENTIAL, List.of("secret"));
             managedRealm.admin().components().component(ldapProvider.getId()).update(ldapProvider);
         });
 
         ldapProvider.getConfig().put(LDAPConstants.CONNECTION_URL, List.of("ldap://invalid"));
+        ldapProvider.getConfig().put(LDAPConstants.BIND_CREDENTIAL, List.of("secret"));
         managedRealm.admin().components().component(ldapProvider.getId()).update(ldapProvider);
 
         List<UserRepresentation> search = managedRealm.admin().users().search("*", -1, -1, true);
@@ -278,6 +280,7 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         storageProviders = managedRealm.admin().components().query(realmId, UserStorageProvider.class.getName());
         ComponentRepresentation ldapProviderValid = storageProviders.get(0);
         ldapProviderValid.getConfig().put(LDAPConstants.CONNECTION_URL, originalUrl);
+        ldapProviderValid.getConfig().put(LDAPConstants.BIND_CREDENTIAL, List.of("secret"));
         managedRealm.admin().components().component(ldapProviderValid.getId()).update(ldapProviderValid);
         user1 = userResource.toRepresentation();
         user1.setLastName("changed");
@@ -291,6 +294,7 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         user1 = userResource.toRepresentation();
         assertFalse(user1.isEnabled());
         ldapProviderValid.getConfig().put(LDAPConstants.CONNECTION_URL, originalUrl);
+        ldapProviderValid.getConfig().put(LDAPConstants.BIND_CREDENTIAL, List.of("secret"));
         managedRealm.admin().components().component(ldapProviderValid.getId()).update(ldapProviderValid);
         user1 = userResource.toRepresentation();
         assertTrue(user1.isEnabled());

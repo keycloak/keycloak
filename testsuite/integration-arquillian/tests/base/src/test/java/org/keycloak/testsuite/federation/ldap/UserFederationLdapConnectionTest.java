@@ -231,6 +231,58 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
     }
 
     @Test
+    public void testUpdateComponentRejectsUrlChangeWithPlaceholderCredential() {
+        Map<String, String> cfg = ldapRule.getConfig();
+        cfg.put(LDAPConstants.CONNECTION_URL, "ldap://localhost:10389");
+        String ldapModelId = runOnServerAdminClientTest.fetchString(LdapHelper.createLDAPProvider(cfg, false)).replace("\"", "");
+        try {
+            ComponentRepresentation rep = realm.components().component(ldapModelId).toRepresentation();
+
+            // changing URL while credential is the sentinel should be rejected
+            rep.getConfig().putSingle(LDAPConstants.CONNECTION_URL, "ldap://anotherhost:10389");
+            rep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, ComponentRepresentation.SECRET_VALUE);
+            Assertions.assertThrows(BadRequestException.class, () ->
+                    realm.components().component(ldapModelId).update(rep));
+
+            // re-entering the credential explicitly should allow the URL change
+            rep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, "secret");
+            realm.components().component(ldapModelId).update(rep);
+
+            // verify the URL was actually updated
+            ComponentRepresentation updated = realm.components().component(ldapModelId).toRepresentation();
+            Assertions.assertEquals("ldap://anotherhost:10389", updated.getConfig().getFirst(LDAPConstants.CONNECTION_URL));
+        } finally {
+            adminClient.realm(REALM_NAME).components().removeComponent(ldapModelId);
+        }
+    }
+
+    @Test
+    public void testUpdateComponentRejectsBindDnChangeWithPlaceholderCredential() {
+        Map<String, String> cfg = ldapRule.getConfig();
+        cfg.put(LDAPConstants.CONNECTION_URL, "ldap://localhost:10389");
+        String ldapModelId = runOnServerAdminClientTest.fetchString(LdapHelper.createLDAPProvider(cfg, false)).replace("\"", "");
+        try {
+            ComponentRepresentation rep = realm.components().component(ldapModelId).toRepresentation();
+
+            // changing bind DN while credential is the sentinel should be rejected
+            rep.getConfig().putSingle(LDAPConstants.BIND_DN, "uid=anotheradmin,ou=system");
+            rep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, ComponentRepresentation.SECRET_VALUE);
+            Assertions.assertThrows(BadRequestException.class, () ->
+                    realm.components().component(ldapModelId).update(rep));
+
+            // re-entering the credential explicitly should allow the bind DN change
+            rep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, "secret");
+            realm.components().component(ldapModelId).update(rep);
+
+            // verify the bind DN was actually updated
+            ComponentRepresentation updated = realm.components().component(ldapModelId).toRepresentation();
+            Assertions.assertEquals("uid=anotheradmin,ou=system", updated.getConfig().getFirst(LDAPConstants.BIND_DN));
+        } finally {
+            adminClient.realm(REALM_NAME).components().removeComponent(ldapModelId);
+        }
+    }
+
+    @Test
     public void testLdapCapabilities() {
 
         // Query the rootDSE success

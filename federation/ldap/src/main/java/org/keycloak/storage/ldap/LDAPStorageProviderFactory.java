@@ -20,8 +20,11 @@ package org.keycloak.storage.ldap;
 import java.net.URI;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.naming.NamingException;
@@ -50,6 +53,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.resources.admin.ComponentResource;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
@@ -331,7 +335,69 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         if (config.getId() == null) {
             // the ldap component is being created, use short id for ldap components
             config.setId(KeycloakModelUtils.generateShortId());
+        } else {
+            // Updating an existing LDAP provider - check if the connection URL changed while
+            // the bind credential was not re-entered (auto-preserved via SECRET_VALUE placeholder).
+            // This prevents credentials from being silently sent to a different server.
+            validateBindCredentialOnUrlChange(session, realm, config, cfg);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void validateBindCredentialOnUrlChange(KeycloakSession session, RealmModel realm,
+                                                   ComponentModel config, LDAPConfig cfg) {
+        if (LDAPConstants.AUTH_TYPE_NONE.equals(cfg.getAuthType())) {
+            return;
+        }
+
+        Set<String> secretPlaceholderFields = session.getAttribute(
+                ComponentResource.SECRET_PLACEHOLDER_FIELDS_ATTR, Set.class);
+        if (secretPlaceholderFields == null || !secretPlaceholderFields.contains(LDAPConstants.BIND_CREDENTIAL)) {
+            // Bind credential was explicitly provided (not a SECRET_VALUE placeholder), no risk.
+            return;
+        }
+
+        ComponentModel oldComponent = realm.getComponent(config.getId());
+        if (oldComponent == null) {
+            return;
+        }
+
+        String oldUrl = oldComponent.getConfig().getFirst(LDAPConstants.CONNECTION_URL);
+        String newUrl = config.getConfig().getFirst(LDAPConstants.CONNECTION_URL);
+        if (!connectionUrlsMatch(oldUrl, newUrl)) {
+            throw new ComponentValidationException("ldapErrorCredentialReentryRequiredOnUrlChange");
+        }
+
+        String oldBindDn = oldComponent.getConfig().getFirst(LDAPConstants.BIND_DN);
+        String newBindDn = config.getConfig().getFirst(LDAPConstants.BIND_DN);
+        if (!Objects.equals(oldBindDn == null ? null : oldBindDn.toLowerCase(Locale.ROOT),
+                            newBindDn == null ? null : newBindDn.toLowerCase(Locale.ROOT))) {
+            throw new ComponentValidationException("ldapErrorCredentialReentryRequiredOnUrlChange");
+        }
+    }
+
+    /**
+     * Compares two LDAP connection URL strings, which may contain multiple space-separated URIs.
+     * Uses URI-based comparison to handle equivalent but textually different representations.
+     */
+    private static boolean connectionUrlsMatch(String url1, String url2) {
+        if (Objects.equals(url1, url2)) {
+            return true;
+        }
+        if (url1 == null || url2 == null) {
+            return false;
+        }
+        String[] urls1 = url1.trim().split(" ");
+        String[] urls2 = url2.trim().split(" ");
+        if (urls1.length != urls2.length) {
+            return false;
+        }
+        for (int i = 0; i < urls1.length; i++) {
+            if (!Objects.equals(URI.create(urls1[i]), URI.create(urls2[i]))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
