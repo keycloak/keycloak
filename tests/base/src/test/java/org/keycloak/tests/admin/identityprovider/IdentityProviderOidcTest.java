@@ -17,11 +17,16 @@
 
 package org.keycloak.tests.admin.identityprovider;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
@@ -37,7 +42,9 @@ import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectHttpServer;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
@@ -52,10 +59,12 @@ import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.util.HttpServerUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.testsuite.util.broker.OIDCIdentityProviderConfigRep;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
+import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -67,6 +76,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -87,6 +97,9 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
 
     @InjectEvents
     Events events;
+
+    @InjectHttpServer
+    HttpServer httpServer;
 
     @Test
     public void testCreateWithReservedCharacterForAlias() {
@@ -582,6 +595,59 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
 
         oauth.logoutRequest().idTokenHint(tokenResponse.getIdToken()).send();
         oauth.logoutRequest().send();
+    }
+
+    @Test
+    public void importConfigShouldReportAMetadataUrlThatCannotBeFetched() {
+        String url = "http://localhost:1/.well-known/openid-configuration";
+
+        OAuth2ErrorRepresentation error = assertImportConfigFails(url);
+
+        assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
+        assertThat(error.getErrorDescription(), containsString("Cannot fetch"));
+        assertThat(error.getErrorDescription(), containsString(url));
+    }
+
+    @Test
+    public void importConfigShouldReportAMetadataUrlThatDoesNotParse() {
+        String url = "http://localhost:1/ .well-known";
+
+        OAuth2ErrorRepresentation error = assertImportConfigFails(url);
+
+        assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
+        assertThat(error.getErrorDescription(), containsString("Cannot fetch"));
+    }
+
+    @Test
+    public void importConfigShouldReportAUrlThatIsNotMetadata() {
+        String path = "/not-a-discovery-document";
+        httpServer.createContext(path, exchange -> HttpServerUtil.sendResponse(exchange, 200,
+                Map.of("Content-Type", List.of("text/html")), "<html>not metadata</html>"));
+
+        try {
+            String url = "http://" + httpServer.getAddress().getHostString() + ":"
+                    + httpServer.getAddress().getPort() + path;
+
+            OAuth2ErrorRepresentation error = assertImportConfigFails(url);
+
+            assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
+            assertThat(error.getErrorDescription(), containsString("Cannot parse"));
+            assertThat(error.getErrorDescription(), containsString(url));
+        } finally {
+            httpServer.removeContext(path);
+        }
+    }
+
+    private OAuth2ErrorRepresentation assertImportConfigFails(String fromUrl) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("providerId", "oidc");
+        data.put("fromUrl", fromUrl);
+
+        BadRequestException error = assertThrows(BadRequestException.class,
+                () -> managedRealm.admin().identityProviders().importFrom(data));
+
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), error.getResponse().getStatus());
+        return error.getResponse().readEntity(OAuth2ErrorRepresentation.class);
     }
 
     public static class ExternalRealmConfig implements RealmConfig {
