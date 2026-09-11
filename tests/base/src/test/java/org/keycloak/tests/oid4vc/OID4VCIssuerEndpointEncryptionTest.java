@@ -3,6 +3,7 @@ package org.keycloak.tests.oid4vc;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,8 @@ import jakarta.ws.rs.core.HttpHeaders;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jwk.RSAPublicJWK;
@@ -34,8 +37,11 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
+import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
@@ -263,6 +269,84 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
         } finally {
             setRealmAttributes(Map.of(ATTR_RESPONSE_ENCRYPTION_REQUIRED, "false"));
         }
+    }
+
+    @Test
+    void testRequestCredentialWithoutAuthorizationRejectedBeforeDecryption() throws Exception {
+        FlowData flow = prepareFlow();
+        CredentialRequest credentialRequest = new CredentialRequest()
+                .setCredentialIdentifier(flow.credentialIdentifier())
+                .setProofs(new Proofs().setJwt(List.of(generateJwtProof(flow.issuer(), flow.cNonce()))));
+        String requestJson = JsonSerialization.valueAsString(credentialRequest);
+
+        JWK requestEncryptionJwk = flow.issuerMetadata().getCredentialRequestEncryption().getJwks().getKeys()[0];
+        String jweWithCorruptCek = corruptCompactSegment(encryptCompact(requestJson, requestEncryptionJwk), 1);
+
+        // .client(id) with no secret prevents the default client Basic-auth header from being
+        // attached, so the request truly carries no Authorization header
+        var response = oauth.oid4vc()
+                .credentialRequest(credentialRequest)
+                .client("unauthenticated-placeholder-client")
+                .payload(jweWithCorruptCek, ContentType.create("application/jwt", UTF_8))
+                .send();
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals(ErrorType.INVALID_TOKEN.getValue(), response.getError());
+        assertNotEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), response.getError());
+    }
+
+    @Test
+    void testRequestCredentialEncryptionErrorsAreUniform() throws Exception {
+        FlowData flow = prepareFlow();
+        CredentialRequest credentialRequest = new CredentialRequest()
+                .setCredentialIdentifier(flow.credentialIdentifier())
+                .setProofs(new Proofs().setJwt(List.of(generateJwtProof(flow.issuer(), flow.cNonce()))));
+        String requestJson = JsonSerialization.valueAsString(credentialRequest);
+
+        JWK requestEncryptionJwk = flow.issuerMetadata().getCredentialRequestEncryption().getJwks().getKeys()[0];
+        String validJwe = encryptCompact(requestJson, requestEncryptionJwk);
+
+        // segment 1 is the wrapped CEK, segment 3 is the AES-GCM ciphertext
+        String jweWithCorruptCek = corruptCompactSegment(validJwe, 1);
+        String jweWithCorruptCiphertext = corruptCompactSegment(validJwe, 3);
+
+        var responseA = oauth.oid4vc()
+                .credentialRequest(credentialRequest)
+                .bearerToken(flow.token())
+                .payload(jweWithCorruptCek, ContentType.create("application/jwt", UTF_8))
+                .send();
+        var responseB = oauth.oid4vc()
+                .credentialRequest(credentialRequest)
+                .bearerToken(flow.token())
+                .payload(jweWithCorruptCiphertext, ContentType.create("application/jwt", UTF_8))
+                .send();
+
+        assertEquals(400, responseA.getStatusCode());
+        assertEquals(400, responseB.getStatusCode());
+        assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), responseA.getError());
+        assertEquals(responseA.getError(), responseB.getError());
+        assertEquals(responseA.getErrorDescription(), responseB.getErrorDescription());
+    }
+
+    private static String encryptCompact(String payload, JWK issuerEncJwk) throws Exception {
+        PublicKey publicKey = JWKParser.create(issuerEncJwk).toPublicKey();
+        JWEHeader.JWEHeaderBuilder builder = new JWEHeader.JWEHeaderBuilder()
+                .keyId(issuerEncJwk.getKeyId())
+                .algorithm(issuerEncJwk.getAlgorithm())
+                .encryptionAlgorithm(A256GCM)
+                .type("JWT");
+        JWE jwe = new JWE().header(builder.build()).content(payload.getBytes(UTF_8));
+        jwe.getKeyStorage().setEncryptionKey(publicKey);
+        return jwe.encodeJwe();
+    }
+
+    // segments: 0=header, 1=encryptedCek, 2=iv, 3=ciphertext, 4=authTag
+    private static String corruptCompactSegment(String compactJwe, int segmentIndex) {
+        String[] parts = compactJwe.split("\\.");
+        byte[] segmentBytes = Base64Url.decode(parts[segmentIndex]);
+        segmentBytes[segmentBytes.length - 1] ^= (byte) 0xFF;
+        parts[segmentIndex] = Base64Url.encode(segmentBytes);
+        return String.join(".", parts);
     }
 
     private FlowData prepareFlow() {
