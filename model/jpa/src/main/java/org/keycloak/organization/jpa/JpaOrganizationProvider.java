@@ -116,7 +116,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             throw new ModelDuplicateException("A organization with the same name already exists.");
         }
 
-        if (getAllStream(Map.of(OrganizationModel.ALIAS, alias), -1, -1).findAny().isPresent()) {
+        if (getByAliasEntity(alias) != null) {
             throw new ModelDuplicateException("A organization with the same alias already exists");
         }
 
@@ -232,6 +232,17 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     @Override
     public OrganizationModel getById(String id) {
         OrganizationEntity entity = getEntity(id, false);
+        return entity == null ? null : new OrganizationAdapter(session, getRealm(), entity, this);
+    }
+
+    @Override
+    public OrganizationModel getByAlias(String alias) {
+        if (alias == null) {
+            return null;
+        }
+
+        OrganizationEntity entity = getByAliasEntity(alias);
+
         return entity == null ? null : new OrganizationAdapter(session, getRealm(), entity, this);
     }
 
@@ -551,9 +562,9 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             predicates.add(builder.equal(membership.get("userId"), member.getId()));
         }
 
-        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(
-                session, AdminPermissionsSchema.ORGANIZATIONS, getRealm(), builder, query, org));
-
+        // no authorization filters here: this resolves the memberships of a given user rather than answering an
+        // administrative query, and it also backs getMemberById, isMember and removeMember. Administrative callers
+        // are expected to check access themselves, as OrganizationMemberResource does.
         TypedQuery<OrganizationEntity> typedQuery = buildSearchQuery(builder, query, org, predicates);
 
         return closing(typedQuery.getResultStream()
@@ -943,6 +954,19 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         TypedQuery<OrganizationEntity> query = em.createNamedQuery("getByOrgName", OrganizationEntity.class);
 
         query.setParameter("name", name);
+        query.setParameter("realmId", getRealm().getId());
+
+        try {
+            return query.getSingleResult();
+        } catch (NoResultException nre) {
+            return null;
+        }
+    }
+
+    private OrganizationEntity getByAliasEntity(String alias) {
+        TypedQuery<OrganizationEntity> query = em.createNamedQuery("getByOrgAlias", OrganizationEntity.class);
+
+        query.setParameter("alias", alias);
         query.setParameter("realmId", getRealm().getId());
 
         try {
