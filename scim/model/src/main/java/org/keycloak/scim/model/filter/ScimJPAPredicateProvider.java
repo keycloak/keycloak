@@ -9,6 +9,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
@@ -36,6 +37,7 @@ public class ScimJPAPredicateProvider {
     private final ScimResourceTypeProvider resourceTypeProvider;
     private final List<ModelSchema<?, ?>> schemas;
     private final CriteriaBuilder cb;
+    private final CriteriaQuery<?> query;
     private final Root<?> root;
     private final BiPredicate<String, String> filterAuthorizationCheck;
 
@@ -56,15 +58,16 @@ public class ScimJPAPredicateProvider {
     // cache joins to avoid creating duplicate joins for the same filter
     private Map<String, Join<?, ?>> attributeJoin = new HashMap<>();
 
-    public ScimJPAPredicateProvider(ScimResourceTypeProvider resourceTypeProvider, List<ModelSchema<?, ?>> schemas, CriteriaBuilder cb, Root<?> root) {
-        this(resourceTypeProvider, schemas, cb, root, null);
+    public ScimJPAPredicateProvider(ScimResourceTypeProvider resourceTypeProvider, List<ModelSchema<?, ?>> schemas, CriteriaBuilder cb, CriteriaQuery<?> query, Root<?> root) {
+        this(resourceTypeProvider, schemas, cb, query, root, null);
     }
 
-    public ScimJPAPredicateProvider(ScimResourceTypeProvider resourceTypeProvider, List<ModelSchema<?, ?>> schemas, CriteriaBuilder cb, Root<?> root,
+    public ScimJPAPredicateProvider(ScimResourceTypeProvider resourceTypeProvider, List<ModelSchema<?, ?>> schemas, CriteriaBuilder cb, CriteriaQuery<?> query, Root<?> root,
                                     BiPredicate<String, String> filterAuthorizationCheck) {
         this.resourceTypeProvider = resourceTypeProvider;
         this.schemas = schemas;
         this.cb = cb;
+        this.query = query;
         this.root = root;
         this.filterAuthorizationCheck = filterAuthorizationCheck;
     }
@@ -157,7 +160,7 @@ public class ScimJPAPredicateProvider {
 
         if (expression == null) {
             if (resourceTypeProvider instanceof ScimAttributeJpaExpressionResolver mapper) {
-                expression = mapper.getAttributeExpression(attrInfo, cb, root, (aClass, joinSupplier) -> getOrCreateAttributeJoin(aClass.getName(), joinSupplier));
+                expression = mapper.getAttributeExpression(attrInfo, cb, query, root, (aClass, joinSupplier) -> getOrCreateAttributeJoin(aClass.getName(), joinSupplier));
             }
         }
 
