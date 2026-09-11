@@ -6,8 +6,11 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.condition.ClientIdUriSchemeCondition;
@@ -16,6 +19,7 @@ import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.AbstractClientIdM
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutor;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactory;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactoryProviderConfig;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -930,6 +934,150 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setTokenEndpointAuthMethod(OIDCLoginProtocol.PRIVATE_KEY_JWT);
         cimd.getRepresentation().setJwksUri(null);
         assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_CONFIDENTIAL_CLIENT_JWKS);
+
+        // Client Metadata Validation:
+        // either jwks or jwks_uri is required. (both jwks and jwks_uri are set)
+        cimd.getRepresentation().setJwksUri(JWKS_URI);
+        cimd.getRepresentation().setJwks(new JSONWebKeySet());
+        assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_CONFIDENTIAL_CLIENT_JWKS);
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorAcceptPublicClientWithConfidentialOnlyGrantTypes() throws Exception {
+        // register profiles
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        executorConfig.setAllowHttpScheme(true);
+        executorConfig.setAcceptPublicClientWithConfidentialClientOnlyGrant(true);
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        updatePolicy(conditionConfig, executorConfig);
+
+        // set Client Metadata for a public client with confidential-only grant types
+        setCimdPublicClient();
+        cimd.getRepresentation().setGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.CLIENT_CREDENTIALS,
+                OAuth2Constants.CIBA_GRANT_TYPE,
+                OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE,
+                OAuth2Constants.UMA_GRANT_TYPE,
+                OAuth2Constants.JWT_AUTHORIZATION_GRANT
+        ));
+
+        // send an authorization request
+        String code = loginUserAndGetCode(true);
+
+        // get an access token
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // check the persisted client settings
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(clientRepresentation.isPublicClient());
+
+        // Verify confidential-only grant types were removed
+        Map<String, String> attrs = clientRepresentation.getAttributes();
+        Assertions.assertFalse(clientRepresentation.isServiceAccountsEnabled());
+        Assertions.assertNotEquals(Boolean.TRUE, clientRepresentation.getAuthorizationServicesEnabled());
+        Assertions.assertNotEquals("true", attrs.get(CibaConfig.OIDC_CIBA_GRANT_ENABLED));
+        Assertions.assertNotEquals("true", attrs.get(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED));
+        Assertions.assertNotEquals("true", attrs.get(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED));
+
+        // Verify public grant types were kept
+        Assertions.assertTrue(clientRepresentation.isStandardFlowEnabled()); // authorization_code kept
+        Assertions.assertEquals("true", attrs.get(OIDCConfigAttributes.USE_REFRESH_TOKEN)); // refresh_token kept
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorRejectPublicClientWithConfidentialOnlyGrantTypesByDefault() throws Exception {
+        // register profiles without setting acceptPublicClientWithConfidentialClientOnlyGrant (default: false)
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        executorConfig.setAllowHttpScheme(true);
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        // acceptPublicClientWithConfidentialClientOnlyGrant is not set, so default value (false) is applied
+        updatePolicy(conditionConfig, executorConfig);
+
+        // set Client Metadata for a public client with tokenEndpointAuthMethod = "none"
+        // and grant types including jwt authorization grant
+        cimd.getRepresentation().setTokenEndpointAuthMethod("none");
+        cimd.getRepresentation().setJwksUri(null);
+        cimd.getRepresentation().setGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.JWT_AUTHORIZATION_GRANT
+        ));
+
+        // registration should fail because a public client cannot have
+        // confidential-only grant types when acceptPublicClientWithConfidentialClientOnlyGrant is false
+        assertLoginAndError("invalid request");
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorAcceptPublicClientWithConfidentialOnlyGrantTypesOnRegisterAndRefetch() throws Exception {
+        // register profiles
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        executorConfig.setAllowHttpScheme(true);
+        executorConfig.setAcceptPublicClientWithConfidentialClientOnlyGrant(true);
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        updatePolicy(conditionConfig, executorConfig);
+
+        cimd.getRepresentation().setTokenEndpointAuthMethod("none");
+        cimd.getRepresentation().setJwksUri(null);
+        cimd.getRepresentation().setGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.JWT_AUTHORIZATION_GRANT
+        ));
+
+        // send an authorization request (first registration)
+        String code = loginUserAndGetCode(true);
+
+        // get an access token
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // check the persisted client settings after first registration
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Map<String, String> attrs = clientRepresentation.getAttributes();
+        Assertions.assertTrue(clientRepresentation.isPublicClient());
+        Assertions.assertTrue(clientRepresentation.isStandardFlowEnabled());
+        Assertions.assertEquals("true", attrs.get(OIDCConfigAttributes.USE_REFRESH_TOKEN));
+        // Verify JWT Authorization Grant was removed
+        Assertions.assertNotEquals("true", attrs.get(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED));
+
+        // logout
+        logout(tokenResponse.getIdToken());
+
+        // move the time ahead so that the client metadata cache expires
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        // do authorization code flow again, forcing a re-fetch of CIMD
+        code = loginUserAndGetCode(false);
+        tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // check the persisted client settings after re-fetch
+        clientRepresentation = findByClientIdByAdmin();
+        attrs = clientRepresentation.getAttributes();
+        Assertions.assertTrue(clientRepresentation.isPublicClient());
+        Assertions.assertTrue(clientRepresentation.isStandardFlowEnabled());
+        Assertions.assertEquals("true", attrs.get(OIDCConfigAttributes.USE_REFRESH_TOKEN));
+        // Verify JWT Authorization Grant is still removed after re-fetch
+        Assertions.assertNotEquals("true", attrs.get(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED));
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
     }
 
     @Test
