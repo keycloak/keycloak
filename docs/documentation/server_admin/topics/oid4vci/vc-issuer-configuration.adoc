@@ -28,7 +28,7 @@ OpenID4VCI supports multiple credential formats for encoding and issuing credent
 - https://github.com/decentralized-identity/jwt-vc-presentation-profile[JWT VC] – JSON Web Token Verifiable Credential
 - https://www.iso.org/standard/69084.html[mDL/mdoc] – Mobile driver's license / mobile document format
 
-{project_name} currently supports both SD-JWT VC and JWT VC for issuance. mDL/mdoc support is planned for a future release.
+{project_name} currently supports both SD-JWT VC and JWT VC for issuance. mDL/mdoc format has just experimental support in {project_name} and should not be used in production environments. It is planned for a proper support in the future releases.
 
 === The Issuer-Holder-Verifier Model
 
@@ -211,7 +211,7 @@ Do not use a generated realm key to sign SD-JWT VCs. A generated key either has 
 
 Elliptic Curve cryptography with the P-256 curve and `ES256` algorithm is recommended for OpenID4VC. To configure a suitable signing key:
 
-. Obtain a P-256 private key and a corresponding leaf certificate issued by a certificate authority. Include intermediate certificates when applicable.
+. Obtain a P-256 private key and a corresponding leaf certificate issued by a certificate authority. Include intermediate certificates when applicable. The example how to create valid ES256 key is in the https://github.com/keycloak/keycloak-playground/blob/main/fapi-playground/keystores/oid4vci-ssl-test/README-generate-keystore.md[Keycloak playground repository] (this is just for the development purposes and not officially supported).
 . Store the private key and its certificate chain in a supported Java keystore. The private-key entry must contain the leaf certificate first, followed by any intermediate certificates. You may append a self-signed root certificate, but you must not append a non-self-signed certificate that is intended to be the trust anchor.
 . In the Admin Console, go to *Realm Settings* > *Keys* > *Providers*.
 . Add a *java-keystore* provider and configure the keystore path, type, passwords, and key alias.
@@ -394,7 +394,7 @@ After selecting the OID4VCI protocol, the following configuration fields become 
 
 | Supported Format
 | SD-JWT VC (`dc+sd-jwt`)
-| The credential format. Supported options: *SD-JWT VC* (`dc+sd-jwt`) and *JWT VC* (`jwt_vc_json`).
+| The credential format. Supported options: *SD-JWT VC* (`dc+sd-jwt`) and *JWT VC* (`jwt_vc_json`). There is also experimental support for the mdoc format, which is available just if the {project_name} server is started with the feature `oid4vc-mdoc` (Not recommended to use in the production environments).
 
 | Token JWS Type
 | (auto)
@@ -412,13 +412,13 @@ After selecting the OID4VCI protocol, the following configuration fields become 
 | `sha-256`
 | Hashing algorithm used before signing the credential.
 
-| Binding Required
+| Cryptographic Binding Required
 | Off
-| When enabled, the credential must be cryptographically bound to the holder's wallet.
+| When enabled, the credential must be cryptographically bound to the holder's wallet. More details about this option are in the <<_oid4vci_proofs_client_scope_config,proofs section>>.
 
 | Cryptographic Binding Methods
 | (when binding enabled)
-| Comma-separated cryptographic binding methods. Allowed value: `jwk`.
+| Comma-separated cryptographic binding methods. The default is `jwk` for SD-JWT VC and JWT VC, while mdoc uses `cose_key`.
 
 | Binding Supported Proof Types
 | (when binding enabled)
@@ -653,3 +653,7 @@ include::managing-credentials.adoc[]
 include::wallet-integration.adoc[]
 
 include::proofs.adoc[]
+
+ifeval::[{project_community}==true]
+include::example-projects.adoc[]
+endif::[]

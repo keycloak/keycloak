@@ -1,0 +1,12 @@
+[[_oid4vci_example_projects]]
+=== Example projects
+
+For the illustration purpose, it is possible to use some example projects, which might be useful for quickstart OID4VCI setup and understand the concepts.
+
+* https://github.com/keycloak/keycloak-oauth-sig/tree/main/oid4vci-deployment[OID4VCI deployment]
+
+* https://github.com/keycloak/keycloak-playground/tree/main/fapi-playground#oid4vci-demo[Keycloak playground]
+
+WARNING:  Those are community projects used just for the illustration purposes and not for production environment. They are not officially supported by the {project_name}
+project team. Use them at your own discretion. Eventually, feel free to create github issues or pull requests in the corresponding github repositories if you find any issues
+related to those example projects.
