@@ -152,19 +152,26 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Invalid token audience", response, events.poll());
 
-        // Multiple audiences does not work
+        // Multiple audiences works if at least one matches
         JsonWebToken jwtToken = createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER);
         jwtToken.addAudience("fake");
         jwt = getIdentityProvider().encodeToken(jwtToken);
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertFailure("Multiple audiences not allowed", response, events.poll());
+        assertSuccess("test-app", response);
 
-        // Multiple audiences does not work (even if both are valid)
+        // Multiple audiences works if both are valid
         jwtToken = createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER);
         jwtToken.addAudience(oAuthClient.getEndpoints().getToken());
         jwt = getIdentityProvider().encodeToken(jwtToken);
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertFailure("Multiple audiences not allowed", response, events.poll());
+        assertSuccess("test-app", response);
+
+        // Multiple audiences fails if none match
+        jwtToken = createAuthorizationGrantToken("basic-user-id", "fake1", IDP_ISSUER);
+        jwtToken.addAudience("fake2");
+        jwt = getIdentityProvider().encodeToken(jwtToken);
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Invalid token audience", response, events.poll());
     }
 
     @Test
@@ -415,12 +422,19 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Invalid token audience", response, events.poll());
 
-        // test two audiences are always wrong
-        JsonWebToken jwtToken = createDefaultAuthorizationGrantToken();
-        jwtToken.addAudience("allowed-aud2");
+        // test multiple audiences works if one matches
+        JsonWebToken jwtToken = createAuthorizationGrantToken("basic-user-id", "allowed-aud1", IDP_ISSUER);
+        jwtToken.addAudience("other-aud");
         jwt = getIdentityProvider().encodeToken(jwtToken);
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertFailure("Multiple audiences not allowed", response, events.poll());
+        assertSuccess("test-app", response);
+
+        // test multiple audiences fails if none match
+        jwtToken = createAuthorizationGrantToken("basic-user-id", "other-aud1", IDP_ISSUER);
+        jwtToken.addAudience("other-aud2");
+        jwt = getIdentityProvider().encodeToken(jwtToken);
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Invalid token audience", response, events.poll());
     }
 
     @Test
