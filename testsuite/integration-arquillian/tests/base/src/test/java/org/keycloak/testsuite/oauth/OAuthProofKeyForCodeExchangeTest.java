@@ -19,6 +19,8 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -679,6 +681,25 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
                     .sessionId(sessionId)
                     .error(Errors.CODE_VERIFIER_MISSING);
         } finally {
+            setPkceActivationSettings("test-app", null);
+        }
+    }
+
+    @Test
+    public void authorizationRequestWithResponseTypeNoneDoesNotRequirePKCE() {
+        try {
+            setPkceActivationSettings("test-app", OAuth2Constants.PKCE_METHOD_S256);
+            oauth.responseType(OIDCResponseType.NONE);
+
+            oauth.loginForm().prompt(OIDCLoginProtocol.PROMPT_VALUE_NONE).open();
+
+            final AuthorizationEndpointResponse response = oauth.parseLoginResponse();
+
+            assertNull(response.getCode());
+            // The request is not rejected by PKCE validation and reaches prompt=none handling.
+            assertEquals(OAuthErrorException.LOGIN_REQUIRED, response.getError());
+        } finally {
+            oauth.responseType(OIDCResponseType.CODE);
             setPkceActivationSettings("test-app", null);
         }
     }
