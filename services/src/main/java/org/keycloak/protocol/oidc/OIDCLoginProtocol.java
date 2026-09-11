@@ -595,8 +595,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     @Override
     public void authenticationComplete(AuthenticationSessionModel authSession) {
-        // Authorization servers that enforce one-time use of request_uri values do so at the point of authorization,
-        // not at the point of visiting the authorization endpoint
+        // If the Request has been a PAR-Request it must not have been consumed already by an authenticationComplete
         String requestUri = authSession.getAuthNote(Constants.AUTHORIZATION_REQUEST_URI);
         RequestUriType requestUriType = Optional.ofNullable(requestUri)
                 .map(AuthorizationEndpointRequestParserProcessor::getRequestUriType)

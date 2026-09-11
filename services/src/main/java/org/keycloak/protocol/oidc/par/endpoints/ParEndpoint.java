@@ -40,6 +40,7 @@ import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
@@ -186,7 +187,10 @@ public class ParEndpoint extends AbstractParEndpoint {
         }
 
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-        singleUseStore.put(buildCacheKey(realm.getId(), key), expiresIn, params);
+        //  PAR object needs to be valid for the time of PAR lifespan together with the authenticationSession time
+        //  (See https://github.com/keycloak/keycloak/issues/48072 for the details)
+        int storeLifespan = expiresIn + SessionExpiration.getAuthSessionLifespan(realm);
+        singleUseStore.put(buildCacheKey(realm.getId(), key), storeLifespan, params);
 
         ParResponse parResponse = new ParResponse(requestUri, expiresIn);
 
