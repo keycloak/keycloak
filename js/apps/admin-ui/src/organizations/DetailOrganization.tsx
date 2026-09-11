@@ -24,6 +24,7 @@ import {
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useParams } from "../utils/useParams";
 import { DetailOrganizationHeader } from "./DetailOraganzationHeader";
+import { DomainsTab } from "./DomainsTab";
 import { IdentityProviders } from "./IdentityProviders";
 import { MembersSection } from "./MembersSection";
 import GroupsSection from "../groups/GroupsSection";
@@ -71,9 +72,9 @@ export default function DetailOrganization() {
       if (!org) {
         throw new Error(t("notFound"));
       }
+      const { domains, ...orgWithoutDomains } = org;
       form.reset({
-        ...org,
-        domains: org.domains?.map((d) => d.name),
+        ...orgWithoutDomains,
         attributes: arrayToKeyValue(org.attributes),
       });
     },
@@ -93,6 +94,7 @@ export default function DetailOrganization() {
   const attributesTab = useTab("attributes");
   const membersTab = useTab("members");
   const groupsTab = useTab("groups");
+  const domainsTab = useTab("domains");
   const identityProvidersTab = useTab("identityProviders");
   const eventsTab = useTab("events");
 
@@ -139,6 +141,14 @@ export default function DetailOrganization() {
                 </ActionGroup>
               </FormAccess>
             </PageSection>
+          </Tab>
+          <Tab
+            id="domains"
+            data-testid="domainsTab"
+            title={<TabTitleText>{t("domains")}</TabTitleText>}
+            {...domainsTab}
+          >
+            <DomainsTab />
           </Tab>
           <Tab
             id="attributes"
