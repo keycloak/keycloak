@@ -634,7 +634,7 @@ public class RoleContainerResource extends RoleResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
     @Operation(summary = "Returns a stream of groups that have the specified role name")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = UserRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = GroupRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
