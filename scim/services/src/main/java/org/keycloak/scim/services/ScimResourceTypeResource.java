@@ -33,6 +33,7 @@ import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.Scim;
 import org.keycloak.scim.resource.common.Meta;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
+import org.keycloak.scim.resource.spi.SearchOptions;
 import org.keycloak.scim.resource.spi.SingletonResourceTypeProvider;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.util.JsonSerialization;
@@ -135,7 +136,12 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
         try {
             normalizePagination(searchRequest);
 
-            Stream<R> stream = resourceTypeProvider.getAll(searchRequest)
+            // sort is ignored for now
+            SearchOptions searchOptions = SearchOptions.builder().withAttributes(searchRequest.getAttributes())
+                    .withCount(searchRequest.getCount()).withExcludedAttributes(searchRequest.getExcludedAttributes())
+                    .withFilter(searchRequest.getFilter()).withStartIndex(searchRequest.getStartIndex()).build();
+
+            Stream<R> stream = resourceTypeProvider.getAll(searchOptions)
                     .peek(this::setMetadata);
 
             if (resourceTypeProvider instanceof SingletonResourceTypeProvider<R>) {
@@ -145,7 +151,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
             }
 
             List<R> resources = stream.toList();
-            Long totalResults = resourceTypeProvider.count(searchRequest, resources.size());
+            Long totalResults = resourceTypeProvider.count(searchOptions, resources.size());
             ListResponse<R> response = new ListResponse<>();
 
             response.setResources(resources);
