@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -67,6 +69,8 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
             + "mechanism that makes multi-cluster setups safe.")
     protected boolean allow_multiple_clusters = false;
 
+    private ExecutorService networkTimeoutExecutor;
+
     private JpaConnectionProviderFactory factory;
     private volatile HealthStatus previousHealthStatus = HealthStatus.HEALTHY;
     private volatile int cyclesSinceLastLog = 0;
@@ -83,7 +87,9 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     @Override
     protected Connection getConnection() throws SQLException {
         try {
-            return factory.getConnection();
+            Connection connection = factory.getConnection();
+            connection.setNetworkTimeout(networkTimeoutExecutor, (int) (staleness_timeout / 3));
+            return connection;
         } catch (Exception e) {
             var cause = e.getCause();
             if (cause instanceof SQLException sql) {
@@ -103,7 +109,18 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
         if (!remove_all_data_on_view_change) {
             throw new RuntimeException("Running this without remove_all_data_on_view_change is not safe");
         }
+        networkTimeoutExecutor = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "jdbc-ping-network-timeout");
+            t.setDaemon(true);
+            return t;
+        });
         super.init();
+    }
+
+    @Override
+    public void destroy() {
+        networkTimeoutExecutor.shutdown();
+        super.destroy();
     }
 
     protected void insert(Connection connection, PingData data, String clustername) throws SQLException {
