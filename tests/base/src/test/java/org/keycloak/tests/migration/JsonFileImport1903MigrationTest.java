@@ -29,6 +29,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
 
@@ -36,10 +37,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
 /**
  * Tests that we can import json file from previous version. MigrationTest only tests DB.
  */
+@TestInstance(PER_CLASS)
 @KeycloakIntegrationTest
 public class JsonFileImport1903MigrationTest extends AbstractJsonFileImportMigrationTest {
 
