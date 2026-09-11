@@ -45,7 +45,9 @@ public class RunOnServerSupplier implements Supplier<RunOnServerClient, InjectRu
 
     @Override
     public boolean compatible(InstanceContext<RunOnServerClient, InjectRunOnServer> a, RequestedInstance<RunOnServerClient, InjectRunOnServer> b) {
-        return a.getAnnotation().realmRef().equals(b.getAnnotation().realmRef());
+        return a.getAnnotation().realmRef().equals(b.getAnnotation().realmRef())
+                && a.getAnnotation().ref().equals(b.getAnnotation().ref())
+                && Arrays.equals(a.getAnnotation().permittedPackages(), b.getAnnotation().permittedPackages());
     }
 
     @Override

@@ -137,7 +137,7 @@ public class ClusteredKeycloakServer implements KeycloakServer {
             copyProvidersAndConfigs(container, configBuilder);
 
             configureLogConsumers(container, i, clusterLatch.get());
-            configureClusterNameIfStatelessEnabled(configBuilder, i);
+            configureNode(configBuilder, i);
             container.runKc(configBuilder.toArgs());
         }
     }
@@ -153,7 +153,7 @@ public class ClusteredKeycloakServer implements KeycloakServer {
 
             copyProvidersAndConfigs(container, configBuilder);
             configureLogConsumers(container, i, clusterLatch.get());
-            configureClusterNameIfStatelessEnabled(configBuilder, i);
+            configureNode(configBuilder, i);
             container.runKc(configBuilder.toArgs());
         }
     }
@@ -204,14 +204,32 @@ public class ClusteredKeycloakServer implements KeycloakServer {
         return containers.length;
     }
 
+    public boolean isNodeRunning(int index) {
+        return containers[index] != null && containers[index].isRunning();
+    }
+
+    public void stopNode(int index) {
+        containers[index].stopKeepContainer();
+    }
+
+    public void startNode(int index) {
+        if (!containers[index].isRunning()) {
+            containers[index].restartContainer();
+            ReadinessProbe.waitUntilNodeReady(this::getBaseUrl, index, startTimeout);
+            if (loadBalancer != null) {
+                loadBalancer.refreshNode(index);
+            }
+        }
+    }
+
     public LoadBalancer getLoadBalancer() {
         return loadBalancer;
     }
 
-    private void configureClusterNameIfStatelessEnabled(KeycloakServerConfigBuilder configBuilder, int id) {
-        if (!stateless) {
-            return;
+    private void configureNode(KeycloakServerConfigBuilder configBuilder, int id) {
+        configBuilder.option("cache-embedded-node-name", "node" + (id + 1));
+        if (stateless) {
+            configBuilder.option("cache-embedded-cluster-name", "cluster-" + id);
         }
-        configBuilder.option("cache-embedded-cluster-name", "cluster-" + id);
     }
 }

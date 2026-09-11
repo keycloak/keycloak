@@ -26,6 +26,10 @@ public final class ReadinessProbe {
         waitUntilReady(index -> server.getBaseUrl(), 1, timeout);
     }
 
+    public static void waitUntilNodeReady(IntFunction<String> baseUrlFunction, int nodeIndex, long timeout) {
+        waitUntilReady(baseUrlFunction.apply(nodeIndex), createTrustAllSslContext(), timeout);
+    }
+
     public static void waitUntilReady(IntFunction<String> baseUrlFunction, int clusterSize, long timeout) {
         var sslContext = createTrustAllSslContext();
         for (int i = 0; i < clusterSize; i++) {
