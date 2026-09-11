@@ -281,6 +281,9 @@ public class IdentityProvidersResource {
 
         try {
             IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation, session);
+            if (!auth.isRealmAdmin()) {
+                identityProvider.setAllowAdminRoleMapping(false);
+            }
             session.identityProviders().create(identityProvider);
 
             representation.setInternalId(identityProvider.getInternalId());
