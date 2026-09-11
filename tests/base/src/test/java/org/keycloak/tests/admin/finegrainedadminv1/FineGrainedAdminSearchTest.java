@@ -315,6 +315,88 @@ public class FineGrainedAdminSearchTest extends AbstractFineGrainedAdminTest {
     }
 
     @Test
+    public void testClientsCount() {
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(REALM_NAME);
+
+            session.getContext().setRealm(realm);
+
+            ClientModel realmAdminClient = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+            UserModel regularAdminUser = session.users().addUser(realm, "regular-admin-user");
+            regularAdminUser.setFirstName("Regular");
+            regularAdminUser.setLastName("Admin");
+            regularAdminUser.setEmail("regular@admin");
+            regularAdminUser.credentialManager().updateCredential(UserCredentialModel.password("password"));
+            regularAdminUser.grantRole(realmAdminClient.getRole(AdminRoles.QUERY_CLIENTS));
+            regularAdminUser.setEnabled(true);
+
+            UserPolicyRepresentation userPolicyRepresentation = new UserPolicyRepresentation();
+
+            userPolicyRepresentation.setName("Only " + regularAdminUser.getUsername());
+            userPolicyRepresentation.addUser(regularAdminUser.getId());
+
+            for (int i = 0; i < 30; i++) {
+                realm.addClient("client-count-" + (i < 10 ? "0" + i : i));
+            }
+
+            AdminPermissionManagement management = AdminPermissions.management(session, realm);
+            ClientPermissionManagement clientPermission = management.clients();
+            ClientModel clientModel = realm.getClientByClientId("client-count-09");
+
+            clientPermission.setPermissionsEnabled(clientModel, true);
+
+            Policy policy = clientPermission.viewPermission(clientModel);
+            AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
+            Policy userPolicy = provider.getStoreFactory().getPolicyStore()
+                    .create(management.realmResourceServer(), userPolicyRepresentation);
+
+            policy.addAssociatedPolicy(RepresentationToModel.toModel(userPolicyRepresentation, provider, userPolicy));
+        });
+
+        try (Keycloak client = adminClientFactory.create().realm(REALM_NAME)
+                .username("regular-admin-user").password("password").clientId( Constants.ADMIN_CLI_CLIENT_ID).build()) {
+
+            // only one client is viewable by this admin; the count must reflect that, not the realm-wide total
+            Long count = client.realm(REALM_NAME).clients().count("client-count-", null);
+
+            Assertions.assertEquals(1, count);
+        }
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(REALM_NAME);
+
+            session.getContext().setRealm(realm);
+
+            AdminPermissionManagement management = AdminPermissions.management(session, realm);
+
+            ClientPermissionManagement clientPermission = management.clients();
+            ClientModel clientModel = realm.getClientByClientId("client-count-10");
+
+            clientPermission.setPermissionsEnabled(clientModel, true);
+
+            Policy policy = clientPermission.viewPermission(clientModel);
+
+            AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
+            ClientModel realmAdminClient = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+            ResourceServer resourceServer = provider.getStoreFactory().getResourceServerStore().findByClient(realmAdminClient);
+
+            policy.addAssociatedPolicy(provider.getStoreFactory().getPolicyStore().findByName(resourceServer, "Only regular-admin-user"));
+        });
+
+        try (Keycloak client = adminClientFactory.create().realm(REALM_NAME)
+                .username("regular-admin-user").password("password").clientId( Constants.ADMIN_CLI_CLIENT_ID).build()) {
+
+            Long count = client.realm(REALM_NAME).clients().count("client-count-", null);
+
+            Assertions.assertEquals(2, count);
+
+            Long noMatchCount = client.realm(REALM_NAME).clients().count("no-such-client-xyz", null);
+
+            Assertions.assertEquals(0, noMatchCount);
+        }
+    }
+
+    @Test
     public void testClientsSearchAfterFirstPage() {
         runOnServer.run(session -> {
             RealmModel realm = session.realms().getRealmByName(REALM_NAME);

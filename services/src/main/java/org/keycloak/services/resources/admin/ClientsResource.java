@@ -65,6 +65,8 @@ import org.keycloak.validation.ValidationUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -182,6 +184,65 @@ public class ClientsResource {
         }
 
         return s;
+    }
+
+    /**
+     * Get clients count in the realm.
+     *
+     * Backed by a database-level COUNT query. The exception is a caller restricted by legacy (v1) fine-grained
+     * admin permissions, which apply per-client rather than realm-wide: like {@link #getClients}, this falls back
+     * to fetching and filtering candidates in memory, since v1 visibility is evaluated per-client and can't be
+     * pushed down into the COUNT query.
+     *
+     * @param search filter by clientId substring (case-insensitive)
+     * @param searchQuery filter by attribute using the format "key1:value1 key2:value2"
+     */
+    @Path("count")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK",
+            content = @Content(schema = @Schema(implementation = Long.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    @Operation(summary = "Get clients count in the realm.",
+        description = "Backed by a database-level COUNT query, except for callers restricted by legacy (v1) fine-grained admin permissions, where visibility is evaluated per-client and the count falls back to filtering candidates in memory.")
+    public Long getClientsCount(
+            @Parameter(description = "filter by clientId substring (case-insensitive)") @QueryParam("search") String search,
+            @Parameter(description = "filter by attribute, format is 'key1:value1 key2:value2'") @QueryParam("q") String searchQuery) {
+        auth.clients().requireList();
+
+        boolean canView = AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || auth.clients().canView();
+
+        try {
+            if (canView) {
+                if (searchQuery != null) {
+                    Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
+                    return realm.searchClientByAttributesCount(attributes);
+                } else if (search != null && !search.isBlank()) {
+                    return realm.searchClientByClientIdCount(search);
+                }
+                return realm.getClientsCount();
+            }
+
+            // Legacy fine-grained admin permissions (v1) restrict visibility per-client rather than realm-wide,
+            // so the database-level COUNT queries above would leak counts across clients the caller can't view.
+            // Mirror the list endpoint's per-model filtering instead.
+            Stream<ClientModel> clientModels;
+            if (searchQuery != null) {
+                Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
+                clientModels = realm.searchClientByAttributes(attributes, -1, -1);
+            } else if (search != null && !search.isBlank()) {
+                clientModels = realm.searchClientByClientIdStream(search, -1, -1);
+            } else {
+                clientModels = realm.getClientsStream();
+            }
+            return clientModels.filter(auth.clients()::canView).count();
+        } catch (ModelException e) {
+            throw new ErrorResponseException(Errors.INVALID_REQUEST, e.getMessage(), Response.Status.BAD_REQUEST);
+        }
     }
 
     private AuthorizationService getAuthorizationService(ClientModel clientModel) {
