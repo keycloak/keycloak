@@ -257,7 +257,7 @@ env:
         fieldPath: metadata.name
 ----
 
-*Bare-metal of VM deployments*
+*Bare-metal or VM deployments*
 
 Pass `+--cache-embedded-node-name=<name>+` with a value that uniquely identifies each node, for example the hostname.
 
