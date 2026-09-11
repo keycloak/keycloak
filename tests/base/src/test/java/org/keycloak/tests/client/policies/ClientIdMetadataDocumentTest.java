@@ -904,6 +904,11 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setPolicyUri("https://localhost:8443/policy");
         cimd.getRepresentation().setJwksUri("https://10.255.255.1:443/mcp");
         assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+
+        // backchannel_client_notification_endpoint : not allowed domain
+        cimd.getRepresentation().setJwksUri("https://localhost:8443/idp/jwks");
+        cimd.getRepresentation().setBackchannelClientNotificationEndpoint("https://127.0.0.1:8500/notification");
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
     }
 
     @Test
@@ -961,6 +966,12 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setClientUri("https://www.example.com");
         cimd.getRepresentation().setTosUri("https://www.example.co.jp/mcp");
         cimd.getRepresentation().setPolicyUri("https://localhost/mcp");
+        assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+
+        // backchannel_client_notification_endpoint not under the same domain of permitted domains
+        cimd.getRepresentation().setClientUri("https://localhost/client");
+        cimd.getRepresentation().setTosUri("https://localhost/mcp");
+        cimd.getRepresentation().setBackchannelClientNotificationEndpoint("https://www.example.com/notification");
         assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
     }
 
