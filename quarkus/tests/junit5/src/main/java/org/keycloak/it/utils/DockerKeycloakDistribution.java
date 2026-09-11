@@ -244,8 +244,12 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
             return;
         }
         try {
-            keycloakContainer.start();
-            containerId = keycloakContainer.getContainerId();
+            String id = containerId != null ? containerId : keycloakContainer.getContainerId();
+            keycloakContainer.getDockerClient().startContainerCmd(id).exec();
+            Wait.forListeningPorts(8080)
+                    .withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT_SECONDS))
+                    .waitUntilReady(keycloakContainer);
+            containerId = id;
         } catch (Exception cause) {
             throw new RuntimeException("Failed to restart the server", cause);
         }
