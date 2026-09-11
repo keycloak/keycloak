@@ -104,119 +104,155 @@ class ClosingDoubleStream implements DoubleStream {
 
     @Override
     public void forEach(DoubleConsumer action) {
-        delegate.forEach(action);
-        close();
+        try {
+            delegate.forEach(action);
+        } finally {
+            close();
+        }
     }
 
     @Override
     public void forEachOrdered(DoubleConsumer action) {
-        delegate.forEachOrdered(action);
-        close();
+        try {
+            delegate.forEachOrdered(action);
+        } finally {
+            close();
+        }
     }
 
     @Override
     public double[] toArray() {
-        double[] result = delegate.toArray();
-        close();
-        return result;
+        try {
+            return delegate.toArray();
+        } finally {
+            close();
+        }
     }
 
     @Override
     public double reduce(double identity, DoubleBinaryOperator op) {
-        double result = delegate.reduce(identity, op);
-        close();
-        return result;
+        try {
+            return delegate.reduce(identity, op);
+        } finally {
+            close();
+        }
     }
 
     @Override
     public OptionalDouble reduce(DoubleBinaryOperator op) {
-        OptionalDouble result = delegate.reduce(op);
-        close();
-        return result;
+        try {
+            return delegate.reduce(op);
+        } finally {
+            close();
+        }
     }
 
     @Override
     public <R> R collect(Supplier<R> supplier, ObjDoubleConsumer<R> accumulator, BiConsumer<R, R> combiner) {
-        R result = delegate.collect(supplier, accumulator, combiner);
-        close();
-        return result;
+        try {
+            return delegate.collect(supplier, accumulator, combiner);
+        } finally {
+            close();
+        }
     }
 
     @Override
     public double sum() {
-        double result = delegate.sum();
-        close();
-        return result;
+        try {
+            return delegate.sum();
+        } finally {
+            close();
+        }
     }
 
     @Override
     public OptionalDouble min() {
-        OptionalDouble result = delegate.min();
-        close();
-        return result;
+        try {
+            return delegate.min();
+        } finally {
+            close();
+        }
     }
 
     @Override
     public OptionalDouble max() {
-        OptionalDouble result = delegate.max();
-        close();
-        return result;
+        try {
+            return delegate.max();
+        } finally {
+            close();
+        }
     }
 
     @Override
     public long count() {
-        long result = delegate.count();
-        close();
-        return result;
+        try {
+            return delegate.count();
+        } finally {
+            close();
+        }
     }
 
     @Override
     public OptionalDouble average() {
-        OptionalDouble result = delegate.average();
-        close();
-        return result;
+        try {
+            return delegate.average();
+        } finally {
+            close();
+        }
     }
 
     @Override
     public DoubleSummaryStatistics summaryStatistics() {
-        DoubleSummaryStatistics result = delegate.summaryStatistics();
-        close();
-        return result;
+        try {
+            return delegate.summaryStatistics();
+        } finally {
+            close();
+        }
     }
 
     @Override
     public boolean anyMatch(DoublePredicate predicate) {
-        boolean result = delegate.anyMatch(predicate);
-        close();
-        return result;
+        try {
+            return delegate.anyMatch(predicate);
+        } finally {
+            close();
+        }
     }
 
     @Override
     public boolean allMatch(DoublePredicate predicate) {
-        boolean result = delegate.allMatch(predicate);
-        close();
-        return result;
+        try {
+            return delegate.allMatch(predicate);
+        } finally {
+            close();
+        }
     }
 
     @Override
     public boolean noneMatch(DoublePredicate predicate) {
-        boolean result = delegate.noneMatch(predicate);
-        close();
-        return result;
+        try {
+            return delegate.noneMatch(predicate);
+        } finally {
+            close();
+        }
     }
 
     @Override
     public OptionalDouble findFirst() {
-        OptionalDouble result = delegate.findFirst();
-        close();
-        return result;
+        try {
+            return delegate.findFirst();
+        } finally {
+            close();
+        }
     }
 
     @Override
     public OptionalDouble findAny() {
-        OptionalDouble result = delegate.findAny();
-        close();
-        return result;
+        try {
+            return delegate.findAny();
+        } finally {
+            close();
+        }
     }
 
     @Override
@@ -274,8 +310,14 @@ class ClosingDoubleStream implements DoubleStream {
 
         @Override
         public boolean hasNext() {
-            final boolean res = iterator.hasNext();
-            if (! res) {
+            boolean res;
+            try {
+                res = iterator.hasNext();
+            } catch (RuntimeException | Error e) {
+                close();
+                throw e;
+            }
+            if (!res) {
                 close();
             }
             return res;
@@ -293,8 +335,11 @@ class ClosingDoubleStream implements DoubleStream {
 
         @Override
         public void forEachRemaining(DoubleConsumer action) {
-            iterator.forEachRemaining(action);
-            close();
+            try {
+                iterator.forEachRemaining(action);
+            } finally {
+                close();
+            }
         }
 
         @Override
@@ -313,8 +358,14 @@ class ClosingDoubleStream implements DoubleStream {
 
         @Override
         public boolean tryAdvance(DoubleConsumer action) {
-            final boolean res = spliterator.tryAdvance(action);
-            if (! res) {
+            boolean res;
+            try {
+                res = spliterator.tryAdvance(action);
+            } catch (RuntimeException | Error e) {
+                close();
+                throw e;
+            }
+            if (!res) {
                 close();
             }
             return res;
@@ -322,8 +373,11 @@ class ClosingDoubleStream implements DoubleStream {
 
         @Override
         public void forEachRemaining(DoubleConsumer action) {
-            spliterator.forEachRemaining(action);
-            close();
+            try {
+                spliterator.forEachRemaining(action);
+            } finally {
+                close();
+            }
         }
 
         @Override
