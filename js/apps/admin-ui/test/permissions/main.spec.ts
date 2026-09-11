@@ -17,7 +17,9 @@ import {
   goToPermissions,
   openSearchPanel,
   pickGroup,
+  pickOrganization,
   removeGroup,
+  removeOrganization,
   selectClient,
   selectResource,
 } from "./main.ts";
@@ -27,7 +29,10 @@ test.describe.serial("Permissions section tests", () => {
   const realmName = `permissions-${uuid()}`;
 
   test.beforeAll(async () => {
-    await adminClient.createRealm(realmName, { adminPermissionsEnabled: true });
+    await adminClient.createRealm(realmName, {
+      adminPermissionsEnabled: true,
+      organizationsEnabled: true,
+    });
     await adminClient.createUser({
       realm: realmName,
       username: "test-user",
@@ -35,6 +40,16 @@ test.describe.serial("Permissions section tests", () => {
     });
     await adminClient.createGroup("one", realmName);
     await adminClient.createGroup("two", realmName);
+    await adminClient.createOrganization({
+      name: "one",
+      realm: realmName,
+      enabled: true,
+    });
+    await adminClient.createOrganization({
+      name: "two",
+      realm: realmName,
+      enabled: true,
+    });
   });
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
@@ -115,6 +130,44 @@ test.describe.serial("Permissions section tests", () => {
       page,
       "Successfully updated the permission",
     );
+    await goToPermissions(page);
+    await deletePermission(page, "test-group-permission");
+  });
+
+  test("should edit organization permission", async ({ page }) => {
+    await clickCreatePermission(page);
+    await selectResource(page, "Organizations");
+    await fillPermissionForm(page, {
+      name: "test-organization-permission",
+      scopes: ["view"],
+      enforcementMode: "specificResources",
+    });
+    await pickOrganization(page, "one");
+    await pickOrganization(page, "two");
+
+    await clickCreateNewPolicy(page);
+    await fillPolicyForm(
+      page,
+      {
+        name: "test-organization-policy",
+        description: "test-description",
+        type: "User",
+        user: "test-user",
+      },
+      true,
+    );
+
+    await clickCreatePolicySaveButton(page);
+    await assertNotificationMessage(page, "Successfully created the policy");
+    await clickSaveButton(page);
+    await removeOrganization(page, "one");
+    await clickSaveButton(page);
+    await assertNotificationMessage(
+      page,
+      "Successfully updated the permission",
+    );
+    await goToPermissions(page);
+    await deletePermission(page, "test-organization-permission");
   });
 
   test.describe.serial("evaluate permissions", () => {
