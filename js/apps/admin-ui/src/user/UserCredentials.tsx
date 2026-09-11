@@ -110,6 +110,9 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
   const [groupedUserCredentials, setGroupedUserCredentials] = useState<
     ExpandableCredentialRepresentation[]
   >([]);
+  const [credentialTypes, setCredentialTypes] = useState<
+    CredentialRepresentation[] | undefined
+  >();
   const [selectedCredential, setSelectedCredential] =
     useState<CredentialRepresentation>({});
   const [isResetPassword, setIsResetPassword] = useState(false);
@@ -131,14 +134,12 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
       return Promise.resolve([]);
     },
     (credentials) => {
-      credentials = [
-        ...credentials.filter((c: CredentialRepresentation) => {
-          return c.federationLink === undefined;
-        }),
-      ];
-      setUserCredentials(credentials);
+      const ownCredentials = credentials.filter(
+        (c: CredentialRepresentation) => c.federationLink === undefined,
+      );
+      setUserCredentials(ownCredentials);
 
-      const groupedCredentials = credentials.reduce((r, a) => {
+      const groupedCredentials = ownCredentials.reduce((r, a) => {
         r[a.type!] = r[a.type!] || [];
         r[a.type!].push(a);
         return r;
@@ -153,6 +154,12 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
           ...groupedCredential,
           isExpanded: false,
         })),
+      );
+
+      setCredentialTypes(
+        credentials.filter(
+          (c: CredentialRepresentation) => c.federationLink !== undefined,
+        ),
       );
     },
     [key],
@@ -361,27 +368,6 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
   };
 
   const useFederatedCredentials = user.federationLink;
-  const [credentialTypes, setCredentialTypes] = useState<
-    CredentialRepresentation[] | undefined
-  >();
-
-  useFetch(
-    () => {
-      if (user.enabled) {
-        return adminClient.users.getCredentials({ id: user.id! });
-      }
-      return Promise.resolve([]);
-    },
-    (credentials) => {
-      credentials = [
-        ...credentials.filter((c: CredentialRepresentation) => {
-          return c.federationLink !== undefined;
-        }),
-      ];
-      setCredentialTypes(credentials);
-    },
-    [key],
-  );
 
   if (!credentialTypes) {
     return <KeycloakSpinner />;
