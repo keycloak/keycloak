@@ -14,20 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.migration;
+package org.keycloak.tests.migration;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.annotations.TestSetup;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.tests.utils.KerberosUtils;
 
-import org.keycloak.exportimport.util.ImportUtils;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.util.KerberosUtils;
-import org.keycloak.testsuite.utils.io.IOUtil;
-import org.keycloak.util.JsonSerialization;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests that we can import json file from previous version.  MigrationTest only tests DB.
@@ -35,39 +33,44 @@ import org.junit.Test;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@KeycloakIntegrationTest
 public class JsonFileImport198MigrationTest extends AbstractJsonFileImportMigrationTest {
 
-    @BeforeClass
-    public static void checkKerberosSupportedByAuthServer() {
+    @InjectRealm(ref = "migration", fromJson = "migration-realm-1.9.8.Final-Migration.json")
+    ManagedRealm migrationManagedRealm;
+
+    @InjectRealm(ref = "migration2", fromJson = "migration-realm-1.9.8.Final-Migration2.json")
+    ManagedRealm migration2ManagedRealm;
+
+    @InjectRealm(ref = "master", attachTo = "master")
+    ManagedRealm masterManagedRealm;
+
+    @InjectRunOnServer(realmRef = "migration")
+    RunOnServerClient injectedRunOnServer;
+
+    @BeforeAll
+    static void checkKerberosSupportedByAuthServer() {
         // Requires 'KERBEROS' feature on the server, due some kerberos provider present in the JSON
         KerberosUtils.assumeKerberosSupportExpected();
     }
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        Map<String, RealmRepresentation> reps = null;
-        try {
-            reps = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, IOUtil.class.getResourceAsStream("/migration-test/migration-realm-1.9.8.Final.json"));
-            masterRep = reps.remove("master");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        for (RealmRepresentation rep : reps.values()) {
-            testRealms.add(rep);
-        }
+    @TestSetup
+    public void setupDependencies() {
+        oauthClient = createOAuthClient();
+        runOnServer = injectedRunOnServer;
     }
 
     @Test
-    public void migration1_9_8Test() {
+    void migration1_9_8Test() {
         checkRealmsImported();
-        testMigratedMigrationData(false);
+        testMigratedMigrationData();
         testMigrationTo2_0_0();
         testMigrationTo2_1_0();
         testMigrationTo2_2_0();
         testMigrationTo2_3_0();
         testMigrationTo2_5_0();
         testMigrationTo3_x();
-        testMigrationTo4_x(false, false);
+        testMigrationTo4_x(false);
         testMigrationTo5_x();
         testMigrationTo6_x();
         testMigrationTo7_x(false);
@@ -79,14 +82,13 @@ public class JsonFileImport198MigrationTest extends AbstractJsonFileImportMigrat
         testMigrationTo21_x();
         testMigrationTo22_x();
         testMigrationTo23_x(false);
-        testMigrationTo24_x(false);
+        testMigrationTo24_x();
         testMigrationTo25_0_0();
         testMigrationTo26_0_0(false);
         testMigrationTo26_3_0();
         testMigrationTo26_4_0();
     }
 
-    @Override
     protected void testMigrationTo2_3_0() {
         testUpdateProtocolMappers(migrationRealm);
         testExtractRealmKeysMigrationRealm(migrationRealm);
