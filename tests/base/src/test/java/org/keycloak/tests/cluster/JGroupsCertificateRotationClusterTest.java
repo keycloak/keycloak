@@ -2,6 +2,7 @@ package org.keycloak.tests.cluster;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.stream.IntStream;
 
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -81,9 +82,9 @@ public class JGroupsCertificateRotationClusterTest extends AbstractClusterTest {
 
         assertTrue(coordinatorIdx >= 0);
         killBackendNode(backendNode(coordinatorIdx));
-        assertClusterSize();
 
         int survivorIdx = (coordinatorIdx + 1) % getClusterSize();
+        assertClusterSize(1, survivorIdx);
         assertTrue(isCoordinator(survivorIdx));
         assertTrue(hasRotationTask(survivorIdx));
 
@@ -153,10 +154,12 @@ public class JGroupsCertificateRotationClusterTest extends AbstractClusterTest {
         return testingClientFor(backendNode(index)).server().fetch(new ClusterTestTasks.ClusterMembersCount(), Integer.class);
     }
 
-    private void assertClusterSize(){
-        var expectedSize = getClusterSize();
-        for (int i = 0; i < expectedSize; ++i) {
-            var nodeIndex = i;
+    private void assertClusterSize() {
+        assertClusterSize(getClusterSize(), IntStream.range(0, getClusterSize()).toArray());
+    }
+
+    private void assertClusterSize(int expectedSize, int... nodeIndices) {
+        for (int nodeIndex : nodeIndices) {
             Awaitility.waitAtMost(Duration.ofMinutes(1))
                     .pollDelay(Duration.ofSeconds(1))
                     .untilAsserted(() -> assertEquals(expectedSize, fetchClusterSize(nodeIndex)));
