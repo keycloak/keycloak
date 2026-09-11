@@ -77,6 +77,10 @@ public class LoadBalancer {
         node((currentNodeIndex + 1) % nodeCount());
     }
 
+    public void refreshNode(int index) {
+        urls.remove(index);
+    }
+
     private Origin origin(int index) {
         if (index >= server.clusterSize()) {
             throw new IllegalArgumentException("Node index out of bounds. Requested nodeIndex: %d, cluster size: %d".formatted(index, server.clusterSize()));

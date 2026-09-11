@@ -215,7 +215,10 @@ public class ClusteredKeycloakServer implements KeycloakServer {
     public void startNode(int index) {
         if (!containers[index].isRunning()) {
             containers[index].restartContainer();
-            ReadinessProbe.waitUntilReady(this::getBaseUrl, 1, startTimeout);
+            ReadinessProbe.waitUntilReady(this::getBaseUrl, index, startTimeout);
+            if (loadBalancer != null) {
+                loadBalancer.refreshNode(index);
+            }
         }
     }
 

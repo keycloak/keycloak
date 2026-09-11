@@ -258,16 +258,17 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
                 this.stdout = fetchOutputStream();
                 this.stderr = fetchErrorStream();
 
-                // A graceful shutdown will help with cleaning up resources, for example JDBC_PING table entries.
-                // Shutdown is fast (less than 100 ms), waiting for a stale JDBC_PING is slow (10+ seconds).
                 if (keycloakContainer.isRunning()) {
+                    String signal = removeContainer ? "TERM" : "KILL";
                     try (KillContainerCmd killContainerCmd = keycloakContainer.getDockerClient().killContainerCmd(keycloakContainer.getContainerId())) {
-                        killContainerCmd.withSignal("TERM").exec();
+                        killContainerCmd.withSignal(signal).exec();
                     }
                     Awaitility.await().atMost(Duration.ofSeconds(2)).untilAsserted(() -> Assertions.assertFalse(keycloakContainer.isRunning()));
                 }
 
-                keycloakContainer.stop();
+                if (removeContainer) {
+                    keycloakContainer.stop();
+                }
                 this.exitCode = 0;
             }
         } catch (Exception cause) {
