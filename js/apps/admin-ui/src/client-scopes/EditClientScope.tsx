@@ -207,12 +207,24 @@ export default function EditClientScope() {
         id: clientScope!.id!,
         mapperId: mapper.id!,
       });
+      setClientScope((currentClientScope) => {
+        if (!currentClientScope?.protocolMappers) {
+          return currentClientScope;
+        }
+
+        return {
+          ...currentClientScope,
+          protocolMappers: currentClientScope.protocolMappers.filter(
+            ({ id }) => id !== mapper.id,
+          ),
+        };
+      });
       addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
-      refresh();
+      return true;
     } catch (error) {
       addError("mappingDeletedError", error);
+      return false;
     }
-    return true;
   };
 
   if (!clientScope) {
