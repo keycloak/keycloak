@@ -41,6 +41,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserSessionProvider;
@@ -821,6 +822,14 @@ public class RefreshTokenTest {
             AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(initialTokenResponse.getRefreshToken());
             assertEquals(200, refreshResponse.getStatusCode());
             assertScopes("openid profile", refreshResponse.getScope());
+
+            assertNotNull(refreshResponse.getIdToken());
+            IDToken refreshedIdToken = oauth.verifyToken(refreshResponse.getIdToken(), IDToken.class);
+            assertEquals(user.getId(), refreshedIdToken.getSubject());
+            assertNull(refreshedIdToken.getNonce());
+            assertNotNull(refreshedIdToken.getAccessTokenHash());
+            assertEquals(HashUtils.accessTokenHash(Algorithm.RS256, refreshResponse.getAccessToken()), refreshedIdToken.getAccessTokenHash());
+            assertNotEquals(HashUtils.accessTokenHash(Algorithm.RS256, initialTokenResponse.getAccessToken()), refreshedIdToken.getAccessTokenHash());
 
             UserInfoResponse userInfoResponse = oauth.doUserInfoRequest(refreshResponse.getAccessToken());
             assertEquals(200, userInfoResponse.getStatusCode());
