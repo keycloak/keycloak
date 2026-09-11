@@ -34,6 +34,10 @@ import org.jgroups.util.UUID;
  */
 public class ControlledJdbcPing extends KEYCLOAK_JDBC_PING2 {
 
+    {
+        allow_multiple_clusters = true;
+    }
+
     private volatile List<PingData> pingData = List.of();
     private volatile Exception exception;
     private final Queue<HealthStatus> statusQueue = new ArrayDeque<>();
