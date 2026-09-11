@@ -14,36 +14,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.composites;
+package org.keycloak.tests.composites;
 
 import java.util.List;
 
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
-
-import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
+@KeycloakIntegrationTest
 public class CompositeImportRoleTest extends AbstractCompositeKeycloakTest {
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation testRealm = loadJson(getClass().getResourceAsStream("/testcomposite.json"), RealmRepresentation.class);
-        testRealm.setId("test");
-        testRealms.add(testRealm);
-    }
+    @InjectRealm(fromJson = "/org/keycloak/tests/composites/testcomposite.json", config = CompositeImportRoleRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    ManagedRealm managedRealm;
 
-    @Page
-    protected LoginPage loginPage;
+    @InjectOAuthClient(lifecycle = LifeCycle.METHOD)
+    OAuthClient oauth;
+
+    @Override
+    protected ManagedRealm managedRealm() {
+        return managedRealm;
+    }
 
     @Test
     public void testAppCompositeUser() throws Exception {
@@ -55,19 +64,15 @@ public class CompositeImportRoleTest extends AbstractCompositeKeycloakTest {
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         Assertions.assertEquals(200, response.getStatusCode());
-
         Assertions.assertEquals("Bearer", response.getTokenType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
-
         Assertions.assertEquals(getUserId("APP_COMPOSITE_USER"), token.getSubject());
-
         Assertions.assertEquals(1, token.getResourceAccess("APP_ROLE_APPLICATION").getRoles().size());
         Assertions.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assertions.assertTrue(token.getResourceAccess("APP_ROLE_APPLICATION").isUserInRole("APP_ROLE_1"));
         Assertions.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
     }
-
 
     @Test
     public void testRealmAppCompositeUser() throws Exception {
@@ -79,18 +84,13 @@ public class CompositeImportRoleTest extends AbstractCompositeKeycloakTest {
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         Assertions.assertEquals(200, response.getStatusCode());
-
         Assertions.assertEquals("Bearer", response.getTokenType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
-
         Assertions.assertEquals(getUserId("REALM_APP_COMPOSITE_USER"), token.getSubject());
-
         Assertions.assertEquals(1, token.getResourceAccess("APP_ROLE_APPLICATION").getRoles().size());
         Assertions.assertTrue(token.getResourceAccess("APP_ROLE_APPLICATION").isUserInRole("APP_ROLE_1"));
     }
-
-
 
     @Test
     public void testRealmOnlyWithUserCompositeAppComposite() throws Exception {
@@ -102,13 +102,10 @@ public class CompositeImportRoleTest extends AbstractCompositeKeycloakTest {
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         Assertions.assertEquals(200, response.getStatusCode());
-
         Assertions.assertEquals("Bearer", response.getTokenType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
-
         Assertions.assertEquals(getUserId("REALM_COMPOSITE_1_USER"), token.getSubject());
-
         Assertions.assertEquals(2, token.getRealmAccess().getRoles().size());
         Assertions.assertTrue(token.getRealmAccess().isUserInRole("REALM_COMPOSITE_1"));
         Assertions.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
@@ -124,13 +121,10 @@ public class CompositeImportRoleTest extends AbstractCompositeKeycloakTest {
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         Assertions.assertEquals(200, response.getStatusCode());
-
         Assertions.assertEquals("Bearer", response.getTokenType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
-
         Assertions.assertEquals(getUserId("REALM_COMPOSITE_1_USER"), token.getSubject());
-
         Assertions.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assertions.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
     }
@@ -145,15 +139,43 @@ public class CompositeImportRoleTest extends AbstractCompositeKeycloakTest {
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         Assertions.assertEquals(200, response.getStatusCode());
-
         Assertions.assertEquals("Bearer", response.getTokenType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
-
         Assertions.assertEquals(getUserId("REALM_ROLE_1_USER"), token.getSubject());
-
         Assertions.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assertions.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
     }
 
+    private static class CompositeImportRoleRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            RealmRepresentation testRealm = realm.build();
+
+            if (testRealm.getClients() != null) {
+                for (ClientRepresentation client : testRealm.getClients()) {
+                    client.setRedirectUris(List.of("*"));
+                }
+            }
+
+            if (testRealm.getApplications() != null) {
+                for (ApplicationRepresentation application : testRealm.getApplications()) {
+                    application.setRedirectUris(List.of("*"));
+                }
+            }
+
+            if (testRealm.getUsers() != null) {
+                for (UserRepresentation user : testRealm.getUsers()) {
+                    if (user.getFirstName() == null) {
+                        user.setFirstName("Test");
+                    }
+                    if (user.getLastName() == null) {
+                        user.setLastName("User");
+                    }
+                }
+            }
+
+            return RealmBuilder.update(testRealm);
+        }
+    }
 }

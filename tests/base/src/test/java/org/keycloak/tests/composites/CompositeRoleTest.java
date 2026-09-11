@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.composites;
+package org.keycloak.tests.composites;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -25,132 +25,46 @@ import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.tests.utils.Assert;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
+@KeycloakIntegrationTest
 public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
 
+    @InjectRealm(config = CompositeRoleRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    ManagedRealm managedRealm;
+
+    @InjectOAuthClient(lifecycle = LifeCycle.METHOD)
+    OAuthClient oauth;
+
     @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmBuilder realmBuilder = RealmBuilder.create()
-                .name("test")
-                .ssoSessionIdleTimeout(3000)
-                .accessTokenLifespan(10000)
-                .ssoSessionMaxLifespan(10000)
-                .accessCodeLifespanUserAction(1000)
-                .accessCodeLifespan(1000)
-                .sslRequired(SslRequired.EXTERNAL.toString());
-
-
-        realmBuilder.realmRoles(
-                RoleBuilder.create().name("REALM_ROLE_1"),
-                RoleBuilder.create().name("REALM_COMPOSITE_1").composite(true).realmComposite("REALM_ROLE_1"),
-                RoleBuilder.create("REALM_ROLE_2"),
-                RoleBuilder.create("REALM_ROLE_3")
-        );
-
-        UserBuilder realmCompositeUser = UserBuilder.create()
-                .username("REALM_COMPOSITE_1_USER")
-                .enabled(true)
-                .password("password")
-                .realmRoles("REALM_COMPOSITE_1");
-        realmBuilder.users(realmCompositeUser);
-
-        UserBuilder realmRole1User = UserBuilder.create()
-                .username("REALM_ROLE_1_USER")
-                .enabled(true)
-                .password("password")
-                .realmRoles("REALM_ROLE_1");
-        realmBuilder.users(realmRole1User);
-
-        ClientBuilder realmComposite1Application = ClientBuilder.create()
-                .clientId("REALM_COMPOSITE_1_APPLICATION")
-                .name("REALM_COMPOSITE_1_APPLICATION")
-                .fullScopeEnabled(Boolean.FALSE)
-                // addScopeMapping(realmComposite1)
-                .redirectUris("http://localhost:8180/auth/realms/master/app/*", "https://localhost:8543/auth/realms/master/app/*")
-                .baseUrl("http://localhost:8180/auth/realms/master/app/auth")
-                .adminUrl("http://localhost:8180/auth/realms/master/app/logout")
-                .secret("password");
-        realmBuilder.clients(realmComposite1Application);
-
-        ClientBuilder realmRole1Application = ClientBuilder.create()
-                .clientId("REALM_ROLE_1_APPLICATION")
-                .name("REALM_ROLE_1_APPLICATION")
-                .fullScopeEnabled(Boolean.FALSE)
-                // addScopeMapping(realmRole1)
-                .redirectUris("http://localhost:8180/auth/realms/master/app/*", "https://localhost:8543/auth/realms/master/app/*")
-                .baseUrl("http://localhost:8180/auth/realms/master/app/auth")
-                .adminUrl("http://localhost:8180/auth/realms/master/app/logout")
-                .secret("password");
-        realmBuilder.clients(realmRole1Application);
-
-        ClientBuilder appRoleApplication = ClientBuilder.create()
-                .clientId("APP_ROLE_APPLICATION")
-                .name("APP_ROLE_APPLICATION")
-                .fullScopeEnabled(Boolean.FALSE)
-                .redirectUris("http://localhost:8180/auth/realms/master/app/*", "https://localhost:8543/auth/realms/master/app/*")
-                .baseUrl("http://localhost:8180/auth/realms/master/app/auth")
-                .adminUrl("http://localhost:8180/auth/realms/master/app/logout")
-                .defaultRoles("APP_ROLE_1", "APP_ROLE_2")
-                .secret("password");
-        realmBuilder.clients(appRoleApplication);
-
-        UserBuilder realmAppCompositeUser = UserBuilder.create()
-                .username("REALM_APP_COMPOSITE_USER")
-                .password("password");
-        realmBuilder.users(realmAppCompositeUser);
-
-        UserBuilder realmAppRoleUser = UserBuilder.create()
-                .username("REALM_APP_ROLE_USER")
-                .password("password")
-                .realmRoles("APP_ROLE_2");
-        realmBuilder.users(realmAppRoleUser);
-
-        ClientBuilder appCompositeApplication = ClientBuilder.create()
-                .clientId("APP_COMPOSITE_APPLICATION")
-                .name("APP_COMPOSITE_APPLICATION")
-                .fullScopeEnabled(Boolean.FALSE)
-                //.scopeMapping(appRole2)
-                .defaultRoles("APP_COMPOSITE_ROLE")
-                .redirectUris("http://localhost:8180/auth/realms/master/app/*", "https://localhost:8543/auth/realms/master/app/*")
-                .baseUrl("http://localhost:8180/auth/realms/master/app/auth")
-                .adminUrl("http://localhost:8180/auth/realms/master/app/logout")
-                .secret("password");
-        realmBuilder.clients(appCompositeApplication);
-
-        UserBuilder appCompositeUser = UserBuilder.create()
-                .username("APP_COMPOSITE_USER")
-                .password("password")
-                .realmRoles("REALM_COMPOSITE_1");
-        realmBuilder.users(appCompositeUser);
-
-        testRealms.add(realmBuilder.build());
+    protected ManagedRealm managedRealm() {
+        return managedRealm;
     }
 
-    @Before
+    @BeforeEach
     public void before() {
-        if (testContext.isInitialized()) {
-            return;
-        }
-
         // addScopeMappings
         addRealmLevelScopeMapping("REALM_COMPOSITE_1_APPLICATION", "REALM_COMPOSITE_1");
         addRealmLevelScopeMapping("REALM_ROLE_1_APPLICATION", "REALM_ROLE_1");
@@ -169,12 +83,12 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
 
         // addRealmAppCompositeToUsers
         UserResource userRsc = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "REALM_APP_COMPOSITE_USER");
-        RoleRepresentation realmAppCompositeRolee = managedRealm.admin().roles().get("REALM_APP_COMPOSITE_ROLE").toRepresentation();
-        userRsc.roles().realmLevel().add(Collections.singletonList(realmAppCompositeRolee));
+        RoleRepresentation realmAppCompositeRoleRep = managedRealm.admin().roles().get("REALM_APP_COMPOSITE_ROLE").toRepresentation();
+        userRsc.roles().realmLevel().add(Collections.singletonList(realmAppCompositeRoleRep));
 
         // addRealmAppCompositeToUsers2
         userRsc = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "APP_COMPOSITE_USER");
-        userRsc.roles().realmLevel().add(Collections.singletonList(realmAppCompositeRolee));
+        userRsc.roles().realmLevel().add(Collections.singletonList(realmAppCompositeRoleRep));
 
         ClientResource appCompositeApplication = AdminApiUtil.findClientByClientId(managedRealm.admin(), "APP_COMPOSITE_APPLICATION");
         RoleResource appCompositeRole = appCompositeApplication.roles().get("APP_COMPOSITE_ROLE");
@@ -190,9 +104,6 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
         toAdd.add(appRole1Rep);
 
         appCompositeRole.addComposites(toAdd);
-
-        // Track that we initialized model already
-        testContext.setInitialized(true);
     }
 
     private void addRealmLevelScopeMapping(String clientId, String roleName) {
@@ -208,9 +119,6 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
         targetClient.getScopeMappings().clientLevel(sourceClient.toRepresentation().getId()).add(Collections.singletonList(role));
     }
 
-    @Page
-    protected LoginPage loginPage;
-
     @Test
     public void testAppCompositeUser() throws Exception {
         oauth.realm("test");
@@ -221,13 +129,10 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         Assertions.assertEquals(200, response.getStatusCode());
-
         Assertions.assertEquals("Bearer", response.getTokenType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
-
         Assertions.assertEquals(getUserId("APP_COMPOSITE_USER"), token.getSubject());
-
         Assertions.assertEquals(1, token.getResourceAccess("APP_ROLE_APPLICATION").getRoles().size());
         Assertions.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assertions.assertTrue(token.getResourceAccess("APP_ROLE_APPLICATION").isUserInRole("APP_ROLE_1"));
@@ -236,7 +141,6 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
         AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
         Assertions.assertEquals(200, refreshResponse.getStatusCode());
     }
-
 
     @Test
     public void testRealmAppCompositeUser() throws Exception {
@@ -248,13 +152,10 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         Assertions.assertEquals(200, response.getStatusCode());
-
         Assertions.assertEquals("Bearer", response.getTokenType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
-
         Assertions.assertEquals(getUserId("REALM_APP_COMPOSITE_USER"), token.getSubject());
-
         Assertions.assertEquals(1, token.getResourceAccess("APP_ROLE_APPLICATION").getRoles().size());
         Assertions.assertTrue(token.getResourceAccess("APP_ROLE_APPLICATION").isUserInRole("APP_ROLE_1"));
 
@@ -272,13 +173,10 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         Assertions.assertEquals(200, response.getStatusCode());
-
         Assertions.assertEquals("Bearer", response.getTokenType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
-
         Assertions.assertEquals(getUserId("REALM_COMPOSITE_1_USER"), token.getSubject());
-
         Assertions.assertEquals(2, token.getRealmAccess().getRoles().size());
         Assertions.assertTrue(token.getRealmAccess().isUserInRole("REALM_COMPOSITE_1"));
         Assertions.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
@@ -297,13 +195,10 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         Assertions.assertEquals(200, response.getStatusCode());
-
         Assertions.assertEquals("Bearer", response.getTokenType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
-
         Assertions.assertEquals(getUserId("REALM_COMPOSITE_1_USER"), token.getSubject());
-
         Assertions.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assertions.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
 
@@ -321,13 +216,10 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         Assertions.assertEquals(200, response.getStatusCode());
-
         Assertions.assertEquals("Bearer", response.getTokenType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
-
         Assertions.assertEquals(getUserId("REALM_ROLE_1_USER"), token.getSubject());
-
         Assertions.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assertions.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
 
@@ -335,7 +227,6 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
         Assertions.assertEquals(200, refreshResponse.getStatusCode());
     }
 
-    
     // KEYCLOAK-4274
     @Test
     public void testRecursiveComposites() throws Exception {
@@ -355,4 +246,109 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
         managedRealm.admin().roles().get("REALM_ROLE_1").deleteComposites(Collections.singletonList(realmComposite1));
     }
 
+    private static class CompositeRoleRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmBuilder configure(RealmBuilder realmBuilder) {
+            realmBuilder.name("test")
+                    .ssoSessionIdleTimeout(3000)
+                    .accessTokenLifespan(10000)
+                    .ssoSessionMaxLifespan(10000)
+                    .accessCodeLifespanUserAction(1000)
+                    .accessCodeLifespan(1000)
+                    .sslRequired(SslRequired.EXTERNAL.toString());
+
+            realmBuilder.realmRoles(
+                    RoleBuilder.create().name("REALM_ROLE_1"),
+                    RoleBuilder.create().name("REALM_COMPOSITE_1").composite(true).realmComposite("REALM_ROLE_1"),
+                    RoleBuilder.create("REALM_ROLE_2"),
+                    RoleBuilder.create("REALM_ROLE_3")
+            );
+
+            UserBuilder realmCompositeUser = UserBuilder.create()
+                    .username("REALM_COMPOSITE_1_USER")
+                    .email("test-user1@localhost")
+                    .name("Realm", "Composite")
+                    .enabled(true)
+                    .password("password")
+                    .realmRoles("REALM_COMPOSITE_1");
+            realmBuilder.users(realmCompositeUser);
+
+            UserBuilder realmRole1User = UserBuilder.create()
+                    .username("REALM_ROLE_1_USER")
+                    .email("test-user2@localhost")
+                    .name("Realm", "Role1")
+                    .enabled(true)
+                    .password("password")
+                    .realmRoles("REALM_ROLE_1");
+            realmBuilder.users(realmRole1User);
+
+            ClientBuilder realmComposite1Application = ClientBuilder.create()
+                    .clientId("REALM_COMPOSITE_1_APPLICATION")
+                    .name("REALM_COMPOSITE_1_APPLICATION")
+                    .fullScopeEnabled(Boolean.FALSE)
+                    .redirectUris("*")
+                    .baseUrl("http://localhost:8180/auth/realms/master/app/auth")
+                    .adminUrl("http://localhost:8180/auth/realms/master/app/logout")
+                    .secret("password");
+            realmBuilder.clients(realmComposite1Application);
+
+            ClientBuilder realmRole1Application = ClientBuilder.create()
+                    .clientId("REALM_ROLE_1_APPLICATION")
+                    .name("REALM_ROLE_1_APPLICATION")
+                    .fullScopeEnabled(Boolean.FALSE)
+                    .redirectUris("*")
+                    .baseUrl("http://localhost:8180/auth/realms/master/app/auth")
+                    .adminUrl("http://localhost:8180/auth/realms/master/app/logout")
+                    .secret("password");
+            realmBuilder.clients(realmRole1Application);
+
+            ClientBuilder appRoleApplication = ClientBuilder.create()
+                    .clientId("APP_ROLE_APPLICATION")
+                    .name("APP_ROLE_APPLICATION")
+                    .fullScopeEnabled(Boolean.FALSE)
+                    .redirectUris("*")
+                    .baseUrl("http://localhost:8180/auth/realms/master/app/auth")
+                    .adminUrl("http://localhost:8180/auth/realms/master/app/logout")
+                    .defaultRoles("APP_ROLE_1", "APP_ROLE_2")
+                    .secret("password");
+            realmBuilder.clients(appRoleApplication);
+
+            UserBuilder realmAppCompositeUser = UserBuilder.create()
+                    .username("REALM_APP_COMPOSITE_USER")
+                    .email("test-user3@localhost")
+                    .name("Realm", "AppComposite")
+                    .password("password");
+            realmBuilder.users(realmAppCompositeUser);
+
+            UserBuilder realmAppRoleUser = UserBuilder.create()
+                    .username("REALM_APP_ROLE_USER")
+                    .email("test-user4@localhost")
+                    .name("Realm", "AppRole")
+                    .password("password")
+                    .realmRoles("APP_ROLE_2");
+            realmBuilder.users(realmAppRoleUser);
+
+            ClientBuilder appCompositeApplication = ClientBuilder.create()
+                    .clientId("APP_COMPOSITE_APPLICATION")
+                    .name("APP_COMPOSITE_APPLICATION")
+                    .fullScopeEnabled(Boolean.FALSE)
+                    .defaultRoles("APP_COMPOSITE_ROLE")
+                    .redirectUris("*")
+                    .baseUrl("http://localhost:8180/auth/realms/master/app/auth")
+                    .adminUrl("http://localhost:8180/auth/realms/master/app/logout")
+                    .secret("password");
+            realmBuilder.clients(appCompositeApplication);
+
+            UserBuilder appCompositeUser = UserBuilder.create()
+                    .username("APP_COMPOSITE_USER")
+                    .email("test-user5@localhost")
+                    .name("App", "Composite")
+                    .password("password")
+                    .realmRoles("REALM_COMPOSITE_1");
+            realmBuilder.users(appCompositeUser);
+
+            return realmBuilder;
+        }
+    }
 }
