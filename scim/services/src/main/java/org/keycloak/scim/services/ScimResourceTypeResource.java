@@ -24,7 +24,10 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.request.PatchRequest;
 import org.keycloak.scim.protocol.request.SearchRequest;
@@ -32,6 +35,8 @@ import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.Scim;
 import org.keycloak.scim.resource.common.Meta;
+import org.keycloak.scim.resource.spi.MembershipChange;
+import org.keycloak.scim.resource.spi.MembershipChangeAware;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
 import org.keycloak.scim.resource.spi.SingletonResourceTypeProvider;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
@@ -237,6 +242,22 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
                     .resourcePath(session.getContext().getUri())
                     .representation(patched)
                     .success();
+
+            if (resourceTypeProvider instanceof MembershipChangeAware membershipChangeAware) {
+                for (MembershipChange change : membershipChangeAware.pollMembershipChanges()) {
+                    // reset accumulated details from a previous iteration: detail() is a no-op for blank values,
+                    // so a blank value on this change could otherwise inherit the previous change's detail
+                    adminEvent.getEvent().setDetails(null);
+                    adminEvent.operation(change.added() ? OperationType.CREATE : OperationType.DELETE)
+                            .resource(ResourceType.GROUP_MEMBERSHIP)
+                            .resourcePath(session.getContext().getUri(), change.user().getId())
+                            .representation(ModelToRepresentation.toRepresentation(change.group(), true))
+                            .detail(UserModel.USERNAME, change.user().getUsername())
+                            .detail(UserModel.EMAIL, change.user().getEmail())
+                            .success();
+                }
+            }
+
             return patched;
         });
     }

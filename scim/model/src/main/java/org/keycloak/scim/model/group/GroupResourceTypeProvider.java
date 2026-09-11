@@ -47,14 +47,30 @@ import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.group.Member;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
+import org.keycloak.scim.resource.spi.MembershipChange;
+import org.keycloak.scim.resource.spi.MembershipChangeAware;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
-public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<GroupModel, Group> implements ScimAttributeJpaExpressionResolver {
+public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<GroupModel, Group> implements ScimAttributeJpaExpressionResolver, MembershipChangeAware {
+
+    private final GroupCoreModelSchema schema;
 
     public GroupResourceTypeProvider(KeycloakSession session) {
-        super(session, new GroupCoreModelSchema(session));
+        this(session, new GroupCoreModelSchema(session));
+    }
+
+    private GroupResourceTypeProvider(KeycloakSession session, GroupCoreModelSchema schema) {
+        super(session, schema);
+        this.schema = schema;
+    }
+
+    @Override
+    public List<MembershipChange> pollMembershipChanges() {
+        List<MembershipChange> changes = List.copyOf(schema.getMembershipChanges());
+        schema.clearMembershipChanges();
+        return changes;
     }
 
     @Override
