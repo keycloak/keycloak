@@ -22,8 +22,10 @@
              version="3.0">
     <persistence-unit name="new-user-store" transaction-type="JTA">
         <class>com.acme.provider.legacy.jpa.entity.Realm</class>
+        <shared-cache-mode>ENABLE_SELECTIVE</shared-cache-mode>
+        <validation-mode>NONE</validation-mode>
         <properties>
-            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
+            <property name="hibernate.dialect" value="com.acme.provider.legacy.jpa.entity.KeycloakItH2Dialect" />
             <property name="jakarta.persistence.jtaDataSource" value="new-user-store" />
             <property name="hibernate.hbm2ddl.auto" value="update" />
             <property name="hibernate.show_sql" value="false" />
@@ -31,6 +33,7 @@
     </persistence-unit>
 
     <persistence-unit name="client-store" transaction-type="JTA">
+        <jar-file>lib/does-not-exist.jar</jar-file>
         <properties>
             <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
         </properties>
