@@ -3,6 +3,8 @@ package org.keycloak.quarkus.runtime.httpclient;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -13,11 +15,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.connections.httpclient.ProxyMappings;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.RequestOptions;
+import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.ProxyType;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
@@ -39,10 +44,12 @@ public class VertxHttpClientProvider implements HttpClientProvider {
     private final double backoffMultiplier;
     private final boolean useJitter;
     private final double jitterFactor;
+    private final ProxyMappings proxyMappings;
 
     VertxHttpClientProvider(WebClient webClient, HttpClient httpClient,
                             long maxConsumedResponseSize, long socketTimeoutMs, int maxRetries,
-                            long initialBackoffMillis, double backoffMultiplier, boolean useJitter, double jitterFactor) {
+                            long initialBackoffMillis, double backoffMultiplier, boolean useJitter, double jitterFactor,
+                            ProxyMappings proxyMappings) {
         this.webClient = webClient;
         this.httpClient = httpClient;
         this.maxConsumedResponseSize = maxConsumedResponseSize;
@@ -52,6 +59,7 @@ public class VertxHttpClientProvider implements HttpClientProvider {
         this.backoffMultiplier = backoffMultiplier;
         this.useJitter = useJitter;
         this.jitterFactor = jitterFactor;
+        this.proxyMappings = proxyMappings;
         this.bridge = new VertxHttpClientBridge(httpClient, this);
     }
 
@@ -64,10 +72,18 @@ public class VertxHttpClientProvider implements HttpClientProvider {
     public int postText(String uri, String text) throws IOException {
         return executeWithRetry(() -> {
             CompletableFuture<Integer> future = new CompletableFuture<>();
-            webClient.postAbs(uri)
+            var req = webClient.postAbs(uri)
                     .as(BodyCodec.none())
-                    .putHeader("Content-Type", "text/plain; charset=ISO-8859-1")
-                    .sendBuffer(Buffer.buffer(text, "ISO-8859-1"))
+                    .putHeader("Content-Type", "text/plain; charset=ISO-8859-1");
+            long timeout = getEffectiveTimeoutMs();
+            if (timeout > 0) {
+                req.timeout(timeout);
+            }
+            ProxyOptions proxy = resolveProxy(uri);
+            if (proxy != null) {
+                req.proxy(proxy);
+            }
+            req.sendBuffer(Buffer.buffer(text, "ISO-8859-1"))
                     .onComplete(ar -> {
                         if (ar.succeeded()) {
                             future.complete(ar.result().statusCode());
@@ -87,6 +103,10 @@ public class VertxHttpClientProvider implements HttpClientProvider {
                     .setMethod(HttpMethod.GET)
                     .setAbsoluteURI(uri)
                     .setTimeout(getEffectiveTimeoutMs());
+            ProxyOptions proxy = resolveProxy(uri);
+            if (proxy != null) {
+                reqOptions.setProxyOptions(proxy);
+            }
 
             httpClient.request(reqOptions).onComplete(reqAr -> {
                 if (reqAr.failed()) {
@@ -169,6 +189,14 @@ public class VertxHttpClientProvider implements HttpClientProvider {
         return executeWithRetry(() -> {
             CompletableFuture<HttpResponse<Buffer>> future = new CompletableFuture<>();
             var req = webClient.getAbs(uri);
+            long timeout = getEffectiveTimeoutMs();
+            if (timeout > 0) {
+                req.timeout(timeout);
+            }
+            ProxyOptions proxy = resolveProxy(uri);
+            if (proxy != null) {
+                req.proxy(proxy);
+            }
             if (headers != null) {
                 headers.forEach(req::putHeader);
             }
@@ -214,6 +242,14 @@ public class VertxHttpClientProvider implements HttpClientProvider {
         return executeWithRetry(() -> {
             CompletableFuture<byte[]> future = new CompletableFuture<>();
             var req = webClient.postAbs(uri);
+            long timeout = getEffectiveTimeoutMs();
+            if (timeout > 0) {
+                req.timeout(timeout);
+            }
+            ProxyOptions proxy = resolveProxy(uri);
+            if (proxy != null) {
+                req.proxy(proxy);
+            }
             if (headers != null) {
                 headers.forEach(req::putHeader);
             }
@@ -294,6 +330,42 @@ public class VertxHttpClientProvider implements HttpClientProvider {
         return socketTimeoutMs > 0
                 ? Math.max(socketTimeoutMs, DEFAULT_TIMEOUT_SECONDS * 1000)
                 : 0;
+    }
+
+    ProxyOptions resolveProxy(String uri) {
+        if (proxyMappings == null) {
+            return null;
+        }
+        try {
+            String hostname = new URI(uri).getHost();
+            return resolveProxyForHost(hostname);
+        } catch (URISyntaxException e) {
+            logger.debugf("Cannot resolve proxy for URI '%s': %s", uri, e.getMessage());
+            return null;
+        }
+    }
+
+    ProxyOptions resolveProxyForHost(String hostname) {
+        if (proxyMappings == null || hostname == null) {
+            return null;
+        }
+        ProxyMappings.ProxyMapping mapping = proxyMappings.getProxyFor(hostname);
+        if (mapping == null || mapping.getProxyHost() == null) {
+            return null;
+        }
+        int port = mapping.getProxyHost().getPort();
+        if (port <= 0) {
+            port = "https".equalsIgnoreCase(mapping.getProxyHost().getSchemeName()) ? 443 : 80;
+        }
+        ProxyOptions options = new ProxyOptions()
+                .setType(ProxyType.HTTP)
+                .setHost(mapping.getProxyHost().getHostName())
+                .setPort(port);
+        if (mapping.getProxyCredentials() != null) {
+            options.setUsername(mapping.getProxyCredentials().getUserName())
+                    .setPassword(mapping.getProxyCredentials().getPassword());
+        }
+        return options;
     }
 
     static <T> T awaitResult(CompletableFuture<T> future, long timeoutMs) throws IOException {

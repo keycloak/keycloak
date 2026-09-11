@@ -9,6 +9,7 @@ import java.net.URISyntaxException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
@@ -16,6 +17,7 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.RequestOptions;
+import io.vertx.core.net.ProxyOptions;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -63,21 +65,18 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
         String method = request.getRequestLine().getMethod();
         long maxSize = provider.getMaxConsumedResponseSize();
 
-        long timeoutMs = provider.getEffectiveTimeoutMs();
+        long idleTimeoutMs = provider.getEffectiveTimeoutMs();
+        long connectTimeoutMs = -1;
         if (request instanceof HttpRequestBase) {
             RequestConfig rc = ((HttpRequestBase) request).getConfig();
             if (rc != null) {
                 int socketTimeout = rc.getSocketTimeout();
-                int connRequestTimeout = rc.getConnectionRequestTimeout();
-                int effectiveTimeout = Integer.MAX_VALUE;
                 if (socketTimeout > 0) {
-                    effectiveTimeout = socketTimeout;
+                    idleTimeoutMs = socketTimeout;
                 }
+                int connRequestTimeout = rc.getConnectionRequestTimeout();
                 if (connRequestTimeout > 0) {
-                    effectiveTimeout = Math.min(effectiveTimeout, connRequestTimeout);
-                }
-                if (effectiveTimeout < Integer.MAX_VALUE) {
-                    timeoutMs = effectiveTimeout;
+                    connectTimeoutMs = connRequestTimeout;
                 }
             }
         }
@@ -97,9 +96,17 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
         RequestOptions reqOptions = new RequestOptions()
                 .setMethod(HttpMethod.valueOf(method))
                 .setAbsoluteURI(uri.toString())
-                .setTimeout(timeoutMs);
+                .setIdleTimeout(idleTimeoutMs);
+        if (connectTimeoutMs > 0) {
+            reqOptions.setConnectTimeout(connectTimeoutMs);
+        }
+        ProxyOptions proxy = provider.resolveProxyForHost(uri.getHost());
+        if (proxy != null) {
+            reqOptions.setProxyOptions(proxy);
+        }
 
         CompletableFuture<CloseableHttpResponse> future = new CompletableFuture<>();
+        AtomicReference<HttpClientRequest> requestRef = new AtomicReference<>();
         Buffer sendBody = bodyBuffer;
         Header sendContentType = entityContentType;
         Header sendContentEncoding = entityContentEncoding;
@@ -111,6 +118,7 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
             }
 
             HttpClientRequest clientReq = reqAr.result();
+            requestRef.set(clientReq);
 
             for (Header header : request.getAllHeaders()) {
                 clientReq.putHeader(header.getName(), header.getValue());
@@ -167,7 +175,15 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
             }
         });
 
-        return VertxHttpClientProvider.awaitResult(future, timeoutMs);
+        try {
+            return VertxHttpClientProvider.awaitResult(future, idleTimeoutMs);
+        } catch (IOException e) {
+            HttpClientRequest req = requestRef.get();
+            if (req != null) {
+                req.reset();
+            }
+            throw e;
+        }
     }
 
     @Override
