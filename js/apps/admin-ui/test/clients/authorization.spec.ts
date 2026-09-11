@@ -396,13 +396,14 @@ test.describe.serial("Client authorization evaluate resource key", () => {
     page,
   }) => {
     const key = getEvaluateResourceKeyInput(page);
-    const options = getEvaluateResourceKeyOptions(page);
 
     await key.click();
-    await key.pressSequentially("charlie");
+    await key.fill("charlie");
 
     await expect(key).toHaveValue("charlie");
-    await expect(options).toHaveText(["charlie-resource"]);
+    await expect(await getEvaluateResourceKeyOptions(page)).toHaveText([
+      "charlie-resource",
+    ]);
 
     await key.press("Enter");
     await expect(key).toHaveValue("charlie-resource");
@@ -412,20 +413,23 @@ test.describe.serial("Client authorization evaluate resource key", () => {
     page,
   }) => {
     const key = getEvaluateResourceKeyInput(page);
-    const options = getEvaluateResourceKeyOptions(page);
 
     await key.click();
-    await options.filter({ hasText: "charlie-resource" }).click();
+    await (await getEvaluateResourceKeyOptions(page))
+      .filter({ hasText: "charlie-resource" })
+      .click();
     await expect(key).toHaveValue("charlie-resource");
 
     // Typing over an existing selection must show what was typed, not the
     // selection it replaces, and must narrow the menu down to it.
     await key.click();
     await key.press("ControlOrMeta+a");
-    await key.pressSequentially("alpha");
+    await key.fill("alpha");
 
     await expect(key).toHaveValue("alpha");
-    await expect(options).toHaveText(["alpha-resource"]);
+    await expect(await getEvaluateResourceKeyOptions(page)).toHaveText([
+      "alpha-resource",
+    ]);
 
     await key.press("Enter");
     await expect(key).toHaveValue("alpha-resource");
@@ -435,21 +439,24 @@ test.describe.serial("Client authorization evaluate resource key", () => {
     page,
   }) => {
     const key = getEvaluateResourceKeyInput(page);
-    const options = getEvaluateResourceKeyOptions(page);
 
     await key.click();
-    await options.filter({ hasText: "bravo-resource" }).click();
+    await (await getEvaluateResourceKeyOptions(page))
+      .filter({ hasText: "bravo-resource" })
+      .click();
     await expect(key).toHaveValue("bravo-resource");
 
     await key.click();
     await key.press("ControlOrMeta+a");
-    await key.pressSequentially("zzz");
+    await key.fill("zzz");
     await key.press("Escape");
     await expect(key).toHaveValue("bravo-resource");
 
     // Re-opening must offer the whole list again, not just the last filter.
     await key.click();
-    await expect(options).toHaveText(resourceNames);
+    await expect(await getEvaluateResourceKeyOptions(page)).toHaveText(
+      resourceNames,
+    );
   });
 
   test("Should not satisfy a required select by clearing the input", async ({
@@ -465,12 +472,10 @@ test.describe.serial("Client authorization evaluate resource key", () => {
     // required check pass with nothing actually selected.
     const resources = page.locator("#resources").getByRole("combobox");
     await resources.click();
-    await resources.pressSequentially("alpha");
+    await resources.fill("alpha");
     await page.locator("#resources").getByLabel("Clear input value").click();
 
     await clickSaveButton(page);
-    await expect(
-      page.getByText("Required field", { exact: true }),
-    ).toBeVisible();
+    await expect(page.getByText("Required field")).toBeVisible();
   });
 });

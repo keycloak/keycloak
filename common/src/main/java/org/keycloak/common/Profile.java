@@ -73,7 +73,7 @@ public class Profile {
 
         CLIENT_ADMIN_API_V2("Client Admin API v2", Type.EXPERIMENTAL, 2, Feature.ADMIN_API),
 
-        ADMIN_V2("New Admin Console", Type.DEFAULT, 2, Feature.ADMIN_API),
+        ADMIN_V3("New Admin Console version 3", Type.DEFAULT, 3, Feature.ADMIN_API),
 
         LOGIN_V2("New Login Theme", Type.DEFAULT, 2, FeatureUpdatePolicy.ROLLING_NO_UPGRADE),
 

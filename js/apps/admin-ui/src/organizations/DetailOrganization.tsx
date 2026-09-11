@@ -100,7 +100,7 @@ export default function DetailOrganization() {
   const [activeEventsTab, setActiveEventsTab] = useState("adminEvents");
 
   return (
-    <PageSection variant="light" className="pf-v5-u-p-0">
+    <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
       <FormProvider {...form}>
         <DetailOrganizationHeader save={() => save(form.getValues())} />
         <RoutableTabs
@@ -115,7 +115,7 @@ export default function DetailOrganization() {
             title={<TabTitleText>{t("settings")}</TabTitleText>}
             {...settingsTab}
           >
-            <PageSection>
+            <PageSection hasBodyWrapper={false}>
               <FormAccess
                 role="anyone"
                 onSubmit={form.handleSubmit(save)}
@@ -146,7 +146,7 @@ export default function DetailOrganization() {
             title={<TabTitleText>{t("attributes")}</TabTitleText>}
             {...attributesTab}
           >
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
               <AttributesForm
                 form={form}
                 save={save}

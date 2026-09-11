@@ -134,19 +134,19 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
   }
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <DisableConfirm />
-      <Card isFlat>
+      <Card>
         <CardTitle>{t("permissions")}</CardTitle>
         <CardBody>
           {t(`${type}PermissionsHint`)}
-          <Form isHorizontal className="pf-v5-u-pt-md">
+          <Form isHorizontal className="pf-v6-u-pt-md">
             <FormGroup
               hasNoPaddingTop
               className="permission-label"
               label={t("permissionsEnabled")}
               fieldId="permissionsEnabled"
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("permissionsEnabledHelp")}
                   fieldLabelId="permissionsEnabled"
@@ -157,7 +157,6 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                 id="permissionsEnabled"
                 data-testid="permissionSwitch"
                 label={t("on")}
-                labelOff={t("off")}
                 isChecked={permission.enabled}
                 onChange={async (_event, enabled) => {
                   if (enabled) {
@@ -175,7 +174,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
       </Card>
       {permission.enabled && (
         <>
-          <Card isFlat className="pf-v5-u-mt-lg">
+          <Card className="pf-v6-u-mt-lg">
             <CardTitle>{t("permissionsList")}</CardTitle>
             <CardBody>
               <Trans i18nKey="permissionsListIntro">
@@ -184,8 +183,8 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
               </Trans>
             </CardBody>
           </Card>
-          <Card isFlat className="keycloak__permission__permission-table">
-            <CardBody className="pf-v5-u-p-0">
+          <Card className="keycloak__permission__permission-table">
+            <CardBody className="pf-v6-u-p-0">
               <Table aria-label={t("permissionsList")} variant="compact">
                 <Thead>
                   <Tr>

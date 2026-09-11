@@ -1,14 +1,15 @@
 import type { OrganizationInvitationRepresentation } from "@keycloak/keycloak-admin-client";
 import { OrganizationInvitationStatus } from "@keycloak/keycloak-admin-client";
 import {
+  Label,
   Button,
-  Chip,
   Dropdown,
   DropdownItem,
   DropdownList,
   MenuToggle,
   ToolbarItem,
 } from "@patternfly/react-core";
+
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
@@ -33,9 +34,9 @@ const InvitationStatusBadge = ({
   const { t } = useTranslation();
 
   return (
-    <Chip isReadOnly>
+    <Label variant="outline">
       {status ? t(`organizationInvitationStatus.${status.toLowerCase()}`) : ""}
-    </Chip>
+    </Label>
   );
 };
 

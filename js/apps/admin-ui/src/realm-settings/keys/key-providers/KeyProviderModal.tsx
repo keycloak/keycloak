@@ -1,4 +1,9 @@
-import { Modal, ModalVariant } from "@patternfly/react-core";
+import {
+  Modal,
+  ModalBody,
+  ModalHeader,
+  ModalVariant,
+} from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { KeyProviderForm } from "./KeyProviderForm";
 import type { ProviderType } from "../../routes/KeyProvider";
@@ -19,11 +24,14 @@ export const KeyProviderModal = ({
     <Modal
       className={style.dialog}
       variant={ModalVariant.medium}
-      title={t("addProvider")}
       isOpen
       onClose={onClose}
+      aria-label={t("addProvider")}
     >
-      <KeyProviderForm providerType={providerType} onClose={onClose} />
+      <ModalHeader title={t("addProvider")} />
+      <ModalBody>
+        <KeyProviderForm providerType={providerType} onClose={onClose} />
+      </ModalBody>
     </Modal>
   );
 };

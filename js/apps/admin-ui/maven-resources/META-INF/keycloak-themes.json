@@ -1,7 +1,7 @@
 {
   "themes": [
     {
-      "name": "keycloak.v2",
+      "name": "keycloak.v3",
       "types": [
         "admin"
       ]

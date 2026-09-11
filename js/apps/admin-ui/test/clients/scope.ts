@@ -34,8 +34,17 @@ export async function clickAddClientScope(page: Page) {
 }
 
 export async function clickAddScope(page: Page, option: string) {
-  await page.getByTestId("add-dropdown").click();
-  await page.getByRole("menuitem", { name: option }).click();
+  const addDropdown = page.getByTestId("add-dropdown");
+
+  await expect(addDropdown).toBeEnabled();
+
+  // Retry: the add-scope dropdown can fail to stay open due to rendering races under CI load.
+  await expect(async () => {
+    await addDropdown.click();
+    const menuItem = page.getByTestId(`add-scope-type-${option.toLowerCase()}`);
+    await expect(menuItem).toBeVisible({ timeout: 2_000 });
+    await menuItem.click({ timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
 }
 
 export async function assertTableCellDropdownValue(page: Page, value: string) {

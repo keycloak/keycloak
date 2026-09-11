@@ -49,7 +49,7 @@ export const SamlGeneralSettings = ({
         <FormGroup
           label={t("endpoints")}
           fieldId="endpoints"
-          labelIcon={
+          labelHelp={
             <HelpItem helpText={t("aliasHelp")} fieldLabelId="alias" />
           }
           className="keycloak__identity-providers__saml_link"

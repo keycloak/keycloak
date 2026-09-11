@@ -20,6 +20,9 @@ import {
   DataListItemCells,
   DataListItemRow,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
 } from "@patternfly/react-core";
 import { AngleRightIcon } from "@patternfly/react-icons";
@@ -155,13 +158,129 @@ export const GroupPickerDialog = ({
   return (
     <Modal
       variant={filter !== "" ? ModalVariant.medium : ModalVariant.small}
-      title={t(text.title, {
-        group1: filterGroups?.[0]?.name,
-        group2: navigation.length ? currentGroup().name : t("root"),
-      })}
       isOpen
       onClose={onClose}
-      actions={[
+    >
+      <ModalHeader
+        title={t(text.title, {
+          group1: filterGroups?.[0]?.name,
+          group2: navigation.length ? currentGroup().name : t("root"),
+        })}
+      />
+      <ModalBody>
+        <PaginatingTableToolbar
+          count={count}
+          first={first}
+          max={max}
+          onNextClick={setFirst}
+          onPreviousClick={setFirst}
+          onPerPageSelect={(first, max) => {
+            setFirst(first);
+            setMax(max);
+          }}
+          inputGroupName={"search"}
+          inputGroupOnEnter={(search) => {
+            setFilter(search);
+            setFirst(0);
+            setMax(10);
+            setNavigation([]);
+            setGroupId(undefined);
+          }}
+          inputGroupPlaceholder={t("searchForGroups")}
+        >
+          <Breadcrumb>
+            {navigation.length > 0 && (
+              <BreadcrumbItem key="home">
+                <Button
+                  variant="link"
+                  onClick={() => {
+                    setGroupId(undefined);
+                    setNavigation([]);
+                    setFirst(0);
+                    setMax(10);
+                  }}
+                >
+                  {t("groups")}
+                </Button>
+              </BreadcrumbItem>
+            )}
+            {navigation.map((group, i) => (
+              <BreadcrumbItem key={i}>
+                {navigation.length - 1 !== i && (
+                  <Button
+                    variant="link"
+                    onClick={() => {
+                      setGroupId(group.id);
+                      setNavigation([...navigation].slice(0, i));
+                      setFirst(0);
+                      setMax(10);
+                    }}
+                  >
+                    {group.name}
+                  </Button>
+                )}
+                {navigation.length - 1 === i && group.name}
+              </BreadcrumbItem>
+            ))}
+          </Breadcrumb>
+          <DataList aria-label={t("groups")} isCompact>
+            {filter == ""
+              ? groups.slice(0, max).map((group: SelectableGroup) => (
+                  <GroupRow
+                    key={group.id}
+                    group={group}
+                    isRowDisabled={isRowDisabled}
+                    onSelect={(group) => {
+                      setGroupId(group.id);
+                      setFirst(0);
+                    }}
+                    type={type}
+                    isSearching={false}
+                    selectedRows={selectedRows}
+                    setSelectedRows={setSelectedRows}
+                    canBrowse={canBrowse}
+                  />
+                ))
+              : groups
+                  .map((g) => deepGroup([g]))
+                  .flat()
+                  .filter((g) => isOrgGroups || g.access)
+                  .map((g) => (
+                    <GroupRow
+                      key={g.id}
+                      group={g}
+                      isRowDisabled={isRowDisabled}
+                      onSelect={(group) => {
+                        setGroupId(group.id);
+                        setFilter("");
+                        setFirst(0);
+                      }}
+                      type={type}
+                      isSearching
+                      selectedRows={selectedRows}
+                      setSelectedRows={setSelectedRows}
+                      canBrowse={false}
+                    />
+                  ))}
+          </DataList>
+          {groups.length === 0 && filter === "" && (
+            <ListEmptyState
+              hasIcon={false}
+              message={t("moveGroupEmpty")}
+              instructions={
+                isMove ? t("moveGroupEmptyInstructions") : undefined
+              }
+            />
+          )}
+          {groups.length === 0 && filter !== "" && (
+            <ListEmptyState
+              message={t("noSearchResults")}
+              instructions={t("noSearchResultsInstructions")}
+            />
+          )}
+        </PaginatingTableToolbar>
+      </ModalBody>
+      <ModalFooter>
         <Button
           data-testid={`${text.ok}-button`}
           key="confirm"
@@ -179,118 +298,8 @@ export const GroupPickerDialog = ({
           isDisabled={type === "selectMany" && selectedRows.length === 0}
         >
           {t(text.ok)}
-        </Button>,
-      ]}
-    >
-      <PaginatingTableToolbar
-        count={count}
-        first={first}
-        max={max}
-        onNextClick={setFirst}
-        onPreviousClick={setFirst}
-        onPerPageSelect={(first, max) => {
-          setFirst(first);
-          setMax(max);
-        }}
-        inputGroupName={"search"}
-        inputGroupOnEnter={(search) => {
-          setFilter(search);
-          setFirst(0);
-          setMax(10);
-          setNavigation([]);
-          setGroupId(undefined);
-        }}
-        inputGroupPlaceholder={t("searchForGroups")}
-      >
-        <Breadcrumb>
-          {navigation.length > 0 && (
-            <BreadcrumbItem key="home">
-              <Button
-                variant="link"
-                onClick={() => {
-                  setGroupId(undefined);
-                  setNavigation([]);
-                  setFirst(0);
-                  setMax(10);
-                }}
-              >
-                {t("groups")}
-              </Button>
-            </BreadcrumbItem>
-          )}
-          {navigation.map((group, i) => (
-            <BreadcrumbItem key={i}>
-              {navigation.length - 1 !== i && (
-                <Button
-                  variant="link"
-                  onClick={() => {
-                    setGroupId(group.id);
-                    setNavigation([...navigation].slice(0, i));
-                    setFirst(0);
-                    setMax(10);
-                  }}
-                >
-                  {group.name}
-                </Button>
-              )}
-              {navigation.length - 1 === i && group.name}
-            </BreadcrumbItem>
-          ))}
-        </Breadcrumb>
-        <DataList aria-label={t("groups")} isCompact>
-          {filter == ""
-            ? groups.slice(0, max).map((group: SelectableGroup) => (
-                <GroupRow
-                  key={group.id}
-                  group={group}
-                  isRowDisabled={isRowDisabled}
-                  onSelect={(group) => {
-                    setGroupId(group.id);
-                    setFirst(0);
-                  }}
-                  type={type}
-                  isSearching={false}
-                  selectedRows={selectedRows}
-                  setSelectedRows={setSelectedRows}
-                  canBrowse={canBrowse}
-                />
-              ))
-            : groups
-                .map((g) => deepGroup([g]))
-                .flat()
-                .filter((g) => isOrgGroups || g.access)
-                .map((g) => (
-                  <GroupRow
-                    key={g.id}
-                    group={g}
-                    isRowDisabled={isRowDisabled}
-                    onSelect={(group) => {
-                      setGroupId(group.id);
-                      setFilter("");
-                      setFirst(0);
-                    }}
-                    type={type}
-                    isSearching
-                    selectedRows={selectedRows}
-                    setSelectedRows={setSelectedRows}
-                    canBrowse={false}
-                  />
-                ))}
-        </DataList>
-        {groups.length === 0 && filter === "" && (
-          <ListEmptyState
-            hasIcon={false}
-            message={t("moveGroupEmpty")}
-            instructions={isMove ? t("moveGroupEmptyInstructions") : undefined}
-          />
-        )}
-        {groups.length === 0 && filter !== "" && (
-          <ListEmptyState
-            message={t("noSearchResults")}
-            instructions={t("noSearchResultsInstructions")}
-          />
-        )}
-      </PaginatingTableToolbar>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };
@@ -394,12 +403,13 @@ const GroupRow = ({
           id="actions"
           aria-labelledby={`select-${group.name}`}
           aria-label={t("groupName")}
-          isPlainButtonAction
         >
           {(canBrowse || type === "selectOne") && group.subGroupCount !== 0 && (
-            <Button variant="link" aria-label={t("select")}>
-              <AngleRightIcon />
-            </Button>
+            <Button
+              icon={<AngleRightIcon />}
+              variant="link"
+              aria-label={t("select")}
+            ></Button>
           )}
         </DataListAction>
       </DataListItemRow>

@@ -140,7 +140,7 @@ export default function KeyProviderFormPage() {
   return (
     <>
       <ViewHeader titleKey={t("editProvider")} subKey={params.providerType} />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <KeyProviderForm
           {...params}
           onClose={() =>

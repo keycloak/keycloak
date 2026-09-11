@@ -35,7 +35,7 @@ export const LdapSettingsSynchronization = ({
         <FormGroup
           hasNoPaddingTop
           label={t("importUsers")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("importUsersHelp")}
               fieldLabelId="importUsers"
@@ -53,7 +53,6 @@ export const LdapSettingsSynchronization = ({
                 data-testid="import-users"
                 name="importEnabled"
                 label={t("on")}
-                labelOff={t("off")}
                 onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 isDisabled={false}
@@ -65,7 +64,7 @@ export const LdapSettingsSynchronization = ({
         <FormGroup
           hasNoPaddingTop
           label={t("syncRegistrations")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("syncRegistrations")}
               fieldLabelId="syncRegistrations"
@@ -82,7 +81,6 @@ export const LdapSettingsSynchronization = ({
                 id="syncRegistrations"
                 data-testid="syncRegistrations"
                 label={t("on")}
-                labelOff={t("off")}
                 onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 aria-label={t("syncRegistrations")}
@@ -99,7 +97,7 @@ export const LdapSettingsSynchronization = ({
         />
         <FormGroup
           label={t("periodicFullSync")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("periodicFullSyncHelp")}
               fieldLabelId="periodicFullSync"
@@ -120,7 +118,6 @@ export const LdapSettingsSynchronization = ({
                 onChange={(_event, value) => field.onChange(value)}
                 isChecked={field.value === true}
                 label={t("on")}
-                labelOff={t("off")}
                 aria-label={t("periodicFullSync")}
               />
             )}
@@ -138,7 +135,7 @@ export const LdapSettingsSynchronization = ({
         )}
         <FormGroup
           label={t("periodicChangedUsersSync")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("periodicChangedUsersSyncHelp")}
               fieldLabelId="periodicChangedUsersSync"
@@ -159,7 +156,6 @@ export const LdapSettingsSynchronization = ({
                 onChange={(_event, value) => field.onChange(value)}
                 isChecked={field.value === true}
                 label={t("on")}
-                labelOff={t("off")}
                 aria-label={t("periodicChangedUsersSync")}
               />
             )}
@@ -177,7 +173,7 @@ export const LdapSettingsSynchronization = ({
         )}
         <FormGroup
           label={t("removeInvalidUsers")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("removeInvalidUsersHelp")}
               fieldLabelId="removeInvalidUsers"
@@ -198,7 +194,6 @@ export const LdapSettingsSynchronization = ({
                 onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
-                labelOff={t("off")}
                 aria-label={t("removeInvalidUsers")}
               />
             )}

@@ -1,5 +1,6 @@
 import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
-import { Chip, FormGroup, Split, SplitItem } from "@patternfly/react-core";
+import { Label, FormGroup, Split, SplitItem } from "@patternfly/react-core";
+
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -44,7 +45,7 @@ export const RoleComponent = ({
   return (
     <FormGroup
       label={t(label!)}
-      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
+      labelHelp={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
       isRequired={required}
     >
@@ -68,12 +69,16 @@ export const RoleComponent = ({
 
             {field.value !== "" && (
               <SplitItem>
-                <Chip textMaxWidth="500px" onClick={() => field.onChange("")}>
+                <Label
+                  variant="outline"
+                  textMaxWidth="500px"
+                  onClose={() => field.onChange("")}
+                >
                   <ServiceRole
                     role={{ name: parseValue(field.value)[1] }}
                     client={{ clientId: parseValue(field.value)[0] }}
                   />
-                </Chip>
+                </Label>
               </SplitItem>
             )}
             <SplitItem>

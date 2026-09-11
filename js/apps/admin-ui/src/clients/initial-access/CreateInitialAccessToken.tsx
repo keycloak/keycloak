@@ -63,7 +63,7 @@ export default function CreateInitialAccessToken() {
         />
       )}
       <ViewHeader titleKey="createToken" subKey="createTokenHelp" />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormAccess
           isHorizontal
           role="create-client"
@@ -97,7 +97,7 @@ export default function CreateInitialAccessToken() {
           <FormGroup
             label={t("webOrigins")}
             fieldId="kc-web-origins"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("webOriginsHelp")}
                 fieldLabelId="webOrigins"

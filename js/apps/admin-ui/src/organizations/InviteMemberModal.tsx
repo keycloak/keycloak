@@ -4,6 +4,9 @@ import {
   ButtonVariant,
   Form,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
 } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
@@ -44,10 +47,26 @@ export const InviteMemberModal = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("inviteNewUser")}
       isOpen
       onClose={onClose}
-      actions={[
+      aria-label={t("inviteNewUser")}
+    >
+      <ModalHeader title={t("inviteNewUser")} />
+      <ModalBody>
+        <FormProvider {...form}>
+          <Form id="form" onSubmit={handleSubmit(submitForm)}>
+            <TextControl
+              name="email"
+              label={t("email")}
+              rules={{ required: t("required") }}
+              autoFocus
+            />
+            <TextControl name="firstName" label={t("firstName")} />
+            <TextControl name="lastName" label={t("lastName")} />
+          </Form>
+        </FormProvider>
+      </ModalBody>
+      <ModalFooter>
         <FormSubmitButton
           formState={formState}
           data-testid="save"
@@ -57,7 +76,7 @@ export const InviteMemberModal = ({
           allowNonDirty
         >
           {t("send")}
-        </FormSubmitButton>,
+        </FormSubmitButton>
         <Button
           id="modal-cancel"
           data-testid="cancel"
@@ -66,21 +85,8 @@ export const InviteMemberModal = ({
           onClick={onClose}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <FormProvider {...form}>
-        <Form id="form" onSubmit={handleSubmit(submitForm)}>
-          <TextControl
-            name="email"
-            label={t("email")}
-            rules={{ required: t("required") }}
-            autoFocus
-          />
-          <TextControl name="firstName" label={t("firstName")} />
-          <TextControl name="lastName" label={t("lastName")} />
-        </Form>
-      </FormProvider>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

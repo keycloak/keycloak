@@ -5,17 +5,19 @@ import {
 } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
+  Content,
+  ContentVariants,
   Flex,
   FlexItem,
   Form,
   FormGroup,
   Label,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
-  Text,
-  TextContent,
   TextInput,
-  TextVariants,
 } from "@patternfly/react-core";
 import { SearchIcon } from "@patternfly/react-icons";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
@@ -109,10 +111,133 @@ export const AddTranslationsDialog = ({
   return (
     <Modal
       variant={ModalVariant.medium}
-      title={t("addTranslationsModalTitle")}
       isOpen
       onClose={toggleDialog}
-      actions={[
+      aria-label={t("addTranslationsModalTitle")}
+    >
+      <ModalHeader title={t("addTranslationsModalTitle")} />
+      <ModalBody>
+        <Flex
+          direction={{ default: "column" }}
+          spaceItems={{ default: "spaceItemsNone" }}
+        >
+          <FlexItem>
+            <Trans
+              i18nKey="addTranslationsModalTitle"
+              values={{ fieldName: t(fieldName) }}
+            >
+              You are able to translate the fieldName based on your locale or
+              <strong>location</strong>
+            </Trans>
+          </FlexItem>
+          <FlexItem>
+            <Form id="add-translation" data-testid="addTranslationForm">
+              <FormGroup label={t("translationKey")} fieldId="translationKey">
+                <TextInput
+                  id="translationKey"
+                  label={t("translationKey")}
+                  data-testid="translation-key"
+                  isDisabled
+                  value={
+                    predefinedAttributes?.includes(orgKey)
+                      ? `\${${orgKey}}`
+                      : `\${${translationKey}}`
+                  }
+                />
+              </FormGroup>
+              <FlexItem>
+                <Content>
+                  <Content
+                    className="pf-v6-u-font-size-sm pf-v6-u-font-weight-bold"
+                    component={ContentVariants.p}
+                  >
+                    {t("translationsTableHeading")}
+                  </Content>
+                </Content>
+                <PaginatingTableToolbar
+                  count={translations.length}
+                  first={first}
+                  max={max}
+                  onNextClick={setFirst}
+                  onPreviousClick={setFirst}
+                  onPerPageSelect={(first, max) => {
+                    setFirst(first);
+                    setMax(max);
+                  }}
+                  inputGroupName={"search"}
+                  inputGroupOnEnter={(search) => {
+                    setFilter(search);
+                    setFirst(0);
+                    setMax(10);
+                  }}
+                  inputGroupPlaceholder={t("searchForLanguage")}
+                >
+                  {translations.length === 0 && filter && (
+                    <ListEmptyState
+                      hasIcon
+                      icon={SearchIcon}
+                      isSearchVariant
+                      message={t("noSearchResults")}
+                      instructions={t("noLanguagesSearchResultsInstructions")}
+                    />
+                  )}
+                  {translations.length !== 0 && (
+                    <Table
+                      aria-label={t("addTranslationsDialogRowsTable")}
+                      data-testid="add-translations-dialog-rows-table"
+                    >
+                      <Thead>
+                        <Tr>
+                          <Th className="pf-v6-u-py-lg">
+                            {t("supportedLanguagesTableColumnName")}
+                          </Th>
+                          <Th className="pf-v6-u-py-lg">
+                            {t("translationTableColumnName")}
+                          </Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {translations
+                          .slice(0, max)
+                          .map((translation, index) => (
+                            <Tr key={index}>
+                              <Td dataLabel={t("supportedLanguage")}>
+                                {localeToDisplayName(
+                                  translation.locale,
+                                  whoAmI.locale,
+                                )}
+                                {translation.locale === realm.defaultLocale && (
+                                  <Label className="pf-v6-u-ml-xs" color="blue">
+                                    {t("defaultLanguage")}
+                                  </Label>
+                                )}
+                              </Td>
+                              <Td>
+                                <TextInput
+                                  id={`${prefix}.${index}.value`}
+                                  data-testid={`translation-value-${index}`}
+                                  {...register(`${prefix}.${index}.value`, {
+                                    required: {
+                                      value:
+                                        translation.locale ===
+                                        realm.defaultLocale,
+                                      message: t("required"),
+                                    },
+                                  })}
+                                />
+                              </Td>
+                            </Tr>
+                          ))}
+                      </Tbody>
+                    </Table>
+                  )}
+                </PaginatingTableToolbar>
+              </FlexItem>
+            </Form>
+          </FlexItem>
+        </Flex>
+      </ModalBody>
+      <ModalFooter>
         <Button
           key="ok"
           data-testid="okTranslationBtn"
@@ -122,7 +247,7 @@ export const AddTranslationsDialog = ({
           onClick={toggleDialog}
         >
           {t("addTranslationDialogOkBtn")}
-        </Button>,
+        </Button>
         <Button
           key="cancel"
           data-testid="cancelTranslationBtn"
@@ -133,125 +258,8 @@ export const AddTranslationsDialog = ({
           }}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <Flex
-        direction={{ default: "column" }}
-        spaceItems={{ default: "spaceItemsNone" }}
-      >
-        <FlexItem>
-          <Trans
-            i18nKey="addTranslationsModalTitle"
-            values={{ fieldName: t(fieldName) }}
-          >
-            You are able to translate the fieldName based on your locale or
-            <strong>location</strong>
-          </Trans>
-        </FlexItem>
-        <FlexItem>
-          <Form id="add-translation" data-testid="addTranslationForm">
-            <FormGroup label={t("translationKey")} fieldId="translationKey">
-              <TextInput
-                id="translationKey"
-                label={t("translationKey")}
-                data-testid="translation-key"
-                isDisabled
-                value={
-                  predefinedAttributes?.includes(orgKey)
-                    ? `\${${orgKey}}`
-                    : `\${${translationKey}}`
-                }
-              />
-            </FormGroup>
-            <FlexItem>
-              <TextContent>
-                <Text
-                  className="pf-v5-u-font-size-sm pf-v5-u-font-weight-bold"
-                  component={TextVariants.p}
-                >
-                  {t("translationsTableHeading")}
-                </Text>
-              </TextContent>
-              <PaginatingTableToolbar
-                count={translations.length}
-                first={first}
-                max={max}
-                onNextClick={setFirst}
-                onPreviousClick={setFirst}
-                onPerPageSelect={(first, max) => {
-                  setFirst(first);
-                  setMax(max);
-                }}
-                inputGroupName={"search"}
-                inputGroupOnEnter={(search) => {
-                  setFilter(search);
-                  setFirst(0);
-                  setMax(10);
-                }}
-                inputGroupPlaceholder={t("searchForLanguage")}
-              >
-                {translations.length === 0 && filter && (
-                  <ListEmptyState
-                    hasIcon
-                    icon={SearchIcon}
-                    isSearchVariant
-                    message={t("noSearchResults")}
-                    instructions={t("noLanguagesSearchResultsInstructions")}
-                  />
-                )}
-                {translations.length !== 0 && (
-                  <Table
-                    aria-label={t("addTranslationsDialogRowsTable")}
-                    data-testid="add-translations-dialog-rows-table"
-                  >
-                    <Thead>
-                      <Tr>
-                        <Th className="pf-v5-u-py-lg">
-                          {t("supportedLanguagesTableColumnName")}
-                        </Th>
-                        <Th className="pf-v5-u-py-lg">
-                          {t("translationTableColumnName")}
-                        </Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      {translations.slice(0, max).map((translation, index) => (
-                        <Tr key={index}>
-                          <Td dataLabel={t("supportedLanguage")}>
-                            {localeToDisplayName(
-                              translation.locale,
-                              whoAmI.locale,
-                            )}
-                            {translation.locale === realm.defaultLocale && (
-                              <Label className="pf-v5-u-ml-xs" color="blue">
-                                {t("defaultLanguage")}
-                              </Label>
-                            )}
-                          </Td>
-                          <Td>
-                            <TextInput
-                              id={`${prefix}.${index}.value`}
-                              data-testid={`translation-value-${index}`}
-                              {...register(`${prefix}.${index}.value`, {
-                                required: {
-                                  value:
-                                    translation.locale === realm.defaultLocale,
-                                  message: t("required"),
-                                },
-                              })}
-                            />
-                          </Td>
-                        </Tr>
-                      ))}
-                    </Tbody>
-                  </Table>
-                )}
-              </PaginatingTableToolbar>
-            </FlexItem>
-          </Form>
-        </FlexItem>
-      </Flex>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

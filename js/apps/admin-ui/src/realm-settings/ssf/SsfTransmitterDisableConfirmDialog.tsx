@@ -1,12 +1,5 @@
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
-import {
-  ButtonVariant,
-  ModalVariant,
-  Text,
-  TextContent,
-  TextList,
-  TextListItem,
-} from "@patternfly/react-core";
+import { ButtonVariant, Content, ModalVariant } from "@patternfly/react-core";
 import { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -67,24 +60,28 @@ export const useSsfTransmitterDisableConfirmDialog = ({
     onConfirm,
     onCancel,
     children: (
-      <TextContent>
-        <Text>{t("ssfTransmitterDisableConfirmIntro")}</Text>
-        <TextList>
-          <TextListItem>
+      <Content>
+        <Content component="p">
+          {t("ssfTransmitterDisableConfirmIntro")}
+        </Content>
+        <Content component="ul">
+          <Content component="li">
             {t("ssfTransmitterDisableConfirmBulletEndpoints")}
-          </TextListItem>
-          <TextListItem>
+          </Content>
+          <Content component="li">
             {t("ssfTransmitterDisableConfirmBulletEvents")}
-          </TextListItem>
-          <TextListItem>
+          </Content>
+          <Content component="li">
             {t("ssfTransmitterDisableConfirmBulletDelivery")}
-          </TextListItem>
-          <TextListItem>
+          </Content>
+          <Content component="li">
             {t("ssfTransmitterDisableConfirmBulletReceivers")}
-          </TextListItem>
-        </TextList>
-        <Text>{t("ssfTransmitterDisableConfirmRecommendation")}</Text>
-      </TextContent>
+          </Content>
+        </Content>
+        <Content component="p">
+          {t("ssfTransmitterDisableConfirmRecommendation")}
+        </Content>
+      </Content>
     ),
   });
 };

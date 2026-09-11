@@ -2,11 +2,13 @@ import { SelectControl, FileUploadControl } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
+  Content,
   Form,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
-  Text,
-  TextContent,
 } from "@patternfly/react-core";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -54,10 +56,39 @@ export const ImportKeyDialog = ({
   return (
     <Modal
       variant={ModalVariant.medium}
-      title={t(title)}
       isOpen
       onClose={toggleDialog}
-      actions={[
+      aria-label={t(title)}
+    >
+      <ModalHeader title={t(title)} />
+      <ModalBody>
+        <Content>
+          <Content component="p">{t(description)}</Content>
+        </Content>
+        <Form className="pf-v6-u-pt-lg">
+          <FormProvider {...form}>
+            <SelectControl
+              name="keystoreFormat"
+              label={t("archiveFormat")}
+              labelIcon={t("archiveFormatHelp")}
+              controller={{
+                defaultValue: formats[0],
+              }}
+              options={formats}
+            />
+            <FileUploadControl
+              label={t("importFile")}
+              id="importFile"
+              name="file"
+              rules={{
+                required: t("required"),
+              }}
+            />
+            {baseFormats.includes(format) && <StoreSettings hidePassword />}
+          </FormProvider>
+        </Form>
+      </ModalBody>
+      <ModalFooter>
         <Button
           id="modal-confirm"
           data-testid="confirm"
@@ -70,7 +101,7 @@ export const ImportKeyDialog = ({
           }}
         >
           {t("import")}
-        </Button>,
+        </Button>
         <Button
           id="modal-cancel"
           data-testid="cancel"
@@ -79,34 +110,8 @@ export const ImportKeyDialog = ({
           onClick={toggleDialog}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <TextContent>
-        <Text>{t(description)}</Text>
-      </TextContent>
-      <Form className="pf-v5-u-pt-lg">
-        <FormProvider {...form}>
-          <SelectControl
-            name="keystoreFormat"
-            label={t("archiveFormat")}
-            labelIcon={t("archiveFormatHelp")}
-            controller={{
-              defaultValue: formats[0],
-            }}
-            options={formats}
-          />
-          <FileUploadControl
-            label={t("importFile")}
-            id="importFile"
-            name="file"
-            rules={{
-              required: t("required"),
-            }}
-          />
-          {baseFormats.includes(format) && <StoreSettings hidePassword />}
-        </FormProvider>
-      </Form>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

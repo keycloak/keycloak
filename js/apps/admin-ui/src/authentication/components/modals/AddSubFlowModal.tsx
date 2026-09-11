@@ -9,6 +9,9 @@ import {
   ButtonVariant,
   Form,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
 } from "@patternfly/react-core";
 import { useEffect, useState } from "react";
@@ -58,9 +61,55 @@ export const AddSubFlowModal = ({
   return (
     <Modal
       variant={ModalVariant.medium}
-      title={t("addSubFlowTo", { name })}
       onClose={onCancel}
-      actions={[
+      isOpen
+      aria-label={t("addSubFlowTo", { name })}
+    >
+      <ModalHeader title={t("addSubFlowTo", { name })} />
+      <ModalBody>
+        <Form
+          id="sub-flow-form"
+          onSubmit={form.handleSubmit(onConfirm)}
+          isHorizontal
+        >
+          <FormProvider {...form}>
+            <TextControl
+              name="name"
+              label={t("name")}
+              labelIcon={t("clientIdHelp")}
+              rules={{ required: t("required") }}
+            />
+            <TextControl
+              name="description"
+              label={t("description")}
+              labelIcon={t("flowNameDescriptionHelp")}
+            />
+            <SelectControl
+              name="type"
+              menuAppendTo="parent"
+              label={t("flowType")}
+              options={types.map((type) => ({
+                key: type,
+                value: t(`flow-type.${type}`),
+              }))}
+              controller={{ defaultValue: types[0] }}
+            />
+            {formProviders && formProviders.length > 1 && (
+              <SelectControl
+                name="provider"
+                label={t("provider")}
+                labelIcon={t("authenticationFlowTypeHelp")}
+                options={formProviders.map((provider) => ({
+                  key: provider.id!,
+                  value: provider.displayName!,
+                }))}
+                controller={{ defaultValue: "" }}
+              />
+            )}
+          </FormProvider>
+        </Form>
+      </ModalBody>
+      <ModalFooter>
         <Button
           key="add"
           data-testid="modal-add"
@@ -68,7 +117,7 @@ export const AddSubFlowModal = ({
           form="sub-flow-form"
         >
           {t("add")}
-        </Button>,
+        </Button>
         <Button
           key="cancel"
           data-testid="cancel"
@@ -76,51 +125,8 @@ export const AddSubFlowModal = ({
           onClick={onCancel}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-      isOpen
-    >
-      <Form
-        id="sub-flow-form"
-        onSubmit={form.handleSubmit(onConfirm)}
-        isHorizontal
-      >
-        <FormProvider {...form}>
-          <TextControl
-            name="name"
-            label={t("name")}
-            labelIcon={t("clientIdHelp")}
-            rules={{ required: t("required") }}
-          />
-          <TextControl
-            name="description"
-            label={t("description")}
-            labelIcon={t("flowNameDescriptionHelp")}
-          />
-          <SelectControl
-            name="type"
-            menuAppendTo="parent"
-            label={t("flowType")}
-            options={types.map((type) => ({
-              key: type,
-              value: t(`flow-type.${type}`),
-            }))}
-            controller={{ defaultValue: types[0] }}
-          />
-          {formProviders && formProviders.length > 1 && (
-            <SelectControl
-              name="provider"
-              label={t("provider")}
-              labelIcon={t("authenticationFlowTypeHelp")}
-              options={formProviders.map((provider) => ({
-                key: provider.id!,
-                value: provider.displayName!,
-              }))}
-              controller={{ defaultValue: "" }}
-            />
-          )}
-        </FormProvider>
-      </Form>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };
