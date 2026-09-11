@@ -40,6 +40,7 @@ import org.keycloak.scim.protocol.request.PatchRequest.PatchOperation;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
+import org.keycloak.scim.resource.spi.MembershipChange;
 import org.keycloak.scim.resource.spi.ScimPatchException;
 import org.keycloak.scim.resource.user.User;
 import org.keycloak.storage.UserStoragePrivateUtil;
@@ -55,8 +56,22 @@ import static org.keycloak.utils.StringUtil.isBlank;
 
 public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<UserModel, User> implements ScimAttributeJpaExpressionResolver {
 
+    private final UserCoreModelSchema schema;
+
     public UserResourceTypeProvider(KeycloakSession session) {
-        super(session, new UserCoreModelSchema(session), List.of(new UserEnterpriseModelSchema(session), new UserExtensionModelSchema(session)));
+        this(session, new UserCoreModelSchema(session));
+    }
+
+    private UserResourceTypeProvider(KeycloakSession session, UserCoreModelSchema schema) {
+        super(session, schema, List.of(new UserEnterpriseModelSchema(session), new UserExtensionModelSchema(session)));
+        this.schema = schema;
+    }
+
+    @Override
+    public List<MembershipChange> pollMembershipChanges() {
+        List<MembershipChange> changes = List.copyOf(schema.getMembershipChanges());
+        schema.clearMembershipChanges();
+        return changes;
     }
 
     @Override

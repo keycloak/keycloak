@@ -3,6 +3,7 @@ package org.keycloak.tests.scim.tck;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -28,6 +29,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
@@ -64,6 +66,7 @@ import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.userprofile.UserProfileConstants;
 import org.keycloak.userprofile.config.UPConfigUtils;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.validators.LengthValidator;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -85,7 +88,9 @@ import static org.keycloak.scim.resource.Scim.getCoreSchema;
 import static org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider.MAX_PATCH_OPERATIONS;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -1921,6 +1926,176 @@ public class UserTest extends AbstractScimTest {
                     "AND operator within a value path for a multivalued attribute should return 400, got " + error.getStatusInt());
             assertTrue(error.getDetail().contains("'and' operator is not supported within a value path filter for multivalued or non-complex attributes"),
                     "Error should mention 'and' operator not supported within a value path, got: " + error.getDetail());
+        }
+    }
+
+    @Test
+    public void testUserMembershipAdminEventsPatch() {
+        GroupRepresentation groupA = createGroup(KeycloakModelUtils.generateId());
+        GroupRepresentation groupB = createGroup(KeycloakModelUtils.generateId());
+        User user = client.users().create(createUser());
+        adminEvents.clear();
+
+        // adding two new groups produces the generic PATCH event followed by one GROUP_MEMBERSHIP CREATE event per group
+        client.users().patch(user.getId(), PatchRequest.create()
+                .add("groups", groupA.getId())
+                .add("groups", groupB.getId())
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.USER);
+        assertMembershipEvents(OperationType.CREATE, user, groupA, groupB);
+        assertNull(adminEvents.poll());
+
+        // re-adding an already existing membership is a no-op: no GROUP_MEMBERSHIP event should be emitted
+        client.users().patch(user.getId(), PatchRequest.create()
+                .add("groups", groupA.getId())
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.USER);
+        assertNull(adminEvents.poll());
+
+        // removing a group produces the generic PATCH event followed by a GROUP_MEMBERSHIP DELETE event
+        client.users().patch(user.getId(), PatchRequest.create()
+                .remove("groups[value eq \"" + groupA.getId() + "\"]")
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.USER);
+        assertMembershipEvent(adminEvents.poll(), OperationType.DELETE, groupA, user);
+        assertNull(adminEvents.poll());
+
+        // removing a group the user is not a member of is a no-op: no GROUP_MEMBERSHIP event should be emitted
+        client.users().patch(user.getId(), PatchRequest.create()
+                .remove("groups[value eq \"" + groupA.getId() + "\"]")
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.USER);
+        assertNull(adminEvents.poll());
+    }
+
+    @Test
+    public void testUserMembershipAdminEventsPut() {
+        GroupRepresentation groupA = createGroup(KeycloakModelUtils.generateId());
+        GroupRepresentation groupB = createGroup(KeycloakModelUtils.generateId());
+        User user = createUser();
+        user.addGroup(groupA.getId());
+        User created = client.users().create(user);
+        User withGroups = client.users().get(created.getId(), List.of("groups"));
+        adminEvents.clear();
+
+        // full replace: drop groupA, add groupB
+        withGroups.getGroups().clear();
+        withGroups.addGroup(groupB.getId());
+        client.users().update(withGroups);
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.USER);
+        assertMembershipEvent(adminEvents.poll(), OperationType.CREATE, groupB, created);
+        assertMembershipEvent(adminEvents.poll(), OperationType.DELETE, groupA, created);
+        assertNull(adminEvents.poll());
+
+        // replacing with the exact same membership is a no-op: no GROUP_MEMBERSHIP event should be emitted
+        User current = client.users().get(created.getId(), List.of("groups"));
+        client.users().update(current);
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.USER);
+        assertNull(adminEvents.poll());
+    }
+
+    @Test
+    public void testUserMembershipAdminEventNotEmittedForInheritedGroupMembership() {
+        GroupRepresentation parent = createGroup(KeycloakModelUtils.generateId());
+        GroupRepresentation child = createSubGroup(parent, KeycloakModelUtils.generateId());
+
+        User user = createUser();
+        user.addGroup(child.getId());
+        User created = client.users().create(user);
+        adminEvents.clear();
+
+        // the user is only a direct member of the child group; membership in the parent is inherited, so removing
+        // the parent group id is a no-op (leaveGroup(parent) does nothing) and no GROUP_MEMBERSHIP event should fire
+        client.users().patch(created.getId(), PatchRequest.create()
+                .remove("groups[value eq \"" + parent.getId() + "\"]")
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.USER);
+        assertNull(adminEvents.poll());
+    }
+
+    @Test
+    public void testGroupMembershipEventConsistentWithAdminApi() throws Exception {
+        GroupRepresentation adminApiGroup = createGroup(KeycloakModelUtils.generateId());
+        GroupRepresentation scimGroup = createGroup(KeycloakModelUtils.generateId());
+        User user = client.users().create(createUser());
+        adminEvents.clear();
+
+        // Admin REST: join a group through the dedicated join endpoint
+        realm.admin().users().get(user.getId()).joinGroup(adminApiGroup.getId());
+        AdminEventRepresentation adminRestEvent = adminEvents.poll();
+
+        // SCIM: join a different group through the User PATCH "groups" attribute
+        client.users().patch(user.getId(), PatchRequest.create()
+                .add("groups", scimGroup.getId())
+                .build());
+        adminEvents.poll(); // discard the generic PATCH/USER event, keep only the membership event
+        AdminEventRepresentation scimEvent = adminEvents.poll();
+
+        // both APIs must produce an equivalent GROUP_MEMBERSHIP audit trail for the same kind of change
+        assertEquals(ResourceType.GROUP_MEMBERSHIP.name(), adminRestEvent.getResourceType());
+        assertEquals(adminRestEvent.getResourceType(), scimEvent.getResourceType());
+        assertEquals(adminRestEvent.getOperationType(), scimEvent.getOperationType());
+        assertEquals(adminRestEvent.getDetails().keySet(), scimEvent.getDetails().keySet());
+
+        Map<?, ?> adminRestRepresentation = JsonSerialization.readValue(adminRestEvent.getRepresentation(), Map.class);
+        Map<?, ?> scimRepresentation = JsonSerialization.readValue(scimEvent.getRepresentation(), Map.class);
+        assertEquals(adminRestRepresentation.keySet(), scimRepresentation.keySet());
+    }
+
+    private static void assertMembershipEvent(AdminEventRepresentation event, OperationType operationType, GroupRepresentation group, User user) {
+        // the resource path is completed with the group id since the request URI (Users/{id}) already carries the
+        // user id; the representation is built via the Admin API's GroupRepresentation (field "name"), not the
+        // SCIM Group representation (field "displayName")
+        AdminEventAssertion.assertSuccess(event)
+                .operationType(operationType)
+                .resourceType(ResourceType.GROUP_MEMBERSHIP)
+                .resourcePath("scim/v2/Users/" + user.getId() + "/" + group.getId())
+                .representation(Map.of("id", group.getId(), "name", group.getName()));
+        Map<String, String> expectedDetails = user.getEmail() != null
+                ? Map.of(UserModel.USERNAME, user.getUserName(), UserModel.EMAIL, user.getEmail())
+                : Map.of(UserModel.USERNAME, user.getUserName());
+        assertThat(event.getDetails(), is(equalTo(expectedDetails)));
+    }
+
+    /**
+     * Asserts a GROUP_MEMBERSHIP event was emitted for each of the given {@code groups}, matching each event to its
+     * corresponding group by resource path rather than by polling order: multivalued PATCH values are materialized
+     * as a {@code Set} internally, so events for a single request are not guaranteed to be emitted in request order.
+     */
+    private void assertMembershipEvents(OperationType operationType, User user, GroupRepresentation... groups) {
+        List<AdminEventRepresentation> events = new ArrayList<>();
+        for (int i = 0; i < groups.length; i++) {
+            events.add(adminEvents.poll());
+        }
+        for (GroupRepresentation group : groups) {
+            String resourcePathSuffix = "/" + group.getId();
+            AdminEventRepresentation event = events.stream()
+                    .filter(e -> e.getResourcePath().endsWith(resourcePathSuffix))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("No membership event found for group " + group.getId()));
+            events.remove(event);
+            assertMembershipEvent(event, operationType, group, user);
         }
     }
 
