@@ -18,7 +18,6 @@
 package org.keycloak.models.workflow;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
@@ -78,12 +77,12 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
             entity.setWorkflowId(workflow.getId());
             entity.setExecutionId(executionId);
             entity.setScheduledStepId(step.getId());
-            entity.setScheduledStepTimestamp(Instant.now().plus(duration).toEpochMilli());
+            entity.setScheduledStepTimestamp(Time.currentTimeMillis() + duration.toMillis());
             em.persist(entity);
             return ScheduleResult.CREATED;
         } else {
             entity.setScheduledStepId(step.getId());
-            entity.setScheduledStepTimestamp(Instant.now().plus(duration).toEpochMilli());
+            entity.setScheduledStepTimestamp(Time.currentTimeMillis() + duration.toMillis());
             return ScheduleResult.UPDATED;
         }
     }

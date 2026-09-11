@@ -9,5 +9,6 @@ org.keycloak.models.workflow.events.UserRoleGrantedWorkflowEventFactory
 org.keycloak.models.workflow.events.UserRoleRevokedWorkflowEventFactory
 
 # client event providers
+org.keycloak.models.workflow.events.ClientActivityWorkflowEventFactory
 org.keycloak.models.workflow.events.ClientAuthenticatedWorkflowEventFactory
 org.keycloak.models.workflow.events.ClientCreatedWorkflowEventFactory
