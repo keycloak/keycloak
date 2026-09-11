@@ -266,6 +266,7 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
 
         // assert introspection and user-info works in 10s
         timeOffSet.set(10);
+        assertTrue(runOnServer.fetch(new TransientSessionValidationOnServer(realm.getName(), exchangedTokenString), Boolean.class));
         assertIntrospectSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
         assertUserInfoSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
 
