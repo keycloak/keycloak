@@ -28,6 +28,7 @@ import jakarta.persistence.LockModeType;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.connections.jpa.support.EntityManagerProxy;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -81,6 +82,7 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
         RootAuthenticationSessionEntity entity;
         for (;;) {
             em.createNamedQuery("insertRootAuthSessionIfAbsent")
+                    .setHint(EntityManagerProxy.ASYNC_COMMIT_ALLOWED, true)
                     .setParameter("id", id)
                     .setParameter("realmId", realm.getId())
                     .setParameter("timestamp", Time.currentTimeSeconds())

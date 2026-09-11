@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.jpa.support;
 
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -39,12 +40,26 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
 
+import org.hibernate.Session;
 import org.hibernate.exception.ConstraintViolationException;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class EntityManagerProxy {
+
+    public static final String SYNC_COMMIT_REQUIRED = "kc.sync_commit_required";
+    public static final String ASYNC_COMMIT_ALLOWED = "kc.async_commit_allowed";
+
+    private static volatile boolean asyncCommitEnabled;
+
+    public static void setAsyncCommitEnabled(boolean enabled) {
+        asyncCommitEnabled = enabled;
+    }
+
+    public static boolean isAsyncCommitEnabled() {
+        return asyncCommitEnabled;
+    }
 
     private static final Pattern WRITE_METHOD_NAMES = Pattern.compile("persist|merge");
 
@@ -102,11 +117,16 @@ public class EntityManagerProxy {
         try {
             flushInBatchIfEnabled(method);
             Object result = method.invoke(em, args);
-            if ((batched || readOnly) && result instanceof Query query) {
-                // TODO: it would be safer if there were a way to validate
-                // if this or disabling persist/detach where correct for a given batch
-                // and types were correct
-                query.setFlushMode(FlushModeType.COMMIT);
+            if (result instanceof Query query) {
+                if (batched || readOnly) {
+                    // TODO: it would be safer if there were a way to validate
+                    // if this or disabling persist/detach where correct for a given batch
+                    // and types were correct
+                    query.setFlushMode(FlushModeType.COMMIT);
+                }
+                if (asyncCommitEnabled) {
+                    result = wrapQuery(query);
+                }
             }
             if (entityManagerProxies != null && args == null && method.getName().equals("close")) {
                 entityManagerProxies.remove(this);
@@ -114,6 +134,66 @@ public class EntityManagerProxy {
             return result;
         } catch (InvocationTargetException e) {
             throw convert(e);
+        }
+    }
+
+    /**
+     * Wraps a JPA {@link Query} to intercept {@code executeUpdate()} calls. When the update modifies
+     * rows (return value &gt; 0), marks the Hibernate session for synchronous commit so that
+     * {@code AsyncCommitIntegrator} does not relax durability for that transaction.
+     * <p>
+     * Queries that only modify entities implementing {@code AsynchronousCommitAllowed} can opt out
+     * by setting the {@link #ASYNC_COMMIT_ALLOWED} hint:
+     * {@code query.setHint(EntityManagerProxy.ASYNC_COMMIT_ALLOWED, true)}.
+     * <p>
+     * The proxy is necessary to distinguish read queries ({@code getResultList}, {@code getSingleResult})
+     * from write queries ({@code executeUpdate}). Without it, the only alternative would be to force
+     * synchronous commit on every {@code createQuery} call, which would disable async commit for most
+     * transactions since nearly all of them use HQL SELECT queries.
+     * <p>
+     * Performance: the JDK caches proxy classes per interface set, so each call only allocates one
+     * small object — negligible compared to the SQL round-trip the query will perform.
+     */
+    private Object wrapQuery(Query delegate) {
+        Class<?>[] ifaces = delegate.getClass().getInterfaces();
+        if (ifaces.length == 0) {
+            ifaces = new Class<?>[]{ Query.class };
+        }
+        return Proxy.newProxyInstance(delegate.getClass().getClassLoader(), ifaces,
+                new QueryHandler(delegate, this.em));
+    }
+
+    private static class QueryHandler implements InvocationHandler {
+        private final Query delegate;
+        private final EntityManager em;
+        private boolean asyncAllowed;
+
+        QueryHandler(Query delegate, EntityManager em) {
+            this.delegate = delegate;
+            this.em = em;
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            // Intercept our custom hint before it reaches Hibernate, which would
+            // log "ignoring unrecognized query hint" and discard it.
+            if (method.getName().equals("setHint")
+                    && args != null && args.length == 2
+                    && ASYNC_COMMIT_ALLOWED.equals(args[0])) {
+                asyncAllowed = Boolean.TRUE.equals(args[1]);
+                return proxy;
+            }
+            try {
+                Object result = method.invoke(delegate, args);
+                if (method.getName().equals("executeUpdate")
+                        && result instanceof Integer rowCount && rowCount > 0
+                        && !asyncAllowed) {
+                    em.unwrap(Session.class).setProperty(SYNC_COMMIT_REQUIRED, Boolean.TRUE);
+                }
+                return result == delegate ? proxy : result;
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
         }
     }
 

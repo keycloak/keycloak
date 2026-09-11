@@ -25,6 +25,7 @@ import jakarta.persistence.LockModeType;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.connections.jpa.support.EntityManagerProxy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProvider;
 
@@ -49,6 +50,7 @@ public class JpaSingleUseObjectProvider implements SingleUseObjectProvider {
             throw new IllegalArgumentException("lifespanSeconds must be positive");
         }
         getEntityManager().createNamedQuery("insertOrOverwriteSingleUseObject")
+                .setHint(EntityManagerProxy.ASYNC_COMMIT_ALLOWED, true)
                 .setParameter("id", key)
                 .setParameter("notes", SingleUseObjectSerialization.notesToString(key, notes))
                 .setParameter("expire", Time.currentTimeSeconds() + lifespanSeconds)
@@ -87,6 +89,7 @@ public class JpaSingleUseObjectProvider implements SingleUseObjectProvider {
     public boolean replace(String key, Map<String, String> notes) {
         Objects.requireNonNull(key);
         var rows = getEntityManager().createNamedQuery("updateIfNotExpiredSingleUseObject")
+                .setHint(EntityManagerProxy.ASYNC_COMMIT_ALLOWED, true)
                 .setParameter("id", key)
                 .setParameter("notes", SingleUseObjectSerialization.notesToString(key, notes))
                 .setParameter("currentTime", Time.currentTimeSeconds())
@@ -101,6 +104,8 @@ public class JpaSingleUseObjectProvider implements SingleUseObjectProvider {
             throw new IllegalArgumentException("lifespanInSeconds must be positive");
         }
         var currentTime = Time.currentTimeSeconds();
+        // No ASYNC_COMMIT_ALLOWED hint: putIfAbsent is used for replay protection,
+        // so the insert must be durable before the response is sent to the client.
         var rows = getEntityManager().createNamedQuery("insertIfAbsentOrExpiredSingleUseObject")
                 .setParameter("id", key)
                 .setParameter("notes", SingleUseObjectSerialization.notesToString(key, Map.of()))
