@@ -1,7 +1,5 @@
 package org.keycloak.scim.model.filter;
 
-import java.time.Instant;
-import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +17,7 @@ import org.keycloak.common.util.TriFunction;
 import org.keycloak.scim.filter.ScimFilterException;
 import org.keycloak.scim.resource.schema.ModelSchema;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
+import org.keycloak.scim.resource.schema.attribute.ScimDateTimeUtil;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
 
 import org.jboss.logging.Logger;
@@ -228,17 +227,9 @@ public class ScimJPAPredicateProvider {
      */
     private Long parseDateTime(String dateTimeString) {
         try {
-            Instant instant = Instant.parse(dateTimeString);
-            return instant.toEpochMilli();
-        } catch (DateTimeParseException e) {
-            // If not a valid ISO 8601 date, try parsing as number (might be a timestamp already)
-            try {
-                return Long.parseLong(dateTimeString);
-            } catch (NumberFormatException nfe) {
-                throw new ScimFilterException(
-                        "Invalid date/time format: " + dateTimeString +
-                                ". Expected ISO 8601 format (e.g., 2011-05-13T04:42:34Z) or timestamp");
-            }
+            return ScimDateTimeUtil.parseDateTime(dateTimeString);
+        } catch (IllegalArgumentException e) {
+            throw new ScimFilterException(e.getMessage());
         }
     }
 

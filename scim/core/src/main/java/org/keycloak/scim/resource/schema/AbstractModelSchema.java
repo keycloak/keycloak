@@ -15,6 +15,7 @@ import org.keycloak.models.ModelValidationException;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.common.MultiValuedAttribute;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
+import org.keycloak.scim.resource.schema.attribute.ScimDateTimeUtil;
 import org.keycloak.scim.resource.schema.path.Path;
 import org.keycloak.scim.resource.spi.ScimMutabilityException;
 import org.keycloak.util.JsonSerialization;
@@ -354,14 +355,25 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
         Objects.requireNonNull(attribute, "attribute cannot be null");
         Objects.requireNonNull(operation, "operation cannot be null");
 
-        if (attribute.isImmutable() && operation != SET) {
+        if (attribute.isImmutable()) {
             String modelAttrName = attribute.getModelAttributeName();
-            if (modelAttrName == null || getAttributeValue(model, modelAttrName) != null) {
-                throw new ScimMutabilityException(
-                        "Attribute '" + attribute.getName() + "' is immutable");
-            }
-            if (operation == REMOVE) {
-                return;
+            Object currentValue = modelAttrName == null ? null : getAttributeValue(model, modelAttrName);
+
+            if (operation == SET) {
+                // PUT/create: RFC 7644 §3.5.1 only rejects the request if the attribute already has a value
+                // and the incoming value differs from it; re-submitting the same value is allowed.
+                if (currentValue != null && !valuesEqual(attribute, currentValue, value)) {
+                    throw new ScimMutabilityException(
+                            "Attribute '" + attribute.getName() + "' is immutable");
+                }
+            } else {
+                if (modelAttrName == null || currentValue != null) {
+                    throw new ScimMutabilityException(
+                            "Attribute '" + attribute.getName() + "' is immutable");
+                }
+                if (operation == REMOVE) {
+                    return;
+                }
             }
         }
 
@@ -373,6 +385,28 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
             case REMOVE -> attribute.remove(model, jsonValue);
             default -> throw new ModelException("Invalid operation: " + operation);
         }
+    }
+
+    /**
+     * Compares the current model value of an immutable attribute with the incoming value, to determine whether a
+     * PUT is actually attempting to change it. Timestamp attributes are normalized to epoch milliseconds before
+     * comparing, since the model stores them as {@link Long} while the wire representation is an ISO 8601 string.
+     */
+    private boolean valuesEqual(Attribute<M, R> attribute, Object currentValue, Object incomingValue) {
+        if (attribute.isTimestamp()) {
+            Long incoming;
+
+            try {
+                incoming = incomingValue instanceof Long l ? l : ScimDateTimeUtil.parseDateTime(incomingValue.toString());
+            } catch (IllegalArgumentException e) {
+                throw new ModelValidationException(e.getMessage());
+            }
+
+            Long current = currentValue instanceof Long l ? l : Long.valueOf(currentValue.toString());
+            return current.equals(incoming);
+        }
+
+        return String.valueOf(currentValue).equals(String.valueOf(incomingValue));
     }
 
     private JsonNode toJsonNode(Object value) {

@@ -858,6 +858,38 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testUpdateUnchangedImmutableMetaCreated() {
+        User user = client.users().create(createUser());
+        adminEvents.clear();
+
+        // PUT round-trip that resubmits the same meta.created should succeed (RFC 7644 §3.5.1)
+        user = client.users().get(user.getId());
+        user.setEmail(user.getEmail().replace("keycloak.org", "updated.org"));
+        client.users().update(user);
+
+        User actual = client.users().get(user.getId());
+        assertEquals(user.getEmail(), actual.getEmail());
+    }
+
+    @Test
+    public void testUpdateImmutableMetaCreated() {
+        User user = client.users().create(createUser());
+        adminEvents.clear();
+
+        user = client.users().get(user.getId());
+        user.getMeta().setCreated(Instant.EPOCH.toString());
+        try {
+            client.users().update(user);
+            fail("should fail because meta.created is immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+        }
+    }
+
+    @Test
     public void testUserMembership() {
         GroupRepresentation groupA = createGroup("Group A");
         GroupRepresentation groupA1 = createSubGroup(groupA, "Group A1");
