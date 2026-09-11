@@ -11,6 +11,7 @@ import org.keycloak.representations.account.LinkedAccountRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -177,6 +178,12 @@ public class OrganizationMemberIdpLinkTest {
 
         consumerRealm.admin().organizations().get(orgId)
                 .identityProviders().addIdentityProvider(IDP_ALIAS).close();
+
+        OrganizationIdentityProviderLinkRepresentation link = new OrganizationIdentityProviderLinkRepresentation();
+        link.setAutoMembership(true);
+        link.setMembershipType("MANAGED");
+        consumerRealm.admin().organizations().get(orgId)
+                .identityProviders().get(IDP_ALIAS).update(link).close();
 
         org = consumerRealm.admin().organizations().get(orgId).toRepresentation();
         org.getDomains().stream()

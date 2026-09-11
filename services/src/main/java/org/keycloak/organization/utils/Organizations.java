@@ -223,6 +223,13 @@ public class Organizations {
         return Math.toIntExact(domain.chars().filter(c -> c == '.').count()) + 1;
     }
 
+    private static int getEffectivePartsSize(String domainName) {
+        if (domainName != null && domainName.startsWith(WILDCARD_PREFIX)) {
+            return getDomainPartsSize(domainName.substring(WILDCARD_PREFIX.length()));
+        }
+        return getDomainPartsSize(domainName);
+    }
+
     public static void validateDomain(String rawDomain) {
         if (isBlank(rawDomain)) {
             return;
@@ -277,8 +284,10 @@ public class Organizations {
         }
 
         List<OrganizationDomainModel> domains = organization.getDomains().filter(model -> isSameDomain(domain, model))
-                // sorted ascending by number of domain parts so the most specific match is the last element
-                .sorted(Comparator.comparingInt(o -> getDomainPartsSize(o.getName())))
+                // sorted ascending by specificity: more domain parts = more specific;
+                // at equal part count, exact matches beat wildcards
+                .sorted(Comparator.comparingInt((OrganizationDomainModel o) -> getEffectivePartsSize(o.getName()))
+                        .thenComparing(o -> o.getName().startsWith(WILDCARD_PREFIX) ? 0 : 1))
                 .toList();
 
         if (domains.isEmpty()) {
@@ -466,7 +475,7 @@ public class Organizations {
                 return model;
             }
 
-            int mostSpecificParts = getDomainPartsSize(bestMatch.getName());
+            int mostSpecificParts = getEffectivePartsSize(bestMatch.getName());
             boolean isExact = !bestMatch.getName().startsWith(WILDCARD_PREFIX);
 
             if (mostSpecificParts > bestParts
