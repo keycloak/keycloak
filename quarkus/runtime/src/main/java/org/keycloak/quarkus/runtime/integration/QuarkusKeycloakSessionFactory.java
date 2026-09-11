@@ -20,6 +20,8 @@ package org.keycloak.quarkus.runtime.integration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
@@ -77,5 +79,14 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
     @Override
     public KeycloakSession create() {
         return new QuarkusKeycloakSession(this);
+    }
+
+    public Stream<ProviderFactory> getProviderFactoriesStream() {
+        return factoriesMap.values()
+                .stream()
+                .filter(Objects::nonNull)
+                .flatMap(m -> m.values().stream())
+                .filter(Objects::nonNull)
+                .distinct();
     }
 }

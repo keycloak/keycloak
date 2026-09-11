@@ -97,6 +97,8 @@ import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakHandlerChainCustomizer;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakTracingCustomizer;
+import org.keycloak.quarkus.runtime.integration.tls.SystemTruststoreReload;
+import org.keycloak.quarkus.runtime.integration.tls.SystemTruststoreReload.SystemTruststoreSourceAndKeystore;
 import org.keycloak.quarkus.runtime.logging.ClearMappedDiagnosticContextFilter;
 import org.keycloak.quarkus.runtime.services.RejectSourceMapFilter;
 import org.keycloak.quarkus.runtime.services.health.BootstrapReadyHealthCheck;
@@ -130,6 +132,7 @@ import io.quarkus.agroal.spi.JdbcDriverBuildItem;
 import io.quarkus.arc.deployment.AnnotationsTransformerBuildItem;
 import io.quarkus.arc.deployment.BuildTimeConditionBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
+import io.quarkus.arc.processor.BuiltinScope;
 import io.quarkus.bootstrap.logging.InitialConfigurator;
 import io.quarkus.datasource.runtime.DataSourcesBuildTimeConfig;
 import io.quarkus.deployment.IsDevelopment;
@@ -154,7 +157,9 @@ import io.quarkus.narayana.jta.runtime.TransactionManagerBuildTimeConfig.UnsafeM
 import io.quarkus.resteasy.reactive.server.spi.MethodScannerBuildItem;
 import io.quarkus.resteasy.reactive.server.spi.PreExceptionMapperHandlerBuildItem;
 import io.quarkus.runtime.LaunchMode;
+import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.configuration.ConfigurationException;
+import io.quarkus.tls.deployment.spi.TlsCertificateBuildItem;
 import io.quarkus.vertx.http.deployment.FilterBuildItem;
 import io.quarkus.vertx.http.deployment.HttpRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.ManagementInterfaceFilterBuildItem;
@@ -181,6 +186,7 @@ import org.jboss.resteasy.reactive.server.model.HandlerChainCustomizer;
 import org.jboss.resteasy.reactive.server.processor.scanning.MethodScanner;
 
 import static org.keycloak.config.DatabaseOptions.DB;
+import static org.keycloak.config.TruststoreOptions.TRUSTSTORE_PATHS_RELOAD_PERIOD;
 import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
 import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
 import static org.keycloak.quarkus.runtime.Providers.getProviderManager;
@@ -195,6 +201,8 @@ import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAP
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.POLICIES;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.SAML_MAPPERS;
 import static org.keycloak.theme.ClasspathThemeProviderFactory.KEYCLOAK_THEMES_JSON;
+
+
 
 class KeycloakProcessor {
 
@@ -906,12 +914,20 @@ class KeycloakProcessor {
 
     @Consume(ProfileBuildItem.class)
     @Produce(CryptoProviderInitBuildItem.class)
+    @Produce(TlsCertificateBuildItem.class) // prepare truststore before TLS registry is created
     @BuildStep
     @Record(ExecutionTime.STATIC_INIT)
-    void initCrypto(KeycloakRecorder recorder) {
+    void initCrypto(KeycloakRecorder recorder, BuildProducer<SyntheticBeanBuildItem> syntheticBeanProducer) {
         FipsMode fipsMode = getFipsMode();
         recorder.setCryptoProvider(fipsMode);
-        recorder.configureTruststore(fipsMode);
+        RuntimeValue<SystemTruststoreSourceAndKeystore> systemTruststoreSourceRuntimeValue = recorder.configureTruststore(fipsMode);
+        if (Configuration.getOptionalKcValue(TRUSTSTORE_PATHS_RELOAD_PERIOD).isPresent()) {
+            syntheticBeanProducer.produce(SyntheticBeanBuildItem.configure(SystemTruststoreReload.class)
+                    .scope(BuiltinScope.SINGLETON.getInfo())
+                    .unremovable()
+                    .runtimeValue(recorder.createSystemTruststoreReloadBean(systemTruststoreSourceRuntimeValue))
+                    .done());
+        }
     }
 
     private FipsMode getFipsMode() {
