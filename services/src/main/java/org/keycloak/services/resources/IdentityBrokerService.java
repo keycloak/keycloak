@@ -954,7 +954,8 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             } else {
                 logger.debugf("Linked existing keycloak user '%s' with identity provider '%s' . Identity provider username is '%s' .", federatedUser.getUsername(), providerAlias, context.getUsername());
 
-                event.event(EventType.FEDERATED_IDENTITY_LINK)
+                event.clone()
+                        .event(EventType.FEDERATED_IDENTITY_LINK)
                         .success();
 
                 updateFederatedIdentity(context, federatedUser);

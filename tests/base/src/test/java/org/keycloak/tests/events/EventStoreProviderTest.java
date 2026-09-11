@@ -44,6 +44,7 @@ import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.tests.common.CustomProvidersServerConfig;
 import org.keycloak.tests.providers.events.TestEventsListenerContextDetailsProviderFactory;
+import org.keycloak.tests.providers.events.TestEventsListenerDeferredProviderFactory;
 import org.keycloak.tests.suites.DatabaseTest;
 
 import org.apache.commons.lang3.StringUtils;
@@ -183,6 +184,64 @@ public class EventStoreProviderTest {
         Assertions.assertEquals(0, eventHelper.queryEvents(realm2.getId(), null, null, null, d01, d03, null, null, null).length);
         Assertions.assertEquals(0, eventHelper.queryEvents(realm1.getId(), null, null, null, d08, d10, null, null, null).length);
         Assertions.assertEquals(0, eventHelper.queryEvents(realm2.getId(), null, null, null, d08, d10, null, null, null).length);
+    }
+
+    /**
+     * See <a href="https://github.com/keycloak/keycloak/issues/52632">#52632</a> -
+     * this test can be removed or changed once we throw an exception instead of a warning.
+     */
+    @Test
+    public void testEventBuilderDeferredListenerKeepsEventType() {
+        realm1.updateWithCleanup(r -> r.eventsListeners(TestEventsListenerDeferredProviderFactory.ID));
+
+        runOnServer.run(session -> {
+            TestEventsListenerDeferredProviderFactory.TYPES_AT_DISPATCH.clear();
+            TestEventsListenerDeferredProviderFactory.TYPES_AT_COMMIT.clear();
+
+            RealmModel realm = session.getContext().getRealm();
+
+            EventBuilder event = new EventBuilder(realm, session)
+                    .session("session1")
+                    .user("user1")
+                    .client("client1");
+
+            event.event(EventType.FEDERATED_IDENTITY_LINK).success();
+            event.event(EventType.LOGIN).success();
+        });
+
+        runOnServer.run(session -> {
+            Assertions.assertEquals(List.of(EventType.FEDERATED_IDENTITY_LINK, EventType.LOGIN),
+                    TestEventsListenerDeferredProviderFactory.TYPES_AT_DISPATCH);
+            Assertions.assertEquals(List.of(EventType.FEDERATED_IDENTITY_LINK, EventType.LOGIN),
+                    TestEventsListenerDeferredProviderFactory.TYPES_AT_COMMIT);
+        });
+    }
+
+    /**
+     * See <a href="https://github.com/keycloak/keycloak/issues/52632">#52632</a> -
+     * this test can be removed once we throw an exception instead of a warning.
+     */
+    @Test
+    public void testEventBuilderWarnsOnReuseAfterTerminalOperation() {
+        // Verify that reusing an EventBuilder after a terminal operation logs a warning.
+        // The warning is logged once per unique call site per JVM; check the server log for:
+        // "EventBuilder modified after a terminal operation (success/error)"
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+
+            EventBuilder event = new EventBuilder(realm, session)
+                    .event(EventType.LOGIN)
+                    .session("session1")
+                    .user("user1")
+                    .client("client1");
+
+            event.success();
+
+            // These should each trigger a deprecation warning in the server log
+            event.detail("key", "value");
+            event.event(EventType.LOGOUT);
+            event.clone();
+        });
     }
 
     @Test

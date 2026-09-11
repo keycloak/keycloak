@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -59,6 +60,8 @@ public class EventBuilder {
     private Event event;
     private Boolean storeImmediately;
     private final boolean isEventsEnabled;
+    private boolean sent;
+    private static final Set<String> WARNED_CALLERS = ConcurrentHashMap.newKeySet();
 
     public EventBuilder(RealmModel realm, KeycloakSession session, ClientConnection clientConnection) {
         this(realm, session);
@@ -111,33 +114,57 @@ public class EventBuilder {
         this.isEventsEnabled = realm.isEventsEnabled();
     }
 
+    // TODO: throw IllegalStateException instead of warning when transitioning to 27.0,
+    // see https://github.com/keycloak/keycloak/issues/52632
+    private void warnIfSent() {
+        if (sent) {
+            String callerKey = null;
+            for (StackTraceElement frame : Thread.currentThread().getStackTrace()) {
+                if (!frame.getClassName().equals(EventBuilder.class.getName())
+                        && !frame.getClassName().equals(Thread.class.getName())) {
+                    callerKey = frame.getClassName() + "." + frame.getMethodName() + ":" + frame.getLineNumber();
+                    break;
+                }
+            }
+            if (callerKey != null && WARNED_CALLERS.add(callerKey)) {
+                log.warn("EventBuilder modified after a terminal operation (success/error); clone the builder before firing the event. This is deprecated and will throw an exception in a future version of Keycloak.", new IllegalStateException());
+            }
+        }
+    }
+
     public EventBuilder realm(RealmModel realm) {
+        warnIfSent();
         event.setRealmId(realm == null ? null : realm.getId());
         event.setRealmName(realm == null ? null : realm.getName());
         return this;
     }
 
     public EventBuilder client(ClientModel client) {
+        warnIfSent();
         event.setClientId(client == null ? null : client.getClientId());
         return this;
     }
 
     public EventBuilder client(String clientId) {
+        warnIfSent();
         event.setClientId(clientId);
         return this;
     }
 
     public EventBuilder user(UserModel user) {
+        warnIfSent();
         event.setUserId(user == null ? null : user.getId());
         return this;
     }
 
     public EventBuilder user(String userId) {
+        warnIfSent();
         event.setUserId(userId);
         return this;
     }
 
     public EventBuilder session(UserSessionModel session) {
+        warnIfSent();
         if (session == null) {
             event.setSessionId(null);
             return this;
@@ -154,21 +181,25 @@ public class EventBuilder {
     }
 
     public EventBuilder session(String sessionId) {
+        warnIfSent();
         event.setSessionId(sessionId);
         return this;
     }
 
     public EventBuilder ipAddress(String ipAddress) {
+        warnIfSent();
         event.setIpAddress(ipAddress);
         return this;
     }
 
     public EventBuilder event(EventType e) {
+        warnIfSent();
         event.setType(e);
         return this;
     }
 
     public EventBuilder detail(String key, String value) {
+        warnIfSent();
         if (value == null || value.equals("")) {
             return this;
         }
@@ -218,11 +249,13 @@ public class EventBuilder {
      * @return
      */
     public EventBuilder storeImmediately(boolean forcedValue) {
+        warnIfSent();
         this.storeImmediately = forcedValue;
         return this;
     }
 
     public EventBuilder removeDetail(String key) {
+        warnIfSent();
         if (event.getDetails() != null) {
             event.getDetails().remove(key);
         }
@@ -233,11 +266,29 @@ public class EventBuilder {
         return event;
     }
 
+    /**
+     * Terminal operation that dispatches the event to the store and listeners.
+     * The builder must not be reused after this call. To fire multiple events,
+     * clone the builder before each terminal call:
+     * <pre>
+     * event.clone().event(EventType.FEDERATED_IDENTITY_LINK).success();
+     * event.event(EventType.LOGIN).success();
+     * </pre>
+     */
     public void success() {
+        warnIfSent();
         send(this.storeImmediately == null ? false : this.storeImmediately);
     }
 
+    /**
+     * Terminal operation that sets the event type to its {@code _ERROR} variant,
+     * records the error, and dispatches the event to the store and listeners.
+     * The builder must not be reused after this call. To fire multiple events,
+     * clone the builder before each terminal call.
+     * @param error the error identifier
+     */
     public void error(String error) {
+        warnIfSent();
         if (Objects.isNull(event.getType())) {
             throw new IllegalStateException("Attempted to define event error without first setting the event type");
         }
@@ -251,10 +302,14 @@ public class EventBuilder {
 
     @Override
     public EventBuilder clone() {
+        warnIfSent();
         return new EventBuilder(session, store, listeners, realm, event.clone());
     }
 
     private void send(boolean sendImmediately) {
+        // send() overwrites time/id, and error() mutates the event type and error field, so a second
+        // terminal call corrupts the event already seen by the store and deferred listeners.
+        sent = true;
         event.setTime(Time.currentTimeMillis());
         event.setId(UUID.randomUUID().toString());
 
@@ -272,9 +327,13 @@ public class EventBuilder {
     }
 
     private void sendNow(EventStoreProvider targetStore, Set<String> eventTypes, List<EventListenerProvider> targetListeners) {
+        // Cloning of the event to protect the store and asynchronous listeners from mutated events while we only warn on calls after the terminal operation.
+        // Can be removed once we throw an error instead of a warning.
+        Event listenerEvent = event.clone();
+
         if (targetStore != null) {
             if (eventTypes.isEmpty() && event.getType().isSaveByDefault() || eventTypes.contains(event.getType().name())) {
-                targetStore.onEvent(event);
+                targetStore.onEvent(listenerEvent);
             }
         }
 
@@ -282,7 +341,7 @@ public class EventBuilder {
 
         for (EventListenerProvider l : targetListeners) {
             try {
-                l.onEvent(event);
+                l.onEvent(listenerEvent);
             } catch (Throwable t) {
                 log.error("Failed to send type to " + l, t);
             }

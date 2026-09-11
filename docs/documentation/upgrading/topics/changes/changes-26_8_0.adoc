@@ -184,6 +184,20 @@ When {project_name} generates self-signed certificates (for example, during SAML
 
 If you have tooling that inspects the CN of {project_name}-generated certificates and expects it to match a value longer than 64 characters, be aware that the CN may now be shorter.
 
+=== `EventBuilder` reuse after a terminal operation logs a warning
+
+Calling `success()`, `error()`, `clone()`, or any setter on an `EventBuilder` that has already been dispatched via `success()` or `error()` now logs a warning with a stack trace. The warning is logged once per call site per JVM lifetime. Reusing a builder after a terminal operation can cause event listeners to observe the wrong event type or details. The `Event` passed to `EventListenerProvider.onEvent()` should be treated as read-only.
+
+The correct pattern is to clone the builder *before* firing a side event:
+
+[source,java]
+----
+event.clone().event(EventType.FEDERATED_IDENTITY_LINK).success();
+event.event(EventType.LOGIN).success();
+----
+
+In a future version of {project_name}, reusing an `EventBuilder` after a terminal operation will throw an exception.
+
 === Transaction isolation level changed to READ COMMITTED for MySQL and MariaDB in stateless mode
 
 When the `stateless` feature is enabled, {project_name} now sets the transaction isolation level to `READ COMMITTED` for MySQL and MariaDB.
@@ -324,6 +338,10 @@ Disabling the `persistent-user-sessions` feature (volatile sessions) is deprecat
 === In-memory login failures (`login-failures:v1`) is deprecated
 
 The previous default of storing login failure data only in the in-memory Infinispan cache (`login-failures:v1`) is deprecated and will be removed in a future release. Login failures are now stored in the database by default (`login-failures:v2`). If you have explicitly enabled `login-failures:v1`, plan to remove this option before upgrading to a future release.
+
+=== Reusing an `EventBuilder` after calling `success()` or `error()`
+
+Calling `success()`, `error()`, or `clone()` on an `EventBuilder` that has already been dispatched is now deprecated and will throw an exception in a future version of {project_name}. Clone the builder before each terminal call. See the notable change above for the correct pattern.
 
 === Organization invitation link no longer exposed in API responses
 
