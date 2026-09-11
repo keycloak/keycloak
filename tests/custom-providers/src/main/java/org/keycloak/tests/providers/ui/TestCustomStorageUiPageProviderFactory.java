@@ -2,6 +2,7 @@ package org.keycloak.tests.providers.ui;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
@@ -52,7 +53,7 @@ public class TestCustomStorageUiPageProviderFactory
             String parentId,
             String providerId) {
         return realmStorage(realm).values().stream()
-                .filter(model -> parentId.equals(model.getParentId()))
+                .filter(model -> Objects.equals(parentId, model.getParentId()))
                 .filter(model -> providerId.equals(model.getProviderId()));
     }
 

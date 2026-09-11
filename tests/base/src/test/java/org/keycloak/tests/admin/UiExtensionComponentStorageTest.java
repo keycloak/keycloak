@@ -1,5 +1,6 @@
 package org.keycloak.tests.admin;
 
+import java.io.Serializable;
 import java.util.List;
 
 import jakarta.ws.rs.BadRequestException;
@@ -123,7 +124,8 @@ public class UiExtensionComponentStorageTest {
         }
     }
 
-    private record RealmComponentExists(String componentId) implements FetchOnServerWrapper<Boolean> {
+    private record RealmComponentExists(String componentId)
+            implements FetchOnServerWrapper<Boolean>, Serializable {
 
         @Override
         public FetchOnServer getRunOnServer() {

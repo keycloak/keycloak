@@ -44,9 +44,13 @@ final class UiExtensionComponentStorage {
         if (providerId != null) {
             ComponentStorageFactory storageFactory = getStorageFactory(session, type, providerId);
             if (storageFactory == null) {
+                storageFactory = findStorageFactoryByProviderId(session, providerId);
+            }
+            if (storageFactory == null) {
                 return null;
             }
-            return storageFactory.listComponents(session, realm, parent, providerId);
+            String resolvedParent = parent != null ? parent : realm.getId();
+            return storageFactory.listComponents(session, realm, resolvedParent, providerId);
         }
         if (type == null) {
             return null;
@@ -117,6 +121,20 @@ final class UiExtensionComponentStorage {
 
     static boolean usesCustomStorage(String providerType, String providerId, KeycloakSession session) {
         return getStorageFactory(session, providerType, providerId) != null;
+    }
+
+    private static ComponentStorageFactory findStorageFactoryByProviderId(
+            KeycloakSession session, String providerId) {
+        return Stream.concat(
+                session.getKeycloakSessionFactory().getProviderFactoriesStream(UiPageProvider.class),
+                session.getKeycloakSessionFactory().getProviderFactoriesStream(UiTabProvider.class))
+                .filter(factory -> factory instanceof ComponentStorageFactory)
+                .filter(factory -> !(factory instanceof ComponentFactory<?, ?> componentFactory
+                        && componentFactory.isInternal()))
+                .filter(factory -> providerId.equals(factory.getId()))
+                .map(ComponentStorageFactory.class::cast)
+                .findFirst()
+                .orElse(null);
     }
 
     @SuppressWarnings("unchecked")
