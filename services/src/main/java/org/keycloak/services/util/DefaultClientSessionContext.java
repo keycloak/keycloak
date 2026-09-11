@@ -193,8 +193,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
             String scopeParam = buildScopesStringFromAuthorizationRequest(ignoreIncludeInTokenScope);
             logger.tracef("Generated scope param with Parameterized Scopes enabled: %1s", scopeParam);
-            String scopeSent = clientSession.getNote(OAuth2Constants.SCOPE);
-            if (TokenUtil.isOIDCRequest(scopeSent)) {
+            if (isOIDCRequest()) {
                 scopeParam = TokenUtil.attachOIDCScope(scopeParam);
             }
             return scopeParam;
@@ -207,12 +206,21 @@ public class DefaultClientSessionContext implements ClientSessionContext {
                 .collect(Collectors.joining(" "));
 
         // See if "openid" scope is requested
-        String scopeSent = clientSession.getNote(OAuth2Constants.SCOPE);
-        if (TokenUtil.isOIDCRequest(scopeSent)) {
+        if (isOIDCRequest()) {
             scopeParam = TokenUtil.attachOIDCScope(scopeParam);
         }
 
         return scopeParam;
+    }
+
+    private boolean isOIDCRequest() {
+        if (TokenUtil.isOIDCRequest(requestedScopeString)) {
+            return true;
+        }
+        if (OAuth2Constants.REFRESH_TOKEN.equals(getAttribute(Constants.GRANT_TYPE, String.class))) {
+            return TokenUtil.isOIDCRequest(clientSession.getNote(OAuth2Constants.SCOPE));
+        }
+        return false;
     }
 
     /**

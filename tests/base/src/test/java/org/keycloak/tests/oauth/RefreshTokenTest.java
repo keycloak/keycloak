@@ -768,6 +768,7 @@ public class RefreshTokenTest {
 
             RefreshToken initialRefreshToken = oauth.parseRefreshToken(tokenResponse.getRefreshToken());
             assertNotNull(initialRefreshToken);
+            assertScopes("openid basic email roles service_account web-origins acr profile", initialRefreshToken.getScope());
 
             timeOffSet.set(2);
 
@@ -782,6 +783,7 @@ public class RefreshTokenTest {
 
             RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshResponse.getRefreshToken());
             assertNotNull(refreshedRefreshToken);
+            assertScopes("openid basic email roles service_account web-origins acr profile", refreshedRefreshToken.getScope());
         } finally {
             oauth.scope(null);
         }
