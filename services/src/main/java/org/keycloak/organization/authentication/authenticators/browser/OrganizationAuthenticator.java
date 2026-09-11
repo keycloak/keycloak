@@ -456,6 +456,12 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         if (username != null) {
             authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
             authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.USERNAME_HIDDEN, Boolean.TRUE.toString());
+            // The next authenticator in the flow (e.g. identity-provider-redirector, when this
+            // falls through with no matching organization) reads the login hint from the CLIENT
+            // note, not from an auth note. tryRedirectBroker's matching-domain path already passes
+            // this same username straight into redirect(...) as the login hint; do the same here so
+            // the fall-through path is not silently missing it.
+            authenticationSession.setClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, username);
         }
 
         context.attempted();
