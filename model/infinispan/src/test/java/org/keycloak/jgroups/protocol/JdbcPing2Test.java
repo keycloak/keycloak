@@ -1,5 +1,6 @@
 package org.keycloak.jgroups.protocol;
 
+import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -15,9 +16,14 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.health.impl.JdbcPingClusterHealthImpl;
 
 import org.hamcrest.CoreMatchers;
+import org.infinispan.Cache;
+import org.infinispan.configuration.cache.CacheMode;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.util.concurrent.WithinThreadExecutor;
 import org.jboss.logging.Logger;
 import org.jgroups.Address;
@@ -268,6 +274,97 @@ public class JdbcPing2Test {
         ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
         ping.runHealthCheck(capturingLog);
         assertEquals(1, capturingLog.infos.get());
+    }
+
+    @Test
+    public void testOnHealthRestoredCallback() {
+        var ping = new ControlledJdbcPing();
+        var capturingLog = new CapturingLog();
+        var callbackCount = new AtomicInteger();
+
+        ping.setView(new UUID(0, 0));
+        ping.setOnHealthRestored(callbackCount::incrementAndGet);
+
+        // Initial HEALTHY — no callback (no transition)
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(0, callbackCount.get());
+
+        // Transition to ERROR — no callback
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(0, callbackCount.get());
+
+        // Recovery to HEALTHY — callback fires
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(1, callbackCount.get());
+
+        // Stay HEALTHY — no callback
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(1, callbackCount.get());
+
+        // UNHEALTHY then recovery — callback fires again
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.UNHEALTHY);
+        ping.runHealthCheck(capturingLog);
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(2, callbackCount.get());
+    }
+
+    @Test
+    public void testCachesClearedOnHealthRecovery() throws Exception {
+        var ping = new ControlledJdbcPing();
+        var capturingLog = new CapturingLog();
+
+        DefaultCacheManager cacheManager = new DefaultCacheManager();
+        try {
+            cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_CACHE_NAME,
+                    new ConfigurationBuilder().clustering().cacheMode(CacheMode.LOCAL).build());
+
+            Cache<String, String> realmCache = cacheManager.getCache(InfinispanConnectionProvider.REALM_CACHE_NAME);
+            realmCache.put("test-realm", "test-data");
+            assertEquals(1, realmCache.size());
+
+            var clusterHealth = new JdbcPingClusterHealthImpl();
+            Field cacheManagerField = JdbcPingClusterHealthImpl.class.getDeclaredField("cacheManager");
+            cacheManagerField.setAccessible(true);
+            cacheManagerField.set(clusterHealth, cacheManager);
+
+            clusterHealth.init(ping, new WithinThreadExecutor());
+
+            // Wire the callback the same way inject() does, but with a same-thread executor
+            ping.setOnHealthRestored(() -> {
+                try {
+                    var m = JdbcPingClusterHealthImpl.class.getDeclaredMethod("clearLocalCaches");
+                    m.setAccessible(true);
+                    m.invoke(clusterHealth);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            ping.setView(new UUID(0, 0));
+
+            // Disconnect: transition to ERROR
+            ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR);
+            ping.runHealthCheck(capturingLog);
+            assertEquals("Cache should not be cleared during disconnect", 1, realmCache.size());
+
+            // Reconnect: transition to HEALTHY — caches must be cleared
+            ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+            ping.runHealthCheck(capturingLog);
+            assertEquals("Cache should be cleared after health recovery", 0, realmCache.size());
+
+            // Populate again, stay HEALTHY — cache should NOT be cleared
+            realmCache.put("new-key", "new-value");
+            ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+            ping.runHealthCheck(capturingLog);
+            assertEquals("Cache should not be cleared when health is stable", 1, realmCache.size());
+        } finally {
+            cacheManager.stop();
+        }
     }
 
     /** Minimal {@link Log} that counts error and info calls; everything else is a no-op. */

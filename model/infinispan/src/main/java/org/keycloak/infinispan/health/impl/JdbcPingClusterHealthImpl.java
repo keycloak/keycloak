@@ -18,18 +18,23 @@
 package org.keycloak.infinispan.health.impl;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.health.ClusterHealth;
 import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
 import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2.HealthStatus;
 
+import org.infinispan.Cache;
+import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.factories.annotations.Inject;
 import org.infinispan.factories.scopes.Scope;
 import org.infinispan.factories.scopes.Scopes;
+import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.remoting.transport.Transport;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.infinispan.util.concurrent.BlockingManager;
@@ -56,6 +61,8 @@ public class JdbcPingClusterHealthImpl implements ClusterHealth {
     private volatile boolean healthy = true;
     private volatile HealthRunner runner;
 
+    @Inject EmbeddedCacheManager cacheManager;
+
     @Inject
     public void inject(Transport transport, BlockingManager blockingManager) {
         // hacking to avoid creating fields :)
@@ -74,6 +81,8 @@ public class JdbcPingClusterHealthImpl implements ClusterHealth {
         }
 
         logger.debug("Cluster Health check available");
+        Executor executor = blockingManager.asExecutor("cluster-health-cache-clear");
+        ping.setOnHealthRestored(() -> executor.execute(this::clearLocalCaches));
         init(ping, blockingManager.asExecutor("cluster-health"));
     }
 
@@ -126,6 +135,15 @@ public class JdbcPingClusterHealthImpl implements ClusterHealth {
     @Override
     public boolean isSupported() {
         return runner != null;
+    }
+
+    private void clearLocalCaches() {
+        logger.info("Clearing local caches after cluster health recovery");
+        Arrays.stream(InfinispanConnectionProvider.LOCAL_CACHE_NAMES)
+                .filter(cacheManager::cacheExists)
+                .map(cacheManager::<String, Object>getCache)
+                .filter(cache -> cache.getCacheConfiguration().clustering().cacheMode() == CacheMode.LOCAL)
+                .forEach(Cache::clear);
     }
 
     private record HealthRunner(KEYCLOAK_JDBC_PING2 discovery, Executor executor, Consumer<KEYCLOAK_JDBC_PING2> check) {
