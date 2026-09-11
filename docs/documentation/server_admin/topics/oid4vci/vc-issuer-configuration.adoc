@@ -418,7 +418,7 @@ After selecting the OID4VCI protocol, the following configuration fields become 
 
 | Cryptographic Binding Methods
 | (when binding enabled)
-| Comma-separated cryptographic binding methods. Default value is `jwk`, which is only supported method for the formats like SD-JWT VC or JWT VC. Different methods might be possible for other formats (like mdoc).
+| Comma-separated cryptographic binding methods. The default is `jwk` for SD-JWT VC and JWT VC, while mdoc uses `cose_key`.
 
 | Binding Supported Proof Types
 | (when binding enabled)
