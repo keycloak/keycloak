@@ -1,4 +1,6 @@
 import { expect, type Page } from "@playwright/test";
+import { switchOff } from "../utils/form.ts";
+import { waitForTableIdle } from "../utils/loading.ts";
 
 export async function goToUserProfileTab(page: Page) {
   await page.getByTestId("rs-user-profile-tab").click();
@@ -47,24 +49,32 @@ export async function goToAttributeGroupsTab(page: Page) {
 }
 
 export async function switchOffIfOn(page: Page, selector: string) {
-  if (await page.isChecked(selector)) {
-    await page.locator(selector).click({ force: true });
+  const switchElement = page.locator(selector);
+  if (await switchElement.isChecked()) {
+    await switchOff(page, switchElement);
   }
 }
 
 export async function clickCreateUser(page: Page) {
-  const emptyAction = page.getByTestId("no-users-found-empty-action");
-  const addUser = page.getByTestId("add-user");
-  await expect(emptyAction.or(addUser).first()).toBeVisible({
-    timeout: 15_000,
-  });
+  await waitForTableIdle(page);
 
-  if ((await emptyAction.count()) > 0 && (await emptyAction.isVisible())) {
-    await emptyAction.click();
+  const addUser = page.getByTestId("add-user");
+  const emptyAction = page.getByTestId("no-users-found-empty-action");
+
+  await expect
+    .poll(
+      async () =>
+        (await addUser.isVisible()) || (await emptyAction.isVisible()),
+      { timeout: 15_000 },
+    )
+    .toBe(true);
+
+  if (await addUser.isVisible()) {
+    await addUser.click();
     return;
   }
 
-  await addUser.click();
+  await emptyAction.click();
 }
 
 export async function fillEmailAndOptionalUsername(

@@ -5,6 +5,7 @@ import { assertNotificationMessage } from "../utils/masthead.ts";
 import { goToIdentityProviders } from "../utils/sidebar.ts";
 import { clickTableRowItem } from "../utils/table.ts";
 import { SERVER_URL } from "../utils/constants.ts";
+import { switchOff, switchOn } from "../utils/form.ts";
 import { clickSaveButton, createDefaultTrustProvider } from "./main.ts";
 
 const alias = "default-trust";
@@ -43,7 +44,7 @@ test.describe.serial("Default Trust identity provider test", () => {
     await expect(page.getByTestId("config.clientSecret")).toBeHidden();
     await expect(page.getByTestId("displayOrder")).toBeHidden();
 
-    await page.getByTestId("config.useJwksUrl").click({ force: true });
+    await switchOff(page, page.getByTestId("config.useJwksUrl"));
 
     await expect(page.getByTestId("config.jwksUrl")).toBeHidden();
     await expect(
@@ -54,7 +55,7 @@ test.describe.serial("Default Trust identity provider test", () => {
     ).toBeVisible();
     await expect(page.getByTestId("import-certificate-button")).toBeVisible();
 
-    await page.getByTestId("config.useX509").click({ force: true });
+    await switchOn(page, page.getByTestId("config.useX509"));
     await expect(page.getByTestId("config.useJwksUrl")).toBeHidden();
     await expect(page.getByTestId("config.trustedCertificates")).toBeVisible();
     await expect(
@@ -75,17 +76,17 @@ test.describe.serial("Default Trust identity provider test", () => {
     await expect(page.getByTestId("config.clientSecret")).toBeHidden();
     await expect(page.getByTestId("mappers-tab")).toBeHidden();
 
-    await page.getByTestId("config.useX509").click({ force: true });
+    await switchOn(page, page.getByTestId("config.useX509"));
     await page
       .getByTestId("config.trustedCertificates")
       .fill("stale certificate");
     await page.getByTestId("config.requiredExtendedKeyUsages").fill("1.2.3.4");
-    await page.getByTestId("config.useX509").click({ force: true });
+    await switchOff(page, page.getByTestId("config.useX509"));
     await clickSaveButton(page);
 
     await assertNotificationMessage(page, "Provider successfully updated");
 
-    await page.getByTestId("config.useJwksUrl").click({ force: true });
+    await switchOff(page, page.getByTestId("config.useJwksUrl"));
     await page.getByTestId("config.publicKeySignatureVerifier").fill(jwks);
     await clickSaveButton(page);
 

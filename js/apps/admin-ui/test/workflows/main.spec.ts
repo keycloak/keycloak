@@ -1,7 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
-import { assertSaveButtonIsDisabled, clickSaveButton } from "../utils/form.ts";
+import {
+  assertSaveButtonIsDisabled,
+  clickSaveButton,
+  clickSwitch,
+} from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { confirmModal } from "../utils/modal.ts";
@@ -119,9 +123,7 @@ test.describe.serial("Workflow CRUD", () => {
     await expect(toggleLocator).toBeEnabled();
     await expect(toggleLocator).toBeChecked();
 
-    // Force click (ignores actionability—best for flaky React toggles)
-    // Without this, test fails intermittently waiting for the element to be actionable
-    await toggleLocator.click({ force: true, timeout: 5000 });
+    await clickSwitch(page, toggleLocator);
 
     await assertNotificationMessage(page, workflowDisabledMessage);
     await expect(toggleLocator).not.toBeChecked();
