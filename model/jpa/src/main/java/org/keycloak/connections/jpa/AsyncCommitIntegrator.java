@@ -21,6 +21,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 
 import org.hibernate.Session;
@@ -45,6 +46,15 @@ import org.jboss.logging.Logger;
  * Hibernate event listener that enables asynchronous commit for transactions
  * that only modify entities implementing {@link AsynchronousCommitAllowed}.
  * <p>
+ * <b>Limitation:</b> HQL {@code executeUpdate()} bypasses Hibernate entity lifecycle events
+ * ({@code PreInsert}/{@code PreUpdate}/{@code PreDelete}), so this integrator never sees those mutations.
+ * In HQL-only transactions the commit stays synchronous (no callback is registered).
+ * However, if a transaction mixes HQL mutations with {@code em.persist}/{@code em.merge}/{@code em.remove}
+ * on {@link AsynchronousCommitAllowed} entities, the HQL mutations silently inherit whatever durability
+ * the integrator decides — the integrator cannot classify what it cannot see. Security-sensitive HQL
+ * mutations (replay protection, token revocation) should call {@link #requireSynchronousCommit(EntityManager)}
+ * before executing the update to force synchronous commit for the transaction.
+ * <p>
  * Database-specific subclasses implement the actual mechanism:
  * <ul>
  *   <li>{@link PostgreSQLAsyncCommitIntegrator} — {@code SET LOCAL synchronous_commit TO OFF}</li>
@@ -66,6 +76,16 @@ public abstract class AsyncCommitIntegrator implements PreInsertEventListener, P
 
     private static final String SYNC_REQUIRED = "kc.sync_commit_required";
     private static final String CALLBACK_REGISTERED = "kc.async_commit.registered";
+
+    /**
+     * Forces the current transaction to use synchronous commit, even if it only contains
+     * {@link AsynchronousCommitAllowed} entities. Call this before HQL {@code executeUpdate()}
+     * mutations that must be durable (replay protection, token revocation) — HQL mutations
+     * bypass entity lifecycle events and are invisible to this integrator.
+     */
+    public static void requireSynchronousCommit(EntityManager em) {
+        em.unwrap(Session.class).setProperty(SYNC_REQUIRED, Boolean.TRUE);
+    }
 
     /**
      * Registers asynchronous commit listeners on the given {@link EntityManagerFactory}

@@ -24,6 +24,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.jpa.AsyncCommitIntegrator;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProvider;
@@ -101,7 +102,9 @@ public class JpaSingleUseObjectProvider implements SingleUseObjectProvider {
             throw new IllegalArgumentException("lifespanInSeconds must be positive");
         }
         var currentTime = Time.currentTimeSeconds();
-        var rows = getEntityManager().createNamedQuery("insertIfAbsentOrExpiredSingleUseObject")
+        var em = getEntityManager();
+        AsyncCommitIntegrator.requireSynchronousCommit(em);
+        var rows = em.createNamedQuery("insertIfAbsentOrExpiredSingleUseObject")
                 .setParameter("id", key)
                 .setParameter("notes", SingleUseObjectSerialization.notesToString(key, Map.of()))
                 .setParameter("expire", currentTime + lifespanInSeconds)
