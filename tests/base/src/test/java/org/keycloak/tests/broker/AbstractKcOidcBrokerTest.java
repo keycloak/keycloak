@@ -116,6 +116,16 @@ public abstract class AbstractKcOidcBrokerTest extends AbstractBrokerLoginTest {
         }
     }
 
+    // Private-key-jwt provider clients advertise their public key via a JWKS endpoint hosted on the
+    // consumer realm, whose actual base URL is only known once the consumer realm exists - same
+    // chicken-and-egg reason configureBrokerEndpoints() rewrites the placeholder callback URLs above.
+    protected void configureProviderClientJwksUrl(String clientId) {
+        ClientRepresentation client = getProviderRealm().admin().clients().findByClientId(clientId).get(0);
+        client.getAttributes().put(OIDCConfigAttributes.JWKS_URL,
+                getConsumerRealm().getBaseUrl() + "/protocol/openid-connect/certs");
+        getProviderRealm().admin().clients().get(client.getId()).update(client);
+    }
+
     protected static IdentityProviderBuilder createOidcIdentityProvider() {
         return IdentityProviderBuilder.create()
                 .providerId(IDP_OIDC_PROVIDER_ID)
@@ -139,102 +149,113 @@ public abstract class AbstractKcOidcBrokerTest extends AbstractBrokerLoginTest {
                 .identityProviders(idpBuilder.build());
     }
 
+    // Shared realm-level setup (name, event listener, default user) for any provider client - lets a test
+    // swap in a customized client (different secret/auth method/etc.) via createDefaultProviderClient()
+    // while reusing the same realm scaffolding as the default OidcProviderRealmConfig.
+    protected static RealmBuilder configureProviderRealm(RealmBuilder realm, ClientBuilder providerClient) {
+        return realm.name(PROVIDER_REALM)
+                .eventsListeners("jboss-logging")
+                // The provider user has no first/last name on purpose: the imported consumer user is
+                // then incomplete, so the consumer's first-broker-login review-profile page appears
+                // (mirroring the legacy suite, which also created the provider user without those names).
+                .users(UserBuilder.create(USER_LOGIN)
+                        .email(USER_EMAIL)
+                        .emailVerified(true)
+                        .password(USER_PASSWORD)
+                        .enabled(true))
+                .clients(providerClient);
+    }
+
+    // The broker callback endpoints (redirect/admin/backchannel-logout) are seeded here with a placeholder
+    // host/port; configureBrokerEndpoints() rewrites them to the consumer realm's actual base URL once it
+    // is known. post.logout.redirect.uris="+" needs no rewrite.
+    protected static ClientBuilder createDefaultProviderClient() {
+        return ClientBuilder.create(CLIENT_ID)
+                .secret(CLIENT_SECRET)
+                .redirectUris("http://localhost:8080/broker/" + IDP_OIDC_ALIAS + "/endpoint/*")
+                .adminUrl("http://localhost:8080/broker/" + IDP_OIDC_ALIAS + "/endpoint")
+                .attribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL,
+                        "http://localhost:8080/protocol/openid-connect/logout/backchannel-logout")
+                .attribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+")
+                .protocolMappers(
+                        ProtocolMapperBuilder.create().name("email")
+                                .protocolMapper(UserAttributeMapper.PROVIDER_ID)
+                                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                                .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "email")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
+                                .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
+                                .config("user.attribute", "email")
+                                .build(),
+                        ProtocolMapperBuilder.create().name("nested.email")
+                                .protocolMapper(UserAttributeMapper.PROVIDER_ID)
+                                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                                .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "nested.email")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
+                                .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
+                                .config("user.attribute", "nested.email")
+                                .build(),
+                        ProtocolMapperBuilder.create().name("dotted.email")
+                                .protocolMapper(UserAttributeMapper.PROVIDER_ID)
+                                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                                .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "dotted\\.email")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
+                                .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
+                                .config("user.attribute", "dotted.email")
+                                .build(),
+                        ProtocolMapperBuilder.create().name(ATTRIBUTE_TO_MAP_NAME)
+                                .protocolMapper(UserAttributeMapper.PROVIDER_ID)
+                                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                                .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, ATTRIBUTE_TO_MAP_NAME)
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
+                                .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
+                                .config("user.attribute", ATTRIBUTE_TO_MAP_NAME)
+                                .config(ProtocolMapperUtils.MULTIVALUED, "true")
+                                .build(),
+                        ProtocolMapperBuilder.create().name(ATTRIBUTE_TO_MAP_NAME_2)
+                                .protocolMapper(UserAttributeMapper.PROVIDER_ID)
+                                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                                .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, ATTRIBUTE_TO_MAP_NAME_2)
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
+                                .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
+                                .config("user.attribute", ATTRIBUTE_TO_MAP_NAME_2)
+                                .config(ProtocolMapperUtils.MULTIVALUED, "true")
+                                .build(),
+                        // Legacy KcOidcBrokerConfiguration's "json-mapper": a hardcoded claim whose
+                        // value is a JSON object ({"test":"value"}) exposed under the "user-claim"
+                        // claim, included only in the ID token. Broker mapper tests rely on this
+                        // exact shape, so mirror it rather than a scalar hardcoded string.
+                        ProtocolMapperBuilder.create().name("json-mapper")
+                                .protocolMapper(HardcodedClaim.PROVIDER_ID)
+                                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                                .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, USER_INFO_CLAIM)
+                                .config(OIDCAttributeMapperHelper.JSON_TYPE, "JSON")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
+                                .config(HardcodedClaim.CLAIM_VALUE,
+                                        "{\"" + HARDCODED_CLAIM + "\": \"" + HARDCODED_VALUE + "\"}")
+                                .build(),
+                        ProtocolMapperBuilder.create().name("audience")
+                                .protocolMapper(AudienceProtocolMapper.PROVIDER_ID)
+                                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                                .config("included.custom.audience", CLIENT_ID)
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
+                                .build());
+    }
+
     static class OidcProviderRealmConfig implements RealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            return realm.name(PROVIDER_REALM)
-                    .eventsListeners("jboss-logging")
-                    // The provider user has no first/last name on purpose: the imported consumer user is
-                    // then incomplete, so the consumer's first-broker-login review-profile page appears
-                    // (mirroring the legacy suite, which also created the provider user without those names).
-                    .users(UserBuilder.create(USER_LOGIN)
-                            .email(USER_EMAIL)
-                            .emailVerified(true)
-                            .password(USER_PASSWORD)
-                            .enabled(true))
-                    // The broker callback endpoints (redirect/admin/backchannel-logout) are seeded here with
-                    // a placeholder host/port; configureBrokerEndpoints() rewrites them to the consumer
-                    // realm's actual base URL once it is known. post.logout.redirect.uris="+" needs no rewrite.
-                    .clients(ClientBuilder.create(CLIENT_ID)
-                            .secret(CLIENT_SECRET)
-                            .redirectUris("http://localhost:8080/broker/" + IDP_OIDC_ALIAS + "/endpoint/*")
-                            .adminUrl("http://localhost:8080/broker/" + IDP_OIDC_ALIAS + "/endpoint")
-                            .attribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL,
-                                    "http://localhost:8080/protocol/openid-connect/logout/backchannel-logout")
-                            .attribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+")
-                            .protocolMappers(
-                                    ProtocolMapperBuilder.create().name("email")
-                                            .protocolMapper(UserAttributeMapper.PROVIDER_ID)
-                                            .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
-                                            .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "email")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
-                                            .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
-                                            .config("user.attribute", "email")
-                                            .build(),
-                                    ProtocolMapperBuilder.create().name("nested.email")
-                                            .protocolMapper(UserAttributeMapper.PROVIDER_ID)
-                                            .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
-                                            .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "nested.email")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
-                                            .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
-                                            .config("user.attribute", "nested.email")
-                                            .build(),
-                                    ProtocolMapperBuilder.create().name("dotted.email")
-                                            .protocolMapper(UserAttributeMapper.PROVIDER_ID)
-                                            .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
-                                            .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "dotted\\.email")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
-                                            .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
-                                            .config("user.attribute", "dotted.email")
-                                            .build(),
-                                    ProtocolMapperBuilder.create().name(ATTRIBUTE_TO_MAP_NAME)
-                                            .protocolMapper(UserAttributeMapper.PROVIDER_ID)
-                                            .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
-                                            .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, ATTRIBUTE_TO_MAP_NAME)
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
-                                            .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
-                                            .config("user.attribute", ATTRIBUTE_TO_MAP_NAME)
-                                            .config(ProtocolMapperUtils.MULTIVALUED, "true")
-                                            .build(),
-                                    ProtocolMapperBuilder.create().name(ATTRIBUTE_TO_MAP_NAME_2)
-                                            .protocolMapper(UserAttributeMapper.PROVIDER_ID)
-                                            .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
-                                            .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, ATTRIBUTE_TO_MAP_NAME_2)
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
-                                            .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
-                                            .config("user.attribute", ATTRIBUTE_TO_MAP_NAME_2)
-                                            .config(ProtocolMapperUtils.MULTIVALUED, "true")
-                                            .build(),
-                                    // Legacy KcOidcBrokerConfiguration's "json-mapper": a hardcoded claim whose
-                                    // value is a JSON object ({"test":"value"}) exposed under the "user-claim"
-                                    // claim, included only in the ID token. Broker mapper tests rely on this
-                                    // exact shape, so mirror it rather than a scalar hardcoded string.
-                                    ProtocolMapperBuilder.create().name("json-mapper")
-                                            .protocolMapper(HardcodedClaim.PROVIDER_ID)
-                                            .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
-                                            .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, USER_INFO_CLAIM)
-                                            .config(OIDCAttributeMapperHelper.JSON_TYPE, "JSON")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
-                                            .config(HardcodedClaim.CLAIM_VALUE,
-                                                    "{\"" + HARDCODED_CLAIM + "\": \"" + HARDCODED_VALUE + "\"}")
-                                            .build(),
-                                    ProtocolMapperBuilder.create().name("audience")
-                                            .protocolMapper(AudienceProtocolMapper.PROVIDER_ID)
-                                            .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
-                                            .config("included.custom.audience", CLIENT_ID)
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
-                                            .build()));
+            return configureProviderRealm(realm, createDefaultProviderClient());
         }
     }
 

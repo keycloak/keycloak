@@ -75,6 +75,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
@@ -85,6 +86,8 @@ import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class IdentityProvidersResource {
+
+    protected static final Logger logger = Logger.getLogger(IdentityProvidersResource.class);
 
     private final RealmModel realm;
     private final KeycloakSession session;
@@ -291,6 +294,10 @@ public class IdentityProvidersResource {
 
             if (message == null) {
                 message = "Invalid request";
+            }
+
+            if (logger.isDebugEnabled()) {
+                logger.debug(message, e);
             }
 
             throw ErrorResponse.error(message, BAD_REQUEST);

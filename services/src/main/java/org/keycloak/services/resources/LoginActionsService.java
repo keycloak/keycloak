@@ -991,7 +991,7 @@ public class LoginActionsService {
 
     private void configureOrganization(BrokeredIdentityContext brokerContext) {
         if (Organizations.isEnabled(session)) {
-            String organizationId = brokerContext.getIdpConfig().getOrganizationId();
+            String organizationId = brokerContext.getIdpConfig().getOrganizationIds().stream().findFirst().orElse(null);
 
             if (organizationId != null) {
                 OrganizationProvider provider = session.getProvider(OrganizationProvider.class);

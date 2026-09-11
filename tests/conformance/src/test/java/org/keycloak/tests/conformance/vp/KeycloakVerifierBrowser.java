@@ -36,7 +36,7 @@ import org.keycloak.broker.oid4vp.OID4VPIdentityProviderEndpoint;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
-import org.keycloak.testframework.conformance.OpenIdConformanceSuite;
+import org.keycloak.testframework.conformance.OpenIdConformanceServer;
 import org.keycloak.testframework.conformance.runner.ModuleRun;
 import org.keycloak.util.JsonSerialization;
 
@@ -57,11 +57,11 @@ final class KeycloakVerifierBrowser {
     private static final Duration STATUS_POLL_TIMEOUT = Duration.ofSeconds(30);
     private static final Duration STATUS_POLL_INTERVAL = Duration.ofMillis(500);
 
-    private final OpenIdConformanceSuite suite;
+    private final OpenIdConformanceServer suite;
     private final String keycloakLocalBaseUrl;
     private final HttpClient httpClient;
 
-    KeycloakVerifierBrowser(OpenIdConformanceSuite suite, String keycloakLocalBaseUrl, SSLContext sslContext) {
+    KeycloakVerifierBrowser(OpenIdConformanceServer suite, String keycloakLocalBaseUrl, SSLContext sslContext) {
         this.suite = suite;
         this.keycloakLocalBaseUrl = keycloakLocalBaseUrl;
         this.httpClient = HttpClient.newBuilder()
@@ -93,7 +93,7 @@ final class KeycloakVerifierBrowser {
                 + "?client_id=" + urlEncode(clientId)
                 + "&response_type=code"
                 + "&scope=openid"
-                + "&redirect_uri=" + urlEncode(OpenIdConformanceSuite.KEYCLOAK_BASE_URI + "/callback")
+                + "&redirect_uri=" + urlEncode(OpenIdConformanceServer.KEYCLOAK_BASE_URI + "/callback")
                 + "&code_challenge=" + urlEncode(PkceUtils.generateS256CodeChallenge(codeVerifier))
                 + "&code_challenge_method=S256"
                 + "&kc_idp_hint=" + urlEncode(idpAlias);
@@ -209,7 +209,7 @@ final class KeycloakVerifierBrowser {
     }
 
     private URI rewriteToHostReachable(URI uri) {
-        if (OpenIdConformanceSuite.KEYCLOAK_BASE_URI.getHost().equals(uri.getHost())) {
+        if (OpenIdConformanceServer.KEYCLOAK_BASE_URI.getHost().equals(uri.getHost())) {
             return URI.create(keycloakLocalBaseUrl + uri.getRawPath()
                     + (uri.getRawQuery() != null ? "?" + uri.getRawQuery() : ""));
         }

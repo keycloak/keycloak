@@ -212,9 +212,13 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                             prepareOperationalInfo(connection);
 
                             String driverDialect = config.get("driverDialect");
-                            // use configured dialect, else rely on Hibernate detection
                             if (driverDialect != null && !driverDialect.isBlank()) {
                                 properties.put("hibernate.dialect", driverDialect);
+                            } else {
+                                String keycloakDialect = resolveKeycloakDialect(connection);
+                                if (keycloakDialect != null) {
+                                    properties.put("hibernate.dialect", keycloakDialect);
+                                }
                             }
 
                             migration(migrationStrategy, initializeEmpty, schema, databaseUpdateFile, connection, session);
@@ -378,6 +382,20 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to connect to database", e);
+        }
+    }
+
+    private static String resolveKeycloakDialect(Connection connection) {
+        try {
+            String dbKind = getDatabaseType(connection.getMetaData().getDatabaseProductName());
+            return switch (dbKind) {
+                case "h2" -> "org.keycloak.connections.jpa.dialect.KeycloakH2Dialect";
+                case "mssql" -> "org.keycloak.connections.jpa.dialect.KeycloakSQLServerDialect";
+                case "oracle" -> "org.keycloak.connections.jpa.dialect.KeycloakOracleDialect";
+                default -> null;
+            };
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
         }
     }
 

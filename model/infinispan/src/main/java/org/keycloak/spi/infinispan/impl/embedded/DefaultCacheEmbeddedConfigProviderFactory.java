@@ -211,6 +211,7 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
         CacheConfigurator.configureNumOwners(config, holder);
         CacheConfigurator.validateWorkCacheConfiguration(holder);
         CacheConfigurator.ensureMinimumOwners(holder);
+        CacheConfigurator.ensureTimeoutOrdering(holder);
         if (JGroupsConfigurator.isClustered(holder)) {
             KeycloakModelUtils.runJobInTransaction(factory, session -> JGroupsConfigurator.configureJGroups(config, holder, session));
         }

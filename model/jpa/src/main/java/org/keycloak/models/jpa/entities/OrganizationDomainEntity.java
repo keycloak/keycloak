@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,7 +37,9 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name="ORG_DOMAIN")
 @NamedQueries({
-        @NamedQuery(name="deleteOrganizationDomainsByRealm", query="delete from  OrganizationDomainEntity d where d.organization IN (select o from OrganizationEntity o where o.realmId=:realmId)")
+        @NamedQuery(name = "getDomainByRealmAndName", query = "select d from OrganizationDomainEntity d where d.realmId = :realmId and d.name = :name"),
+        @NamedQuery(name = "deleteOrganizationDomainsByRealm", query = "delete from OrganizationDomainEntity d where d.realmId = :realmId"),
+        @NamedQuery(name = "clearDomainIdpRouting", query = "update OrganizationDomainEntity d set d.identityProvider = null, d.autoRedirect = false where d.identityProvider.id = :idpId")
 })
 public class OrganizationDomainEntity {
 
@@ -46,15 +48,25 @@ public class OrganizationDomainEntity {
     @Access(AccessType.PROPERTY)
     private String id;
 
-    @Column(name="NAME")
-    protected String name;
+    @Column(name = "NAME", nullable = false)
+    private String name;
 
-    @Column(name="VERIFIED")
-    protected Boolean verified;
+    @Column(name = "VERIFIED", nullable = false)
+    private boolean verified;
+
+    @Column(name = "REALM_ID", nullable = false)
+    private String realmId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "IDP_ID", referencedColumnName = "INTERNAL_ID")
+    private IdentityProviderEntity identityProvider;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ORG_ID")
     private OrganizationEntity organization;
+
+    @Column(name = "AUTO_REDIRECT", nullable = false)
+    private boolean autoRedirect;
 
     public String getId() {
         return id;
@@ -65,27 +77,51 @@ public class OrganizationDomainEntity {
     }
 
     public String getName() {
-        return this.name;
+        return name;
     }
 
     public void setName(String name) {
         this.name = name;
     }
 
-    public Boolean isVerified() {
-        return this.verified;
+    public boolean isVerified() {
+        return verified;
     }
 
-    public void setVerified(Boolean verified) {
+    public void setVerified(boolean verified) {
         this.verified = verified;
     }
 
+    public String getRealmId() {
+        return realmId;
+    }
+
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
+    }
+
+    public IdentityProviderEntity getIdentityProvider() {
+        return identityProvider;
+    }
+
+    public void setIdentityProvider(IdentityProviderEntity identityProvider) {
+        this.identityProvider = identityProvider;
+    }
+
     public OrganizationEntity getOrganization() {
-        return this.organization;
+        return organization;
     }
 
     public void setOrganization(OrganizationEntity organization) {
         this.organization = organization;
+    }
+
+    public boolean isAutoRedirect() {
+        return autoRedirect;
+    }
+
+    public void setAutoRedirect(boolean autoRedirect) {
+        this.autoRedirect = autoRedirect;
     }
 
     @Override
@@ -93,17 +129,13 @@ public class OrganizationDomainEntity {
         if (this == o) return true;
         if (o == null) return false;
         if (!(o instanceof OrganizationDomainEntity)) return false;
-
         OrganizationDomainEntity that = (OrganizationDomainEntity) o;
         return id != null && id.equals(that.getId());
     }
 
     @Override
     public int hashCode() {
-        if (name == null) {
-            return super.hashCode();
-        }
-        return name.hashCode();
+        if (id == null) return super.hashCode();
+        return id.hashCode();
     }
-
 }
