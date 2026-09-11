@@ -190,6 +190,40 @@ public class ConditionsValidator {
     }
 
     /**
+     * Returns true if the conditions contain a OneTimeUse condition.
+     * @return true if OneTimeUse is present
+     */
+    public boolean isOneTimeUse() {
+        if (conditions instanceof ConditionsType) {
+            return hasOneTimeUseCondition((ConditionsType) conditions);
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if the conditions contain a NotOnOrAfter element.
+     * @return true if NotOnOrAfter is present
+     */
+    public boolean hasNotOnOrAfter() {
+        if (conditions instanceof ConditionsType) {
+            return ((ConditionsType) conditions).getNotOnOrAfter() != null;
+        }
+        return false;
+    }
+
+    private boolean hasOneTimeUseCondition(ConditionsType conditionsType) {
+        if (conditionsType.getConditions() == null) {
+            return false;
+        }
+        for (ConditionAbstractType condition : conditionsType.getConditions()) {
+            if (condition instanceof OneTimeUseType) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Section 2.5.1.4
      * @return 
      */
