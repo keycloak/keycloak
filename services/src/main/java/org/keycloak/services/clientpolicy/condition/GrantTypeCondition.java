@@ -100,14 +100,15 @@ public class GrantTypeCondition extends AbstractClientPolicyConditionProvider<Gr
         if (request == null) return false;
         try {
             OIDCResponseType parsedResponseType = OIDCResponseType.parse(request.getAuthorizationEndpointRequest().getResponseType());
-            if (parsedResponseType.hasResponseType(OIDCResponseType.CODE)) {
-                return isGrantMatching(OAuth2Constants.AUTHORIZATION_CODE);
-            }
-            else if (parsedResponseType.isImplicitFlow()) {
+            if (parsedResponseType.isImplicitFlow()) {
                 return isGrantMatching(OAuth2Constants.IMPLICIT);
             }
             else if (parsedResponseType.isImplicitOrHybridFlow()) {
+                // hybrid, the response carries a code and a front channel token
                 return isGrantMatching(OAuth2Constants.AUTHORIZATION_CODE) || isGrantMatching(OAuth2Constants.IMPLICIT);
+            }
+            else if (parsedResponseType.hasResponseType(OIDCResponseType.CODE)) {
+                return isGrantMatching(OAuth2Constants.AUTHORIZATION_CODE);
             }
             else {
                 return false;
