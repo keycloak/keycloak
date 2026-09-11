@@ -201,7 +201,9 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         }
 
                         MigrationStrategy migrationStrategy = getMigrationStrategy();
-                        boolean initializeEmpty = config.getBoolean("initializeEmpty", true);
+                        // An explicit migration strategy wins over the implicit initialization of an empty database, so the
+                        // default of initializeEmpty depends on the strategy. An explicitly configured value always wins.
+                        boolean initializeEmpty = config.getBoolean("initializeEmpty", migrationStrategy == MigrationStrategy.UPDATE);
                         File databaseUpdateFile = getDatabaseUpdateFile();
 
                         properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
