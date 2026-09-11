@@ -435,8 +435,9 @@ export default function DetailSettings() {
     (isOAuth2 || isOIDC) &&
     !!provider?.types?.includes(IdentityProviderType.JWT_AUTHORIZATION_GRANT) &&
     isFeatureEnabled(Feature.JWTAuthorizationGrant);
-  const groupResource = provider.organizationId
-    ? adminClient.organizations.groups(provider.organizationId)
+  const firstOrgLink = provider.organizationLinks?.[0];
+  const groupResource = firstOrgLink?.organizationId
+    ? adminClient.organizations.groups(firstOrgLink.organizationId)
     : adminClient.groups;
 
   const loader = async () => {

@@ -40,7 +40,6 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import helpUrls from "../help-urls";
-import { toEditOrganization } from "../organizations/routes/EditOrganization";
 import { upperCaseFormatter } from "../util";
 import { ManageOrderDialog } from "./ManageOrderDialog";
 import { toIdentityProvider } from "./routes/IdentityProvider";
@@ -78,20 +77,22 @@ const OrganizationLink = (identityProvider: IdentityProviderRepresentation) => {
   const { t } = useTranslation();
   const { realm } = useRealm();
 
-  if (!identityProvider?.organizationId) {
+  const links = identityProvider?.organizationLinks;
+  if (!links || links.length === 0) {
     return "—";
   }
 
   return (
     <Link
       key={identityProvider.providerId}
-      to={toEditOrganization({
+      to={toIdentityProvider({
         realm,
-        id: identityProvider.organizationId,
-        tab: "identityProviders",
+        providerId: identityProvider.providerId!,
+        alias: identityProvider.alias!,
+        tab: "organizations",
       })}
     >
-      {t("organization")}
+      {t("linkedOrganizationsCount", { count: links.length })}
     </Link>
   );
 };
