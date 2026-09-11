@@ -17,6 +17,7 @@
 
 package org.keycloak.loginfailures.jpa;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.IntConsumer;
 
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -33,7 +34,7 @@ public enum LoginFailureExpirationAction implements ExpirationAction {
         if (realm == null) {
             return false;
         }
-        var expired = LoginFailureUtils.computeExpirationCutOffTimestamp(realm, currentTime);
+        var expired = LoginFailureUtils.computeExpirationCutOffTimestampMillis(realm, TimeUnit.SECONDS.toMillis(currentTime));
         if (expired == -1) {
             // Permanent-lockout realm: still purge cleared entries (lastFailure = 0)
             expired = 1;
