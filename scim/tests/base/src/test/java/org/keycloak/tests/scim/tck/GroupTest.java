@@ -9,7 +9,9 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -28,6 +30,7 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -405,6 +408,61 @@ public class GroupTest extends AbstractScimTest {
     }
 
     @Test
+    public void testGroupMembershipAdminEvents() {
+        User userA = createScimUser();
+        User userB = createScimUser();
+
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        adminEvents.clear();
+
+        // adding two new members produces the generic PATCH event followed by one GROUP_MEMBERSHIP CREATE event per member
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .add("members", userA.getId())
+                .add("members", userB.getId())
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.GROUP);
+        assertMembershipEvent(adminEvents.poll(), OperationType.CREATE, group, userA);
+        assertMembershipEvent(adminEvents.poll(), OperationType.CREATE, group, userB);
+        assertNull(adminEvents.poll());
+
+        // re-adding an already existing member is a no-op: no GROUP_MEMBERSHIP event should be emitted
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .add("members", userA.getId())
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.GROUP);
+        assertNull(adminEvents.poll());
+
+        // removing a member produces the generic PATCH event followed by a GROUP_MEMBERSHIP DELETE event
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .remove("members[value eq \"" + userA.getId() + "\"]")
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.GROUP);
+        assertMembershipEvent(adminEvents.poll(), OperationType.DELETE, group, userA);
+        assertNull(adminEvents.poll());
+
+        // removing a user that is not a member is a no-op: no GROUP_MEMBERSHIP event should be emitted
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .remove("members[value eq \"" + userA.getId() + "\"]")
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.GROUP);
+        assertNull(adminEvents.poll());
+    }
+
+    @Test
     public void testGroupMembers() {
         // create users via SCIM
         User userA = createScimUser();
@@ -761,10 +819,89 @@ public class GroupTest extends AbstractScimTest {
         ), "Expected member with userId=" + userId + " and userName=" + userName);
     }
 
+    private static void assertMembershipEvent(AdminEventRepresentation event, OperationType operationType, Group group, User user) {
+        // the representation is built via ModelToRepresentation.toRepresentation(GroupModel, boolean), i.e. the Admin
+        // API's GroupRepresentation (field "name"), not the SCIM Group representation (field "displayName")
+        AdminEventAssertion.assertSuccess(event)
+                .operationType(operationType)
+                .resourceType(ResourceType.GROUP_MEMBERSHIP)
+                .resourcePath("scim/v2/Groups/" + group.getId() + "/" + user.getId())
+                .representation(Map.of("id", group.getId(), "name", group.getDisplayName()));
+        Map<String, String> expectedDetails = user.getEmail() != null
+                ? Map.of(UserModel.USERNAME, user.getUserName(), UserModel.EMAIL, user.getEmail())
+                : Map.of(UserModel.USERNAME, user.getUserName());
+        assertThat(event.getDetails(), is(equalTo(expectedDetails)));
+    }
+
+    @Test
+    public void testGroupMembershipAdminEventNotEmittedForInheritedSubgroupMembership() {
+        // parent group managed via SCIM, subgroup created via the admin client (subgroups are not exposed via SCIM)
+        Group parent = new Group();
+        parent.setDisplayName(KeycloakModelUtils.generateId());
+        parent = client.groups().create(parent);
+
+        GroupRepresentation subGroupRep = new GroupRepresentation();
+        subGroupRep.setName(KeycloakModelUtils.generateId());
+        String subGroupId;
+        try (Response response = realm.admin().groups().group(parent.getId()).subGroup(subGroupRep)) {
+            subGroupId = ApiUtil.getCreatedId(response);
+        }
+
+        User user = createScimUser();
+        realm.admin().users().get(user.getId()).joinGroup(subGroupId);
+        adminEvents.clear();
+
+        // user.isMemberOf(parent) would return true here (inherited via the subgroup), but the user is not a
+        // direct member of the parent group, so leaveGroup(parent) is a no-op and no membership event should fire
+        client.groups().patch(parent.getId(), PatchRequest.create()
+                .remove("members[value eq \"" + user.getId() + "\"]")
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.GROUP);
+        assertNull(adminEvents.poll());
+    }
+
+    @Test
+    public void testGroupMembershipAdminEventDoesNotLeakDetailsAcrossMembers() {
+        User userWithEmail = createScimUser();
+        User userWithoutEmail = createScimUserWithoutEmail();
+
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        adminEvents.clear();
+
+        // userWithEmail is added first so its EMAIL detail must not leak into userWithoutEmail's event
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .add("members", userWithEmail.getId())
+                .add("members", userWithoutEmail.getId())
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.GROUP);
+        assertMembershipEvent(adminEvents.poll(), OperationType.CREATE, group, userWithEmail);
+        assertMembershipEvent(adminEvents.poll(), OperationType.CREATE, group, userWithoutEmail);
+        assertNull(adminEvents.poll());
+    }
+
     private User createScimUser() {
         User user = new User();
         user.setUserName(KeycloakModelUtils.generateId());
         user.setEmail(user.getUserName() + "@keycloak.org");
+        user.setFirstName("firstName");
+        user.setLastName("lastName");
+        user.setActive(true);
+        User created = client.users().create(user);
+        adminEvents.clear();
+        return created;
+    }
+
+    private User createScimUserWithoutEmail() {
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
         user.setFirstName("firstName");
         user.setLastName("lastName");
         user.setActive(true);
