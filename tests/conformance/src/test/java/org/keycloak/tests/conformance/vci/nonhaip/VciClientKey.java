@@ -48,19 +48,19 @@ public final class VciClientKey {
     private VciClientKey() {
     }
 
-    static JsonNode privateJwks() {
+    public static JsonNode privateJwks() {
         return KEY.privateJwks();
     }
 
-    static JsonNode publicJwks() {
+    public static JsonNode publicJwks() {
         return KEY.publicJwks();
     }
 
-    static JsonNode privateJwks2() {
+    public static JsonNode privateJwks2() {
         return KEY2.privateJwks();
     }
 
-    static JsonNode publicJwks2() {
+    public static JsonNode publicJwks2() {
         return KEY2.publicJwks();
     }
 }

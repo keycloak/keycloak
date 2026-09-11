@@ -24,21 +24,21 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.conformance.runner.BrowserInteraction;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.testframework.conformance.runner.ConformanceResult;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.tests.conformance.vci.AbstractVciConformanceTest;
-import org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig;
+import org.keycloak.tests.conformance.vci.haip.configs.HaipVciRealmConfig;
+import org.keycloak.tests.conformance.vci.haip.configs.HaipVciServerConfig;
 
-import static org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig.HAIP_PLAN;
+import static org.keycloak.tests.conformance.vci.haip.configs.HaipVciRealmConfig.HAIP_PLAN;
 
 /**
  * Sends an unsigned authorization request without going through PAR: Keycloak requires pushed authorization, so
  * it rejects the request because it has no pushed request_uri to resolve.
  */
-@KeycloakIntegrationTest(config = HaipVciConformanceRealmConfig.ServerConfig.class)
+@KeycloakIntegrationTest(config = HaipVciServerConfig.class)
 public class IssuerFapi2UnsignedRequestWithoutParTest extends AbstractVciConformanceTest {
 
-    @InjectRealm(config = HaipVciConformanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(config = HaipVciRealmConfig.class)
     ManagedRealm realm;
 
     @Override

@@ -25,17 +25,24 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.VCFormat;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.constants.OID4VCIConstants;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.keys.KeyProvider;
 import org.keycloak.mdoc.MdocIssuerSignedDocument;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+
+import org.junit.jupiter.api.BeforeEach;
 
 import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED;
@@ -51,17 +58,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class OID4VCMdocTestBase extends OID4VCIssuerTestBase {
 
+    @BeforeEach
+    void mdocTestSetup() {
+        ensureMdocCompliantSigningConfiguration();
+    }
+
     public static class VCTestServerWithMdocEnabled implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_MDOC);
+            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_MDOC)
+                    .spiOption("keys", "java-keystore", "keystores-path", MdocTestSigningKey.keystoresBaseDir());
         }
     }
 
     public static class VCTestServerWithPreAuthCodeAndMdocEnabled implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER, Profile.Feature.OID4VC_VCI_PREAUTH_CODE, Profile.Feature.OID4VC_MDOC);
+            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER, Profile.Feature.OID4VC_VCI_PREAUTH_CODE, Profile.Feature.OID4VC_MDOC)
+                    .spiOption("keys", "java-keystore", "keystores-path", MdocTestSigningKey.keystoresBaseDir());
         }
     }
 
@@ -82,9 +96,9 @@ public abstract class OID4VCMdocTestBase extends OID4VCIssuerTestBase {
                 scopeName,
                 credentialConfigurationId,
                 List.of(
-                        ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.iso.18013.5.1"),
-                        ProtocolMapperUtils.getUserAttributeMapper("family_name", "lastName", "org.iso.18013.5.1"),
-                        ProtocolMapperUtils.getSubjectIdMapper("id", UserModel.USERNAME, "org.iso.18013.5.1")
+                        ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.example.credential"),
+                        ProtocolMapperUtils.getUserAttributeMapper("family_name", "lastName", "org.example.credential"),
+                        ProtocolMapperUtils.getSubjectIdMapper("id", UserModel.USERNAME, "org.example.credential")
                 ),
                 "ES256",
                 true
@@ -211,8 +225,8 @@ public abstract class OID4VCMdocTestBase extends OID4VCIssuerTestBase {
         assertFalse(encodedIssuerSigned.isBlank(), "mDoc credential response must contain a base64url payload");
 
         Map<String, Object> nameSpaces = getMdocNamespacesFromCredential(encodedIssuerSigned);
-        assertTrue(nameSpaces.containsKey("org.iso.18013.5.1"), "mDoc payload must include the configured namespace");
-        Map<?, ?> namespaceClaims = assertInstanceOf(Map.class, nameSpaces.get("org.iso.18013.5.1"));
+        assertTrue(nameSpaces.containsKey("org.example.credential"), "mDoc payload must include the configured namespace");
+        Map<?, ?> namespaceClaims = assertInstanceOf(Map.class, nameSpaces.get("org.example.credential"));
         assertTrue(namespaceClaims.containsKey("given_name"), "mDoc payload must contain the given_name claim");
         assertTrue(namespaceClaims.containsKey("id"), "mDoc payload must contain the id claim");
 
@@ -229,7 +243,7 @@ public abstract class OID4VCMdocTestBase extends OID4VCIssuerTestBase {
         assertInstanceOf(String.class, credential, "mDoc credential should be a string");
 
         Map<String, Object> nameSpaces = getMdocNamespacesFromCredential((String) credential);
-        assertTrue(nameSpaces.containsKey("org.iso.18013.5.1"));
+        assertTrue(nameSpaces.containsKey("org.example.credential"));
 
         Map<String, Object> mobileSecurityObject = getMdocMobileSecurityObjectFromCredential((String) credential);
         assertEquals(mdocTypeCredentialDocType, mobileSecurityObject.get("docType"));
@@ -269,6 +283,37 @@ public abstract class OID4VCMdocTestBase extends OID4VCIssuerTestBase {
             protocolMapperRepresentation.setConfig(config);
             return protocolMapperRepresentation;
         }
+    }
+
+    /**
+     * Persistently add an ES256 signing key with a CA issued certificate, as mdoc issuance rejects
+     * the self signed certificates of generated realm keys.
+     */
+    protected void ensureMdocCompliantSigningConfiguration() {
+        final String providerName = "mdoc-signing-key-provider";
+        var components = testRealm.admin().components();
+        if (!components.query(testRealm.getId(), KeyProvider.class.getName(), providerName).isEmpty()) {
+            return;
+        }
+
+        ComponentRepresentation component = new ComponentRepresentation();
+        component.setProviderType(KeyProvider.class.getName());
+        component.setName(providerName);
+        component.setId(UUID.randomUUID().toString());
+        component.setProviderId("java-keystore");
+        component.setConfig(new MultivaluedHashMap<>(Map.of(
+                "keystore", List.of(MdocTestSigningKey.keyStorePath()),
+                "keystorePassword", List.of(MdocTestSigningKey.PASSWORD),
+                "keystoreType", List.of("PKCS12"),
+                "keyAlias", List.of(MdocTestSigningKey.KEY_ALIAS),
+                "keyPassword", List.of(MdocTestSigningKey.PASSWORD),
+                "algorithm", List.of(Algorithm.ES256),
+                "keyUse", List.of(KeyUse.SIG.name()),
+                "priority", List.of("300"),
+                "enabled", List.of("true"),
+                "active", List.of("true")
+        )));
+        components.add(component).close();
     }
 
     private static MdocIssuerSignedDocument parseCredential(String encodedIssuerSigned) {
