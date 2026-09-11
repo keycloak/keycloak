@@ -454,6 +454,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
 
         if (username != null) {
+            authenticationSession.setClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, username);
             authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
             authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.USERNAME_HIDDEN, Boolean.TRUE.toString());
         }
