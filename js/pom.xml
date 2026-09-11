@@ -40,7 +40,7 @@
 
     <properties>
         <node.version>v24.9.0</node.version>
-        <pnpm.version>11.1.1</pnpm.version>
+        <pnpm.version>11.21.0</pnpm.version>
         <!-- The JavaScript projects use non-standard folders for their sources, therefore, name it here explicitly -->
         <maven.build.cache.input.1>src</maven.build.cache.input.1>
         <maven.build.cache.input.2>public</maven.build.cache.input.2>
@@ -122,6 +122,19 @@
                         </goals>
                         <configuration>
                             <arguments>build</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-js-sbom</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Generate an SBOM for the NPM packages.
+                                 -prod argument excludes non-production dependencies. W/o it non-production dependencies
+                                 will appear with scope 'excluded', meaning excluded from runtime -->
+                            <arguments>sbom --sbom-format cyclonedx --prod --filter !create-keycloak-theme --filter !keycloak-server --out ${project.build.directory}/js-sbom.cdx.json</arguments>
                         </configuration>
                     </execution>
                 </executions>
