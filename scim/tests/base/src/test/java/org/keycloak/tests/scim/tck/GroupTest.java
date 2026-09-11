@@ -254,6 +254,89 @@ public class GroupTest extends AbstractScimTest {
     }
 
     @Test
+    public void testUpdateImmutableAttribute() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group.setExternalId(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        String originalExternalId = group.getExternalId();
+        adminEvents.clear();
+
+        // PUT with a changed externalId should fail because it is immutable
+        group.setExternalId("changed-" + originalExternalId);
+        try {
+            client.groups().update(group);
+            fail("should fail because externalId is immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+            assertTrue(error.getDetail().contains("externalId"));
+        }
+
+        // verify externalId was not changed
+        Group actual = client.groups().get(group.getId());
+        assertEquals(originalExternalId, actual.getExternalId());
+    }
+
+    @Test
+    public void testUpdateUnchangedImmutableAttribute() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group.setExternalId(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        adminEvents.clear();
+
+        // PUT round-trip that resubmits the same externalId and meta.created should succeed (RFC 7644 §3.5.1)
+        group = client.groups().get(group.getId());
+        group.setDisplayName("Updated " + group.getDisplayName());
+        client.groups().update(group);
+
+        Group actual = client.groups().get(group.getId());
+        assertEquals(group.getDisplayName(), actual.getDisplayName());
+        assertEquals(group.getExternalId(), actual.getExternalId());
+    }
+
+    @Test
+    public void testUpdateInitializeImmutableAttribute() {
+        // create a group without externalId
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        assertNull(group.getExternalId());
+        adminEvents.clear();
+
+        // PUT initializing a previously-unset externalId should succeed (RFC 7644 §3.5.1)
+        String externalId = KeycloakModelUtils.generateId();
+        group.setExternalId(externalId);
+        client.groups().update(group);
+
+        Group actual = client.groups().get(group.getId());
+        assertEquals(externalId, actual.getExternalId());
+    }
+
+    @Test
+    public void testUpdateImmutableMetaCreated() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        adminEvents.clear();
+
+        group = client.groups().get(group.getId());
+        group.getMeta().setCreated(Instant.EPOCH.toString());
+        try {
+            client.groups().update(group);
+            fail("should fail because meta.created is immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+        }
+    }
+
+    @Test
     public void testMetaLocationUrl() {
         Group group = new Group();
         group.setDisplayName(KeycloakModelUtils.generateId());
