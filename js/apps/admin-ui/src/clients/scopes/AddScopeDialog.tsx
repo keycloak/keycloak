@@ -35,6 +35,8 @@ import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 
 import "./client-scopes.css";
 
+const ADD_SCOPE_MODAL_FOCUS_TRAP_ID = "add-scope-modal-focus-trap";
+
 export type AddScopeDialogProps = {
   clientScopes: ClientScopeRepresentation[];
   clientName?: string;
@@ -153,8 +155,22 @@ export const AddScopeDialog = ({
     return options;
   }, [t, isOid4vcEnabled]);
 
+  const onEscapePress = () => {
+    if (addToggle) {
+      setAddToggle(false);
+    } else {
+      toggleDialog();
+    }
+  };
+
   return (
-    <Modal variant={ModalVariant.medium} isOpen={open} onClose={toggleDialog}>
+    <Modal
+      variant={ModalVariant.medium}
+      isOpen={open}
+      onClose={toggleDialog}
+      focusTrapId={ADD_SCOPE_MODAL_FOCUS_TRAP_ID}
+      onEscapePress={onEscapePress}
+    >
       <ModalHeader
         title={
           isClientScopesConditionType
@@ -311,9 +327,9 @@ export const AddScopeDialog = ({
             <Dropdown
               popperProps={{
                 direction: "up",
-                appendTo: () => document.body,
+                appendTo: () =>
+                  document.getElementById(ADD_SCOPE_MODAL_FOCUS_TRAP_ID),
               }}
-              zIndex={9999}
               onOpenChange={(isOpen) => setAddToggle(isOpen)}
               className="keycloak__client-scopes-add__add-dropdown"
               key="add-dropdown"
@@ -322,6 +338,7 @@ export const AddScopeDialog = ({
                 <MenuToggle
                   ref={ref}
                   isDisabled={rows.length === 0}
+                  onClick={() => setAddToggle(!addToggle)}
                   isExpanded={addToggle}
                   isInForm
                   variant="primary"
