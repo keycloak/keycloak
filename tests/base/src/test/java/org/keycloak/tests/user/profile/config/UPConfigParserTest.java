@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.user.profile.config;
+package org.keycloak.tests.user.profile.config;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,14 +32,18 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPGroup;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientScopeBuilder;
-import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.tests.utils.LegacyRealmConfig;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.userprofile.config.UPConfigUtils.readConfig;
 import static org.keycloak.userprofile.config.UPConfigUtils.validate;
@@ -50,18 +54,15 @@ import static org.keycloak.userprofile.config.UPConfigUtils.validate;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
-public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
+@KeycloakIntegrationTest
+public class UPConfigParserTest {
 
-	@Override
-	public void configureTestRealm(RealmRepresentation testRealm) {
-	    testRealm.setClientScopes(new ArrayList<>());
-	    testRealm.getClientScopes().add(ClientScopeBuilder.create().name("phone-1-sel").build());
-        testRealm.getClientScopes().add(ClientScopeBuilder.create().name("phone-1").build());
-        testRealm.getClientScopes().add(ClientScopeBuilder.create().name("phone-2-sel").build());
-        testRealm.getClientScopes().add(ClientScopeBuilder.create().name("phone-2").build());
-        testRealm.getClientScopes().add(ClientScopeBuilder.create().name("phone-3-sel").build());
-	}
-	
+    @InjectRealm(config = UPConfigParserRealmConfig.class)
+    ManagedRealm managedRealm;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
+
     @Test
     public void attributeNameIsValid() {
         // few invalid cases
@@ -164,24 +165,24 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         return UPConfigParserTest.class.getResourceAsStream("test-OK.json");
     }
 
-    @Test(expected = JsonMappingException.class)
+    @Test
     public void parseConfigurationFile_invalidJsonFormat() throws IOException {
-        readConfig(getClass().getResourceAsStream("test-invalidJsonFormat.json"));
+        Assertions.assertThrows(JsonMappingException.class, () -> readConfig(getClass().getResourceAsStream("test-invalidJsonFormat.json")));
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void parseConfigurationFile_invalidType() throws IOException {
-        readConfig(getClass().getResourceAsStream("test-invalidType.json"));
+        Assertions.assertThrows(IOException.class, () -> readConfig(getClass().getResourceAsStream("test-invalidType.json")));
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void parseConfigurationFile_unknownField() throws IOException {
-        readConfig(getClass().getResourceAsStream("test-unknownField.json"));
+        Assertions.assertThrows(IOException.class, () -> readConfig(getClass().getResourceAsStream("test-unknownField.json")));
     }
 
     @Test
     public void validateConfiguration_OK() {
-        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UPConfigParserTest::validateConfiguration_OK);
+        runOnServer.run(UPConfigParserTest::validateConfiguration_OK);
     }
 
     public static void validateConfiguration_OK(KeycloakSession session) throws IOException {
@@ -191,7 +192,7 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void validateConfiguration_attributeNameErrors() {
-        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UPConfigParserTest::validateConfiguration_attributeNameErrors);
+        runOnServer.run(UPConfigParserTest::validateConfiguration_attributeNameErrors);
     }
 
     public static void validateConfiguration_attributeNameErrors(KeycloakSession session) throws IOException {
@@ -221,7 +222,7 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void validateConfiguration_attributePermissionsErrors() {
-        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UPConfigParserTest::validateConfiguration_attributePermissionsErrors);
+        runOnServer.run(UPConfigParserTest::validateConfiguration_attributePermissionsErrors);
     }
 
     public static void validateConfiguration_attributePermissionsErrors(KeycloakSession session) throws IOException {
@@ -263,7 +264,7 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void validateConfiguration_attributeRequirementsErrors() {
-        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UPConfigParserTest::validateConfiguration_attributeRequirementsErrors);
+        runOnServer.run(UPConfigParserTest::validateConfiguration_attributeRequirementsErrors);
     }
 
     public static void validateConfiguration_attributeRequirementsErrors(KeycloakSession session) throws IOException {
@@ -294,7 +295,7 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
 
     @Test
 	public void validateConfiguration_attributeValidationsErrors() {
-		getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UPConfigParserTest::validateConfiguration_attributeValidationsErrors);
+		runOnServer.run(UPConfigParserTest::validateConfiguration_attributeValidationsErrors);
 	}
     
     private static void validateConfiguration_attributeValidationsErrors(KeycloakSession session) throws IOException {
@@ -326,7 +327,7 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void validateConfiguration_attributeGroupConfigurationErrors() {
-        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UPConfigParserTest::validateConfiguration_attributeGroupConfigurationErrors);
+        runOnServer.run(UPConfigParserTest::validateConfiguration_attributeGroupConfigurationErrors);
     }
 
     private static void validateConfiguration_attributeGroupConfigurationErrors(KeycloakSession session) throws IOException {
@@ -342,7 +343,7 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void validateConfiguration_attributeGroupReferenceErrors() {
-        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UPConfigParserTest::validateConfiguration_attributeGroupReferenceErrors);
+        runOnServer.run(UPConfigParserTest::validateConfiguration_attributeGroupReferenceErrors);
     }
 
     private static void validateConfiguration_attributeGroupReferenceErrors(KeycloakSession session) throws IOException {
@@ -358,7 +359,7 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
     
     @Test
     public void validateConfiguration_attributeAnnotationsErrors() {
-        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UPConfigParserTest::validateConfiguration_attributeAnnotationsErrors);
+        runOnServer.run(UPConfigParserTest::validateConfiguration_attributeAnnotationsErrors);
     }
 
     private static void validateConfiguration_attributeAnnotationsErrors(KeycloakSession session) throws IOException {
@@ -373,4 +374,18 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         Assertions.assertEquals(2, errors.size());
     }
 
+
+    private static class UPConfigParserRealmConfig extends LegacyRealmConfig {
+
+    	@Override
+    	public void configureTestRealm(RealmRepresentation testRealm) {
+    	    testRealm.setClientScopes(new ArrayList<>());
+    	    testRealm.getClientScopes().add(ClientScopeBuilder.create().name("phone-1-sel").build());
+            testRealm.getClientScopes().add(ClientScopeBuilder.create().name("phone-1").build());
+            testRealm.getClientScopes().add(ClientScopeBuilder.create().name("phone-2-sel").build());
+            testRealm.getClientScopes().add(ClientScopeBuilder.create().name("phone-2").build());
+            testRealm.getClientScopes().add(ClientScopeBuilder.create().name("phone-3-sel").build());
+    	}
+    	
+    }
 }
