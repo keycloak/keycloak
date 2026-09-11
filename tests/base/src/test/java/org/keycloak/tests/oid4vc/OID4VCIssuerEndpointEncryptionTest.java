@@ -8,7 +8,6 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.HttpHeaders;
 
 import org.keycloak.TokenVerifier;
@@ -21,16 +20,12 @@ import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryption;
-import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
@@ -52,13 +47,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
 public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest {
-
-    @InjectRunOnServer
-    RunOnServerClient runOnServer;
 
     @AfterEach
     void logoutAfterEach() {
@@ -164,28 +155,24 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
     }
 
     @Test
-    void testRequestCredentialWithIncompleteEncryptionParams() throws Throwable {
-        String token = getBearerToken(oauth, client, jwtTypeCredentialScope.getName());
-        withCausePropagation(() -> runOnServer.run(session -> {
-            var authenticator = new BearerTokenAuthenticator(session);
-            authenticator.setTokenString(token);
-            var endpoint = prepareIssuerEndpoint(session, authenticator);
+    void testRequestCredentialWithIncompleteEncryptionParams() throws IOException {
+        // Use an OID4VCI token via the HTTP client (not runOnServer) so the token is verified
+        // against the correct credential-endpoint URI.
+        FlowData flow = prepareFlow();
 
-            JWK jwk = JWKParser.create().parse("{\"kty\":\"RSA\",\"n\":\"test-n\",\"e\":\"AQAB\"}").getJwk();
-            CredentialRequest request = new CredentialRequest()
-                    .setCredentialIdentifier("test-credential")
-                    .setCredentialResponseEncryption(new CredentialResponseEncryption().setJwk(jwk));
+        JWK jwk = JWKParser.create().parse("{\"kty\":\"RSA\",\"n\":\"test-n\",\"e\":\"AQAB\"}").getJwk();
+        CredentialRequest request = new CredentialRequest()
+                .setCredentialIdentifier(flow.credentialIdentifier())
+                .setCredentialResponseEncryption(new CredentialResponseEncryption().setJwk(jwk));
 
-            try {
-                endpoint.requestCredential(JsonSerialization.writeValueAsString(request));
-                fail("Expected BadRequestException");
-            } catch (BadRequestException e) {
-                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), error.getError());
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
-        }));
+        Oid4vcCredentialResponse response = oauth.oid4vc()
+                .credentialRequest(null)
+                .payload(JsonSerialization.writeValueAsString(request), ContentType.APPLICATION_JSON)
+                .bearerToken(flow.token())
+                .send();
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), response.getError());
     }
 
     @Test
