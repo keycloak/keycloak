@@ -151,6 +151,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         attributes.put("identityProviderContext", brokerContext);
         attributes.put("identityProviderAlias", idpAlias);
         attributes.put("identityProviderDisplayName", idpDisplayName);
+        attributes.put("identityProviderUsernameSentinel", java.util.UUID.randomUUID().toString());
 
         List<Object> subjectAttrs = Collections.singletonList(idpDisplayName);
         send("identityProviderLinkSubject", subjectAttrs, "identity-provider-link.ftl", attributes);
