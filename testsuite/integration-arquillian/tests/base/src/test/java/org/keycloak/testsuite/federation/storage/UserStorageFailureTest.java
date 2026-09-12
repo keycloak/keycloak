@@ -413,6 +413,54 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    @Test
+    public void testUnavailableStorageDoesNotCacheEmptyGroups() {
+        String groupName = "external-group";
+
+        try {
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
+                UserStorageUtil.userCache(session).evict(realm);
+                if (session.groups().getGroupByName(realm, null, groupName) == null) {
+                    realm.createGroup(groupName);
+                }
+                FailableHardcodedStorageProvider.groupName = groupName;
+
+                session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
+            });
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
+                UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
+                Assertions.assertTrue(user instanceof CachedUserModel);
+            });
+
+            toggleForceFailOnValidation(true);
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
+                UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
+                Assertions.assertEquals(0, user.getGroupsStream().count());
+            });
+
+            toggleForceFailOnValidation(false);
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
+                UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
+                Assertions.assertEquals(groupName, user.getGroupsStream().findFirst().orElseThrow().getName());
+            });
+        } finally {
+            toggleForceFailOnValidation(false);
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
+                FailableHardcodedStorageProvider.groupName = null;
+                UserStorageUtil.userCache(session).evict(realm);
+                var group = session.groups().getGroupByName(realm, null, groupName);
+                if (group != null) {
+                    realm.removeGroup(group);
+                }
+            });
+        }
+    }
+
     private void enableCache() {
         ComponentRepresentation component = managedRealm.admin().components().query().stream()
                 .filter(c -> c.getProviderId().equals(FailableHardcodedStorageProviderFactory.PROVIDER_ID))
