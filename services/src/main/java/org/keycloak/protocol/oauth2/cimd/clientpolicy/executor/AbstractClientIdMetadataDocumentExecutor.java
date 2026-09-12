@@ -35,7 +35,10 @@ import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 
 /**
@@ -86,7 +89,8 @@ import org.jboss.logging.Logger;
  * According to the CIMD specification, the client metadata format is the same as for Dynamic Client Registration except for {@code client_id} property.
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc7591>OAuth 2.0 Dynamic Client Registration Protocol [RFC 7591]</a>
  * Therefore, {@link OIDCClientRepresentation} is used for the client metadata format.
- * The CIMD specification allows the use of additional properties (MAY requirement level), but the class does not treat them.
+ * The CIMD specification allows the use of additional properties (MAY requirement level).
+ * The class ignores such the properties when parsing a client metadata document, but it does not treat them.
  *
  * <p>Client Metadata Augmentation in {@code OIDCClientRepresentation}:
  * To successfully convert a fetched client metadata to {@code ClientRepresentation}, intentionally augment it.
@@ -415,6 +419,15 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
     // Implementation
     // Fetch Client Metadata
     public static final String ERR_METADATA_FETCH_FAILED = "Client Metadata fetch failed";
+    public static final String ERR_METADATA_PARSE_FAILED = "Invalid Client Metadata: cannot be parsed as a client metadata document.";
+
+    // The CIMD specification (Section 4.1) allows a client metadata document to define additional properties,
+    // and RFC 7591 (Section 2) requires ignoring any client metadata the authorization server does not understand.
+    // Therefore, a client metadata document is parsed leniently, ignoring unknown properties.
+    // The lenient parsing is intentionally scoped to fetched client metadata documents so that
+    // other consumers of OIDCClientRepresentation (e.g. Dynamic Client Registration) keep their current behavior.
+    private static final ObjectMapper clientMetadataObjectMapper = JsonSerialization.createObjectMapperWithDefaults()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     /**
      * Verifies an authorization request to check if the request includes required parameters and follows the expected format.
@@ -591,7 +604,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                 }
             }
 
-            clientOIDC = response.asJson(OIDCClientRepresentation.class);
+            clientOIDC = parseClientMetadata(response.asString());
 
             // to successfully convert it to Client Representation, intentionally augment it.
             augmentClientOIDC(clientOIDC);
@@ -600,6 +613,23 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         } catch (IOException e) {
             getLogger().warnv("HTTP connection failure: {0}", e);
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, ERR_METADATA_FETCH_FAILED);
+        }
+    }
+
+    /**
+     * Parse a fetched client metadata document leniently, ignoring unknown properties as required by
+     * the CIMD specification (Section 4.1) and RFC 7591 (Section 2).
+     *
+     * @param clientMetadataDocument a fetched client metadata document as a JSON string
+     * @return {@code OIDCClientRepresentation} a parsed client metadata
+     * @throws ClientPolicyException when the document cannot be parsed as a client metadata document.
+     */
+    protected OIDCClientRepresentation parseClientMetadata(final String clientMetadataDocument) throws ClientPolicyException {
+        try {
+            return clientMetadataObjectMapper.readValue(clientMetadataDocument, OIDCClientRepresentation.class);
+        } catch (JsonProcessingException e) {
+            getLogger().warnv("failed to parse client metadata document: {0}", e.getMessage());
+            throw invalidClientIdMetadata(ERR_METADATA_PARSE_FAILED);
         }
     }
 

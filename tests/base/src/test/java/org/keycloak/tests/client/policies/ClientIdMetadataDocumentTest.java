@@ -565,6 +565,49 @@ public class ClientIdMetadataDocumentTest {
         assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_FETCH_FAILED);
     }
 
+    @Test
+    public void testClientIdMetadataDocumentExecutorIgnoresUnknownProperties() throws Exception {
+        // register profiles
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        // public client whose client metadata document contains additional, non-registered properties.
+        // The CIMD specification (Section 4.1) allows a client metadata document to define additional properties,
+        // and RFC 7591 (Section 2) requires ignoring any client metadata the authorization server does not understand.
+        // "code_challenge_methods_used" is a non-registered property served by real-world MCP clients.
+        setCimdPublicClient();
+        cimd.setAdditionalProperties(Map.of(
+                "code_challenge_methods_used", List.of("S256"),
+                "x_unknown_property", "arbitrary-value"));
+
+        // send an authorization request - success
+        String code = loginUserAndGetCode(true);
+
+        // get an access token
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+        AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+        Assertions.assertEquals(CLIENT_ID, accessToken.getIssuedFor());
+
+        // the unknown properties are ignored: the recognized metadata is registered as usual
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(clientRepresentation.isPublicClient());
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorParseClientMetadataFailed() throws Exception {
+        // register profiles
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        // 200 OK but the response body is not a valid JSON document
+        cimd.setRawMetadata("{\"client_id\": \"" + CLIENT_ID + "\", \"redirect_uris\": \"not-json");
+
+        // send an authorization request - fail
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_PARSE_FAILED);
+    }
+
     private void testClientIdMetadataDocumentExecutorCacheControl(String cacheControlHeaderValue, int expectedExpiry) {
         // set Client Metadata
         cimd.getRepresentation().setLogoUri("https://www.example.com");
