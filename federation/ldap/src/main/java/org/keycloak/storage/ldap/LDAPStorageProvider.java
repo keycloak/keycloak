@@ -488,7 +488,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 // do no force the import and return the current existing user if available
                 .map(ldapUser -> importUserFromLDAP(session, realm, ldapUser, ImportType.NOT_FORCED_RETURN_EXISTING))
                 // null when a brand-new entry fails User Profile validation on import - must not leak through as
-                // e.g. a null group/role member.
+                // e.g. a null group/role member. skip/limit deliberately stays before this map/filter: dns can be
+                // an entire group's membership, and importing (with its DB writes/validation) only the requested
+                // page's worth - rather than every entry up to it, on every page request - matters far more than
+                // a page occasionally coming back smaller than maxResults because one of its entries was rejected.
                 .filter(Objects::nonNull);
     }
 
@@ -511,7 +514,13 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 .skip(firstResult)
                 .limit(maxResults)
                 // do no force the import and return the current existing user if available
-                .map(ldapUser -> importUserFromLDAP(session, realm, ldapUser, ImportType.NOT_FORCED_RETURN_EXISTING));
+                .map(ldapUser -> importUserFromLDAP(session, realm, ldapUser, ImportType.NOT_FORCED_RETURN_EXISTING))
+                // null when a brand-new entry fails User Profile validation on import - must not leak through as
+                // e.g. a null group/role member. skip/limit deliberately stays before this map/filter: uids can be
+                // an entire group's membership, and importing (with its DB writes/validation) only the requested
+                // page's worth - rather than every entry up to it, on every page request - matters far more than
+                // a page occasionally coming back smaller than maxResults because one of its entries was rejected.
+                .filter(Objects::nonNull);
     }
 
     private Condition createSearchCondition(LDAPQueryConditionsBuilder conditionsBuilder, String name, boolean equals, String value) {
