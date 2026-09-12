@@ -21,7 +21,6 @@ package org.keycloak.common.crypto;
 
 import java.security.Principal;
 import java.security.cert.X509Certificate;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -80,7 +79,12 @@ public abstract class UserIdentityExtractorProvider {
 
         @Override
         public Object extractUserIdentity(X509Certificate[] certs) {
-            String value = Optional.ofNullable(_f.apply(certs)).orElseThrow(IllegalArgumentException::new);
+            String value = _f.apply(certs);
+
+            if (value == null) {
+                logger.debugf("[PatternMatcher:extract] No value was found for pattern=\"%s\"", _pattern);
+                return null;
+            }
 
             Pattern r = Pattern.compile(_pattern, Pattern.CASE_INSENSITIVE);
 
