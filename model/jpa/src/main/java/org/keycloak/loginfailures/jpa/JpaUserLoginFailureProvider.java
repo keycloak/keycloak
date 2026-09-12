@@ -79,7 +79,7 @@ public class JpaUserLoginFailureProvider implements UserLoginFailureProvider {
             return true;
         }
 
-        long expireMs = LoginFailureUtils.computeExpirationCutOffTimestamp(realm, Time.currentTimeSeconds());
+        long expireMs = LoginFailureUtils.computeExpirationCutOffTimestampMillis(realm, Time.currentTimeMillis());
         return expireMs != -1 && entity.getLastFailure() < expireMs;
     }
 
