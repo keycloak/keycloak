@@ -5,6 +5,7 @@ import java.util.List;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.JavascriptExecutor;
 
@@ -109,6 +110,7 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnRegisterPage.clickRegister();
         webAuthnRegisterPage.registerWebAuthnCredential(SecretGenerator.getInstance().randomString(24));
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
         logout();
 
         // Replay the captured credential data in a new registration session
