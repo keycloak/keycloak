@@ -112,6 +112,22 @@ KC_TEST_DATABASE=remote \
   mvn test
 ```
 
+## Features
+
+To enable or disable Keycloak features for all tests, use the `KC_FEATURES`, `KC_FEATURES_DISABLED`, or 
+`KC_FEATURE_<name>` options. For example:
+```shell
+KC_FEATURES=stateless mvn test 
+```
+
+Or in `.env.test`:
+```properties
+KC_FEATURES=stateless,dpop
+KC_FEATURE_PASSKEYS=disabled
+```
+
+See [CONFIG.md](CONFIG.md#keycloak-features) for details.
+
 ## Browser 
 
 The test framework supports using a range of different browsers when running tests:
