@@ -135,4 +135,17 @@ public interface LDAPStorageMapper extends Provider {
      * @return
      */
     public LDAPStorageProvider getLdapProvider();
+
+    /**
+     * Whether this specific attribute is configured read-only independent of the overall provider edit mode - i.e.
+     * even while the provider itself is {@code WRITABLE}, a value entered for it through the User Profile would
+     * still be silently discarded and overwritten again with the LDAP value on the next import. Consulted only
+     * while the provider is {@code WRITABLE}; a mapper need not account for the overall edit mode itself.
+     *
+     * @param attrName one of the names returned by {@link #getUserAttributes()}
+     * @return true if this attribute's value is never actually written back to LDAP
+     */
+    default boolean isUserAttributeReadOnly(String attrName) {
+        return false;
+    }
 }
