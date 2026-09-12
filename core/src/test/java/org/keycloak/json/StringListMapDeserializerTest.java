@@ -88,6 +88,14 @@ public class StringListMapDeserializerTest {
         assertNull(foo.get(2));
     }
 
+    @Test
+    public void nonStringValues() throws IOException {
+        Map<String, List<String>> attributes = deserialize("\"enabled\": true, \"count\": 5");
+
+        assertEquals("true", attributes.get("enabled").get(0));
+        assertEquals("5", attributes.get("count").get(0));
+    }
+
     private Map<String, List<String>> deserialize(String attributeKeyValueString) throws IOException {
         TestObject testObject = mapper.readValue("{ \"attributes\": {" + attributeKeyValueString + " } }", TestObject.class);
 
