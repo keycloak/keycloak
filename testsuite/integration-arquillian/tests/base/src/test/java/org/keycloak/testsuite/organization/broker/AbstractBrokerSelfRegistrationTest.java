@@ -1146,7 +1146,8 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         openIdentityFirstLoginPage(email, true, idp.getAlias(), false, true);
 
         loginOrgIdp(email, "external@unknown.org", true, true);
-        assertIsMember("external@unknown.org", organization);
+        // V4: domain gate blocks membership when user's email domain doesn't match any org domain
+        assertIsNotMember("external@unknown.org", organization);
     }
 
     @Test

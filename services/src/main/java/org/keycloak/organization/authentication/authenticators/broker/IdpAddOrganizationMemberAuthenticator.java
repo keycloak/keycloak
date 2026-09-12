@@ -17,24 +17,31 @@
 
 package org.keycloak.organization.authentication.authenticators.broker;
 
-import java.util.stream.Stream;
+import java.util.List;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.OrganizationDomainModel;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
+import org.keycloak.representations.idm.MembershipType;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganizationsPresent;
 
 public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthenticator {
+
+    private static final Logger logger = Logger.getLogger(IdpAddOrganizationMemberAuthenticator.class);
 
     @Override
     protected void actionImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
@@ -45,23 +52,37 @@ public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthentica
         KeycloakSession session = context.getSession();
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         UserModel user = context.getUser();
-        OrganizationModel organization = Organizations.resolveOrganization(session);
+        IdentityProviderModel idpConfig = brokerContext.getIdpConfig();
+        String emailDomain = Organizations.getEmailDomain(brokerContext.getEmail());
 
-        if (organization == null) {
-            context.attempted();
-            return;
+        for (String orgId : idpConfig.getOrganizationIds()) {
+            OrganizationModel org = provider.getById(orgId);
+            if (org == null || !org.isEnabled()) continue;
+
+            OrganizationIdentityProviderLinkModel link = provider.getIdentityProviderLink(org, idpConfig);
+            if (link == null || !link.isAutoMembership()) continue;
+
+            if (!passesDomainGate(org, emailDomain)) continue;
+
+            try {
+                if (link.getMembershipType() == MembershipType.MANAGED) {
+                    provider.addManagedMember(org, user);
+                } else {
+                    provider.addMember(org, user);
+                }
+            } catch (ModelException e) {
+                logger.debugf("Could not add member to org %s: %s", orgId, e.getMessage());
+            }
         }
 
-        Stream<IdentityProviderModel> expectedBrokers = organization.getIdentityProviders();
-        IdentityProviderModel broker = brokerContext.getIdpConfig();
-
-        if (expectedBrokers.noneMatch(broker::equals)) {
-            context.failure(AuthenticationFlowError.ACCESS_DENIED);
-            return;
-        }
-
-        provider.addManagedMember(organization, user);
         context.success();
+    }
+
+    private boolean passesDomainGate(OrganizationModel org, String emailDomain) {
+        List<OrganizationDomainModel> domains = org.getDomains().toList();
+        if (domains.isEmpty()) return true;
+        if (emailDomain == null) return false;
+        return Organizations.getMatchingDomain(emailDomain, org) != null;
     }
 
     @Override
@@ -77,12 +98,8 @@ public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthentica
             return false;
         }
 
-        OrganizationModel organization = Organizations.resolveOrganization(session);
-
-        if (organization == null || !organization.isEnabled()) {
-            return false;
-        }
-
-        return provider.getIdentityProviders(organization).findAny().isPresent();
+        BrokeredIdentityContext brokerContext = (BrokeredIdentityContext)
+                session.getAttribute(BrokeredIdentityContext.class.getName());
+        return brokerContext != null && brokerContext.getIdpConfig().hasOrganization();
     }
 }
