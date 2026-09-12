@@ -1,10 +1,16 @@
 package org.keycloak.tests.oauth;
 
 import org.keycloak.common.Profile;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.DefaultOAuthClientConfiguration;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
@@ -39,6 +45,9 @@ public class ResourceIndicatorsTest {
 
     @InjectOAuthClient(ref = "bare", config = BareClientConfig.class)
     OAuthClient bareOauth;
+
+    @InjectEvents
+    Events events;
 
     @TestSetup
     public void loginUser() {
@@ -150,6 +159,21 @@ public class ResourceIndicatorsTest {
         AccessTokenResponse tokenResponse = oauth.clientCredentialsGrantRequest()
                 .resource("urn:client:test-app").send();
         assertValidResponse(tokenResponse, "test-app");
+    }
+
+    @Test
+    public void testClientCredentialsInvalidResourceLogsErrorEvent() {
+        events.clear();
+
+        AccessTokenResponse tokenResponse = oauth.clientCredentialsGrantRequest()
+                .resource("/invalid").send();
+        assertErrorResponse(tokenResponse, INVALID_TARGET, ERROR_INVALID_RESOURCE);
+
+        EventAssertion.assertError(events.poll())
+                .type(EventType.CLIENT_LOGIN_ERROR)
+                .error(Errors.INVALID_REQUEST)
+                .details(Details.REASON, ERROR_INVALID_RESOURCE);
+        Assertions.assertNull(events.poll());
     }
 
     private static final class ResourceIndicatorsRealm implements RealmConfig {

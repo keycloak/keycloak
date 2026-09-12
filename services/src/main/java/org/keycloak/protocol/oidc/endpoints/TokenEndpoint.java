@@ -173,6 +173,8 @@ public class TokenEndpoint {
         try {
             return grant.process(context);
         } catch (TokenInterceptorException e) {
+            event.detail(REASON, e.getDescription());
+            event.error(Errors.INVALID_REQUEST);
             throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
         } catch (RefreshTokenException e) {
             event.detail(REASON, e.getErrorDescription());
