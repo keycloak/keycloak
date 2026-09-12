@@ -110,20 +110,9 @@ public class ClaimToUserSessionNoteMapper extends AbstractClaimMapper {
                 Boolean.parseBoolean(mapperModel.getConfig().get(ARE_CLAIM_VALUES_REGEX_PROPERTY_NAME));
 
         for (Map.Entry<String, List<String>> claim : claims.entrySet()) {
-            Object claimValueObj = getClaimValue(context, claim.getKey());
-            for (String value : claim.getValue()) {
-                if (claimValueObj != null) {
-                    if (!(claimValueObj instanceof String)) {
-                        LOG.warnf(
-                                "Claim '%s' does not contain a string value for user with brokerUserId '%s'. "
-                                + "Actual value is of type '%s': %s",
-                                claim.getKey(),
-                                context.getBrokerUserId(), claimValueObj.getClass(), claimValueObj);
-                        continue;
-                    }
-
-                    String claimValue = (String) claimValueObj;
-
+            String claimValue = getStringCompatibleClaimValue(context, claim.getKey());
+            if (claimValue != null) {
+                for (String value : claim.getValue()) {
                     boolean claimValuesMatch = areClaimValuesRegex ? valueMatchesRegex(value, claimValue)
                             : valueEquals(value, claimValue);
 
@@ -133,6 +122,19 @@ public class ClaimToUserSessionNoteMapper extends AbstractClaimMapper {
                 }
             }
         }
+    }
+
+    private String getStringCompatibleClaimValue(BrokeredIdentityContext context, String key) {
+        Object claimValueObj = getClaimValue(context, key);
+        if (claimValueObj instanceof String || claimValueObj instanceof Number || claimValueObj instanceof Boolean) {
+            return claimValueObj.toString();
+        }
+        LOG.warnf(
+                "Claim '%s' does not contain a string-compatible (String/Number/Boolean) value for user with brokerUserId '%s'. "
+                        + "Actual value is of type '%s': %s",
+                key,
+                context.getBrokerUserId(), claimValueObj.getClass(), claimValueObj);
+        return null;
     }
 
 }
