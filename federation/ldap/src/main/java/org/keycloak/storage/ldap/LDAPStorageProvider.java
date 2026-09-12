@@ -1350,6 +1350,13 @@ public class LDAPStorageProvider implements UserStorageProvider,
             AttributeMetadata attributeMetadata = UserProfileUtil.createAttributeMetadata(attrName, metadata, guiOrder++, getModel().getName());
 
             if (attributeMetadata != null) {
+                // Brand-new metadata for an LDAP-mapped attribute with no prior base-profile entry: its value is
+                // established here from LDAP data just like an existing base attribute below, so it deserves the
+                // same protection once this attribute turns out to be read-only (e.g. via its mapper, or because
+                // the whole provider is READ_ONLY - see step 3).
+                if (validateUserProfile) {
+                    attributeMetadata.addReadOnlyBypassCondition(AttributeMetadata.ALWAYS_FALSE);
+                }
                 metadatas.add(attributeMetadata);
             } else {
                 // The attribute already has metadata on the base profile (e.g. username, email, firstName,
@@ -1403,6 +1410,24 @@ public class LDAPStorageProvider implements UserStorageProvider,
             Stream.concat(metadata.getAttributes().stream(), metadatas.stream())
                     .filter((m) -> !INTERNAL_ATTRIBUTES.contains(m.getName()))
                     .forEach(attrMetadata -> attrMetadata.addWriteCondition(AttributeMetadata.ALWAYS_FALSE));
+
+            // Every profile attribute - not just the ones an LDAP mapper explicitly targets - is read-only here,
+            // because the whole provider is: a required attribute with no mapper of its own (e.g. one defined
+            // purely in this realm's User Profile configuration) still only ever gets its value from whatever a
+            // user brought into this read-only-from-LDAP account, so it deserves the same protection as the
+            // explicitly LDAP-mapped attributes handled above - or a missing/invalid value compares as unchanged
+            // and is silently forgiven forever, defeating opt-in validation for exactly the attributes it's most
+            // likely to matter for.
+            if (validateUserProfile) {
+                Set<String> alreadyOverridden = new HashSet<>(attributes);
+                metadata.getAttributes().stream()
+                        .filter(m -> !INTERNAL_ATTRIBUTES.contains(m.getName()) && !alreadyOverridden.contains(m.getName()))
+                        .forEach(existing -> {
+                            AttributeMetadata override = existing.clone();
+                            override.addReadOnlyBypassCondition(AttributeMetadata.ALWAYS_FALSE);
+                            metadatas.add(override);
+                        });
+            }
         } else if (validateUserProfile && !notWritableBackToLdap.isEmpty()) {
             // provider is WRITABLE overall, but some attributes are still individually read-only at the mapper
             // level - only enforced when opted in, or this would silently block admin/account console edits to

@@ -22,9 +22,11 @@ import java.net.BindException;
 import java.net.ServerSocket;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
@@ -33,6 +35,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.SynchronizationResultRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPAttributeRequired;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
@@ -294,6 +300,43 @@ public class LDAPUserProfileValidationTest {
             });
     }
 
+    @Test
+    public void testReadOnlyModeDefeatsBypassForUnmappedRequiredAttribute() {
+        final String username = "readonlyunmappedrequser";
+        final String customAttribute = "department";
+
+        // "department" has no LDAP mapper at all - its value is never established from LDAP, and it stays unset
+        // on every user imported below. It is required here purely via the realm's User Profile configuration.
+        UserProfileResource upResource = managedRealm.admin().users().userProfile();
+        UPConfig originalUpConfig = upResource.getConfiguration();
+        try {
+            UPConfig upConfig = upResource.getConfiguration();
+            upConfig.addOrReplaceAttribute(new UPAttribute(customAttribute,
+                    new UPAttributePermissions(Set.of("user", "admin"), Set.of("user", "admin")),
+                    new UPAttributeRequired(Set.of(), Set.of())));
+            upResource.update(upConfig);
+
+            // Under READ_ONLY, decorateUserProfile() makes every profile attribute read-only for this provider's
+            // users - including "department", which has no LDAP mapper of its own. Before the fix, only attributes
+            // an LDAP mapper explicitly targets had their read-only bypass defeated, so a missing (and therefore
+            // "unchanged empty") required attribute like this one would still be silently forgiven.
+            setEditMode(UserStorageProvider.EditMode.READ_ONLY);
+            try {
+                runOnServer.run(addLdapUser(username, "Valid", "User", "readonly-unmapped-required@example.org"));
+
+                List<UserRepresentation> found = managedRealm.admin().users().search(username, true);
+                Assertions.assertTrue(found.isEmpty(),
+                        "The user should have been rejected: '" + customAttribute + "' is required, has no LDAP "
+                                + "mapper, and is unset - it must not be forgiven just because it's read-only and "
+                                + "unchanged under a READ_ONLY provider with VALIDATE_USER_PROFILE enabled.");
+            } finally {
+                setEditMode(UserStorageProvider.EditMode.WRITABLE); // restore the class-wide default
+            }
+        } finally {
+            upResource.update(originalUpConfig);
+        }
+    }
+
     private static final int MAX_LDAP_BIND_ATTEMPTS = 5;
 
     // Probing for a free port and then closing the socket before the embedded server binds to it is inherently
@@ -368,6 +411,15 @@ public class LDAPUserProfileValidationTest {
                     .orElseThrow(() -> new IllegalStateException("Expected a 'first name' LDAP mapper to already exist"));
             firstNameMapper.getConfig().putSingle(UserAttributeLDAPStorageMapper.READ_ONLY, String.valueOf(readOnly));
             realm.updateComponent(firstNameMapper);
+        });
+    }
+
+    private void setEditMode(UserStorageProvider.EditMode editMode) {
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            ldapModel.getConfig().putSingle(LDAPConstants.EDIT_MODE, editMode.name());
+            realm.updateComponent(ldapModel);
         });
     }
 
