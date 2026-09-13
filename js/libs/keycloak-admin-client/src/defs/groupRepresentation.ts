@@ -15,5 +15,6 @@ export default interface GroupRepresentation {
   access?: Record<string, boolean>;
   attributes?: Record<string, any>;
   clientRoles?: Record<string, any>;
+  organizationRoles?: Record<string, string[]>;
   realmRoles?: string[];
 }

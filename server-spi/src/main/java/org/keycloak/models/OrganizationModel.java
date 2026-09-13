@@ -153,6 +153,7 @@ public interface OrganizationModel extends RoleContainerModel {
     boolean isMember(UserModel user);
 
     default boolean isDefaultRole(RoleModel role) {
-        return getDefaultRole().equals(role);
+        RoleModel defaultRole = getDefaultRole();
+        return defaultRole != null && defaultRole.equals(role);
     }
 }

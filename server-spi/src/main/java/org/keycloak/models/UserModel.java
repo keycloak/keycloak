@@ -181,6 +181,22 @@ public interface UserModel extends RoleMapperModel, Model {
     Stream<GroupModel> getGroupsStream();
 
     /**
+     * Obtains the groups whose direct membership contributes role mappings to this user.
+     * The returned stream may include internal groups that are intentionally omitted from
+     * {@link #getGroupsStream()} and must not be used to present or administer the user's groups.
+     * Parent-group and composite-role inheritance is resolved by consumers; implementations
+     * must not synthesize memberships for inherited groups.
+     *
+     * <p>The default implementation returns {@link #getGroupsStream()} for compatibility with
+     * user storage providers that do not distinguish internal role-mapping memberships.</p>
+     *
+     * @return a non-null {@link Stream} of directly assigned groups that contribute role mappings.
+     */
+    default Stream<GroupModel> getRoleMappingsGroupsStream() {
+        return getGroupsStream();
+    }
+
+    /**
      * Returns a paginated stream of groups within this realm with search in the name
      *
      * @param search Case insensitive string which will be searched for. Ignored if null.

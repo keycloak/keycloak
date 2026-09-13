@@ -1,4 +1,5 @@
 import RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import type { Groups } from "@keycloak/keycloak-admin-client/lib/resources/groups";
 import {
   KeycloakDataTable,
   ListEmptyState,
@@ -35,7 +36,8 @@ type AddRoleMappingModalProps = {
   onClose: () => void;
   title?: string;
   actionLabel?: string;
-  groupsResource?: any;
+  groupsResource?: Groups;
+  canMapOrganizationRoles?: boolean;
 };
 
 export type FilterType = "roles" | "clients" | "orgRoles";
@@ -56,6 +58,7 @@ type AddRoleButtonProps = Omit<
   label?: string;
   variant?: "default" | "plain" | "primary" | "plainText" | "secondary";
   isDisabled?: boolean;
+  canMapOrganizationRoles?: boolean;
   onFilerTypeChange: (type: FilterType) => void;
 };
 
@@ -63,6 +66,7 @@ export const AddRoleButton = ({
   label,
   variant,
   isDisabled,
+  canMapOrganizationRoles = false,
   onFilerTypeChange,
   ...rest
 }: AddRoleButtonProps) => {
@@ -71,7 +75,6 @@ export const AddRoleButton = ({
 
   const { hasAccess } = useAccess();
   const canViewRealmRoles = hasAccess("view-realm") || hasAccess("query-users");
-  const canViewOrganizationRoles = hasAccess("manage-organizations");
 
   return (
     <Dropdown
@@ -111,7 +114,7 @@ export const AddRoleButton = ({
             {t("realmRoles")}
           </DropdownItem>
         )}
-        {canViewOrganizationRoles && (
+        {canMapOrganizationRoles && (
           <DropdownItem
             data-testid="org-roles"
             component="button"
@@ -138,6 +141,7 @@ export const AddRoleMappingModal = ({
   title,
   actionLabel,
   groupsResource,
+  canMapOrganizationRoles = false,
 }: AddRoleMappingModalProps) => {
   const { adminClient } = useAdminClient();
 
@@ -200,31 +204,33 @@ export const AddRoleMappingModal = ({
   };
 
   const orgRolesLoader = async (
-    first?: number,
-    max?: number,
+    _first?: number,
+    _max?: number,
     search?: string,
   ): Promise<Row[]> => {
-    if (type !== "groups" || !groupsResource) {
+    if (
+      type !== "groups" ||
+      !groupsResource?.isOrgGroups() ||
+      !groupsResource.getOrgId() ||
+      !canMapOrganizationRoles
+    ) {
       return [];
     }
-
-    const roles = await (
-      groupsResource as any
-    ).listAvailableOrganizationRoleMappings({
+    const roles = await groupsResource.listAvailableOrganizationRoleMappings({
       id,
     });
-
     const filtered = search
       ? roles.filter(
-          (role: RoleRepresentation) =>
+          (role) =>
             role.name?.toLowerCase().includes(search.toLowerCase()) ||
             role.description?.toLowerCase().includes(search.toLowerCase()),
         )
       : roles;
 
     return localeSort(
-      filtered.map((role: RoleRepresentation) => ({
-        role: { ...role, isOrgRole: true },
+      filtered.map((role) => ({
+        org: { id: groupsResource.getOrgId() },
+        role,
         id: role.id,
       })),
       compareRow,

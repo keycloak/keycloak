@@ -151,6 +151,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public void setParent(GroupModel parent) {
+        OrganizationsValidation.validateOrganizationGroupParent(session, this, parent);
         if (parent == null) {
             group.setParentId(GroupEntity.TOP_PARENT_ID);
         } else if (!parent.getId().equals(getId())) {
@@ -368,7 +369,20 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public void grantRole(RoleModel role) {
-        OrganizationsValidation.validateOrganizationRoleGroupMapping(this, role);
+        boolean organizationRelevant = Type.ORGANIZATION.equals(getType())
+                || role != null && role.isType(RoleModel.Type.ORGANIZATION)
+                || getEntity().getOrganization() != null;
+        OrganizationRoleGraphGuard graphGuard = null;
+
+        if (organizationRelevant) {
+            graphGuard = new OrganizationRoleGraphGuard(session, em, realm.getId());
+            graphGuard.lockRealm();
+        }
+
+        if (graphGuard != null && role != null) {
+            graphGuard.validateOrganizationGroupGrant(getId(), role);
+        }
+        OrganizationsValidation.validateOrganizationRoleGroupMapping(session, this, role);
         if (hasDirectRole(role)) return;
         GroupRoleMappingEntity entity = new GroupRoleMappingEntity();
         entity.setGroup(getEntity());
@@ -396,6 +410,13 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public void deleteRoleMapping(RoleModel role) {
+        boolean organizationRelevant = Type.ORGANIZATION.equals(getType())
+                || role != null && role.isType(RoleModel.Type.ORGANIZATION)
+                || getEntity().getOrganization() != null;
+        if (organizationRelevant) {
+            new OrganizationRoleGraphGuard(session, em, realm.getId()).lockRealm();
+        }
+        OrganizationsValidation.validateOrganizationRoleGroupMappingRemoval(session, this, role);
         if (group == null || role == null) return;
 
         TypedQuery<GroupRoleMappingEntity> query = getGroupRoleMappingEntityTypedQuery(role);

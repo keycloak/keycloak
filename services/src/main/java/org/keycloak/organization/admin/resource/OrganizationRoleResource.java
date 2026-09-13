@@ -163,8 +163,8 @@ public class OrganizationRoleResource extends RoleResource {
             @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Response deleteRole() {
-        rejectDefaultRoleRemoval();
         auth.roles().requireManage(role);
+        rejectDefaultRoleRemoval();
 
         RoleRepresentation representation = ModelToRepresentation.toBriefRepresentation(role);
         deleteRole(role);
@@ -218,10 +218,11 @@ public class OrganizationRoleResource extends RoleResource {
                                                         @QueryParam("first") Integer first,
                                                         @QueryParam("max") Integer max) {
         auth.roles().requireView(role);
-        if (search == null && first == null && max == null) {
-            return role.getCompositesStream().map(this::toBriefRepresentation);
-        }
-        return role.getCompositesStream(search, first, max).map(this::toBriefRepresentation);
+        Stream<RoleModel> composites = StringUtil.isBlank(search)
+                ? role.getCompositesStream()
+                : role.getCompositesStream(search, null, null);
+        return paginatedStream(composites.filter(auth.roles()::canView), first, max)
+                .map(this::toBriefRepresentation);
     }
 
     @GET
@@ -284,6 +285,7 @@ public class OrganizationRoleResource extends RoleResource {
 
         return paginatedStream(effectiveRoleComposites()
                 .filter(candidate -> matchesSearch(candidate, search))
+                .filter(auth.roles()::canView)
                 .sorted(effectiveRoleComparator()), first, max)
                 .map(this::toBriefRepresentation);
     }
@@ -374,7 +376,9 @@ public class OrganizationRoleResource extends RoleResource {
         int first = firstResult == null ? 0 : firstResult;
         int max = maxResults == null ? Constants.DEFAULT_MAX_RESULTS : maxResults;
 
-        return session.getProvider(OrganizationProvider.class).getRoleMembersStream(organization, role, search, first, max)
+        return paginatedStream(session.getProvider(OrganizationProvider.class)
+                .getRoleMembersStream(organization, role, search, null, null)
+                .filter(auth.users()::canView), first, max)
                 .map(user -> toUserRepresentation(user, briefRep));
     }
 
@@ -397,6 +401,10 @@ public class OrganizationRoleResource extends RoleResource {
         auth.users().requireQuery();
 
         if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) && !auth.users().canView()) {
+            return Stream.empty();
+        }
+
+        if (organization.isDefaultRole(role)) {
             return Stream.empty();
         }
 

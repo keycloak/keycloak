@@ -17,9 +17,13 @@
 
 package org.keycloak.tests.organization.cache;
 
+import java.util.stream.IntStream;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -181,6 +185,77 @@ public class OrganizationRoleCacheModelTest {
             assertThat(acme.getRole("renamed-project-admin").getId(), is(recreatedRoleId));
             assertThat(acme.searchForRolesStream("renamed", null, null).map(RoleModel::getId).toList(),
                     containsInAnyOrder(recreatedRoleId));
+        });
+    }
+
+    @Test
+    public void shouldInvalidateGroupBackedDefaultAcrossSwitchJoinAndLeave() {
+        String[] ids = runOnServer.fetch(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            OrganizationProvider organizations = session.getProvider(OrganizationProvider.class);
+            OrganizationModel acme = getOrganization(session, ACME_ID);
+            RoleModel original = acme.getDefaultRole();
+            RoleModel replacement = acme.addRole("cache-replacement-default");
+            UserModel user = session.users().addUser(realm, "cache-default-member");
+            organizations.addMember(acme, user);
+            acme.setDomains(IntStream.range(0, 101)
+                    .mapToObj(index -> new OrganizationDomainModel("cache-" + index + ".example.test", false, null, false))
+                    .collect(java.util.stream.Collectors.toSet()));
+
+            return new String[] { original.getId(), replacement.getId(), user.getId() };
+        }, String[].class);
+
+        // Force both the organization and its internal group through their cold cache-loading paths.
+        realm.admin().clearRealmCache();
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            OrganizationProvider organizations = session.getProvider(OrganizationProvider.class);
+            OrganizationModel acme = getOrganization(session, ACME_ID);
+            GroupModel root = organizations.getOrganizationGroup(acme);
+            RoleModel original = realm.getRoleById(ids[0]);
+            UserModel user = session.users().getUserById(realm, ids[2]);
+
+            assertThat(acme.getDefaultRole().getId(), is(original.getId()));
+            assertThat(root.getRoleMappingsStream().map(RoleModel::getId).toList(), containsInAnyOrder(original.getId()));
+            assertThat(organizations.getByMember(user).map(OrganizationModel::getId).toList(), hasItem(acme.getId()));
+            assertThat(user.hasRole(original), is(true));
+            assertThat(user.hasDirectRole(original), is(false));
+        });
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            OrganizationModel acme = getOrganization(session, ACME_ID);
+            acme.setDefaultRole(realm.getRoleById(ids[1]));
+        });
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            OrganizationProvider organizations = session.getProvider(OrganizationProvider.class);
+            OrganizationModel acme = getOrganization(session, ACME_ID);
+            GroupModel root = organizations.getOrganizationGroup(acme);
+            RoleModel original = realm.getRoleById(ids[0]);
+            RoleModel replacement = realm.getRoleById(ids[1]);
+            UserModel user = session.users().getUserById(realm, ids[2]);
+
+            assertThat(acme.getDefaultRole().getId(), is(replacement.getId()));
+            assertThat(root.getRoleMappingsStream().map(RoleModel::getId).toList(), containsInAnyOrder(replacement.getId()));
+            assertThat(user.hasRole(original), is(false));
+            assertThat(user.hasRole(replacement), is(true));
+            assertThat(user.hasDirectRole(replacement), is(false));
+            assertThat(organizations.removeMember(acme, user), is(true));
+        });
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            OrganizationProvider organizations = session.getProvider(OrganizationProvider.class);
+            OrganizationModel acme = getOrganization(session, ACME_ID);
+            RoleModel replacement = realm.getRoleById(ids[1]);
+            UserModel user = session.users().getUserById(realm, ids[2]);
+
+            assertThat(organizations.getByMember(user).map(OrganizationModel::getId).toList(), not(hasItem(acme.getId())));
+            assertThat(user.hasRole(replacement), is(false));
+            assertThat(user.hasDirectRole(replacement), is(false));
         });
     }
 

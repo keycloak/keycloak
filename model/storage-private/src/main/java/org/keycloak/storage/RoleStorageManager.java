@@ -124,14 +124,7 @@ public class RoleStorageManager implements RoleProvider {
 
     @Override
     public RoleModel addRole(RoleContainerModel container, String id, String name) {
-        if (container instanceof RealmModel) {
-            return addRealmRole((RealmModel) container, id, name);
-        } else if (container instanceof ClientModel) {
-            return addClientRole((ClientModel) container, id, name);
-        } else if (container instanceof OrganizationModel) {
-            return localStorage().addRole(container, id, name);
-        }
-        return null;
+        return localStorage().addRole(container, id, name);
     }
 
     @Override
@@ -281,7 +274,7 @@ public class RoleStorageManager implements RoleProvider {
 
     @Override
     public RoleModel getRoleInContainerById(RoleContainerModel container, String id) {
-        return localStorage().getRoleInContainerById(container, id);
+        return RoleProvider.super.getRoleInContainerById(container, id);
     }
 
     @Override

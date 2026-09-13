@@ -38,11 +38,17 @@ import org.keycloak.admin.client.resource.BearerAuthFilter;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.OrganizationRoleResource;
 import org.keycloak.admin.ui.rest.model.RoleDeleteRequest;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.jpa.entities.GroupEntity;
+import org.keycloak.models.jpa.entities.OrganizationEntity;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -444,6 +450,11 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
         UserRepresentation user = realm.admin().users().get(member.getId()).toRepresentation();
 
         OrganizationRoleResource defaultRole = organizationResource.roles().getDefault();
+        assertThat(defaultRole.getUserMembers().stream().map(UserRepresentation::getId).toList(), contains(user.getId()));
+        assertThat(defaultRole.getUserMembers("default-block", true, 0, 1).stream()
+                .map(UserRepresentation::getId).toList(), contains(user.getId()));
+        assertTrue(defaultRole.getUserMembers(1, 1).isEmpty());
+        assertTrue(defaultRole.getAvailableUserMembers(null, null, true, 0, 10).isEmpty());
         assertThrows(BadRequestException.class, () -> defaultRole.addUserMembers(List.of(user)));
         assertThrows(BadRequestException.class, () -> defaultRole.deleteUserMembers(List.of(user)));
     }
@@ -582,6 +593,12 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
         realm.cleanup().add(r -> r.roles().deleteRole(realmRoleName));
         realmRole = realm.admin().roles().get(realmRoleName).toRepresentation();
 
+        String organizationGroupRealmRoleName = "admin-ui-organization-group-realm-role";
+        realm.admin().roles().create(new RoleRepresentation(organizationGroupRealmRoleName, null, false));
+        realm.cleanup().add(r -> r.roles().deleteRole(organizationGroupRealmRoleName));
+        RoleRepresentation organizationGroupRealmRole = realm.admin().roles()
+                .get(organizationGroupRealmRoleName).toRepresentation();
+
         String realmCompositeName = "admin-ui-realm-composite";
         RoleRepresentation realmComposite = new RoleRepresentation(realmCompositeName, null, false);
         realm.admin().roles().create(realmComposite);
@@ -598,8 +615,12 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
         realm.cleanup().add(r -> r.clients().get(roleClientId).remove());
         realm.admin().clients().get(roleClientId).roles().create(new RoleRepresentation("admin-ui-mapped-client-role", null, true));
         realm.admin().clients().get(roleClientId).roles().create(new RoleRepresentation("admin-ui-available-client-role", null, true));
+        realm.admin().clients().get(roleClientId).roles()
+                .create(new RoleRepresentation("admin-ui-organization-group-client-role", null, true));
         RoleRepresentation mappedClientRole = realm.admin().clients().get(roleClientId).roles()
                 .get("admin-ui-mapped-client-role").toRepresentation();
+        RoleRepresentation organizationGroupClientRole = realm.admin().clients().get(roleClientId).roles()
+                .get("admin-ui-organization-group-client-role").toRepresentation();
 
         ClientRepresentation targetClient = new ClientRepresentation();
         targetClient.setClientId("admin-ui-role-target");
@@ -612,6 +633,16 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
 
         GroupRepresentation group = createGroup(realm.admin(), "admin-ui-role-group");
         realm.cleanup().add(r -> r.groups().group(group.getId()).remove());
+        GroupRepresentation organizationGroup = new GroupRepresentation();
+        organizationGroup.setName("admin-ui-organization-role-group");
+        try (Response response = organizationResource.groups().addTopLevelGroup(organizationGroup)) {
+            organizationGroup.setId(ApiUtil.getCreatedId(response));
+        }
+        GroupRepresentation organizationChild = new GroupRepresentation();
+        organizationChild.setName("admin-ui-organization-role-child");
+        try (Response response = organizationResource.groups().group(organizationGroup.getId()).addSubGroup(organizationChild)) {
+            organizationChild.setId(ApiUtil.getCreatedId(response));
+        }
 
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("admin-ui-role-client-scope");
@@ -626,6 +657,11 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
         realm.admin().users().get(user.getId()).roles().clientLevel(roleClientId).add(List.of(mappedClientRole));
         realm.admin().groups().group(group.getId()).roles().realmLevel().add(List.of(realmRole));
         realm.admin().groups().group(group.getId()).roles().clientLevel(roleClientId).add(List.of(mappedClientRole));
+        organizationResource.groups().group(organizationGroup.getId()).roles().realmLevel()
+                .add(List.of(organizationGroupRealmRole));
+        organizationResource.groups().group(organizationGroup.getId()).roles().clientLevel(roleClientId)
+                .add(List.of(organizationGroupClientRole));
+        organizationResource.groups().group(organizationGroup.getId()).addMember(user.getId());
         realm.admin().clientScopes().get(clientScopeId).getScopeMappings().realmLevel().add(List.of(realmRole));
         realm.admin().clientScopes().get(clientScopeId).getScopeMappings().clientLevel(roleClientId).add(List.of(mappedClientRole));
         realm.admin().clients().get(targetClientId).getScopeMappings().realmLevel().add(List.of(realmRole));
@@ -642,14 +678,57 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
             assertAvailableClientRole(uiExt, "clientScopes", clientScopeId);
             assertAvailableClientRole(uiExt, "clients", targetClientId);
 
+            assertThat(getRoleMappings(uiExt, "effective-roles", "groups", group.getId()).stream()
+                    .map(role -> role.get("role")).toList(), hasItem("admin-ui-mapped-client-role"));
+            assertThat(getRoleMappings(uiExt, "effective-roles-all", "groups", group.getId()).stream()
+                    .map(role -> role.get("name")).toList(), hasItem(realmRole.getName()));
+            assertThat(getRoleMappings(uiExt, "effective-roles", "groups", organizationGroup.getId()).stream()
+                    .map(role -> role.get("role")).toList(), hasItem("admin-ui-organization-group-client-role"));
+            assertThat(getRoleMappings(uiExt, "effective-roles-all", "groups", organizationGroup.getId()).stream()
+                    .map(role -> role.get("name")).toList(), hasItem(organizationGroupRealmRoleName));
+
+            String organizationId = organization.getId();
+            String rootId = runOnServer.fetch(session -> {
+                OrganizationModel model = session.getProvider(OrganizationProvider.class).getById(organizationId);
+                return session.getProvider(OrganizationProvider.class).getOrganizationGroup(model).getId();
+            }, String.class);
+            assertNotFound(uiExt.path("effective-roles").path("groups").path(rootId));
+
+            setStoredGroupOrganization(organizationGroup.getId(), null);
+            try {
+                assertNotFound(uiExt.path("effective-roles-all").path("groups").path(organizationGroup.getId()));
+            } finally {
+                setStoredGroupOrganization(organizationGroup.getId(), organizationId);
+            }
+
+            setStoredGroupType(organizationGroup.getId(), GroupModel.Type.REALM);
+            try {
+                assertNotFound(uiExt.path("effective-roles").path("groups").path(organizationChild.getId()));
+            } finally {
+                setStoredGroupType(organizationGroup.getId(), GroupModel.Type.ORGANIZATION);
+            }
+
+            setStoredGroupParent(organizationChild.getId(), GroupEntity.TOP_PARENT_ID);
+            try {
+                assertNotFound(uiExt.path("effective-roles-all").path("groups").path(organizationChild.getId()));
+            } finally {
+                setStoredGroupParent(organizationChild.getId(), organizationGroup.getId());
+            }
+
             List<Map<String, Object>> effectiveClientRoles = getRoleMappings(uiExt, "effective-roles", "users", user.getId());
             assertThat(effectiveClientRoles.stream().map(role -> role.get("role")).toList(),
                     hasItem("admin-ui-mapped-client-role"));
+            assertThat(effectiveClientRoles.stream().map(role -> role.get("role")).toList(),
+                    hasItem("admin-ui-organization-group-client-role"));
 
             List<Map<String, Object>> allEffectiveRoles = getRoleMappings(uiExt, "effective-roles-all", "users", user.getId());
             assertThat(allEffectiveRoles.stream().map(role -> role.get("name")).toList(), hasItem(realmRole.getName()));
             assertThat(allEffectiveRoles.stream().map(role -> role.get("name")).toList(),
                     hasItem("admin-ui-mapped-client-role"));
+            assertThat(allEffectiveRoles.stream().map(role -> role.get("name")).toList(),
+                    hasItem(organizationGroupRealmRoleName));
+            assertThat(allEffectiveRoles.stream().map(role -> role.get("name")).toList(),
+                    hasItem("admin-ui-organization-group-client-role"));
             assertFalse(allEffectiveRoles.stream().map(role -> role.get("name")).toList()
                     .contains(organizationRole.getName()));
 
@@ -689,6 +768,34 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
         assertThat(roles.stream().map(role -> role.get("role")).toList(), contains("admin-ui-available-client-role"));
     }
 
+    private void setStoredGroupOrganization(String groupId, String organizationId) {
+        runOnServer.run(session -> {
+            var em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            GroupEntity group = em.find(GroupEntity.class, groupId);
+            group.setOrganization(organizationId == null ? null : em.getReference(OrganizationEntity.class, organizationId));
+            em.flush();
+        });
+        realm.admin().clearRealmCache();
+    }
+
+    private void setStoredGroupType(String groupId, GroupModel.Type type) {
+        runOnServer.run(session -> {
+            var em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            em.find(GroupEntity.class, groupId).setType(type.intValue());
+            em.flush();
+        });
+        realm.admin().clearRealmCache();
+    }
+
+    private void setStoredGroupParent(String groupId, String parentId) {
+        runOnServer.run(session -> {
+            var em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            em.find(GroupEntity.class, groupId).setParentId(parentId);
+            em.flush();
+        });
+        realm.admin().clearRealmCache();
+    }
+
     private List<Map<String, Object>> getRoleMappings(WebTarget uiExt, String endpoint, String type, String id) {
         return getRoleMappings(uiExt, endpoint, type, id, Map.of());
     }
@@ -723,6 +830,12 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
             assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
             return organization.roles().get(ApiUtil.getCreatedId(response)).toRepresentation();
         }
+    }
+
+    private RoleRepresentation createRealmRole(String name) {
+        realm.admin().roles().create(new RoleRepresentation(name, null, false));
+        realm.cleanup().add(r -> r.roles().deleteRole(name));
+        return realm.admin().roles().get(name).toRepresentation();
     }
 
     private UserRepresentation createUser(String username) {
@@ -782,7 +895,7 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
     }
 
     @Test
-    public void testOrganizationRoleWithTransitiveAdminCompositeCannotBeAssignedToMember() {
+    public void testOrganizationRoleRejectsExistingTransitiveAdminComposite() {
         OrganizationRepresentation organization = createOrganization("transitive-admin-composite");
         OrganizationResource organizationResource = realm.admin().organizations().get(organization.getId());
         RoleRepresentation orgRole = createOrganizationRole(organizationResource, "transitive-admin-org-role");
@@ -793,21 +906,23 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
         realm.cleanup().add(r -> r.roles().deleteRole(customRealmRoleName));
         RoleRepresentation customRealmRole = realm.admin().roles().get(customRealmRoleName).toRepresentation();
 
-        orgRoleResource.addComposites(List.of(customRealmRole));
-
         var realmManagement = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
         RoleRepresentation adminRole = realm.admin().clients().get(realmManagement.getId())
                 .roles().get(AdminRoles.MANAGE_REALM).toRepresentation();
         realm.admin().roles().get(customRealmRoleName).addComposites(List.of(adminRole));
 
+        assertThrows(BadRequestException.class, () -> orgRoleResource.addComposites(List.of(customRealmRole)));
+
         MemberRepresentation member = addMember(organizationResource, "transitive-admin@transitive-admin-composite.org");
         UserRepresentation user = realm.admin().users().get(member.getId()).toRepresentation();
-
-        assertThrows(BadRequestException.class, () -> orgRoleResource.addUserMembers(List.of(user)));
+        orgRoleResource.addUserMembers(List.of(user));
+        assertThat(orgRoleResource.getUserMembers().stream().map(UserRepresentation::getId).toList(),
+                contains(user.getId()));
+        assertTrue(orgRoleResource.getRoleComposites().isEmpty());
     }
 
     @Test
-    public void testOrgRolePoisonedByAdminCompositeOnIntermediateRealmRole() {
+    public void testOrganizationRoleCannotBePoisonedThroughIntermediateRealmRole() {
         OrganizationRepresentation organization = createOrganization("org-role-poison");
         OrganizationResource organizationResource = realm.admin().organizations().get(organization.getId());
         RoleRepresentation orgRole = createOrganizationRole(organizationResource, "victim-org-role");
@@ -818,26 +933,122 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
         realm.cleanup().add(r -> r.roles().deleteRole(realmRoleName));
         RoleRepresentation realmRole = realm.admin().roles().get(realmRoleName).toRepresentation();
 
-        // Adding a non-admin realm role as composite of the org role is allowed
         orgRoleResource.addComposites(List.of(realmRole));
 
-        // Before poisoning: member assignment works normally
         MemberRepresentation member = addMember(organizationResource, "victim@org-role-poison.org");
         UserRepresentation user = realm.admin().users().get(member.getId()).toRepresentation();
         orgRoleResource.addUserMembers(List.of(user));
         assertEquals(1, orgRoleResource.getUserMembers().size());
         orgRoleResource.deleteUserMembers(List.of(user));
 
-        // Poisoning: adding an admin role as composite of the REALM role via the standard realm roles
-        // API succeeds with no error — the org-specific composite validation is not invoked there.
         var realmManagement = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
         RoleRepresentation adminRole = realm.admin().clients().get(realmManagement.getId())
                 .roles().get(AdminRoles.MANAGE_REALM).toRepresentation();
-        realm.admin().roles().get(realmRoleName).addComposites(List.of(adminRole));
+        realm.admin().users().get(user.getId()).roles().clientLevel(realmManagement.getId()).add(List.of(adminRole));
+        assertThrows(BadRequestException.class, () -> realm.admin().roles().get(realmRoleName).addComposites(List.of(adminRole)));
 
-        // After poisoning: member assignment now fails even though the org role itself was never
-        // changed — isAdminRoleOrComposite(orgRole) returns true transitively through the realm role.
-        assertThrows(BadRequestException.class, () -> orgRoleResource.addUserMembers(List.of(user)));
+        assertTrue(realm.admin().roles().get(realmRoleName).getRoleComposites().isEmpty());
+        assertThat(realm.admin().users().get(user.getId()).roles().clientLevel(realmManagement.getId()).listAll()
+                .stream().map(RoleRepresentation::getId).toList(), hasItem(adminRole.getId()));
+        orgRoleResource.addUserMembers(List.of(user));
+        assertThat(orgRoleResource.getUserMembers().stream().map(UserRepresentation::getId).toList(),
+                contains(user.getId()));
+    }
+
+    @Test
+    public void testMultiHopCycleAndCompositeBatchCannotPoisonOrganizationRole() {
+        OrganizationRepresentation organization = createOrganization("multi-hop-role-graph");
+        OrganizationResource organizationResource = realm.admin().organizations().get(organization.getId());
+        RoleRepresentation organizationRole = createOrganizationRole(organizationResource, "multi-hop-org-role");
+        OrganizationRoleResource organizationRoleResource = organizationResource.roles().get(organizationRole.getId());
+        RoleRepresentation first = createRealmRole("multi-hop-first");
+        RoleRepresentation second = createRealmRole("multi-hop-second");
+        RoleRepresentation rolledBack = createRealmRole("multi-hop-rolled-back");
+        RoleRepresentation reverseOrder = createRealmRole("multi-hop-reverse-order");
+        RoleRepresentation reverseRolledBack = createRealmRole("multi-hop-reverse-rolled-back");
+        var realmManagement = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation adminRole = realm.admin().clients().get(realmManagement.getId())
+                .roles().get(AdminRoles.MANAGE_REALM).toRepresentation();
+
+        organizationRoleResource.addComposites(List.of(first, reverseOrder));
+        realm.admin().roles().get(first.getName()).addComposites(List.of(second));
+        realm.admin().roles().get(second.getName()).addComposites(List.of(first));
+
+        organizationRoleResource.getRoleComposites();
+        realm.admin().roles().get(first.getName()).getRoleComposites();
+        realm.admin().roles().get(second.getName()).getRoleComposites();
+
+        assertThrows(BadRequestException.class, () -> realm.admin().roles().get(second.getName()).addComposites(List.of(rolledBack, adminRole)));
+        assertThat(realm.admin().roles().get(second.getName()).getRoleComposites().stream()
+                .map(RoleRepresentation::getId).toList(), contains(first.getId()));
+
+        assertThrows(BadRequestException.class, () -> realm.admin().roles().get(reverseOrder.getName()).addComposites(List.of(adminRole, reverseRolledBack)));
+        assertTrue(realm.admin().roles().get(reverseOrder.getName()).getRoleComposites().isEmpty());
+
+        String organizationRoleId = organizationRole.getId();
+        runOnServer.run(session -> {
+            RoleModel storedOrganizationRole = session.getContext().getRealm().getRoleById(organizationRoleId);
+            RoleModel storedAdminRole = session.getContext().getRealm()
+                    .getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).getRole(AdminRoles.MANAGE_REALM);
+            assertFalse(storedOrganizationRole.hasRole(storedAdminRole));
+        });
+    }
+
+    @Test
+    public void testAdministrativeClassificationChangesRejectAnchoredRoles() {
+        OrganizationRepresentation organization = createOrganization("classification-change-graph");
+        OrganizationResource organizationResource = realm.admin().organizations().get(organization.getId());
+        RoleRepresentation organizationRole = createOrganizationRole(organizationResource, "classification-org-role");
+        OrganizationRoleResource organizationRoleResource = organizationResource.roles().get(organizationRole.getId());
+
+        String renameRoleName = "classification-safe-role";
+        String organizationRoleId = organizationRole.getId();
+        String renameRoleId = runOnServer.fetch(session -> {
+            RoleModel storedOrganizationRole = session.getContext().getRealm().getRoleById(organizationRoleId);
+            RoleModel safeRole = session.roles().addClientRole(session.getContext().getRealm()
+                    .getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID), renameRoleName);
+            storedOrganizationRole.addCompositeRole(safeRole);
+            return safeRole.getId();
+        }, String.class);
+        runOnServer.run(session -> {
+            RoleModel safeRole = session.getContext().getRealm().getRoleById(renameRoleId);
+            assertThrows(org.keycloak.models.ModelException.class, () -> safeRole.setName(AdminRoles.MANAGE_USERS));
+            assertEquals(renameRoleName, safeRole.getName());
+        });
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("classification-safe-client");
+        client.setEnabled(true);
+        String clientUuid;
+        try (Response response = realm.admin().clients().create(client)) {
+            clientUuid = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clients().get(clientUuid).remove());
+        realm.admin().clients().get(clientUuid).roles()
+                .create(new RoleRepresentation(AdminRoles.MANAGE_CLIENTS, null, false));
+        RoleRepresentation clientRole = realm.admin().clients().get(clientUuid).roles()
+                .get(AdminRoles.MANAGE_CLIENTS).toRepresentation();
+        organizationRoleResource.addComposites(List.of(clientRole));
+
+        ClientRepresentation changedClient = realm.admin().clients().get(clientUuid).toRepresentation();
+        changedClient.setClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+        assertThrows(BadRequestException.class, () -> realm.admin().clients().get(clientUuid).update(changedClient));
+        assertEquals("classification-safe-client", realm.admin().clients().get(clientUuid).toRepresentation().getClientId());
+
+        RoleRepresentation realmAdminName = createRealmRole(AdminRoles.ADMIN);
+        organizationRoleResource.addComposites(List.of(realmAdminName));
+        String realmAdminRoleId = realmAdminName.getId();
+        String originalRealmName = realm.getName();
+        runOnServer.run(session -> {
+            org.keycloak.models.RealmModel storedRealm = session.getContext().getRealm();
+            assertEquals(AdminRoles.ADMIN, storedRealm.getRoleById(realmAdminRoleId).getName());
+            assertThrows(org.keycloak.models.ModelException.class, () -> storedRealm.setName("master"));
+            assertEquals(originalRealmName, storedRealm.getName());
+        });
+
+        String clientRoleId = clientRole.getId();
+        runOnServer.run(session -> assertThat(session.getContext().getRealm().getRoleById(organizationRoleId)
+                .getCompositesStream().map(RoleModel::getId).toList(),
+                containsInAnyOrder(renameRoleId, clientRoleId, realmAdminRoleId)));
     }
 
     @Test
@@ -945,7 +1156,7 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
         OrganizationResource org1Resource = realm.admin().organizations().get(org1.getId());
         OrganizationResource org2Resource = realm.admin().organizations().get(org2.getId());
 
-        // Create a role in org2
+        RoleRepresentation org1Role = createOrganizationRole(org1Resource, "same-org-test-role");
         RoleRepresentation org2Role = createOrganizationRole(org2Resource, "cross-org-test-role");
 
         // Create a group in org1
@@ -958,11 +1169,13 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
 
         GroupRepresentation org1Group = org1Resource.groups().getAll(groupName, null, true, 0, 10, false, false).get(0);
 
-        // Attempt to assign org2's role to org1's group
-        // This should fail because the role belongs to a different organization
-        assertThrows(BadRequestException.class,
-                () -> org1Resource.groups().group(org1Group.getId()).roles()
-                        .addOrganizationRoleMappings(List.of(org2Role)),
+        var org1RoleMappings = org1Resource.groups().group(org1Group.getId()).roles();
+        assertThat(org1RoleMappings.getAvailableOrganizationRoleMappings().stream().map(RoleRepresentation::getId).toList(),
+                contains(org1Role.getId()));
+        org1RoleMappings.addOrganizationRoleMappings(List.of(org1Role));
+        assertThat(org1RoleMappings.getAll().getOrganizationMappings().get(org1.getAlias()).stream()
+                .map(RoleRepresentation::getId).toList(), contains(org1Role.getId()));
+        assertThrows(BadRequestException.class, () -> org1RoleMappings.addOrganizationRoleMappings(List.of(org2Role)),
                 "Should prevent assigning a role from a different organization to a group");
     }
 
@@ -974,8 +1187,6 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
         OrganizationResource org1Resource = realm.admin().organizations().get(org1.getId());
         OrganizationResource org2Resource = realm.admin().organizations().get(org2.getId());
 
-        // Create roles in both organizations
-        RoleRepresentation org1Role = createOrganizationRole(org1Resource, "org1-role");
         RoleRepresentation org2Role = createOrganizationRole(org2Resource, "cross-org-delete-role");
 
         // Create a group in org1
@@ -987,10 +1198,6 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
         }
 
         GroupRepresentation org1Group = org1Resource.groups().getAll(groupName, null, true, 0, 10, false, false).get(0);
-
-        // Assign org1's role to the group
-        org1Resource.groups().group(org1Group.getId()).roles()
-                .addOrganizationRoleMappings(List.of(org1Role));
 
         // Attempt to delete org2's role from org1's group
         // This should fail because the role belongs to a different organization

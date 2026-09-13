@@ -11,6 +11,13 @@ type GroupRoleMappingProps = {
   canManageGroup: boolean;
 };
 
+const toRoleMappingPayload = (row: Row): RoleMappingPayload => {
+  if (!row.role.id || !row.role.name) {
+    throw new Error("Role mappings require both a role id and name");
+  }
+  return { id: row.role.id, name: row.role.name };
+};
+
 export const GroupRoleMapping = ({
   id,
   name,
@@ -24,31 +31,15 @@ export const GroupRoleMapping = ({
   const assignRoles = async (rows: Row[]) => {
     try {
       const realmRoles = rows
-        .filter(
-          (row) => row.client === undefined && !(row.role as any).isOrgRole,
-        )
-        .map((row) => row.role as RoleMappingPayload)
-        .flat();
+        .filter((row) => row.client === undefined && !row.org)
+        .map(toRoleMappingPayload);
       if (realmRoles.length > 0) {
-        await groups.addRealmRoleMappings({
-          id,
-          roles: realmRoles,
-        });
+        await groups.addRealmRoleMappings({ id, roles: realmRoles });
       }
 
-      const orgRoles = rows
-        .filter((row) => (row.role as any).isOrgRole)
-        .map((row) => {
-          const role = { ...row.role } as any;
-          delete role.isOrgRole;
-          return role as RoleMappingPayload;
-        })
-        .flat();
+      const orgRoles = rows.filter((row) => row.org).map(toRoleMappingPayload);
       if (orgRoles.length > 0) {
-        await groups.addOrganizationRoleMappings({
-          id,
-          roles: orgRoles,
-        });
+        await groups.addOrganizationRoleMappings({ id, roles: orgRoles });
       }
 
       await Promise.all(
@@ -58,7 +49,7 @@ export const GroupRoleMapping = ({
             groups.addClientRoleMappings({
               id,
               clientUniqueId: row.client!.id!,
-              roles: [row.role as RoleMappingPayload],
+              roles: [toRoleMappingPayload(row)],
             }),
           ),
       );
@@ -76,6 +67,7 @@ export const GroupRoleMapping = ({
       type="groups"
       save={assignRoles}
       groupsResource={groups}
+      canMapOrganizationRoles={groups.isOrgGroups() && canManageGroup}
     />
   );
 };

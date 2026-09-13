@@ -83,6 +83,13 @@ public class RolePolicyProvider implements PolicyProvider, PartialEvaluationPoli
             RoleModel role = realm.getRoleById(roleDefinition.getId());
 
             if (role != null) {
+                if (role.isType(RoleModel.Type.ORGANIZATION)) {
+                    if (Boolean.TRUE.equals(roleDefinition.isRequired())) {
+                        return false;
+                    }
+                    continue;
+                }
+
                 boolean isFetchRoles = policyRep.isFetchRoles() != null && policyRep.isFetchRoles();
                 boolean hasRole = hasRole(identity, role, realm, authorizationProvider, isFetchRoles);
 

@@ -35,8 +35,11 @@ import org.keycloak.organization.protocol.mappers.saml.OrganizationMembershipMap
 import org.keycloak.organization.protocol.mappers.saml.OrganizationRoleMembershipMapper;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
+import org.keycloak.protocol.saml.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.saml.mappers.SAMLAudienceResolveProtocolMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -74,8 +77,27 @@ public class OrganizationSAMLProtocolMapperTest extends AbstractOrganizationTest
         organization.identityProviders().get(broker.getAlias()).delete().close();
         MemberRepresentation member = addMember(organization);
 
+        GroupRepresentation realmGroup = new GroupRepresentation();
+        realmGroup.setName("visible-saml-group");
+        try (Response response = managedRealm.admin().groups().add(realmGroup)) {
+            realmGroup.setId(ApiUtil.getCreatedId(response));
+        }
+        getCleanup().addCleanup(() -> managedRealm.admin().groups().group(realmGroup.getId()).remove());
+        managedRealm.admin().users().get(member.getId()).joinGroup(realmGroup.getId());
+
+        GroupRepresentation organizationGroup = new GroupRepresentation();
+        organizationGroup.setName("hidden-saml-organization-group");
+        try (Response response = organization.groups().addTopLevelGroup(organizationGroup)) {
+            organizationGroup.setId(ApiUtil.getCreatedId(response));
+        }
+        organization.groups().group(organizationGroup.getId()).addMember(member.getId());
+        organizationGroup = organization.groups().group(organizationGroup.getId()).toRepresentation(false);
+
         RoleRepresentation directRole = createOrganizationRole(organization, "org-admin");
         RoleRepresentation childRole = createOrganizationRole(organization, "org-auditor");
+        RoleRepresentation groupRole = createOrganizationRole(organization, "org-group-reviewer");
+        organization.groups().group(organizationGroup.getId()).roles()
+                .addOrganizationRoleMappings(List.of(groupRole));
         RoleRepresentation realmRole = new RoleRepresentation("organization-realm-composite", "", false);
         managedRealm.admin().roles().create(realmRole);
         realmRole = managedRealm.admin().roles().get(realmRole.getName()).toRepresentation();
@@ -112,6 +134,16 @@ public class OrganizationSAMLProtocolMapperTest extends AbstractOrganizationTest
         roleMapper.setProtocolMapper(OrganizationRoleMembershipMapper.ID);
         clientResource.getProtocolMappers().createMapper(roleMapper).close();
 
+        ProtocolMapperRepresentation groupMapper = new ProtocolMapperRepresentation();
+        groupMapper.setName("groups");
+        groupMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        groupMapper.setProtocolMapper(GroupMembershipMapper.PROVIDER_ID);
+        groupMapper.setConfig(java.util.Map.of(
+                AttributeStatementHelper.SAML_ATTRIBUTE_NAME, "groups",
+                GroupMembershipMapper.SINGLE_GROUP_ATTRIBUTE, Boolean.TRUE.toString(),
+                "full.path", Boolean.TRUE.toString()));
+        clientResource.getProtocolMappers().createMapper(groupMapper).close();
+
         ProtocolMapperRepresentation audienceMapper = new ProtocolMapperRepresentation();
         audienceMapper.setName("audience-resolve");
         audienceMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
@@ -145,10 +177,15 @@ public class OrganizationSAMLProtocolMapperTest extends AbstractOrganizationTest
                 .toList();
 
         assertAttributeValues(attributes, "organization." + organizationName + ".roles",
-                "default-roles-org-" + organizationName, "org-admin", "org-auditor");
+                "default-roles-org-" + organizationName, "org-admin", "org-auditor", "org-group-reviewer");
         assertAttributeValues(attributes, "organization." + organizationName + ".realm_access.roles", realmRole.getName());
         assertAttributeValues(attributes, "organization." + organizationName + ".resource_access.organization-role-client.roles",
                 clientRole.getName());
+        assertAttributeValues(attributes, "groups", "/visible-saml-group");
+        List<Object> groupValues = attributes.stream().filter(attribute -> "groups".equals(attribute.getName()))
+                .findAny().orElseThrow().getAttributeValue();
+        Assertions.assertFalse(groupValues.contains(organizationGroup.getId()));
+        Assertions.assertFalse(groupValues.contains(organizationGroup.getPath()));
         AudienceRestrictionType audience = ((ResponseType) samlResponse.getSamlObject()).getAssertions().get(0).getAssertion()
                 .getConditions().getConditions().stream()
                 .filter(AudienceRestrictionType.class::isInstance)

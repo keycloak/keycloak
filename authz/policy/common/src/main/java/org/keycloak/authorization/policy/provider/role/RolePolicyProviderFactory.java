@@ -51,6 +51,7 @@ import org.keycloak.utils.StringUtil;
 public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePolicyRepresentation> {
 
     public static final String ID = "role";
+    static final String ORGANIZATION_ROLES_NOT_SUPPORTED = "Organization roles cannot be used in role policies";
     private RolePolicyProvider provider = new RolePolicyProvider(this::toRepresentation);
 
     @Override
@@ -96,22 +97,18 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
 
     @Override
     public void onCreate(Policy policy, RolePolicyRepresentation representation, AuthorizationProvider authorization) {
-        updateRoles(policy, representation, authorization);
+        updatePolicy(policy, representation, authorization);
     }
 
     @Override
     public void onUpdate(Policy policy, RolePolicyRepresentation representation, AuthorizationProvider authorization) {
-        updateRoles(policy, representation, authorization);
+        updatePolicy(policy, representation, authorization);
     }
 
     @Override
     public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
-        updateRoles(policy, authorization, getRoles(representation.getConfig().get("roles"), authorization.getRealm()));
-        String fetchRoles = representation.getConfig().get("fetchRoles");
-
-        if (StringUtil.isNotBlank(fetchRoles)) {
-            policy.putConfig("fetchRoles", fetchRoles);
-        }
+        updatePolicy(policy, authorization, getRoles(representation.getConfig().get("roles"), authorization.getRealm()),
+                representation.getConfig().get("fetchRoles"));
     }
 
     @Override
@@ -144,14 +141,13 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
         representation.setConfig(config);
     }
 
-    private void updateRoles(Policy policy, RolePolicyRepresentation representation, AuthorizationProvider authorization) {
-        if (representation.isFetchRoles() != null) {
-            policy.putConfig("fetchRoles", String.valueOf(representation.isFetchRoles()));
-        }
-        updateRoles(policy, authorization, representation.getRoles());
+    private void updatePolicy(Policy policy, RolePolicyRepresentation representation, AuthorizationProvider authorization) {
+        updatePolicy(policy, authorization, representation.getRoles(),
+                representation.isFetchRoles() == null ? null : String.valueOf(representation.isFetchRoles()));
     }
 
-    private void updateRoles(Policy policy, AuthorizationProvider authorization, Set<RolePolicyRepresentation.RoleDefinition> roles) {
+    private void updatePolicy(Policy policy, AuthorizationProvider authorization,
+            Set<RolePolicyRepresentation.RoleDefinition> roles, String fetchRoles) {
         Set<RolePolicyRepresentation.RoleDefinition> updatedRoles = new HashSet<>();
         Set<String> processedRoles = new HashSet<>();
         if (roles != null) {
@@ -162,19 +158,29 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
                     continue;
                 }
 
+                if (role.isType(RoleModel.Type.ORGANIZATION)) {
+                    throw new PolicyValidationException(ORGANIZATION_ROLES_NOT_SUPPORTED);
+                }
+
                 if (!processedRoles.add(role.getId())) {
                     throw new PolicyValidationException("Role can't be specified multiple times - " + role.getName());
                 }
-                definition.setId(role.getId());
-                updatedRoles.add(definition);
+                updatedRoles.add(new RoleDefinition(role.getId(), definition.isRequired()));
             }
         }
 
+        Map<String, String> config = new HashMap<>(policy.getConfig());
         try {
-            policy.putConfig("roles", JsonSerialization.writeValueAsString(updatedRoles));
+            config.put("roles", JsonSerialization.writeValueAsString(updatedRoles));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to serialize roles", cause);
         }
+
+        if (StringUtil.isNotBlank(fetchRoles)) {
+            config.put("fetchRoles", fetchRoles);
+        }
+
+        policy.setConfig(config);
     }
 
     @Override

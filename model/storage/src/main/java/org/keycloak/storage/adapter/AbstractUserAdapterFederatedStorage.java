@@ -127,26 +127,33 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
      */
     @Override
     public Stream<GroupModel> getGroupsStream() {
+        return getRoleMappingsGroupsStream().filter(group -> GroupModel.Type.REALM.equals(group.getType()));
+    }
+
+    @Override
+    public Stream<GroupModel> getRoleMappingsGroupsStream() {
         Stream<GroupModel> groups = getFederatedStorage().getGroupsStream(realm, this.getId());
         if (appendDefaultGroups()) groups = Stream.concat(groups, realm.getDefaultGroupsStream());
-        return Stream.concat(groups, getGroupsInternal().stream());
+        return Stream.concat(groups, getGroupsInternal().stream()).distinct();
     }
 
     @Override
     public void joinGroup(GroupModel group) {
+        OrganizationsValidation.validateOrganizationGroupMembership(session, this, group, true);
         getFederatedStorage().joinGroup(realm, this.getId(), group);
 
     }
 
     @Override
     public void leaveGroup(GroupModel group) {
+        OrganizationsValidation.validateOrganizationGroupMembership(session, this, group, false);
         getFederatedStorage().leaveGroup(realm, this.getId(), group);
 
     }
 
     @Override
     public boolean isMemberOf(GroupModel group) {
-        return RoleUtils.isMember(getGroupsStream(), group);
+        return RoleUtils.isMember(getRoleMappingsGroupsStream(), group);
     }
 
     /**
@@ -172,7 +179,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     @Override
     public boolean hasRole(RoleModel role) {
         return RoleUtils.hasRole(getRoleMappingsStream(), role)
-          || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
+          || RoleUtils.hasRoleFromGroup(getRoleMappingsGroupsStream(), role, true);
     }
 
     @Override

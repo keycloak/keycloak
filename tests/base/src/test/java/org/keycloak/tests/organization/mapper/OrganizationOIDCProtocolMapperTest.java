@@ -49,6 +49,7 @@ import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -222,9 +223,27 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testOrganizationNotAddedByGroupMapper() throws Exception {
         OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
-        addMember(organization);
+        MemberRepresentation member = addMember(organization);
+
+        GroupRepresentation realmGroup = new GroupRepresentation();
+        realmGroup.setName("visible-realm-group");
+        try (Response createRealmGroup = realm.admin().groups().add(realmGroup)) {
+            realmGroup.setId(ApiUtil.getCreatedId(createRealmGroup));
+        }
+        realm.cleanup().add(r -> r.groups().group(realmGroup.getId()).remove());
+        realm.admin().users().get(member.getId()).joinGroup(realmGroup.getId());
+
+        GroupRepresentation organizationGroup = new GroupRepresentation();
+        organizationGroup.setName("hidden-organization-group");
+        try (Response createOrganizationGroup = organization.groups().addTopLevelGroup(organizationGroup)) {
+            organizationGroup.setId(ApiUtil.getCreatedId(createOrganizationGroup));
+        }
+        organization.groups().group(organizationGroup.getId()).addMember(member.getId());
+        organizationGroup = organization.groups().group(organizationGroup.getId()).toRepresentation(false);
+
         ClientRepresentation client = realm.admin().clients().findByClientId("direct-grant").get(0);
         ClientResource clientResource = realm.admin().clients().get(client.getId());
         clientResource.getProtocolMappers().createMapper(createGroupMapper()).close();
@@ -235,7 +254,11 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(response.getScope(), containsString("organization"));
         AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
-        assertThat(accessToken.getOtherClaims().get("groups"), nullValue());
+        assertThat(accessToken.getOtherClaims(), hasKey("groups"));
+        Map<String, Object> groupClaims = (Map<String, Object>) accessToken.getOtherClaims().get("groups");
+        assertThat((List<String>) groupClaims.get("groups"), containsInAnyOrder("/visible-realm-group"));
+        assertFalse(accessToken.getOtherClaims().toString().contains(organizationGroup.getId()));
+        assertFalse(accessToken.getOtherClaims().toString().contains(organizationGroup.getPath()));
     }
 
     @SuppressWarnings("unchecked")
@@ -1891,6 +1914,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "groups.groups");
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+        config.put("full.path", "true");
         groupMapper.setConfig(config);
         return groupMapper;
     }

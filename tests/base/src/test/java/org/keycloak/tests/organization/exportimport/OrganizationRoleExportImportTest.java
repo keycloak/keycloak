@@ -21,6 +21,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +42,17 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileImportProviderFactory;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -49,6 +60,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -122,11 +134,30 @@ public class OrganizationRoleExportImportTest extends AbstractOrganizationTest {
             customRoleId = ApiUtil.getCreatedId(response);
         }
         RoleRepresentation customRole = organization.roles().get(customRoleId).toRepresentation();
+        RoleRepresentation groupRoleRequest = role(null, "group-viewer");
+        String groupRoleId;
+        try (Response response = organization.roles().create(groupRoleRequest)) {
+            groupRoleId = ApiUtil.getCreatedId(response);
+        }
+        RoleRepresentation groupRole = organization.roles().get(groupRoleId).toRepresentation();
         RoleRepresentation defaultRole = organization.roles().getDefault().toRepresentation();
         organization.roles().getDefault().addComposites(List.of(customRole, realmRole, clientRole));
         UserRepresentation memberReference = new UserRepresentation();
         memberReference.setId(member.getId());
         organization.roles().get(customRoleId).addUserMembers(List.of(memberReference));
+
+        GroupRepresentation parent = new GroupRepresentation();
+        parent.setName("export-parent");
+        try (Response response = organization.groups().addTopLevelGroup(parent)) {
+            parent.setId(ApiUtil.getCreatedId(response));
+        }
+        GroupRepresentation child = new GroupRepresentation();
+        child.setName("export-child");
+        try (Response response = organization.groups().group(parent.getId()).addSubGroup(child)) {
+            child.setId(ApiUtil.getCreatedId(response));
+        }
+        organization.groups().group(parent.getId()).roles().addOrganizationRoleMappings(List.of(groupRole));
+        organization.groups().group(child.getId()).addMember(member.getId());
 
         String exportFile = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"", "")
                 + File.separator + "organization-roles-" + UUID.randomUUID() + ".json";
@@ -139,7 +170,7 @@ public class OrganizationRoleExportImportTest extends AbstractOrganizationTest {
         String serializedExport = runOnServerMaster.fetchString(session -> Files.readString(Path.of(exportFile)));
         RealmRepresentation exportedRealm = JsonSerialization.readValue(serializedExport, RealmRepresentation.class);
         assertExportedRealm(exportedRealm, organizationRepresentation.getAlias(), defaultRole.getName(), customRole,
-                realmRole.getName(), client.getClientId(), clientRole.getName(), member.getUsername());
+                groupRole, realmRole.getName(), client.getClientId(), clientRole.getName(), member.getUsername());
 
         realmResource.remove();
         runOnServerMaster.run(ExportImportHelper.setProvider(SingleFileImportProviderFactory.PROVIDER_ID));
@@ -163,13 +194,28 @@ public class OrganizationRoleExportImportTest extends AbstractOrganizationTest {
         assertEquals(customRole.getDescription(), importedCustom.getDescription());
         assertThat(importedCustom.getAttributes().get("tier"), containsInAnyOrder("admin"));
         assertThat(importedOrganization.roles().list(false).stream().map(RoleRepresentation::getName).toList(),
-                containsInAnyOrder(defaultRole.getName(), customRole.getName()));
+                containsInAnyOrder(defaultRole.getName(), customRole.getName(), groupRole.getName()));
         assertThat(importedOrganization.roles().get(importedDefault.getId()).getRoleComposites().stream()
                         .map(RoleRepresentation::getName).toList(),
                 containsInAnyOrder(customRole.getName(), realmRole.getName(), clientRole.getName()));
         assertThat(importedOrganization.roles().get(importedCustom.getId()).getUserMembers().stream()
                         .map(UserRepresentation::getUsername).toList(),
                 containsInAnyOrder(member.getUsername()));
+        assertThat(importedOrganization.roles().get(importedDefault.getId()).getUserMembers().stream()
+                        .map(UserRepresentation::getUsername).toList(),
+                containsInAnyOrder(member.getUsername()));
+        assertGroupBackedDefault(realm.getName(), importedRepresentation.getId(), member.getUsername(),
+                importedDefault.getName());
+        GroupRepresentation importedParent = importedOrganization.groups()
+                .getGroupByPath("/export-parent", false, false);
+        assertThat(importedParent.getOrganizationRoles().get(organizationRepresentation.getAlias()),
+                containsInAnyOrder(groupRole.getName()));
+        GroupRepresentation importedChild = importedOrganization.groups().group(importedParent.getId())
+                .getSubGroups(null, null, null, null).stream()
+                .filter(candidate -> "export-child".equals(candidate.getName()))
+                .findFirst().orElseThrow();
+        assertGroupRoleInherited(realm.getName(), importedRepresentation.getId(), member.getUsername(),
+                importedChild.getId(), groupRole.getName());
     }
 
     @Test
@@ -186,8 +232,12 @@ public class OrganizationRoleExportImportTest extends AbstractOrganizationTest {
         MemberRepresentation member = new MemberRepresentation();
         member.setUsername("import-member");
         member.setMembershipType(MembershipType.UNMANAGED);
-        member.setOrganizationRoles(List.of(viewer.getName()));
+        member.setOrganizationRoles(List.of(viewer.getName(), customDefault.getName()));
         organization.setMembers(List.of(member));
+        GroupRepresentation duplicateGroupMapping = group("group-with-duplicate-organization-role");
+        duplicateGroupMapping.setOrganizationRoles(Map.of(organization.getAlias(),
+                List.of(viewer.getName(), viewer.getName())));
+        organization.setGroups(List.of(group("legacy-group-without-organization-roles"), duplicateGroupMapping));
 
         OrganizationRepresentation defaultOnlyOrganization = organization("default-only-org-id", "default-only-org");
         RoleRepresentation defaultOnlyViewer = role("default-only-viewer-id", "viewer");
@@ -212,6 +262,14 @@ public class OrganizationRoleExportImportTest extends AbstractOrganizationTest {
                     .map(RoleRepresentation::getName).toList(), containsInAnyOrder(viewer.getName()));
             assertThat(imported.roles().get(viewer.getId()).getUserMembers().stream()
                     .map(UserRepresentation::getUsername).toList(), containsInAnyOrder(member.getUsername()));
+            assertThat(imported.roles().get(importedDefault.getId()).getUserMembers().stream()
+                    .map(UserRepresentation::getUsername).toList(), containsInAnyOrder(member.getUsername()));
+            assertGroupBackedDefault(valid.getRealm(), imported.toRepresentation().getId(), member.getUsername(),
+                    importedDefault.getName());
+            assertEquals("legacy-group-without-organization-roles",
+                    imported.groups().getGroupByPath("/legacy-group-without-organization-roles", false).getName());
+            assertThat(imported.groups().getGroupByPath("/group-with-duplicate-organization-role", false, false)
+                    .getOrganizationRoles().get(organization.getAlias()), containsInAnyOrder(viewer.getName()));
 
             OrganizationResource importedDefaultOnly = organization(importedRealm, importedOrganizations,
                     defaultOnlyOrganization.getAlias());
@@ -268,6 +326,41 @@ public class OrganizationRoleExportImportTest extends AbstractOrganizationTest {
             invalidMapping.setOrganizationRoles(List.of("missing-role"));
             imported.getOrganizations().get(0).setMembers(List.of(invalidMapping));
         });
+        assertInvalidRealmImport("foreign-organization-group-role-alias", imported -> {
+            OrganizationRepresentation importedOrganization = imported.getOrganizations().get(0);
+            RoleRepresentation role = role("group-role-id", "group-role");
+            importedOrganization.setRoles(List.of(role));
+            GroupRepresentation group = group("organization-group");
+            group.setOrganizationRoles(Map.of("another-organization", List.of(role.getName())));
+            importedOrganization.setGroups(List.of(group));
+        });
+        assertInvalidRealmImport("missing-organization-group-role", imported -> {
+            OrganizationRepresentation importedOrganization = imported.getOrganizations().get(0);
+            GroupRepresentation group = group("organization-group");
+            group.setOrganizationRoles(Map.of(importedOrganization.getAlias(), List.of("missing-role")));
+            importedOrganization.setGroups(List.of(group));
+        });
+        assertNullOrganizationRoleListRejectedDirectly();
+        assertInvalidRealmImport("blank-organization-group-role", imported -> {
+            OrganizationRepresentation importedOrganization = imported.getOrganizations().get(0);
+            GroupRepresentation group = group("organization-group");
+            group.setOrganizationRoles(Map.of(importedOrganization.getAlias(), List.of(" ")));
+            importedOrganization.setGroups(List.of(group));
+        });
+        assertInvalidRealmImport("default-organization-group-role", imported -> {
+            OrganizationRepresentation importedOrganization = imported.getOrganizations().get(0);
+            RoleRepresentation importedDefault = role("group-default-id", "member");
+            importedOrganization.setRoles(List.of(importedDefault));
+            importedOrganization.setDefaultRole(importedDefault);
+            GroupRepresentation group = group("organization-group");
+            group.setOrganizationRoles(Map.of(importedOrganization.getAlias(), List.of(importedDefault.getName())));
+            importedOrganization.setGroups(List.of(group));
+        });
+        assertInvalidRealmImport("organization-role-on-realm-group", imported -> {
+            GroupRepresentation group = group("realm-group");
+            group.setOrganizationRoles(Map.of("import-org", List.of("organization-role")));
+            imported.setGroups(List.of(group));
+        });
         assertInvalidRealmImport("generic-organization-composite", imported -> {
             RoleRepresentation genericRole = role("realm-role-id", "realm-role");
             genericRole.setComposites(organizationComposites("organization-role"));
@@ -287,10 +380,24 @@ public class OrganizationRoleExportImportTest extends AbstractOrganizationTest {
             roles.setClient(Map.of(client.getClientId(), List.of(genericRole)));
             imported.setRoles(roles);
         });
+        assertInvalidRealmImport("administrative-composite-path", imported -> {
+            RoleRepresentation bridge = role("administrative-bridge-id", "administrative-bridge");
+            RoleRepresentation.Composites bridgeComposites = new RoleRepresentation.Composites();
+            bridgeComposites.setClient(Map.of(Constants.REALM_MANAGEMENT_CLIENT_ID,
+                    List.of(AdminRoles.MANAGE_REALM)));
+            bridge.setComposites(bridgeComposites);
+            RolesRepresentation roles = new RolesRepresentation();
+            roles.setRealm(List.of(bridge));
+            imported.setRoles(roles);
+
+            RoleRepresentation organizationRole = role("administrative-org-role-id", "administrative-org-role");
+            organizationRole.setComposites(organizationComposites(bridge.getName()));
+            imported.getOrganizations().get(0).setRoles(List.of(organizationRole));
+        });
     }
 
     private static void assertExportedRealm(RealmRepresentation exportedRealm, String organizationAlias,
-            String defaultRoleName, RoleRepresentation customRole, String realmRoleName, String clientId,
+            String defaultRoleName, RoleRepresentation customRole, RoleRepresentation groupRole, String realmRoleName, String clientId,
             String clientRoleName, String memberName) {
         OrganizationRepresentation organization = exportedRealm.getOrganizations().stream()
                 .filter(candidate -> organizationAlias.equals(candidate.getAlias()))
@@ -298,7 +405,7 @@ public class OrganizationRoleExportImportTest extends AbstractOrganizationTest {
                 .orElseThrow();
         assertEquals(defaultRoleName, organization.getDefaultRole().getName());
         assertThat(organization.getRoles().stream().map(RoleRepresentation::getName).toList(),
-                containsInAnyOrder(defaultRoleName, customRole.getName()));
+                containsInAnyOrder(defaultRoleName, customRole.getName(), groupRole.getName()));
         RoleRepresentation exportedDefault = organization.getRoles().stream()
                 .filter(role -> defaultRoleName.equals(role.getName())).findFirst().orElseThrow();
         RoleRepresentation exportedCustom = organization.getRoles().stream()
@@ -316,6 +423,12 @@ public class OrganizationRoleExportImportTest extends AbstractOrganizationTest {
         assertTrue(organization.getMembers().stream()
                 .flatMap(member -> Optional.ofNullable(member.getOrganizationRoles()).orElse(List.of()).stream())
                 .noneMatch(defaultRoleName::equals));
+        GroupRepresentation exportedParent = organization.getGroups().stream()
+                .filter(group -> "export-parent".equals(group.getName())).findFirst().orElseThrow();
+        assertThat(exportedParent.getOrganizationRoles().get(organizationAlias),
+                containsInAnyOrder(groupRole.getName()));
+        assertThat(exportedParent.getSubGroups().stream().map(GroupRepresentation::getName).toList(),
+                containsInAnyOrder("export-child"));
 
         List<RoleRepresentation> genericRoles = new ArrayList<>(Optional.ofNullable(exportedRealm.getRoles())
                 .map(RolesRepresentation::getRealm).orElse(List.of()));
@@ -345,6 +458,79 @@ public class OrganizationRoleExportImportTest extends AbstractOrganizationTest {
         } finally {
             removeRealm(imported.getRealm());
         }
+    }
+
+    private void assertNullOrganizationRoleListRejectedDirectly() {
+        runOnServerMaster.run(session -> {
+            RealmRepresentation imported = importRealm("null-organization-group-role-list");
+            OrganizationRepresentation importedOrganization = imported.getOrganizations().get(0);
+            GroupRepresentation group = group("organization-group");
+            Map<String, List<String>> mappings = new HashMap<>();
+            mappings.put(importedOrganization.getAlias(), null);
+            group.setOrganizationRoles(mappings);
+            importedOrganization.setGroups(List.of(group));
+
+            RealmManager manager = new RealmManager(session);
+            try {
+                assertThrows(ModelException.class, () -> manager.importRealm(imported));
+            } finally {
+                RealmModel partialRealm = session.realms().getRealmByName(imported.getRealm());
+                if (partialRealm != null) {
+                    RealmModel currentRealm = session.getContext().getRealm();
+                    session.getContext().setRealm(partialRealm);
+                    try {
+                        manager.removeRealm(partialRealm);
+                    } finally {
+                        session.getContext().setRealm(currentRealm);
+                    }
+                }
+            }
+        });
+    }
+
+    private void assertGroupBackedDefault(String realmName, String organizationId, String username,
+            String expectedDefaultRoleName) {
+        runOnServerMaster.run(session -> {
+            RealmModel currentRealm = session.getContext().getRealm();
+            RealmModel importedRealm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(importedRealm);
+            try {
+                OrganizationProvider organizations = session.getProvider(OrganizationProvider.class);
+                OrganizationModel organization = organizations.getById(organizationId);
+                RoleModel defaultRole = organization.getDefaultRole();
+                GroupModel root = organizations.getOrganizationGroup(organization);
+                UserModel user = session.users().getUserByUsername(importedRealm, username);
+
+                assertEquals(expectedDefaultRoleName, defaultRole.getName());
+                assertTrue(user.hasRole(defaultRole));
+                assertTrue(!user.hasDirectRole(defaultRole));
+                assertEquals(List.of(defaultRole.getId()), root.getRoleMappingsStream().map(RoleModel::getId).toList());
+            } finally {
+                session.getContext().setRealm(currentRealm);
+            }
+        });
+    }
+
+    private void assertGroupRoleInherited(String realmName, String organizationId, String username, String groupId,
+            String roleName) {
+        runOnServerMaster.run(session -> {
+            RealmModel currentRealm = session.getContext().getRealm();
+            RealmModel importedRealm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(importedRealm);
+            try {
+                OrganizationModel organization = session.getProvider(OrganizationProvider.class).getById(organizationId);
+                UserModel user = session.users().getUserByUsername(importedRealm, username);
+                GroupModel group = importedRealm.getGroupById(groupId);
+                RoleModel role = organization.getRole(roleName);
+
+                assertTrue(user.isMemberOf(group));
+                assertTrue(group.getParent().hasDirectRole(role));
+                assertTrue(user.hasRole(role));
+                assertTrue(!user.hasDirectRole(role));
+            } finally {
+                session.getContext().setRealm(currentRealm);
+            }
+        });
     }
 
     private static RealmRepresentation importRealm(String variant) {
@@ -379,6 +565,12 @@ public class OrganizationRoleExportImportTest extends AbstractOrganizationTest {
         role.setId(id);
         role.setName(name);
         return role;
+    }
+
+    private static GroupRepresentation group(String name) {
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName(name);
+        return group;
     }
 
     private static RoleRepresentation.Composites organizationComposites(String roleName) {

@@ -123,7 +123,9 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
             Long loaded = realmCache.getCache().getCurrentRevision(id);
             OrganizationModel model = getDelegate().getById(id);
             if (model == null) return null;
-            cached = new CachedOrganization(loaded, getRealm(), model, d -> realmCache.registerInvalidation(cacheKeyByDomain(d)));
+            String groupId = ((org.keycloak.organization.jpa.OrganizationAdapter) model).getGroupId();
+            cached = new CachedOrganization(loaded, getRealm(), model, groupId,
+                    d -> realmCache.registerInvalidation(cacheKeyByDomain(d)));
             if (!invalid) {
                 realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
             }
@@ -437,6 +439,12 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     @Override
     public GroupModel getOrganizationGroup(OrganizationModel organization) {
+        if (organization instanceof OrganizationAdapter adapter) {
+            GroupModel group = getRealm().getGroupById(adapter.getGroupId());
+            if (group != null) {
+                return group;
+            }
+        }
         return getDelegate().getOrganizationGroup(organization);
     }
 

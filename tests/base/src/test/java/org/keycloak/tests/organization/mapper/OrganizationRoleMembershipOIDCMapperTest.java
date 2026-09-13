@@ -27,7 +27,11 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.models.Constants;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.protocol.mappers.OrganizationRoleMapperUtils;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationMembershipMapper;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationRoleMembershipMapper;
@@ -41,6 +45,7 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -51,6 +56,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -70,6 +77,9 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
 
     @InjectOAuthClient
     OAuthClient oauth;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @BeforeEach
     public void addRoleMapper() {
@@ -110,8 +120,11 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
         MemberRepresentation member = addMember(acme, memberEmail, "Test", "User");
         other.members().addMember(member.getId()).close();
 
+        RoleRepresentation acmeDefault = acme.roles().getDefault().toRepresentation();
+        RoleRepresentation otherDefault = other.roles().getDefault().toRepresentation();
         RoleRepresentation acmeRole = createOrganizationRole(acme, "acme-admin");
         RoleRepresentation acmeChildRole = createOrganizationRole(acme, "acme-auditor");
+        RoleRepresentation acmeGroupRole = createOrganizationRole(acme, "acme-group-reviewer");
         RoleRepresentation otherRole = createOrganizationRole(other, "other-admin");
         RoleRepresentation realmRole = createRealmRole("organization-realm-composite");
         ClientRole clientRole = createClientRole("organization-role-client", "organization-client-composite");
@@ -119,6 +132,18 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
         acme.roles().get(acmeRole.getId()).addComposites(List.of(acmeChildRole, realmRole, clientRole.role()));
         assignOrganizationRole(acme, acmeRole, member.getId());
         assignOrganizationRole(other, otherRole, member.getId());
+        GroupRepresentation parent = new GroupRepresentation();
+        parent.setName("oidc-parent");
+        try (Response groupResponse = acme.groups().addTopLevelGroup(parent)) {
+            parent.setId(ApiUtil.getCreatedId(groupResponse));
+        }
+        GroupRepresentation child = new GroupRepresentation();
+        child.setName("oidc-child");
+        try (Response groupResponse = acme.groups().group(parent.getId()).addSubGroup(child)) {
+            child.setId(ApiUtil.getCreatedId(groupResponse));
+        }
+        acme.groups().group(parent.getId()).roles().addOrganizationRoleMappings(List.of(acmeGroupRole));
+        acme.groups().group(child.getId()).addMember(member.getId());
         addDirectGrantAudience();
 
         AccessTokenResponse response = authenticate("openid organization:*");
@@ -129,16 +154,32 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
         assertThat(introspection.isActive(), is(true));
 
         for (Map<String, Object> claims : List.of(accessToken.getOtherClaims(), idToken.getOtherClaims(), userInfo.getOtherClaims(), introspection.getOtherClaims())) {
-            assertRoleClaims(claims, OAuth2Constants.ORGANIZATION, "acme", "acme-admin", "acme-auditor", realmRole.getName(),
+            assertRoleClaims(claims, OAuth2Constants.ORGANIZATION, "acme", acmeDefault.getName(), "acme-admin", "acme-auditor", realmRole.getName(),
                     clientRole.clientId(), clientRole.role().getName());
+            assertThat((List<String>) organizationData(claims, OAuth2Constants.ORGANIZATION, "acme")
+                    .get(OrganizationRoleMapperUtils.ROLES), hasItem(acmeGroupRole.getName()));
 
             Map<String, Object> otherData = organizationData(claims, OAuth2Constants.ORGANIZATION, "other");
             List<String> otherRoles = (List<String>) otherData.get(OrganizationRoleMapperUtils.ROLES);
             assertThat(otherData, not(hasKey("organization_roles")));
+            assertThat(otherRoles, hasItem(otherDefault.getName()));
             assertThat(otherRoles, hasItem("other-admin"));
             assertThat(otherRoles, not(hasItem("acme-admin")));
             assertThat(otherRoles, not(hasItem("acme-auditor")));
         }
+
+        AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        assertThat(refreshedResponse.getStatusCode(), is(Response.Status.OK.getStatusCode()));
+        AccessToken refreshedAccessToken = TokenVerifier.create(refreshedResponse.getAccessToken(), AccessToken.class).getToken();
+        Map<String, Object> refreshedClaims = refreshedAccessToken.getOtherClaims();
+        assertRoleClaims(refreshedClaims, OAuth2Constants.ORGANIZATION, "acme", acmeDefault.getName(),
+                acmeRole.getName(), acmeChildRole.getName(), realmRole.getName(), clientRole.clientId(),
+                clientRole.role().getName());
+        assertThat((List<String>) organizationData(refreshedClaims, OAuth2Constants.ORGANIZATION, "acme")
+                .get(OrganizationRoleMapperUtils.ROLES), hasItem(acmeGroupRole.getName()));
+        List<String> refreshedOtherRoles = (List<String>) organizationData(refreshedClaims,
+                OAuth2Constants.ORGANIZATION, "other").get(OrganizationRoleMapperUtils.ROLES);
+        assertThat(refreshedOtherRoles, not(hasItem(acmeGroupRole.getName())));
 
         if (accessToken.getRealmAccess() != null) {
             assertThat(accessToken.getRealmAccess().isUserInRole(realmRole.getName()), is(false));
@@ -147,8 +188,8 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
         assertThat(accessToken.getResourceAccess(), not(hasKey(clientRole.clientId())));
         assertThat(accessToken.getResourceAccess(), not(hasKey("acme")));
 
-        assertCustomClaimName("my_orgs", "acme", "acme-admin");
-        assertCustomClaimName("custom.org", "acme", "acme-admin");
+        assertCustomClaimName("my_orgs", "acme", acmeDefault.getName(), "acme-admin");
+        assertCustomClaimName("custom.org", "acme", acmeDefault.getName(), "acme-admin");
 
         AccessTokenResponse responseWithoutOrganizationScope = authenticate("openid");
         AccessToken accessTokenWithoutOrganizationScope = TokenVerifier.create(responseWithoutOrganizationScope.getAccessToken(), AccessToken.class).getToken();
@@ -157,8 +198,138 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
         assertThat(accessTokenWithoutOrganizationScope.getOtherClaims(), not(hasKey("custom")));
     }
 
+    @Test
     @SuppressWarnings("unchecked")
-    private void assertCustomClaimName(String claimName, String organizationAlias, String roleName) throws Exception {
+    public void testDefaultRoleSwitchIsResolvedOnRefresh() throws Exception {
+        assertDefaultRoleSwitchIsResolvedOnRefresh("refresh-org", "openid organization:*");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testDefaultRoleSwitchIsResolvedOnOfflineRefresh() throws Exception {
+        addOptionalClientScope(OAuth2Constants.OFFLINE_ACCESS);
+        assertDefaultRoleSwitchIsResolvedOnRefresh("offline-refresh-org",
+                "openid organization:* " + OAuth2Constants.OFFLINE_ACCESS);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testDefaultRoleIsResolvedForLightweightAccessTokens() throws Exception {
+        OrganizationRepresentation representation = createOrganization("lightweight-org");
+        OrganizationResource organization = realm.admin().organizations().get(representation.getId());
+        addMember(organization, memberEmail, "Test", "User");
+        RoleRepresentation defaultRole = organization.roles().getDefault().toRepresentation();
+
+        ClientResource client = directGrantClient();
+        ClientRepresentation clientRepresentation = client.toRepresentation();
+        String lightweightAttribute = Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED;
+        String previousLightweight = clientRepresentation.getAttributes().put(lightweightAttribute, Boolean.TRUE.toString());
+        client.update(clientRepresentation);
+        setMapperConfig(OIDCAttributeMapperHelper.INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN, Boolean.TRUE.toString());
+        setRoleMapperConfig(OIDCAttributeMapperHelper.INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN, Boolean.TRUE.toString());
+
+        try {
+            AccessTokenResponse response = authenticate("openid organization:*");
+            assertThat(response.getStatusCode(), is(Response.Status.OK.getStatusCode()));
+            AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+            List<String> roles = (List<String>) organizationData(accessToken.getOtherClaims(),
+                    OAuth2Constants.ORGANIZATION, representation.getAlias()).get(OrganizationRoleMapperUtils.ROLES);
+            assertThat(roles, hasItem(defaultRole.getName()));
+        } finally {
+            clientRepresentation.getAttributes().compute(lightweightAttribute, (key, value) -> previousLightweight);
+            client.update(clientRepresentation);
+            setMapperConfig(OIDCAttributeMapperHelper.INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN, null);
+            setRoleMapperConfig(OIDCAttributeMapperHelper.INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN, null);
+        }
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testDefaultRoleSwitchIsResolvedOnTokenExchange() throws Exception {
+        OrganizationRepresentation representation = createOrganization("exchange-org");
+        OrganizationResource organization = realm.admin().organizations().get(representation.getId());
+        addMember(organization, memberEmail, "Test", "User");
+        RoleRepresentation original = organization.roles().getDefault().toRepresentation();
+        RoleRepresentation replacement = createOrganizationRole(organization, "exchange-default");
+        String organizationId = representation.getId();
+        String replacementId = replacement.getId();
+
+        AccessTokenResponse response = authenticate("openid organization:*");
+        assertThat(response.getStatusCode(), is(Response.Status.OK.getStatusCode()));
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        List<String> initialRoles = (List<String>) organizationData(accessToken.getOtherClaims(),
+                OAuth2Constants.ORGANIZATION, representation.getAlias()).get(OrganizationRoleMapperUtils.ROLES);
+        assertThat(initialRoles, hasItem(original.getName()));
+        assertThat(initialRoles, not(hasItem(replacement.getName())));
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            OrganizationModel current = session.getProvider(OrganizationProvider.class).getById(organizationId);
+            current.setDefaultRole(realm.getRoleById(replacementId));
+        });
+
+        ClientResource client = directGrantClient();
+        ClientRepresentation clientRepresentation = client.toRepresentation();
+        String tokenExchangeAttribute = "standard.token.exchange.enabled";
+        String previousTokenExchange = clientRepresentation.getAttributes().put(tokenExchangeAttribute, Boolean.TRUE.toString());
+        client.update(clientRepresentation);
+
+        try {
+            oauth.scope("openid organization:*");
+            response = oauth.tokenExchangeRequest(response.getAccessToken())
+                    .client(clientRepresentation.getClientId(), "password")
+                    .send();
+            assertThat(response.getStatusCode(), is(Response.Status.OK.getStatusCode()));
+            accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+            List<String> exchangedRoles = (List<String>) organizationData(accessToken.getOtherClaims(),
+                    OAuth2Constants.ORGANIZATION, representation.getAlias()).get(OrganizationRoleMapperUtils.ROLES);
+            assertThat(exchangedRoles, hasItem(replacement.getName()));
+            assertThat(exchangedRoles, not(hasItem(original.getName())));
+        } finally {
+            clientRepresentation.getAttributes().compute(tokenExchangeAttribute, (key, value) -> previousTokenExchange);
+            client.update(clientRepresentation);
+        }
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testServiceAccountInheritsAndLosesDefaultRoleOnNewTokens() throws Exception {
+        OrganizationRepresentation representation = createOrganization("service-org");
+        OrganizationResource organization = realm.admin().organizations().get(representation.getId());
+        RoleRepresentation defaultRole = organization.roles().getDefault().toRepresentation();
+
+        ClientRepresentation client = ClientBuilder.create("organization-role-service-account")
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .build();
+        String clientId;
+        try (Response response = realm.admin().clients().create(client)) {
+            clientId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clients().get(clientId).remove());
+        ClientResource clientResource = realm.admin().clients().get(clientId);
+        clientResource.addOptionalClientScope(organizationScope().toRepresentation().getId());
+        UserRepresentation serviceAccount = clientResource.getServiceAccountUser();
+        organization.members().addMember(serviceAccount.getId()).close();
+
+        oauth.client(client.getClientId(), "secret");
+        oauth.scope("openid organization:*");
+        AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest();
+        assertThat(response.getStatusCode(), is(Response.Status.OK.getStatusCode()));
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        List<String> roles = (List<String>) organizationData(accessToken.getOtherClaims(), OAuth2Constants.ORGANIZATION,
+                representation.getAlias()).get(OrganizationRoleMapperUtils.ROLES);
+        assertThat(roles, hasItem(defaultRole.getName()));
+
+        organization.members().member(serviceAccount.getId()).delete().close();
+        response = oauth.doClientCredentialsGrantAccessTokenRequest();
+        assertThat(response.getStatusCode(), is(Response.Status.OK.getStatusCode()));
+        accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims(), not(hasKey(OAuth2Constants.ORGANIZATION)));
+    }
+
+    @SuppressWarnings("unchecked")
+    private void assertCustomClaimName(String claimName, String organizationAlias, String defaultRoleName, String roleName) throws Exception {
         setMapperConfig(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, claimName);
 
         AccessTokenResponse response = authenticate("openid organization:*");
@@ -167,6 +338,7 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
 
         List<String> organizationRoles = (List<String>) organizationData.get(OrganizationRoleMapperUtils.ROLES);
         assertThat(organizationData, not(hasKey("organization_roles")));
+        assertThat(organizationRoles, hasItem(defaultRoleName));
         assertThat(organizationRoles, hasItem(roleName));
         assertThat(accessToken.getOtherClaims(), not(hasKey(OAuth2Constants.ORGANIZATION)));
         if (claimName.contains(".")) {
@@ -181,6 +353,71 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
         oauth.client("direct-grant", "password");
         oauth.scope(scope);
         return oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void assertDefaultRoleSwitchIsResolvedOnRefresh(String alias, String scope) throws Exception {
+        OrganizationRepresentation representation = createOrganization(alias);
+        OrganizationResource organization = realm.admin().organizations().get(representation.getId());
+        addMember(organization, memberEmail, "Test", "User");
+        RoleRepresentation original = organization.roles().getDefault().toRepresentation();
+        RoleRepresentation replacement = createOrganizationRole(organization, alias + "-default");
+        String organizationId = representation.getId();
+        String replacementId = replacement.getId();
+
+        AccessTokenResponse response = authenticate(scope);
+        assertThat(response.getStatusCode(), is(Response.Status.OK.getStatusCode()));
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        List<String> initialRoles = (List<String>) organizationData(accessToken.getOtherClaims(),
+                OAuth2Constants.ORGANIZATION, representation.getAlias()).get(OrganizationRoleMapperUtils.ROLES);
+        assertThat(initialRoles, hasItem(original.getName()));
+        assertThat(initialRoles, not(hasItem(replacement.getName())));
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            OrganizationModel current = session.getProvider(OrganizationProvider.class).getById(organizationId);
+            current.setDefaultRole(realm.getRoleById(replacementId));
+        });
+
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        assertThat(response.getStatusCode(), is(Response.Status.OK.getStatusCode()));
+        accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        List<String> refreshedRoles = (List<String>) organizationData(accessToken.getOtherClaims(),
+                OAuth2Constants.ORGANIZATION, representation.getAlias()).get(OrganizationRoleMapperUtils.ROLES);
+        assertThat(refreshedRoles, hasItem(replacement.getName()));
+        assertThat(refreshedRoles, not(hasItem(original.getName())));
+    }
+
+    private void addOptionalClientScope(String scopeName) {
+        ClientScopeRepresentation scope = realm.admin().clientScopes().findAll().stream()
+                .filter(candidate -> scopeName.equals(candidate.getName()))
+                .findAny()
+                .orElseThrow();
+        ClientResource client = directGrantClient();
+        if (client.getOptionalClientScopes().stream().noneMatch(candidate -> scopeName.equals(candidate.getName()))) {
+            client.addOptionalClientScope(scope.getId());
+        }
+    }
+
+    private ClientResource directGrantClient() {
+        ClientRepresentation client = realm.admin().clients().findByClientId("direct-grant").stream()
+                .findAny()
+                .orElseThrow();
+        return realm.admin().clients().get(client.getId());
+    }
+
+    private void setRoleMapperConfig(String key, String value) {
+        ClientScopeResource scope = organizationScope();
+        ProtocolMapperRepresentation mapper = scope.getProtocolMappers().getMappers().stream()
+                .filter(candidate -> OrganizationRoleMembershipMapper.PROVIDER_ID.equals(candidate.getProtocolMapper()))
+                .findAny()
+                .orElseThrow();
+        if (value == null) {
+            mapper.getConfig().remove(key);
+        } else {
+            mapper.getConfig().put(key, value);
+        }
+        scope.getProtocolMappers().update(mapper.getId(), mapper);
     }
 
     private void addDirectGrantAudience() {
@@ -273,10 +510,12 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
 
     @SuppressWarnings("unchecked")
     private static void assertRoleClaims(Map<String, Object> claims, String claimName, String organizationAlias,
-            String directRole, String organizationComposite, String realmComposite, String clientId, String clientComposite) {
+            String defaultRole, String directRole, String organizationComposite, String realmComposite, String clientId,
+            String clientComposite) {
         Map<String, Object> data = organizationData(claims, claimName, organizationAlias);
         List<String> organizationRoles = (List<String>) data.get(OrganizationRoleMapperUtils.ROLES);
         assertThat(data, not(hasKey("organization_roles")));
+        assertThat(organizationRoles, hasItem(defaultRole));
         assertThat(organizationRoles, hasItem(directRole));
         assertThat(organizationRoles, hasItem(organizationComposite));
 

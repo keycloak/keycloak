@@ -20,12 +20,14 @@ import java.io.Closeable;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.NotFoundException;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.exportimport.ExportImportConfig;
@@ -35,12 +37,17 @@ import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageUtil;
+import org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity;
 import org.keycloak.testsuite.AbstractAuthTest;
 
 import org.junit.After;
@@ -104,8 +111,14 @@ public class FederatedStorageExportImportTest extends AbstractAuthTest {
 
         testingClient.server().run(session -> {
             RealmModel realm = new RealmManager(session).createRealm(REALM_NAME);
+            realm.setOrganizationsEnabled(true);
             RoleModel role = realm.addRole("test-role");
             GroupModel group = realm.createGroup("test-group");
+            OrganizationProvider organizations = session.getProvider(OrganizationProvider.class);
+            OrganizationModel organization = organizations.create("federated-export-org", "Federated export",
+                    "federated-export");
+            GroupModel organizationGroup = organizations.createGroup(organization, "internal-group", null);
+            RoleModel organizationRole = organization.addRole("federated-organization-role");
 
             List<String> attrValues = new LinkedList<>();
             attrValues.add("1");
@@ -117,7 +130,20 @@ public class FederatedStorageExportImportTest extends AbstractAuthTest {
                     getPasswordPolicy().getHashIterations());
             UserStorageUtil.userFederatedStorage(session).createCredential(realm, userId, credential);
             UserStorageUtil.userFederatedStorage(session).grantRole(realm, userId, role);
+            var federatedStorage = UserStorageUtil.userFederatedStorage(session);
+            RoleModel defaultRole = organization.getDefaultRole();
+            Assertions.assertThrows(ModelException.class, () -> federatedStorage.grantRole(realm, userId, defaultRole));
+            Assertions.assertThrows(ModelException.class, () -> federatedStorage.grantRole(realm, userId, organizationRole));
             UserStorageUtil.userFederatedStorage(session).joinGroup(realm, userId, group);
+            UserStorageUtil.userFederatedStorage(session).leaveGroup(realm, userId, group);
+            UserStorageUtil.userFederatedStorage(session).joinGroup(realm, userId, group);
+            // Simulate a legacy raw row that predates organization membership validation.
+            FederatedUserGroupMembershipEntity legacyOrganizationMembership = new FederatedUserGroupMembershipEntity();
+            legacyOrganizationMembership.setUserId(userId);
+            legacyOrganizationMembership.setStorageProviderId(new StorageId(userId).getProviderId());
+            legacyOrganizationMembership.setGroupId(organizationGroup.getId());
+            legacyOrganizationMembership.setRealmId(realm.getId());
+            session.getProvider(JpaConnectionProvider.class).getEntityManager().persist(legacyOrganizationMembership);
         });
 
         final String realmId = testRealmResource().toRepresentation().getId();
@@ -157,7 +183,9 @@ public class FederatedStorageExportImportTest extends AbstractAuthTest {
                     .collect(Collectors.toSet()).contains("UPDATE_PASSWORD"));
             Assertions.assertTrue(UserStorageUtil.userFederatedStorage(session).getRoleMappingsStream(realm, userId)
                     .collect(Collectors.toSet()).contains(role));
-            Assertions.assertTrue(UserStorageUtil.userFederatedStorage(session).getGroupsStream(realm, userId).collect(Collectors.toSet()).contains(group));
+            Set<GroupModel> groups = UserStorageUtil.userFederatedStorage(session).getGroupsStream(realm, userId)
+                    .collect(Collectors.toSet());
+            Assertions.assertEquals(Set.of(group), groups);
             List<CredentialModel> creds = UserStorageUtil.userFederatedStorage(session).getStoredCredentialsStream(realm, userId).collect(Collectors.toList());
             Assertions.assertEquals(1, creds.size());
             Assertions.assertTrue(FederatedStorageExportImportTest.getHashProvider(session, realm.getPasswordPolicy())

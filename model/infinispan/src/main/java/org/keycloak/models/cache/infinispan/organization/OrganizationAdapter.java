@@ -55,6 +55,10 @@ public class OrganizationAdapter implements OrganizationModel {
         invalidated = true;
     }
 
+    String getGroupId() {
+        return cached.getGroupId();
+    }
+
     private OrganizationModel getOrganizationModel() {
         return delegate.get().getById(cached.getId());
     }

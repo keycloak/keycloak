@@ -143,6 +143,9 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     @Override
     public void setName(String name) {
+        if (!Objects.equals(realm.getName(), name)) {
+            new OrganizationRoleGraphGuard(session, em, getId()).validateRealmNameChange(name);
+        }
         realm.setName(name);
         em.flush();
     }

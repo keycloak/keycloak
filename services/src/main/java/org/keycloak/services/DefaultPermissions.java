@@ -143,7 +143,7 @@ public class DefaultPermissions implements Permissions {
             return true;
         }
         // Group-inherited roles
-        return user.getGroupsStream().anyMatch(AdminRoles::groupHasAdminRoles);
+        return user.getRoleMappingsGroupsStream().anyMatch(AdminRoles::groupHasAdminRoles);
     }
 
     private AdminPermissionEvaluator getEvaluator(AccessToken accessToken) {

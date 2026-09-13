@@ -15,8 +15,13 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IssuedVerifiableCredentialModel;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserVerifiableCredentialModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -53,6 +58,7 @@ import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -85,6 +91,52 @@ public class AccountRestServiceRolesTest {
         assertEndpointStatus("manage-account-user", "groups", 200);
         assertEndpointStatus("view-groups-user", "groups", 200);
         assertEndpointStatus("no-access-user", "groups", 403);
+    }
+
+    @Test
+    public void groupsEndpointOmitsOrganizationGroups() throws IOException {
+        String username = "view-groups-user-with-group";
+        String[] hidden = runOnServer.fetch(session -> {
+            OrganizationProvider organizations = session.getProvider(OrganizationProvider.class);
+            OrganizationModel organization = organizations.create("account-hidden-groups", "account-hidden-groups");
+            GroupModel rootGroup = organizations.getOrganizationGroup(organization);
+            GroupModel hiddenGroup = organizations.createGroup(organization, "00-account-hidden", null);
+            UserModel user = session.users().getUserByUsername(session.getContext().getRealm(), username);
+            assertTrue(organizations.addMember(organization, user));
+            user.joinGroup(hiddenGroup);
+            return String.join("\n", organization.getId(), rootGroup.getId(),
+                    ModelToRepresentation.buildGroupPath(rootGroup), hiddenGroup.getId(),
+                    ModelToRepresentation.buildGroupPath(hiddenGroup));
+        }, String.class).split("\n");
+
+        try {
+            AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest(username, PASSWORD);
+            assertTrue(tokenResponse.isSuccess(), "Token request failed: " + tokenResponse.getErrorDescription());
+            HttpGet request = new HttpGet(realm.getBaseUrl() + "/account/groups");
+            request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + tokenResponse.getAccessToken());
+            request.addHeader(HttpHeaders.ACCEPT, "application/json");
+
+            JsonNode groups;
+            try (CloseableHttpResponse response = httpClient.execute(request)) {
+                assertEquals(200, response.getStatusLine().getStatusCode());
+                groups = new ObjectMapper().readTree(EntityUtils.toString(response.getEntity()));
+            }
+
+            assertTrue(groups.isArray());
+            assertEquals(1, groups.size());
+            assertEquals("test-group", groups.get(0).get("name").asText());
+            for (int index = 1; index < hidden.length; index++) {
+                assertFalse(groups.toString().contains(hidden[index]));
+            }
+        } finally {
+            runOnServer.run(session -> {
+                OrganizationProvider organizations = session.getProvider(OrganizationProvider.class);
+                OrganizationModel organization = organizations.getById(hidden[0]);
+                if (organization != null) {
+                    organizations.remove(organization);
+                }
+            });
+        }
     }
 
     @Test
@@ -328,6 +380,7 @@ public class AccountRestServiceRolesTest {
         public RealmBuilder configure(RealmBuilder realm) {
             return realm
                 .attribute("verifiableCredentialsEnabled", "true")
+                .organizationsEnabled(true)
                 .groups("test-group")
                 .users(
                     UserBuilder.create("manage-account-user")

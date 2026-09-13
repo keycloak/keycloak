@@ -120,7 +120,7 @@ public class EffectiveRoleMappingResource extends RoleMappingResource {
             throw new NotFoundException("Could not find group");
         }
 
-        auth.groups().requireView(group);
+        requireView(group);
         return toSortedClientRoles(
                 addSubClientRoles(addParents(group).flatMap(GroupModel::getRoleMappingsStream))
         );
@@ -154,7 +154,7 @@ public class EffectiveRoleMappingResource extends RoleMappingResource {
         return toSortedClientRoles(
                 addSubClientRoles(Stream.concat(
                 user.getRoleMappingsStream(),
-                user.getGroupsStream()
+                user.getRoleMappingsGroupsStream()
                         .flatMap(g -> addParents(g))
                         .flatMap(GroupModel::getRoleMappingsStream)))
         );

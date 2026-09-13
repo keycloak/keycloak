@@ -54,6 +54,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.jpa.JpaUserCredentialStore;
+import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.storage.StorageId;
@@ -478,6 +479,7 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void joinGroup(RealmModel realm, String userId, GroupModel group) {
+        OrganizationsValidation.validateOrganizationGroupMembership(session, session.users().getUserById(realm, userId), group, true);
         createIndex(realm, userId);
         FederatedUserGroupMembershipEntity entity = new FederatedUserGroupMembershipEntity();
         entity.setUserId(userId);
@@ -492,6 +494,7 @@ public class JpaUserFederatedStorageProvider implements
     @Override
     public void leaveGroup(RealmModel realm, String userId, GroupModel group) {
         if (userId == null || group == null) return;
+        OrganizationsValidation.validateOrganizationGroupMembership(session, session.users().getUserById(realm, userId), group, false);
 
         TypedQuery<FederatedUserGroupMembershipEntity> query1 = em.createNamedQuery("feduserMemberOf", FederatedUserGroupMembershipEntity.class);
         query1.setParameter("userId", userId);
@@ -562,6 +565,10 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void grantRole(RealmModel realm, String userId, RoleModel role) {
+        if (role != null && role.isType(RoleModel.Type.ORGANIZATION)) {
+            lockRealm(realm);
+            rejectAuthoritativeDefaultRole(realm, role);
+        }
         OrganizationsValidation.validateOrganizationRoleMapping(session.users().getUserById(realm, userId), role);
         createIndex(realm, userId);
         FederatedUserRoleMappingEntity entity = new FederatedUserRoleMappingEntity();
@@ -571,6 +578,29 @@ public class JpaUserFederatedStorageProvider implements
         entity.setRoleId(role.getId());
         em.persist(entity);
 
+    }
+
+    private void lockRealm(RealmModel realm) {
+        RealmEntity entity = em.find(RealmEntity.class, realm.getId(), LockModeType.PESSIMISTIC_WRITE);
+        if (entity == null) {
+            throw new ModelException("Realm does not exist");
+        }
+        em.flush();
+    }
+
+    private void rejectAuthoritativeDefaultRole(RealmModel realm, RoleModel role) {
+        boolean defaultRole = !em.createQuery("select organization.id from OrganizationEntity organization "
+                        + "where organization.id = :organizationId and organization.realmId = :realmId "
+                        + "and organization.defaultRoleId = :roleId", String.class)
+                .setParameter("organizationId", role.getContainerId())
+                .setParameter("realmId", realm.getId())
+                .setParameter("roleId", role.getId())
+                .setMaxResults(1)
+                .getResultList()
+                .isEmpty();
+        if (defaultRole) {
+            throw new ModelException("The default organization role is granted through organization membership");
+        }
     }
 
     @Override

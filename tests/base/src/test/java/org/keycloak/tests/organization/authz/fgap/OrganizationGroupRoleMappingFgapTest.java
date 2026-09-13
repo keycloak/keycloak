@@ -26,6 +26,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.OrganizationGroupResource;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -56,7 +57,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -77,6 +80,7 @@ public class OrganizationGroupRoleMappingFgapTest {
     private String orgId;
     private String groupId;
     private RoleRepresentation testRole;
+    private RoleRepresentation organizationRole;
 
     @BeforeEach
     public void setup() {
@@ -106,6 +110,11 @@ public class OrganizationGroupRoleMappingFgapTest {
         testRole = new RoleRepresentation("fgap-test-role", "Test role for FGAP", false);
         realm.admin().roles().create(testRole);
         testRole = realm.admin().roles().get("fgap-test-role").toRepresentation();
+
+        organizationRole = new RoleRepresentation("fgap-organization-role", "Organization role for FGAP", false);
+        try (Response response = realm.admin().organizations().get(orgId).roles().create(organizationRole)) {
+            organizationRole.setId(ApiUtil.getCreatedId(response));
+        }
     }
 
     @Test
@@ -120,17 +129,35 @@ public class OrganizationGroupRoleMappingFgapTest {
     }
 
     @Test
+    public void testManageUsersWithoutOrganizationPermissionCannotAccessOrganizationRoles() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        ClientResource realmManagement = AdminApiUtil.findClientByClientId(realm.admin(),
+                Constants.REALM_MANAGEMENT_CLIENT_ID);
+        RoleRepresentation manageUsers = realmManagement.roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
+        realm.admin().users().get(myadmin.getId()).roles().clientLevel(realmManagement.toRepresentation().getId())
+                .add(List.of(manageUsers));
+
+        assertThrows(ForbiddenException.class, () -> getAdminOrgGroup().roles().getAvailableOrganizationRoleMappings());
+    }
+
+    @Test
     public void testViewOrgPermissionAllowsListingRoleMappings() {
         UserPolicyRepresentation policy = createAdminPolicy();
         PermissionTestUtils.createPermission(clientResource, orgId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
 
         // Add role mapping using realm admin
         realm.admin().organizations().get(orgId).groups().group(groupId).roles().realmLevel().add(List.of(testRole));
+        realm.admin().organizations().get(orgId).groups().group(groupId).roles()
+                .addOrganizationRoleMappings(List.of(organizationRole));
 
         // myadmin with VIEW can list role mappings
         List<RoleRepresentation> roles = getAdminOrgGroup().roles().realmLevel().listAll();
         assertThat(roles, hasSize(1));
         assertThat(roles.get(0).getName(), is("fgap-test-role"));
+        assertThat(getAdminOrgGroup().roles().getAll().getOrganizationMappings().get("testOrg"), hasSize(1));
+        assertThat(getAdminOrgGroup().roles().getAvailableOrganizationRoleMappings(), hasSize(0));
+        assertThat(getAdminOrgGroup().toRepresentation(false).getAccess().get("view"), is(true));
+        assertThat(getAdminOrgGroup().toRepresentation(false).getAccess().get("manage"), is(false));
     }
 
     @Test
@@ -178,6 +205,24 @@ public class OrganizationGroupRoleMappingFgapTest {
         List<RoleRepresentation> roles = getAdminOrgGroup().roles().realmLevel().listAll();
         assertThat(roles, hasSize(1));
         assertThat(roles.get(0).getName(), is("fgap-test-role"));
+    }
+
+    @Test
+    public void testManageOrgAllowsOrganizationRoleMappingAndContextualDiscovery() {
+        UserPolicyRepresentation policy = createAdminPolicy();
+        PermissionTestUtils.createPermission(clientResource, orgId, ORGANIZATIONS_RESOURCE_TYPE,
+                Set.of(VIEW, MANAGE), policy);
+
+        List<RoleRepresentation> available = getAdminOrgGroup().roles().getAvailableOrganizationRoleMappings();
+        assertThat(available.stream().map(RoleRepresentation::getId).toList(), is(List.of(organizationRole.getId())));
+
+        getAdminOrgGroup().roles().addOrganizationRoleMappings(List.of(organizationRole));
+        assertThat(getAdminOrgGroup().roles().getAll().getOrganizationMappings().get("testOrg"), hasSize(1));
+        assertThat(getAdminOrgGroup().roles().getAvailableOrganizationRoleMappings(), hasSize(0));
+        assertThat(getAdminOrgGroup().toRepresentation(false).getAccess().get("manage"), is(true));
+
+        getAdminOrgGroup().roles().deleteOrganizationRoleMappings(List.of(organizationRole));
+        assertThat(getAdminOrgGroup().roles().getAll().getOrganizationMappings(), nullValue());
     }
 
     @Test

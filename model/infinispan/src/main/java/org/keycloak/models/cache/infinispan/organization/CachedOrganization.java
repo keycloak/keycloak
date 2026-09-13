@@ -48,12 +48,14 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
     private final String redirectUrl;
     private final boolean enabled;
     private final String defaultRoleId;
+    private final String groupId;
     private final LazyLoader<OrganizationModel, MultivaluedHashMap<String, String>> attributes;
     private final Set<OrganizationDomainModel> domains;
     private final Map<String, String> domainNames;
     private final Set<IdentityProviderModel> idps;
 
-    public CachedOrganization(long revision, RealmModel realm, OrganizationModel organization, Consumer<String> invalidateDomain) {
+    public CachedOrganization(long revision, RealmModel realm, OrganizationModel organization, String groupId,
+            Consumer<String> invalidateDomain) {
         super(revision, organization.getId());
         this.realm = realm.getId();
         this.name = organization.getName();
@@ -63,6 +65,7 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
         this.enabled = organization.isEnabled();
         RoleModel defaultRole = organization.getDefaultRole();
         this.defaultRoleId = defaultRole == null ? null : defaultRole.getId();
+        this.groupId = groupId;
         this.attributes = new DefaultLazyLoader<>(orgModel -> new MultivaluedHashMap<>(orgModel.getAttributes()), MultivaluedHashMap::new);
         this.domains = organization.getDomains().collect(Collectors.toSet());
         this.domainNames = Collections.synchronizedMap(new LinkedHashMap<>(16, 0.75f, true) {
@@ -109,6 +112,10 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
 
     public String getDefaultRoleId() {
         return defaultRoleId;
+    }
+
+    public String getGroupId() {
+        return groupId;
     }
 
     public MultivaluedHashMap<String, String> getAttributes(KeycloakSession session, Supplier<OrganizationModel> organizationModel) {

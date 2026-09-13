@@ -1864,6 +1864,33 @@ public class DefaultExportImportManager implements ExportImportManager {
                 }
             }
         }
+        if (groupRep.getOrganizationRoles() != null) {
+            List<RoleModel> resolvedRoles = new ArrayList<>();
+            Set<String> roleNames = new HashSet<>();
+            for (Map.Entry<String, List<String>> entry : groupRep.getOrganizationRoles().entrySet()) {
+                if (!Objects.equals(organization.getAlias(), entry.getKey())) {
+                    throw new ModelException("Organization role mappings must belong to the imported organization");
+                }
+                if (entry.getValue() == null) {
+                    throw new ModelException("Organization role mappings must contain a role list");
+                }
+                for (String roleName : entry.getValue()) {
+                    if (StringUtil.isBlank(roleName)) {
+                        throw new ModelException("Organization role mapping name is required");
+                    }
+                    String trimmedRoleName = roleName.trim();
+                    if (!roleNames.add(trimmedRoleName)) {
+                        continue;
+                    }
+                    RoleModel role = organization.getRole(trimmedRoleName);
+                    if (role == null || organization.isDefaultRole(role)) {
+                        throw new ModelException("Unable to find organization role mapping: " + roleName);
+                    }
+                    resolvedRoles.add(role);
+                }
+            }
+            resolvedRoles.forEach(group::grantRole);
+        }
 
         if (groupRep.getSubGroups() != null) {
             for (GroupRepresentation subGroup : groupRep.getSubGroups()) {

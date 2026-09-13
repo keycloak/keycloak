@@ -34,8 +34,6 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
-import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
@@ -46,6 +44,7 @@ import org.keycloak.models.GroupModel.GroupMemberJoinEvent;
 import org.keycloak.models.GroupModel.GroupMemberLeaveEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.MembershipMetadata;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleModel.RoleGrantedEvent;
@@ -59,7 +58,6 @@ import org.keycloak.models.jpa.entities.UserRequiredActionEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
-import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.representations.idm.MembershipType;
 
@@ -403,21 +401,6 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         return em.createQuery(queryBuilder);
     }
 
-    private TypedQuery<Long> createCountGroupsQuery() {
-        // we query ids only as the group  might be cached and following the @ManyToOne will result in a load
-        // even if we're getting just the id.
-        CriteriaBuilder builder = em.getCriteriaBuilder();
-        CriteriaQuery<Long> queryBuilder = builder.createQuery(Long.class);
-        Root<UserGroupMembershipEntity> root = queryBuilder.from(UserGroupMembershipEntity.class);
-
-        List<Predicate> predicates = new ArrayList<>();
-        predicates.add(builder.equal(root.get("user"), getEntity()));
-
-        queryBuilder.select(builder.count(root));
-        queryBuilder.where(predicates.toArray(new Predicate[0]));
-        return em.createQuery(queryBuilder);
-    }
-
     @Override
     public Stream<GroupModel> getGroupsStream() {
         return getGroupsStream(null, null, null);
@@ -425,29 +408,32 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public Stream<GroupModel> getGroupsStream(String search, Integer first, Integer max) {
+        return session.groups().getGroupsStream(realm, getGroupIdsStream(), search, first, max);
+    }
+
+    @Override
+    public Stream<GroupModel> getRoleMappingsGroupsStream() {
+        return getGroupIdsStream()
+                .map(id -> session.groups().getGroupById(realm, id))
+                .filter(Objects::nonNull)
+                .sorted(GroupModel.COMPARE_BY_NAME);
+    }
+
+    private Stream<String> getGroupIdsStream() {
         if (groupIdsCache == null) {
             groupIdsCache = createGetGroupsQuery().getResultList();
         }
-        return session.groups().getGroupsStream(realm, groupIdsCache.stream(), search, first, max);
+        return groupIdsCache.stream();
     }
 
     @Override
     public long getGroupsCount() {
-        Long result = createCountGroupsQuery().getSingleResult();
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
-            if (result > 0) {
-                // remove from the count the organization group membership
-                OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
-                result -= provider.getByMember(this).count();
-            }
-        }
-        return result;
+        return getGroupsCountByNameContaining(null);
     }
 
     @Override
     public long getGroupsCountByNameContaining(String search) {
-        if (search == null) return getGroupsCount();
-        return session.groups().getGroupsCount(realm, closing(createGetGroupsQuery().getResultStream()), search);
+        return session.groups().getGroupsCount(realm, getGroupIdsStream(), search);
     }
 
     @Override
@@ -469,6 +455,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void joinGroup(GroupModel group, MembershipMetadata metadata) {
+        OrganizationsValidation.validateOrganizationGroupMembership(session, this, group, true);
         if (hasDirectGroup(group)) return;
         joinGroupImpl(group, metadata);
     }
@@ -493,6 +480,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void leaveGroup(GroupModel group) {
+        OrganizationsValidation.validateOrganizationGroupMembership(session, this, group, false);
         if (user == null || group == null) return;
 
         TypedQuery<UserGroupMembershipEntity> query = getUserGroupMappingQuery(group);
@@ -511,7 +499,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public boolean isMemberOf(GroupModel group) {
-        return RoleUtils.isMember(getGroupsStream(), group);
+        return RoleUtils.isMember(getRoleMappingsGroupsStream(), group);
     }
 
     protected TypedQuery<UserGroupMembershipEntity> getUserGroupMappingQuery(GroupModel group) {
@@ -525,7 +513,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     @Override
     public boolean hasRole(RoleModel role) {
         return RoleUtils.hasRole(getRoleMappingsStream(), role)
-                || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
+                || RoleUtils.hasRoleFromGroup(getRoleMappingsGroupsStream(), role, true);
     }
 
     protected TypedQuery<UserRoleMappingEntity> getUserRoleMappingEntityTypedQuery(RoleModel role) {
@@ -537,10 +525,29 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void grantRole(RoleModel role) {
+        if (role != null && role.isType(RoleModel.Type.ORGANIZATION)) {
+            new OrganizationRoleGraphGuard(session, em, realm.getId()).lockRealm();
+            rejectAuthoritativeDefaultRole(role);
+        }
         OrganizationsValidation.validateOrganizationRoleMapping(this, role);
         if (hasDirectRole(role)) return;
         grantRoleImpl(role);
         RoleGrantedEvent.fire(role, this, session);
+    }
+
+    private void rejectAuthoritativeDefaultRole(RoleModel role) {
+        boolean defaultRole = !em.createQuery("select organization.id from OrganizationEntity organization "
+                        + "where organization.id = :organizationId and organization.realmId = :realmId "
+                        + "and organization.defaultRoleId = :roleId", String.class)
+                .setParameter("organizationId", role.getContainerId())
+                .setParameter("realmId", realm.getId())
+                .setParameter("roleId", role.getId())
+                .setMaxResults(1)
+                .getResultList()
+                .isEmpty();
+        if (defaultRole) {
+            throw new ModelException("The default organization role is granted through organization membership");
+        }
     }
 
     @Override

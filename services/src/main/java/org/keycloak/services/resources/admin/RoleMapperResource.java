@@ -19,8 +19,10 @@ package org.keycloak.services.resources.admin;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -58,6 +60,8 @@ import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -146,6 +150,8 @@ public class RoleMapperResource {
         List<RoleRepresentation> realmRolesRepresentation = new ArrayList<>();
         Map<String, ClientMappingsRepresentation> appMappings = new HashMap<>();
         Map<String, List<RoleRepresentation>> orgMappings = new HashMap<>();
+        OrganizationGroupContext organizationGroup = roleMapper instanceof GroupModel
+                ? getVisibleOrganizationGroup(false) : null;
 
         final AtomicReference<ClientMappingsRepresentation> mappings = new AtomicReference<>();
 
@@ -166,6 +172,11 @@ public class RoleMapperResource {
                 mappings.get().getMappings().add(ModelToRepresentation.toBriefRepresentation(roleMapping));
             } else if (container instanceof OrganizationModel) {
                 OrganizationModel org = (OrganizationModel) container;
+                if (roleMapper instanceof GroupModel && (organizationGroup == null
+                        || !Objects.equals(organizationGroup.organization().getId(), org.getId())
+                        || organizationGroup.organization().isDefaultRole(roleMapping))) {
+                    return;
+                }
                 List<RoleRepresentation> orgRolesList = orgMappings.computeIfAbsent(org.getAlias(), k -> new ArrayList<>());
                 orgRolesList.add(ModelToRepresentation.toBriefRepresentation(roleMapping));
             }
@@ -369,41 +380,38 @@ public class RoleMapperResource {
     }
 
     /**
-     * Get organization-level roles that can be mapped to a group
+     * Get organization-level roles that can be mapped to a visible organization group.
      *
-     * @return
+     * @return available organization roles
      */
     @Path("organizations/available")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
-    @Operation(summary = "Get organization-level roles that can be mapped")
+    @Operation(summary = "Get organization-level roles that can be mapped to a group")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RoleRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<RoleRepresentation> getAvailableOrganizationRoleMappings() {
         viewPermission.require();
-
-        if (!(roleMapper instanceof GroupModel)) {
+        OrganizationGroupContext context = getVisibleOrganizationGroup(false);
+        if (context == null) {
             return Stream.empty();
         }
 
-        GroupModel group = (GroupModel) roleMapper;
-        OrganizationModel organization = group.getOrganization();
-        
-        if (organization == null) {
-            return Stream.empty();
-        }
-
-        return organization.getRolesStream()
+        return context.organization().getRolesStream()
+                .filter(role -> !context.organization().isDefaultRole(role))
+                .filter(auth.roles()::canView)
+                .filter(this::canMapRole)
                 .filter(((Predicate<RoleModel>) roleMapper::hasDirectRole).negate())
+                .filter(role -> isValidOrganizationGroupRole(context.group(), role))
                 .map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
-     * Add organization-level role mappings to a group
+     * Add organization-level role mappings to a visible organization group.
      *
      * @param roles Roles to add
      */
@@ -411,7 +419,7 @@ public class RoleMapperResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
-    @Operation(summary = "Add organization-level role mappings")
+    @Operation(summary = "Add organization-level role mappings to a group")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Invalid input"),
@@ -422,31 +430,20 @@ public class RoleMapperResource {
 
         logger.debugv("** addOrganizationRoleMappings: {0}", roles);
 
-        if (!(roleMapper instanceof GroupModel)) {
-            throw new BadRequestException("Organization role mappings can only be assigned to groups");
+        OrganizationGroupContext context = getVisibleOrganizationGroup(true);
+        List<RoleModel> resolvedRoles = resolveOrganizationRoles(context, roles, true);
+        try {
+            resolvedRoles.forEach(roleMapper::grantRole);
+        } catch (RuntimeException cause) {
+            markRollback();
+            throw cause;
         }
-
-        GroupModel group = (GroupModel) roleMapper;
-        OrganizationModel organization = group.getOrganization();
-        
-        if (organization == null) {
-            throw new BadRequestException("Group does not belong to an organization");
-        }
-
-        for (RoleRepresentation roleRep : roles) {
-            RoleModel roleModel = realm.getRoleById(roleRep.getId());
-
-            if (roleModel == null || !roleModel.getContainer().equals(organization)) {
-                throw new BadRequestException("Role not found");
-            }
-            
-            roleMapper.grantRole(roleModel);
-            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), roleModel.getId()).success();
-        }
+        resolvedRoles.forEach(role -> adminEvent.operation(OperationType.CREATE)
+                .resourcePath(session.getContext().getUri(), role.getId()).success());
     }
 
     /**
-     * Delete organization-level role mappings
+     * Delete organization-level role mappings from a visible organization group.
      *
      * @param roles Roles to remove
      */
@@ -454,7 +451,7 @@ public class RoleMapperResource {
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
-    @Operation(summary = "Delete organization-level role mappings")
+    @Operation(summary = "Delete organization-level role mappings from a group")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Invalid input"),
@@ -463,21 +460,109 @@ public class RoleMapperResource {
     public void deleteOrganizationRoleMappings(@Parameter(description = "Roles to remove") List<RoleRepresentation> roles) {
         managePermission.require();
 
-        if (!(roleMapper instanceof GroupModel)) {
-            throw new BadRequestException("Organization role mappings can only be assigned to groups");
+        OrganizationGroupContext context = getVisibleOrganizationGroup(true);
+        List<RoleModel> resolvedRoles = resolveOrganizationRoles(context, roles, false);
+        try {
+            resolvedRoles.forEach(roleMapper::deleteRoleMapping);
+        } catch (RuntimeException cause) {
+            markRollback();
+            throw cause;
         }
+        resolvedRoles.forEach(role -> adminEvent.operation(OperationType.DELETE)
+                .resourcePath(session.getContext().getUri(), role.getId()).success());
+    }
 
-        GroupModel group = (GroupModel) roleMapper;
+    private OrganizationGroupContext getVisibleOrganizationGroup(boolean failOnInvalid) {
+        if (!(roleMapper instanceof GroupModel group) || !GroupModel.Type.ORGANIZATION.equals(group.getType())) {
+            return invalidOrganizationGroup(failOnInvalid, "Organization role mappings can only be assigned to organization groups");
+        }
         OrganizationModel organization = group.getOrganization();
+        OrganizationModel current = session.getContext().getOrganization();
+        boolean validOrganization = organization != null && organization.getRealm() != null && current != null
+                && Objects.equals(organization.getId(), current.getId())
+                && Objects.equals(organization.getRealm().getId(), current.getRealm().getId())
+                && Objects.equals(realm.getId(), organization.getRealm().getId());
+        if (!validOrganization) return invalidOrganizationGroup(failOnInvalid, "Group does not belong to the current organization");
+        GroupModel root = session.getProvider(OrganizationProvider.class).getOrganizationGroup(organization);
+        boolean visible = root != null && !Objects.equals(root.getId(), group.getId())
+                && isAnchoredOrganizationGroup(group, root, organization);
+        if (!visible) return invalidOrganizationGroup(failOnInvalid, "The internal organization group is not publicly configurable");
+        return new OrganizationGroupContext(group, organization);
+    }
 
+    private boolean isAnchoredOrganizationGroup(GroupModel group, GroupModel root, OrganizationModel organization) {
+        Set<String> visited = new HashSet<>();
+        GroupModel current = group;
+        boolean anchored = false;
+        while (current != null && visited.add(current.getId())) {
+            OrganizationModel owner = current.getOrganization();
+            if (!GroupModel.Type.ORGANIZATION.equals(current.getType()) || owner == null || owner.getRealm() == null
+                    || !Objects.equals(organization.getId(), owner.getId())
+                    || !Objects.equals(realm.getId(), owner.getRealm().getId())) break;
+            if (Objects.equals(root.getId(), current.getId())) {
+                anchored = current.getParent() == null;
+                break;
+            }
+            current = current.getParent();
+        }
+        return anchored;
+    }
+
+    private OrganizationGroupContext invalidOrganizationGroup(boolean failOnInvalid, String message) {
+        if (failOnInvalid) {
+            throw new BadRequestException(message);
+        }
+        return null;
+    }
+
+    private List<RoleModel> resolveOrganizationRoles(OrganizationGroupContext context,
+            List<RoleRepresentation> roles, boolean validateGrant) {
+        if (roles == null) {
+            throw new BadRequestException("Roles are required");
+        }
+        Map<String, RoleModel> resolved = new LinkedHashMap<>();
         for (RoleRepresentation roleRep : roles) {
-            RoleModel roleModel = realm.getRoleById(roleRep.getId());
-            if (roleModel == null || !roleModel.getContainer().equals(organization)) {
+            if (roleRep == null || roleRep.getId() == null) {
+                throw new BadRequestException("Role id is required");
+            }
+            RoleModel role = realm.getRoleById(roleRep.getId());
+            if (role == null || !role.isType(RoleModel.Type.ORGANIZATION)
+                    || !(role.getContainer() instanceof OrganizationModel roleOrganization)
+                    || !Objects.equals(context.organization().getId(), roleOrganization.getId())
+                    || roleOrganization.getRealm() == null
+                    || !Objects.equals(context.organization().getRealm().getId(), roleOrganization.getRealm().getId())
+                    || context.organization().isDefaultRole(role)) {
                 throw new BadRequestException("Role not found");
             }
-            roleMapper.deleteRoleMapping(roleModel);
-            adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri(), roleModel.getId()).success();
+            auth.roles().requireMapRole(role);
+            if (validateGrant) {
+                try {
+                    OrganizationsValidation.validateOrganizationRoleGroupMapping(session, context.group(), role);
+                } catch (ModelException cause) {
+                    throw new BadRequestException(cause.getMessage(), cause);
+                }
+            }
+            resolved.putIfAbsent(role.getId(), role);
         }
+        return List.copyOf(resolved.values());
+    }
+
+    private boolean isValidOrganizationGroupRole(GroupModel group, RoleModel role) {
+        try {
+            OrganizationsValidation.validateOrganizationRoleGroupMapping(session, group, role);
+            return true;
+        } catch (ModelException ignored) {
+            return false;
+        }
+    }
+
+    private void markRollback() {
+        if (session.getTransactionManager().isActive()) {
+            session.getTransactionManager().setRollbackOnly();
+        }
+    }
+
+    private record OrganizationGroupContext(GroupModel group, OrganizationModel organization) {
     }
 
     @Path("clients/{client-id}")

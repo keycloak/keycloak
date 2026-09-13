@@ -18,6 +18,8 @@
 package org.keycloak.organization.jpa;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -129,6 +131,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         entity.setId(id != null ? id : KeycloakModelUtils.generateId());
         entity.setRealmId(getRealm().getId());
         OrganizationAdapter adapter = new OrganizationAdapter(session, getRealm(), entity, this);
+        OrganizationModel current = Organizations.resolveOrganization(session);
 
         try {
             session.getContext().setOrganization(adapter);
@@ -149,7 +152,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
             createDefaultRole(adapter);
         } finally {
-            session.getContext().setOrganization(null);
+            session.getContext().setOrganization(current);
         }
 
         return adapter;
@@ -158,9 +161,11 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     @Override
     public boolean remove(OrganizationModel organization) {
         OrganizationEntity entity = getEntity(organization.getId());
+        OrganizationAdapter persistentOrganization = new OrganizationAdapter(session, getRealm(), entity, this);
+        OrganizationModel current = Organizations.resolveOrganization(session);
 
         try {
-            session.getContext().setOrganization(organization);
+            session.getContext().setOrganization(persistentOrganization);
             RealmModel realm = session.realms().getRealm(getRealm().getId());
 
             // check if the realm is being removed so that we don't need to remove manually remove any other data but the org
@@ -171,20 +176,21 @@ public class JpaOrganizationProvider implements OrganizationProvider {
                     OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
                     //TODO: won't scale, requires a better mechanism for bulk deleting users
                     userProvider.getGroupMembersStream(realm, group).forEach(userModel -> provider.removeMember(organization, userModel));
+                    persistentOrganization.clearDefaultRoleForRemoval();
                     groupProvider.removeGroup(realm, group);
                 }
 
                 organization.getIdentityProviders().forEach((model) -> removeIdentityProvider(organization, model));
             }
 
-            session.roles().removeRoles(organization);
+            session.roles().removeRoles(persistentOrganization);
 
             OrganizationModel.OrganizationRemovedEvent.fire(organization, session);
 
             em.remove(entity);
             em.flush();
         } finally {
-            session.getContext().setOrganization(null);
+            session.getContext().setOrganization(current);
         }
 
         return true;
@@ -255,9 +261,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             return false;
         }
 
-        if (current == null) {
-            session.getContext().setOrganization(organization);
-        }
+        session.getContext().setOrganization(organization);
 
         try {
             GroupModel group = getOrganizationGroup(entity);
@@ -267,12 +271,9 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             }
 
             user.joinGroup(group, metadata);
-            grantDefaultRole(organization, user);
             OrganizationModel.OrganizationMemberJoinEvent.fire(organization, user, session);
         } finally {
-            if (current == null) {
-                session.getContext().setOrganization(null);
-            }
+            session.getContext().setOrganization(current);
         }
 
         return true;
@@ -544,9 +545,19 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         throwExceptionIfObjectIsNull(role, "Role");
 
         GroupModel group = getOrganizationGroup(organization);
-        Stream<UserModel> roleMembers = userProvider.getGroupMembersStream(getRealm(), group, search, false, null, null)
-                .filter(user -> user.hasDirectRole(role));
-        return paginatedStream(roleMembers, first, max);
+        Map<String, UserModel> uniqueMembers = new LinkedHashMap<>();
+        try (Stream<UserModel> members = userProvider.getGroupMembersStream(getRealm(), group, search, false, null, null)) {
+            Stream<UserModel> roleMembers = organization.isDefaultRole(role)
+                    ? members
+                    : members.filter(user -> user.hasDirectRole(role));
+            roleMembers.forEach(user -> uniqueMembers.putIfAbsent(user.getId(), user));
+        }
+
+        Comparator<UserModel> stableOrder = Comparator
+                .comparing((UserModel user) -> Objects.toString(user.getUsername(), ""), String.CASE_INSENSITIVE_ORDER)
+                .thenComparing(user -> Objects.toString(user.getUsername(), ""))
+                .thenComparing(UserModel::getId);
+        return paginatedStream(uniqueMembers.values().stream().sorted(stableOrder), first, max);
     }
 
     private Predicate[] getSearchOptionPredicateArray(String value, boolean exact, CriteriaBuilder builder, From<?, UserEntity> from) {
@@ -998,9 +1009,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         } else {
             OrganizationModel current = Organizations.resolveOrganization(session);
 
-            if (current == null) {
-                session.getContext().setOrganization(organization);
-            }
+            session.getContext().setOrganization(organization);
 
             try {
                 removeOrganizationRoleMappings(organization, member);
@@ -1009,9 +1018,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
                 // Remove from internal organization group
                 member.leaveGroup(getOrganizationGroup(organization));
             } finally {
-                if (current == null) {
-                    session.getContext().setOrganization(null);
-                }
+                session.getContext().setOrganization(current);
             }
         }
 
@@ -1076,13 +1083,6 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         RoleModel defaultRole = organization.addRole(Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-" + organization.getAlias().toLowerCase(Locale.ROOT));
         defaultRole.setDescription("${role_default-roles}");
         organization.setDefaultRole(defaultRole);
-    }
-
-    private void grantDefaultRole(OrganizationModel organization, UserModel user) {
-        RoleModel defaultRole = organization.getDefaultRole();
-        if (defaultRole != null) {
-            user.grantRole(defaultRole);
-        }
     }
 
     private void removeOrganizationRoleMappings(OrganizationModel organization, UserModel user) {
