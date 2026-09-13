@@ -224,15 +224,18 @@ public class LDAPPaginationTest {
 
     @Test
     public void testLoadUsersByUniqueAttributeOmitsRejectedEntryFromPage() {
-        final int totalUsers = 6;
-        final int firstResult = 2;
+        final int totalUsers = 4;
+        final int firstResult = 0;
         final int maxResults = 4;
-        final int rejectedIndex = 3;
-        final String rejectedUsername = "uniqueattrpagerejected<em>user";
+        final int rejectedIndex = 1;
+        // Distinct prefix from testLoadUsersByUniqueAttributeImportsOnlyRequestedPage above: removeAllLDAPUsers()
+        // only clears the LDAP directory between tests, not local users already imported from an earlier method
+        // in this class - reusing a username here could collide with one of those and hide the rejection.
+        final String rejectedUsername = "rejectedpageuniqueattruser<em>";
 
-        // The requested window (firstResult..firstResult+maxResults) is made to cover exactly the remaining
-        // entries, so which physical LDAP entry the rejected one turns out to be doesn't depend on result
-        // ordering: it is guaranteed to fall inside the page regardless.
+        // firstResult=0 and maxResults=totalUsers make the requested window cover every entry, so which physical
+        // LDAP entry the rejected one turns out to be doesn't depend on result ordering: it is guaranteed to fall
+        // inside the page regardless.
         managedRealm.updateWithCleanup(r -> r.editUsernameAllowed(false));
         setValidateUserProfile(true);
         try {
@@ -245,7 +248,7 @@ public class LDAPPaginationTest {
 
                 List<String> usernames = new ArrayList<>();
                 for (int i = 0; i < totalUsers; i++) {
-                    String username = (i == rejectedIndex) ? rejectedUsername : "uniqueattrpageuser" + i;
+                    String username = (i == rejectedIndex) ? rejectedUsername : "pageuniqueattruser" + i;
                     LDAPTestUtils.addLDAPUser(ldapProvider, realm, username, "First" + i, "Last" + i,
                             username + "@example.org", null, "4578");
                     usernames.add(username);
@@ -274,11 +277,11 @@ public class LDAPPaginationTest {
 
     @Test
     public void testLoadUsersByDNsOmitsRejectedEntryFromPage() {
-        final int totalUsers = 6;
-        final int firstResult = 2;
+        final int totalUsers = 4;
+        final int firstResult = 0;
         final int maxResults = 4;
-        final int rejectedIndex = 3;
-        final String rejectedUsername = "dnpagerejected<em>user";
+        final int rejectedIndex = 1;
+        final String rejectedUsername = "rejectedpagednuser<em>";
 
         managedRealm.updateWithCleanup(r -> r.editUsernameAllowed(false));
         setValidateUserProfile(true);
@@ -292,7 +295,7 @@ public class LDAPPaginationTest {
 
                 List<LDAPDn> dns = new ArrayList<>();
                 for (int i = 0; i < totalUsers; i++) {
-                    String username = (i == rejectedIndex) ? rejectedUsername : "dnpageuser" + i;
+                    String username = (i == rejectedIndex) ? rejectedUsername : "pagednuser" + i;
                     LDAPObject ldapUser = LDAPTestUtils.addLDAPUser(ldapProvider, realm, username, "First" + i,
                             "Last" + i, username + "@example.org", null, "4578");
                     dns.add(ldapUser.getDn());
