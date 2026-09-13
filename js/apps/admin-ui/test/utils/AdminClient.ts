@@ -336,6 +336,7 @@ class AdminClient {
     idpDisplayName: string,
     alias: string,
     realm: string = this.#client.realmName,
+    config: Record<string, string> = {},
   ) {
     await this.#login();
     const identityProviders =
@@ -346,6 +347,7 @@ class AdminClient {
       providerId: idp?.id!,
       displayName: idpDisplayName,
       alias: alias,
+      config,
     });
   }
 
@@ -461,6 +463,18 @@ class AdminClient {
     await this.#withRealm(realm, async () => {
       const orgId = await this.#findOrgId(orgName);
       await this.#client.organizations.addMember({ orgId, userId });
+    });
+  }
+
+  async linkIdpToOrganization(
+    orgName: string,
+    alias: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    await this.#withRealm(realm, async () => {
+      const orgId = await this.#findOrgId(orgName);
+      await this.#client.organizations.linkIdp({ orgId, alias });
     });
   }
 
