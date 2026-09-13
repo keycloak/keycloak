@@ -441,6 +441,34 @@ public class LDAPUserProfileValidationTest {
         }
     }
 
+    @Test
+    public void testHardcodedAttributeMapperModelPropertyNotAddedAsUserProfileAttribute() {
+        final String username = "hardcodedenableduser";
+
+        addHardcodedAttributeMapper("enabled", "true");
+        try {
+            runOnServer.run(addLdapUser(username, "Valid", "User", "hardcoded-enabled-user@example.org"));
+
+            List<UserRepresentation> found = managedRealm.admin().users().search(username, true);
+            Assertions.assertEquals(1, found.size(), "Sanity check: user should have been imported.");
+
+            // "enabled" is a UserModel bean property, not a real User Profile attribute - User Profile has no
+            // concept of it. Exposing it via getUserProfileAttributes() would make decorateUserProfile() fabricate
+            // a bogus, disconnected "enabled" attribute whose edits would just write a plain custom attribute
+            // instead of actually enabling/disabling the user.
+            runOnServer.run(session -> {
+                RealmModel realm = session.getContext().getRealm();
+                UserModel user = session.users().getUserByUsername(realm, username);
+                UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
+                UserProfile profile = profileProvider.create(UserProfileContext.UPDATE_PROFILE, user);
+                Assertions.assertFalse(profile.getAttributes().nameSet().contains("enabled"),
+                        "'enabled' must not be exposed as a User Profile attribute by HardcodedAttributeMapper.");
+            });
+        } finally {
+            removeHardcodedAttributeMapper();
+        }
+    }
+
     private void addHardcodedAttributeMapper(String userModelAttribute, String attributeValue) {
         runOnServer.run(session -> {
             RealmModel realm = session.getContext().getRealm();

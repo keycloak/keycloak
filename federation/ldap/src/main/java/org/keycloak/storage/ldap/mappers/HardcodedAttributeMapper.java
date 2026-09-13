@@ -32,6 +32,7 @@ import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.userprofile.UserProfileUtil;
 
 import org.jboss.logging.Logger;
 
@@ -74,7 +75,20 @@ public class HardcodedAttributeMapper extends AbstractLDAPStorageMapper {
         // never read from LDAP, only hardcoded on import - so it must never be searchable via searchLDAPByAttributes,
         // which would otherwise build a filter against a non-existent (or unrelated) LDAP attribute.
         String userModelAttrName = getUserModelAttribute();
-        return userModelAttrName == null ? Collections.emptySet() : Set.of(userModelAttrName);
+        if (userModelAttrName == null) {
+            return Collections.emptySet();
+        }
+
+        // This mapper can also target a UserModel bean property (e.g. "enabled", "emailVerified" - see
+        // setPropertyOnUserModel()) rather than a custom attribute. Only expose it here if it is either a genuine
+        // custom attribute (not a model property at all) or one of the few model properties User Profile itself
+        // manages as a root attribute (username, email, firstName, lastName, locale). Any other model property has
+        // no corresponding User Profile attribute, so exposing it here would make decorateUserProfile() fabricate a
+        // bogus, disconnected attribute (e.g. an "enabled" field whose edits write a plain custom attribute instead
+        // of actually enabling/disabling the user) instead of leaving it alone.
+        boolean isOtherModelProperty = userModelProperties.containsKey(userModelAttrName.toLowerCase())
+                && !UserProfileUtil.isRootAttribute(userModelAttrName);
+        return isOtherModelProperty ? Collections.emptySet() : Set.of(userModelAttrName);
     }
 
     @Override
