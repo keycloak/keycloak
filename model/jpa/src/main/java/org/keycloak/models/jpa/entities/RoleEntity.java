@@ -47,7 +47,7 @@ import org.hibernate.annotations.Nationalized;
 //@DynamicInsert
 //@DynamicUpdate
 @Table(name="KEYCLOAK_ROLE", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "NAME", "CLIENT_REALM_CONSTRAINT" })
+        @UniqueConstraint(columnNames = { "NAME", "TYPE", "CLIENT_REALM_CONSTRAINT" })
 })
 @NamedQueries({
         @NamedQuery(name="getClientRoles", query="select role from RoleEntity role where role.type = 'CLIENT' and role.clientId = :client order by role.name"),
@@ -107,8 +107,8 @@ public class RoleEntity {
     @Column(name="ORG_ID")
     private String organizationId;
 
-    // Hack to ensure that either name+client or name+realm are unique. Needed due to MS-SQL as it don't allow multiple NULL values in the column, which is part of constraint
-    @Column(name="CLIENT_REALM_CONSTRAINT", length = 36)
+    // Non-null container ID used with the role type to keep names unique within each container.
+    @Column(name="CLIENT_REALM_CONSTRAINT", length = 255)
     private String clientRealmConstraint;
 
     // Explicitly not using OrphanRemoval as we're handling the removal manually through HQL but at the same time we still

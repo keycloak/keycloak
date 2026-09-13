@@ -40,6 +40,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.exportimport.ExportImportConfig;
+import org.keycloak.exportimport.Strategy;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileImportProviderFactory;
 import org.keycloak.models.AdminRoles;
@@ -75,6 +76,8 @@ import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -104,8 +107,9 @@ public class OrganizationRoleExportImportTest extends AbstractOrganizationTest {
         keys.forEach(properties::remove);
     }
 
-    @Test
-    public void shouldPreserveOrganizationRolesAcrossRealmExportImport() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void shouldPreserveOrganizationRolesAcrossRealmExportImport(boolean overwriteExisting) throws Exception {
         RealmResource realmResource = realm.admin();
         OrganizationRepresentation organizationRepresentation = createOrganization("acme");
         OrganizationResource organization = realmResource.organizations().get(organizationRepresentation.getId());
@@ -113,6 +117,7 @@ public class OrganizationRoleExportImportTest extends AbstractOrganizationTest {
 
         RoleRepresentation realmRole = new RoleRepresentation("export-realm-role", null, false);
         realmResource.roles().create(realmRole);
+        realm.cleanup().add(r -> r.roles().get("export-realm-role").remove());
         realmRole = realmResource.roles().get(realmRole.getName()).toRepresentation();
 
         ClientRepresentation client = new ClientRepresentation();
@@ -122,6 +127,7 @@ public class OrganizationRoleExportImportTest extends AbstractOrganizationTest {
         try (Response response = realmResource.clients().create(client)) {
             clientId = ApiUtil.getCreatedId(response);
         }
+        realm.cleanup().add(r -> r.clients().get(clientId).remove());
         RoleRepresentation clientRole = new RoleRepresentation("export-client-role", null, false);
         realmResource.clients().get(clientId).roles().create(clientRole);
         clientRole = realmResource.clients().get(clientId).roles().get(clientRole.getName()).toRepresentation();
@@ -172,9 +178,15 @@ public class OrganizationRoleExportImportTest extends AbstractOrganizationTest {
         assertExportedRealm(exportedRealm, organizationRepresentation.getAlias(), defaultRole.getName(), customRole,
                 groupRole, realmRole.getName(), client.getClientId(), clientRole.getName(), member.getUsername());
 
-        realmResource.remove();
+        if (overwriteExisting) {
+            // A CLI import starts with an empty cache and removes the existing realm in the import transaction.
+            realmResource.clearRealmCache();
+        } else {
+            realmResource.remove();
+        }
         runOnServerMaster.run(ExportImportHelper.setProvider(SingleFileImportProviderFactory.PROVIDER_ID));
         runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
+        runOnServerMaster.run(ExportImportHelper.setStrategy(Strategy.OVERWRITE_EXISTING));
         runOnServerMaster.run(ExportImportHelper.runImport());
 
         RealmResource importedRealm = adminClient.realm(realm.getName());

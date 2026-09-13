@@ -313,6 +313,7 @@
         <addColumn tableName="ORG">
             <column name="DEFAULT_ROLE_ID" type="VARCHAR(36)"/>
         </addColumn>
+        <dropUniqueConstraint tableName="KEYCLOAK_ROLE" constraintName="UK_J3RWUVD56ONTGSUHOGM184WW2-2"/>
     </changeSet>
 
     <changeSet author="keycloak" id="26.8.0-40585-organization-roles-migrate-data">
@@ -321,6 +322,8 @@
 
     <changeSet author="keycloak" id="26.8.0-40585-organization-roles-constraints">
         <addNotNullConstraint tableName="KEYCLOAK_ROLE" columnName="TYPE" columnDataType="VARCHAR(32)"/>
+        <addUniqueConstraint tableName="KEYCLOAK_ROLE" columnNames="NAME, TYPE, CLIENT_REALM_CONSTRAINT"
+                             constraintName="UK_ROLE_NAME_TYPE_CONTAINER"/>
 
         <addForeignKeyConstraint baseTableName="KEYCLOAK_ROLE"
                                  baseColumnNames="ORG_ID"

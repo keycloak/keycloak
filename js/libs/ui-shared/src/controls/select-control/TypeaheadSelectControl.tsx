@@ -51,6 +51,7 @@ export const TypeaheadSelectControl = <
   onFilter,
   variant,
   isFullWidth = true,
+  isDisabled = false,
   ...rest
 }: SelectControlProps<T, P>) => {
   const {
@@ -202,15 +203,21 @@ export const TypeaheadSelectControl = <
                 ref={ref}
                 id={id || name}
                 variant="typeahead"
-                onClick={() => {
-                  setOpen(!open);
-                  textInputRef.current?.focus();
-                }}
+                onClick={
+                  isDisabled
+                    ? undefined
+                    : () => {
+                        setOpen(!open);
+                        textInputRef.current?.focus();
+                      }
+                }
                 isExpanded={open}
                 isFullWidth={isFullWidth}
+                isDisabled={isDisabled}
+                aria-disabled={isDisabled}
                 status={get(errors, name) ? MenuToggleStatus.danger : undefined}
               >
-                <TextInputGroup isPlain>
+                <TextInputGroup isPlain isDisabled={isDisabled}>
                   <TextInputGroupMain
                     placeholder={placeholderText}
                     value={
@@ -245,6 +252,7 @@ export const TypeaheadSelectControl = <
                             (selection: string, index: number) => (
                               <Chip
                                 key={index}
+                                isReadOnly={isDisabled}
                                 onClick={(ev) => {
                                   ev.stopPropagation();
                                   field.onChange(
@@ -270,6 +278,7 @@ export const TypeaheadSelectControl = <
                     {(!!filterValue || field.value) && (
                       <Button
                         variant="plain"
+                        isDisabled={isDisabled}
                         onClick={() => {
                           setFilterValue("");
                           field.onChange(isTypeaheadMulti ? [] : "");
@@ -295,7 +304,7 @@ export const TypeaheadSelectControl = <
                 setOpen(false);
               }
             }}
-            isOpen={open}
+            isOpen={!isDisabled && open}
           >
             <SelectList>
               {filteredOptions.map((option, index) => (

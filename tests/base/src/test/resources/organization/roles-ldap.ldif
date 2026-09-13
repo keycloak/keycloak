@@ -1,0 +1,9 @@
+dn: ou=People,dc=keycloak,dc=org
+objectClass: top
+objectClass: organizationalUnit
+ou: People
+
+dn: ou=Groups,dc=keycloak,dc=org
+objectClass: top
+objectClass: organizationalUnit
+ou: Groups

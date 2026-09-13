@@ -2,6 +2,7 @@ import type { KeycloakAdminClient } from "../client.js";
 import IdentityProviderRepresentation from "../defs/identityProviderRepresentation.js";
 import type OrganizationRepresentation from "../defs/organizationRepresentation.js";
 import type OrganizationInvitationRepresentation from "../defs/organizationInvitationRepresentation.js";
+import type UserRepresentation from "../defs/userRepresentation.js";
 import Resource from "./resource.js";
 import { Groups } from "./groups.js";
 import OrganizationMemberRepresentation from "../defs/organizationMemberRepresentation.js";

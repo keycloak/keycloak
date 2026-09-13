@@ -66,6 +66,8 @@ export default function AddMapper() {
     useState<IdentityProviderMapperTypeRepresentation>();
 
   const [idp, setIdp] = useState<IdentityProviderRepresentation>();
+  // Match the server's IdP mapper scope until per-mapper organizations are supported.
+  const organizationId = idp?.organizationLinks?.[0]?.organizationId;
 
   const save = async (idpMapper: IdentityProviderMapperRepresentation) => {
     const mapper = convertFormValuesToObject(idpMapper);
@@ -227,8 +229,8 @@ export default function AddMapper() {
               />
               <GroupResourceContext
                 value={
-                  idp?.organizationId
-                    ? adminClient.organizations.groups(idp.organizationId)
+                  organizationId
+                    ? adminClient.organizations.groups(organizationId)
                     : adminClient.groups
                 }
               >

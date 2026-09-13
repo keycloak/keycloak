@@ -84,8 +84,7 @@ test.describe.serial("Identity providers", () => {
       .locator("#config\\.organizationRole")
       .getByRole("combobox");
     await expect(unscopedRoleSelect).toBeVisible();
-    await unscopedRoleSelect.click();
-    await unscopedRoleSelect.fill(targetRoleName);
+    await expect(unscopedRoleSelect).toBeDisabled();
     await expect(
       page.getByRole("option", { name: targetRoleName, exact: true }),
     ).toHaveCount(0);

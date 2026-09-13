@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -42,7 +41,6 @@ import jakarta.persistence.criteria.Root;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
-import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.GroupProvider;
@@ -1080,7 +1078,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     private void createDefaultRole(OrganizationAdapter organization) {
-        RoleModel defaultRole = organization.addRole(Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-" + organization.getAlias().toLowerCase(Locale.ROOT));
+        RoleModel defaultRole = organization.addRole(Organizations.getDefaultRoleName(organization.getAlias(), ""));
         defaultRole.setDescription("${role_default-roles}");
         organization.setDefaultRole(defaultRole);
     }
