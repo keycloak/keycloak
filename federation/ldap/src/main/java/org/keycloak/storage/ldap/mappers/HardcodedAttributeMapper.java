@@ -80,15 +80,25 @@ public class HardcodedAttributeMapper extends AbstractLDAPStorageMapper {
         }
 
         // This mapper can also target a UserModel bean property (e.g. "enabled", "emailVerified" - see
-        // setPropertyOnUserModel()) rather than a custom attribute. Only expose it here if it is either a genuine
-        // custom attribute (not a model property at all) or one of the few model properties User Profile itself
-        // manages as a root attribute (username, email, firstName, lastName, locale). Any other model property has
-        // no corresponding User Profile attribute, so exposing it here would make decorateUserProfile() fabricate a
-        // bogus, disconnected attribute (e.g. an "enabled" field whose edits write a plain custom attribute instead
-        // of actually enabling/disabling the user) instead of leaving it alone.
-        boolean isOtherModelProperty = userModelProperties.containsKey(userModelAttrName.toLowerCase())
-                && !UserProfileUtil.isRootAttribute(userModelAttrName);
-        return isOtherModelProperty ? Collections.emptySet() : Set.of(userModelAttrName);
+        // setPropertyOnUserModel()) rather than a custom attribute, and that lookup is case-insensitive - a
+        // mapper configured as e.g. "FirstName" still updates the real firstName property on import. Canonicalize
+        // to the property's real name before deciding what to expose, or such a differently-cased root attribute
+        // would be exposed under its configured spelling as a separate attribute from the real one
+        // decorateUserProfile() already knows, defeating the read-only bypass override on the real attribute.
+        //
+        // Only expose it here if it is either a genuine custom attribute (not a model property at all) or one of
+        // the few model properties User Profile itself manages as a root attribute (username, email, firstName,
+        // lastName, locale). Any other model property has no corresponding User Profile attribute, so exposing it
+        // here would make decorateUserProfile() fabricate a bogus, disconnected attribute (e.g. an "enabled" field
+        // whose edits write a plain custom attribute instead of actually enabling/disabling the user) instead of
+        // leaving it alone.
+        Property<Object> userModelProperty = userModelProperties.get(userModelAttrName.toLowerCase());
+        if (userModelProperty == null) {
+            return Set.of(userModelAttrName);
+        }
+
+        String propertyName = userModelProperty.getName();
+        return UserProfileUtil.isRootAttribute(propertyName) ? Set.of(propertyName) : Collections.emptySet();
     }
 
     @Override

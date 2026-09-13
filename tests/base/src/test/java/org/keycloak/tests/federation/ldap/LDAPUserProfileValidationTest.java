@@ -244,6 +244,30 @@ public class LDAPUserProfileValidationTest {
     }
 
     @Test
+    public void testImportUserWithCaseVariantReadOnlyMapperAttributeFailureCannotBeFixedByUser() {
+        final String username = "casevariantmapperuser";
+        // Same setup as testImportUserWithReadOnlyMapperAttributeFailureCannotBeFixedByUser, but the "first name"
+        // mapper is reconfigured to target "FirstName" rather than the canonical "firstName" - the model-property
+        // lookup mappers use to resolve this at import time is case-insensitive, so it still updates the real
+        // firstName property. getUserProfileAttributes() must canonicalize this too, or the read-only write
+        // condition below would land on a separate, bogus "FirstName" attribute instead of the real one, letting
+        // this otherwise-unfixable failure through as a soft UPDATE_PROFILE required action.
+        setFirstNameMapperUserModelAttribute("FirstName");
+        setFirstNameMapperReadOnly(true);
+        try {
+            runOnServer.run(addLdapUser(username, "Invalid<b>Name", "ValidLastName", "case-variant-mapper-user@example.org"));
+
+            List<UserRepresentation> found = managedRealm.admin().users().search(username, true);
+            Assertions.assertTrue(found.isEmpty(),
+                    "The user should have been rejected: firstName cannot really be fixed by the user since its "
+                            + "mapper is read-only, regardless of the casing configured on the mapper.");
+        } finally {
+            setFirstNameMapperReadOnly(false);
+            setFirstNameMapperUserModelAttribute(UserModel.FIRST_NAME);
+        }
+    }
+
+    @Test
     public void testExistingInvalidReadOnlyAttributeOnlyValidatedWhenOptedIn() {
         final String username = "readonlybypassuser<em>";
         managedRealm.updateWithCleanup(r -> r.editUsernameAllowed(false));
@@ -469,6 +493,33 @@ public class LDAPUserProfileValidationTest {
         }
     }
 
+    @Test
+    public void testHardcodedAttributeMapperCaseVariantRootPropertyStillUnfixable() {
+        final String username = "hardcodedcasevariantuser";
+
+        // The model-property lookup in onImportUserFromLDAP()/setPropertyOnUserModel() is case-insensitive, so
+        // "FirstName" still updates the real firstName property on every import, exactly like "firstName" would.
+        // getUserProfileAttributes() must canonicalize to "firstName" too, or the real attribute's read-only
+        // bypass override would never be applied (it would instead be applied to a separate, bogus "FirstName"
+        // attribute nothing else ever looks at), letting this invalid hardcoded value slip through as fixable.
+        //
+        // The LDAP-provided firstName below is deliberately the very same invalid value HardcodedAttributeMapper
+        // is configured with, so the end result doesn't depend on mapper execution order against the realm's own
+        // default "first name" mapper (also targeting firstName) - only on whether HardcodedAttributeMapper's
+        // read-only classification is correctly applied to it despite the case mismatch.
+        addHardcodedAttributeMapper("FirstName", "Invalid<b>Name");
+        try {
+            runOnServer.run(addLdapUser(username, "Invalid<b>Name", "ValidLastName", "hardcoded-case-variant-user@example.org"));
+
+            List<UserRepresentation> found = managedRealm.admin().users().search(username, true);
+            Assertions.assertTrue(found.isEmpty(),
+                    "The user should have been rejected: 'FirstName' is hardcoded to an invalid value and can "
+                            + "never actually be fixed by the user, regardless of the casing configured on the mapper.");
+        } finally {
+            removeHardcodedAttributeMapper();
+        }
+    }
+
     private void addHardcodedAttributeMapper(String userModelAttribute, String attributeValue) {
         runOnServer.run(session -> {
             RealmModel realm = session.getContext().getRealm();
@@ -565,6 +616,20 @@ public class LDAPUserProfileValidationTest {
                     .findFirst()
                     .orElseThrow(() -> new IllegalStateException("Expected a 'first name' LDAP mapper to already exist"));
             firstNameMapper.getConfig().putSingle(UserAttributeLDAPStorageMapper.READ_ONLY, String.valueOf(readOnly));
+            realm.updateComponent(firstNameMapper);
+        });
+    }
+
+    // Also shared and reverted like setFirstNameMapperReadOnly above - see its comment.
+    private void setFirstNameMapperUserModelAttribute(String userModelAttribute) {
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            ComponentModel firstNameMapper = realm.getComponentsStream(ldapModel.getId(), LDAPStorageMapper.class.getName())
+                    .filter(m -> "first name".equals(m.getName()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Expected a 'first name' LDAP mapper to already exist"));
+            firstNameMapper.getConfig().putSingle(UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE, userModelAttribute);
             realm.updateComponent(firstNameMapper);
         });
     }
