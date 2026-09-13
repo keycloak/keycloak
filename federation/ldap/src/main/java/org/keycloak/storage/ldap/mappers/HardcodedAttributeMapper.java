@@ -69,7 +69,10 @@ public class HardcodedAttributeMapper extends AbstractLDAPStorageMapper {
     }
 
     @Override
-    public Set<String> getUserAttributes() {
+    public Set<String> getUserProfileAttributes() {
+        // Not returned from getUserAttributes(): this attribute has no backing LDAP attribute - its value is
+        // never read from LDAP, only hardcoded on import - so it must never be searchable via searchLDAPByAttributes,
+        // which would otherwise build a filter against a non-existent (or unrelated) LDAP attribute.
         String userModelAttrName = getUserModelAttribute();
         return userModelAttrName == null ? Collections.emptySet() : Set.of(userModelAttrName);
     }

@@ -410,6 +410,37 @@ public class LDAPUserProfileValidationTest {
         }
     }
 
+    @Test
+    public void testHardcodedAttributeMapperNotSearchableInLdap() {
+        final String username = "hardcodedsearchuser";
+        final String customAttribute = "hardcodedsearchdept";
+        final String hardcodedValue = "12345";
+
+        addHardcodedAttributeMapper(customAttribute, hardcodedValue);
+        try {
+            runOnServer.run(addLdapUser(username, "Valid", "User", "hardcoded-search-user@example.org"));
+
+            List<UserRepresentation> found = managedRealm.admin().users().search(username, true);
+            Assertions.assertEquals(1, found.size(), "Sanity check: user should have been imported with a valid hardcoded value.");
+
+            // HardcodedAttributeMapper.onImportUserFromLDAP() sets this attribute directly on the Keycloak user -
+            // it has no backing LDAP attribute of its own and is never read from LDAP. Searching by it must be
+            // treated as unmapped (exactly like an attribute with no LDAP mapper at all) rather than turned into
+            // an LDAP filter against a non-existent (or unrelated) LDAP attribute, which would either fail
+            // outright against the LDAP schema or silently match unrelated data.
+            runOnServer.run(session -> {
+                RealmModel realm = session.getContext().getRealm();
+                ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+                LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+                List<UserModel> results = ldapProvider.searchForUserStream(realm, Map.of(customAttribute, hardcodedValue), null, null).toList();
+                Assertions.assertTrue(results.isEmpty(),
+                        "Searching by '" + customAttribute + "' must not be treated as an LDAP-searchable attribute.");
+            });
+        } finally {
+            removeHardcodedAttributeMapper();
+        }
+    }
+
     private void addHardcodedAttributeMapper(String userModelAttribute, String attributeValue) {
         runOnServer.run(session -> {
             RealmModel realm = session.getContext().getRealm();

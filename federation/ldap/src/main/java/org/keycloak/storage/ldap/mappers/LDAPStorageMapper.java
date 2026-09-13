@@ -95,11 +95,28 @@ public interface LDAPStorageMapper extends Provider {
     Set<String> mandatoryAttributeNames();
 
     /**
-     * Method that returns user model attributes, which this mapper maps to Keycloak users
+     * Method that returns user model attributes, which this mapper maps to Keycloak users. Also used to decide
+     * what attributes can be turned into an LDAP search filter (see {@code LDAPStorageProvider#searchLDAPByAttributes}),
+     * so a mapper must only return an attribute here if it is genuinely backed by a real LDAP attribute - one with
+     * no backing LDAP attribute (e.g. a hardcoded value never read from LDAP) must not appear here, or searching by
+     * it would silently build a filter against a non-existent (or unrelated) LDAP attribute. Such a mapper can still
+     * expose the attribute to the realm's User Profile via {@link #getUserProfileAttributes()}.
      *
      * @return user model attributes. Returns empty set if not user attributes provided by this mapper. Never returns null.
      */
     Set<String> getUserAttributes();
+
+    /**
+     * Method that returns user model attributes this mapper exposes to the realm's User Profile (metadata
+     * creation and read-only marking there) - distinct from {@link #getUserAttributes()}, which also controls
+     * what can be turned into an LDAP search filter. Defaults to {@link #getUserAttributes()}; override this
+     * instead when the mapper has no real backing LDAP attribute to search by (e.g. a hardcoded value).
+     *
+     * @return user attributes exposed to the User Profile. Never returns null.
+     */
+    default Set<String> getUserProfileAttributes() {
+        return getUserAttributes();
+    }
 
     /**
      * Called when invoke proxy on LDAP federation provider
@@ -142,7 +159,7 @@ public interface LDAPStorageMapper extends Provider {
      * still be silently discarded and overwritten again with the LDAP value on the next import. Consulted only
      * while the provider is {@code WRITABLE}; a mapper need not account for the overall edit mode itself.
      *
-     * @param attrName one of the names returned by {@link #getUserAttributes()}
+     * @param attrName one of the names returned by {@link #getUserProfileAttributes()}
      * @return true if this attribute's value is never actually written back to LDAP
      */
     default boolean isUserAttributeReadOnly(String attrName) {

@@ -1333,7 +1333,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         // added to metadatas more than once, and DefaultAttributes#getUserStorageProviderMetadata would fail
         // collecting them into a map with a "duplicate key" exception.
         List<String> attributes = ldapMappers.stream()
-                .flatMap(ldapMapper -> ldapMapper.getUserAttributes().stream())
+                .flatMap(ldapMapper -> ldapMapper.getUserProfileAttributes().stream())
                 .distinct()
                 .toList();
 
@@ -1343,7 +1343,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         // canBeFixedByUser() relies on Attributes.isReadOnly() to know this, so it must reflect that reality
         // rather than only the User Profile permission configuration - see step 3 below.
         Set<String> notWritableBackToLdap = ldapMappers.stream()
-                .flatMap(ldapMapper -> ldapMapper.getUserAttributes().stream()
+                .flatMap(ldapMapper -> ldapMapper.getUserProfileAttributes().stream()
                         .filter(ldapMapper::isUserAttributeReadOnly))
                 .collect(Collectors.toSet());
 
