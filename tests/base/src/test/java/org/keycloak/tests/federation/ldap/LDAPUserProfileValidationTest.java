@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -32,6 +33,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.SynchronizationResultRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -42,6 +44,8 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.storage.ldap.mappers.HardcodedAttributeMapper;
+import org.keycloak.storage.ldap.mappers.HardcodedAttributeMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -59,6 +63,7 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.util.ldap.LDAPEmbeddedServer;
+import org.keycloak.validate.validators.PatternValidator;
 
 import org.apache.directory.api.ldap.model.exception.LdapConfigurationException;
 import org.junit.jupiter.api.AfterEach;
@@ -212,6 +217,33 @@ public class LDAPUserProfileValidationTest {
     }
 
     @Test
+    public void testUnsyncedEditModeDoesNotTreatMapperReadOnlyAttributeAsUnfixable() {
+        final String username = "unsyncedmapperuser";
+        // Same setup as testImportUserWithReadOnlyMapperAttributeFailureCannotBeFixedByUser (firstName's mapper
+        // individually configured read-only), but with the provider itself UNSYNCED rather than WRITABLE.
+        // isUserAttributeReadOnly() (see LDAPStorageMapper) is documented to be consulted only while the
+        // provider is WRITABLE: under UNSYNCED, LDAPStorageProviderFactory sets read.only=true on every default
+        // mapper - that only means "not written back to LDAP", which is true of every attribute under UNSYNCED
+        // by definition, since edits are still genuinely persisted in Keycloak, just never pushed back to LDAP.
+        // So this must still be a soft-fixable required action, not a hard rejection.
+        setEditMode(UserStorageProvider.EditMode.UNSYNCED);
+        setFirstNameMapperReadOnly(true);
+        try {
+            runOnServer.run(addLdapUser(username, "Invalid<b>Name", "ValidLastName", "unsynced-mapper-user@example.org"));
+
+            List<UserRepresentation> found = managedRealm.admin().users().search(username, true);
+            Assertions.assertEquals(1, found.size(),
+                    "The user should have been imported: under UNSYNCED, firstName can still be fixed by the "
+                            + "user through Keycloak even though its mapper reports read-only.");
+            Assertions.assertTrue(found.get(0).getRequiredActions().contains(UserModel.RequiredAction.UPDATE_PROFILE.name()),
+                    "The user should have been given the UPDATE_PROFILE required action.");
+        } finally {
+            setFirstNameMapperReadOnly(false);
+            setEditMode(UserStorageProvider.EditMode.WRITABLE);
+        }
+    }
+
+    @Test
     public void testExistingInvalidReadOnlyAttributeOnlyValidatedWhenOptedIn() {
         final String username = "readonlybypassuser<em>";
         managedRealm.updateWithCleanup(r -> r.editUsernameAllowed(false));
@@ -335,6 +367,70 @@ public class LDAPUserProfileValidationTest {
         } finally {
             upResource.update(originalUpConfig);
         }
+    }
+
+    @Test
+    public void testHardcodedAttributeMapperInvalidValueCannotBeFixedByUser() {
+        final String username = "hardcodedmapperuser";
+        final String customAttribute = "hardcodeddept";
+        final String invalidHardcodedValue = "not-digits";
+
+        // A digits-only pattern that the hardcoded value below deliberately violates - any User Profile validator
+        // would do, this one just makes the failure trivial to force.
+        UserProfileResource upResource = managedRealm.admin().users().userProfile();
+        UPConfig originalUpConfig = upResource.getConfiguration();
+        try {
+            UPConfig upConfig = upResource.getConfiguration();
+            UPAttribute attribute = new UPAttribute(customAttribute,
+                    new UPAttributePermissions(Set.of("user", "admin"), Set.of("user", "admin")),
+                    new UPAttributeRequired(Set.of(), Set.of()));
+            attribute.addValidation(PatternValidator.ID, Map.of(PatternValidator.CFG_PATTERN, "^[0-9]+$"));
+            upConfig.addOrReplaceAttribute(attribute);
+            upResource.update(upConfig);
+
+            // HardcodedAttributeMapper.onImportUserFromLDAP() unconditionally overwrites this attribute with
+            // invalidHardcodedValue on every single import - a UPDATE_PROFILE fix would be silently discarded
+            // again on the very next import, so this must be a hard rejection, exactly like an individually
+            // read-only UserAttributeLDAPStorageMapper attribute (see
+            // testImportUserWithReadOnlyMapperAttributeFailureCannotBeFixedByUser above).
+            addHardcodedAttributeMapper(customAttribute, invalidHardcodedValue);
+            try {
+                runOnServer.run(addLdapUser(username, "Valid", "User", "hardcoded-mapper-user@example.org"));
+
+                List<UserRepresentation> found = managedRealm.admin().users().search(username, true);
+                Assertions.assertTrue(found.isEmpty(),
+                        "The user should have been rejected: '" + customAttribute + "' is hardcoded to an "
+                                + "invalid value by HardcodedAttributeMapper, and the user can never actually fix "
+                                + "it - any edit is discarded again on the next import.");
+            } finally {
+                removeHardcodedAttributeMapper();
+            }
+        } finally {
+            upResource.update(originalUpConfig);
+        }
+    }
+
+    private void addHardcodedAttributeMapper(String userModelAttribute, String attributeValue) {
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            ComponentModel mapperModel = KeycloakModelUtils.createComponentModel("hardcodedAttributeMapper",
+                    ldapModel.getId(), HardcodedAttributeMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
+                    HardcodedAttributeMapper.USER_MODEL_ATTRIBUTE, userModelAttribute,
+                    HardcodedAttributeMapper.ATTRIBUTE_VALUE, attributeValue);
+            realm.addComponentModel(mapperModel);
+        });
+    }
+
+    private void removeHardcodedAttributeMapper() {
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            realm.getComponentsStream(ldapModel.getId(), LDAPStorageMapper.class.getName())
+                    .filter(m -> "hardcodedAttributeMapper".equals(m.getName()))
+                    .findFirst()
+                    .ifPresent(realm::removeComponent);
+        });
     }
 
     private static final int MAX_LDAP_BIND_ATTEMPTS = 5;

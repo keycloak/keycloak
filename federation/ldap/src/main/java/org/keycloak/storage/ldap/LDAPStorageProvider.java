@@ -1431,11 +1431,19 @@ public class LDAPStorageProvider implements UserStorageProvider,
                             metadatas.add(override);
                         });
             }
-        } else if (validateUserProfile && !notWritableBackToLdap.isEmpty()) {
+        } else if (getEditMode() == EditMode.WRITABLE && validateUserProfile && !notWritableBackToLdap.isEmpty()) {
             // provider is WRITABLE overall, but some attributes are still individually read-only at the mapper
             // level - only enforced when opted in, or this would silently block admin/account console edits to
             // these attributes on every WRITABLE provider with such a mapper, whether or not the realm ever asked
             // for LDAP import validation.
+            //
+            // Must not apply under UNSYNCED: LDAPStorageProviderFactory configures every default mapper's
+            // read.only config to true there too (it means "not written back to LDAP", true of every attribute
+            // under UNSYNCED by definition), but isUserAttributeReadOnly()'s contract explicitly limits it to
+            // being consulted while WRITABLE - UNSYNCED means edits are still genuinely kept in Keycloak, just
+            // never pushed back to LDAP, so blocking writes here would wrongly make every LDAP-mapped attribute
+            // uneditable (and, via canBeFixedByUser(), turn every otherwise-fixable import validation failure
+            // into a hard rejection) on any UNSYNCED provider that opts into VALIDATE_USER_PROFILE.
             Stream.concat(metadata.getAttributes().stream(), metadatas.stream())
                     .filter((m) -> notWritableBackToLdap.contains(m.getName()))
                     .forEach(attrMetadata -> attrMetadata.addWriteCondition(AttributeMetadata.ALWAYS_FALSE));

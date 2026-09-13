@@ -18,7 +18,9 @@
 package org.keycloak.storage.ldap.mappers;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.component.ComponentModel;
@@ -64,6 +66,20 @@ public class HardcodedAttributeMapper extends AbstractLDAPStorageMapper {
     @Override
     public void onRegisterUserToLDAP(LDAPObject ldapUser, UserModel localUser, RealmModel realm) {
 
+    }
+
+    @Override
+    public Set<String> getUserAttributes() {
+        String userModelAttrName = getUserModelAttribute();
+        return userModelAttrName == null ? Collections.emptySet() : Set.of(userModelAttrName);
+    }
+
+    @Override
+    public boolean isUserAttributeReadOnly(String attrName) {
+        // onImportUserFromLDAP() unconditionally overwrites this attribute with the configured hardcoded value on
+        // every import, discarding any edit made through the User Profile in the meantime - the same
+        // never-actually-persisted behavior UserAttributeLDAPStorageMapper's read-only mappers have.
+        return true;
     }
 
     @Override
