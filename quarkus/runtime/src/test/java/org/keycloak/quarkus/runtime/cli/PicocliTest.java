@@ -774,6 +774,7 @@ public class PicocliTest extends AbstractConfigurationTest {
             // after the build truncate - like docker or a zip
             Files.setLastModifiedTime(path, FileTime.fromMillis(Files.getLastModifiedTime(path).toMillis() / 1000 * 1000));
             
+Environment.setHomeDir(tmp);
             nonRunningPicocli = pseudoLaunch("start", "--http-enabled=true", "--hostname-strict=false", "--db=dev-file");
             
             // start with no other changes should be fine
