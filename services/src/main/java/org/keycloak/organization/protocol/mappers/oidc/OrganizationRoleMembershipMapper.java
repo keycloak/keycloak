@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
@@ -29,6 +31,7 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.organization.OrganizationProvider;
@@ -90,15 +93,19 @@ public class OrganizationRoleMembershipMapper extends AbstractOIDCProtocolMapper
             return;
         }
 
-        String orgClaimName = organizationMapperModel.getConfig().get(TOKEN_CLAIM_NAME);
+        String orgClaimName = new OrganizationMembershipMapper()
+                .getEffectiveModel(session, userSession.getRealm(), organizationMapperModel)
+                .getConfig().get(TOKEN_CLAIM_NAME);
         model = getEffectiveModel(session, userSession.getRealm(), model);
         model.getConfig().put(TOKEN_CLAIM_NAME, orgClaimName);
 
         Map<String, Object> orgClaims = OIDCAttributeMapperHelper.getOrInitializeOrganizationClaimAsMap(token, model);
         UserModel user = userSession.getUser();
+        Set<String> scopedRoleIds = clientSessionCtx.getRolesStream().map(RoleModel::getId).collect(Collectors.toSet());
 
         resolveOrganizations(session, userSession, clientSessionCtx).forEach(organization -> {
-            OrganizationRoleClaims claims = OrganizationRoleMapperUtils.resolveRoleClaims(organization, user, session);
+            OrganizationRoleClaims claims = OrganizationRoleMapperUtils.resolveRoleClaims(organization, user, session,
+                    role -> role.isType(RoleModel.Type.ORGANIZATION) || scopedRoleIds.contains(role.getId()));
             if (claims.isEmpty()) {
                 return;
             }

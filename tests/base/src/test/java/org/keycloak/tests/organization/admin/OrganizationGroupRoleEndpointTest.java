@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
@@ -275,7 +274,7 @@ public class OrganizationGroupRoleEndpointTest extends AbstractOrganizationTest 
         persistGroupMapping(groupId, storedIds[1]);
         try {
             assertThat(mappedRoleNames(mappings().getAll()), empty());
-            assertThrows(InternalServerErrorException.class, () -> groups.group(groupId).toRepresentation(false));
+            assertThrows(BadRequestException.class, () -> groups.group(groupId).toRepresentation(false));
         } finally {
             removeGroupMapping(groupId, storedIds[1]);
         }

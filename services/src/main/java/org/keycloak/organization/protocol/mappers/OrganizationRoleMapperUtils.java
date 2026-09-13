@@ -29,6 +29,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
@@ -53,6 +55,11 @@ public final class OrganizationRoleMapperUtils {
     }
 
     public static OrganizationRoleClaims resolveRoleClaims(OrganizationModel organization, UserModel user, KeycloakSession session) {
+        return resolveRoleClaims(organization, user, session, role -> true);
+    }
+
+    public static OrganizationRoleClaims resolveRoleClaims(OrganizationModel organization, UserModel user, KeycloakSession session,
+            Predicate<RoleModel> roleFilter) {
         if (organization == null || user == null || !organization.isEnabled() || !organization.isMember(user)) {
             return OrganizationRoleClaims.empty();
         }
@@ -100,7 +107,8 @@ public final class OrganizationRoleMapperUtils {
             return OrganizationRoleClaims.empty();
         }
 
-        return OrganizationRoleClaims.from(organization, expandOrganizationRoleGraph(organization, organizationRoles));
+        return OrganizationRoleClaims.from(organization, expandOrganizationRoleGraph(organization, organizationRoles).stream()
+                .filter(roleFilter).collect(Collectors.toSet()));
     }
 
     private static void collectOrganizationGroupRoles(KeycloakSession session, GroupModel group, GroupModel root,

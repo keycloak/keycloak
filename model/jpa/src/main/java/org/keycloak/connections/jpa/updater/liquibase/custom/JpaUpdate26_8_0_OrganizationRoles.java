@@ -21,14 +21,13 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
-import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.GroupEntity;
+import org.keycloak.organization.utils.Organizations;
 
 import liquibase.datatype.DataTypeFactory;
 import liquibase.exception.CustomChangeException;
@@ -38,7 +37,6 @@ import liquibase.structure.core.Table;
 
 public class JpaUpdate26_8_0_OrganizationRoles extends CustomKeycloakTask {
 
-    static final int MAX_ROLE_NAME_LENGTH = 255;
     static final int MAX_ROLE_NAME_CANDIDATES = 1_000;
     static final int MAX_ROLE_ID_CANDIDATES = 100;
 
@@ -198,11 +196,9 @@ public class JpaUpdate26_8_0_OrganizationRoles extends CustomKeycloakTask {
         if (isBlank(name)) {
             throw new CustomChangeException(getTaskId() + ": Organization " + organization.id() + " has no name or alias");
         }
-        String baseRoleName = Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-" + name.toLowerCase(Locale.ROOT);
-
         for (int candidate = 0; candidate < MAX_ROLE_NAME_CANDIDATES; candidate++) {
             String suffix = candidate == 0 ? "" : "-" + candidate;
-            String roleName = truncateWithoutSplittingSurrogate(baseRoleName, MAX_ROLE_NAME_LENGTH - suffix.length()) + suffix;
+            String roleName = Organizations.getDefaultRoleName(name, suffix);
             if (isRoleNameAvailable(organization.id(), roleName)) {
                 return roleName;
             }
@@ -212,20 +208,8 @@ public class JpaUpdate26_8_0_OrganizationRoles extends CustomKeycloakTask {
 
     private boolean isRoleNameAvailable(String organizationId, String roleName) throws CustomChangeException {
         return !exists("SELECT ID FROM " + getTableName("KEYCLOAK_ROLE")
-                + " WHERE CLIENT_REALM_CONSTRAINT=? AND NAME=?",
+                + " WHERE TYPE='ORGANIZATION' AND CLIENT_REALM_CONSTRAINT=? AND NAME=?",
                 "checking organization role name availability", organizationId, roleName);
-    }
-
-    private static String truncateWithoutSplittingSurrogate(String value, int maximumLength) {
-        if (value.length() <= maximumLength) {
-            return value;
-        }
-
-        int end = maximumLength;
-        if (end > 0 && Character.isHighSurrogate(value.charAt(end - 1)) && Character.isLowSurrogate(value.charAt(end))) {
-            end--;
-        }
-        return value.substring(0, end);
     }
 
     private boolean exists(String sql, String operation, String... parameters) throws CustomChangeException {

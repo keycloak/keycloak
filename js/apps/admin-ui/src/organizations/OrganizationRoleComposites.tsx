@@ -1,3 +1,6 @@
+import KeycloakAdminClient, {
+  NetworkError,
+} from "@keycloak/keycloak-admin-client";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import {
   KeycloakDataTable,
@@ -48,6 +51,41 @@ const toRoleRepresentation = (role: CompositeRow): RoleRepresentation => {
   return representation;
 };
 
+const withClientNames = async (
+  roles: CompositeRow[],
+  adminClient: KeycloakAdminClient,
+): Promise<CompositeRow[]> => {
+  const clientIds = new Set(
+    roles
+      .filter((role) => role.clientRole && role.containerId)
+      .map((role) => role.containerId!),
+  );
+  const clientNames = new Map(
+    await Promise.all(
+      [...clientIds].map(async (id) => {
+        try {
+          const client = await adminClient.clients.findOne({ id });
+          return [id, client?.clientId || id] as const;
+        } catch (error) {
+          if (
+            error instanceof NetworkError &&
+            (error.response.status === 403 || error.response.status === 404)
+          ) {
+            return [id, id] as const;
+          }
+          throw error;
+        }
+      }),
+    ),
+  );
+  return roles.map((role) => ({
+    ...role,
+    clientName: role.clientRole
+      ? clientNames.get(role.containerId!)
+      : undefined,
+  }));
+};
+
 type AddOrganizationRoleCompositeModalProps = {
   organizationId: string;
   roleId: string;
@@ -78,7 +116,10 @@ export const AddOrganizationRoleCompositeModal = ({
       max,
       search,
     });
-    return roles.map((role) => ({ ...role, source }));
+    return withClientNames(
+      roles.map((role) => ({ ...role, source })),
+      adminClient,
+    );
   };
 
   return (
@@ -192,11 +233,14 @@ export const OrganizationRoleComposites = ({
           max,
           search,
         });
-        return roles.map((role) => ({
-          ...role,
-          source: sourceKey(role, organizationId),
-          isInherited: false,
-        }));
+        return await withClientNames(
+          roles.map((role) => ({
+            ...role,
+            source: sourceKey(role, organizationId),
+            isInherited: false,
+          })),
+          adminClient,
+        );
       }
 
       const [effectiveRoles, directRoles] = await Promise.all([
@@ -213,11 +257,14 @@ export const OrganizationRoleComposites = ({
         }),
       ]);
       const directRoleIds = new Set(directRoles.map((role) => role.id));
-      return effectiveRoles.map((role) => ({
-        ...role,
-        source: sourceKey(role, organizationId),
-        isInherited: !directRoleIds.has(role.id),
-      }));
+      return await withClientNames(
+        effectiveRoles.map((role) => ({
+          ...role,
+          source: sourceKey(role, organizationId),
+          isInherited: !directRoleIds.has(role.id),
+        })),
+        adminClient,
+      );
     } catch (error) {
       addError("organizationRoleCompositesLoadError", error);
       return [];
@@ -346,6 +393,11 @@ export const OrganizationRoleComposites = ({
             name: "source",
             displayKey: "roleType",
             cellRenderer: (role) => t(`${role.source}Role`),
+          },
+          {
+            name: "clientName",
+            displayKey: "client",
+            cellFormatters: [emptyFormatter()],
           },
           {
             name: "isInherited",

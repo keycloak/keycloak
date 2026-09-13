@@ -151,6 +151,11 @@ public class HardcodedRoleStorageProvider implements RoleStorageProvider {
         }
 
         @Override
+        public boolean isClientRole() {
+            return false;
+        }
+
+        @Override
         public String getContainerId() {
             return realm.getId();
         }

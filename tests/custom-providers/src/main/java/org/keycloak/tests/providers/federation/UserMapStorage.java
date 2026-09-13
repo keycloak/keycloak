@@ -132,12 +132,20 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
 
                 @Override
                 public void leaveGroup(GroupModel group) {
-                    UserMapStorage.this.leaveGroup(realm, getUsername(), group);
+                    if (Boolean.parseBoolean(model.getConfig().getFirst("federatedStorage"))) {
+                        super.leaveGroup(group);
+                    } else {
+                        UserMapStorage.this.leaveGroup(realm, getUsername(), group);
+                    }
                 }
 
                 @Override
                 public void joinGroup(GroupModel group) {
-                    UserMapStorage.this.joinGroup(realm, getUsername(), group);
+                    if (Boolean.parseBoolean(model.getConfig().getFirst("federatedStorage"))) {
+                        super.joinGroup(group);
+                    } else {
+                        UserMapStorage.this.joinGroup(realm, getUsername(), group);
+                    }
                 }
 
                 @Override

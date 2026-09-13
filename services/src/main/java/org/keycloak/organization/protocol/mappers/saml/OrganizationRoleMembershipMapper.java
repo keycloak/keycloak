@@ -19,6 +19,8 @@ package org.keycloak.organization.protocol.mappers.saml;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.common.Profile;
@@ -26,9 +28,11 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.organization.OrganizationProvider;
@@ -41,6 +45,7 @@ import org.keycloak.protocol.saml.mappers.SAMLAttributeStatementMapper;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.services.util.DefaultClientSessionContext;
 
 import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganizationsPresent;
 
@@ -67,9 +72,16 @@ public class OrganizationRoleMembershipMapper extends AbstractSAMLProtocolMapper
         }
 
         UserModel user = userSession.getUser();
+        ClientSessionContext context = session.getAttribute(ClientSessionContext.class.getName(), ClientSessionContext.class);
+        if (context == null) {
+            context = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession, session);
+        }
+        Set<String> scopedRoleIds = context.getRolesStream().map(RoleModel::getId).collect(Collectors.toSet());
         provider.getByMember(user)
                 .filter(OrganizationModel::isEnabled)
-                .forEach(organization -> addAttributes(attributeStatement, organization, OrganizationRoleMapperUtils.resolveRoleClaims(organization, user, session)));
+                .forEach(organization -> addAttributes(attributeStatement, organization,
+                        OrganizationRoleMapperUtils.resolveRoleClaims(organization, user, session,
+                                role -> role.isType(RoleModel.Type.ORGANIZATION) || scopedRoleIds.contains(role.getId()))));
     }
 
     private void addAttributes(AttributeStatementType attributeStatement, OrganizationModel organization, OrganizationRoleClaims claims) {

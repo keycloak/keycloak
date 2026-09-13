@@ -668,10 +668,11 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         List<String> roleIds = em.createNamedQuery("getOrganizationRoleIdsByRealm", String.class)
                 .setParameter("realm", realm.getId())
                 .getResultList();
+        // Roles loaded during realm removal must also be invalidated before an overwrite import reuses their IDs.
         roleIds.stream()
                 .map(id -> session.roles().getRoleById(realm, id))
                 .filter(Objects::nonNull)
-                .forEach(this::removeRole);
+                .forEach(session.roles()::removeRole);
     }
 
     @Override
