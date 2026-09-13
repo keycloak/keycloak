@@ -1317,8 +1317,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
         RealmModel realm = session.getContext().getRealm();
         // Gates every behavior change below that only exists to support LDAP import User Profile validation
         // (see #isUserProfileValid) - without it, none of that validation ever runs, so none of its side effects
-        // on this realm's User Profile metadata should be visible either.
-        boolean validateUserProfile = Boolean.parseBoolean(model.getConfig().getFirst(LDAPConstants.VALIDATE_USER_PROFILE));
+        // on this realm's User Profile metadata should be visible either. isImportEnabled() must be included here
+        // too: importUserFromLDAP() only ever calls isUserProfileValid() when import is enabled (see the check
+        // there), so a non-import provider must never apply these side effects regardless of this config value.
+        boolean validateUserProfile = model.isImportEnabled()
+                && Boolean.parseBoolean(model.getConfig().getFirst(LDAPConstants.VALIDATE_USER_PROFILE));
         List<LDAPStorageMapper> ldapMappers = realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
                 .sorted(ldapMappersComparator.sortAsc())
                 .map(mapperManager::getMapper)
