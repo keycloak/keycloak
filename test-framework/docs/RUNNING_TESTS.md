@@ -114,8 +114,8 @@ KC_TEST_DATABASE=remote \
 
 ## Features
 
-To enable or disable Keycloak features for all tests, use the `KC_FEATURES`, `KC_FEATURES_DISABLED`, or 
-`KC_FEATURE_<name>` options. For example:
+To enable or disable Keycloak features for tests that start a managed Keycloak server, use the `KC_FEATURES`,
+`KC_FEATURES_DISABLED`, or `KC_FEATURE_<name>` options. For example:
 ```shell
 KC_FEATURES=stateless mvn test 
 ```
