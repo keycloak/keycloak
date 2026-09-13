@@ -43,7 +43,6 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestCleanup;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.util.ApiUtil;
