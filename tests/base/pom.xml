@@ -160,6 +160,7 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-cli</artifactId>
+            <scope>test</scope>
         </dependency>
         <!--
              Embedded ApacheDS server used by LDAP federation tests to run against a real directory.

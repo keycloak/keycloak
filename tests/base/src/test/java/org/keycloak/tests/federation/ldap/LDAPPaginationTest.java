@@ -222,6 +222,111 @@ public class LDAPPaginationTest {
                         + "must be applied to the LDAP entries before the (expensive) import step, not after.");
     }
 
+    @Test
+    public void testLoadUsersByUniqueAttributeOmitsRejectedEntryFromPage() {
+        final int totalUsers = 6;
+        final int firstResult = 2;
+        final int maxResults = 4;
+        final int rejectedIndex = 3;
+        final String rejectedUsername = "uniqueattrpagerejected<em>user";
+
+        // The requested window (firstResult..firstResult+maxResults) is made to cover exactly the remaining
+        // entries, so which physical LDAP entry the rejected one turns out to be doesn't depend on result
+        // ordering: it is guaranteed to fall inside the page regardless.
+        managedRealm.updateWithCleanup(r -> r.editUsernameAllowed(false));
+        setValidateUserProfile(true);
+        try {
+            int before = managedRealm.admin().users().count();
+
+            int returned = runOnServer.fetch(session -> {
+                RealmModel realm = session.getContext().getRealm();
+                ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+                LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+
+                List<String> usernames = new ArrayList<>();
+                for (int i = 0; i < totalUsers; i++) {
+                    String username = (i == rejectedIndex) ? rejectedUsername : "uniqueattrpageuser" + i;
+                    LDAPTestUtils.addLDAPUser(ldapProvider, realm, username, "First" + i, "Last" + i,
+                            username + "@example.org", null, "4578");
+                    usernames.add(username);
+                }
+
+                try (Stream<UserModel> stream = ldapProvider.loadUsersByUniqueAttribute(
+                        realm, LDAPConstants.UID, usernames, firstResult, maxResults)) {
+                    return (int) stream.collect(Collectors.toList()).size();
+                }
+            }, Integer.class);
+
+            int after = managedRealm.admin().users().count();
+
+            Assertions.assertEquals(maxResults - 1, returned,
+                    "The rejected entry inside the requested page should be silently omitted from the returned "
+                            + "page instead of surfacing as a null element or throwing.");
+            Assertions.assertEquals(maxResults - 1, after - before,
+                    "Only the valid entries in the requested page should have been imported; the rejected one "
+                            + "must not count towards it.");
+            Assertions.assertTrue(managedRealm.admin().users().search(rejectedUsername, true).isEmpty(),
+                    "The rejected entry must not have been imported into the local database.");
+        } finally {
+            setValidateUserProfile(false);
+        }
+    }
+
+    @Test
+    public void testLoadUsersByDNsOmitsRejectedEntryFromPage() {
+        final int totalUsers = 6;
+        final int firstResult = 2;
+        final int maxResults = 4;
+        final int rejectedIndex = 3;
+        final String rejectedUsername = "dnpagerejected<em>user";
+
+        managedRealm.updateWithCleanup(r -> r.editUsernameAllowed(false));
+        setValidateUserProfile(true);
+        try {
+            int before = managedRealm.admin().users().count();
+
+            int returned = runOnServer.fetch(session -> {
+                RealmModel realm = session.getContext().getRealm();
+                ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+                LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+
+                List<LDAPDn> dns = new ArrayList<>();
+                for (int i = 0; i < totalUsers; i++) {
+                    String username = (i == rejectedIndex) ? rejectedUsername : "dnpageuser" + i;
+                    LDAPObject ldapUser = LDAPTestUtils.addLDAPUser(ldapProvider, realm, username, "First" + i,
+                            "Last" + i, username + "@example.org", null, "4578");
+                    dns.add(ldapUser.getDn());
+                }
+
+                try (Stream<UserModel> stream = ldapProvider.loadUsersByDNs(realm, dns, firstResult, maxResults)) {
+                    return (int) stream.collect(Collectors.toList()).size();
+                }
+            }, Integer.class);
+
+            int after = managedRealm.admin().users().count();
+
+            Assertions.assertEquals(maxResults - 1, returned,
+                    "The rejected entry inside the requested page should be silently omitted from the returned "
+                            + "page instead of surfacing as a null element or throwing.");
+            Assertions.assertEquals(maxResults - 1, after - before,
+                    "Only the valid entries in the requested page should have been imported; the rejected one "
+                            + "must not count towards it.");
+            Assertions.assertTrue(managedRealm.admin().users().search(rejectedUsername, true).isEmpty(),
+                    "The rejected entry must not have been imported into the local database.");
+        } finally {
+            setValidateUserProfile(false);
+        }
+    }
+
+    private void setValidateUserProfile(boolean enabled) {
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            ldapModel.getConfig().putSingle(LDAPConstants.VALIDATE_USER_PROFILE, String.valueOf(enabled));
+            realm.updateComponent(ldapModel);
+        });
+    }
+
     private static final int MAX_LDAP_BIND_ATTEMPTS = 5;
 
     private static int startLdapEmbeddedServer() throws Exception {
