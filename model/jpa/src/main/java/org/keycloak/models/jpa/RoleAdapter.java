@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
@@ -100,6 +101,9 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
         if (isBlank(name)) {
             throw new ModelException("Role name cannot be null or empty");
         }
+        if (!Objects.equals(role.getName(), name) && AdminRoles.ALL_ROLES.contains(name)) {
+            new OrganizationRoleGraphGuard(session, em, realm.getId()).validateRoleNameChange(getId(), name);
+        }
         role.setName(name);
     }
 
@@ -112,6 +116,9 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public void addCompositeRole(RoleModel role) {
+        OrganizationRoleGraphGuard graphGuard = new OrganizationRoleGraphGuard(session, em, realm.getId());
+        graphGuard.lockRealm();
+        graphGuard.validateCompositeAddition(getId(), role.getId());
         OrganizationsValidation.validateOrganizationRoleComposite(this, role);
         RoleEntity parent = em.getReference(RoleEntity.class, getId());
         RoleEntity child = em.getReference(RoleEntity.class, role.getId());

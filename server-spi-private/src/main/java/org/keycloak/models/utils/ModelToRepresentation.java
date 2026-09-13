@@ -251,6 +251,14 @@ public class ModelToRepresentation {
                 currentClientRoles.add(role.getName());
             } else if (role.getContainer() instanceof OrganizationModel) {
                 OrganizationModel org = (OrganizationModel) role.getContainer();
+                OrganizationModel groupOrganization = group.getOrganization();
+                if (!GroupModel.Type.ORGANIZATION.equals(group.getType()) || group.getParent() == null
+                        || groupOrganization == null || groupOrganization.getRealm() == null
+                        || !groupOrganization.getId().equals(org.getId())
+                        || !groupOrganization.getRealm().getId().equals(org.getRealm().getId())
+                        || org.isDefaultRole(role)) {
+                    throw new ModelException("Invalid organization role mapping on organization group");
+                }
                 String orgAlias = org.getAlias();
                 List<String> currentOrgRoles = orgRoleNames.computeIfAbsent(orgAlias, k -> new ArrayList<>());
                 currentOrgRoles.add(role.getName());
@@ -258,6 +266,9 @@ public class ModelToRepresentation {
         }
         rep.setRealmRoles(realmRoleNames);
         rep.setClientRoles(clientRoleNames);
+        if (!orgRoleNames.isEmpty()) {
+            rep.setOrganizationRoles(orgRoleNames);
+        }
         Map<String, List<String>> attributes = group.getAttributes();
         rep.setAttributes(attributes);
         return rep;

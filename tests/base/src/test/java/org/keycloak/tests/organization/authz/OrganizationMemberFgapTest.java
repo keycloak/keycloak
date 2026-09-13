@@ -181,6 +181,21 @@ public class OrganizationMemberFgapTest {
     }
 
     @Test
+    public void testDefaultRoleMembersAreFilteredBeforePagination() {
+        UserPolicyRepresentation policy = createAdminPolicy();
+        PermissionTestUtils.createPermission(clientResource, Set.of(userBob.getId()),
+                AdminPermissionsSchema.USERS.getType(), Set.of(VIEW), policy);
+
+        OrganizationRoleResource defaultRole = realmAdminClient.realm(realm.getName()).organizations()
+                .get(orgId).roles().getDefault();
+        List<UserRepresentation> firstPage = defaultRole.getUserMembers(null, true, 0, 1);
+
+        assertThat(firstPage, hasSize(1));
+        assertEquals(userBob.getId(), firstPage.get(0).getId());
+        assertTrue(defaultRole.getAvailableUserMembers(null, null, true, 0, 10).isEmpty());
+    }
+
+    @Test
     public void testSearchWithAllUsersPermission() {
         // grant myadmin permission to view all users
         UserPolicyRepresentation policy = createAdminPolicy();

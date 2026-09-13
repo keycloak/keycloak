@@ -171,6 +171,9 @@ public final class OrganizationExportImportUtils {
 
         for (String roleName : member.getOrganizationRoles()) {
             RoleModel role = getRequiredOrganizationRole(organization, roleName, "organization role mapping");
+            if (organization.isDefaultRole(role)) {
+                continue;
+            }
             OrganizationsValidation.validateOrganizationRoleMapping(user, role);
             user.grantRole(role);
         }

@@ -255,6 +255,9 @@ public class RepresentationToModel {
     }
 
     public static void importGroup(RealmModel realm, GroupModel parent, GroupRepresentation group) {
+        if (group.getOrganizationRoles() != null && !group.getOrganizationRoles().isEmpty()) {
+            throw new ModelException("Organization role mappings are only valid inside organization group import");
+        }
         GroupModel newGroup = realm.createGroup(group.getId(), group.getName(), parent);
         if (group.getDescription() != null) {
             newGroup.setDescription(group.getDescription());

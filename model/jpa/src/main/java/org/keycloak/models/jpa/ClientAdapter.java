@@ -532,6 +532,9 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public void setClientId(String clientId) {
+        if (!Objects.equals(entity.getClientId(), clientId)) {
+            new OrganizationRoleGraphGuard(session, em, realm.getId()).validateClientIdChange(getId(), clientId);
+        }
         entity.setClientId(clientId);
     }
 

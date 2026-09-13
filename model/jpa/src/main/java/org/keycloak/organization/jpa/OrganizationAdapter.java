@@ -27,12 +27,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
@@ -40,9 +40,13 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.JpaModel;
+import org.keycloak.models.jpa.entities.GroupEntity;
+import org.keycloak.models.jpa.entities.GroupRoleMappingEntity;
 import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
+import org.keycloak.models.jpa.entities.RealmEntity;
+import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
@@ -50,11 +54,12 @@ import org.keycloak.utils.StringUtil;
 
 import static java.util.Optional.ofNullable;
 
+/** JPA-backed organization model. */
 public final class OrganizationAdapter implements OrganizationModel, JpaModel<OrganizationEntity> {
 
     private final KeycloakSession session;
     private final RealmModel realm;
-    private final OrganizationEntity entity;
+    private OrganizationEntity entity;
     private final OrganizationProvider provider;
     private GroupModel group;
     private Map<String, List<String>> attributes;
@@ -94,10 +99,57 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
 
     @Override
     public void setDefaultRole(RoleModel role) {
-        if (role != null && (!role.isType(RoleModel.Type.ORGANIZATION) || !getId().equals(role.getContainerId()))) {
-            throw new ModelException("Default role must belong to the organization");
+        if (role == null) {
+            throw new ModelValidationException("Default organization role cannot be null");
         }
-        entity.setDefaultRoleId(role == null ? null : role.getId());
+
+        OrganizationModel current = session.getContext().getOrganization();
+        session.getContext().setOrganization(this);
+        try {
+            replaceDefaultRole(role);
+        } catch (RuntimeException cause) {
+            markRollback();
+            throw cause;
+        } finally {
+            session.getContext().setOrganization(current);
+        }
+    }
+
+    void clearDefaultRoleForRemoval() {
+        OrganizationModel current = session.getContext().getOrganization();
+        session.getContext().setOrganization(this);
+        try {
+            EntityManager em = getEntityManager();
+            lockRealm(em);
+            OrganizationEntity locked = lockOrganization(em);
+            GroupEntity root = requireOrganizationRoot(em, locked);
+            List<String> mappings = getRootRoleMappings(em, root);
+            String previousRoleId = locked.getDefaultRoleId();
+
+            if (previousRoleId == null) {
+                if (!mappings.isEmpty()) {
+                    throw reject("Internal organization group has role mappings without a default role");
+                }
+                return;
+            }
+            if (mappings.size() != 1 || !previousRoleId.equals(mappings.get(0))) {
+                throw reject("Internal organization group has role mappings other than the default role");
+            }
+
+            RoleModel previousRole = session.roles().getRoleInContainerById(this, previousRoleId);
+            if (previousRole == null) {
+                throw reject("Default organization role does not exist");
+            }
+
+            locked.setDefaultRoleId(null);
+            em.flush();
+            requireRootModel(root).deleteRoleMapping(previousRole);
+        } catch (RuntimeException cause) {
+            markRollback();
+            throw cause;
+        } finally {
+            session.getContext().setOrganization(current);
+        }
     }
 
     @Override
@@ -387,5 +439,192 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
             group = realm.getGroupById(getGroupId());
         }
         return group;
+    }
+
+    private void replaceDefaultRole(RoleModel candidate) {
+        EntityManager em = getEntityManager();
+        lockRealm(em);
+        OrganizationEntity locked = lockOrganization(em);
+        RoleEntity candidateEntity = requireCandidate(em, locked, candidate);
+        GroupEntity root = requireOrganizationRoot(em, locked);
+        List<String> mappings = getRootRoleMappings(em, root);
+        String previousRoleId = locked.getDefaultRoleId();
+        boolean sameRole = Objects.equals(previousRoleId, candidateEntity.getId());
+
+        validateCurrentDefault(em, locked, previousRoleId, mappings, sameRole);
+        if (hasDirectUserMapping(em, candidateEntity.getId())) {
+            throw reject("A role with direct user mappings cannot become the default organization role");
+        }
+        if (hasGroupMappingOutsideRoot(em, candidateEntity.getId(), root.getId())) {
+            throw reject("A role mapped to another group cannot become the default organization role");
+        }
+        if (hasIncomingComposite(em, candidateEntity.getId())) {
+            throw reject("A role used as a composite child cannot become the default organization role");
+        }
+
+        if (sameRole && mappings.size() == 1) {
+            return;
+        }
+
+        RoleModel authoritativeCandidate = session.roles().getRoleInContainerById(this, candidateEntity.getId());
+        if (authoritativeCandidate == null) {
+            throw reject("Default organization role does not exist");
+        }
+
+        RoleModel previousRole = previousRoleId == null || sameRole ? null
+                : session.roles().getRoleInContainerById(this, previousRoleId);
+        if (previousRoleId != null && !sameRole && previousRole == null) {
+            throw reject("Current default organization role does not exist");
+        }
+
+        locked.setDefaultRoleId(candidateEntity.getId());
+        em.flush();
+
+        GroupModel rootModel = requireRootModel(root);
+        if (mappings.isEmpty() || !sameRole) {
+            rootModel.grantRole(authoritativeCandidate);
+        }
+        if (previousRole != null) {
+            rootModel.deleteRoleMapping(previousRole);
+        }
+
+        List<String> result = getRootRoleMappings(em, root);
+        if (result.size() != 1 || !candidateEntity.getId().equals(result.get(0))) {
+            throw reject("Unable to establish the default role mapping on the internal organization group");
+        }
+    }
+
+    private EntityManager getEntityManager() {
+        return session.getProvider(JpaConnectionProvider.class).getEntityManager();
+    }
+
+    private void lockRealm(EntityManager em) {
+        RealmEntity realmEntity = em.find(RealmEntity.class, realm.getId(), LockModeType.PESSIMISTIC_WRITE);
+        if (realmEntity == null) {
+            throw reject("Organization realm does not exist");
+        }
+        em.flush();
+    }
+
+    private OrganizationEntity lockOrganization(EntityManager em) {
+        OrganizationEntity locked = em.find(OrganizationEntity.class, getId(), LockModeType.PESSIMISTIC_WRITE);
+        if (locked == null || !realm.getId().equals(locked.getRealmId())) {
+            throw reject("Organization does not exist in the current realm");
+        }
+        em.refresh(locked, LockModeType.PESSIMISTIC_WRITE);
+        entity = locked;
+        return locked;
+    }
+
+    private RoleEntity requireCandidate(EntityManager em, OrganizationEntity organization, RoleModel candidate) {
+        RoleEntity candidateEntity = candidate == null ? null : em.find(RoleEntity.class, candidate.getId());
+        if (candidateEntity == null || candidateEntity.getType() != RoleModel.Type.ORGANIZATION
+                || !organization.getId().equals(candidateEntity.getOrganizationId())
+                || !organization.getRealmId().equals(candidateEntity.getRealmId())) {
+            throw reject("Default role must belong to the organization and realm");
+        }
+        return candidateEntity;
+    }
+
+    private GroupEntity requireOrganizationRoot(EntityManager em, OrganizationEntity organization) {
+        GroupEntity root = organization.getGroupId() == null ? null
+                : em.find(GroupEntity.class, organization.getGroupId(), LockModeType.PESSIMISTIC_WRITE);
+        if (root == null || root.getType() != GroupModel.Type.ORGANIZATION.intValue()
+                || !organization.getRealmId().equals(root.getRealm())
+                || root.getOrganization() == null || !organization.getId().equals(root.getOrganization().getId())
+                || !GroupEntity.TOP_PARENT_ID.equals(root.getParentId())) {
+            throw reject("Invalid internal organization group");
+        }
+        return root;
+    }
+
+    private List<String> getRootRoleMappings(EntityManager em, GroupEntity root) {
+        return em.createNamedQuery("groupRoleMappings", GroupRoleMappingEntity.class)
+                .setParameter("group", root)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .getResultStream()
+                .map(GroupRoleMappingEntity::getRoleId)
+                .toList();
+    }
+
+    private void validateCurrentDefault(EntityManager em, OrganizationEntity organization, String previousRoleId,
+            List<String> mappings, boolean sameRole) {
+        if (previousRoleId == null) {
+            if (!mappings.isEmpty()) {
+                throw reject("Internal organization group has role mappings without a default role");
+            }
+            return;
+        }
+
+        RoleEntity previousRole = em.find(RoleEntity.class, previousRoleId);
+        if (previousRole == null || previousRole.getType() != RoleModel.Type.ORGANIZATION
+                || !organization.getId().equals(previousRole.getOrganizationId())
+                || !organization.getRealmId().equals(previousRole.getRealmId())) {
+            throw reject("Current default organization role is invalid");
+        }
+
+        if (mappings.isEmpty()) {
+            if (!sameRole) {
+                throw reject("Current default organization role mapping is missing");
+            }
+            return;
+        }
+        if (mappings.size() != 1 || !previousRoleId.equals(mappings.get(0))) {
+            throw reject("Internal organization group has role mappings other than the default role");
+        }
+    }
+
+    private boolean hasDirectUserMapping(EntityManager em, String roleId) {
+        boolean local = !em.createQuery("select mapping.roleId from UserRoleMappingEntity mapping where mapping.roleId = :roleId", String.class)
+                .setParameter("roleId", roleId)
+                .setMaxResults(1)
+                .getResultList()
+                .isEmpty();
+        if (local) {
+            return true;
+        }
+        return !em.createQuery("select mapping.roleId from FederatedUserRoleMappingEntity mapping where mapping.roleId = :roleId", String.class)
+                .setParameter("roleId", roleId)
+                .setMaxResults(1)
+                .getResultList()
+                .isEmpty();
+    }
+
+    private boolean hasGroupMappingOutsideRoot(EntityManager em, String roleId, String rootId) {
+        return !em.createQuery("select mapping.roleId from GroupRoleMappingEntity mapping "
+                        + "where mapping.roleId = :roleId and mapping.group.id <> :rootId", String.class)
+                .setParameter("roleId", roleId)
+                .setParameter("rootId", rootId)
+                .setMaxResults(1)
+                .getResultList()
+                .isEmpty();
+    }
+
+    private boolean hasIncomingComposite(EntityManager em, String roleId) {
+        return !em.createQuery("select composite.childRole.id from CompositeRoleEntity composite "
+                        + "where composite.childRole.id = :roleId", String.class)
+                .setParameter("roleId", roleId)
+                .setMaxResults(1)
+                .getResultList()
+                .isEmpty();
+    }
+
+    private GroupModel requireRootModel(GroupEntity root) {
+        GroupModel rootModel = realm.getGroupById(root.getId());
+        if (rootModel == null) {
+            throw reject("Internal organization group does not exist");
+        }
+        return rootModel;
+    }
+
+    private ModelValidationException reject(String message) {
+        markRollback();
+        return new ModelValidationException(message);
+    }
+
+    private void markRollback() {
+        if (session.getTransactionManager().isActive()) {
+            session.getTransactionManager().setRollbackOnly();
+        }
     }
 }

@@ -256,6 +256,14 @@ This is intentional: without the `stateless` feature, neither deployment invalid
 * *Multiple independent deployments sharing the same database*: enable the `stateless` feature and assign each deployment a unique cluster name via `--cache-embedded-cluster-name`.
   Without `stateless`, cross-deployment cache invalidation does not work and serving traffic from multiple deployments simultaneously leads to incorrect behavior.
 
+=== Organization roles and inherited defaults
+
+Organization Roles are introduced in this release. Each existing organization receives a default organization role during the database upgrade. {project_name} stores the role identifier on the organization and maps the role once to the organization's hidden internal root group. Existing organization members inherit the default role through their existing membership; the upgrade does not add a direct role mapping for each local or federated member.
+
+Regular organization roles can be assigned directly to organization members or to visible groups from the same organization. Members inherit roles assigned to their group and its parent groups. Visible organization groups also continue to accept realm and client role mappings. The internal root group and its default-role mapping are managed by {project_name} and are not exposed as administrator-configurable groups.
+
+No migration or cleanup is required for organization-role data from earlier releases because those releases did not include Organization Roles.
+
 === Generic role type checks
 
 `RoleModel` now distinguishes realm, client and organization roles through `getType()` and the new `isType(RoleModel.Type)` convenience method.
@@ -264,6 +272,30 @@ The existing `RoleModel#isClientRole()` method remains available for compatibili
 The `RoleUtils.isClientRole(RoleModel, ClientModel)` helper and `RoleModel.RoleNameChangeEvent#getClientId()` also remain available but are deprecated.
 For client role renames, `getClientId()` returns the public client ID; it returns `null` for realm role renames.
 `RoleNameChangeEvent` continues to represent realm and client role renames; organization role renames do not publish this legacy event.
+
+=== Role provider SPI uses generic role containers
+
+The role provider SPI now uses `RoleContainerModel` for operations shared by realm, client and organization roles.
+The deprecated realm- and client-specific methods remain available to callers, but they are not compatibility bridges for provider implementations.
+
+A custom `RoleLookupProvider` implementation must implement these generic methods and be rebuilt:
+
+* `getRole(RoleContainerModel, String)`
+* `searchForRolesStream(RoleContainerModel, String, Integer, Integer)`
+
+A custom `RoleProvider` implementation must implement those two methods and these four additional methods:
+
+* `addRole(RoleContainerModel, String, String)`
+* `getRolesStream(RoleContainerModel, Integer, Integer)`
+* `getRolesCount(RoleContainerModel, String)`
+* `removeRoles(RoleContainerModel)`
+
+Custom `RoleContainerModel` implementations must also implement `getRealm()` and be rebuilt against the updated SPI.
+For a realm container this method returns the realm itself; client and organization containers return their owning realm.
+
+When migrating a provider, dispatch each generic operation according to whether the container is a `RealmModel`, `ClientModel` or `OrganizationModel` and preserve the provider's existing semantics for the supported types.
+Do not return an empty stream or zero for a supported container merely because the generic method is new.
+`RoleStorageManager#getRolesCount` remains a count of the local role provider; it does not aggregate roles from external `RoleStorageProvider` implementations, even though realm and client searches can include external roles.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features

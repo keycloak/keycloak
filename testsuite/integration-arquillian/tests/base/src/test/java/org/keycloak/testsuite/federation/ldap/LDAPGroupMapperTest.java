@@ -28,6 +28,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -178,6 +179,19 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             Assertions.assertTrue(johnGroups.contains(group12));
             Assertions.assertTrue(johnGroups.contains(groupTeam20162017));
             Assertions.assertTrue(johnGroups.contains(groupTeamChild20182019));
+            Assertions.assertTrue(john.isMemberOf(group1));
+            RoleModel inheritedRole = appRealm.addRole("ldap-group-inherited-role");
+            group1.grantRole(inheritedRole);
+            Assertions.assertTrue(john.hasRole(inheritedRole));
+
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+            GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ctx.getLdapProvider(), appRealm);
+            LDAPObject johnLdap = ctx.getLdapProvider().loadLDAPUserByUsername(appRealm, "johnkeycloak");
+            UserModel johnDb = UserStoragePrivateUtil.userLocalStorage(session)
+                    .getUserByUsername(appRealm, "johnkeycloak");
+            UserModel groupMapperDelegate = groupMapper.new LDAPGroupMappingsUserDelegate(appRealm, johnDb, johnLdap);
+            Assertions.assertTrue(groupMapperDelegate.isMemberOf(group1));
+            Assertions.assertTrue(groupMapperDelegate.hasRole(inheritedRole));
 
             Assertions.assertEquals(2, john.getGroupsStream("gr", 0, 10).count());
             Assertions.assertEquals(1, john.getGroupsStream("gr", 1, 10).count());

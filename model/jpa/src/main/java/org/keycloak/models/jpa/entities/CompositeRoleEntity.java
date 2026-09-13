@@ -40,6 +40,8 @@ import jakarta.persistence.Table;
 @NamedQueries({
         @NamedQuery(name="deleteRoleFromComposites", query="delete CompositeRoleEntity c where c.parentRole = :role or c.childRole = :role"),
         @NamedQuery(name="deleteSingleCompositeFromRole", query="delete CompositeRoleEntity c where c.parentRole = :parentRole and c.childRole = :childRole"),
+        @NamedQuery(name="getChildRoleIdsFromParentRoleIds", query="select distinct c.childRole.id from CompositeRoleEntity c where c.parentRole.id in :parentRoleIds"),
+        @NamedQuery(name="getParentRoleIdsFromChildRoleIds", query="select distinct c.parentRole.id from CompositeRoleEntity c where c.childRole.id in :childRoleIds"),
 })
 @IdClass(CompositeRoleEntity.Key.class)
 public class CompositeRoleEntity {

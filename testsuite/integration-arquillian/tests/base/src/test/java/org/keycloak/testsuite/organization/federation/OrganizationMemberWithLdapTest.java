@@ -29,9 +29,12 @@ import org.keycloak.admin.client.resource.OrganizationRoleResource;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -51,12 +54,15 @@ import org.junit.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OrganizationMemberWithLdapTest extends AbstractOrganizationTest {
 
@@ -94,6 +100,7 @@ public class OrganizationMemberWithLdapTest extends AbstractOrganizationTest {
         OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         OrganizationRepresentation orgRepresentation = organization.toRepresentation();
         UserRepresentation ldapUser = managedRealm.admin().users().searchByUsername("johnkeycloak", true).get(0);
+        RoleRepresentation defaultOrganizationRole = organization.roles().getDefault().toRepresentation();
         RoleRepresentation organizationRole = new RoleRepresentation("ldap-organization-role", null, false);
         String organizationRoleId;
         try (Response response = organization.roles().create(organizationRole)) {
@@ -116,6 +123,55 @@ public class OrganizationMemberWithLdapTest extends AbstractOrganizationTest {
         organizationRoleResource.addUserMembers(List.of(roleMember));
         assertThat(organizationRoleResource.getUserMembers().stream().map(UserRepresentation::getId).toList(),
                 contains(ldapUser.getId()));
+
+        RoleRepresentation inheritedOrganizationRole = new RoleRepresentation("ldap-group-role", null, false);
+        try (Response response = organization.roles().create(inheritedOrganizationRole)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            inheritedOrganizationRole.setId(ApiUtil.getCreatedId(response));
+        }
+        GroupRepresentation inheritedRoleGroup = new GroupRepresentation();
+        inheritedRoleGroup.setName("ldap-role-group");
+        try (Response response = organization.groups().addTopLevelGroup(inheritedRoleGroup)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            inheritedRoleGroup.setId(ApiUtil.getCreatedId(response));
+        }
+        var inheritedRoleMappings = organization.groups().group(inheritedRoleGroup.getId()).roles();
+        var inheritedRoles = List.of(inheritedOrganizationRole);
+        assertThat(inheritedRoleMappings.getAvailableOrganizationRoleMappings().stream()
+                .map(RoleRepresentation::getId).toList(), hasItem(inheritedOrganizationRole.getId()));
+        inheritedRoleMappings.addOrganizationRoleMappings(inheritedRoles);
+        assertFalse(inheritedRoleMappings.getAvailableOrganizationRoleMappings().stream()
+                .anyMatch(role -> inheritedOrganizationRole.getId().equals(role.getId())));
+
+        RoleRepresentation inheritedRealmRole = new RoleRepresentation("ldap-inherited-realm-role", null, false);
+        managedRealm.admin().roles().create(inheritedRealmRole);
+        inheritedRealmRole = managedRealm.admin().roles().get(inheritedRealmRole.getName()).toRepresentation();
+        organization.groups().group(inheritedRoleGroup.getId()).roles().realmLevel().add(List.of(inheritedRealmRole));
+        organization.groups().group(inheritedRoleGroup.getId()).addMember(ldapUser.getId());
+
+        AtomicReference<String> inheritedGroupId = new AtomicReference<>(inheritedRoleGroup.getId());
+        AtomicReference<String> inheritedRoleId = new AtomicReference<>(inheritedRealmRole.getId());
+        AtomicReference<String> inheritedOrganizationRoleId = new AtomicReference<>(inheritedOrganizationRole.getId());
+        AtomicReference<String> defaultRoleId = new AtomicReference<>(defaultOrganizationRole.getId());
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            LDAPTestContext context = LDAPTestContext.init(session);
+            RealmModel realm = context.getRealm();
+            UserModel john = session.users().getUserByUsername(realm, "johnkeycloak");
+            GroupModel group = realm.getGroupById(inheritedGroupId.get());
+            RoleModel role = realm.getRoleById(inheritedRoleId.get());
+            RoleModel defaultRole = realm.getRoleById(defaultRoleId.get());
+
+            assertThat(john.getFederationLink(), notNullValue());
+            assertFalse(john.getGroupsStream().anyMatch(candidate -> inheritedGroupId.get().equals(candidate.getId())));
+            assertTrue(john.getRoleMappingsGroupsStream()
+                    .anyMatch(candidate -> inheritedGroupId.get().equals(candidate.getId())));
+            assertTrue(john.isMemberOf(group));
+            assertTrue(john.hasRole(role));
+            assertTrue(john.hasRole(realm.getRoleById(inheritedOrganizationRoleId.get())));
+            assertTrue(RoleUtils.getDeepUserRoleMappings(john).contains(role));
+            assertTrue(john.hasRole(defaultRole));
+            assertFalse(john.hasDirectRole(defaultRole));
+        });
 
         ClientRepresentation client = new ClientRepresentation();
         client.setClientId("ldap-organization-role-client");
@@ -143,6 +199,7 @@ public class OrganizationMemberWithLdapTest extends AbstractOrganizationTest {
         testingClient.server(TEST_REALM_NAME).run(session -> {
             LDAPTestContext context = LDAPTestContext.init(session);
             assertThat(LDAPTestUtils.getLdapGroupByName(session, context.getRealm(), "groupsMapper", orgId.get()), is(nullValue()));
+            assertThat(LDAPTestUtils.getLdapGroupByName(session, context.getRealm(), "groupsMapper", "ldap-role-group"), is(nullValue()));
         });
 
         // make the user leave the organization and check it was successful.
@@ -154,6 +211,15 @@ public class OrganizationMemberWithLdapTest extends AbstractOrganizationTest {
         assertThat(organizationRoleResource.getUserMembers(), hasSize(0));
         assertThat(managedRealm.admin().users().get(ldapUser.getId()).roles().clientLevel(clientId).listAll().stream()
                 .map(RoleRepresentation::getId).toList(), contains(clientRole.getId()));
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            LDAPTestContext context = LDAPTestContext.init(session);
+            RealmModel realm = context.getRealm();
+            UserModel john = session.users().getUserByUsername(realm, "johnkeycloak");
+            assertFalse(john.hasRole(realm.getRoleById(defaultRoleId.get())));
+            assertFalse(john.hasRole(realm.getRoleById(inheritedRoleId.get())));
+            assertFalse(john.hasRole(realm.getRoleById(inheritedOrganizationRoleId.get())));
+        });
     }
 
 }

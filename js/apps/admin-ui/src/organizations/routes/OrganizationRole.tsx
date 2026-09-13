@@ -24,7 +24,7 @@ export const OrganizationRoleRoute: AppRouteObject = {
   path: "/:realm/organizations/:orgId/roles/:roleId/:tab/*",
   element: <OrganizationRoleDetails />,
   handle: {
-    access: "view-organizations",
+    access: "query-organizations",
     breadcrumb: (t) => t("organizationRoleDetails"),
   },
 };

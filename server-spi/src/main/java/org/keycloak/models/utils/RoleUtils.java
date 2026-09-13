@@ -18,8 +18,10 @@
 package org.keycloak.models.utils;
 
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -236,15 +238,37 @@ public class RoleUtils {
      * @return all user role mappings including all groups of user. Composite roles will be expanded
      */
     public static Set<RoleModel> getDeepUserRoleMappings(UserModel user) {
-        Set<RoleModel> roleMappings = user.getRoleMappingsStream().collect(Collectors.toSet());
-        user.getGroupsStream().forEach(group -> addGroupRoles(group, roleMappings));
-        return expandCompositeRoles(roleMappings);
-    }
+        Set<RoleModel> roleMappings;
+        try (Stream<RoleModel> directRoles = user.getRoleMappingsStream()) {
+            roleMappings = directRoles.filter(Objects::nonNull).collect(Collectors.toSet());
+        }
 
-    private static void addGroupRoles(GroupModel group, Set<RoleModel> roleMappings) {
-        roleMappings.addAll(group.getRoleMappingsStream().collect(Collectors.toSet()));
-        if (group.getParentId() == null) return;
-        addGroupRoles(group.getParent(), roleMappings);
+        Deque<GroupModel> pendingGroups = new ArrayDeque<>();
+        try (Stream<GroupModel> directGroups = user.getRoleMappingsGroupsStream()) {
+            directGroups.filter(Objects::nonNull).forEach(pendingGroups::addLast);
+        }
+
+        Set<String> visitedGroupIds = new HashSet<>();
+        Set<GroupModel> visitedGroupsWithoutIds = Collections.newSetFromMap(new IdentityHashMap<>());
+        while (!pendingGroups.isEmpty()) {
+            GroupModel group = pendingGroups.removeFirst();
+            String groupId = group.getId();
+            boolean firstVisit = groupId == null ? visitedGroupsWithoutIds.add(group) : visitedGroupIds.add(groupId);
+            if (!firstVisit) {
+                continue;
+            }
+
+            try (Stream<RoleModel> groupRoles = group.getRoleMappingsStream()) {
+                groupRoles.filter(Objects::nonNull).forEach(roleMappings::add);
+            }
+
+            GroupModel parent = group.getParent();
+            if (parent != null) {
+                pendingGroups.addLast(parent);
+            }
+        }
+
+        return expandCompositeRoles(roleMappings);
     }
 
     private static RealmModel realmOf(RoleModel role) {

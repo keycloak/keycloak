@@ -16,6 +16,7 @@
  */
 package org.keycloak.storage.role;
 
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.keycloak.models.ClientModel;
@@ -109,7 +110,7 @@ public interface RoleLookupProvider {
     Stream<RoleModel> searchForClientRolesStream(RealmModel realm, String search, Stream<String> excludedIds, Integer first, Integer max);
 
     /**
-     * Returns an organization role by name within the given {@code container}.
+     * Returns a role by name within the given {@code container}.
      *
      * @param container the container that owns the role.
      * @param name Role name.
@@ -118,8 +119,7 @@ public interface RoleLookupProvider {
     RoleModel getRole(RoleContainerModel container, String name);
 
     /**
-     * Returns role by internal ID within the given {@code container}.
-     * This lookup only returns organization roles owned by the given {@code container}.
+     * Returns a realm, client or organization role by internal ID within the given {@code container}.
      *
      * @param container the container that owns the role.
      * @param id Internal role ID.
@@ -138,11 +138,7 @@ public interface RoleLookupProvider {
             case ORGANIZATION -> container instanceof OrganizationModel;
         };
 
-        if (typeMatches) {
-            return role.getContainerId().equals(container.getId()) ? role : null;
-        }
-
-        return null;
+        return typeMatches && Objects.equals(role.getContainerId(), container.getId()) ? role : null;
     }
 
     /**

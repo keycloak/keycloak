@@ -85,6 +85,8 @@ public class LDAPHardcodedGroupMapperTest extends AbstractLDAPTest implements Se
                     .filter(it -> it.getName().equals("parent_group")).findFirst().orElse(null);
             assertThat(parentGroup, notNullValue());
             assertThat(hardcodedGroup.getParent(), equalTo(parentGroup));
+            assertThat(john.getGroupsStream().anyMatch(hardcodedGroup::equals), is(true));
+            assertThat(john.getRoleMappingsGroupsStream().filter(hardcodedGroup::equals).count(), equalTo(1L));
 
             // check group membership
             assertThat(john.isMemberOf(hardcodedGroup), is(true));

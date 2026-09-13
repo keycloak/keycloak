@@ -47,14 +47,23 @@ public interface RoleMappingResource {
     @Path("clients/{clientUUID}")
     RoleScopeResource clientLevel(@PathParam("clientUUID") String clientUUID);
 
+    /**
+     * Returns organization roles available for mapping to a visible organization group.
+     */
     @GET
     @Path("organizations/available")
     List<RoleRepresentation> getAvailableOrganizationRoleMappings();
 
+    /**
+     * Adds organization role mappings to a visible organization group.
+     */
     @POST
     @Path("organizations")
     void addOrganizationRoleMappings(List<RoleRepresentation> roles);
 
+    /**
+     * Removes direct organization role mappings from a visible organization group.
+     */
     @DELETE
     @Path("organizations")
     void deleteOrganizationRoleMappings(List<RoleRepresentation> roles);

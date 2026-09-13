@@ -80,6 +80,10 @@ public final class OrganizationRoleMapperHelper {
             throw new IdentityProviderMapperConfigException("Unable to find organization role '" + roleId + "' referenced by mapper '"
                     + mapperModel.getName() + "' in organization '" + organization.getAlias() + "'.");
         }
+        if (organization.isDefaultRole(role)) {
+            throw new IdentityProviderMapperConfigException("The default organization role is granted through organization membership and cannot be configured on mapper '"
+                    + mapperModel.getName() + "'.");
+        }
     }
 
     public static void grantUserRole(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
@@ -107,6 +111,11 @@ public final class OrganizationRoleMapperHelper {
         RoleModel role = session.roles().getRoleInContainerById(organization, roleId);
         if (role == null || !role.isType(RoleModel.Type.ORGANIZATION) || !Objects.equals(organization.getId(), role.getContainerId())) {
             LOG.warnf("Unable to find organization role '%s' referenced by mapper '%s' in organization '%s' on realm '%s'.", roleId,
+                    mapperModel.getName(), organization.getAlias(), realm.getName());
+            return null;
+        }
+        if (organization.isDefaultRole(role)) {
+            LOG.warnf("Ignoring default organization role '%s' referenced by mapper '%s' in organization '%s' on realm '%s'.", roleId,
                     mapperModel.getName(), organization.getAlias(), realm.getName());
             return null;
         }
