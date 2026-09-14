@@ -199,6 +199,53 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
     }
 
     /**
+     * GET /clients/{client} - client secret masking for view-only users.
+     * View-only users should see masked secrets, matching v1 behavior.
+     */
+    @Test
+    public void getClientSecretMaskedForViewOnly() {
+        String testClientId = "test-client";
+
+        // view-clients: should get masked secret, not plaintext
+        OIDCClientRepresentation viewRep = (OIDCClientRepresentation) getClientsApi(viewClientsAdminClient).client(testClientId).getClient();
+        assertThat(viewRep.getAuth().getSecret(), is("**********"));
+
+        // manage-cllients: should get the real secret
+        OIDCClientRepresentation manageRep = (OIDCClientRepresentation) getClientsApi(manageClientsAdminClient).client(testClientId).getClient();
+        assertThat(manageRep.getAuth().getSecret(), is("test-secret"));
+    }
+
+    /**
+     * GET /clients - client secret masking for view-only users.
+     */
+    @Test
+    public void getClientListSecretMaskedForViewOnly() {
+        // view-clients: list should have masked secrets
+        var viewClients = getClientsApi(viewClientsAdminClient).getClients().toList();
+        assertThat(viewClients.size(), greaterThan(0));
+
+        OIDCClientRepresentation testClient = viewClients.stream()
+                .filter(r -> r instanceof OIDCClientRepresentation)
+                .map(r -> (OIDCClientRepresentation) r)
+                .filter(r -> "test-client".equals(r.getClientId()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("test-client not found in list"));
+
+        assertThat(testClient.getAuth().getSecret(), is("**********"));
+
+        // manage-clients: list should have the real secret
+        var manageClients = getClientsApi(manageClientsAdminClient).getClients().toList();
+        OIDCClientRepresentation testClientManaged = manageClients.stream()
+                .filter(r -> r instanceof OIDCClientRepresentation)
+                .map(r -> (OIDCClientRepresentation) r)
+                .filter(r -> "test-client".equals(r.getClientId()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("test-client not found in list"));
+
+        assertThat(testClientManaged.getAuth().getSecret(), is("test-secret"));
+    }
+
+    /**
      * GET /clients/{client} (client == null)
      * Permissions: if auth.clients().canList() return 404, else return 403
      */
