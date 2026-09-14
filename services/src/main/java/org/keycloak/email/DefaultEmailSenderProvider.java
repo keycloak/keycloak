@@ -17,14 +17,23 @@
 
 package org.keycloak.email;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 
+import jakarta.activation.DataHandler;
 import jakarta.mail.Address;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
@@ -37,11 +46,14 @@ import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.internet.MimeUtility;
+import jakarta.mail.util.ByteArrayDataSource;
 
 import org.keycloak.common.enums.HostnameVerificationPolicy;
+import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.theme.Theme;
 import org.keycloak.truststore.JSSETruststoreConfigurator;
 import org.keycloak.utils.EmailValidationUtil;
 import org.keycloak.utils.SMTPUtil;
@@ -57,6 +69,7 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
     private static final Logger logger = Logger.getLogger(DefaultEmailSenderProvider.class);
     private static final String SUPPORTED_SSL_PROTOCOLS = getSupportedSslProtocols();
+    private static final Pattern CID_PATTERN = Pattern.compile("[\"']cid:(.*?)[\"']");
 
     private final Map<EmailAuthenticator.AuthenticatorType, EmailAuthenticator> authenticators;
 
@@ -201,25 +214,134 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
     }
 
     private Multipart buildMultipartBody(String textBody, String htmlBody) throws EmailException {
-        Multipart multipart = new MimeMultipart("alternative");
+        Theme theme = null;
+        if (htmlBody != null && session != null && !extractCidReferences(htmlBody).isEmpty()) {
+            try {
+                theme = session.theme().getTheme(Theme.Type.EMAIL);
+            } catch (IOException e) {
+                throw new EmailException("Failed to load email theme for embedded resources", e);
+            }
+        }
+        return buildMultipartBody(textBody, htmlBody, theme);
+    }
+
+    Multipart buildMultipartBody(String textBody, String htmlBody, Theme theme) throws EmailException {
+        Set<String> paths = extractCidReferences(htmlBody);
+        Map<String, String> pathToContentId = contentIdsFor(paths);
+        String resolvedHtml = paths.isEmpty() ? htmlBody : rewriteCidReferences(htmlBody, pathToContentId);
 
         try {
+            MimeMultipart alternative = new MimeMultipart("alternative");
+
             if (textBody != null) {
                 MimeBodyPart textPart = new MimeBodyPart();
                 textPart.setText(textBody, "UTF-8");
-                multipart.addBodyPart(textPart);
+                alternative.addBodyPart(textPart);
             }
 
-            if (htmlBody != null) {
+            if (resolvedHtml != null) {
                 MimeBodyPart htmlPart = new MimeBodyPart();
-                htmlPart.setContent(htmlBody, "text/html; charset=UTF-8");
-                multipart.addBodyPart(htmlPart);
+                htmlPart.setContent(resolvedHtml, "text/html; charset=UTF-8");
+                alternative.addBodyPart(htmlPart);
             }
-        } catch (MessagingException e) {
-            throw new EmailException("Error encoding email body parts", e);
+
+            if (paths.isEmpty() || theme == null) {
+                return alternative;
+            }
+
+            // RFC 2387 / RFC 2557 (MHTML): related root, alternative + inline images as siblings
+            MimeMultipart related = new MimeMultipart("related");
+
+            MimeBodyPart alternativePart = new MimeBodyPart();
+            alternativePart.setContent(alternative);
+            related.addBodyPart(alternativePart);
+
+            for (String path : paths) {
+                String contentId = pathToContentId.get(path);
+                try (InputStream inputStream = theme.getResourceAsStream(path)) {
+                    if (inputStream == null) {
+                        logger.warnf("Embedded email resource not found in theme: %s", path);
+                        continue;
+                    }
+
+                    byte[] bytes = inputStream.readAllBytes();
+                    String mimeType = MimeTypeUtil.getContentType(path);
+                    if (mimeType == null) {
+                        mimeType = "application/octet-stream";
+                    }
+
+                    MimeBodyPart imagePart = new MimeBodyPart();
+                    imagePart.setDataHandler(new DataHandler(new ByteArrayDataSource(bytes, mimeType)));
+                    imagePart.setHeader("Content-ID", "<" + contentId + ">");
+                    imagePart.setDisposition(MimeBodyPart.INLINE);
+                    imagePart.setFileName(fileNameFor(path));
+                    related.addBodyPart(imagePart);
+                }
+            }
+
+            return related;
+        } catch (IOException | MessagingException e) {
+            throw new EmailException("Error embedding email resources", e);
+        }
+    }
+
+    static Set<String> extractCidReferences(String htmlBody) {
+        Set<String> paths = new HashSet<>();
+        if (htmlBody == null) {
+            return paths;
+        }
+        Matcher matcher = CID_PATTERN.matcher(htmlBody);
+        while (matcher.find()) {
+            paths.add(matcher.group(1));
+        }
+        return paths;
+    }
+
+    /**
+     * Maps theme paths to URL-safe Content-IDs (filename only, no slashes).
+     * RFC 2392: cid URLs are matched against Content-ID headers; many clients reject slashes in IDs.
+     */
+    static Map<String, String> contentIdsFor(Set<String> paths) {
+        Map<String, String> pathToContentId = new LinkedHashMap<>();
+        Map<String, String> usedIds = new HashMap<>();
+
+        for (String path : paths) {
+            String baseId = fileNameFor(path);
+            String contentId = baseId;
+            int suffix = 2;
+            while (usedIds.containsKey(contentId)) {
+                contentId = baseId + "-" + suffix++;
+            }
+            usedIds.put(contentId, path);
+            pathToContentId.put(path, contentId);
         }
 
-        return multipart;
+        return pathToContentId;
+    }
+
+    static String rewriteCidReferences(String htmlBody, Map<String, String> pathToContentId) {
+        if (htmlBody == null) {
+            return null;
+        }
+        Matcher matcher = CID_PATTERN.matcher(htmlBody);
+        StringBuilder resolved = new StringBuilder();
+        while (matcher.find()) {
+            String path = matcher.group(1);
+            String contentId = pathToContentId.get(path);
+            if (contentId != null) {
+                char quote = matcher.group().charAt(0);
+                matcher.appendReplacement(resolved, Matcher.quoteReplacement(quote + "cid:" + contentId + quote));
+            } else {
+                matcher.appendReplacement(resolved, Matcher.quoteReplacement(matcher.group()));
+            }
+        }
+        matcher.appendTail(resolved);
+        return resolved.toString();
+    }
+
+    static String fileNameFor(String path) {
+        int slash = path.lastIndexOf('/');
+        return slash >= 0 ? path.substring(slash + 1) : path;
     }
 
     private EmailAuthenticator selectAuthenticatorBasedOnConfig(Map<String, String> config) {
