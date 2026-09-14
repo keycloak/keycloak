@@ -282,10 +282,14 @@ public class IdentityProvidersResource {
 
         try {
             IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation, session);
-            if (!auth.hasOneAdminRole(AdminRoles.MANAGE_REALM) && identityProvider.isAllowAdminRoleMapping()) {
-                throw ErrorResponse.error("Only users with '" + AdminRoles.MANAGE_REALM
-                        + "' role can enable the '" + IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING + "' setting.",
-                        Response.Status.FORBIDDEN);
+            if (!auth.hasOneAdminRole(AdminRoles.MANAGE_REALM)) {
+                if (identityProvider.getConfig().containsKey(IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING)
+                        && identityProvider.isAllowAdminRoleMapping()) {
+                    throw ErrorResponse.error("Only users with '" + AdminRoles.MANAGE_REALM
+                            + "' role can enable the '" + IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING + "' setting.",
+                            Response.Status.FORBIDDEN);
+                }
+                identityProvider.setAllowAdminRoleMapping(false);
             }
             session.identityProviders().create(identityProvider);
 
