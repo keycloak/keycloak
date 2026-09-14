@@ -498,6 +498,14 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--foobar'"));
     }
+    
+    @Test
+    public void failIfOptimizedUsedForFirstStartup() {
+        putEnvVar("KC_OPTIMIZED", "true");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("The 'optimized' option was used for first ever server start."));
+    }
 
     @Test
     public void failIfOptimizedUsedForFirstStartupExport() {
@@ -637,6 +645,26 @@ public class PicocliTest extends AbstractConfigurationTest {
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("WARNING: --optimized is deprecated, please see the documentation for the usage of the 'optimized' option instead."));
+    }
+    
+    @Test
+    public void startOptimizedOptionSucceeds() {
+        build("build", "--db=dev-file");
+        putEnvVar("KC_OPTIMIZED", "true");
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("WARNING: --optimized is deprecated, please see the documentation for the usage of the 'optimized' option instead."));
+    }
+    
+    @Test
+    public void startOptimizedOptionDetectsChange() {
+        build("build", "--db=oracle");
+        putEnvVar("KC_OPTIMIZED", "true");
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--http-enabled=true", "--hostname-strict=false");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
     }
 
     @Test

@@ -424,11 +424,10 @@ The server supports some of the most common TLS termination proxies:
 
 To configure how client certificates are retrieved from the requests, you need to:
 
-.Enable the corresponding proxy provider
-<@kc.build parameters="--spi-x509cert-lookup--provider=<provider>"/>
-
 .Configure the HTTP headers
 <@kc.start parameters="--spi-x509cert-lookup--<provider>--ssl-client-cert=SSL_CLIENT_CERT --spi-x509cert-lookup--<provider>--ssl-cert-chain-prefix=CERT_CHAIN --spi-x509cert-lookup--<provider>-certificate-chain-length=10"/>
+
+NOTE: The provider selection (`spi-x509cert-lookup--provider`) is a build time option and should be set via config file, environment variable. See <@links.server id="configuration"/> for more on handling build time options.
 
 When configuring the HTTP headers, you need to make sure the values you are using correspond to the names of the headers
 forwarded by the proxy with the client certificate information.

@@ -19,15 +19,6 @@ copy "path\to\prunsrv.exe" "%KEYCLOAK_HOME%\bin\prunsrv.exe"
 
 Use the amd64 binary for 64-bit and x86 for 32-bit systems.
 
-== Optional: Pre-build
-
-Pre-building is optional. If you do not pre-build, Keycloak will build automatically on first start, which takes longer.
-
-[source,bash]
-----
-bin/kc.bat build --db=postgres
-----
-
 == Installing the Service
 
 Keycloak includes a `tools windows-service` subcommand to simplify service installation and uninstallation.
@@ -129,8 +120,7 @@ To change runtime configuration:
 
 1. Stop the service: `net stop keycloak`.
 2. Update environment variables or `conf/keycloak.conf`.
-3. Optionally re-run build: `bin\kc.bat build [new-options]`.
-4. Start the service: `net start keycloak`.
+3. Start the service: `net start keycloak`.
 
 == Troubleshooting
 
