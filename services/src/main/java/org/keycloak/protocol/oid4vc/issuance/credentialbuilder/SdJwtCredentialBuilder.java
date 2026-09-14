@@ -63,10 +63,6 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
         // Always add a jti (the credential id)
         claims.put(CLAIM_NAME_JTI, vcId != null ? vcId : UUID.randomUUID().toString());
 
-        Optional.ofNullable(issuanceDate).ifPresent(it ->
-                claims.put(CLAIM_NAME_IAT, it.getEpochSecond())
-        );
-
         // Put all claims into the disclosure spec, except the one to be kept visible
         DisclosureSpec.Builder disclosureSpecBuilder = DisclosureSpec.builder();
         claims.entrySet()
@@ -92,11 +88,18 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
         claims.put(CLAIM_NAME_ISSUER, credentialBuildConfig.getCredentialIssuer());
         claims.put(CLAIM_NAME_VCT, credentialBuildConfig.getCredentialType());
 
+        // iat is issuer-controlled: it must always reflect the issuer-configured credential lifetime
+        // and must not be overridable by a mapped attribute value (see keycloak/keycloak#52667).
+        if (issuanceDate != null) {
+            claims.put(CLAIM_NAME_IAT, issuanceDate.getEpochSecond());
+        }
+
         // Set exp claim from verifiable credential expiration date
         // expiry is optional, but should be set if available to comply with HAIP
         // see: https://openid.github.io/OpenID4VC-HAIP/openid4vc-high-assurance-interoperability-profile-wg-draft.html#section-6.1
-        // Only set if not already set by a protocol mapper
-        if (!claims.containsKey(CLAIM_NAME_EXP) && expirationDate != null) {
+        // exp is issuer-controlled: it must always reflect the issuer-configured credential lifetime
+        // and must not be overridable by a mapped attribute value (see keycloak/keycloak#52667).
+        if (expirationDate != null) {
             claims.put(CLAIM_NAME_EXP, expirationDate.getEpochSecond());
         }
 

@@ -47,6 +47,10 @@ import static org.keycloak.VCFormat.MSO_MDOC;
  * bearing other claims. Default is the value in the verifiable credential.
  * <p>
  * We will use the java.time.temporal.ChronoUnit enum values to help flatten down the time.
+ * <p>
+ * NOTE: For SD-JWT credentials, this mapper has no effect on `iat` and `exp` claims, which are
+ * always sourced from the normalized issuance and expiration date values computed by the Issuer
+ * Endpoint.
  *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
@@ -111,6 +115,12 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
     public boolean supportsCredentialFormat(String credentialFormat) {
         // mDoc carries issuance timing in the MSO validityInfo instead of a VC-level iat claim.
         return !MSO_MDOC.equals(credentialFormat);
+    }
+
+    @Override
+    public boolean mapsUserControlledData() {
+        // The value is the issuer's issuance time, not user-controlled; the claim name may legitimately target "iat".
+        return false;
     }
 
     public void setClaim(VerifiableCredential verifiableCredential,

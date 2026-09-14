@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -90,14 +91,24 @@ public class OID4VCTargetRoleMapper extends OID4VCMapper {
 		return CONFIG_PROPERTIES;
 	}
 
+    @Override
+    protected String resolveClaimName(ProtocolMapperModel mapperModel) {
+        Map<String, String> config = mapperModel.getConfig();
+        if (config == null) {
+            return null;
+        }
+
+        return Optional.ofNullable(config.get(CLAIM_NAME)).orElse(DEFAULT_CLAIM_NAME);
+    }
+
 	@Override
 	public List<String> getMetadataAttributePath() {
-		return getMetadataAttributePath(getClaimName(DEFAULT_CLAIM_NAME));
+		return getMetadataAttributePath(resolveClaimName(mapperModel));
 	}
 
 	@Override
 	protected List<String> getClaimLookupPath() {
-		return getClaimLookupPath(getClaimName(DEFAULT_CLAIM_NAME));
+		return getClaimLookupPath(resolveClaimName(mapperModel));
 	}
 
 	@Override
@@ -152,7 +163,11 @@ public class OID4VCTargetRoleMapper extends OID4VCMapper {
 	@Override
 	public void setClaim(Map<String, Object> claims,
 						 UserSessionModel userSessionModel) {
-		String propertyName = getClaimName(DEFAULT_CLAIM_NAME);
+		if (shouldSkipSensitiveMapping()) {
+			return;
+		}
+
+		String propertyName = resolveClaimName(mapperModel);
 		String client = mapperModel.getConfig().get(CLIENT_CONFIG_KEY);
 		ClientModel clientModel = userSessionModel.getRealm().getClientByClientId(client);
 		if (clientModel == null) {

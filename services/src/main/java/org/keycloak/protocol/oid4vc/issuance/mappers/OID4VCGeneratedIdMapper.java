@@ -68,6 +68,12 @@ public class OID4VCGeneratedIdMapper extends OID4VCMapper {
     }
 
     @Override
+    public boolean mapsUserControlledData() {
+        // The value is a generated id, not user-controlled; the claim name may legitimately target "jti".
+        return false;
+    }
+
+    @Override
     public List<String> getMetadataAttributePath() {
         return getMetadataAttributePath(getGeneratedIdClaimName());
     }

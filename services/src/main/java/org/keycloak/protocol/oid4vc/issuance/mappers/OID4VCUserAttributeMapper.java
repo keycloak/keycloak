@@ -84,6 +84,10 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
 
     @Override
     public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
+        if (shouldSkipSensitiveMapping()) {
+            return;
+        }
+
         String claimName = mapperModel.getConfig().get(CLAIM_NAME);
         String userAttribute = mapperModel.getConfig().get(USER_ATTRIBUTE_KEY);
         if (claimName == null && userAttribute == null) {
@@ -140,6 +144,12 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
     }
 
     @Override
+    protected String resolveClaimName(ProtocolMapperModel mapperModel) {
+        Map<String, String> config = mapperModel.getConfig();
+        return Optional.ofNullable(config.get(CLAIM_NAME)).orElse(config.get(USER_ATTRIBUTE_KEY));
+    }
+
+    @Override
     public List<String> getMetadataAttributePath() {
         String claimName = mapperModel.getConfig().get(CLAIM_NAME);
         String userAttributeName = mapperModel.getConfig().get(USER_ATTRIBUTE_KEY);
@@ -158,8 +168,7 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
 
     @Override
     protected List<String> getClaimLookupPath() {
-        String claimName = Optional.ofNullable(mapperModel.getConfig().get(CLAIM_NAME))
-                .orElse(mapperModel.getConfig().get(USER_ATTRIBUTE_KEY));
+        String claimName = resolveClaimName(mapperModel);
         if (claimName == null) {
             return Collections.emptyList();
         }

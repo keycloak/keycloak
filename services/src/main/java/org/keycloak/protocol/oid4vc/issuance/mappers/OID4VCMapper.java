@@ -44,8 +44,10 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.utils.JsonUtils;
 
 import org.apache.commons.collections4.ListUtils;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.CREDENTIAL_SUBJECT;
+import static org.keycloak.OID4VCConstants.RESERVED_CLAIM_NAMES;
 import static org.keycloak.VCFormat.MSO_MDOC;
 import static org.keycloak.VCFormat.SD_JWT_VC;
 
@@ -56,11 +58,16 @@ import static org.keycloak.VCFormat.SD_JWT_VC;
  */
 public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentProviderFactory {
 
+    private static final Logger LOGGER = Logger.getLogger(OID4VCMapper.class);
+
     public static final String CLAIM_NAME = "claim.name";
     public static final String MDOC_NAMESPACE = "mdoc.namespace";
     public static final String USER_ATTRIBUTE_KEY = "userAttribute";
     private static final List<ProviderConfigProperty> OID4VC_CONFIG_PROPERTIES = new ArrayList<>();
     private static final List<ProviderConfigProperty> MDOC_CONFIG_PROPERTIES = new ArrayList<>();
+
+    public static final String MAPPER_RESERVED_CLAIM_ERROR = "oid4vciReservedClaimError";
+    public static final String MAPPER_MISSING_MDOC_NAMESPACE_ERROR = "oid4vciMissingMdocNamespaceError";
 
     static {
         ProviderConfigProperty property;
@@ -99,6 +106,10 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
 
     protected abstract List<ProviderConfigProperty> getIndividualConfigProperties();
 
+    public String getMapperName() {
+        return mapperModel == null ? null : mapperModel.getName();
+    }
+
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         Stream<ProviderConfigProperty> configProperties = OID4VC_CONFIG_PROPERTIES.stream();
@@ -118,6 +129,39 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
         // OID4VC mappers are configured on the credential client scope, which carries the credential format.
         if (client instanceof ClientScopeModel clientScope) {
             validateMdocNamespace(new CredentialScopeModel(clientScope).getFormat(), mapperModel);
+        }
+
+        // Prevent mappings of user-controlled data to reserved claims
+        validateAgainstSensitiveMappings(mapperModel);
+    }
+
+    /**
+     * Rejects a mapper that maps user-controlled data and whose configured claim name targets a reserved,
+     * issuer-controlled claim (e.g. exp, iat, sub, jti). Such a mapper could let a user-controlled value
+     * override issuer-controlled claims (see keycloak/keycloak#52667).
+     */
+    protected void validateAgainstSensitiveMappings(ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
+        String claimName = resolveClaimName(mapperModel);
+        if (mapsUserControlledData() && RESERVED_CLAIM_NAMES.contains(claimName)) {
+            throw new ProtocolMapperConfigException(
+                    String.format("Claim name '%s' is reserved and must not be used by this OID4VC mapper.",
+                            claimName),
+                    MAPPER_RESERVED_CLAIM_ERROR);
+        }
+    }
+
+    /**
+     * Returns {@code true} when this mapper should be skipped at issuance because it maps user-controlled
+     * data and targets a reserved, issuer-controlled claim name. Logs a warning in that case.
+     */
+    protected boolean shouldSkipSensitiveMapping() {
+        try {
+            validateAgainstSensitiveMappings(mapperModel);
+            return false;
+        } catch (ProtocolMapperConfigException e) {
+            LOGGER.warnf(e, "OID4VC mapper '%s' targets a reserved claim. This sensitive mapping will be skipped",
+                    getMapperName());
+            return true;
         }
     }
 
@@ -143,7 +187,8 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
         String namespace = config == null ? null : config.get(MDOC_NAMESPACE);
         if (namespace == null || namespace.isBlank()) {
             throw new ProtocolMapperConfigException(
-                    String.format("mso_mdoc credential mappers require a non-empty '%s' configuration.", MDOC_NAMESPACE));
+                    String.format("mso_mdoc credential mappers require a non-empty '%s' configuration.", MDOC_NAMESPACE),
+                    MAPPER_MISSING_MDOC_NAMESPACE_ERROR);
         }
     }
 
@@ -336,4 +381,22 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
         }
     }
 
+    /**
+     * Whether this mapper maps user-controlled data to credential claims. Sensitive by default so that any
+     * mapper that is not explicitly known to be safe is protected. Mappers whose values are issuer-controlled
+     * (e.g. generated ids, static claims, issuance-time claims, container fields) override this to {@code false}.
+     */
+    public boolean mapsUserControlledData() {
+        return true;
+    }
+
+    /**
+     * Resolves the effective claim name written by this mapper, based on the given configuration.
+     * Subclasses override this when they derive the claim name with a fallback (e.g. user attribute or a
+     * default claim name).
+     */
+    protected String resolveClaimName(ProtocolMapperModel mapperModel) {
+        Map<String, String> config = mapperModel.getConfig();
+        return config == null ? null : config.get(CLAIM_NAME);
+    }
 }

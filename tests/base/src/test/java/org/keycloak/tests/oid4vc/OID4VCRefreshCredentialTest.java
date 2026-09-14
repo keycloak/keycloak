@@ -56,6 +56,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OAuthErrorException.INVALID_GRANT;
 import static org.keycloak.OAuthErrorException.INVALID_REQUEST;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
 import static org.keycloak.events.Details.CREDENTIAL_TYPE;
 import static org.keycloak.events.Details.REASON;
@@ -660,6 +663,58 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         assertTrue(Math.abs(refreshTokenLifetimeSeconds - credentialLifetime) <= tolerance,
                 String.format("Refresh token lifetime should be ~%d seconds (credential lifetime), but was %d seconds",
                         credentialLifetime, refreshTokenLifetimeSeconds));
+    }
+
+    /**
+     * Verifies that a user-controlled 'exp' attribute cannot extend the SD-JWT refresh expiration time.
+     * A legacy user-attribute mapper targeting the reserved 'exp' claim is attached via the scope update path
+     * (bypassing config-time validation, which only runs on the dedicated protocol-mappers endpoints), but the
+     * issuer-controlled refresh interval must still govern the credential expiration. Other sensitive
+     * claims must not be mapped equally.
+     */
+    @Test
+    public void testUserControlledExpAttributeDoesNotExtendRefreshExpiration() throws Exception {
+        int refreshInterval = 604800; // 7 days
+        long farFuture = Time.currentTimeSeconds() + 10L * 365 * 24 * 3600; // +10 years
+
+        String scopeId = getCredentialScopeId(minimalJwtTypeCredentialScopeName);
+
+        // Configure the scope's refresh interval AND attach user-attribute mappers targeting the reserved
+        // 'exp' and the sensitive 'cnf' claims.
+        testRealm.updateClientScope(scopeId, scope -> {
+            CredentialScopeRepresentation scopeRep = new CredentialScopeRepresentation(scope.build());
+            scopeRep.setRefreshIntervalInSeconds(refreshInterval);
+            return ClientScopeBuilder.update(scopeRep).mappers(
+                    ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, CLAIM_NAME_EXP),
+                    ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_CNF, UserModel.USERNAME));
+        });
+
+        // Set a user-controlled attribute to a far-future timestamp to attempt to extend the refresh expiration.
+        user.updateWithCleanup(u -> u.attribute(CLAIM_NAME_EXP, String.valueOf(farFuture)));
+
+        // Issue the SD-JWT.
+        AccessTokenResponse tokenResponse = authzCodeFlow();
+        assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
+
+        CredentialResponse response = wallet.credentialRequest(ctx, tokenResponse.getAccessToken())
+                .credentialIdentifier(ctx.getAuthorizedCredentialIdentifier())
+                .send().getCredentialResponse();
+        assertSuccessfulCredentialResponse(response);
+
+        IssuerSignedJWT issuerSignedJWT = SdJwtVP.of(response.getCredentials().get(0).getCredential().toString())
+                .getIssuerSignedJWT();
+        long iat = issuerSignedJWT.getPayload().get(CLAIM_NAME_IAT).asLong();
+        long exp = issuerSignedJWT.getPayload().get(CLAIM_NAME_EXP).asLong();
+
+        long tolerance = 60;
+        assertTrue(Math.abs((exp - iat) - refreshInterval) <= tolerance,
+                String.format("SD-JWT lifetime should be ~%d seconds (refresh interval), but was %d seconds",
+                        refreshInterval, exp - iat));
+        assertTrue(exp < farFuture,
+                "A user-controlled 'exp' attribute must NOT extend the refresh expiration time");
+
+        assertNull(issuerSignedJWT.getPayload().get(CLAIM_NAME_CNF),
+                "Sensitive claim must not have been mapped by user attribute mapper");
     }
 
     /**
