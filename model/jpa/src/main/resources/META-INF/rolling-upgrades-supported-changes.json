@@ -843,6 +843,10 @@
     "id" : "25.0.0-28265-tables",
     "author" : "keycloak",
     "filename" : "META-INF/jpa-changelog-25.0.0.xml"
+  }, {
+    "id" : "26.7.0-backfill-group-org-id",
+    "author" : "keycloak",
+    "filename" : "META-INF/jpa-changelog-26.7.0.xml"
   } ],
   "migrations" : [ ]
 }
