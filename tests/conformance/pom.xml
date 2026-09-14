@@ -52,5 +52,10 @@
             <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-ui</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

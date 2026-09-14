@@ -16,27 +16,33 @@
  */
 package org.keycloak.tests.oid4vc;
 
-import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.VCFormat;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
-public class OID4VCMdocFeatureDisabledWellKnownProviderTest extends OID4VCMdocTestBase {
+public class OID4VCMdocFeatureDisabledWellKnownProviderTest extends OID4VCIssuerTestBase {
 
     @Test
-    void testMdocCredentialConfigurationHiddenWhenFeatureDisabled() {
-        CredentialScopeRepresentation mdocScope = createMdocCredentialScope("mdoc-feature-off-scope", "mdoc-feature-off-config");
+    void testMdocCredentialConfigurationRejectedWhenFeatureDisabled() {
+        CredentialScopeRepresentation mdocScope = new CredentialScopeRepresentation("mdoc-feature-off-scope")
+                .setCredentialConfigurationId("mdoc-feature-off-config")
+                .setFormat(VCFormat.MSO_MDOC);
 
-        CredentialIssuer credentialIssuer = oauth.oid4vc().doIssuerMetadataRequest().getMetadata();
-        assertNotNull(credentialIssuer);
-        assertFalse(credentialIssuer.getCredentialsSupported().containsKey(mdocScope.getCredentialConfigurationId()),
-                "mso_mdoc configuration must not be advertised when the mDoc feature is disabled");
+        try (Response response = testRealm.admin().clientScopes().create(mdocScope)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            String error = response.readEntity(String.class);
+            assertTrue(error.contains(VCFormat.MSO_MDOC), error);
+            assertTrue(error.contains("No credential builder found"), error);
+        }
     }
 
     @Test

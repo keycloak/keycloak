@@ -221,6 +221,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         // Remove groups before organizations to avoid FK constraint violations
         session.groups().preRemove(adapter);
 
+        em.createNamedQuery("deleteOrgIdpByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("deleteOrganizationDomainsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("deleteOrganizationsByRealm")

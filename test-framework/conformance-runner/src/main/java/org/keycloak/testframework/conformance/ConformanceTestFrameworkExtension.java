@@ -26,6 +26,6 @@ public class ConformanceTestFrameworkExtension implements TestFrameworkExtension
 
     @Override
     public List<Supplier<?, ?>> suppliers() {
-        return List.of(new OpenIdConformanceSuiteSupplier());
+        return List.of(new OpenIdConformanceServerSupplier());
     }
 }

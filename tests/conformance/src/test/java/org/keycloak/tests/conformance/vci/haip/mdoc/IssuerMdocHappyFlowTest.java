@@ -1,0 +1,58 @@
+/*
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.tests.conformance.vci.haip.mdoc;
+
+import java.util.Map;
+import java.util.stream.Stream;
+
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.conformance.runner.BrowserInteraction;
+import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
+import org.keycloak.testframework.conformance.runner.ConformanceResult;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.tests.conformance.vci.AbstractVciConformanceTest;
+import org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig;
+import org.keycloak.tests.conformance.vci.haip.issuer.IssuerHappyFlowTest;
+
+import static org.keycloak.tests.conformance.vci.VciConformanceRealmUtil.MDOC_CREDENTIAL_FORMAT_VARIANT;
+import static org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig.HAIP_PLAN;
+
+/**
+ * Runs the issuer happy flow with the ISO mdoc credential format, mirroring {@link IssuerHappyFlowTest} for SD-JWT VC.
+ */
+@KeycloakIntegrationTest(config = HaipVciConformanceRealmConfig.ServerConfig.class)
+public class IssuerMdocHappyFlowTest extends AbstractVciConformanceTest {
+
+    @InjectRealm(config = HaipVciConformanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    ManagedRealm realm;
+
+    @Override
+    protected Stream<ConformanceModuleVariant> moduleVariants() {
+        // The plan variant pins every dimension but vci_credential_encryption, leaving the plain and encrypted variants
+        return discoverModuleVariants(
+                HAIP_PLAN,
+                Map.of(
+                        "credential_format", MDOC_CREDENTIAL_FORMAT_VARIANT,
+                        "vci_authorization_code_flow_variant", "wallet_initiated"),
+                "oid4vci-1_0-issuer-happy-flow",
+                ConformanceResult.PASSED,
+                BrowserInteraction.LOGIN);
+    }
+}
