@@ -41,7 +41,7 @@ public interface HttpClientProvider extends Provider {
      * {@link #postText}, {@link #postBinary}) for simple operations. This method exposes an Apache HTTP Client type
      * and will be removed when the Apache dependency is dropped.
      */
-    @Deprecated(since = "27.0", forRemoval = true)
+    @Deprecated(since = "26.8", forRemoval = true)
     CloseableHttpClient getHttpClient();
 
     /**
