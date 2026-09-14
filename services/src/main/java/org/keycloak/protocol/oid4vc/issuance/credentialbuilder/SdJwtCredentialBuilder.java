@@ -3,7 +3,6 @@ package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 import java.net.URI;
 import java.time.Instant;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,6 +20,7 @@ import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.SdJwtUtils;
 import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
@@ -73,12 +73,16 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
                 .stream()
                 .filter(entry -> !credentialBuildConfig.getSdJwtVisibleClaims().contains(entry.getKey()))
                 .forEach(entry -> {
-                    if (entry.getValue() instanceof List<?> listValue) {
+                    // Determine array-ness from the serialized JSON value so that non-List
+                    // Java values (e.g. HashSet from OID4VCTargetRoleMapper, Java arrays)
+                    // are also disclosed per-element.
+                    JsonNode valueNode = JsonSerialization.mapper.valueToTree(entry.getValue());
+                    if (valueNode != null && valueNode.isArray()) {
                         // Disclose elements one by one, the claim name itself stays visible
-                        IntStream.range(0, listValue.size())
+                        int size = valueNode.size();
+                        IntStream.range(0, size)
                                 .forEach(i -> disclosureSpecBuilder
-                                        .withUndisclosedArrayElt(entry.getKey(), i, SdJwtUtils.randomSalt())
-                                );
+                                        .withUndisclosedArrayElt(entry.getKey(), i, SdJwtUtils.randomSalt()));
                     } else {
                         disclosureSpecBuilder.withUndisclosedClaim(entry.getKey(), SdJwtUtils.randomSalt());
                     }

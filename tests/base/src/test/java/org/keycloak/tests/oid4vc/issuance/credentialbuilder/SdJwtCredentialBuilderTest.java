@@ -1,6 +1,7 @@
 package org.keycloak.tests.oid4vc.issuance.credentialbuilder;
 
 import java.security.KeyPairGenerator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -139,6 +140,42 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
 
         assertEquals(1, disclosedPayload.get("roles").size(), "Only the selected element must be disclosed");
         assertEquals("admin", disclosedPayload.get("roles").get(0).asText());
+    }
+
+    @Test
+    public void buildSdJwtCredential_DisclosesSetElementsIndividually() throws Exception {
+        // Regression test: OID4VCTargetRoleMapper stores roles as a HashSet, not a List.
+        // Array-ness must be determined from the serialized JSON value, not the Java type.
+        CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
+                .setCredentialIssuer(TEST_ISSUER_DID)
+                .setCredentialType("https://credentials.example.com/test-credential")
+                .setTokenJwsType(VCFormat.SD_JWT_VC)
+                .setHashAlgorithm(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM)
+                .setNumberOfDecoys(0)
+                .setSdJwtVisibleClaims(List.of());
+
+        Set<String> rolesSet = new HashSet<>(List.of("admin", "auditor", "user"));
+        VerifiableCredential testCredential = getTestCredential(
+                Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
+                        "roles", rolesSet));
+
+        SdJwtCredentialBody sdJwtCredentialBody = new SdJwtCredentialBuilder()
+                .buildCredentialBody(testCredential, credentialBuildConfig);
+        SdJwtVP sdJwt = SdJwtVP.of(sdJwtCredentialBody.sign(exampleSigner()));
+
+        // The claim name stays visible while its elements are undisclosed one by one
+        JsonNode rolesNode = sdJwt.getIssuerSignedJWT().getPayload().get("roles");
+        assertNotNull(rolesNode, "Set-valued claim name must stay visible for per-element disclosure");
+        assertTrue(rolesNode.isArray(), "Set-valued claim must be serialized as a JSON array");
+        assertEquals(3, rolesNode.size(), "Each set element must be undisclosed separately");
+
+        Map<String, JsonNode> elementDisclosures = sdJwt.getDisclosures().entrySet().stream()
+                .map(e -> Map.entry(e.getKey(), decodeDisclosure(e.getValue())))
+                .filter(e -> e.getValue().size() == 2)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        assertEquals(rolesSet,
+                elementDisclosures.values().stream().map(node -> node.get(1).asText()).collect(Collectors.toSet()),
+                "Every set element must have its own disclosure");
     }
 
     static Stream<Integer> decoyCountProvider() {
