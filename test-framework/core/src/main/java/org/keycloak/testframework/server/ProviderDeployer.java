@@ -2,16 +2,21 @@ package org.keycloak.testframework.server;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.it.utils.Maven;
+import org.keycloak.testframework.FatalTestClassException;
 import org.keycloak.testframework.util.FileUtils;
 import org.keycloak.testframework.util.MavenProjectUtil;
 
@@ -24,12 +29,15 @@ final class ProviderDeployer {
     private final File providersDir;
     private final boolean hotDeployEnabled;
     private final Set<KeycloakDependency> requestedDependencies;
+    private final Set<SingleTestProvider> providerFactories;
+    private final String REL_SERVICES_PATH = "META-INF" + File.separator + "services" + File.separator;
 
-    ProviderDeployer(Logger log, File keycloakHomeDir, Set<KeycloakDependency> requestedDependencies, boolean hotDeployEnabled) {
+    ProviderDeployer(Logger log, File keycloakHomeDir, KeycloakServerConfigBuilder serverConfig, boolean hotDeployEnabled) {
         this.log = log;
         this.providersDir = new File(keycloakHomeDir, "providers");
-        this.requestedDependencies = requestedDependencies;
+        this.requestedDependencies = serverConfig.toDependencies();
         this.hotDeployEnabled = hotDeployEnabled;
+        this.providerFactories = serverConfig.toProviderFactories();
     }
 
     boolean updateDependencies() throws IOException {
@@ -136,6 +144,68 @@ final class ProviderDeployer {
                     .max()
                     .orElse(0);
         }
+    }
+
+    public void deployProviderFactories() {
+        for (SingleTestProvider testProvider : providerFactories) {
+            try {
+                Set<Class<?>> classesToDeploy = new HashSet<>();
+                List<String> resourceFiles = Arrays.stream(testProvider.resourceFiles()).toList();
+
+                Class<?> providerFactory = testProvider.providerFactory();
+                classesToDeploy.add(providerFactory);
+
+                List<Class<?>> providerFactoryIFaces = getAllIFaces(providerFactory);
+                classesToDeploy.addAll(providerFactoryIFaces);
+                Set<String> potentialServiceFiles = getPotentialServiceFiles(providerFactoryIFaces);
+
+                Class<?> provider = getProviderFromFactory(providerFactory);
+                try {
+                    classesToDeploy.add(provider.getDeclaredMethod("getResource").getReturnType());
+                } catch (NoSuchMethodException ignored) {}
+                classesToDeploy.add(provider);
+                classesToDeploy.addAll(getAllIFaces(provider));
+
+                if (testProvider.spi() != null) {
+                    classesToDeploy.add(testProvider.spi());
+                    potentialServiceFiles.add(REL_SERVICES_PATH + "org.keycloak.provider.Spi");
+                }
+
+                String jarName = provider.getSimpleName() + "-single-deploy.jar";
+                Path targetPath = providersDir.toPath().resolve(jarName);
+                Path classesDir = Path.of(providerFactory.getProtectionDomain().getCodeSource().getLocation().toURI());
+
+                MavenProjectUtil.buildJar(jarName, classesDir, classesToDeploy, potentialServiceFiles, resourceFiles, targetPath);
+            } catch (URISyntaxException e) {
+                throw new FatalTestClassException("Failed to deploy: " + testProvider.providerFactory(), e);
+            }
+        }
+    }
+
+    private List<Class<?>> getAllIFaces(Class<?> providerFactory) {
+        List<Class<?>> providerFactoryIFaces = List.of(providerFactory.getInterfaces());
+        List<Class<?>> classesToDeploy = new ArrayList<>(providerFactoryIFaces);
+        for (Class<?> iFace : providerFactoryIFaces) {
+            classesToDeploy.addAll(Arrays.asList(iFace.getInterfaces()));
+        }
+        return classesToDeploy;
+    }
+
+    private Set<String> getPotentialServiceFiles(List<Class<?>> providerFactoryIFaces) {
+        Set<String> potentialServiceFiles = new HashSet<>();
+        for (Class<?> iFace : providerFactoryIFaces) {
+            potentialServiceFiles.add(REL_SERVICES_PATH + iFace.getName());
+        }
+        return potentialServiceFiles;
+    }
+
+    private Class<?> getProviderFromFactory(Class<?> providerFactory) {
+        for (Method method : providerFactory.getDeclaredMethods()) {
+            if (method.getName().equals("create") && !method.isBridge()) {
+                return method.getReturnType();
+            }
+        }
+        throw new FatalTestClassException("Could not find provider of: " + providerFactory.getName() + ". ProviderFactory does not declare a create method"); // TODO prolly need a new exception
     }
 
 }

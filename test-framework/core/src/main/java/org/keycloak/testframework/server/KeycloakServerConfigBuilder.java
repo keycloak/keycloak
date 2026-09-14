@@ -25,6 +25,7 @@ public class KeycloakServerConfigBuilder {
     private final Set<String> featuresDisabled = new HashSet<>();
     private final LogBuilder log = new LogBuilder();
     private final Set<KeycloakDependency> dependencies = new HashSet<>();
+    private final Set<SingleTestProvider> providerFactories = new HashSet<>();
     private CacheType cacheType = CacheType.LOCAL;
     private boolean externalInfinispan = false;
     private String shutdownDelay = "0s";
@@ -187,10 +188,12 @@ public class KeycloakServerConfigBuilder {
         return dependency(groupId, artifactId, false, false);
     }
 
+    // TODO add JavaDoc
     public KeycloakServerConfigBuilder dependency(String groupId, String artifactId, boolean hotDeployable) {
         return dependency(groupId, artifactId, hotDeployable, false);
     }
 
+    // TODO add JavaDoc
     private KeycloakServerConfigBuilder dependency(String groupId, String artifactId, boolean hotDeployable, boolean dependencyCurrentProject) {
         dependencies.add(
                 new KeycloakDependency.Builder()
@@ -203,8 +206,26 @@ public class KeycloakServerConfigBuilder {
         return this;
     }
 
+    // TODO add JavaDoc
     public KeycloakServerConfigBuilder dependencyCurrentProject() {
         return dependency("", "", false, true);
+    }
+
+    /**
+     *
+     * @param providerFactory
+     * @param resources note that the service file for this factory is unnecessary
+     * @return
+     */
+    public KeycloakServerConfigBuilder deploy(Class<?> providerFactory, String... resources) {
+        this.providerFactories.add(new SingleTestProvider(providerFactory, null, resources));
+        return this;
+    }
+
+    // TODO add JavaDoc
+    public KeycloakServerConfigBuilder deploy(Class<?> providerFactory, Class<?> spi, String... resources) {
+        this.providerFactories.add(new SingleTestProvider(providerFactory, spi, resources));
+        return this;
     }
 
     public class LogBuilder {
@@ -325,6 +346,10 @@ public class KeycloakServerConfigBuilder {
 
     Set<KeycloakDependency> toDependencies() {
         return dependencies;
+    }
+
+    Set<SingleTestProvider> toProviderFactories() {
+        return providerFactories;
     }
 
     private Set<String> toFeatureStrings(Profile.Feature... features) {
