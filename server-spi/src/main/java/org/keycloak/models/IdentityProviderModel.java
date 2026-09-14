@@ -429,7 +429,9 @@ public class IdentityProviderModel implements Serializable {
     }
 
     public boolean isAllowAdminRoleMapping() {
-        return getBooleanConfig(ALLOW_ADMIN_ROLE_MAPPING);
+        String value = getConfig().get(ALLOW_ADMIN_ROLE_MAPPING);
+        // Defaulting to "true" if not set to preserve backward compatibility for pre-existing IDPs.
+        return value == null || Boolean.parseBoolean(value);
     }
 
     public void setAllowAdminRoleMapping(boolean allow) {
