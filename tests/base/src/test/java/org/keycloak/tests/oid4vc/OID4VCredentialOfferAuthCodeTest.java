@@ -313,7 +313,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode).send();
         assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
         assertEquals("invalid_authorization_details", tokenResponse.getError());
-        assertEquals("Credential offer target user different from login user 'john'", tokenResponse.getErrorDescription());
+        assertEquals("Invalid authorization_details: Credential offer target user different from login user 'john'", tokenResponse.getErrorDescription());
         assertNull(tokenResponse.getAccessToken(), "No access token should be issued");
         assertNull(tokenResponse.getRefreshToken(), "No refresh token should be issued");
 
