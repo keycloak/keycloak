@@ -140,6 +140,7 @@ public class ComponentResource {
 
         return components
                 .filter(component -> !isInternalComponent(component.getProviderType(), component.getProviderId()))
+                .filter(this::canViewComponent)
                 .filter(component -> Objects.isNull(name) || Objects.equals(component.getName(), name))
                 .filter(component -> Objects.isNull(providerId) || Objects.equals(component.getProviderId(), providerId))
                 .map(component -> {
@@ -377,6 +378,20 @@ public class ComponentResource {
             return;
         }
         auth.realm().requireManageRealm();
+    }
+
+    private boolean canViewComponent(ComponentModel component) {
+        UiExtensionSupport extension = UiExtensionComponentStorage.getExtensionFactory(
+                session, component.getProviderType(), component.getProviderId());
+        if (extension == null) {
+            return true;
+        }
+        try {
+            UiExtensionPermissions.requireView(auth, extension);
+            return true;
+        } catch (ForbiddenException e) {
+            return false;
+        }
     }
 
     private ComponentTypeRepresentation toComponentTypeRepresentation(ProviderFactory factory, ComponentModel parent) {

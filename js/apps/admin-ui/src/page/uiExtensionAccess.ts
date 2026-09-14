@@ -29,7 +29,10 @@ export function canViewUiExtension(
   page: ComponentTypeRepresentation,
   { hasSomeAccess }: AccessChecker,
 ): boolean {
-  return hasSomeAccess(...getRequiredViewRoles(page));
+  return hasSomeAccess(
+    ...getRequiredViewRoles(page),
+    ...getRequiredManageRoles(page),
+  );
 }
 
 export function canManageUiExtension(

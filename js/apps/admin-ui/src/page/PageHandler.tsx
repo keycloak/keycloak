@@ -68,7 +68,7 @@ export const PageHandler = ({
   const storageType: StorageType =
     (page.metadata.storageType as StorageType | undefined) || "COMPONENT";
   const resolvedEntityId = getEntityId(storageType, tabParams);
-  const componentId = idAttribute ?? id;
+  const pageComponentId = idAttribute ?? id;
   const customEndpointTemplate = page.metadata.endpoint as string | undefined;
   const customEndpointDependency =
     storageType === "CUSTOM"
@@ -109,8 +109,8 @@ export const PageHandler = ({
             params.set(key, value);
           }
         });
-      } else if (componentId) {
-        params.set("componentId", componentId);
+      } else if (pageComponentId) {
+        params.set("componentId", pageComponentId);
       }
 
       const query = params.toString();
@@ -145,7 +145,7 @@ export const PageHandler = ({
       providerType,
       encodedRealmName,
       resolvedEntityId,
-      componentId,
+      pageComponentId,
       customEndpointDependency,
       tabParamsDependency,
     ],
@@ -154,12 +154,14 @@ export const PageHandler = ({
   useEffect(() => {
     setIsLoading(true);
     form.reset({});
+    setId(idAttribute);
   }, [
     form,
     idAttribute,
     resolvedEntityId,
     customEndpointDependency,
     propertySignature,
+    tabParamsDependency,
   ]);
 
   useFetch(
@@ -242,8 +244,8 @@ export const PageHandler = ({
         case "COMPONENT":
         default: {
           const [data, tabs] = await Promise.all([
-            componentId
-              ? adminClient.components.findOne({ id: componentId })
+            pageComponentId && providerType !== TAB_PROVIDER
+              ? adminClient.components.findOne({ id: pageComponentId })
               : Promise.resolve(),
             providerType === TAB_PROVIDER
               ? adminClient.components.find({
@@ -254,7 +256,7 @@ export const PageHandler = ({
               : Promise.resolve(),
           ]);
           const tab = (tabs || []).find((t) => t.providerId === providerId);
-          return data || tab;
+          return providerType === TAB_PROVIDER ? tab : data || tab;
         }
       }
     },
@@ -403,9 +405,11 @@ export const PageHandler = ({
             providerType,
             parentId: realm.id,
           };
-          if (componentId) {
+          const activeComponentId =
+            providerType === TAB_PROVIDER ? id : pageComponentId;
+          if (activeComponentId) {
             await adminClient.components.update(
-              { id: componentId },
+              { id: activeComponentId },
               updatedComponent,
             );
           } else {

@@ -43,7 +43,7 @@ final class UiExtensionComponentStorage {
             String providerId) {
         if (providerId != null) {
             ComponentStorageFactory storageFactory = getStorageFactory(session, type, providerId);
-            if (storageFactory == null) {
+            if (storageFactory == null && type == null) {
                 storageFactory = findStorageFactoryByProviderId(session, providerId);
             }
             if (storageFactory == null) {
@@ -64,7 +64,7 @@ final class UiExtensionComponentStorage {
                     .filter(factory -> !(factory instanceof ComponentFactory<?, ?> componentFactory
                             && componentFactory.isInternal()))
                     .flatMap(factory -> ((ComponentStorageFactory) factory)
-                            .listComponents(session, realm, parent, factory.getId()));
+                            .listComponents(session, realm, parent != null ? parent : realm.getId(), factory.getId()));
         } catch (IllegalArgumentException e) {
             return null;
         }
