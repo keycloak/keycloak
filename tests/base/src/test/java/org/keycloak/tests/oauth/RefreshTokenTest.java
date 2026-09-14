@@ -778,7 +778,7 @@ public class RefreshTokenTest {
             AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
             assertEquals(200, refreshResponse.getStatusCode());
 
-            assertScopes("openid profile", refreshResponse.getScope());
+            assertScopes("openid email profile", refreshResponse.getScope());
 
             UserInfoResponse userInfoResponse = oauth.doUserInfoRequest(refreshResponse.getAccessToken());
             assertEquals(200, userInfoResponse.getStatusCode());
@@ -821,7 +821,7 @@ public class RefreshTokenTest {
             oauth.scope("profile");
             AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(initialTokenResponse.getRefreshToken());
             assertEquals(200, refreshResponse.getStatusCode());
-            assertScopes("openid profile", refreshResponse.getScope());
+            assertScopes("openid email profile", refreshResponse.getScope());
 
             assertNotNull(refreshResponse.getIdToken());
             IDToken refreshedIdToken = oauth.verifyToken(refreshResponse.getIdToken(), IDToken.class);
