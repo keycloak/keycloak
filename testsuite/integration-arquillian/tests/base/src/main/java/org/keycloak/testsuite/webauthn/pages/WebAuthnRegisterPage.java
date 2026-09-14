@@ -18,6 +18,8 @@
 package org.keycloak.testsuite.webauthn.pages;
 
 import java.time.Duration;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.keycloak.testsuite.pages.LogoutSessionsPage;
 import org.keycloak.testsuite.util.UIUtils;
@@ -47,6 +49,8 @@ public class WebAuthnRegisterPage extends LogoutSessionsPage {
 
     public static final long ALERT_CHECK_TIMEOUT = 3; //seconds
     public static final long ALERT_DEFAULT_TIMEOUT = 60; //seconds
+
+    private static final Pattern CHALLENGE_PATTERN = Pattern.compile("challenge\\s*:\\s*\"([^\"]+)\"");
 
     @FindBy(id = "registerWebAuthn")
     private WebElement registerButton;
@@ -94,6 +98,11 @@ public class WebAuthnRegisterPage extends LogoutSessionsPage {
         }
     }
 
+
+    public String getChallenge() {
+        Matcher matcher = CHALLENGE_PATTERN.matcher(driver.getPageSource());
+        return matcher.find() ? matcher.group(1) : null;
+    }
 
     public boolean isAIA() {
         try {
