@@ -742,11 +742,23 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
      * IdentityBrokerException is thrown on any error.
      *
      * @param encodedToken The token in the encoded string format.
-     * @param shouldBeSigned true if the token should be signed (id token),
+     * @param shouldBeSigned true if the token must be a signed JWS (id token, logout token),
      * false if the token can be only encrypted and not signed (user info).
      * @return The content in string format.
      */
     protected String parseTokenInput(String encodedToken, boolean shouldBeSigned) {
+        return parseTokenInput(encodedToken, shouldBeSigned, false);
+    }
+
+    /**
+     * @param encodedToken The token in the encoded string format.
+     * @param shouldBeSigned true if the token must be a signed JWS,
+     * false if the token can be only encrypted and not signed (user info).
+     * @param enforceSignatureValidation true to validate the signature regardless of the
+     * IDP's {@code validateSignature} setting (e.g. for backchannel logout tokens).
+     * @return The content in string format.
+     */
+    protected String parseTokenInput(String encodedToken, boolean shouldBeSigned, boolean enforceSignatureValidation) {
         if (encodedToken == null) {
             throw new IdentityBrokerException("No token from server.");
         }
@@ -796,7 +808,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             }
 
             // verify signature of the JWS
-            if (!verify(jws, shouldBeSigned)) {
+            if (!verify(jws, enforceSignatureValidation)) {
                 throw new IdentityBrokerException("token signature validation failed");
             }
             return new String(jws.getContent(), StandardCharsets.UTF_8);
@@ -815,10 +827,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         return validateToken(encodedToken, ignoreAudience, false);
     }
 
-    public JsonWebToken validateToken(String encodedToken, boolean ignoreAudience, boolean shouldBeSigned) {
+    public JsonWebToken validateToken(String encodedToken, boolean ignoreAudience, boolean enforceSignatureValidation) {
         JsonWebToken token;
         try {
-            token = JsonSerialization.readValue(parseTokenInput(encodedToken, shouldBeSigned), JsonWebToken.class);
+            token = JsonSerialization.readValue(parseTokenInput(encodedToken, true, enforceSignatureValidation), JsonWebToken.class);
         } catch (IOException e) {
             throw new IdentityBrokerException("Invalid token", e);
         }
