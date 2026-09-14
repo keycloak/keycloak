@@ -218,7 +218,11 @@ public class IdentityProviderResource {
         }
 
         if (!auth.hasOneAdminRole(AdminRoles.MANAGE_REALM)) {
-            updated.setAllowAdminRoleMapping(identityProviderModel.isAllowAdminRoleMapping());
+            if (updated.isAllowAdminRoleMapping() != identityProviderModel.isAllowAdminRoleMapping()) {
+                throw ErrorResponse.error("Only users with '" + AdminRoles.MANAGE_REALM
+                        + "' role can change the '" + IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING + "' setting.",
+                        Response.Status.FORBIDDEN);
+            }
         }
 
         session.identityProviders().update(updated);

@@ -542,18 +542,15 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
             }
         });
 
-        // Attacker tries to enable the switch via IdP update
+        // Attacker tries to enable the switch via IdP update — should get 403
         runAs(realmName, "admin-cli", attackerName, attackerClient -> {
             IdentityProviderRepresentation idpRep = attackerClient.realm(realmName)
                     .identityProviders().get("test-idp").toRepresentation();
             idpRep.getConfig().put(IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING, "true");
-            attackerClient.realm(realmName).identityProviders().get("test-idp").update(idpRep);
+            assertThrows(ForbiddenException.class, () ->
+                    attackerClient.realm(realmName).identityProviders().get("test-idp").update(idpRep),
+                    "Non-manage-realm user should not be able to enable allowAdminRoleMapping");
         });
-
-        // Verify the switch was silently preserved as false
-        IdentityProviderRepresentation updatedIdp = testRealm.identityProviders().get("test-idp").toRepresentation();
-        assertFalse(Boolean.parseBoolean(updatedIdp.getConfig().get(IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING)),
-                "Non-realm-admin should not be able to enable allowAdminRoleMapping");
     }
     
     @Test
