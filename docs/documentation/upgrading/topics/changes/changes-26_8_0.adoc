@@ -35,6 +35,12 @@ Note that {project_name}'s trust store (or mTLS store) is shared for all the rea
 
 Revalidating certificates can be problematic in certain installations (for example if a proxy is configured for TLS termination and the certificates are passed to {project_name} using headers). The trust-store or mTLS store in {project_name} should always be configured correctly to validate the client certificate chain. Please see link:https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] and link:https://www.keycloak.org/server/mutual-tls[Configuring trusted certificates for mTLS], for more information if you are using a TLS termination proxy and X509 client authentication.
 
+=== Client policy source groups condition matches the full group path
+
+The `client-updater-source-groups` client policy condition now matches groups by their full path instead of the simple group name. A configured value without a leading slash is treated as a top level group, so a condition configured with `topGroup` matches `/topGroup` and keeps behaving as before. Top level groups configured by their simple name do not require any change.
+
+Only the conditions configured with the simple name of a subgroup need to be updated to the full path of that group, for example `/topGroup/level2group`.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

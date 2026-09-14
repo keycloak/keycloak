@@ -803,13 +803,13 @@ public class OID4VCIssuerEndpoint {
 
         cors = Cors.builder().auth().allowedMethods(HttpPost.METHOD_NAME).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
+        // Authenticate before any processing of the payload
+        AuthenticationManager.AuthResult authResult = getAuthResult();
+
         CredentialIssuer issuerMetadata = new OID4VCIssuerWellKnownProvider(session).getIssuerMetadata();
 
         // Validate request encryption
         CredentialRequest credentialRequest = validateRequestEncryption(requestPayload, issuerMetadata, eventBuilder);
-
-        // Authenticate first to fail fast on auth errors
-        AuthenticationManager.AuthResult authResult = getAuthResult();
 
         // Set client and user info in event
         ClientModel clientModel = session.getContext().getClient();
@@ -1925,6 +1925,11 @@ public class OID4VCIssuerEndpoint {
         } catch (VCIssuerException e) {
             eventBuilder.detail(Details.REASON, e.getMessage())
                     .error(e.getErrorType().getValue());
+
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(e.getMessage(), e);
+            }
+
             switch (e.getErrorType()) {
                 case INVALID_NONCE:
                     throw new ErrorResponseException(INVALID_NONCE.getValue(), e.getMessage(), Response.Status.BAD_REQUEST);
@@ -1934,6 +1939,13 @@ public class OID4VCIssuerEndpoint {
                     throw new BadRequestException("Could not validate provided proof", e);
             }
         } catch (CredentialBuilderException e) {
+            eventBuilder.detail(Details.REASON, e.getMessage())
+                    .error(INVALID_PROOF.getValue());
+
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(e.getMessage(), e);
+            }
+
             // A proof key that cannot be bound to the credential, such as an mDoc COSE_Key conversion that rejects
             // the key curve, is an invalid proof rather than a server error.
             throw new ErrorResponseException(INVALID_PROOF.getValue(), e.getMessage(), Response.Status.BAD_REQUEST);

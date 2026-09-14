@@ -14,18 +14,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.Time;
@@ -42,19 +40,35 @@ import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
+import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.group.Member;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
+import org.keycloak.scim.resource.spi.MembershipChange;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<GroupModel, Group> implements ScimAttributeJpaExpressionResolver {
 
+    private final GroupCoreModelSchema schema;
+
     public GroupResourceTypeProvider(KeycloakSession session) {
-        super(session, new GroupCoreModelSchema(session));
+        this(session, new GroupCoreModelSchema(session));
+    }
+
+    private GroupResourceTypeProvider(KeycloakSession session, GroupCoreModelSchema schema) {
+        super(session, schema);
+        this.schema = schema;
+    }
+
+    @Override
+    public List<MembershipChange> pollMembershipChanges() {
+        List<MembershipChange> changes = List.copyOf(schema.getMembershipChanges());
+        schema.clearMembershipChanges();
+        return changes;
     }
 
     @Override
@@ -168,7 +182,18 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     @Override
     public boolean onDelete(GroupModel model) {
         RealmModel realm = session.getContext().getRealm();
+        Permissions permissions = session.getContext().getPermissions();
+        rejectIfAdminDescendant(model, permissions);
         return session.groups().removeGroup(realm, model);
+    }
+
+    private void rejectIfAdminDescendant(GroupModel group, Permissions permissions) {
+        group.getSubGroupsStream().forEach(subGroup -> {
+            if (permissions.isAdminGroup(subGroup)) {
+                throw new ForbiddenException();
+            }
+            rejectIfAdminDescendant(subGroup, permissions);
+        });
     }
 
     @Override
@@ -191,14 +216,11 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
         // (ne, pr, gt, co, etc.) cannot be safely authorized through value comparison because they can match
         // rows the caller is not permitted to see, so they silently return empty results for this path.
         // This restriction only applies to the members.value/members paths; all other filter attributes are
-        // unaffected. When FGAP is disabled, all operators are allowed.
+        // unaffected. Permission checks are required regardless of whether FGAP is enabled.
         BiPredicate<String, String> authCheck = (path, value) -> {
             if ("members.value".equalsIgnoreCase(path) || "members".equalsIgnoreCase(path)) {
-                if (!realm.isAdminPermissionsEnabled()) {
-                    return true;
-                }
                 if (value == null) {
-                    return false;
+                    return permissions.hasPermission(AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
                 }
                 UserModel user = session.users().getUserById(realm, value);
                 return user != null && permissions.hasPermission(user, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
@@ -207,7 +229,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
         };
 
         // create filter predicate using the same query and root that will be used for execution
-        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, root, authCheck);
+        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, query, root, authCheck);
         predicates.add(evaluator.visit(filterContext).predicate());
 
         // apply realm restriction and group type restrictions
@@ -221,11 +243,11 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     }
 
     @Override
-    public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, Root<?> root, BiFunction<Class<?>, Supplier<Join<?, ?>>, Join<?, ?>> joinResolver) {
+    public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, Root<?> root, Subquery<?> subquery) {
         if ("members".equals(attribute.getName())) {
-            Join<?, ?> join = joinResolver.apply(UserGroupMembershipEntity.class, () -> root.join(UserGroupMembershipEntity.class));
-            join.on(cb.equal(root.get("id"), join.get("groupId")));
-            return join.get("user").get("id");
+            Root<UserGroupMembershipEntity> membership = subquery.from(UserGroupMembershipEntity.class);
+            subquery.where(cb.equal(membership.get("groupId"), root.get("id")));
+            return membership.get("user").get("id");
         }
         return null;
     }

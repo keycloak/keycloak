@@ -29,16 +29,16 @@ public class LoginFailureUtils {
      * Compute the expiration time cut-off in milliseconds for expiring login failure entries.
      *
      * @param realm current realm
-     * @param currentTime current timestamp in seconds since last epoch
+     * @param currentTimeMillis current timestamp in milliseconds since last epoch
      * @return Timestamp in milliseconds, or -1L if the realm will never expire.
      */
-    public static long computeExpirationCutOffTimestamp(RealmModel realm, long currentTime) {
+    public static long computeExpirationCutOffTimestampMillis(RealmModel realm, long currentTimeMillis) {
         if (realm.isPermanentLockout() && realm.getMaxTemporaryLockouts() == 0) {
             // If mode is permanent lockout only, the "failure reset time" cannot be configured and login failures should never expire.
             return -1L;
         }
         // expired if last-failure + max-delta-time < current time
-        return TimeUnit.SECONDS.toMillis(currentTime - realm.getMaxDeltaTimeSeconds());
+        return currentTimeMillis - TimeUnit.SECONDS.toMillis(realm.getMaxDeltaTimeSeconds());
     }
 
 }
