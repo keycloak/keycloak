@@ -315,6 +315,9 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
     protected void send(Map<String, String> config, String subject, String textBody, String htmlBody, String address) throws EmailException {
         EmailSenderProvider emailSender = session.getProvider(EmailSenderProvider.class);
+        if (emailSender == null) {
+            throw new EmailException("Email sender provider is disabled or not configured");
+        }
         if (address == null) {
             emailSender.send(config, user, subject, textBody, htmlBody);
         } else {
