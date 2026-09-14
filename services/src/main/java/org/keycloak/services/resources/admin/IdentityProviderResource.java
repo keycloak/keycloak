@@ -217,7 +217,7 @@ public class IdentityProviderResource {
             updated.getConfig().put("clientSecret", identityProviderModel.getConfig() != null ? identityProviderModel.getConfig().get("clientSecret") : null);
         }
 
-        if (!auth.isRealmAdmin()) {
+        if (!auth.hasOneAdminRole(AdminRoles.MANAGE_REALM)) {
             updated.setAllowAdminRoleMapping(identityProviderModel.isAllowAdminRoleMapping());
         }
 
@@ -516,7 +516,7 @@ public class IdentityProviderResource {
     }
 
     private void validateMapperAdminRoleMapping(IdentityProviderMapperModel mapperModel) {
-        if (auth.isRealmAdmin()) {
+        if (auth.hasOneAdminRole(AdminRoles.MANAGE_REALM)) {
             return;
         }
 
