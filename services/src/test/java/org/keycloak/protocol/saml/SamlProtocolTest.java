@@ -241,6 +241,16 @@ public class SamlProtocolTest {
         }
 
         @Override
+        public String getDisplayNameShort() {
+            return null;
+        }
+
+        @Override
+        public void setDisplayNameShort(String displayNameShort) {
+
+        }
+
+        @Override
         public boolean isEnabled() {
             return false;
         }

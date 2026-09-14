@@ -118,6 +118,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.keycloak.tests</groupId>
             <artifactId>keycloak-tests-custom-providers</artifactId>
             <version>${project.version}</version>

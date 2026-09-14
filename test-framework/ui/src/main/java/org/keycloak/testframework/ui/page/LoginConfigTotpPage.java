@@ -48,6 +48,9 @@ public class LoginConfigTotpPage extends AbstractLoginPage {
     @FindBy(id = "mode-manual")
     private WebElement manualLink;
 
+    @FindBy(id = "kc-totp-secret-qr-code")
+    private WebElement totpQrCode;
+
     @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement loginAlertErrorMessage;
 
@@ -63,6 +66,14 @@ public class LoginConfigTotpPage extends AbstractLoginPage {
 
     public String getTotpSecret() {
         return totpSecret.getAttribute("value");
+    }
+
+    /**
+     * @return the "src" attribute of the barcode-mode QR code image, i.e. a
+     * {@code data:image/png;base64,...} URI containing the rendered QR code.
+     */
+    public String getTotpQrCodeSrc() {
+        return totpQrCode.getAttribute("src");
     }
 
     public boolean isCancelDisplayed() {

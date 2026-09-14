@@ -265,6 +265,11 @@ function RealmSettingsGeneralTabForm({
           />
           <TextControl name="displayNameHtml" label={t("htmlDisplayName")} />
           <TextControl
+            name="displayNameShort"
+            label={t("displayNameShort")}
+            labelIcon={t("realmShortDisplayNameHelp")}
+          />
+          <TextControl
             name={convertAttributeNameToForm("attributes.frontendUrl")}
             type="url"
             label={t("frontendUrl")}
