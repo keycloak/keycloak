@@ -21,10 +21,13 @@ import java.util.Set;
 
 import org.keycloak.broker.provider.mappersync.ConfigSyncEventListener;
 import org.keycloak.cache.AlternativeLookupProvider;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
@@ -100,5 +103,21 @@ public abstract class AbstractIdentityProviderMapper implements IdentityProvider
     @Override
     public Set<Class<? extends Provider>> dependsOn() {
         return Set.of(AlternativeLookupProvider.class); //for caching
+    }
+
+    protected static boolean isAdminRoleGrantAllowed(KeycloakSession session, RealmModel realm, RoleModel role, IdentityProviderMapperModel mapperModel) {
+        if (role == null || !AdminRoles.isAdminRole(role)) {
+            return true;
+        }
+        IdentityProviderModel idp = session.identityProviders().getByAlias(mapperModel.getIdentityProviderAlias());
+        if (idp == null) {
+            return true;
+        }
+        if (!idp.isAllowAdminRoleMapping()) {
+            LOG.warnf("Mapper '%s' on identity provider '%s' in realm '%s' attempted to grant admin role '%s' but '%s' is disabled.",
+                    mapperModel.getName(), idp.getAlias(), realm.getName(), role.getName(), IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING);
+            return false;
+        }
+        return true;
     }
 }
