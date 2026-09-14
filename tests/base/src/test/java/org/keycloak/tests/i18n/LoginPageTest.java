@@ -351,9 +351,7 @@ public class LoginPageTest {
 
         oauth.openLoginForm();
         oauth.fillLoginForm("basic-user", "invalid-password");
-        loginPage.assertCurrent();
-
-        assertThat(loginPage.getUsernameInputError(), is("Invalid username or password."));
+        loginPage.waitForUsernameInputError("Invalid username or password.");
         loginPage.fillLogin("basic-user", "password");
         loginPage.submit();
 

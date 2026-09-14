@@ -36,7 +36,7 @@ public class OID4VCMdocAuthorizationCodeFlowTest extends OID4VCAuthorizationCode
     @Override
     protected CredentialScopeRepresentation getCredentialScope() {
         ensureEcSigningKeyProvider("mdoc-issuer-key", "P-256", "ES256", 200);
-        return mdocTypeCredentialScope;
+        return requireExistingCredentialScope(mdocTypeCredentialScopeName);
     }
 
     @Override

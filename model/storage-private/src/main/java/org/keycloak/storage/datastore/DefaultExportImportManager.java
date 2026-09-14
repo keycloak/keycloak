@@ -1779,12 +1779,13 @@ public class DefaultExportImportManager implements ExportImportManager {
             for (OrganizationRepresentation orgRep : Optional.ofNullable(rep.getOrganizations()).orElse(Collections.emptyList())) {
                 OrganizationsValidation.validateUrl(orgRep.getRedirectUrl());
                 OrganizationModel orgModel = provider.create(orgRep.getId(), orgRep.getName(), orgRep.getAlias());
-                RepresentationToModel.toModel(orgRep, orgModel);
 
                 for (IdentityProviderRepresentation identityProvider : Optional.ofNullable(orgRep.getIdentityProviders()).orElse(Collections.emptyList())) {
                     IdentityProviderModel idp = session.identityProviders().getByAlias(identityProvider.getAlias());
                     provider.addIdentityProvider(orgModel, idp);
                 }
+
+                RepresentationToModel.toModel(orgRep, orgModel);
 
                 for (GroupRepresentation groupRep : Optional.ofNullable(orgRep.getGroups()).orElse(Collections.emptyList())) {
                     importOrganizationGroup(provider, orgModel, newRealm, groupRep, null);

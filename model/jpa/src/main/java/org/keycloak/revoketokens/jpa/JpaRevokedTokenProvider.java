@@ -40,7 +40,7 @@ public class JpaRevokedTokenProvider implements RevokedTokenProvider {
     @Override
     public boolean put(String id, long lifespanSeconds) {
         var em = getEntityManager();
-        var currentTime = Time.currentTime();
+        var currentTime = Time.currentTimeSeconds();
         var expire = currentTime + lifespanSeconds;
         var rows = em.createNamedQuery("insertRevokeTokenIfAbsent")
                 .setParameter("id", id)
@@ -62,7 +62,7 @@ public class JpaRevokedTokenProvider implements RevokedTokenProvider {
         if (expireTime == null) {
             return false;
         }
-        var lifespan = expireTime - Time.currentTime();
+        var lifespan = expireTime - Time.currentTimeSeconds();
         if (lifespan > 0) {
             // cache it in case of malicious clients trying to reuse the same token over and over.
             cache.put(id, lifespan);

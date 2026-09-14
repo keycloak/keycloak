@@ -178,6 +178,16 @@ public class OrganizationMemberIdpLinkTest {
         consumerRealm.admin().organizations().get(orgId)
                 .identityProviders().addIdentityProvider(IDP_ALIAS).close();
 
+        org = consumerRealm.admin().organizations().get(orgId).toRepresentation();
+        org.getDomains().stream()
+                .filter(d -> d.getName().equals(ORG_DOMAIN))
+                .findFirst()
+                .ifPresent(d -> {
+                    d.setIdentityProviderAlias(IDP_ALIAS);
+                    d.setAutoRedirect(true);
+                });
+        consumerRealm.admin().organizations().get(orgId).update(org).close();
+
         return consumerRealm.admin().organizations().get(orgId).toRepresentation();
     }
 

@@ -73,7 +73,7 @@ public abstract class OID4VCMdocTestBase extends OID4VCIssuerTestBase {
         CredentialScopeRepresentation existingScope = base.getCredentialScope(scopeName);
         if (existingScope != null) {
             addScopeToOid4vciClients(base, existingScope.getId());
-            addCredentialToTestUser(base, scopeName);
+            addCredentialToTestUsers(base, scopeName);
             return existingScope;
         }
 
@@ -114,7 +114,7 @@ public abstract class OID4VCMdocTestBase extends OID4VCIssuerTestBase {
         CredentialScopeRepresentation existingScope = base.getCredentialScope(scopeName);
         if (existingScope != null) {
             addScopeToOid4vciClients(base, existingScope.getId());
-            addCredentialToTestUser(base, scopeName);
+            addCredentialToTestUsers(base, scopeName);
             return existingScope;
         }
 
@@ -152,7 +152,7 @@ public abstract class OID4VCMdocTestBase extends OID4VCIssuerTestBase {
         base.testRealm.cleanup().add(realm -> realm.clientScopes().get(scopeId).remove());
 
         addScopeToOid4vciClients(base, scopeId);
-        addCredentialToTestUser(base, scopeName);
+        addCredentialToTestUsers(base, scopeName);
         return new CredentialScopeRepresentation(base.testRealm.admin().clientScopes().get(scopeId).toRepresentation());
     }
 
@@ -162,11 +162,18 @@ public abstract class OID4VCMdocTestBase extends OID4VCIssuerTestBase {
 
     private static void addScopeToOid4vciClients(OID4VCIssuerTestBase base, String scopeId) {
         base.testRealm.admin().clients().get(base.client.getId()).addOptionalClientScope(scopeId);
+        base.testRealm.admin().clients().get(base.abcaClient.getId()).addOptionalClientScope(scopeId);
         base.testRealm.admin().clients().get(base.pubClient.getId()).addOptionalClientScope(scopeId);
     }
 
-    private static void addCredentialToTestUser(OID4VCIssuerTestBase base, String scopeName) {
-        String userId = base.requireExistingUser(TEST_USER).getId();
+    private static void addCredentialToTestUsers(OID4VCIssuerTestBase base, String scopeName) {
+        for (String username : List.of(TEST_USER, "alice")) {
+            addCredentialToTestUser(base, username, scopeName);
+        }
+    }
+
+    private static void addCredentialToTestUser(OID4VCIssuerTestBase base, String username, String scopeName) {
+        String userId = base.requireExistingUser(username).getId();
         boolean alreadyPresent = base.testRealm.admin().users().get(userId).verifiableCredentials().getCredentials().stream()
                 .anyMatch(credential -> scopeName.equals(credential.getCredentialScopeName()));
         if (!alreadyPresent) {

@@ -156,7 +156,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     private static boolean editEmailCondition(AttributeContext c) {
         RealmModel realm = c.getSession().getContext().getRealm();
 
-        if (REGISTRATION.equals(c.getContext()) || USER_API.equals(c.getContext())) {
+        if (REGISTRATION.equals(c.getContext()) || c.getContext().isAdminContext()) {
             return true;
         }
 
@@ -188,7 +188,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     private static boolean readEmailCondition(AttributeContext c) {
         UserProfileContext context = c.getContext();
 
-        if (REGISTRATION.equals(context) || USER_API.equals(c.getContext())) {
+        if (REGISTRATION.equals(context) || context.isAdminContext()) {
             return true;
         }
 

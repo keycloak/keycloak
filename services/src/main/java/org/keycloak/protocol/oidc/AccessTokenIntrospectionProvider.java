@@ -123,20 +123,19 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
 
                 tokenMetadata.put(OAuth2Constants.TOKEN_TYPE, transformedToken.getType());
                 tokenMetadata.put("active", true);
-                eventBuilder.success();
-            } else {
-                tokenMetadata = JsonSerialization.createObjectNode();
-                logger.debug("Keycloak token introspection return false");
-                tokenMetadata.put("active", false);
-            }
 
-            // if consumer requests application/jwt return a JWT representation of the introspection contents in an jwt field
-            if (transformedToken != null) {
+                // if consumer requests application/jwt return a JWT representation of the introspection contents in an jwt field
                 boolean isJwtRequest = org.keycloak.utils.MediaType.APPLICATION_JWT.equals(session.getContext().getRequestHeaders().getHeaderString(HttpHeaders.ACCEPT));
                 if (isJwtRequest && Boolean.parseBoolean(authenticatedClient.getAttribute(Constants.SUPPORT_JWT_CLAIM_IN_INTROSPECTION_RESPONSE_ENABLED))) {
                     // consumers can use this to convert an opaque token into an JWT based token
                     tokenMetadata.put("jwt", session.tokens().encode(transformedToken));
                 }
+
+                eventBuilder.success();
+            } else {
+                tokenMetadata = JsonSerialization.createObjectNode();
+                logger.debug("Keycloak token introspection return false");
+                tokenMetadata.put("active", false);
             }
 
             return Response.ok(JsonSerialization.writeValueAsBytes(tokenMetadata)).type(MediaType.APPLICATION_JSON_TYPE).build();

@@ -44,6 +44,8 @@ public class UseLightweightAccessTokenExecutor implements ClientPolicyExecutorPr
             case SERVICE_ACCOUNT_TOKEN_REQUEST:
             case BACKCHANNEL_TOKEN_REQUEST:
             case DEVICE_TOKEN_REQUEST:
+            case TOKEN_EXCHANGE_REQUEST:
+            case JWT_AUTHORIZATION_GRANT:
                 session.setAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, true);
                 break;
         }

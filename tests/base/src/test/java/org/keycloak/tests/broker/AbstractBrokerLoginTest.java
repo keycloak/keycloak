@@ -27,9 +27,13 @@ public abstract class AbstractBrokerLoginTest extends AbstractBrokerTest {
 
     protected void loginUser() {
         logInAsUserInIDP();
-
         updateAccountInformation();
+        assertUserCreatedInConsumerRealm();
+    }
 
+    // Reused by concrete tests that override loginUser() with a custom pre-login step (extra query
+    // params, IdP-hint, locale checks, etc.) but still need the same post-login assertions.
+    protected void assertUserCreatedInConsumerRealm() {
         ManagedRealm consumerRealm = getConsumerRealm();
         UserRepresentation userRep = AccountHelper.getUserRepresentation(
                 consumerRealm.admin(), getUserLogin());

@@ -828,12 +828,12 @@ public class FilterTest extends AbstractScimTest {
 
     @Test
     public void testFilterByMetaTimestamps() {
-        Instant before = Instant.now();
-
         User user = createUser("bob");
         final String userName = user.getUserName();
 
-        Instant after = Instant.now();
+        Instant created = Instant.parse(user.getMeta().getCreated());
+        Instant before = created.minusMillis(1);
+        Instant after = created.plusMillis(1);
 
         // filter by meta.created gt <before> — should include the user
         String filter = ResourceFilter.filter()
@@ -873,15 +873,15 @@ public class FilterTest extends AbstractScimTest {
 
     @Test
     public void testFilterGroupsByMetaTimestamps() {
-        Instant before = Instant.now();
-
         Group group = new Group();
         group.setDisplayName(KeycloakModelUtils.generateId());
         group = client.groups().create(group);
         groupIdsToRemove.add(group.getId());
         String displayName = group.getDisplayName();
 
-        Instant after = Instant.now();
+        Instant created = Instant.parse(group.getMeta().getCreated());
+        Instant before = created.minusMillis(1);
+        Instant after = created.plusMillis(1);
 
         // filter by meta.created gt <before> — should include the group
         String filter = ResourceFilter.filter()

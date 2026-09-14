@@ -500,6 +500,114 @@ public class GroupTest extends AbstractScimTest {
     }
 
     @Test
+    public void testGroupMembersFilterByDisplayRejected() {
+        // create users via SCIM
+        User userA = createScimUser();
+
+        // create a group
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        // add member
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .add("members", userA.getId())
+                .build());
+
+        // PATCH remove member with display sub-attribute (not supported - only value is supported)
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .remove("members[display eq \"" + userA.getUserName() + "\"]")
+                    .build());
+            fail("Should have thrown an exception - only 'value' sub-attribute is supported for members filtering");
+        } catch (ScimClientException e) {
+            ErrorResponse error = e.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt(),
+                    "Filtering members by non-value sub-attributes should return 400, got " + error.getStatusInt());
+            assertTrue(error.getDetail().contains("Only value sub-attribute is supported for filtering complex multivalued attributes, got: display"),
+                    "Error should mention only 'value' sub-attribute is supported, got: " + error.getDetail());
+        }
+    }
+
+    @Test
+    public void testGroupMembersFilterByAndOperatorRejected() {
+        // create users via SCIM
+        User userA = createScimUser();
+
+        // create a group
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        // add member
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .add("members", userA.getId())
+                .build());
+
+        // PATCH remove using AND filter - should fail (AND is not supported for multivalued attributes)
+        // AND is not supported because filtering is restricted to 'value' sub-attribute only,
+        // making AND filters like "value eq id1 and value eq id2" semantically invalid
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .remove("members[value eq \"" + userA.getId() + "\" and value eq \"other-id\"]")
+                    .build());
+            fail("Should have thrown an exception - AND operator is not supported for multivalued attributes");
+        } catch (ScimClientException e) {
+            ErrorResponse error = e.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt(),
+                    "AND operator on multivalued attributes should return 400, got " + error.getStatusInt());
+            assertTrue(error.getDetail().contains("and operator is not supported for multivalued or non-complex attributes"),
+                    "Error should mention AND operator not supported, got: " + error.getDetail());
+        }
+    }
+
+    @Test
+    public void testSimpleAttributeFilterWithAndOperatorRejected() {
+        // create a group
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        // PATCH using AND filter on simple single-valued attribute (displayName)
+        // Should fail with 400, not 500 (NPE from visitComparisonExpression returning null)
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .remove("displayName[value eq \"" + group.getDisplayName() + "\" and value eq \"other\"]")
+                    .build());
+            fail("Should have thrown an exception for AND on simple attribute");
+        } catch (ScimClientException e) {
+            ErrorResponse error = e.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt(),
+                    "AND operator on simple single-valued attributes should return 400, not 500 (NPE), got " + error.getStatusInt());
+        }
+    }
+
+    @Test
+    public void testSimpleAttributeFilterWithOrOperatorRejected() {
+        // create a group
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        // PATCH using OR filter on simple single-valued attribute (displayName)
+        // Should fail with 400, not 500 (NPE from flattenIntoArray on a null node)
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .remove("displayName[value eq \"" + group.getDisplayName() + "\" or value eq \"other\"]")
+                    .build());
+            fail("Should have thrown an exception for OR on simple attribute");
+        } catch (ScimClientException e) {
+            ErrorResponse error = e.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt(),
+                    "OR operator on simple single-valued attributes should return 400, not 500 (NPE), got " + error.getStatusInt());
+        }
+    }
+
+    @Test
     public void testGroupMembersOnCreate() {
         // create users via SCIM
         User userA = createScimUser();

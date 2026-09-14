@@ -48,6 +48,10 @@ runs:
         # explicitly so it is cached and test jobs don't hit Maven Central for it.
         SUREFIRE_VER=$(./mvnw help:evaluate -Dexpression=version.surefire.plugin -q -DforceStdout)
         ./mvnw dependency:get -Dartifact=org.apache.maven.surefire:surefire-junit-platform:${SUREFIRE_VER}
+        # Surefire auto-provisions junit-jupiter-engine when it finds junit-jupiter-api on the
+        # classpath, so it is not a declared dependency and won't be fetched by dependency:resolve.
+        JUNIT5_VER=$(./mvnw help:evaluate -Dexpression=junit5.version -q -DforceStdout -pl testsuite/integration-arquillian/tests/base)
+        ./mvnw dependency:get -Dartifact=org.junit.jupiter:junit-jupiter-engine:${JUNIT5_VER}
 
     - id: compress-keycloak-maven-repository
       name: Compress Keycloak Maven artifacts

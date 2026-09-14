@@ -104,6 +104,25 @@ public abstract class KeycloakLogFilter implements Filter {
             }
         }
 
+        // ISPN000208 "No live owners found for segments" fires during state transfer when a node is the sole
+        // remaining owner after another node departed. The data is safe (this node has it), but the message
+        // is logged at ERROR and alarms users. With numOwners>=2 enforced by Keycloak, a single node
+        // departure always leaves at least one live owner, so this is expected during rolling restarts.
+        // https://github.com/keycloak/keycloak/issues/52088
+        if (Objects.equals(record.getLevel(), Level.SEVERE) && record.getLoggerName().equals("org.infinispan.CLUSTER") && record.getMessage().startsWith("ISPN000208")) {
+            return false;
+        }
+
+        // HHH100503 "JDBC batch still contained JDBC statements on release" is logged at INFO after a
+        // constraint violation that Keycloak already handles. Logged too loudly for a normal occurrence.
+        // TODO: Remove this suppression once Hibernate addresses HHH-20861 by no longer logging
+        // HHH100503 at INFO for this handled condition, or otherwise changes the upstream behavior
+        // so this message is no longer emitted in normal operation.
+        // https://hibernate.atlassian.net/browse/HHH-20861
+        if (Objects.equals(record.getLevel(), Level.INFO) && record.getLoggerName().equals("org.hibernate.orm.jdbc.batch") && record.getMessage().startsWith("HHH100503:")) {
+            return false;
+        }
+
         if (executor != null && ThreadCreator.isVirtual(Thread.currentThread())) {
             executor.submit(new RecordLogger(ExtLogRecord.wrap(record), this));
             return false;

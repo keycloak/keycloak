@@ -2,16 +2,22 @@ import { expect } from "chai";
 import { KeycloakAdminClient } from "../src/client.js";
 import { credentials } from "./constants.js";
 import { Server, createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 
 describe("Timeout", () => {
   let server: Server;
+  let baseUrl: string;
 
   before(async () => {
     server = createServer((req, res) => {
       res.writeHead(200, { "Content-Type": "text/plain" });
       setTimeout(() => res.end("Hello, world!\n"), 1500);
     });
-    server.listen(8888, "localhost");
+    await new Promise<void>((resolve) =>
+      server.listen(0, "localhost", resolve),
+    );
+    const { port } = server.address() as AddressInfo;
+    baseUrl = `http://localhost:${port}`;
   });
 
   after(async () => {
@@ -19,9 +25,7 @@ describe("Timeout", () => {
   });
 
   void it("create without timeout", async () => {
-    const client = new KeycloakAdminClient({
-      baseUrl: "http://localhost:8888",
-    });
+    const client = new KeycloakAdminClient({ baseUrl });
 
     try {
       await client.auth(credentials);
@@ -34,10 +38,7 @@ describe("Timeout", () => {
   });
 
   void it("create with timeout", async () => {
-    const client = new KeycloakAdminClient({
-      baseUrl: "http://localhost:8888",
-      timeout: 1000,
-    });
+    const client = new KeycloakAdminClient({ baseUrl, timeout: 1000 });
 
     try {
       await client.auth(credentials);

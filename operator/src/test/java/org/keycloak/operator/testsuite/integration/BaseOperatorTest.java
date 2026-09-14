@@ -411,21 +411,38 @@ public enum OperatorDeployment {local_apiserver,local,remote}
       }
       Log.info("Deleting Keycloak CR");
 
-      // first graceful scaledown
-      k8sclient.resources(Keycloak.class).list().getItems().forEach(
-              k -> k8sclient.resource(new KeycloakBuilder(k).editSpec().withInstances(0).endSpec().build()).unlock().patch());
+      // Graceful scaledown: unpause, set instances=0, then wait for instances==0 AND
+      // observedGeneration matching generation (reconciler finished processing the scaledown).
+      // Checking both reduces the chance that an in-flight reconciliation re-creates the
+      // StatefulSet after the CR is deleted below — see https://github.com/keycloak/keycloak/issues/52497
+      k8sclient.resources(Keycloak.class).list().getItems().forEach(k -> {
+          var builder = new KeycloakBuilder(k);
+          if (k.getMetadata().getAnnotations() != null
+                  && k.getMetadata().getAnnotations().containsKey(Constants.KEYCLOAK_PAUSE_ANNOTATION)) {
+              builder.editMetadata()
+                      .addToAnnotations(Constants.KEYCLOAK_PAUSE_ANNOTATION, null)
+                      .endMetadata();
+          }
+          k8sclient.resource(builder.editSpec().withInstances(0).endSpec().build()).unlock().patch();
+      });
 
       try {
           k8sclient.resources(Keycloak.class).informOnCondition(
-                  l -> l.stream().allMatch(k -> Optional.ofNullable(k.getStatus()).map(KeycloakStatus::getInstances).orElse(0).equals(0)))
+                  l -> l.stream().allMatch(k -> {
+                      var status = k.getStatus();
+                      return Optional.ofNullable(status).map(KeycloakStatus::getInstances).orElse(0).equals(0)
+                              && Optional.ofNullable(status).map(KeycloakStatus::getObservedGeneration).orElse(0L)
+                                      .equals(k.getMetadata().getGeneration());
+                  }))
                   .get(40, TimeUnit.SECONDS);
       } catch (Exception e) {
           throw KubernetesClientException.launderThrowable(e);
       }
 
-      // this can be simplified to just the root deletion after we pick up the fix
-      // it can be further simplified after https://github.com/fabric8io/kubernetes-client/issues/5838
-      // to just a timed foreground deletion
+      // Foreground cascade deletion would simplify this to just deleting the CRs and waiting
+      // for them to disappear, but it requires blockOwnerDeletion=true on owner references.
+      // fabric8 defaults it to null and https://github.com/fabric8io/kubernetes-client/issues/5838
+      // was auto-closed as stale without a fix, so that path is not available.
       var roots = List.of(Keycloak.class, KeycloakRealmImport.class, KeycloakOIDCClient.class, KeycloakSAMLClient.class);
       roots.forEach(c -> k8sclient.resources(c).delete());
       // enforce that at least the statefulset are gone

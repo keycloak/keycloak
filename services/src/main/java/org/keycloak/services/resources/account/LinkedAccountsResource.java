@@ -217,7 +217,7 @@ public class LinkedAccountsResource {
 
         FederatedIdentityModel identity = getIdentity(identities, providerAlias);
         // if idp is not yet linked and is currently bound to an organization, it should not be available for linking.
-        if (identity == null && provider.getOrganizationId() != null) return null;
+        if (identity == null && provider.hasOrganization()) return null;
 		boolean hide = switch (provider.getShowInAccountConsole()) {
 			case ALWAYS -> false;
 			case WHEN_LINKED -> identity == null;
