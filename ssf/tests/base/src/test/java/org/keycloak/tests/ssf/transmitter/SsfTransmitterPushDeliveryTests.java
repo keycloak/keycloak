@@ -11,6 +11,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;
@@ -58,6 +59,7 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.HttpServerUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -91,6 +93,9 @@ import org.junit.jupiter.api.Test;
  *         CAEP credential-change event, used to assert that SETs carrying
  *         un-requested event types are not delivered.</li>
  * </ul>
+ *
+ * <p>The token-revocation tests additionally use a plain relying party,
+ * {@link #SECOND_RP}, to share one SSO session between two clients.
  */
 @KeycloakIntegrationTest(config = SsfTransmitterPushDeliveryTests.PushDeliveryKeycloakServerConfig.class)
 public class SsfTransmitterPushDeliveryTests {
@@ -103,6 +108,14 @@ public class SsfTransmitterPushDeliveryTests {
 
     static final String RECEIVER_CRED_ONLY = "ssf-receiver-push-cred-only";
     static final String RECEIVER_CRED_ONLY_SECRET = "receiver-push-cred-only-secret";
+
+    /**
+     * Second relying party that joins the SSO session established by the
+     * injected {@code test-app} client in
+     * {@link #testNoPushOnRefreshTokenRevocationWhileOtherClientSessionAlive}.
+     */
+    static final String SECOND_RP = "second-rp";
+    static final String SECOND_RP_SECRET = "second-rp-secret";
 
     static final String TEST_USER = "tester";
     static final String TEST_PASSWORD = "test";
@@ -205,6 +218,179 @@ public class SsfTransmitterPushDeliveryTests {
         Assertions.assertFalse(subId.isMissingNode(), "SSF 1.0 SET should carry a top-level sub_id");
         Assertions.assertTrue(subId.path("user").isObject(), "sub_id.user should describe the logged-out user");
         Assertions.assertTrue(subId.path("session").isObject(), "sub_id.session should describe the revoked session");
+    }
+
+    /**
+     * A relying party that validates tokens offline and trusts SSF/CAEP
+     * for real-time revocation must learn about sessions ended through
+     * OAuth2 token revocation, not just logout: revoking a refresh token
+     * on {@code POST /protocol/openid-connect/revoke} removes the user
+     * session server-side and must emit the same {@link CaepSessionRevoked}
+     * SET as a logout (keycloak#51376).
+     */
+    @Test
+    public void testPushDeliversCaepSessionRevokedOnRefreshTokenRevocation() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
+        createPushStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        AccessTokenResponse tokenResponse = oauthClient.passwordGrantRequest(TEST_USER, TEST_PASSWORD).send();
+        Assertions.assertNotNull(tokenResponse.getRefreshToken(),
+                "password grant response should include a refresh token");
+        String sessionId = extractSessionId(tokenResponse.getRefreshToken());
+
+        Assertions.assertTrue(oauthClient.tokenRevocationRequest(tokenResponse.getRefreshToken())
+                        .refreshToken().send().isSuccess(),
+                "token revocation should succeed");
+
+        CapturedPush captured = awaitPush();
+        JsonNode set = decodeSet(captured);
+
+        JsonNode sessionRevoked = set.path("events").path(CaepSessionRevoked.TYPE);
+        Assertions.assertFalse(sessionRevoked.isMissingNode(),
+                "revoking the refresh token ends the session — the SET must carry CAEP session-revoked");
+        Assertions.assertEquals("Token revoked", sessionRevoked.path("reason_admin").path("en").asText(),
+                "reason_admin should distinguish token revocation from logout");
+
+        Assertions.assertEquals(sessionId, set.path("sub_id").path("session").path("id").asText(),
+                "sub_id.session should identify the session the revoked token belonged to");
+    }
+
+    /**
+     * Same as {@link #testPushDeliversCaepSessionRevokedOnRefreshTokenRevocation}
+     * for offline tokens: revoking the offline token removes the offline
+     * user session (and the online session it was minted from), so a
+     * {@link CaepSessionRevoked} SET must be pushed.
+     */
+    @Test
+    public void testPushDeliversCaepSessionRevokedOnOfflineTokenRevocation() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
+        createPushStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        oauthClient.scope("openid " + OAuth2Constants.OFFLINE_ACCESS);
+        try {
+            AccessTokenResponse tokenResponse = oauthClient.passwordGrantRequest(TEST_USER, TEST_PASSWORD).send();
+            Assertions.assertNotNull(tokenResponse.getRefreshToken(),
+                    () -> "password grant with offline_access should return an offline token, got error: "
+                            + tokenResponse.getError() + " / " + tokenResponse.getErrorDescription());
+            String sessionId = extractSessionId(tokenResponse.getRefreshToken());
+
+            Assertions.assertTrue(oauthClient.tokenRevocationRequest(tokenResponse.getRefreshToken())
+                            .refreshToken().send().isSuccess(),
+                    "offline token revocation should succeed");
+
+            CapturedPush captured = awaitPush();
+            JsonNode set = decodeSet(captured);
+
+            Assertions.assertTrue(set.path("events").has(CaepSessionRevoked.TYPE),
+                    "revoking the offline token ends the offline session — the SET must carry CAEP session-revoked");
+            Assertions.assertEquals(sessionId, set.path("sub_id").path("session").path("id").asText(),
+                    "sub_id.session should identify the session the revoked offline token belonged to");
+        } finally {
+            oauthClient.scope(null);
+        }
+    }
+
+    /**
+     * Counterpart guard against over-notification: revoking a bearer
+     * access token blocklists the token but does not end the user
+     * session, so no session-revoked SET may be emitted — receivers
+     * would otherwise kill a session that is still legitimately alive.
+     */
+    @Test
+    public void testNoPushOnAccessTokenRevocation() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
+        createPushStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        AccessTokenResponse tokenResponse = oauthClient.passwordGrantRequest(TEST_USER, TEST_PASSWORD).send();
+        Assertions.assertNotNull(tokenResponse.getAccessToken(),
+                "password grant should succeed for the test user");
+
+        Assertions.assertTrue(oauthClient.tokenRevocationRequest(tokenResponse.getAccessToken())
+                        .accessToken().send().isSuccess(),
+                "access token revocation should succeed");
+
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "access-token revocation leaves the session alive — no session-revoked SET may be pushed");
+    }
+
+    /**
+     * Multi-client counterpart of {@link #testNoPushOnAccessTokenRevocation}:
+     * when two clients share one SSO session, revoking one client's
+     * refresh token only detaches that client's client-session — Keycloak
+     * keeps the user session alive for the other client. The
+     * {@code REVOKE_GRANT} event still carries the session id, so the
+     * mapper must look the session up and stay silent while it is alive;
+     * announcing it as revoked would let receivers kill a session the
+     * other client still legitimately uses. Only revoking the last
+     * remaining refresh token ends the session and must trigger the push.
+     *
+     * <p>Unlike the access-token case (whose event has no session id at
+     * all) this exercises the session-liveness lookup in
+     * {@code SecurityEventTokenMapper#shouldIgnoreRevokeGrant}.
+     */
+    @Test
+    public void testNoPushOnRefreshTokenRevocationWhileOtherClientSessionAlive() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
+        createPushStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        String firstClientId = oauthClient.config().getClientId();
+        String firstClientSecret = oauthClient.config().getClientSecret();
+        try {
+            // Browser login with the first client establishes the SSO session.
+            AuthorizationEndpointResponse firstLogin = oauthClient.doLogin(TEST_USER, TEST_PASSWORD);
+            Assertions.assertNotNull(firstLogin.getCode(),
+                    () -> "browser login with the first client should succeed, got error: "
+                            + firstLogin.getError() + " / " + firstLogin.getErrorDescription());
+            AccessTokenResponse firstTokens = oauthClient.doAccessTokenRequest(firstLogin.getCode());
+            Assertions.assertNotNull(firstTokens.getRefreshToken(),
+                    "code exchange for the first client should include a refresh token");
+            String sessionId = extractSessionId(firstTokens.getRefreshToken());
+
+            // The second client joins the same SSO session through the
+            // browser's identity cookie — no credentials are prompted.
+            oauthClient.client(SECOND_RP, SECOND_RP_SECRET);
+            oauthClient.openLoginForm();
+            AuthorizationEndpointResponse secondLogin = oauthClient.parseLoginResponse();
+            Assertions.assertNotNull(secondLogin.getCode(),
+                    () -> "SSO login with the second client should succeed, got error: "
+                            + secondLogin.getError() + " / " + secondLogin.getErrorDescription());
+            AccessTokenResponse secondTokens = oauthClient.doAccessTokenRequest(secondLogin.getCode());
+            Assertions.assertNotNull(secondTokens.getRefreshToken(),
+                    "code exchange for the second client should include a refresh token");
+            Assertions.assertEquals(sessionId, extractSessionId(secondTokens.getRefreshToken()),
+                    "both clients should share the same SSO session");
+
+            // Revoking the second client's refresh token detaches only its
+            // client session; the first client keeps the user session alive.
+            Assertions.assertTrue(oauthClient.tokenRevocationRequest(secondTokens.getRefreshToken())
+                            .refreshToken().send().isSuccess(),
+                    "refresh token revocation for the second client should succeed");
+
+            Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                    "another client still holds the SSO session — no session-revoked SET may be pushed");
+
+            // Revoking the last remaining refresh token removes the user
+            // session, which must now be announced.
+            oauthClient.client(firstClientId, firstClientSecret);
+            Assertions.assertTrue(oauthClient.tokenRevocationRequest(firstTokens.getRefreshToken())
+                            .refreshToken().send().isSuccess(),
+                    "refresh token revocation for the first client should succeed");
+
+            CapturedPush captured = awaitPush();
+            JsonNode set = decodeSet(captured);
+
+            Assertions.assertTrue(set.path("events").has(CaepSessionRevoked.TYPE),
+                    "revoking the last refresh token ends the session — the SET must carry CAEP session-revoked");
+            Assertions.assertEquals(sessionId, set.path("sub_id").path("session").path("id").asText(),
+                    "sub_id.session should identify the shared SSO session");
+        } finally {
+            oauthClient.client(firstClientId, firstClientSecret);
+            oauthClient.getDriver().manage().deleteAllCookies();
+        }
     }
 
     /**
@@ -444,6 +630,18 @@ public class SsfTransmitterPushDeliveryTests {
         });
     }
 
+    /**
+     * Reads the {@code sid} claim from a (refresh) token so tests can
+     * correlate the revoked token's session with the {@code sub_id.session}
+     * of the pushed SET.
+     */
+    protected String extractSessionId(String token) throws JWSInputException, IOException {
+        JsonNode claims = JsonSerialization.readValue(new JWSInput(token).getContent(), JsonNode.class);
+        String sid = claims.path("sid").asText();
+        Assertions.assertFalse(sid.isEmpty(), "token should carry a sid claim");
+        return sid;
+    }
+
     protected CapturedPush awaitPush() throws InterruptedException {
         CapturedPush captured = pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS);
         Assertions.assertNotNull(captured,
@@ -621,6 +819,20 @@ public class SsfTransmitterPushDeliveryTests {
                             .lastName("Tester")
                             .enabled(true)
                             .password(TEST_PASSWORD)
+                            // grant offline_access explicitly for the offline-token revocation test
+                            .realmRoles(OAuth2Constants.OFFLINE_ACCESS)
+                            .build()
+            );
+
+            // Plain relying party (no SSF role) that shares the SSO session
+            // with the injected test-app client in the multi-client
+            // token-revocation test. Wildcard redirect keeps it independent
+            // of the test framework's dynamically assigned callback URL.
+            realm.clients(
+                    ClientBuilder.create(SECOND_RP)
+                            .secret(SECOND_RP_SECRET)
+                            .publicClient(false)
+                            .redirectUris("*")
                             .build()
             );
 
