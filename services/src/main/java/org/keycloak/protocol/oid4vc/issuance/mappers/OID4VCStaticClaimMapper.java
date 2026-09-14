@@ -61,6 +61,12 @@ public class OID4VCStaticClaimMapper extends OID4VCMapper {
         return CONFIG_PROPERTIES;
     }
 
+    @Override
+    public boolean mapsUserControlledData() {
+        // The value is an admin-configured static value, not user-controlled.
+        return false;
+    }
+
     public void setClaim(VerifiableCredential verifiableCredential,
                          UserSessionModel userSessionModel) {
         // nothing to do for the mapper.

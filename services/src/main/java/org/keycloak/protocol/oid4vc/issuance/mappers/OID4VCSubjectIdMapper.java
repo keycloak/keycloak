@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import org.keycloak.models.KeycloakSession;
@@ -91,6 +92,10 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
 
     @Override
     public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
+        if (shouldSkipSensitiveMapping()) {
+            return;
+        }
+
         UserModel userModel = userSessionModel.getUser();
         String userAttributeName = mapperModel.getConfig().get(OID4VCMapper.USER_ATTRIBUTE_KEY);
         String propertyName = getClaimName(userAttributeName);
@@ -110,18 +115,25 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
 
     // the configured user attribute serves as fallback claim name to stay compatible with mappers that were
     // created without an explicit claim name
-    private String resolveClaimName() {
-        return getClaimName(mapperModel.getConfig().get(OID4VCMapper.USER_ATTRIBUTE_KEY));
+    @Override
+    protected String resolveClaimName(ProtocolMapperModel mapperModel) {
+        Map<String, String> config = mapperModel.getConfig();
+        if (config == null) {
+            return null;
+        }
+
+        return Optional.ofNullable(config.get(CLAIM_NAME))
+                .orElse(config.get(OID4VCMapper.USER_ATTRIBUTE_KEY));
     }
 
     @Override
     public List<String> getMetadataAttributePath() {
-        return getMetadataAttributePath(resolveClaimName());
+        return getMetadataAttributePath(resolveClaimName(mapperModel));
     }
 
     @Override
     protected List<String> getClaimLookupPath() {
-        return getClaimLookupPath(resolveClaimName());
+        return getClaimLookupPath(resolveClaimName(mapperModel));
     }
 
     @Override
