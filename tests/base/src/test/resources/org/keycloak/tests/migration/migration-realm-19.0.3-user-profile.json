@@ -2,10 +2,10 @@
   "id": "migration-user-profile",
   "realm": "migration-user-profile",
   "enabled": true,
-  "attributes" : {
-    "userProfileEnabled" : "true"
+  "attributes": {
+    "userProfileEnabled": "true"
   },
-  "components" : {
+  "components": {
     "org.keycloak.userprofile.UserProfileProvider": [
       {
         "id": "98cef18c-bcd8-40d2-9e7d-d257298317f2",
@@ -22,5 +22,5 @@
       }
     ]
   },
-  "keycloakVersion" : "19.0.3"
+  "keycloakVersion": "19.0.3"
 }
