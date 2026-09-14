@@ -43,4 +43,13 @@ public class IDTokenTest {
         Assert.assertEquals(addressClaimSet.getRegion(), addressClaimsSet.get("region"));
         Assert.assertEquals(addressClaimSet.getPostalCode(), addressClaimsSet.get("postal_code"));
     }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSessionStateUsesSessionId() {
+        IDToken idToken = new IDToken();
+        idToken.setSessionId("session-123");
+
+        Assert.assertEquals("session-123", idToken.getSessionState());
+    }
 }
