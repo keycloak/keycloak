@@ -20,6 +20,7 @@ package org.keycloak.protocol.oidc.grants;
 import java.util.Collections;
 import java.util.Set;
 
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuthErrorException;
@@ -30,6 +31,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -37,6 +39,7 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.PreTokenRequestContext;
 import org.keycloak.services.clientpolicy.context.ServiceAccountTokenRequestContext;
 import org.keycloak.services.clientpolicy.context.ServiceAccountTokenResponseContext;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -59,6 +62,11 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
 
     private static final Logger logger = Logger.getLogger(ClientCredentialsGrantType.class);
 
+    @Override
+    public void preProcess(KeycloakSession session, MultivaluedMap<String, String> formParams) throws ClientPolicyException {
+        session.clientPolicy().triggerOnEvent(new PreTokenRequestContext(session, formParams));
+    }
+  
     @Override
     public Response process(Context context) {
         setContext(context);

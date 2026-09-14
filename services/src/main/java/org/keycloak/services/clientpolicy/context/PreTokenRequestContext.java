@@ -13,6 +13,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.OAuth2Constants.CLIENT_ID;
 import static org.keycloak.OAuth2Constants.CODE;
 import static org.keycloak.protocol.oidc.utils.OAuth2CodeParser.CACHE_KEY_PREFIX;
 
@@ -23,10 +24,13 @@ public class PreTokenRequestContext implements ClientModelContext {
     private final KeycloakSession session;
     private final MultivaluedMap<String, String> formParams;
     private ClientModel client;
+    private final String clientId;
+
 
     public PreTokenRequestContext(KeycloakSession session, MultivaluedMap<String, String> formParams) {
         this.session = session;
         this.formParams = formParams;
+        this.clientId = formParams.getFirst(CLIENT_ID);
     }
 
     @Override
@@ -75,5 +79,13 @@ public class PreTokenRequestContext implements ClientModelContext {
             }
         }
         return client;
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public MultivaluedMap<String, String> getRequestParameters() {
+        return formParams;
     }
 }
