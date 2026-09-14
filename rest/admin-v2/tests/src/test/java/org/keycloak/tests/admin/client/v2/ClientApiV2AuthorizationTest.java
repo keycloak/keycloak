@@ -210,7 +210,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         OIDCClientRepresentation viewRep = (OIDCClientRepresentation) getClientsApi(viewClientsAdminClient).client(testClientId).getClient();
         assertThat(viewRep.getAuth().getSecret(), is("**********"));
 
-        // manage-cllients: should get the real secret
+        // manage-clients: should get the real secret
         OIDCClientRepresentation manageRep = (OIDCClientRepresentation) getClientsApi(manageClientsAdminClient).client(testClientId).getClient();
         assertThat(manageRep.getAuth().getSecret(), is("test-secret"));
     }
@@ -236,15 +236,17 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         }
 
         // manage-clients: list should have the real secret
-        var manageClients = getClientsApi(manageClientsAdminClient).getClients().toList();
-        OIDCClientRepresentation testClientManaged = manageClients.stream()
-                .filter(r -> r instanceof OIDCClientRepresentation)
-                .map(r -> (OIDCClientRepresentation) r)
-                .filter(r -> "test-client".equals(r.getClientId()))
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("test-client not found in list"));
+        try (var manageResponse = getClientsApi(manageClientsAdminClient).getClients()) {
+            var manageClients = manageResponse.toList();
+            OIDCClientRepresentation testClientManaged = manageClients.stream()
+                    .filter(r -> r instanceof OIDCClientRepresentation)
+                    .map(r -> (OIDCClientRepresentation) r)
+                    .filter(r -> "test-client".equals(r.getClientId()))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("test-client not found in list"));
 
-        assertThat(testClientManaged.getAuth().getSecret(), is("test-secret"));
+            assertThat(testClientManaged.getAuth().getSecret(), is("test-secret"));
+        }
     }
 
     /**
