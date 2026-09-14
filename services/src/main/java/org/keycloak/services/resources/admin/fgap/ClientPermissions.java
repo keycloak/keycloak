@@ -725,6 +725,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
             return client.getClientId().endsWith(AdminRoles.APP_SUFFIX);
         }
 
-        return Constants.REALM_MANAGEMENT_CLIENT_ID.equals(client.getClientId());
+        return Constants.REALM_MANAGEMENT_CLIENT_ID.equals(client.getClientId())
+                || Constants.ADMIN_PERMISSIONS_CLIENT_ID.equals(client.getClientId());
     }
 }
