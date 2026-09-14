@@ -28,6 +28,10 @@ import { useParams } from "../../utils/useParams";
 import { toClientScope } from "../routes/ClientScope";
 import { MapperParams, MapperRoute } from "../routes/Mapper";
 
+// Filtered on the client side because ProtocolMapper.getConfigProperties() is static and context-free,
+// so the server cannot return different properties for client vs client-scope mappers.
+const SCOPE_CONDITION = "scope.condition";
+
 export default function MappingDetails() {
   const { adminClient } = useAdminClient();
 
@@ -222,7 +226,9 @@ export default function MappingDetails() {
               rules={{ required: t("required") }}
             />
             <DynamicComponents
-              properties={mapping?.properties || []}
+              properties={(mapping?.properties || []).filter(
+                (p) => p.name !== SCOPE_CONDITION || !isOnClientScope,
+              )}
               isNew={!isUpdating}
               stringify
             />

@@ -329,7 +329,6 @@ public class DefaultClientSessionContext implements ClientSessionContext {
                 .collect(Collectors.toSet());
     }
 
-
     private Set<RoleModel> loadUserRoles() {
         UserModel user = clientSession.getUserSession().getUser();
         return RoleUtils.getDeepUserRoleMappings(user);
