@@ -131,7 +131,6 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     @Consumes({APPLICATION_SCIM_JSON, MediaType.APPLICATION_JSON})
     @Produces(APPLICATION_SCIM_JSON)
     public Response search(SearchRequest searchRequest) {
-        logger.debugf("SCIM SEARCH %s filter=%s", resourceTypeProvider.getName(), searchRequest.getFilter());
         try {
             normalizePagination(searchRequest);
 
