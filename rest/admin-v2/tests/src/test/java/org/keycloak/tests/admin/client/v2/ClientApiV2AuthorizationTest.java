@@ -221,17 +221,19 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
     @Test
     public void getClientListSecretMaskedForViewOnly() {
         // view-clients: list should have masked secrets
-        var viewClients = getClientsApi(viewClientsAdminClient).getClients().toList();
-        assertThat(viewClients.size(), greaterThan(0));
+        try (var response = getClientsApi(viewClientsAdminClient).getClients()) {
+            var viewClients = response.toList();
+            assertThat(viewClients.size(), greaterThan(0));
 
-        OIDCClientRepresentation testClient = viewClients.stream()
-                .filter(r -> r instanceof OIDCClientRepresentation)
-                .map(r -> (OIDCClientRepresentation) r)
-                .filter(r -> "test-client".equals(r.getClientId()))
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("test-client not found in list"));
+            OIDCClientRepresentation testClient = viewClients.stream()
+                    .filter(r -> r instanceof OIDCClientRepresentation)
+                    .map(r -> (OIDCClientRepresentation) r)
+                    .filter(r -> "test-client".equals(r.getClientId()))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("test-client not found in list"));
 
-        assertThat(testClient.getAuth().getSecret(), is("**********"));
+            assertThat(testClient.getAuth().getSecret(), is("**********"));
+        }
 
         // manage-clients: list should have the real secret
         var manageClients = getClientsApi(manageClientsAdminClient).getClients().toList();
