@@ -372,7 +372,7 @@ export const AdvancedSettings = ({
         field="config.caseSensitiveOriginalUsername"
         label="caseSensitiveOriginalUsername"
       />
-      {hasAccess("realm-admin") && (
+      {hasAccess("manage-realm") && (
         <SwitchField
           field="config.allowAdminRoleMapping"
           label="allowAdminRoleMapping"
