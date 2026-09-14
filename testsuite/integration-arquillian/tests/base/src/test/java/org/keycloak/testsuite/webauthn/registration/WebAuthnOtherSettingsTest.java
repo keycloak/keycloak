@@ -48,6 +48,7 @@ import java.util.Optional;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -227,5 +228,56 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
             webAuthnErrorPage.assertCurrent();
             assertThat(webAuthnErrorPage.getError(), containsString("Acceptable AAGUIDs require an attestation format other than 'none'."));
         }
+    }
+
+    @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
+    public void registrationFailsWhenChallengeAlreadyClaimed() {
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("firstName", "lastName", EMAIL, USERNAME, generatePassword(USERNAME));
+
+        webAuthnRegisterPage.assertCurrent();
+
+        final String challenge = webAuthnRegisterPage.getChallenge();
+        assertThat("Challenge should be present in the page", challenge, notNullValue());
+        final String claimKey = WebAuthnConstants.AUTH_CHALLENGE_NOTE + ":" + challenge;
+
+        // Verify the single-use object was created for this challenge
+        Boolean exists = getTestingClient().server(TEST_REALM_NAME)
+                .fetch(session -> session.singleUseObjects().contains(claimKey), Boolean.class);
+        assertThat("Single-use object should exist for the issued challenge", exists, is(true));
+
+        // Simulate a concurrent request on another node that already consumed this challenge
+        getTestingClient().server(TEST_REALM_NAME).run(session -> session.singleUseObjects().remove(claimKey));
+
+        webAuthnRegisterPage.clickRegister();
+        // The ceremony succeeds in the browser, the form is submitted only after the label prompt is confirmed
+        webAuthnRegisterPage.registerWebAuthnCredential("test-credential");
+
+        webAuthnErrorPage.assertCurrent();
+        assertThat(webAuthnErrorPage.getError(), containsString("Failed to register your Passkey."));
+        assertThat("No credential should be created when challenge was already claimed", getWebAuthnCredentialCount(), is(0L));
+
+        // Retry should issue a new challenge and succeed
+        webAuthnErrorPage.clickTryAgain();
+        waitForPageToLoad();
+
+        webAuthnRegisterPage.assertCurrent();
+        assertThat("Retry should generate a new challenge", webAuthnRegisterPage.getChallenge(), not(challenge));
+
+        webAuthnRegisterPage.clickRegister();
+        webAuthnRegisterPage.registerWebAuthnCredential("test-credential");
+
+        appPage.assertCurrent();
+        assertThat("Exactly one credential after successful retry", getWebAuthnCredentialCount(), is(1L));
+    }
+
+    private long getWebAuthnCredentialCount() {
+        return userResource().credentials().stream()
+                .filter(credential -> getCredentialType().equals(credential.getType()))
+                .count();
     }
 }
