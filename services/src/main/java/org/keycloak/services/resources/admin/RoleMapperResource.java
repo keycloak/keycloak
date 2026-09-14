@@ -146,12 +146,15 @@ public class RoleMapperResource {
 
         final AtomicReference<ClientMappingsRepresentation> mappings = new AtomicReference<>();
 
-        roleMapper.getRoleMappingsStream().filter(roleMapping -> auth.roles().canView(roleMapping)).forEach(roleMapping -> {
+        roleMapper.getRoleMappingsStream().forEach(roleMapping -> {
             RoleContainerModel container = roleMapping.getContainer();
             if (container instanceof RealmModel) {
                 realmRolesRepresentation.add(ModelToRepresentation.toBriefRepresentation(roleMapping));
             } else if (container instanceof ClientModel) {
                 ClientModel clientModel = (ClientModel) container;
+                if (!auth.roles().canView(roleMapping)) {
+                    return;
+                }
                 mappings.set(appMappings.get(clientModel.getClientId()));
                 if (mappings.get() == null) {
                     mappings.set(new ClientMappingsRepresentation());
