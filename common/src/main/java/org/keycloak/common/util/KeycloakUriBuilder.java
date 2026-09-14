@@ -705,16 +705,26 @@ public class KeycloakUriBuilder {
 
     private static final Pattern PARAM_REPLACEMENT = Pattern.compile("_resteasy_uri_parameter");
 
-
-    public KeycloakUriBuilder queryParam(String name, Object... values) throws IllegalArgumentException {
+    public static String queryParamAsString(String name, Object... values) throws IllegalArgumentException {
         if (name == null) throw new IllegalArgumentException("name parameter is null");
+        if (name.isEmpty()) throw new IllegalArgumentException("name parameter is empty");
         if (values == null) throw new IllegalArgumentException("values parameter is null");
+        StringBuilder qry = new StringBuilder();
         for (Object value : values) {
             if (value == null) throw new IllegalArgumentException("A passed in value was null");
-            if (query == null) query = "";
-            else query += "&";
-            query += Encode.encodeQueryParamAsIs(name) + "=" + Encode.encodeQueryParamAsIs(value.toString());
+            if (qry.length() != 0)
+                qry.append("&");
+            qry.append(Encode.encodeQueryParamAsIs(name)).append("=").append(Encode.encodeQueryParamAsIs(value.toString()));
         }
+        return qry.toString();
+    }
+
+    public KeycloakUriBuilder queryParam(String name, Object... values) throws IllegalArgumentException {
+        String queryParameter = queryParamAsString(name, values);
+        if (query == null)
+            query = queryParameter;
+        else
+            query += "&" + queryParameter;
         return this;
     }
 
@@ -726,8 +736,8 @@ public class KeycloakUriBuilder {
         }
 
         String replacedName = Encode.encodeQueryParam(name);
-        query = removeParams(query, rawName -> rawName.equals(replacedName));
-
+        // check encoded and decoded variants of query param name
+        query = removeParams(query, rawName -> rawName.equals(replacedName) || Encode.decode(rawName).equals(Encode.decode(replacedName)));
         // don't set values if values is null
         if (values == null) return this;
         return queryParam(name, values);
@@ -826,7 +836,7 @@ public class KeycloakUriBuilder {
 
     /**
      * Removes all query parameters whose name, after percent-decoding, equals the given {@code name}.
-     * Unlike {@link #replaceQueryParam}, this catches encoded variants such as {@code st%61te} matching {@code state}.
+     * This catches encoded variants such as {@code st%61te} matching {@code state}.
      *
      * <pre>
      * KeycloakUriBuilder.fromUri("http://example.com/path?st%61te=evil&amp;other=keep", false)
