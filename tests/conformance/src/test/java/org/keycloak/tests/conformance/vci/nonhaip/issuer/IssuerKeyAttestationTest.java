@@ -25,27 +25,27 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.conformance.runner.BrowserInteraction;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.testframework.conformance.runner.ConformanceResult;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.tests.conformance.vci.VciConformanceRealmUtil;
 import org.keycloak.tests.conformance.vci.nonhaip.AbstractNonHaipVciConformanceTest;
-import org.keycloak.tests.conformance.vci.nonhaip.NonHaipVciConformanceRealmConfig;
+import org.keycloak.tests.conformance.vci.nonhaip.configs.NonHaipVciRealmConfig;
+import org.keycloak.tests.conformance.vci.nonhaip.configs.NonHaipVciServerConfig;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
 import static org.keycloak.tests.conformance.vci.VciConformanceRealmUtil.SD_JWT_SCOPE;
-import static org.keycloak.tests.conformance.vci.nonhaip.NonHaipVciConformanceRealmConfig.NON_HAIP_PLAN;
+import static org.keycloak.tests.conformance.vci.nonhaip.configs.NonHaipVciRealmConfig.NON_HAIP_PLAN;
 
 /**
  * Issues a credential whose configuration requires key attestations, so the suite includes a valid key attestation
  * that Keycloak must accept. The attestation x5c chain is trusted through the {@code conformance-attester-x509}
- * trust-material identity provider configured by {@link NonHaipVciConformanceRealmConfig}.
+ * trust-material identity provider configured by {@link NonHaipVciRealmConfig}.
  */
-@KeycloakIntegrationTest(config = NonHaipVciConformanceRealmConfig.ServerConfig.class)
+@KeycloakIntegrationTest(config = NonHaipVciServerConfig.class)
 public class IssuerKeyAttestationTest extends AbstractNonHaipVciConformanceTest {
 
-    @InjectRealm(config = KeyAttestationRequiredRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(config = KeyAttestationRequiredRealmConfig.class)
     ManagedRealm realm;
 
     @Override
@@ -65,7 +65,7 @@ public class IssuerKeyAttestationTest extends AbstractNonHaipVciConformanceTest 
         return VciConformanceRealmUtil.attesterJwks();
     }
 
-    public static class KeyAttestationRequiredRealmConfig extends NonHaipVciConformanceRealmConfig {
+    public static class KeyAttestationRequiredRealmConfig extends NonHaipVciRealmConfig {
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {

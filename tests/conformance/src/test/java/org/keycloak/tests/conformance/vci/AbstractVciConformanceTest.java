@@ -26,15 +26,16 @@ import org.keycloak.testframework.conformance.OpenIdConformanceServer;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.testframework.conformance.runner.ModuleRun;
 import org.keycloak.tests.conformance.AbstractConformanceTest;
-import org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig;
+import org.keycloak.tests.conformance.vci.haip.configs.HaipVciRealmConfig;
+import org.keycloak.tests.conformance.vci.nonhaip.configs.NonHaipVciRealmConfig;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Baseline for OID4VCI conformance tests, shared by both the HAIP and non-HAIP hierarchies. HAIP test classes inject
- * a realm with {@link HaipVciConformanceRealmConfig} (or a subclass); non-HAIP tests extend
+ * a realm with {@link HaipVciRealmConfig} (or a subclass); non-HAIP tests extend
  * {@link org.keycloak.tests.conformance.vci.nonhaip.AbstractNonHaipVciConformanceTest} and inject
- * {@link org.keycloak.tests.conformance.vci.nonhaip.NonHaipVciConformanceRealmConfig} (or a subclass). Subclasses
+ * {@link NonHaipVciRealmConfig} (or a subclass). Subclasses
  * override the JWKS and plan-variant hooks below to supply the profile-specific configuration.
  */
 public abstract class AbstractVciConformanceTest extends AbstractConformanceTest {
@@ -55,8 +56,12 @@ public abstract class AbstractVciConformanceTest extends AbstractConformanceTest
      * omitted so it stays discovered per module (it defaults to plain).
      */
     protected Map<String, String> planVariant(String flowVariant) {
+        return planVariant("sd_jwt_vc", flowVariant);
+    }
+
+    protected Map<String, String> planVariant(String credentialFormat, String flowVariant) {
         return Map.of(
-                "credential_format", "sd_jwt_vc",
+                "credential_format", credentialFormat,
                 "vci_authorization_code_flow_variant", flowVariant);
     }
 
