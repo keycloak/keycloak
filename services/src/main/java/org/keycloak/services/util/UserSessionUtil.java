@@ -178,6 +178,7 @@ public class UserSessionUtil {
 
         String noteValue = userSession.isOffline() ? Constants.CREATED_FROM_PERSISTENT_OFFLINE : Constants.CREATED_FROM_PERSISTENT_ONLINE;
         transientSession.setNote(Constants.CREATED_FROM_PERSISTENT, noteValue);
+        transientSession.setNote(Constants.CREATED_FROM_PERSISTENT_STARTED, String.valueOf(userSession.getStarted()));
 
         // Use "started" time from the original session
         return new UserSessionModelDelegate(transientSession) {
@@ -211,6 +212,21 @@ public class UserSessionUtil {
     }
 
     private static UserSessionModel createTransientSessionForClient(KeycloakSession session, UserSessionModel userSession, ClientModel client) {
+        String persistentSessionStarted = userSession.getNote(Constants.CREATED_FROM_PERSISTENT_STARTED);
+        if (persistentSessionStarted != null) {
+            int sessionStarted = Integer.parseInt(persistentSessionStarted);
+            if (userSession.getAuthenticatedClientSessionByClient(client.getId()) == null) {
+                attachAuthenticationSession(session, userSession, client);
+            }
+            return new UserSessionModelDelegate(userSession) {
+
+                @Override
+                public int getStarted() {
+                    return sessionStarted;
+                }
+            };
+        }
+
         UserSessionModel transientSession = createTransientUserSession(session, userSession);
         attachAuthenticationSession(session, transientSession, client);
         return transientSession;
@@ -237,7 +253,9 @@ public class UserSessionUtil {
     }
 
     private static boolean checkTokenIssuedAt(AccessToken token, UserSessionModel userSession) {
-        if (token.isIssuedBeforeSessionStart(userSession.getStarted())) {
+        String persistentSessionStarted = userSession.getNote(Constants.CREATED_FROM_PERSISTENT_STARTED);
+        int sessionStarted = persistentSessionStarted == null ? userSession.getStarted() : Integer.parseInt(persistentSessionStarted);
+        if (token.isIssuedBeforeSessionStart(sessionStarted)) {
             logger.debug("Stale token for user session");
             return false;
         } else {
