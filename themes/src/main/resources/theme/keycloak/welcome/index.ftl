@@ -62,11 +62,11 @@
               <#if localUser>
                 <h1 class="pf-v5-c-title pf-m-2xl">Create an administrative user</h1>
                 <#if !successMessage?has_content>
-                  <p class="pf-v5-c-login__main-header-desc">To get started with ${productName}, you first create an administrative user.</p>
+                  <p class="${properties.kcLoginMainHeaderDesc!}">To get started with ${productName}, you first create an administrative user.</p>
                 </#if>
               <#else>
                 <h1 class="pf-v5-c-title pf-m-3xl">Local access required</h1>
-                <p class="pf-v5-c-login__main-header-desc">You will need local access to create the administrative user.</p>
+                <p class="${properties.kcLoginMainHeaderDesc!}">You will need local access to create the administrative user.</p>
               </#if>
             </header>
             <div class="pf-v5-c-login__main-body">
@@ -173,7 +173,7 @@
                       </div>
                     </div>
                     <input name="stateChecker" type="hidden" value="${stateChecker}">
-                    <div class="pf-v5-c-form__group pf-m-action">
+                    <div class="${properties.kcFormActionGroupClass!}">
                       <button class="pf-v5-c-button pf-m-primary pf-m-block" type="submit">Create user</button>
                     </div>
                   </form>
