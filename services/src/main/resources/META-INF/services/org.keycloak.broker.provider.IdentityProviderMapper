@@ -31,6 +31,7 @@ org.keycloak.broker.oid4vp.mappers.OID4VPSdJwtUserSessionAttributeMapper
 org.keycloak.broker.saml.mappers.AdvancedAttributeToRoleMapper
 org.keycloak.broker.saml.mappers.AdvancedAttributeToGroupMapper
 org.keycloak.broker.saml.mappers.AttributeToRoleMapper
+org.keycloak.broker.saml.mappers.EmailAttributeToNameMapper
 org.keycloak.broker.saml.mappers.UserAttributeMapper
 org.keycloak.broker.saml.mappers.XPathAttributeMapper
 org.keycloak.broker.saml.mappers.UsernameTemplateMapper
