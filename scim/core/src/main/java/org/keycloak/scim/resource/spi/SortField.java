@@ -1,17 +1,25 @@
-package org.keycloak.admin.api;
+package org.keycloak.scim.resource.spi;
 
 import java.util.Objects;
 
 /**
- * A single parsed clause of a {@code sort} query expression, before the field name has
- * been resolved to a resource-specific {@link SortField}.
+ * A sort field along with all options
  */
-public final class SortSegment {
+public final class SortField {
+    
+    public enum SortOrder {
+        ASC,
+        DESC;
+
+        public boolean isAscending() {
+            return this == ASC;
+        }
+    }
 
     private final String fieldName;
     private final SortOrder order;
 
-    public SortSegment(String fieldName, SortOrder order) {
+    public SortField(String fieldName, SortOrder order) {
         this.fieldName = Objects.requireNonNull(fieldName, "fieldName cannot be null");
         this.order = order == null ? SortOrder.ASC : order;
     }
@@ -29,10 +37,10 @@ public final class SortSegment {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof SortSegment)) {
+        if (!(obj instanceof SortField)) {
             return false;
         }
-        SortSegment other = (SortSegment) obj;
+        SortField other = (SortField) obj;
         return fieldName.equals(other.fieldName) && order == other.order;
     }
 
