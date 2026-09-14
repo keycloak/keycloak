@@ -135,7 +135,7 @@ public class Profile {
 
         MULTI_SITE("Multi-site support", Type.DISABLED_BY_DEFAULT, FeatureUpdatePolicy.SHUTDOWN),
 
-        STATELESS("Stateless (stores authentication sessions, action tokens and login failure data in the database, allowing multiple clusters to be connected with just the database)", Type.PREVIEW, FeatureUpdatePolicy.SHUTDOWN, Feature.LOGIN_FAILURES_V2),
+        STATELESS("Stateless (stores authentication sessions, action tokens and login failure data in the database, allowing multiple clusters to be connected with just the database)", Type.DISABLED_BY_DEFAULT, FeatureUpdatePolicy.SHUTDOWN, Feature.LOGIN_FAILURES_V2),
 
         CLUSTERLESS("Store all session data, work cache and login failure data in an external Infinispan cluster.", Type.EXPERIMENTAL, FeatureUpdatePolicy.SHUTDOWN),
 

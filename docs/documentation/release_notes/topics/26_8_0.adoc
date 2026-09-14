@@ -17,6 +17,14 @@ Client Secret Rotation enables confidential clients to rotate their secrets thro
 
 In this release, Client Secret Rotation is promoted from preview to supported. For more details, see the link:{adminguide_link}#_secret_rotation[{adminguide_name}].
 
+= High Availability
+
+== Multi-cluster v2 (supported)
+
+Multi-cluster v2 enables connecting two or more {project_name} clusters without an external {jdgserver_name} cluster by using the `stateless` feature. Session data is stored in the database, simplifying the deployment architecture compared to multi-cluster v1.
+
+In this release, multi-cluster v2 and the `stateless` feature are promoted from preview to supported. The feature is disabled by default and can be enabled with `--features=stateless`. For more details, see <@links.ha id="multi-cluster-v2-introduction" />.
+
 = Configuring and Running
 
 == Support for encrypted PEM private keys
