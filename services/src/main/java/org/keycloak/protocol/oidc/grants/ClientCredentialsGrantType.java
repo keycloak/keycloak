@@ -44,6 +44,7 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
 
@@ -111,7 +112,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         // persisting of userSession by default
         UserSessionModel.SessionPersistenceState sessionPersistenceState = UserSessionModel.SessionPersistenceState.PERSISTENT;
 
-        if (!useRefreshToken()) {
+        if (!useRefreshToken(TokenUtil.isOfflineTokenRequested(scope))) {
             // we don't want to store a session hence we mark it as transient, see KEYCLOAK-9551
             sessionPersistenceState = UserSessionModel.SessionPersistenceState.TRANSIENT;
         }
@@ -159,8 +160,8 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
     }
 
     @Override
-    protected boolean useRefreshToken() {
-        return clientConfig.isUseRefreshTokenForClientCredentialsGrant();
+    protected boolean useRefreshToken(boolean offlineToken) {
+        return clientConfig.isUseRefreshTokenForClientCredentialsGrant() || (clientConfig.isUseRefreshTokenForOfflineToken() && offlineToken);
     }
 
     /**

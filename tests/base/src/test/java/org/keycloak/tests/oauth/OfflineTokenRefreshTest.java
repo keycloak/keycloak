@@ -65,6 +65,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.tests.utils.admin.AdminApiUtil.findUserByUsername;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -538,6 +539,93 @@ public class OfflineTokenRefreshTest {
         }
     }
 
+    @Test
+    public void offlineTokenAuthorizationCodeGrantGeneratesRefreshTokenWhenUseRefreshTokenForOfflineTokenEnabled() {
+        updateOfflineClientRefreshTokenConfig(false, true);
+        try {
+            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+            oauth.client(OFFLINE_CLIENT_ID, "secret1");
+            oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
+            oauth.doLogin("test-user@localhost", "password");
+            EventRepresentation loginEvent = events.poll();
+            EventAssertion.assertSuccess(loginEvent)
+                    .type(EventType.LOGIN)
+                    .clientId(OFFLINE_CLIENT_ID)
+                    .details(Details.REDIRECT_URI, OFFLINE_CLIENT_APP_URI);
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+            assertEquals(200, tokenResponse.getStatusCode());
+            assertNotNull(tokenResponse.getAccessToken());
+            assertNotNull(tokenResponse.getRefreshToken());
+            assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getType());
+            EventRepresentation codeToTokenEvent = events.poll();
+            EventAssertion.assertSuccess(codeToTokenEvent)
+                    .type(EventType.CODE_TO_TOKEN)
+                    .clientId(OFFLINE_CLIENT_ID)
+                    .sessionId(loginEvent.getSessionId())
+                    .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE);
+        } finally {
+            resetOfflineClientRefreshTokenConfig();
+        }
+    }
+
+    @Test
+    public void offlineTokenAuthorizationCodeGrantDoesNotGenerateRefreshTokenWhenUseRefreshTokenForOfflineTokenDisabled() {
+        updateOfflineClientRefreshTokenConfig(false, false);
+        try {
+            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+            oauth.client(OFFLINE_CLIENT_ID, "secret1");
+            oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
+            oauth.doLogin("test-user@localhost", "password");
+            EventRepresentation loginEvent = events.poll();
+            EventAssertion.assertSuccess(loginEvent)
+                    .type(EventType.LOGIN)
+                    .clientId(OFFLINE_CLIENT_ID)
+                    .details(Details.REDIRECT_URI, OFFLINE_CLIENT_APP_URI);
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+            assertEquals(200, tokenResponse.getStatusCode());
+            assertNotNull(tokenResponse.getAccessToken());
+            assertNull(tokenResponse.getRefreshToken());
+            EventRepresentation codeToTokenEvent = events.poll();
+            EventAssertion.assertSuccess(codeToTokenEvent)
+                    .type(EventType.CODE_TO_TOKEN)
+                    .clientId(OFFLINE_CLIENT_ID)
+                    .sessionId(loginEvent.getSessionId());
+        } finally {
+            resetOfflineClientRefreshTokenConfig();
+        }
+    }
+
+    @Test
+    public void offlineTokenRefreshIssuesNewRefreshTokenWhenUseRefreshTokenForOfflineTokenEnabled() {
+        updateOfflineClientRefreshTokenConfig(false, true);
+        try {
+            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+            oauth.client(OFFLINE_CLIENT_ID, "secret1");
+            oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
+            oauth.doLogin("test-user@localhost", "password");
+            events.poll();
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+            String refreshToken = tokenResponse.getRefreshToken();
+            assertNotNull(refreshToken);
+            events.poll();
+            AccessTokenResponse refreshedTokenResponse = oauth.doRefreshTokenRequest(refreshToken);
+            assertEquals(200, refreshedTokenResponse.getStatusCode());
+            assertNotNull(refreshedTokenResponse.getAccessToken());
+            assertNotNull(refreshedTokenResponse.getRefreshToken());
+            assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, oauth.parseRefreshToken(refreshedTokenResponse.getRefreshToken()).getType());
+            EventRepresentation refreshEvent = events.poll();
+            EventAssertion.assertSuccess(refreshEvent)
+                    .type(EventType.REFRESH_TOKEN)
+                    .clientId(OFFLINE_CLIENT_ID)
+                    .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE);
+        } finally {
+            resetOfflineClientRefreshTokenConfig();
+        }
+    }
+
 
     // KEYCLOAK-7688 Offline Session Max for Offline Token
     private int[] changeOfflineSessionSettings(boolean isEnabled, int sessionMax, int sessionIdle, int clientSessionMax, int clientSessionIdle) {
@@ -657,4 +745,21 @@ public class OfflineTokenRefreshTest {
                     .protocolMappers(audienceMapper);
         }
     }
+
+    private void updateOfflineClientRefreshTokenConfig(boolean useRefreshToken, boolean useRefreshTokenForOfflineToken) {
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), OFFLINE_CLIENT_ID);
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        clientRep.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, String.valueOf(useRefreshToken));
+        clientRep.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_OFFLINE_TOKEN, String.valueOf(useRefreshTokenForOfflineToken));
+        clientResource.update(clientRep);
+    }
+
+    private void resetOfflineClientRefreshTokenConfig() {
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), OFFLINE_CLIENT_ID);
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        clientRep.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "true");
+        clientRep.getAttributes().remove(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_OFFLINE_TOKEN);
+        clientResource.update(clientRep);
+    }
+
 }
