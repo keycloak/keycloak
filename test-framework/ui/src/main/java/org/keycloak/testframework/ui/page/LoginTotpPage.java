@@ -14,12 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.pages;
+package org.keycloak.testframework.ui.page;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.keycloak.testsuite.util.UIUtils;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
@@ -30,13 +30,19 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LoginTotpPage extends LanguageComboboxAwarePage {
+public class LoginTotpPage extends AbstractLoginPage  {
 
     @FindBy(id = "otp")
     private WebElement otpInput;
 
+    @FindBy(id = "password-token")
+    private WebElement passwordToken;
+
     @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
+
+    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
+    private WebElement loginErrorMessage;
 
     @FindBy(id = "input-error-otp")
     private WebElement totpInputCodeError;
@@ -44,19 +50,31 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     @FindBy(id = "input-error-otp-code")
     private WebElement otpInputCodeError;
 
+    public LoginTotpPage(ManagedWebDriver driver) {
+        super(driver);
+    }
+
     public void login(String totp) {
         otpInput.clear();
         if (totp != null) otpInput.sendKeys(totp);
 
-        UIUtils.clickLink(submitButton);
+        submitButton.click();
     }
 
-    public String getInputError(){
+    public String getAlertError() {
         try {
-            return UIUtils.getTextFromElement(totpInputCodeError);
+            return loginErrorMessage.getText();
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
+    public String getInputError() {
+        try {
+            return totpInputCodeError.getText();
         } catch (NoSuchElementException e) {
             try {
-                return UIUtils.getTextFromElement(otpInputCodeError);
+                return otpInputCodeError.getText();
             } catch (NoSuchElementException ex) {
                 return null;
             }
@@ -78,12 +96,10 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         }
     }
 
-
     public List<String> getAvailableOtpCredentials() {
         return driver.findElements(getXPathForLookupAllCards())
                 .stream().map(WebElement::getText).collect(Collectors.toList());
     }
-
 
     public String getSelectedOtpCredential() {
         try {
@@ -107,11 +123,9 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         return By.xpath("//div[contains(@class, 'pf-v5-c-tile')][normalize-space() = '"+ credentialName +"']");
     }
 
-
     public void selectOtpCredential(String credentialName) {
-        WebElement webElement = driver.findElement(
-                getXPathForLookupCardWithName(credentialName));
-        UIUtils.click(webElement);
+        WebElement webElement = driver.findElement(getXPathForLookupCardWithName(credentialName));
+        webElement.click();
     }
 
 }
