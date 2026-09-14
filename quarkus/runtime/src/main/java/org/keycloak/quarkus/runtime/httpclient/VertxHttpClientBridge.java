@@ -36,11 +36,9 @@ import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicStatusLine;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
-import org.jboss.logging.Logger;
+
 
 public class VertxHttpClientBridge extends CloseableHttpClient {
-
-    private static final Logger logger = Logger.getLogger(VertxHttpClientBridge.class);
 
     private final HttpClient httpClient;
     private final VertxHttpClientProvider provider;
@@ -118,6 +116,10 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
             }
 
             HttpClientRequest clientReq = reqAr.result();
+            if (future.isDone()) {
+                clientReq.reset();
+                return;
+            }
             requestRef.set(clientReq);
 
             for (Header header : request.getAllHeaders()) {
@@ -178,6 +180,7 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
         try {
             return VertxHttpClientProvider.awaitResult(future, idleTimeoutMs);
         } catch (IOException e) {
+            future.completeExceptionally(e);
             HttpClientRequest req = requestRef.get();
             if (req != null) {
                 req.reset();
