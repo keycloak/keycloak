@@ -18,4 +18,6 @@ public interface JOSEHeader extends Serializable {
     String getRawAlgorithm();
 
     String getKeyId();
+
+    String getType();
 }
