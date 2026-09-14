@@ -49,8 +49,8 @@ public class JpaSingleUseObjectProvider implements SingleUseObjectProvider {
         if (lifespanSeconds <= 0) {
             throw new IllegalArgumentException("lifespanSeconds must be positive");
         }
-        getEntityManager().createNamedQuery("insertOrOverwriteSingleUseObject")
-                .setHint(EntityManagerProxy.ASYNC_COMMIT_ALLOWED, true)
+        var em = getEntityManager();
+        EntityManagerProxy.allowAsyncCommit(em, em.createNamedQuery("insertOrOverwriteSingleUseObject"))
                 .setParameter("id", key)
                 .setParameter("notes", SingleUseObjectSerialization.notesToString(key, notes))
                 .setParameter("expire", Time.currentTimeSeconds() + lifespanSeconds)
@@ -88,8 +88,8 @@ public class JpaSingleUseObjectProvider implements SingleUseObjectProvider {
     @Override
     public boolean replace(String key, Map<String, String> notes) {
         Objects.requireNonNull(key);
-        var rows = getEntityManager().createNamedQuery("updateIfNotExpiredSingleUseObject")
-                .setHint(EntityManagerProxy.ASYNC_COMMIT_ALLOWED, true)
+        var em = getEntityManager();
+        var rows = EntityManagerProxy.allowAsyncCommit(em, em.createNamedQuery("updateIfNotExpiredSingleUseObject"))
                 .setParameter("id", key)
                 .setParameter("notes", SingleUseObjectSerialization.notesToString(key, notes))
                 .setParameter("currentTime", Time.currentTimeSeconds())

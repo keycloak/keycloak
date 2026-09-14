@@ -84,7 +84,7 @@ public class AsyncCommitHqlTest {
                     || dialect instanceof SQLServerDialect
                     || dialect instanceof OracleDialect;
 
-            assertEquals(databaseSupportsAsyncCommit, EntityManagerProxy.isAsyncCommitEnabled(),
+            assertEquals(databaseSupportsAsyncCommit, EntityManagerProxy.isAsyncCommitEnabled(em),
                     "Async commit enablement must match database support (" + dialect.getClass().getSimpleName() + ")");
 
             String key = "async-commit-test-" + UUID.randomUUID();
@@ -107,10 +107,9 @@ public class AsyncCommitHqlTest {
     @Test
     public void executeUpdateWithZeroRowsDoesNotSetFlag() {
         runOnServer.run(session -> {
-            Assumptions.assumeTrue(EntityManagerProxy.isAsyncCommitEnabled(),
-                    "Only meaningful when async commit is enabled (Query wrapping active)");
-
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            Assumptions.assumeTrue(EntityManagerProxy.isAsyncCommitEnabled(em),
+                    "Only meaningful when async commit is enabled (Query wrapping active)");
 
             int rows = em.createQuery("UPDATE RealmEntity r SET r.displayName = r.displayName WHERE r.id = :id")
                     .setParameter("id", "non-existent-realm-id")
@@ -129,11 +128,11 @@ public class AsyncCommitHqlTest {
         String realmName = managedRealm.getName();
 
         runOnServer.run(session -> {
-            Assumptions.assumeTrue(EntityManagerProxy.isAsyncCommitEnabled(),
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            Assumptions.assumeTrue(EntityManagerProxy.isAsyncCommitEnabled(em),
                     "Only meaningful when async commit is enabled (Query wrapping active)");
 
             RealmModel realm = session.realms().getRealmByName(realmName);
-            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
 
             em.createQuery("SELECT r FROM RealmEntity r WHERE r.id = :id")
                     .setParameter("id", realm.getId())
@@ -151,7 +150,8 @@ public class AsyncCommitHqlTest {
         String realmName = managedRealm.getName();
 
         runOnServer.run(session -> {
-            Assumptions.assumeTrue(EntityManagerProxy.isAsyncCommitEnabled(),
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            Assumptions.assumeTrue(EntityManagerProxy.isAsyncCommitEnabled(em),
                     "Only meaningful when async commit is enabled");
 
             RealmModel realm = session.realms().getRealmByName(realmName);
@@ -162,8 +162,6 @@ public class AsyncCommitHqlTest {
             event.setType(EventType.LOGIN);
             event.setTime(System.currentTimeMillis());
             session.getProvider(EventStoreProvider.class).onEvent(event);
-
-            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             em.flush();
 
             boolean flagSet = Boolean.TRUE.equals(
@@ -178,13 +176,13 @@ public class AsyncCommitHqlTest {
         String realmName = managedRealm.getName();
 
         runOnServer.run(session -> {
-            Assumptions.assumeTrue(EntityManagerProxy.isAsyncCommitEnabled(),
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            Assumptions.assumeTrue(EntityManagerProxy.isAsyncCommitEnabled(em),
                     "Only meaningful when async commit is enabled");
 
             RealmModel realm = session.realms().getRealmByName(realmName);
             session.authenticationSessions().createRootAuthenticationSession(realm, UUID.randomUUID().toString());
 
-            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             boolean flagSet = Boolean.TRUE.equals(
                     em.unwrap(Session.class).getProperties().get(EntityManagerProxy.SYNC_COMMIT_REQUIRED));
             assertFalse(flagSet,

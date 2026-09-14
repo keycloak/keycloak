@@ -81,8 +81,7 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
         // could remove it between the INSERT and the subsequent find. Retry if this happens.
         RootAuthenticationSessionEntity entity;
         for (;;) {
-            em.createNamedQuery("insertRootAuthSessionIfAbsent")
-                    .setHint(EntityManagerProxy.ASYNC_COMMIT_ALLOWED, true)
+            EntityManagerProxy.allowAsyncCommit(em, em.createNamedQuery("insertRootAuthSessionIfAbsent"))
                     .setParameter("id", id)
                     .setParameter("realmId", realm.getId())
                     .setParameter("timestamp", Time.currentTimeSeconds())

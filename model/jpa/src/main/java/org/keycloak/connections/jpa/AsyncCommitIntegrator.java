@@ -107,7 +107,7 @@ public abstract class AsyncCommitIntegrator implements PreInsertEventListener, P
         registry.appendListeners(EventType.PRE_UPDATE, listener);
         registry.appendListeners(EventType.PRE_DELETE, listener);
 
-        EntityManagerProxy.setAsyncCommitEnabled(true);
+        EntityManagerProxy.enableAsyncCommit(emf);
         logger.debugf("Registered asynchronous commit listeners for %s", dialect.getClass().getSimpleName());
     }
 

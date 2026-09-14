@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.FlushModeType;
 import jakarta.persistence.OptimisticLockException;
 import jakarta.persistence.Query;
@@ -49,16 +50,34 @@ import org.hibernate.exception.ConstraintViolationException;
 public class EntityManagerProxy {
 
     public static final String SYNC_COMMIT_REQUIRED = "kc.sync_commit_required";
-    public static final String ASYNC_COMMIT_ALLOWED = "kc.async_commit_allowed";
+    static final String ASYNC_COMMIT_ALLOWED = "kc.async_commit_allowed";
+    private static final String ASYNC_COMMIT_ENABLED = "kc.async_commit_enabled";
 
-    private static volatile boolean asyncCommitEnabled;
-
-    public static void setAsyncCommitEnabled(boolean enabled) {
-        asyncCommitEnabled = enabled;
+    /**
+     * Marks an entity manager factory as async-commit-capable. Called once at startup
+     * by {@code AsyncCommitIntegrator} after successfully registering listeners.
+     */
+    public static void enableAsyncCommit(EntityManagerFactory emf) {
+        emf.getProperties().put(ASYNC_COMMIT_ENABLED, Boolean.TRUE);
     }
 
-    public static boolean isAsyncCommitEnabled() {
-        return asyncCommitEnabled;
+    /**
+     * Returns whether async commit is enabled for the given entity manager's factory.
+     */
+    public static boolean isAsyncCommitEnabled(EntityManager em) {
+        return Boolean.TRUE.equals(em.getEntityManagerFactory().getProperties().get(ASYNC_COMMIT_ENABLED));
+    }
+
+    /**
+     * Marks a query as safe for asynchronous commit. Call this on queries that only modify
+     * entities implementing {@code AsynchronousCommitAllowed}. When async commit is not enabled
+     * on the entity manager's factory, this is a no-op.
+     */
+    public static Query allowAsyncCommit(EntityManager em, Query query) {
+        if (isAsyncCommitEnabled(em)) {
+            query.setHint(ASYNC_COMMIT_ALLOWED, true);
+        }
+        return query;
     }
 
     private static final Pattern WRITE_METHOD_NAMES = Pattern.compile("persist|merge");
@@ -67,6 +86,7 @@ public class EntityManagerProxy {
     private EntityManager em;
     private final KeycloakSession session;
     private final boolean batchEnabled;
+    private final boolean asyncCommitEnabled;
     private final int batchSize;
     private int changeCount = 0;
 
@@ -98,6 +118,7 @@ public class EntityManagerProxy {
     private EntityManagerProxy(KeycloakSession session, EntityManager em, Set<EntityManagerProxy> entityManagerProxies, boolean batchEnabled, int batchSize) {
         this.session = session;
         this.batchEnabled = batchEnabled;
+        this.asyncCommitEnabled = Boolean.TRUE.equals(em.getEntityManagerFactory().getProperties().get(ASYNC_COMMIT_ENABLED));
         this.batchSize = batchSize;
         this.em = em;
         this.entityManagerProxies = entityManagerProxies;
