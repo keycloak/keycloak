@@ -194,7 +194,21 @@ public class JWE implements JOSE {
 
         keyStorage.setEncryptionProvider(encryptionProvider);
 
-        byte[] decodedCek = algorithmProvider.decodeCek(Base64Url.decode(base64Cek), keyStorage.getDecryptionKey(), this.header, encryptionProvider);
+        byte[] decodedCek;
+        if (JWEConstants.RSA1_5.equals(this.header.getAlgorithm())) {
+            int expectedCekLength = encryptionProvider.getExpectedCEKLength();
+            decodedCek = JWEUtils.generateSecret(expectedCekLength);
+            try {
+                byte[] unwrappedCek = algorithmProvider.decodeCek(Base64Url.decode(base64Cek), keyStorage.getDecryptionKey(), this.header, encryptionProvider);
+                if (unwrappedCek != null && unwrappedCek.length == expectedCekLength) {
+                    decodedCek = unwrappedCek;
+                }
+            } catch (Exception e) {
+                // keep the randomly generated fallback CEK
+            }
+        } else {
+            decodedCek = algorithmProvider.decodeCek(Base64Url.decode(base64Cek), keyStorage.getDecryptionKey(), this.header, encryptionProvider);
+        }
         keyStorage.setCEKBytes(decodedCek);
 
         encryptionProvider.verifyAndDecodeJwe(this);

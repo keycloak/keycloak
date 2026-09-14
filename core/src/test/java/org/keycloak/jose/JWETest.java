@@ -20,6 +20,7 @@ package org.keycloak.jose;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyPair;
+import javax.crypto.AEADBadTagException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -338,6 +339,76 @@ public abstract class JWETest {
         System.out.println("Decoded content length: " + decodedContent.length());
 
         Assert.assertEquals(PAYLOAD, decodedContent);
+    }
+
+    @Test
+    public void testRSA1_5_CekUnwrapFailureIsIndistinguishableFromAeadFailure() throws Exception {
+        KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
+        JWEAlgorithmProvider jweAlgorithmProvider = CryptoIntegration.getProvider().getAlgorithmProvider(JWEAlgorithmProvider.class, JWEConstants.RSA1_5);
+        JWEEncryptionProvider jweEncryptionProvider = new AesGcmJWEEncryptionProvider(JWEConstants.A128GCM);
+
+        JWEHeader jweHeader = new JWEHeader(JWEConstants.RSA1_5, JWEConstants.A128GCM, null);
+        JWE jwe = new JWE().header(jweHeader).content(PAYLOAD.getBytes(StandardCharsets.UTF_8));
+        jwe.getKeyStorage().setEncryptionKey(keyPair.getPublic());
+        String validJwe = jwe.encodeJwe(jweAlgorithmProvider, jweEncryptionProvider);
+
+        // segment 1 is the RSA-encrypted CEK, segment 3 is the AES-GCM ciphertext
+        String jweWithCorruptCek = corruptCompactSegment(validJwe, 1);
+        String jweWithCorruptCiphertext = corruptCompactSegment(validJwe, 3);
+
+        Throwable causeForCorruptCek = assertDecodeFails(jweWithCorruptCek, keyPair, jweAlgorithmProvider, jweEncryptionProvider);
+        Throwable causeForCorruptCiphertext = assertDecodeFails(jweWithCorruptCiphertext, keyPair, jweAlgorithmProvider, jweEncryptionProvider);
+
+        Assert.assertNotNull(causeForCorruptCek);
+        Assert.assertNotNull(causeForCorruptCiphertext);
+        Assert.assertEquals(AEADBadTagException.class, causeForCorruptCek.getClass());
+        Assert.assertEquals(causeForCorruptCiphertext.getClass(), causeForCorruptCek.getClass());
+    }
+
+    @Test
+    public void testRSA1_5_ValidRoundTripStillSucceedsAfterCountermeasure() throws Exception {
+        testKeyEncryption_ContentEncryptionAesGcm(JWEConstants.RSA1_5, JWEConstants.A128GCM);
+    }
+
+    @Test
+    public void testRSAOAEP_CekUnwrapFailureIsNotSubstituted() throws Exception {
+        KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
+        JWEAlgorithmProvider jweAlgorithmProvider = CryptoIntegration.getProvider().getAlgorithmProvider(JWEAlgorithmProvider.class, JWEConstants.RSA_OAEP);
+        JWEEncryptionProvider jweEncryptionProvider = new AesGcmJWEEncryptionProvider(JWEConstants.A128GCM);
+
+        JWEHeader jweHeader = new JWEHeader(JWEConstants.RSA_OAEP, JWEConstants.A128GCM, null);
+        JWE jwe = new JWE().header(jweHeader).content(PAYLOAD.getBytes(StandardCharsets.UTF_8));
+        jwe.getKeyStorage().setEncryptionKey(keyPair.getPublic());
+        String validJwe = jwe.encodeJwe(jweAlgorithmProvider, jweEncryptionProvider);
+
+        String jweWithCorruptCek = corruptCompactSegment(validJwe, 1);
+
+        Throwable cause = assertDecodeFails(jweWithCorruptCek, keyPair, jweAlgorithmProvider, jweEncryptionProvider);
+
+        Assert.assertNotNull(cause);
+        Assert.assertNotEquals(AEADBadTagException.class, cause.getClass());
+    }
+
+    private Throwable assertDecodeFails(String compactJwe, KeyPair keyPair, JWEAlgorithmProvider jweAlgorithmProvider,
+                                         JWEEncryptionProvider jweEncryptionProvider) throws Exception {
+        JWE jwe = new JWE();
+        jwe.getKeyStorage().setDecryptionKey(keyPair.getPrivate());
+        try {
+            jwe.verifyAndDecodeJwe(compactJwe, jweAlgorithmProvider, jweEncryptionProvider);
+            Assert.fail("Expected decryption of a corrupted JWE to fail, but it succeeded");
+            return null;
+        } catch (JWEException e) {
+            return e.getCause();
+        }
+    }
+
+    // segments: 0=header, 1=encryptedCek, 2=iv, 3=ciphertext, 4=authTag
+    private String corruptCompactSegment(String compactJwe, int segmentIndex) {
+        String[] parts = compactJwe.split("\\.");
+        byte[] segmentBytes = Base64Url.decode(parts[segmentIndex]);
+        segmentBytes[segmentBytes.length - 1] ^= (byte) 0xFF;
+        parts[segmentIndex] = Base64Url.encode(segmentBytes);
+        return String.join(".", parts);
     }
 
 }
