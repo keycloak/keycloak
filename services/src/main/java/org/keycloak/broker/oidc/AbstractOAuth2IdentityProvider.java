@@ -501,6 +501,28 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             return exchangeNotLinked(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
 
+        // Refresh the stored token if it has expired and a refresh token is available
+        try {
+            if (model.getToken().startsWith("{")) {
+                OAuthResponse previousResponse = JsonSerialization.readValue(model.getToken(), OAuthResponse.class);
+                Long exp = previousResponse.getAccessTokenExpiration();
+                if (needsRefresh(exp) && previousResponse.getRefreshToken() != null) {
+                    OAuthResponse newResponse = refreshToken(previousResponse, session);
+                    if (newResponse.getExpiresIn() != null && newResponse.getExpiresIn() > 0) {
+                        long accessTokenExpiration = Time.currentTime() + newResponse.getExpiresIn();
+                        newResponse.setAccessTokenExpiration(accessTokenExpiration);
+                    }
+                    model.setToken(JsonSerialization.writeValueAsString(newResponse));
+                    session.users().updateFederatedIdentity(realm, tokenSubject, model);
+                }
+            }
+        } catch (IOException e) {
+            ErrorRepresentation error = new ErrorRepresentation();
+            error.setErrorMessage("Unable to refresh token");
+            throw new WebApplicationException("Unable to refresh token", e,
+                    Response.status(Response.Status.BAD_GATEWAY).entity(error).type(MediaType.APPLICATION_JSON).build());
+        }
+
         String accessToken = extractTokenFromResponse(model.getToken(), getAccessTokenResponseParameter());
         if (accessToken == null) {
             model.setToken(null);
