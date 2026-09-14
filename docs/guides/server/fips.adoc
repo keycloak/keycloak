@@ -247,8 +247,10 @@ WORKDIR /opt/keycloak
 RUN cp /tmp/files/*.jar /opt/keycloak/providers/
 RUN cp /tmp/files/keycloak-fips.keystore.* /opt/keycloak/conf/server.keystore
 RUN cp /tmp/files/kc.java.security /opt/keycloak/conf/
-
-RUN /opt/keycloak/bin/kc.sh build --features=fips --fips-mode=strict
+ENV KC_FEATURES=fips
+ENV KC_FIPS_MODE=strict
+ENV KC_OPTIMIZED=true
+RUN /opt/keycloak/bin/kc.sh build
 
 FROM quay.io/keycloak/keycloak:{containerlabel}
 COPY --from=builder /opt/keycloak/ /opt/keycloak/

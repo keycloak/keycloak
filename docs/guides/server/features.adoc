@@ -9,6 +9,8 @@ includedOptions="features features-* feature-*">
 
 {project_name} has packed some functionality in features, including some disabled features, such as Technology Preview and deprecated features. Other features are enabled by default, but you can disable them if they do not apply to your use of {project_name}.
 
+All feature options are build time options.
+
 == Enabling features
 
 Some supported features, and all preview features, are disabled by default.
@@ -16,32 +18,23 @@ You can enable feature either via single option or including it into the list of
 
 === Single option
 
-You can enable the specific feature `<name>` as follows:
+You can enable the specific feature `<name>` with the option `feature-<name>` set to a value of `enabled|vX`:
 
-<@kc.build parameters="--feature-<name>=enabled|disabled|vX"/>
-
-Possible values are `enabled`, `disabled`, or a specific version of the feature that should be enabled.
-For example, to enable `token-exchange`, enter this command:
-
-<@kc.build parameters="--feature-token-exchange=enabled"/>
+For example, to enable `token-exchange`, use `feature-token-exchange` set to `enabled`.
 
 The single-option mechanism is useful when updating long feature lists is cumbersome or when you want to modify a specific feature without overriding the entire list in a pre-built image.
 
 === List of enabled features
 
-<@kc.build parameters="--features=\"<name>[,<name>]\""/>
+Features may also be enabled via a list with the `features` option that expects a comma separated list of features in the format of `name[:vX]` or the term `preview`.
 
-For example, to enable `docker` and `token-exchange`, enter this command:
+For example, to enable `docker` and `token-exchange`, set `features` to `docker,token-exchange`.
 
-<@kc.build parameters="--features=\"docker,token-exchange\""/>
-
-To enable all preview features, enter this command:
-
-<@kc.build parameters="--features=\"preview\""/>
+To enable all preview features, set `features` to `preview`.
 
 === Versioning
 
-Enabled feature may be versioned, or unversioned.  If you use a versioned feature name, e.g. feature:v1, that exact feature version will be enabled as long as it still exists in the runtime.  If you instead use an unversioned name, e.g. just feature, the selection of the particular supported feature version may change from release to release according to the following precedence:
+An enabled feature may be versioned, or unversioned.  If you use a versioned feature (shown above as vX), e.g. v1, that exact feature version will be enabled as long as it still exists in the runtime.  If you instead use an unversioned name, e.g. just feature, the selection of the particular supported feature version may change from release to release according to the following precedence:
 
 . The highest default supported version
 . The highest non-default supported version
@@ -56,23 +49,17 @@ When a feature is disabled, all versions of that feature are disabled.
 
 === Single option
 
-You can disable the specific feature `<name>` as follows:
+You can disable the specific feature `<name>` with the option `feature-<name>` set to `disabled`:
 
-<@kc.build parameters="--feature-<name>=disabled"/>
-
-For example, to disable `dpop` and `recovery-codes`, enter this command:
-
-<@kc.build parameters="--feature-dpop=disabled --feature-recovery-codes=disabled"/>
+For example, to disable `dpop` and `recovery-codes`, set `feature-dpop` and `feature-recovery-codes` to `disabled`.
 
 The single-option mechanism is useful when updating long feature lists is cumbersome or when you want to modify a specific feature without overriding the entire list in a pre-built image.
 
 === List of disabled features
 
-<@kc.build parameters="--features-disabled=\"<name>[,<name>]\""/>
+Similar to the `features` option, `features-disabled` accepts list of features, but the names must be unversioned.
 
-For example to disable `impersonation`, enter this command:
-
-<@kc.build parameters="--features-disabled=\"impersonation\""/>
+For example to disable `impersonation`, set `features-disabled` to `impersonation`.
 
 It is not allowed to have a feature in both the `features-disabled` list and the `features` list.
 

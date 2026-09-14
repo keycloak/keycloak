@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 
 import org.jboss.logging.Logger;
@@ -49,8 +48,8 @@ public final class Messages {
         return String.format("You can not '%s' the server in %s mode. Please re-build the server first, using '%s build' for the default production mode.%n", cmd, Environment.getKeycloakModeFromProfile(org.keycloak.common.util.Environment.DEV_PROFILE_VALUE), Environment.getCommand());
     }
 
-    public static String optimizedUsedForFirstStartup() {
-        return String.format("The '%s' flag was used for first ever server start. Please don't use this flag for the first startup or use '%s %s' to build the server first.", AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG, Environment.getCommand(), Build.NAME);
+    public static String optimizedUsedForFirstStartup(String option) {
+        return String.format("%s was used for first ever server start. Please don't use this for the first startup or use '%s %s' to build the server first.", option, Environment.getCommand(), Build.NAME);
     }
 
     public static String invalidLogLevel(String logLevel) {

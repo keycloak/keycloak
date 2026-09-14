@@ -65,14 +65,18 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
     }
 
     boolean requiresReAugmentation() {
+        if (picocli.isOptimizedSet()) {
+            picocli.validateBuildtime();
+            return false;
+        }
         Map<String, String> rawPersistedProperties = Configuration.getRawPersistedProperties();
         if (rawPersistedProperties.isEmpty()) {
             return true; // no build yet
         }
-        // everything but the optimized value must match
+        // everything but the optimized-build value must match
         AtomicBoolean changed = new AtomicBoolean();
         picocli.checkChangesInBuildOptions((key, oldValue, newValue) -> {
-            if (key.equals(Configuration.KC_OPTIMIZED)) {
+            if (key.equals(Configuration.KC_OPTIMIZED_BUILD)) {
                 return;
             }
             if (key.startsWith(Picocli.KC_PROVIDER_FILE_PREFIX) && oldValue != null && newValue != null

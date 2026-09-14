@@ -41,7 +41,7 @@ public final class Configuration {
 
     public static final char OPTION_PART_SEPARATOR_CHAR = '-';
     public static final String OPTION_PART_SEPARATOR = String.valueOf(OPTION_PART_SEPARATOR_CHAR);
-    public static final String KC_OPTIMIZED = NS_KEYCLOAK_PREFIX + "optimized";
+    public static final String KC_OPTIMIZED_BUILD = NS_KEYCLOAK_PREFIX + "optimized-build";
 
     private static SmallRyeConfig config;
 
@@ -233,11 +233,11 @@ public final class Configuration {
     }
 
     public static boolean isOptimized() {
-        return Configuration.getRawPersistedProperty(KC_OPTIMIZED).isPresent();
+        return Configuration.getRawPersistedProperty(KC_OPTIMIZED_BUILD).isPresent();
     }
 
     public static void markAsOptimized(Properties properties) {
-        properties.put(Configuration.KC_OPTIMIZED, Boolean.TRUE.toString());
+        properties.put(Configuration.KC_OPTIMIZED_BUILD, Boolean.TRUE.toString());
     }
 
     public static ConfigValue getNonPersistedConfigValue(String name) {
