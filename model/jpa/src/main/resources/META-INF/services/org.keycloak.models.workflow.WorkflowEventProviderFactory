@@ -7,6 +7,8 @@ org.keycloak.models.workflow.events.UserGroupMembershipAddedWorkflowEventFactory
 org.keycloak.models.workflow.events.UserGroupMembershipRemovedWorkflowEventFactory
 org.keycloak.models.workflow.events.UserRoleGrantedWorkflowEventFactory
 org.keycloak.models.workflow.events.UserRoleRevokedWorkflowEventFactory
+org.keycloak.models.workflow.events.UserDisabledByTemporaryLockoutWorkflowEventFactory
+org.keycloak.models.workflow.events.UserDisabledByPermanentLockoutWorkflowEventFactory
 
 # client event providers
 org.keycloak.models.workflow.events.ClientAuthenticatedWorkflowEventFactory
