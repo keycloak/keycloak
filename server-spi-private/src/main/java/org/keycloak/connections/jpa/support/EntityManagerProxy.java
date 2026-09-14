@@ -211,7 +211,13 @@ public class EntityManagerProxy {
                         && !asyncAllowed) {
                     em.unwrap(Session.class).setProperty(SYNC_COMMIT_REQUIRED, Boolean.TRUE);
                 }
-                return result == delegate ? proxy : result;
+                // Preserve proxy for fluent methods (setParameter, setHint, …) that return
+                // the delegate.  Skip for unwrap(), which may return a concrete Hibernate
+                // class the JDK proxy cannot implement — substituting would cause ClassCastException.
+                if (result == delegate && !method.getName().equals("unwrap")) {
+                    return proxy;
+                }
+                return result;
             } catch (InvocationTargetException e) {
                 throw e.getCause();
             }
