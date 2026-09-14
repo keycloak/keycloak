@@ -69,6 +69,9 @@ jobs:
       - name: Setup Java
         uses: ./.github/actions/java-setup
 
+      - name: Restore Maven cache
+        uses: ./.github/actions/maven-cache
+
       - name: Restore Quarkus snapshot cache
         if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
         uses: ./.github/actions/quarkus-snapshot-cache
@@ -93,6 +96,9 @@ jobs:
 
       - name: Setup Java
         uses: ./.github/actions/java-setup
+
+      - name: Restore Maven cache
+        uses: ./.github/actions/maven-cache
 
       - name: Restore Quarkus snapshot cache
         if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
@@ -145,6 +151,9 @@ jobs:
 
       - name: Setup Java
         uses: ./.github/actions/java-setup
+
+      - name: Restore Maven cache
+        uses: ./.github/actions/maven-cache
 
       - name: Restore Quarkus snapshot cache
         if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
@@ -210,6 +219,9 @@ jobs:
 
       - name: Setup Java
         uses: ./.github/actions/java-setup
+
+      - name: Restore Maven cache
+        uses: ./.github/actions/maven-cache
 
       - name: Restore Quarkus snapshot cache
         if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
@@ -279,6 +291,9 @@ jobs:
 
       - name: Setup Java
         uses: ./.github/actions/java-setup
+
+      - name: Restore Maven cache
+        uses: ./.github/actions/maven-cache
 
       - name: Restore Quarkus snapshot cache
         if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
@@ -390,6 +405,9 @@ jobs:
 
       - name: Setup Java
         uses: ./.github/actions/java-setup
+
+      - name: Restore Maven cache
+        uses: ./.github/actions/maven-cache
 
       - name: Restore Quarkus snapshot cache
         if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
