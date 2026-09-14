@@ -1,6 +1,7 @@
 package org.keycloak.tests.oid4vc;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -32,8 +33,10 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
 
+import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -263,6 +266,21 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
         } finally {
             setRealmAttributes(Map.of(ATTR_RESPONSE_ENCRYPTION_REQUIRED, "false"));
         }
+    }
+
+    @Test
+    void testUnauthenticatedEncryptedRequestIsRejectedBeforeDecryption() {
+        //header: {"alg":"RSA-OAEP-256","enc":"A256GCM","kid":"test"}
+        String jweLikePayload = "eyJhbGciOiJSU0EtT0FFUC0yNTYiLCJlbmMiOiJBMjU2R0NNIiwia2lkIjoidGVzdCJ9.aa.bb.cc.dd";
+
+        Oid4vcCredentialResponse response = oauth.oid4vc()
+                .credentialRequest()
+                .payload(jweLikePayload, ContentType.create("application/jwt", StandardCharsets.UTF_8))
+                .bearerToken("invalid-access-token")
+                .send();
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals(ErrorType.INVALID_TOKEN.getValue(), response.getError());
     }
 
     private FlowData prepareFlow() {
