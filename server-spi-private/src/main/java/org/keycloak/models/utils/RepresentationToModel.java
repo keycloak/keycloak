@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -119,6 +120,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -990,7 +992,7 @@ public class RepresentationToModel {
         identityProviderModel.setStoreToken(representation.isStoreToken());
         identityProviderModel.setAddReadTokenRoleOnCreate(representation.isAddReadTokenRoleOnCreate());
         updateOrganizationBroker(representation, session);
-        identityProviderModel.setOrganizationIds(representation.getOrganizationIds());
+        identityProviderModel.setOrganizationIds(extractOrganizationIds(representation));
 
         // Merge config from the identity provider model in case the provider sets some default config
         Map<String, String> repConfig = removeEmptyString(representation.getConfig());
@@ -1889,7 +1891,7 @@ public class RepresentationToModel {
         String legacyOrgId = representation.getConfig() != null
                 ? representation.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE) : null;
 
-        Set<String> repOrgIds = representation.getOrganizationIds();
+        Set<String> repOrgIds = extractOrganizationIds(representation);
         if ((repOrgIds == null || repOrgIds.isEmpty()) && legacyOrgId != null) {
             repOrgIds = Set.of(legacyOrgId);
         }
@@ -1912,8 +1914,19 @@ public class RepresentationToModel {
             }
             representation.getConfig().remove(MigrationUtils.ORGANIZATION_REDIRECT_MODE_ATTRIBUTE);
 
-            representation.setOrganizationIds(orgIds);
+            representation.setOrganizationLinks(orgIds.stream()
+                    .map(OrganizationIdentityProviderLinkRepresentation::new)
+                    .collect(Collectors.toList()));
         }
+    }
+
+    private static Set<String> extractOrganizationIds(IdentityProviderRepresentation representation) {
+        List<OrganizationIdentityProviderLinkRepresentation> links = representation.getOrganizationLinks();
+        if (links == null || links.isEmpty()) return null;
+        return links.stream()
+                .map(OrganizationIdentityProviderLinkRepresentation::getOrganizationId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     public static OrganizationModel toModel(OrganizationRepresentation rep, OrganizationModel model) {

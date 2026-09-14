@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.organization.broker;
 
 import java.util.List;
-import java.util.Set;
 
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -33,6 +32,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 
@@ -48,6 +48,21 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
 
+    private static boolean hasOrgLink(IdentityProviderRepresentation idpRep, String orgId) {
+        return idpRep.getOrganizationLinks() != null &&
+                idpRep.getOrganizationLinks().stream().anyMatch(l -> orgId.equals(l.getOrganizationId()));
+    }
+
+    private static boolean hasNoOrgLinks(IdentityProviderRepresentation idpRep) {
+        return idpRep.getOrganizationLinks() == null || idpRep.getOrganizationLinks().isEmpty();
+    }
+
+    private static List<OrganizationIdentityProviderLinkRepresentation> linksFor(String... orgIds) {
+        return java.util.Arrays.stream(orgIds)
+                .map(OrganizationIdentityProviderLinkRepresentation::new)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     @Test
     public void testUpdate() {
         OrganizationRepresentation organization = createOrganization();
@@ -56,31 +71,31 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         IdentityProviderRepresentation expected = orgIdPResource.toRepresentation();
 
         // organization link set
-        Assertions.assertTrue(expected.getOrganizationIds().contains(organization.getId()));
+        Assertions.assertTrue(hasOrgLink(expected, organization.getId()));
 
         IdentityProviderResource idpResource = managedRealm.admin().identityProviders().get(expected.getAlias());
         IdentityProviderRepresentation actual = idpResource.toRepresentation();
-        Assertions.assertTrue(actual.getOrganizationIds().contains(organization.getId()));
-        // ignore organization ids from repo when updating
-        actual.setOrganizationIds(Set.of("somethingelse"));
+        Assertions.assertTrue(hasOrgLink(actual, organization.getId()));
+        // ignore organization links from repo when updating
+        actual.setOrganizationLinks(linksFor("somethingelse"));
         idpResource.update(actual);
         actual = idpResource.toRepresentation();
-        Assertions.assertTrue(actual.getOrganizationIds().contains(organization.getId()));
+        Assertions.assertTrue(hasOrgLink(actual, organization.getId()));
 
         OrganizationRepresentation secondOrg = createOrganization("secondorg");
-        actual.setOrganizationIds(Set.of(secondOrg.getId()));
+        actual.setOrganizationLinks(linksFor(secondOrg.getId()));
         idpResource.update(actual);
         actual = idpResource.toRepresentation();
-        Assertions.assertTrue(actual.getOrganizationIds().contains(organization.getId()));
+        Assertions.assertTrue(hasOrgLink(actual, organization.getId()));
 
         actual = idpResource.toRepresentation();
         // the link to the organization should not change
-        Assertions.assertTrue(actual.getOrganizationIds().contains(organization.getId()));
-        actual.setOrganizationIds(Set.of());
+        Assertions.assertTrue(hasOrgLink(actual, organization.getId()));
+        actual.setOrganizationLinks(null);
         idpResource.update(actual);
         actual = idpResource.toRepresentation();
         // the link to the organization should not change
-        Assertions.assertTrue(actual.getOrganizationIds().contains(organization.getId()));
+        Assertions.assertTrue(hasOrgLink(actual, organization.getId()));
     }
 
     @Test
@@ -90,7 +105,7 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
                 .identityProviders().get(bc.getIDPAlias()).toRepresentation();
 
         //remove Org related stuff from the template
-        idpTemplate.setOrganizationIds(Set.of());
+        idpTemplate.setOrganizationLinks(null);
 
         for (int i = 0; i < 5; i++) {
             idpTemplate.setAlias("idp-" + i);
@@ -158,8 +173,8 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
 
         // verify the IdP is linked to both orgs
         IdentityProviderRepresentation idpAfterLink = managedRealm.admin().identityProviders().get(alias).toRepresentation();
-        Assertions.assertTrue(idpAfterLink.getOrganizationIds().contains(orgRep.getId()));
-        Assertions.assertTrue(idpAfterLink.getOrganizationIds().contains(secondOrgRep.getId()));
+        Assertions.assertTrue(hasOrgLink(idpAfterLink, orgRep.getId()));
+        Assertions.assertTrue(hasOrgLink(idpAfterLink, secondOrgRep.getId()));
     }
 
     @Test
@@ -174,7 +189,7 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         // broker not removed from realm
         IdentityProviderRepresentation idpRep = managedRealm.admin().identityProviders().get(bc.getIDPAlias()).toRepresentation();
         // broker no longer linked to the org
-        Assertions.assertTrue(idpRep.getOrganizationIds() == null || idpRep.getOrganizationIds().isEmpty());
+        Assertions.assertTrue(hasNoOrgLinks(idpRep));
     }
 
     @Test
@@ -288,9 +303,9 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
 
         // IdP should be linked to both orgs
         IdentityProviderRepresentation idpRep = managedRealm.admin().identityProviders().get(idpAlias).toRepresentation();
-        Assertions.assertEquals(2, idpRep.getOrganizationIds().size());
-        Assertions.assertTrue(idpRep.getOrganizationIds().contains(orgA.getId()));
-        Assertions.assertTrue(idpRep.getOrganizationIds().contains(orgB.getId()));
+        Assertions.assertEquals(2, idpRep.getOrganizationLinks().size());
+        Assertions.assertTrue(hasOrgLink(idpRep, orgA.getId()));
+        Assertions.assertTrue(hasOrgLink(idpRep, orgB.getId()));
 
         // IdP visible from both org endpoints
         assertNotNull(orgAResource.identityProviders().get(idpAlias).toRepresentation());
@@ -303,9 +318,9 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
 
         // IdP still linked to orgB only
         idpRep = managedRealm.admin().identityProviders().get(idpAlias).toRepresentation();
-        Assertions.assertEquals(1, idpRep.getOrganizationIds().size());
-        Assertions.assertTrue(idpRep.getOrganizationIds().contains(orgB.getId()));
-        assertFalse(idpRep.getOrganizationIds().contains(orgA.getId()));
+        Assertions.assertEquals(1, idpRep.getOrganizationLinks().size());
+        Assertions.assertTrue(hasOrgLink(idpRep, orgB.getId()));
+        assertFalse(hasOrgLink(idpRep, orgA.getId()));
 
         // still visible from orgB
         assertNotNull(orgBResource.identityProviders().get(idpAlias).toRepresentation());

@@ -1,13 +1,17 @@
 package org.keycloak.tests.scim.tck;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -19,7 +23,10 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.UserRemovedEvent;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -50,6 +57,9 @@ import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.userprofile.UserProfileConstants;
@@ -60,6 +70,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.http.client.HttpClient;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -94,6 +105,9 @@ public class UserTest extends AbstractScimTest {
     @InjectHttpClient
     HttpClient httpClient;
 
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
+
     @BeforeEach
     public void onBefore() {
         UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
@@ -117,6 +131,11 @@ public class UserTest extends AbstractScimTest {
         realmRep.setEditUsernameAllowed(false);
         realm.admin().update(realmRep);
         adminEvents.clear();
+    }
+
+    @AfterEach
+    public void onAfterEach() {
+        unregisterProviderEventListener();
     }
 
     @Test
@@ -655,6 +674,16 @@ public class UserTest extends AbstractScimTest {
 
         actual = client.users().get(id);
         assertNull(actual);
+    }
+
+    @Test
+    public void testDeleteFiresUserRemovedEvent() {
+        registerProviderEventListener();
+        User expected = createUser();
+        String id = client.users().create(expected).getId();
+        client.users().delete(id);
+        assertThrows(NotFoundException.class, () -> realm.admin().users().get(id).toRepresentation());
+        runOnServer.run(assertUserRemovedEventFired());
     }
 
     @Test
@@ -1679,6 +1708,38 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testUpdateUnchangedImmutableMetaCreated() {
+        User user = client.users().create(createUser());
+        adminEvents.clear();
+
+        // PUT round-trip that resubmits the same meta.created should succeed (RFC 7644 §3.5.1)
+        user = client.users().get(user.getId());
+        user.setEmail(user.getEmail().replace("keycloak.org", "updated.org"));
+        client.users().update(user);
+
+        User actual = client.users().get(user.getId());
+        assertEquals(user.getEmail(), actual.getEmail());
+    }
+
+    @Test
+    public void testUpdateImmutableMetaCreated() {
+        User user = client.users().create(createUser());
+        adminEvents.clear();
+
+        user = client.users().get(user.getId());
+        user.getMeta().setCreated(Instant.EPOCH.toString());
+        try {
+            client.users().update(user);
+            fail("should fail because meta.created is immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+        }
+    }
+
+    @Test
     public void testUserMembership() {
         GroupRepresentation groupA = createGroup("Group A");
         GroupRepresentation groupA1 = createSubGroup(groupA, "Group A1");
@@ -1796,6 +1857,71 @@ public class UserTest extends AbstractScimTest {
         assertNotNull(resources.getResources().stream()
                 .filter(u -> u.getId().equals(expected1.getId()))
                 .findFirst().orElse(null));
+    }
+
+    @Test
+    public void testGroupFilterMultivaluedConjunctionAndNegationBugs() {
+        // Covers the bugs tracked by https://github.com/keycloak/keycloak/issues/51805: correlated
+        // EXISTS subqueries (rather than a shared JOIN) are required to correctly express conjunction
+        // across independent values and negation for multivalued attributes (here, groups).
+        GroupRepresentation groupA = createGroup("MultiValued Group A");
+        GroupRepresentation groupB = createGroup("MultiValued Group B");
+
+        User user = createUser();
+        user.addGroup(groupA.getId());
+        user.addGroup(groupB.getId());
+        User created = client.users().create(user);
+
+        // Conjunction: the user belongs to BOTH groupA and groupB, so a filter requiring
+        // "some value = A" AND "some value = B" should match. Each side is evaluated as an
+        // independent EXISTS subquery, so a different group membership row can satisfy each side.
+        boolean matchesConjunction = client.users().search(
+                        "(groups.value eq \"" + groupA.getId() + "\") and (groups.value eq \"" + groupB.getId() + "\")")
+                .getResources().stream()
+                .anyMatch(u -> u.getId().equals(created.getId()));
+        assertTrue(matchesConjunction, "user belongs to both groups and should match the conjunction filter");
+
+        // Negation: the user DOES belong to groupA, so "not (groups.value eq A)" must NOT match.
+        // The NOT applies to the correlated EXISTS as a whole (i.e. per resource), not per joined row,
+        // so a resource is excluded only if it truly has no group matching groupA.
+        User noGroupsUser = client.users().create(createUser());
+        ListResponse<User> negationResults = client.users().search(
+                "not (groups.value eq \"" + groupA.getId() + "\")");
+        assertFalse(negationResults.getResources().stream().anyMatch(u -> u.getId().equals(created.getId())),
+                "user belongs to groupA and must not match the negated filter");
+        // a resource with no values at all for the attribute must still match the negated filter
+        assertTrue(negationResults.getResources().stream().anyMatch(u -> u.getId().equals(noGroupsUser.getId())),
+                "user has no groups at all and should match the negated filter");
+    }
+
+    @Test
+    public void testGroupFilterValuePathAndOperatorRejected() {
+        // Unlike "(groups.value eq A) and (groups.value eq B)" above - two independent top-level
+        // comparisons, each with its own EXISTS - a bracketed value path requires every condition
+        // inside it to be satisfied by the SAME group membership. Since groups only exposes a single
+        // "value" sub-attribute, no single membership can equal two different values at once, so this
+        // filter shape is rejected with 400 rather than silently evaluated as two independent EXISTS
+        // subqueries (which would incorrectly match a user belonging to both groups separately).
+        GroupRepresentation groupA = createGroup("ValuePath Group A");
+        GroupRepresentation groupB = createGroup("ValuePath Group B");
+
+        User user = createUser();
+        user.addGroup(groupA.getId());
+        user.addGroup(groupB.getId());
+        client.users().create(user);
+
+        try {
+            client.users().search(
+                    "groups[value eq \"" + groupA.getId() + "\" and value eq \"" + groupB.getId() + "\"]");
+            fail("Should have thrown an exception - AND operator is not supported within a value path for multivalued attributes");
+        } catch (ScimClientException e) {
+            ErrorResponse error = e.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt(),
+                    "AND operator within a value path for a multivalued attribute should return 400, got " + error.getStatusInt());
+            assertTrue(error.getDetail().contains("'and' operator is not supported within a value path filter for multivalued or non-complex attributes"),
+                    "Error should mention 'and' operator not supported within a value path, got: " + error.getDetail());
+        }
     }
 
     @Test
@@ -2177,6 +2303,84 @@ public class UserTest extends AbstractScimTest {
         } finally {
             client.users().delete(user.getId());
         }
+    }
+
+    @Test
+    public void testPatchRemoveFilteredMultivaluedScalarAttributeWithAndOperator() {
+        // Reproducer for issue #51525: AND operator on multivalued scalar attributes
+        // AND is not supported because a scalar value cannot satisfy two conditions simultaneously.
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+        setupMultivaluedCustomAttributes(customSchema);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        user = client.users().create(user);
+
+        // Add multiple values to the simple scalar multivalued attribute (no .value subattribute)
+        client.users().patch(user.getId(), PatchRequest.create()
+                .add(customSchema + ":affiliation", "[\"value-a\", \"value-b\", \"value-c\"]")
+                .build());
+
+        user = client.users().get(user.getId());
+        Map<?, ?> extension = (Map<?, ?>) user.getExtensions().get(customSchema);
+        List<?> values = (List<?>) extension.get("affiliation");
+        assertNotNull(values, "affiliation attribute should exist");
+        assertEquals(3, values.size());
+
+        // PATCH remove with AND filter - should fail with ModelValidationException (400)
+        try {
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .remove(customSchema + ":affiliation[value eq \"value-a\" and value eq \"value-b\"]")
+                    .build());
+            fail("AND operator should not be supported for multivalued scalar attributes");
+        } catch (ScimClientException sce) {
+            // Expected: 400 (bad request) because AND is unsupported
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt(),
+                    "AND on multivalued attributes should return 400, got " + error.getStatusInt());
+            assertTrue(error.getDetail().contains("and operator is not supported for multivalued or non-complex attributes"),
+                    "Error should mention AND operator not supported, got: " + error.getDetail());
+        }
+    }
+
+    @Test
+    public void testPatchRemoveFilteredMultivaluedScalarAttributeWithOrOperator() {
+        // Reproducer for issue #51525: OR operator on multivalued scalar attributes
+        // OR should remove only the matched values, leaving others intact
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+        setupMultivaluedCustomAttributes(customSchema);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        user = client.users().create(user);
+
+        // Add multiple values to the simple scalar multivalued attribute (no .value subattribute)
+        client.users().patch(user.getId(), PatchRequest.create()
+                .add(customSchema + ":affiliation", "[\"value-a\", \"value-b\", \"value-c\"]")
+                .build());
+
+        user = client.users().get(user.getId());
+        Map<?, ?> extension = (Map<?, ?>) user.getExtensions().get(customSchema);
+        List<?> values = (List<?>) extension.get("affiliation");
+        assertNotNull(values, "affiliation attribute should exist");
+        assertEquals(3, values.size());
+
+        // PATCH remove with OR filter - should remove only matched values
+        client.users().patch(user.getId(), PatchRequest.create()
+                .remove(customSchema + ":affiliation[value eq \"value-a\" or value eq \"value-b\"]")
+                .build());
+
+        user = client.users().get(user.getId());
+        extension = (Map<?, ?>) user.getExtensions().get(customSchema);
+        values = (List<?>) extension.get("affiliation");
+        assertNotNull(values, "affiliation attribute should still exist after filtered remove");
+
+        // Only "value-c" should remain
+        assertEquals(1, values.size(),
+                "After removing 'value-a' and 'value-b', only 1 value should remain");
+        assertTrue(values.contains("value-c"),
+                "Only 'value-c' should remain after removing 'value-a' and 'value-b', got: " + values);
     }
 
     @Test
@@ -2800,6 +3004,54 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testPatchRemoveFilteredMultivaluedCustomAttributes() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+        setupMultivaluedCustomAttributes(customSchema);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        user = client.users().create(user);
+
+        client.users().patch(user.getId(), PatchRequest.create()
+                .add(customSchema + ":assurance", "[{\"value\": \"https://refeds.org/assurance/ID/unique\"}, {\"value\": \"https://refeds.org/assurance/IAP/low\"}]")
+                .add(customSchema + ":affiliation", "[\"member\", \"faculty\"]")
+                .build());
+
+        client.users().patch(user.getId(), PatchRequest.create()
+                .remove(customSchema + ":assurance[value eq \"https://refeds.org/assurance/IAP/low\"]")
+                .build());
+
+        User actual = client.users().get(user.getId());
+        Map<?, ?> extension = (Map<?, ?>) actual.getExtensions().get(customSchema);
+        List<?> assurance = (List<?>) extension.get("assurance");
+        assertNotNull(assurance, "all values were removed instead of only the filtered one");
+        assertEquals(1, assurance.size());
+        assertEquals("https://refeds.org/assurance/ID/unique", ((Map<?, ?>) assurance.get(0)).get("value"));
+
+        // a multivalued attribute without the ".value" annotation is filtered the same way
+        client.users().patch(user.getId(), PatchRequest.create()
+                .remove(customSchema + ":affiliation[value eq \"member\"]")
+                .build());
+
+        actual = client.users().get(user.getId());
+        extension = (Map<?, ?>) actual.getExtensions().get(customSchema);
+        List<?> affiliation = (List<?>) extension.get("affiliation");
+        assertNotNull(affiliation, "all values were removed instead of only the filtered one");
+        assertEquals(1, affiliation.size());
+        assertEquals("faculty", affiliation.get(0));
+
+        // SCIM attribute names are case-insensitive
+        client.users().patch(user.getId(), PatchRequest.create()
+                .remove(customSchema + ":affiliation[VALUE eq \"faculty\"]")
+                .build());
+
+        actual = client.users().get(user.getId());
+        extension = (Map<?, ?>) actual.getExtensions().get(customSchema);
+        assertNull(extension.get("affiliation"));
+        assertEquals(1, ((List<?>) extension.get("assurance")).size());
+    }
+
+    @Test
     public void testFilterMultivaluedCustomAttributes() {
         String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
         setupMultivaluedCustomAttributes(customSchema);
@@ -2871,6 +3123,30 @@ public class UserTest extends AbstractScimTest {
         }
     }
 
+    @Test
+    public void testManyToOneScimAttributeMapping() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
+        String scimAttribute = customSchema + ":mobileNumber";
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+
+        UPAttribute mobileAttr = new UPAttribute("mobile", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, scimAttribute));
+        mobileAttr.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(mobileAttr);
+
+        UPAttribute phoneAttr = new UPAttribute("phone", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, scimAttribute));
+        phoneAttr.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(phoneAttr);
+
+        try {
+            realm.admin().users().userProfile().update(upConfig);
+            fail("should fail because multiple user profile attributes cannot be mapped to the same SCIM attribute");
+        } catch (BadRequestException e) {
+            assertTrue(e.getResponse().getStatus() == 400);
+        }
+    }
+
     private void setupMultivaluedCustomAttributes(String customSchema) {
         UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
 
@@ -2887,5 +3163,59 @@ public class UserTest extends AbstractScimTest {
         upConfig.addOrReplaceAttribute(affiliationAttribute);
 
         realm.admin().users().userProfile().update(upConfig);
+    }
+
+    private void registerProviderEventListener() {
+        runOnServer.run(session -> {
+            ProviderEventCollector collector = ProviderEventCollector.getInstance();
+            session.getKeycloakSessionFactory().register(collector);
+            collector.clear();
+        });
+    }
+
+    private void unregisterProviderEventListener() {
+        runOnServer.run(session -> {
+            ProviderEventCollector collector = ProviderEventCollector.getInstance();
+            session.getKeycloakSessionFactory().unregister(collector);
+            collector.clear();
+        });
+    }
+
+    private static RunOnServer assertUserRemovedEventFired() {
+        return session -> assertFalse(ProviderEventCollector.getInstance().getEvents(UserRemovedEvent.class).isEmpty(), "User removed event was not fired");
+    }
+
+    private static class ProviderEventCollector implements ProviderEventListener, Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        private static final ProviderEventCollector INSTANCE = new ProviderEventCollector();
+
+        private final List<ProviderEvent> events = new CopyOnWriteArrayList<>();
+
+        private ProviderEventCollector() {}
+
+        public static ProviderEventCollector getInstance() {
+            return INSTANCE;
+        }
+
+        @Override
+        public void onEvent(ProviderEvent event) {
+            if (event instanceof UserRemovedEvent) {
+                events.add(event);
+            }
+        }
+
+        public <T extends ProviderEvent> List<T> getEvents(Class<T> eventType) {
+            return events.stream()
+                    .filter(eventType::isInstance)
+                    .map(eventType::cast)
+                    .toList();
+        }
+
+        public void clear() {
+            events.clear();
+        }
     }
 }

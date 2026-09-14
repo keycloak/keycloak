@@ -40,6 +40,7 @@ import org.keycloak.utils.StringUtil;
 @Entity
 @NamedQueries({
         @NamedQuery(name="getByOrgName", query="select distinct o from OrganizationEntity o where o.realmId = :realmId AND o.name = :name"),
+        @NamedQuery(name="getByOrgAlias", query="select distinct o from OrganizationEntity o where o.realmId = :realmId AND o.alias = :alias"),
         @NamedQuery(name="getByDomainName", query="select distinct o from OrganizationEntity o inner join o.domains d" +
                 " where o.realmId = :realmId and d.name in (:names)"),
         @NamedQuery(name="getCount", query="select count(o) from OrganizationEntity o where o.realmId = :realmId"),

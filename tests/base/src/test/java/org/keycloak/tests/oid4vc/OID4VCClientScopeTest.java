@@ -326,6 +326,16 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
         assertTrue(error.contains(VC_CRYPTOGRAPHIC_BINDING_METHODS));
     }
 
+    @Test
+    public void testCredentialFormatWithoutBuilderRejected() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("issue-52515-unsupported-format");
+        scope.setFormat("unsupported-format");
+
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains("No credential builder found"), error);
+        assertTrue(error.contains("unsupported-format"), error);
+    }
+
     private String createCredentialScope(ClientScopesResource clientScopes, String name,
                                          String credentialConfigurationId) {
         CredentialScopeRepresentation scope = new CredentialScopeRepresentation(name);
@@ -341,7 +351,7 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
         ClientScopesResource clientScopes = testRealm.admin().clientScopes();
         try (Response response = clientScopes.create(scope)) {
             assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus(),
-                    "Should reject scope when binding_required=true and cryptographic_binding_methods_supported is absent");
+                    "Should reject invalid OID4VC client scope configuration");
             return response.readEntity(String.class);
         }
     }

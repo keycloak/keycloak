@@ -14,18 +14,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.Time;
@@ -42,6 +40,7 @@ import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
+import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.group.Member;
@@ -168,7 +167,18 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     @Override
     public boolean onDelete(GroupModel model) {
         RealmModel realm = session.getContext().getRealm();
+        Permissions permissions = session.getContext().getPermissions();
+        rejectIfAdminDescendant(model, permissions);
         return session.groups().removeGroup(realm, model);
+    }
+
+    private void rejectIfAdminDescendant(GroupModel group, Permissions permissions) {
+        group.getSubGroupsStream().forEach(subGroup -> {
+            if (permissions.isAdminGroup(subGroup)) {
+                throw new ForbiddenException();
+            }
+            rejectIfAdminDescendant(subGroup, permissions);
+        });
     }
 
     @Override
@@ -207,7 +217,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
         };
 
         // create filter predicate using the same query and root that will be used for execution
-        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, root, authCheck);
+        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, query, root, authCheck);
         predicates.add(evaluator.visit(filterContext).predicate());
 
         // apply realm restriction and group type restrictions
@@ -221,11 +231,11 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     }
 
     @Override
-    public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, Root<?> root, BiFunction<Class<?>, Supplier<Join<?, ?>>, Join<?, ?>> joinResolver) {
+    public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, Root<?> root, Subquery<?> subquery) {
         if ("members".equals(attribute.getName())) {
-            Join<?, ?> join = joinResolver.apply(UserGroupMembershipEntity.class, () -> root.join(UserGroupMembershipEntity.class));
-            join.on(cb.equal(root.get("id"), join.get("groupId")));
-            return join.get("user").get("id");
+            Root<UserGroupMembershipEntity> membership = subquery.from(UserGroupMembershipEntity.class);
+            subquery.where(cb.equal(membership.get("groupId"), root.get("id")));
+            return membership.get("user").get("id");
         }
         return null;
     }

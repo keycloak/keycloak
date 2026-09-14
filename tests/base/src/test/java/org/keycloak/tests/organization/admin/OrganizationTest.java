@@ -1294,4 +1294,57 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertEquals(1, reloaded.getDomains().size());
         assertNotNull(reloaded.getDomain("example.com"));
     }
+
+    @Test
+    public void testDomainWithIdpRouting() {
+        OrganizationRepresentation org = createOrganization("idp-routing-test");
+        OrganizationResource orgResource = realm.admin().organizations().get(org.getId());
+
+        // createOrganization already sets identityProviderAlias and autoRedirect on the first domain
+        OrganizationRepresentation fetched = orgResource.toRepresentation();
+        OrganizationDomainRepresentation domain = fetched.getDomain("idp-routing-test.org");
+        assertNotNull(domain);
+        assertNotNull(domain.getIdentityProviderAlias());
+        assertTrue(domain.isAutoRedirect());
+
+        // update to clear IdP routing
+        domain.setIdentityProviderAlias(null);
+        domain.setAutoRedirect(false);
+        try (Response response = orgResource.update(fetched)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        fetched = orgResource.toRepresentation();
+        domain = fetched.getDomain("idp-routing-test.org");
+        assertNull(domain.getIdentityProviderAlias());
+        assertFalse(domain.isAutoRedirect());
+
+        // set it back
+        String brokerAlias = orgResource.identityProviders().getIdentityProviders().get(0).getAlias();
+        domain.setIdentityProviderAlias(brokerAlias);
+        domain.setAutoRedirect(true);
+        try (Response response = orgResource.update(fetched)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        fetched = orgResource.toRepresentation();
+        domain = fetched.getDomain("idp-routing-test.org");
+        assertEquals(brokerAlias, domain.getIdentityProviderAlias());
+        assertTrue(domain.isAutoRedirect());
+    }
+
+    @Test
+    public void testDomainIdpRoutingValidation() {
+        OrganizationRepresentation org = createOrganization("idp-validation-test");
+        OrganizationResource orgResource = realm.admin().organizations().get(org.getId());
+
+        OrganizationRepresentation fetched = orgResource.toRepresentation();
+        OrganizationDomainRepresentation domain = fetched.getDomain("idp-validation-test.org");
+
+        // try to set identityProviderAlias to an IdP that doesn't exist
+        domain.setIdentityProviderAlias("nonexistent-idp");
+        try (Response response = orgResource.update(fetched)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
 }

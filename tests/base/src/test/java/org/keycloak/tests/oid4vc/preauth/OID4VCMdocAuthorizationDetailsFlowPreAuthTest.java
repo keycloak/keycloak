@@ -36,7 +36,7 @@ public class OID4VCMdocAuthorizationDetailsFlowPreAuthTest extends OID4VCAuthori
     @Override
     protected ClientScopeRepresentation getCredentialClientScope() {
         ensureEcSigningKeyProvider("mdoc-preauth-auth-details-issuer-key", "P-256", "ES256", 200);
-        return mdocTypeCredentialScope;
+        return requireExistingCredentialScope(mdocTypeCredentialScopeName);
     }
 
     @Override

@@ -22,8 +22,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import org.keycloak.testframework.conformance.OpenIdConformanceSuite;
-import org.keycloak.testframework.conformance.annotations.InjectConformanceSuite;
+import org.keycloak.testframework.conformance.OpenIdConformanceServer;
+import org.keycloak.testframework.conformance.annotations.InjectOpenIdConformanceServer;
 import org.keycloak.testframework.conformance.runner.BrowserInteraction;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleResult;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
@@ -53,8 +53,8 @@ public abstract class AbstractConformanceTest {
     @InjectCertificates(config = TlsCertificates.class)
     protected ManagedCertificates certificates;
 
-    @InjectConformanceSuite
-    protected OpenIdConformanceSuite suite;
+    @InjectOpenIdConformanceServer
+    protected OpenIdConformanceServer server;
 
     protected abstract Stream<ConformanceModuleVariant> moduleVariants();
 
@@ -72,7 +72,7 @@ public abstract class AbstractConformanceTest {
             String name, ConformanceResult expectedResult, BrowserInteraction browserInteraction) {
         ConformanceModuleVariant template = new ConformanceModuleVariant(plan, planVariant, name, Map.of(),
                 expectedResult, browserInteraction);
-        return OpenIdConformanceSuite.instance().client()
+        return OpenIdConformanceServer.instance().client()
                 .discoverModuleVariants(plan, planVariant, name, suiteConfig(template))
                 .map(moduleVariant -> new ConformanceModuleVariant(plan, planVariant, name, moduleVariant,
                         expectedResult, browserInteraction));
@@ -86,7 +86,7 @@ public abstract class AbstractConformanceTest {
             List<String> names, ConformanceResult expectedResult, BrowserInteraction browserInteraction) {
         ConformanceModuleVariant template = new ConformanceModuleVariant(plan, planVariant, names.get(0), Map.of(),
                 expectedResult, browserInteraction);
-        Map<String, List<Map<String, String>>> discovered = OpenIdConformanceSuite.instance().client()
+        Map<String, List<Map<String, String>>> discovered = OpenIdConformanceServer.instance().client()
                 .discoverModuleVariants(plan, planVariant, names, suiteConfig(template));
         return names.stream().flatMap(name -> discovered.get(name).stream()
                 .map(moduleVariant -> new ConformanceModuleVariant(plan, planVariant, name, moduleVariant,
@@ -104,7 +104,7 @@ public abstract class AbstractConformanceTest {
     @ParameterizedTest
     @MethodSource("moduleVariants")
     public void conformance(ConformanceModuleVariant moduleVariant) {
-        ConformanceModuleResult result = suite.client()
+        ConformanceModuleResult result = server.client()
                 .run(moduleVariant, suiteConfig(moduleVariant), interaction(moduleVariant));
         if (!result.finishedWith(moduleVariant.expectedResult())) {
             LOGGER.errorf("Full logs of failed conformance module %s:%n%s", result.module(), result.logs().toPrettyString());
