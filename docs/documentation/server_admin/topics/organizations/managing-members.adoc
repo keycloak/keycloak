@@ -104,6 +104,18 @@ On the other hand, if no user is associated with the given email address, the st
 will involve creating a new account through the realm's self-registration flow. In this case, the user is forced
 to provide the same email address used to send the invitation.
 
+When a new user follows an invitation link and then authenticates using an identity provider during registration,
+the invitation remains bound to that authentication session across the broker redirect and first broker login flow.
+After successful broker authentication, the user joins the organization targeted by the invitation, and the
+invitation is consumed.
+
+In this invitation-driven broker onboarding path, membership is created as *Unmanaged*, consistent with existing-user
+invitation acceptance.
+The organization is determined by the invitation link itself, and invitation consumption is authorized only when the
+resulting user email matches the invitation email.
+This behavior applies whether the selected identity provider is linked to the organization or is available as a
+realm-level provider during registration.
+
 == Managing invitations
 
 {project_name} provides comprehensive invitation management capabilities that allow administrators to track, manage, and control
@@ -142,6 +154,7 @@ To resend a pending invitation:
 . Select *Resend*.
 
 A new invitation email will be sent to the recipient with a fresh expiration time.
+If the previous invitation was still pending, that previous invitation is replaced and can no longer be consumed.
 
 ==== Deleting invitations
 
