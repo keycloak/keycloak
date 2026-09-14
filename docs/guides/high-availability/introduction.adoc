@@ -96,8 +96,10 @@ Disadvantages::
 
 To learn more about the different high-availability architectures and their supported configurations, please consult the individual {sections}.
 
+<@profile.ifCommunity>
 * <@links.ha id="single-cluster-introduction" />
 * <@links.ha id="multi-cluster-introduction" />
 * <@links.ha id="multi-cluster-v2-introduction" />
+</@profile.ifCommunity>
 
 </@tmpl.guide>
