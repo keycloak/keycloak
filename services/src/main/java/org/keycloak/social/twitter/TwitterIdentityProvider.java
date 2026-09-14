@@ -45,6 +45,7 @@ import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.DelegatingSerializationFilter;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -108,6 +109,11 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
     protected static RequestToken base64DecodeRequestToken(String serialized) throws IOException, ClassNotFoundException {
         try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(Base64.getMimeDecoder().decode(serialized)))) {
+            DelegatingSerializationFilter.builder()
+                    .addAllowedClass(RequestToken.class)
+                    .addAllowedClass(String.class)
+                    .addAllowedPattern("twitter4j.OAuthToken")
+                    .setFilter(in);
             return (RequestToken) in.readObject();
         }
     }
