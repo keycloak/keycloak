@@ -136,6 +136,7 @@ public class LDAPUtils {
         ldapQuery.setSearchScope(config.getSearchScope());
         ldapQuery.setSearchDn(config.getUsersDn());
         ldapQuery.addObjectClasses(config.getUserObjectClasses());
+        ldapQuery.setUserQuery(true);
 
         String customFilter = config.getCustomUserSearchFilter();
         if (customFilter != null) {
