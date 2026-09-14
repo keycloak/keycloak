@@ -2,10 +2,16 @@ package org.keycloak.tests.oid4vc;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -808,6 +814,121 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         List<IssuedVerifiableCredentialRepresentation> issuedCreds = testRealm.admin().users().get(user.getId())
                 .verifiableCredentials().getIssuedCredentials();
         assertEquals(1, issuedCreds.size(), "Should still be only one issued credential");
+    }
+
+    /**
+     * Verify that OID4VCI refresh token rotation correctly rejects a replayed token
+     * when revokeRefreshToken is enabled on the realm.
+     *
+     * This test targets a potential vulnerability where OID4VCIRefreshTokenProvider
+     * creates a new transient session on each refresh exchange, causing the rotation
+     * state (consumed token ID and reuse count) to be lost between requests.
+     */
+    @Test
+    public void testRefreshTokenRotationRejectsReplayedToken() {
+        testRealm.updateWithCleanup(r -> r.revokeRefreshToken(true).refreshTokenMaxReuse(0));
+
+        AccessTokenResponse tokenResponse = authzCodeFlow();
+        assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
+
+        String accessToken = tokenResponse.getAccessToken();
+        String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+
+        CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
+                .credentialIdentifier(credentialIdentifier)
+                .send().getCredentialResponse();
+        assertSuccessfulCredentialResponse(credResponse);
+
+        // Save Token-A (the initial refresh token)
+        String tokenA = tokenResponse.getRefreshToken();
+        assertNotNull(tokenA, "Token-A (initial refresh token) should not be null");
+
+        timeOffSet.set(10);
+
+        // Step 2: Exchange Token-A → Token-B (first refresh — should succeed)
+        AccessTokenResponse refreshResponse1 = wallet.refreshRequest(ctx).send();
+        assertTrue(refreshResponse1.isSuccess(), "First refresh (Token-A → Token-B) should succeed");
+        String tokenB = refreshResponse1.getRefreshToken();
+        assertNotNull(tokenB, "Token-B (new refresh token) should not be null");
+
+        timeOffSet.set(20);
+
+        // Step 3: Replay Token-A — should be REJECTED because it was already consumed
+        AccessTokenResponse replayResponse = oauth.doRefreshTokenRequest(tokenA);
+        assertFalse(replayResponse.isSuccess(), "Replaying Token-A after rotation should fail — transient session must not lose rotation state");
+        assertEquals(INVALID_GRANT, replayResponse.getError(), "Expected invalid_grant error for replayed refresh token");
+    }
+
+    /**
+     * Verify that two refreshes of the same refresh token family cannot both be accepted when they run concurrently.
+     *
+     * The rotation state is a single record shared by the whole family, which every exchange reads and writes back.
+     * The initial token keeps the session id of the authorization-code session, while the tokens rotated out of it
+     * are minted off a transient session and carry none. Unless the refresh lock is keyed on the family rather than
+     * on the session, the two take different locks, read the same record and overwrite each other's update —
+     * forking one family into two live branches.
+     */
+    @Test
+    public void testConcurrentRefreshWithinFamilyKeepsRotationStateConsistent() throws Exception {
+        // A max reuse of one keeps the parent usable after it has been rotated, so parent and child are valid at once
+        testRealm.updateWithCleanup(r -> r.revokeRefreshToken(true).refreshTokenMaxReuse(1));
+
+        AccessTokenResponse tokenResponse = authzCodeFlow();
+        assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
+        String parent = tokenResponse.getRefreshToken();
+
+        // Rotate the family one step. The clock is advanced so the two tokens have distinct issued-at times
+        timeOffSet.set(10);
+        AccessTokenResponse rotation = oauth.doRefreshTokenRequest(parent);
+        assertTrue(rotation.isSuccess(), "Rotating the parent token should succeed, but failed with " + rotation.getError());
+        String child = rotation.getRefreshToken();
+
+        timeOffSet.set(20);
+        List<AccessTokenResponse> responses = refreshConcurrently(parent, child);
+
+        int accepted = 0;
+        for (AccessTokenResponse response : responses) {
+            if (response.isSuccess()) {
+                accepted++;
+            } else {
+                // Anything other than invalid_grant means the exchange broke rather than being refused, for
+                // instance because the serialization lock could not be acquired
+                assertEquals(INVALID_GRANT, response.getError(), "A refused concurrent refresh must fail with invalid_grant");
+            }
+        }
+
+        // Accepting the parent mints a new child and moves the family's latest-generated marker onto it, which
+        // leaves the child stale; accepting the child does the same to the parent. Serialized, exactly one of the
+        // two can therefore be accepted, whichever order they arrive in. Two acceptances mean both read the same
+        // rotation record and overwrote each other's update
+        assertEquals(1, accepted, "Exactly one of two concurrent refreshes of the same family must be accepted");
+    }
+
+    /**
+     * Sends one refresh request per token, all released together, and returns the responses in the order the tokens
+     * were given.
+     */
+    private List<AccessTokenResponse> refreshConcurrently(String... refreshTokens) throws Exception {
+        ExecutorService executor = Executors.newFixedThreadPool(refreshTokens.length);
+        try {
+            CountDownLatch start = new CountDownLatch(1);
+            List<Future<AccessTokenResponse>> futures = new ArrayList<>(refreshTokens.length);
+            for (String refreshToken : refreshTokens) {
+                futures.add(executor.submit(() -> {
+                    start.await();
+                    return oauth.doRefreshTokenRequest(refreshToken);
+                }));
+            }
+            start.countDown();
+
+            List<AccessTokenResponse> responses = new ArrayList<>(futures.size());
+            for (Future<AccessTokenResponse> future : futures) {
+                responses.add(future.get(30, TimeUnit.SECONDS));
+            }
+            return responses;
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     protected AccessTokenResponse authzCodeFlow() {
