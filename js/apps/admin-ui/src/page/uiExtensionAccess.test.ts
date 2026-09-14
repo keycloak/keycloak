@@ -47,6 +47,9 @@ describe("uiExtensionAccess", () => {
     });
 
     expect(canViewUiExtension(extension, access(["view-clients"]))).toBe(true);
+    expect(canViewUiExtension(extension, access(["manage-clients"]))).toBe(
+      true,
+    );
     expect(canViewUiExtension(extension, access(["view-realm"]))).toBe(false);
     expect(canManageUiExtension(extension, access(["manage-clients"]))).toBe(
       true,

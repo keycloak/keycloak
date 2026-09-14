@@ -13,7 +13,11 @@ final class UiExtensionPermissions {
     }
 
     static void requireView(AdminPermissionEvaluator auth, UiExtensionSupport extension) {
-        requireAnyRole(auth, extension.getRequiredViewRoles(), false);
+        if (hasAnyRole(auth, extension.getRequiredViewRoles())
+                || hasAnyRole(auth, extension.getRequiredManageRoles())) {
+            return;
+        }
+        throw new ForbiddenException();
     }
 
     static void requireManage(AdminPermissionEvaluator auth, UiExtensionSupport extension) {
@@ -30,10 +34,16 @@ final class UiExtensionPermissions {
             return;
         }
 
-        if (roles.stream().anyMatch(role -> auth.hasOneAdminRole(role))) {
+        if (hasAnyRole(auth, roles)) {
             return;
         }
 
         throw new ForbiddenException();
+    }
+
+    private static boolean hasAnyRole(AdminPermissionEvaluator auth, List<String> roles) {
+        return roles != null
+                && !roles.isEmpty()
+                && roles.stream().anyMatch(role -> auth.hasOneAdminRole(role));
     }
 }
