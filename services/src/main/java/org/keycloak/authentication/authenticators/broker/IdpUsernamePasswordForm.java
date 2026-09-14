@@ -68,8 +68,12 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
         LoginFormsProvider form = setupForm(context, new MultivaluedHashMap<>(), getExistingUser(context))
                 .setExecution(context.getExecution().getId());
         if (error != null) {
+            // Clear nested IdP attributes when showing an error
+            form.setAttribute("nestedIdpHeader", null);
+            form.setAttribute("nestedIdpAlias", null);
+            form.setAttribute("nestedIdpUsername", null);
             if (field != null) {
-                form.addError(new FormMessage(field, error));
+                form.setErrors(java.util.List.of(new FormMessage(field, error)));
             } else {
                 form.setError(error);
             }
@@ -107,7 +111,13 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
         SerializedBrokeredIdentityContext serializedCtx0 = SerializedBrokeredIdentityContext.readFromAuthenticationSession(context.getAuthenticationSession(), AbstractIdpAuthenticator.NESTED_FIRST_BROKER_CONTEXT);
         if (serializedCtx0 != null) {
             BrokeredIdentityContext ctx0 = serializedCtx0.deserialize(context.getSession(), context.getAuthenticationSession());
-            form.setError(Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE, ctx0.getIdpConfig().getAlias(), ctx0.getUsername());
+            String alias = ctx0.getIdpConfig().getAlias() != null ? ctx0.getIdpConfig().getAlias() : "";
+            String username = ctx0.getUsername() != null ? ctx0.getUsername() : "";
+            form.setError(Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE, alias, username);
+            form.setAttribute("nestedIdpHeader", Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE);
+            form.setAttribute("nestedIdpAlias", alias);
+            form.setAttribute("nestedIdpUsername", username);
+            form.setAttribute("nestedIdpSentinel", java.util.UUID.randomUUID().toString());
             context.getAuthenticationSession().setAuthNote(AbstractIdpAuthenticator.NESTED_FIRST_BROKER_CONTEXT, null);
         }
 
