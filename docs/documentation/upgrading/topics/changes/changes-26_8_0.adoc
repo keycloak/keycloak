@@ -46,7 +46,7 @@ Other token types (ID tokens, access tokens) continue to respect the `Validate S
 If your OIDC identity provider has `Validate Signatures` set to *OFF* and uses backchannel logout, you must configure the identity provider's public key so that {project_name} can validate logout token signatures. Either:
 
 * Set `Use JWKS URL` to *ON* and configure the `JWKS URL` pointing to the external IDP's JWKS endpoint, or
-* Provide the IDP's public key directly via the `Validating Public Key` or `Validating Public Key Id` fields.
+* Provide the IDP's public key directly via the `Validating Public Key` field and, if needed, its key ID via the `Validating Public Key Id` field.
 
 === Client policy source groups condition matches the full group path
 
