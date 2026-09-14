@@ -241,6 +241,14 @@ public class RealmAdminResource {
     }
 
     /**
+     * Base path for uploading custom themes.
+     */
+    @Path("themes")
+    public ThemeUploadResource getThemesResource() {
+        return new ThemeUploadResource(session, auth);
+    }
+
+    /**
      * Get realm default client scopes.  Only name and ids are returned.
      *
      * @return
