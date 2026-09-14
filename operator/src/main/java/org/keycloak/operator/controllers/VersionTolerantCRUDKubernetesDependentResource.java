@@ -40,5 +40,15 @@ public class VersionTolerantCRUDKubernetesDependentResource<R extends HasMetadat
                 .filter(owner -> owner.getKind().equals(kind) && owner.getApiVersion().startsWith(correctApi))
                 .map(or -> ResourceID.fromOwnerReference(resource, or, clusterScoped)).collect(Collectors.toSet()));
     }
+    
+    @Override
+    protected void addReferenceHandlingMetadata(R desired, P primary) {
+        if (addOwnerReference()) {
+            // override the sdk behavior to set block owner deletion
+            desired.addOwnerReference(primary, false, true);
+        } else {
+            super.addReferenceHandlingMetadata(desired, primary);
+        }
+    }
 
 }
