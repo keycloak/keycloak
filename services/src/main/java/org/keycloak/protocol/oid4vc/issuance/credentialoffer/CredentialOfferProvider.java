@@ -82,7 +82,7 @@ public interface CredentialOfferProvider extends Provider {
             String grantType,
             List<String> credentialConfigurationIds,
             String targetClientId,
-            String targetUserId,
+            String targetUsername,
             Integer expireAt
     );
 
@@ -97,15 +97,15 @@ public interface CredentialOfferProvider extends Provider {
             String grantType,
             List<String> credentialConfigurationIds,
             String targetClientId,
-            String targetUserId,
+            String targetUsername,
             long expireAt
     ) {
         if (expireAt < Integer.MIN_VALUE || expireAt > Integer.MAX_VALUE) {
             throw new CredentialOfferException(Errors.INVALID_REQUEST,
                     "Credential offer expiration is outside the integer range supported by this provider: " + expireAt);
         }
-        return createCredentialOffer(user, grantType, credentialConfigurationIds, targetClientId, targetUserId,
-                Integer.valueOf((int) expireAt));
+        return createCredentialOffer(user, grantType, credentialConfigurationIds,
+                targetClientId, targetUsername, Integer.valueOf((int) expireAt));
     }
 
     @Override
