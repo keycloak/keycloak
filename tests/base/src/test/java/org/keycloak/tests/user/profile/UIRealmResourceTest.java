@@ -16,7 +16,7 @@
  *  * limitations under the License.
  *
  */
-package org.keycloak.testsuite.user.profile;
+package org.keycloak.tests.user.profile;
 
 import java.io.IOException;
 import java.util.Map;
@@ -49,24 +49,32 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectAdminEvents;
+import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.RegisterPage;
-import org.keycloak.testsuite.util.AssertAdminEvents;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.page.RegisterPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.tests.utils.LegacyRealmConfig;
 import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
 
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-
-import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -76,31 +84,47 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  *
  * @author rmartinc
  */
-public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
+@KeycloakIntegrationTest
+public class UIRealmResourceTest {
+
+    @InjectRealm(config = UIRealmResourceRealmConfig.class)
+    ManagedRealm managedRealm;
+
+    @InjectAdminClient(mode = InjectAdminClient.Mode.BOOTSTRAP)
+    Keycloak adminClient;
+
+    @InjectOAuthClient
+    OAuthClient oauth;
+
+    @InjectAdminEvents
+    AdminEvents adminEvents;
 
     private static final String TEST_PWD = "password";
     private static final String USER_WITH_VIEW_USERS_ROLE = "user-with-view-users-role";
     private static final String USER_WITHOUT_ADMIN_ROLE = "user-without-admin-role";
 
-    private static Client httpClient;
-    private static Keycloak keycloakAdminClientViewUsers;
-    private static Keycloak keycloakAdminClientWithoutAdminRoles;
+    private Client httpClient;
+    private Keycloak keycloakAdminClientViewUsers;
+    private Keycloak keycloakAdminClientWithoutAdminRoles;
 
-    @Page
+    @InjectPage
+    protected LoginPage loginPage;
+
+    @InjectPage
     protected RegisterPage registerPage;
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    @InjectEvents
+    Events events;
 
-    @Rule
-    public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
+    @InjectWebDriver
+    ManagedWebDriver driver;
 
-    @BeforeClass
-    public static void initHttpClients() {
+    @BeforeEach
+    public void initHttpClients() {
         httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true);
 
         keycloakAdminClientViewUsers = KeycloakBuilder.builder().serverUrl(getKeycloakServerUrl())
-                .realm(TEST_REALM_NAME)
+                .realm(managedRealm.getName())
                 .username(USER_WITH_VIEW_USERS_ROLE)
                 .password(TEST_PWD)
                 .clientId(Constants.ADMIN_CLI_CLIENT_ID)
@@ -108,16 +132,19 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
                 .build();
 
         keycloakAdminClientWithoutAdminRoles = KeycloakBuilder.builder().serverUrl(getKeycloakServerUrl())
-                .realm(TEST_REALM_NAME)
+                .realm(managedRealm.getName())
                 .username(USER_WITHOUT_ADMIN_ROLE)
                 .password(TEST_PWD)
                 .clientId(Constants.ADMIN_CLI_CLIENT_ID)
                 .resteasyClient(httpClient)
                 .build();
+
+        adminEvents.clear();
+        events.clear();
     }
 
-    @AfterClass
-    public static void closeHttpClients() {
+    @AfterEach
+    public void closeHttpClients() {
         if (keycloakAdminClientViewUsers != null) {
             keycloakAdminClientViewUsers.close();
         }
@@ -127,17 +154,9 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         if (httpClient != null) {
             httpClient.close();
         }
-    }
-
-    @Override
-    public void configureTestRealm(final RealmRepresentation testRealm) {
-        final var userWithViewUsersRole = createTestUserRep(USER_WITH_VIEW_USERS_ROLE,
-                Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_USERS);
-        testRealm.getUsers().add(userWithViewUsersRole);
-
-        final var userWithoutAdminRole = createTestUserRep(USER_WITHOUT_ADMIN_ROLE,
-                Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_GROUPS);
-        testRealm.getUsers().add(userWithoutAdminRole);
+        if (driver != null) {
+            driver.driver().manage().deleteAllCookies();
+        }
     }
 
     @Test
@@ -145,8 +164,8 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         RealmRepresentation rep = managedRealm.admin().toRepresentation();
         updateRealmExt(toUIRealmRepresentation(rep, null));
 
-        assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, Matchers.nullValue(String.class), ResourceType.REALM);
-        assertAdminEvents.assertEmpty();
+        AdminEventAssertion.assertSuccess(adminEvents.poll()).operationType(OperationType.UPDATE).resourceType(ResourceType.REALM);
+        Assertions.assertNull(adminEvents.poll());
     }
 
     @Test
@@ -155,8 +174,8 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
 
         updateRealmExt(toUIRealmRepresentation(rep, upConfig));
-        assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, Matchers.nullValue(String.class), ResourceType.REALM);
-        assertAdminEvents.assertEmpty();
+        AdminEventAssertion.assertSuccess(adminEvents.poll()).operationType(OperationType.UPDATE).resourceType(ResourceType.REALM);
+        Assertions.assertNull(adminEvents.poll());
     }
 
     @Test
@@ -170,38 +189,44 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
                     new UPAttributePermissions(Set.of(), Set.of(UPConfigUtils.ROLE_USER, UPConfigUtils.ROLE_ADMIN))));
 
             updateRealmExt(toUIRealmRepresentation(rep, upConfig));
-            AdminEventRepresentation adminEvent = assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, Matchers.nullValue(String.class), ResourceType.REALM);
+            AdminEventRepresentation adminEvent = adminEvents.poll();
+            AdminEventAssertion.assertSuccess(adminEvent).operationType(OperationType.UPDATE).resourceType(ResourceType.REALM);
             Assertions.assertNotNull(adminEvent.getRepresentation());
-            adminEvent = assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, "ui-ext", ResourceType.USER_PROFILE);
+            adminEvent = adminEvents.poll();
+            AdminEventAssertion.assertEvent(adminEvent, OperationType.UPDATE, "ui-ext", ResourceType.USER_PROFILE);
             assertEquals(upConfig, toUpConfig(adminEvent.getRepresentation()));
 
             upConfig.getAttribute("foo").setDisplayName("Foo");
             updateRealmExt(toUIRealmRepresentation(rep, upConfig));
-            assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, Matchers.nullValue(String.class), ResourceType.REALM);
-            adminEvent = assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, "ui-ext", ResourceType.USER_PROFILE);
+            AdminEventAssertion.assertSuccess(adminEvents.poll()).operationType(OperationType.UPDATE).resourceType(ResourceType.REALM);
+            adminEvent = adminEvents.poll();
+            AdminEventAssertion.assertEvent(adminEvent, OperationType.UPDATE, "ui-ext", ResourceType.USER_PROFILE);
             assertEquals(upConfig, toUpConfig(adminEvent.getRepresentation()));
 
             upConfig.getAttribute("foo").setPermissions(new UPAttributePermissions(Set.of(), Set.of(UPConfigUtils.ROLE_USER)));
             updateRealmExt(toUIRealmRepresentation(rep, upConfig));
-            assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, Matchers.nullValue(String.class), ResourceType.REALM);
-            adminEvent = assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, "ui-ext", ResourceType.USER_PROFILE);
+            AdminEventAssertion.assertSuccess(adminEvents.poll()).operationType(OperationType.UPDATE).resourceType(ResourceType.REALM);
+            adminEvent = adminEvents.poll();
+            AdminEventAssertion.assertEvent(adminEvent, OperationType.UPDATE, "ui-ext", ResourceType.USER_PROFILE);
             assertEquals(upConfig, toUpConfig(adminEvent.getRepresentation()));
 
             upConfig.getAttribute("foo").setRequired(new UPAttributeRequired(Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER), Set.of()));
             updateRealmExt(toUIRealmRepresentation(rep, upConfig));
-            assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, Matchers.nullValue(String.class), ResourceType.REALM);
-            adminEvent = assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, "ui-ext", ResourceType.USER_PROFILE);
+            AdminEventAssertion.assertSuccess(adminEvents.poll()).operationType(OperationType.UPDATE).resourceType(ResourceType.REALM);
+            adminEvent = adminEvents.poll();
+            AdminEventAssertion.assertEvent(adminEvent, OperationType.UPDATE, "ui-ext", ResourceType.USER_PROFILE);
             assertEquals(upConfig, toUpConfig(adminEvent.getRepresentation()));
 
             upConfig.getAttribute("foo").setValidations(Map.of("length", Map.of("min", "3", "max", "128")));
             updateRealmExt(toUIRealmRepresentation(rep, upConfig));
-            assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, Matchers.nullValue(String.class), ResourceType.REALM);
-            adminEvent = assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, "ui-ext", ResourceType.USER_PROFILE);
+            AdminEventAssertion.assertSuccess(adminEvents.poll()).operationType(OperationType.UPDATE).resourceType(ResourceType.REALM);
+            adminEvent = adminEvents.poll();
+            AdminEventAssertion.assertEvent(adminEvent, OperationType.UPDATE, "ui-ext", ResourceType.USER_PROFILE);
             assertEquals(upConfig, toUpConfig(adminEvent.getRepresentation()));
 
             updateRealmExt(toUIRealmRepresentation(rep, upConfig));
-            assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, Matchers.nullValue(String.class), ResourceType.REALM);
-            assertAdminEvents.assertEmpty();
+            AdminEventAssertion.assertSuccess(adminEvents.poll()).operationType(OperationType.UPDATE).resourceType(ResourceType.REALM);
+            Assertions.assertNull(adminEvents.poll());
         } finally {
             updateRealmExt(toUIRealmRepresentation(rep, upConfigOrig));
         }
@@ -211,9 +236,10 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
     public void testRegistrationFormWithNotReadableOrWritableRequiredEmail() throws IOException {
         RealmRepresentation testRealm = managedRealm.admin().toRepresentation();
         testRealm.setRegistrationEmailAsUsername(true);
-        getCleanup().addCleanup(() -> {
+        testRealm.setRegistrationAllowed(true);
+        managedRealm.cleanup().add(r -> {
             testRealm.setRegistrationEmailAsUsername(false);
-            managedRealm.admin().update(testRealm);
+            r.update(testRealm);
         });
         managedRealm.admin().update(testRealm);
 
@@ -229,6 +255,7 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         registerPage.assertCurrent();
 
         Assertions.assertTrue(registerPage.isEmailPresent(), "Email is missing on the registration page.");
+        Assertions.assertFalse(registerPage.isUsernamePresent(), "Username should not be present on the registration page.");
 
         registerPage.registerWithEmailAsUsername("Tom", "Brady", "tbrady@email.com", "password", "password");
 
@@ -257,7 +284,6 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        Assertions.assertTrue(registerPage.isUsernamePresent(), "Username is missing on the registration page.");
         Assertions.assertFalse(registerPage.isEmailPresent(), "Email should not be present on the registration page.");
 
         registerPage.register("Alice", "Wood",  null, "awood", "password", "password");
@@ -269,6 +295,7 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         assertEquals("awood", user.getUsername());
         assertEquals("Alice", user.getFirstName());
         assertEquals("Wood", user.getLastName());
+        managedRealm.admin().users().get(userId).logout();
     }
 
     @Test
@@ -303,12 +330,12 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         } finally {
             rep.setRealm(originalRealmName);
             updateRealmExt(toUIRealmRepresentation(rep, upConfig), updatedName);
-            assertAdminEvents.clear();
+            adminEvents.clear();
         }
     }
 
-    private static String getKeycloakServerUrl() {
-        return getAuthServerContextRoot() + "/auth";
+    private String getKeycloakServerUrl() {
+        return managedRealm.getBaseUrl().replace("/realms/" + managedRealm.getName(), "");
     }
 
     private static UserRepresentation createTestUserRep(final String username, final String clientId, final String roleName) {
@@ -323,7 +350,7 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
     }
 
     private Response getUiRealmInfo(final TokenManager tokenManager) {
-        return prepareHttpRequest(TEST_REALM_NAME, "ui-ext/info", tokenManager)
+        return prepareHttpRequest(managedRealm.getName(), "ui-ext/info", tokenManager)
                 .request(MediaType.APPLICATION_JSON)
                 .get();
     }
@@ -367,6 +394,22 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
             return JsonSerialization.readValue(representation, type);
         } catch (final IOException e) {
             throw new IllegalStateException(e);
+        }
+    }
+
+    public static class UIRealmResourceRealmConfig extends LegacyRealmConfig {
+
+        @Override
+        public void configureTestRealm(final RealmRepresentation testRealm) {
+            testRealm.setRegistrationAllowed(true);
+
+            final var userWithViewUsersRole = createTestUserRep(USER_WITH_VIEW_USERS_ROLE,
+                    Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_USERS);
+            testRealm.getUsers().add(userWithViewUsersRole);
+
+            final var userWithoutAdminRole = createTestUserRep(USER_WITHOUT_ADMIN_ROLE,
+                    Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_GROUPS);
+            testRealm.getUsers().add(userWithoutAdminRole);
         }
     }
 }
