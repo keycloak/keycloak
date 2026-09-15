@@ -1,7 +1,6 @@
 package org.keycloak.broker.kubernetes;
 
 import java.io.File;
-import java.net.InetAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 
@@ -46,6 +45,22 @@ final class KubernetesUtils {
                 System.getenv(KUBERNETES_SERVICE_HOST_KEY),
                 System.getenv(KUBERNETES_SERVICE_PORT_HTTPS_KEY),
                 System.getenv(KUBERNETES_SERVICE_PORT_KEY));
+    }
+
+    static boolean isTrustedKubernetesApiDiscoveryUrl(String url) {
+        if (!isTrustedKubernetesApiUrl(url)) {
+            return false;
+        }
+
+        try {
+            URI discoveryUri = URI.create(discoveryUrl(url));
+            return discoveryUri.getPath() != null
+                    && discoveryUri.getPath().endsWith(OIDC_DISCOVERY_PATH)
+                    && discoveryUri.getQuery() == null
+                    && discoveryUri.getFragment() == null;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     static boolean isTrustedKubernetesApiUrl(String url, String serviceHost, String httpsServicePort, String servicePort) {
@@ -108,16 +123,38 @@ final class KubernetesUtils {
     }
 
     private static boolean isIpLiteral(String host) {
-        if (host == null || (!host.contains(":") && !host.matches("\\d+(\\.\\d+){3}"))) {
+        if (host == null) {
             return false;
         }
 
-        try {
-            String address = InetAddress.getByName(host).getHostAddress();
-            return host.contains(":") || address.equals(host);
-        } catch (Exception e) {
+        String normalizedHost = host;
+        if (normalizedHost.startsWith("[") && normalizedHost.endsWith("]")) {
+            normalizedHost = normalizedHost.substring(1, normalizedHost.length() - 1);
+        }
+
+        if (normalizedHost.contains(":")) {
+            return true;
+        }
+
+        String[] octets = normalizedHost.split("\\.", -1);
+        if (octets.length != 4) {
             return false;
         }
+
+        for (String octet : octets) {
+            if (octet.isEmpty() || !octet.chars().allMatch(Character::isDigit)) {
+                return false;
+            }
+            try {
+                if (Integer.parseInt(octet) > 255) {
+                    return false;
+                }
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static boolean isTrustedKubernetesApiPort(URI uri) {

@@ -90,7 +90,7 @@ public class KubernetesIdentityProviderConfig extends IdentityProviderModel impl
         String issuerDiscoveryUrl = getIssuerDiscoveryUrl();
         checkUrl(realm.getSslRequired(), issuerDiscoveryUrl, ISSUER_DISCOVERY_URL);
 
-        boolean trustedKubernetesApiUrl = KubernetesUtils.isTrustedKubernetesApiUrl(issuerDiscoveryUrl);
+        boolean trustedKubernetesApiUrl = KubernetesUtils.isTrustedKubernetesApiDiscoveryUrl(issuerDiscoveryUrl);
 
         try {
             KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();

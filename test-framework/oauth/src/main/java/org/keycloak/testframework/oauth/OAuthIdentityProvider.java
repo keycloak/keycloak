@@ -126,7 +126,14 @@ public class OAuthIdentityProvider {
             return host;
         }
 
-        return exchange.getLocalAddress().getHostString() + ":" + exchange.getLocalAddress().getPort();
+        return formatHostForAuthority(exchange.getLocalAddress().getHostString()) + ":" + exchange.getLocalAddress().getPort();
+    }
+
+    private String formatHostForAuthority(String host) {
+        if (host != null && host.indexOf(':') >= 0 && !host.startsWith("[") && !host.endsWith("]")) {
+            return "[" + host + "]";
+        }
+        return host;
     }
 
     public class JwksHttpHandler implements HttpHandler {

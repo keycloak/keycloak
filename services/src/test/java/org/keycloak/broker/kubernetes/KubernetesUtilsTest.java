@@ -85,6 +85,17 @@ class KubernetesUtilsTest {
     }
 
     @Test
+    void trustedApiDiscoveryUrlRejectsQueryAndFragment() {
+        assertFalse(KubernetesUtils.isTrustedKubernetesApiDiscoveryUrl("https://kubernetes.default.svc?query"));
+        assertFalse(KubernetesUtils.isTrustedKubernetesApiDiscoveryUrl("https://kubernetes.default.svc#fragment"));
+    }
+
+    @Test
+    void trustedApiDiscoveryUrlAllowsIssuerBasePath() {
+        assertTrue(KubernetesUtils.isTrustedKubernetesApiDiscoveryUrl("https://kubernetes.default.svc/proxy"));
+    }
+
+    @Test
     void trustedApiJwksUrlAllowsApiServerAdvertiseAddressFromTrustedIssuer() {
         assertTrue(KubernetesUtils.isTrustedKubernetesApiJwksUrl(
                 "https://172.18.0.2:6443/openid/v1/jwks",
@@ -133,6 +144,20 @@ class KubernetesUtilsTest {
     void trustedApiJwksUrlRejectsUnexpectedPort() {
         assertFalse(KubernetesUtils.isTrustedKubernetesApiJwksUrl(
                 "https://172.18.0.2:65535/openid/v1/jwks",
+                "https://kubernetes.default.svc.cluster.local"));
+    }
+
+    @Test
+    void trustedApiJwksUrlRejectsInvalidIpv4Literal() {
+        assertFalse(KubernetesUtils.isTrustedKubernetesApiJwksUrl(
+                "https://999.999.999.999:6443/openid/v1/jwks",
+                "https://kubernetes.default.svc.cluster.local"));
+    }
+
+    @Test
+    void trustedApiJwksUrlAllowsIpv6ApiServerAdvertiseAddressFromTrustedIssuer() {
+        assertTrue(KubernetesUtils.isTrustedKubernetesApiJwksUrl(
+                "https://[fd00::2]:6443/openid/v1/jwks",
                 "https://kubernetes.default.svc.cluster.local"));
     }
 

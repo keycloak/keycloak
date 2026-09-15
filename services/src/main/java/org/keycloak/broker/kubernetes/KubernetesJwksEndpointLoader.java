@@ -1,5 +1,7 @@
 package org.keycloak.broker.kubernetes;
 
+import java.io.IOException;
+
 import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
@@ -37,7 +39,7 @@ public class KubernetesJwksEndpointLoader implements PublicKeyLoader {
         String wellKnownEndpoint = KubernetesUtils.discoveryUrl(issuer);
 
         SimpleHttpRequest wellKnownRequest = simpleHttp.doGet(wellKnownEndpoint).acceptJson();
-        if (token != null && KubernetesUtils.isTrustedKubernetesApiUrl(issuer)) {
+        if (token != null && KubernetesUtils.isTrustedKubernetesApiDiscoveryUrl(issuer)) {
             wellKnownRequest.auth(token);
         }
 
