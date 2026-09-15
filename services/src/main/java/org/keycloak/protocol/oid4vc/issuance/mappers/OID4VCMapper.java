@@ -162,15 +162,17 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
     }
 
     /**
-     * Returns {@code true} when this mapper passes all issuance-time guards.
+     * Returns {@code true} when this mapper passes all issuance-time guards (credential-format validation and the
+     * sensitive-mapping check). Because scope updates/imports can bypass {@link #validateConfig}, this is invoked
+     * centrally at issuance so a misconfigured mapper is safely skipped instead of failing the request.
      */
     public boolean passesMappingGuards() {
         try {
+            validateMdocNamespace(format, mapperModel);
             validateAgainstSensitiveMappings(format, mapperModel);
             return true;
         } catch (ProtocolMapperConfigException e) {
-            LOGGER.warnf(e, "OID4VC mapper '%s' targets a reserved claim. This sensitive mapping will be skipped",
-                    getMapperName());
+            LOGGER.warnf(e, "OID4VC mapper '%s' failed validation and will be skipped", getMapperName());
             return false;
         }
     }

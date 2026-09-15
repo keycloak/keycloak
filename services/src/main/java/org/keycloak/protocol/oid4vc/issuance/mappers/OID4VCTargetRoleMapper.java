@@ -95,7 +95,7 @@ public class OID4VCTargetRoleMapper extends OID4VCMapper {
     protected String resolveClaimName(ProtocolMapperModel mapperModel) {
         Map<String, String> config = mapperModel.getConfig();
         if (config == null) {
-            return null;
+            return DEFAULT_CLAIM_NAME;
         }
 
         return Optional.ofNullable(config.get(CLAIM_NAME)).orElse(DEFAULT_CLAIM_NAME);
