@@ -232,7 +232,8 @@ public class ClientStreamStore implements SsfStreamStore {
             SSF_STREAM_DEFAULT_SUBJECTS_KEY,
             SSF_STREAM_CREATED_AT_KEY,
             SSF_STREAM_UPDATED_AT_KEY,
-            SSF_STREAM_MANAGED_BY_KEY);
+            SSF_STREAM_MANAGED_BY_KEY,
+            SSF_LAST_VERIFIED_AT_KEY);
 
     protected final KeycloakSession session;
 
@@ -636,6 +637,17 @@ public class ClientStreamStore implements SsfStreamStore {
         // legacy fallback. This is what actually migrates a stream off the
         // old storage shape — it happens on the first update after upgrade.
         client.removeAttribute(SSF_STREAM_CONFIG_KEY);
+
+        // min_verification_interval is a per-stream property (SSF 1.0
+        // §8.1.4.2), so a new stream starts with a clean rate-limit
+        // window. Without this a receiver that deletes and re-creates
+        // its stream would be 429'd on the new stream's first verify
+        // because the stamp from the previous stream still sits on the
+        // client.
+        String previousStreamId = client.getAttribute(SSF_STREAM_ID_KEY);
+        if (previousStreamId == null || !previousStreamId.equals(streamConfig.getStreamId())) {
+            client.removeAttribute(SSF_LAST_VERIFIED_AT_KEY);
+        }
 
         client.setAttribute(SSF_STREAM_ID_KEY, streamConfig.getStreamId());
 
