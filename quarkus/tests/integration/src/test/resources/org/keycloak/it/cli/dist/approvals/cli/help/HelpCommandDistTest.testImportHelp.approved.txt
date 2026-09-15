@@ -289,6 +289,14 @@ Truststore:
 --truststore-paths <truststore-paths>
                      List of pkcs12 (p12, pfx, or pkcs12 file extensions), PEM files, or
                        directories containing those files that will be used as a system truststore.
+--truststore-paths-reload-period <reload period>
+                     Interval on which to reload the system truststore material referenced by the
+                       truststore-paths option and the automatically discovered CA certificates.
+                       May be an ISO 8601 duration value, an integer number of seconds, or an
+                       integer followed by one of [ms, h, m, s, d]. If not set, the system
+                       truststore is not reloaded automatically. When the reload period is
+                       configured, there must be at least one truststore source: a truststore-paths
+                       entry, a file under conf/truststores, or a discovered cluster CA certificate.
 
 Import:
 

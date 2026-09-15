@@ -45,7 +45,7 @@ public class SSLSocketFactory extends javax.net.ssl.SSLSocketFactory implements 
 
     private static final Logger log = Logger.getLogger(SSLSocketFactory.class);
 
-    private static SSLSocketFactory instance;
+    private static volatile SSLSocketFactory instance;
 
     private final javax.net.ssl.SSLSocketFactory sslsf;
 
@@ -70,6 +70,11 @@ public class SSLSocketFactory extends javax.net.ssl.SSLSocketFactory implements 
             instance = new SSLSocketFactory();
         }
         return instance;
+    }
+
+    public static synchronized void reset() {
+        instance = null;
+        getDefault();
     }
 
     @Override
