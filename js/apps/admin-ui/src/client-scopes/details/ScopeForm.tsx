@@ -344,12 +344,12 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   // The field defaults to "false" for other protocols and RHF retains that value across
   // protocol changes (shouldUnregister is false), so we must set it explicitly.
   useEffect(() => {
-    if (isOid4vcProtocol && !clientScope) {
+    if (!clientScope) {
       setValue(
         convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
           "attributes.include.in.token.scope",
         ),
-        "true",
+        isOid4vcProtocol ? "true" : "false",
       );
     }
   }, [isOid4vcProtocol, clientScope, setValue]);
