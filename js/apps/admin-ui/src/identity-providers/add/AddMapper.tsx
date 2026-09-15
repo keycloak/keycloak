@@ -43,6 +43,12 @@ export type Role = RoleRepresentation & {
   clientId?: string;
 };
 
+const MAPPER_SYNC_RETRIES = 10;
+const MAPPER_SYNC_DELAY_MS = 300;
+
+const sleep = (durationMs: number) =>
+  new Promise((resolve) => setTimeout(resolve, durationMs));
+
 export default function AddMapper() {
   const { adminClient } = useAdminClient();
 
@@ -66,8 +72,38 @@ export default function AddMapper() {
     useState<IdentityProviderMapperTypeRepresentation>();
 
   const [idp, setIdp] = useState<IdentityProviderRepresentation>();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const waitForMapperToBeAvailable = async (mapperId?: string) => {
+    if (!mapperId) {
+      return false;
+    }
+
+    for (let attempt = 0; attempt < MAPPER_SYNC_RETRIES; attempt++) {
+      try {
+        const mapper = await adminClient.identityProviders.findOneMapper({
+          alias,
+          id: mapperId,
+        });
+        if (mapper?.id === mapperId) {
+          return true;
+        }
+      } catch {
+        // The mapper can still be in-flight right after creation.
+      }
+
+      await sleep(MAPPER_SYNC_DELAY_MS);
+    }
+
+    return false;
+  };
 
   const save = async (idpMapper: IdentityProviderMapperRepresentation) => {
+    if (isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
     const mapper = convertFormValuesToObject(idpMapper);
 
     const identityProviderMapper = {
@@ -78,8 +114,8 @@ export default function AddMapper() {
       identityProviderAlias: alias!,
     };
 
-    if (id) {
-      try {
+    try {
+      if (id) {
         await adminClient.identityProviders.updateMapper(
           {
             id: id!,
@@ -88,28 +124,41 @@ export default function AddMapper() {
           { ...identityProviderMapper, id },
         );
         addAlert(t("mapperSaveSuccess"), AlertVariant.success);
-      } catch (error) {
-        addError("mapperSaveError", error);
-      }
-    } else {
-      try {
+      } else {
         const createdMapper = await adminClient.identityProviders.createMapper({
           identityProviderMapper,
           alias: alias!,
         });
 
-        addAlert(t("mapperCreateSuccess"), AlertVariant.success);
-        void navigate(
-          toIdentityProviderEditMapper({
-            realm,
-            alias,
-            providerId: providerId,
-            id: createdMapper.id,
-          }),
+        const mapperAvailable = await waitForMapperToBeAvailable(
+          createdMapper.id,
         );
-      } catch (error) {
-        addError("mapperCreateError", error);
+        addAlert(t("mapperCreateSuccess"), AlertVariant.success);
+
+        if (createdMapper.id && mapperAvailable) {
+          void navigate(
+            toIdentityProviderEditMapper({
+              realm,
+              alias,
+              providerId: providerId,
+              id: createdMapper.id,
+            }),
+          );
+        } else {
+          void navigate(
+            toIdentityProvider({
+              providerId,
+              alias,
+              tab: "mappers",
+              realm,
+            }),
+          );
+        }
       }
+    } catch (error) {
+      addError(id ? "mapperSaveError" : "mapperCreateError", error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -242,12 +291,15 @@ export default function AddMapper() {
             data-testid="new-mapper-save-button"
             variant="primary"
             type="submit"
+            isDisabled={isSaving}
+            isLoading={isSaving}
           >
             {t("save")}
           </Button>
           <Button
             data-testid="new-mapper-cancel-button"
             variant="link"
+            isDisabled={isSaving}
             component={(props) => (
               <Link
                 {...props}

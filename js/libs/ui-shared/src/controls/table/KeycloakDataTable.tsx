@@ -504,7 +504,7 @@ export function KeycloakDataTable<T>({
               ),
             )
             .slice(first, first + max + 1),
-    [search, first, max],
+    [search, isPaginated, unPaginatedData, first, max],
   );
 
   useFetch(
