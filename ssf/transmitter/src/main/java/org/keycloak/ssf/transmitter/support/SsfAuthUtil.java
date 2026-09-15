@@ -10,7 +10,6 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -39,15 +38,19 @@ public class SsfAuthUtil {
         try {
             auth = new AppAuthManager.BearerTokenAuthenticator(session).authenticate();
         } catch (NotAuthorizedException e) {
-            // Thrown by AppAuthManager.extractAuthorizationHeaderToken for a
-            // non-Bearer Authorization header. Its response has no entity and
-            // would be rewritten by KeycloakErrorHandler without the challenge.
-            throw unauthorized(session, "Invalid Authorization header");
+            // Thrown by AppAuthManager.extractAuthorizationHeaderToken when the
+            // Authorization header does not carry a Bearer token (unsupported
+            // scheme or no token part). RFC 6750 §3.1 treats an attempt with an
+            // unsupported authentication method like a request without
+            // credentials: bare challenge, no error code. The exception's own
+            // response has no entity and would be rewritten by
+            // KeycloakErrorHandler without the challenge, hence the mapping.
+            throw unauthorized(session, null);
         }
         if (auth == null) {
             // RFC 6750 §3.1: a request without any credentials gets a bare
-            // challenge; only a request that presented a bad token gets
-            // error="invalid_token".
+            // challenge; only a request that presented a bearer token which
+            // failed validation gets error="invalid_token".
             boolean tokenPresent = session.getContext().getRequestHeaders().getHeaderString(HttpHeaders.AUTHORIZATION) != null;
             throw unauthorized(session, tokenPresent ? "Token verification failed" : null);
         }
@@ -71,10 +74,10 @@ public class SsfAuthUtil {
             entity = new OAuth2ErrorRepresentation(OAuthErrorException.INVALID_TOKEN, errorDescription);
         } else {
             // RFC 6750 §3.1: no credentials presented, so neither the
-            // challenge nor the body claims an error code. The entity
+            // challenge nor the body carries error information. The entity
             // must still be non-null so RESTEasy returns this response
             // as-is instead of routing it through KeycloakErrorHandler.
-            entity = Map.of(OAuth2Constants.ERROR_DESCRIPTION, "Bearer token required");
+            entity = Map.of();
         }
         return Response.status(Response.Status.UNAUTHORIZED)
                 .header(HttpHeaders.WWW_AUTHENTICATE, challenge.toString())
@@ -104,13 +107,17 @@ public class SsfAuthUtil {
                 .build();
     }
 
+    private static final Pattern HEADER_CONTROL_CHARS = Pattern.compile("[\\x00-\\x1F\\x7F]");
+
     /**
      * Renders a value as an RFC 9110 quoted-string for use in a
-     * {@code WWW-Authenticate} challenge: CR/LF are stripped so the value
-     * cannot break the header, and {@code "} / {@code \} are backslash-escaped.
+     * {@code WWW-Authenticate} challenge: ASCII control characters (including
+     * CR/LF) are stripped so the value cannot break or ambiguously shape the
+     * header, and {@code "} / {@code \} are backslash-escaped. Non-ASCII is
+     * kept, as RFC 9110 permits obs-text inside quoted-strings.
      */
     static String quote(String value) {
-        String sanitized = value == null ? "" : value.replace("\r", "").replace("\n", "");
+        String sanitized = value == null ? "" : HEADER_CONTROL_CHARS.matcher(value).replaceAll("");
         return '"' + sanitized.replace("\\", "\\\\").replace("\"", "\\\"") + '"';
     }
 

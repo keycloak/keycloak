@@ -22,6 +22,16 @@ class SsfAuthUtilTest {
     }
 
     @Test
+    void quoteStripsOtherControlCharacters() {
+        assertEquals("\"realm\"", SsfAuthUtil.quote("re\u0000a\u001Bl\u007Fm"));
+    }
+
+    @Test
+    void quoteKeepsNonAscii() {
+        assertEquals("\"r\u00e9alm\"", SsfAuthUtil.quote("r\u00e9alm"));
+    }
+
+    @Test
     void quoteHandlesNull() {
         assertEquals("\"\"", SsfAuthUtil.quote(null));
     }

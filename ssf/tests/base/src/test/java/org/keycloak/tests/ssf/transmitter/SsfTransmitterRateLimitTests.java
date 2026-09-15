@@ -230,7 +230,8 @@ public class SsfTransmitterRateLimitTests {
     }
 
     protected void deleteStream(String token, String streamId) throws IOException {
-        try (SimpleHttpResponse response = http.doDelete(SsfTransmitterUrls.getStreamsEndpointUrl(realm.getBaseUrl()) + "?stream_id=" + streamId)
+        try (SimpleHttpResponse response = http.doDelete(SsfTransmitterUrls.getStreamsEndpointUrl(realm.getBaseUrl()))
+                .param("stream_id", streamId)
                 .auth(token)
                 .asResponse()) {
             Assertions.assertEquals(204, response.getStatus(), "stream deletion should succeed");
