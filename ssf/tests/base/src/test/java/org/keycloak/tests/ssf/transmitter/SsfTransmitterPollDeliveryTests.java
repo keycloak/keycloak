@@ -494,6 +494,8 @@ public class SsfTransmitterPollDeliveryTests {
             Assertions.assertFalse(challenge.contains("error="), "bare request must not carry an error code: " + challenge);
             // ...and the body carries no error information either
             Assertions.assertTrue(response.asJson().isEmpty(), "bare request body must be an empty JSON object");
+            Assertions.assertEquals("no-store", response.getFirstHeader("Cache-Control"),
+                    "auth error responses must not be cacheable");
         }
     }
 
