@@ -122,7 +122,8 @@ public class ClientScopesResource {
         auth.clients().requireManageClientScopes();
         ClientScopeResource.validateClientScopeName(rep.getName());
         ClientScopeResource.validateClientScopeProtocol(session, rep.getProtocol());
-        ClientScopeResource.validateDynamicClientScope(rep);
+        ClientScopeResource.validateClientScope(session, rep);
+        ClientScopeResource.validateParameterizedClientScope(session, rep);
         try {
             LoginProtocolFactory loginProtocolFactory = //
                     (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class,

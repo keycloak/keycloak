@@ -1,0 +1,177 @@
+[id="listening-workflow-provider-events_{context}"]
+
+[[_workflow_provider_events_]]
+= Listening to workflow provider events
+
+During the lifecycle of a workflow execution, {project_name} fires a series of provider events that represent key moments
+such as activation, step execution, failures, and completion. SPI developers can listen to these events by implementing
+the `ProviderEventListener` interface and registering the listener with the `KeycloakSessionFactory`.
+
+[NOTE]
+====
+{project_name} does not persist workflow execution history. By default, only log messages record what happened during
+a workflow run (see <<_troubleshooting_workflows_>>). Provider events allow you to capture and store workflow lifecycle
+data externally — for example, in an audit database or monitoring system — providing a complete execution trail beyond
+what the standard log messages offer.
+====
+
+== Common event fields
+
+All workflow provider events extend the `WorkflowProviderEvent` interface, which provides the following common fields:
+
+[cols="2*", options="header"]
+|===
+|Method
+|Description
+| `getKeycloakSession()` | The `KeycloakSession` associated with this event.
+| `getRealm()` | The realm where the workflow event occurred.
+| `getWorkflowId()` | The ID of the workflow.
+| `getWorkflowName()` | The name of the workflow.
+| `getResourceId()` | The ID of the resource (user or client) associated with the workflow.
+| `getResourceType()` | The type of the resource — either `USERS` or `CLIENTS`.
+| `getExecutionId()` | The unique ID for this workflow execution.
+|===
+
+[[_workflow_provider_event_types_]]
+== Event types
+
+The following event types are available:
+
+[cols="3*", options="header"]
+|===
+|Event Type
+|Description
+|Additional Fields
+
+| `WorkflowActivatedEvent`
+| Fired when a workflow is activated for a resource — either through a trigger event, a schedule, or a manual API call.
+a|
+* `getTriggerEventType()`: The event provider ID that triggered activation (e.g., `user-created`, `scheduled`, or `AD_HOC` for manual activation).
+
+| `WorkflowDeactivatedEvent`
+| Fired when a workflow execution is deactivated for a resource — for example, through a manual API call, a cancel-in-progress trigger, or because the resource no longer meets the workflow conditions.
+a|
+* `getReason()`: The reason for deactivation.
+
+| `WorkflowRestartedEvent`
+| Fired when a workflow execution is restarted from the beginning for a resource.
+| None — uses only the common fields.
+
+| `WorkflowStepScheduledEvent`
+| Fired when a workflow step is scheduled for future execution (i.e., the step has an `after` delay).
+a|
+* `getStepId()`: The ID of the scheduled step.
+* `getStepProviderId()`: The provider ID of the step (e.g., `disable-user`).
+* `getScheduledTime()`: The time the step is scheduled to execute, in milliseconds since epoch.
+* `getDelay()`: The delay duration string (e.g., `PT5M` for 5 minutes).
+
+| `WorkflowStepExecutedEvent`
+| Fired when a workflow step completes successfully.
+a|
+* `getStepId()`: The ID of the executed step.
+* `getStepProviderId()`: The provider ID of the step.
+
+| `WorkflowStepFailedEvent`
+| Fired when a workflow step execution fails.
+a|
+* `getStepId()`: The ID of the failed step.
+* `getStepProviderId()`: The provider ID of the step.
+* `getErrorMessage()`: The error message from the failure.
+
+| `WorkflowResourceMigratedEvent`
+| Fired when resources are migrated from one workflow (or step) to another using the migration API.
+a|
+* `getSourceWorkflowId()` / `getSourceWorkflowName()`: The source workflow.
+* `getDestinationWorkflowId()` / `getDestinationWorkflowName()`: The destination workflow.
+* `getSourceStepId()` / `getSourceStepProviderId()`: The source step.
+* `getDestinationStepId()` / `getDestinationStepProviderId()`: The destination step.
+* `getOldExecutionId()` / `getNewExecutionId()`: The execution IDs from the source and destination workflows.
+
+| `WorkflowCompletedEvent`
+| Fired when all steps of a workflow have been executed successfully and the workflow execution is complete.
+| None — uses only the common fields.
+|===
+
+== Event lifecycle
+
+During a typical workflow execution, provider events are fired in the following order:
+
+. `WorkflowActivatedEvent` — the workflow is activated for the resource.
+. For each step in the step chain:
+.. `WorkflowStepScheduledEvent` — if the step has an `after` delay.
+.. `WorkflowStepExecutedEvent` — when the step completes successfully.
+.. `WorkflowStepFailedEvent` — if the step fails (replaces `WorkflowStepExecutedEvent`).
+. `WorkflowCompletedEvent` — all steps completed successfully.
+
+A `WorkflowDeactivatedEvent` may replace `WorkflowCompletedEvent` if the workflow is cancelled or the resource no longer
+meets the workflow conditions. A `WorkflowRestartedEvent` may occur at any point if the workflow is restarted from the beginning
+by a restart-in-progress trigger.
+
+== Implementing a listener
+
+To listen to workflow provider events, create a custom `EventListenerProviderFactory` that registers a `ProviderEventListener`
+with the `KeycloakSessionFactory` during initialization. The listener is packaged as a JAR and deployed to the `providers/` folder,
+then enabled in the Admin Console under *Realm Settings* -> *Events* -> *Event listeners*.
+
+The following example shows a factory that registers a listener to capture workflow events:
+
+[source,java]
+----
+import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventListenerProviderFactory;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.workflow.WorkflowProviderEvent;
+import org.keycloak.models.workflow.WorkflowProviderEvent.WorkflowStepFailedEvent;
+
+public class WorkflowAuditListenerFactory implements EventListenerProviderFactory {
+
+    @Override
+    public EventListenerProvider create(KeycloakSession session) {
+        return new WorkflowAuditListener(session);
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+        factory.register(event -> {
+            if (event instanceof WorkflowStepFailedEvent failedEvent) {
+                // handle step failure — e.g., send a notification or store in an audit log
+                String workflowName = failedEvent.getWorkflowName();
+                String stepId = failedEvent.getStepId();
+                String error = failedEvent.getErrorMessage();
+                // ...
+            } else if (event instanceof WorkflowProviderEvent workflowEvent) {
+                // handle other workflow events
+                String workflowName = workflowEvent.getWorkflowName();
+                String resourceId = workflowEvent.getResourceId();
+                // ...
+            }
+        });
+    }
+
+    @Override
+    public void init(org.keycloak.Config.Scope config) {
+    }
+
+    @Override
+    public void close() {
+    }
+
+    @Override
+    public String getId() {
+        return "workflow-audit";
+    }
+}
+----
+
+The factory must be registered as a service provider in `META-INF/services/org.keycloak.events.EventListenerProviderFactory`
+so that {project_name} discovers it when the JAR is deployed.
+
+== Use cases
+
+Since {project_name} does not persist workflow execution history, provider events are the primary mechanism for building
+a complete audit trail of workflow activity. Common use cases include:
+
+* **Auditing and compliance**: Store workflow events in an external database to maintain a full record of workflow executions, step results, and failures.
+* **External notifications**: Send alerts (e.g., via email or messaging systems) when specific events occur, such as step failures or workflow completion.
+* **Monitoring and metrics**: Feed workflow event data into monitoring systems to track execution rates, failure rates, and step durations.

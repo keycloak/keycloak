@@ -10,9 +10,9 @@ const NewClientPolicy = lazy(() => import("../NewClientPolicy"));
 export const AddClientPolicyRoute: AppRouteObject = {
   path: "/:realm/realm-settings/client-policies/policies/add-client-policy",
   element: <NewClientPolicy />,
-  breadcrumb: (t) => t("createPolicy"),
   handle: {
     access: "manage-clients",
+    breadcrumb: (t) => t("createPolicy"),
   },
 };
 

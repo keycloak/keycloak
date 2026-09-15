@@ -228,7 +228,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
         }
 
         if (!errors.isEmpty()) {
-            processor.logFailure();
+            processor.logFailure(null);
             List<FormMessage> messages = new LinkedList<>();
             Set<String> fields = new HashSet<>();
             for (ValidationContextImpl v : errors) {

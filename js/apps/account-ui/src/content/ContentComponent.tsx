@@ -21,7 +21,10 @@ function findComponent(
       return item.modulePath;
     }
     if ("children" in item) {
-      return findComponent(item.children, componentId);
+      const modulePath = findComponent(item.children, componentId);
+      if (modulePath) {
+        return modulePath;
+      }
     }
   }
   return undefined;
@@ -39,7 +42,7 @@ export const ContentComponent = () => {
     [content, componentId],
   );
 
-  return modulePath && <Component modulePath={modulePath} />;
+  return modulePath && <Component key={modulePath} modulePath={modulePath} />;
 };
 
 type ComponentProps = {
@@ -50,7 +53,8 @@ const Component = ({ modulePath }: ComponentProps) => {
   const { environment } = useEnvironment();
 
   const Element = lazy(
-    () => import(joinPath(environment.resourceUrl, modulePath)),
+    () =>
+      import(/* @vite-ignore */ joinPath(environment.resourceUrl, modulePath)),
   );
   return (
     <Suspense fallback={<Spinner />}>

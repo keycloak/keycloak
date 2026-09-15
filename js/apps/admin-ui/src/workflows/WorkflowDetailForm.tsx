@@ -104,7 +104,7 @@ export default function WorkflowDetailForm() {
         yaml: data.workflowYAML,
       });
       addAlert(t("workflowCreated"), AlertVariant.success);
-      navigate(toWorkflows({ realm }));
+      void navigate(toWorkflows({ realm }));
     } catch (error) {
       addError("workflowCreateError", error);
     }
@@ -171,6 +171,7 @@ export default function WorkflowDetailForm() {
                 data-testid="save"
                 allowInvalid
                 allowNonDirty
+                isDisabled={mode === "create" && !form.formState.isDirty}
               >
                 {mode === "update" ? t("save") : t("create")}
               </FormSubmitButton>

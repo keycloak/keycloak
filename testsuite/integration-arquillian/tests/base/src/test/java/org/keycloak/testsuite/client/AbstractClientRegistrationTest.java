@@ -39,6 +39,7 @@ import org.junit.Before;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Deprecated(forRemoval = true)
 public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTest {
 
     static final String REALM_NAME = "test";

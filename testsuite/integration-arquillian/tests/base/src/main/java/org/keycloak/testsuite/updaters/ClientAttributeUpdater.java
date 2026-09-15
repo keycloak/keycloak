@@ -155,6 +155,11 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
         return this;
     }
 
+    public ClientAttributeUpdater setBaseUrl(String baseUrl) {
+        rep.setBaseUrl(baseUrl);
+        return this;
+    }
+
     public ClientAttributeUpdater addDefaultClientScope(String clientScope) {
         rep.getDefaultClientScopes().add(clientScope);
         return this;

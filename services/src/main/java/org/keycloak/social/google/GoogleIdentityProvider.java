@@ -19,11 +19,9 @@ package org.keycloak.social.google;
 import java.util.List;
 
 import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.OAuth2Constants;
-import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.provider.AuthenticationRequest;
@@ -32,26 +30,25 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.services.ErrorResponseException;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
+
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class GoogleIdentityProvider extends OIDCIdentityProvider implements SocialIdentityProvider<OIDCIdentityProviderConfig> {
 
+    public static final String ISSUER_URL = "https://accounts.google.com";
     public static final String AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
     public static final String TOKEN_URL = "https://oauth2.googleapis.com/token";
     public static final String PROFILE_URL = "https://openidconnect.googleapis.com/v1/userinfo";
     public static final String TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo";
+    public static final String JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs";
     public static final String DEFAULT_SCOPE = "openid profile email";
 
     private static final String OIDC_PARAMETER_HOSTED_DOMAINS = "hd";
@@ -63,6 +60,10 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
         config.setAuthorizationUrl(AUTH_URL);
         config.setTokenUrl(TOKEN_URL);
         config.setUserInfoUrl(PROFILE_URL);
+        getConfig().setUseJwksUrl(true);
+        getConfig().setJwksUrl(JWKS_URL);
+        getConfig().setIssuer(ISSUER_URL);
+        getConfig().setAllowClientIdAsAudience(true);
     }
 
     @Override
@@ -98,30 +99,11 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
 
 
     @Override
-    protected BrokeredIdentityContext exchangeExternalTokenV1Impl(EventBuilder event, MultivaluedMap<String, String> params) {
-        return exchangeExternalUserInfoValidationOnly(event, params);
-    }
-
-    @Override
-    protected BrokeredIdentityContext exchangeExternalTokenV2Impl(TokenExchangeContext tokenExchangeContext) {
-        try {
-            JsonNode tokenInfo = SimpleHttp.create(session).doGet(TOKEN_INFO_URL)
-                    .header("Authorization", "Bearer " + tokenExchangeContext.getParams().getSubjectToken())
-                    .asJson();
-            if (tokenInfo == null || !tokenInfo.has(JsonWebToken.AUD) || !tokenInfo.get(JsonWebToken.AUD).asText().equals(getConfig().getClientId())) {
-                logger.tracef("Invalid response or unmatching audience from the token-info endpoint from Google. Expected audience '%s' . Token info response: %s", getConfig().getClientId(), tokenInfo);
-                EventBuilder event = tokenExchangeContext.getEvent();
-                event.detail(Details.REASON, "Google token validation failed");
-                event.error(Errors.INVALID_TOKEN);
-                throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Google token validation failed", Response.Status.BAD_REQUEST);
-            }
-        } catch (ErrorResponseException ere) {
-            throw ere;
-        } catch (Exception e) {
-            throw new IdentityBrokerException("Could not verify token info from google.", e);
-        }
-
-        return exchangeExternalUserInfoValidationOnly(tokenExchangeContext.getEvent(), tokenExchangeContext.getFormParams());
+    protected BrokeredIdentityContext exchangeExternalImpl(EventBuilder event, MultivaluedMap<String, String> params) {
+        BrokeredIdentityContext context = exchangeExternalUserInfoValidationOnly(event, params);
+        JsonNode profile = (JsonNode) context.getContextData().get(USER_INFO);
+        validateHostedDomain(getJsonProperty(profile, OIDC_PARAMETER_HOSTED_DOMAINS));
+        return context;
     }
 
     @Override
@@ -144,24 +126,24 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     @Override
     protected JsonWebToken validateToken(final String encodedToken, final boolean ignoreAudience) {
         JsonWebToken token = super.validateToken(encodedToken, ignoreAudience);
-        String hostedDomain = ((GoogleIdentityProviderConfig) getConfig()).getHostedDomain();
-        boolean anyHostedDomain = hostedDomain == null || "*".equals(hostedDomain);
-
-        if (anyHostedDomain) {
-            return token;
-        }
-
         Object receivedHdParam = token.getOtherClaims().get(OIDC_PARAMETER_HOSTED_DOMAINS);
+        validateHostedDomain(receivedHdParam != null ? receivedHdParam.toString() : null);
+        return token;
+    }
 
-        if (receivedHdParam == null) {
-            throw new IdentityBrokerException("Identity token does not contain hosted domain parameter.");
+    private void validateHostedDomain(String receivedHd) {
+        String hostedDomain = ((GoogleIdentityProviderConfig) getConfig()).getHostedDomain();
+        if (hostedDomain == null || "*".equals(hostedDomain)) {
+            return;
         }
-
-        if (List.of(hostedDomain.split(",")).contains(receivedHdParam))  {
-            return token;
+        if (receivedHd != null && List.of(hostedDomain.split(",")).contains(receivedHd)) {
+            return;
         }
-
         throw new IdentityBrokerException("Hosted domain does not match.");
     }
 
+    @Override
+    public boolean isAssertionReuseAllowed() {
+        return true;
+    }
 }

@@ -26,7 +26,7 @@ import org.infinispan.remoting.transport.Transport;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.NODE_PREFIX;
 
-public record NodeInfo(String nodeName, String siteName) {
+public record NodeInfo(String nodeName, String siteName, String clusterName) {
 
     public NodeInfo {
         Objects.requireNonNull(nodeName);
@@ -35,21 +35,20 @@ public record NodeInfo(String nodeName, String siteName) {
     public static NodeInfo of(EmbeddedCacheManager cacheManager) {
         var transportConfig = cacheManager.getCacheManagerConfiguration().transport();
         var nodeName = transportConfig.nodeName();
+        var clusterName = transportConfig.clusterName();
 
         if (nodeName != null) {
-            // user configured a node name, use it.
-            return new NodeInfo(nodeName, transportConfig.siteId());
+            return new NodeInfo(nodeName, transportConfig.siteId(), clusterName);
         }
 
         var transport = GlobalComponentRegistry.componentOf(cacheManager, Transport.class);
-        // if we have a cluster, use the node name from JGroups; otherwise generate a random name.
         nodeName = transport == null ?
                 NODE_PREFIX + ThreadLocalRandom.current().nextInt(1000000) :
                 transport.localNodeName();
-        return new NodeInfo(nodeName, transportConfig.siteId());
+        return new NodeInfo(nodeName, transportConfig.siteId(), clusterName);
     }
 
     public String printInfo() {
-        return "Node name: %s, Site name: %s".formatted(nodeName, siteName);
+        return "Node name: %s, Site name: %s, Cluster name: %s".formatted(nodeName, siteName, clusterName);
     }
 }

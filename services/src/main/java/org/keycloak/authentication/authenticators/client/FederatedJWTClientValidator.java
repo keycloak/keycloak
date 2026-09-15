@@ -12,12 +12,15 @@ public class FederatedJWTClientValidator extends AbstractJWTClientValidator {
     private final int allowedClockSkew;
     private final boolean reusePermitted;
     private int maximumExpirationTime = 300;
+    private final List<String> validAudiences;
 
-    public FederatedJWTClientValidator(ClientAuthenticationFlowContext context, SignatureValidator signatureValidator, String expectedTokenIssuer, int allowedClockSkew, boolean reusePermitted) throws Exception {
+    public FederatedJWTClientValidator(ClientAuthenticationFlowContext context, SignatureValidator signatureValidator,
+            String expectedTokenIssuer, int allowedClockSkew, boolean reusePermitted, String... validAudiences) throws Exception {
         super(context, signatureValidator, null);
         this.expectedTokenIssuer = expectedTokenIssuer;
         this.allowedClockSkew = allowedClockSkew;
         this.reusePermitted = reusePermitted;
+        this.validAudiences = validAudiences == null ? Collections.emptyList() : List.of(validAudiences);
     }
 
     @Override
@@ -27,7 +30,9 @@ public class FederatedJWTClientValidator extends AbstractJWTClientValidator {
 
     @Override
     protected List<String> getExpectedAudiences() {
-        return Collections.singletonList(Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName()));
+        return validAudiences.isEmpty()
+                ? List.of(Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName()))
+                : validAudiences;
     }
 
     @Override

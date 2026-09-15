@@ -3,6 +3,7 @@ package org.keycloak.testframework.injection;
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -12,14 +13,15 @@ public class InstanceContext<T, A extends Annotation> {
     private final Registry registry;
     private final Supplier<T, A> supplier;
     private final A annotation;
-    private final Set<InstanceContext<?, ?>> dependencies = new HashSet<>();
+    private final Set<InstanceContext<?, ?>> dependents = new HashSet<>();
     private T value;
     private Class<? extends T> requestedValueType;
     private LifeCycle lifeCycle;
     private final String ref;
     private final Map<String, Object> notes = new HashMap<>();
+    private final List<Dependency> declaredDependencies;
 
-    public InstanceContext(int instanceId, Registry registry, Supplier<T, A> supplier, A annotation, Class<? extends T> requestedValueType) {
+    public InstanceContext(int instanceId, Registry registry, Supplier<T, A> supplier, A annotation, Class<? extends T> requestedValueType, List<Dependency> declaredDependencies) {
         this.instanceId = instanceId != -1 ? instanceId : hashCode();
         this.registry = registry;
         this.supplier = supplier;
@@ -27,6 +29,7 @@ public class InstanceContext<T, A extends Annotation> {
         this.requestedValueType = requestedValueType;
         this.lifeCycle = supplier.getLifeCycle(annotation);
         this.ref = StringUtil.convertEmptyToNull(supplier.getRef(annotation));
+        this.declaredDependencies = declaredDependencies;
     }
 
     public int getInstanceId() {
@@ -73,12 +76,16 @@ public class InstanceContext<T, A extends Annotation> {
         return annotation;
     }
 
-    public Set<InstanceContext<?, ?>> getDependencies() {
-        return dependencies;
+    public Set<InstanceContext<?, ?>> getDependents() {
+        return dependents;
     }
 
-    public void registerDependency(InstanceContext<?, ?> instanceContext) {
-        dependencies.add(instanceContext);
+    public List<Dependency> getDeclaredDependencies() {
+        return declaredDependencies;
+    }
+
+    public void registerDependent(InstanceContext<?, ?> instanceContext) {
+        dependents.add(instanceContext);
     }
 
     public void addNote(String key, Object value) {

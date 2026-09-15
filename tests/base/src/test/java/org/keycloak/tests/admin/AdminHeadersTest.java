@@ -32,6 +32,7 @@ public class AdminHeadersTest {
         assertDefaultValue(BrowserSecurityHeaders.X_FRAME_OPTIONS, h);
         assertDefaultValue(BrowserSecurityHeaders.X_CONTENT_TYPE_OPTIONS, h);
         assertDefaultValue(BrowserSecurityHeaders.REFERRER_POLICY, h);
+        assertDefaultValue(BrowserSecurityHeaders.X_ROBOTS_TAG, h);
 
         response.close();
     }

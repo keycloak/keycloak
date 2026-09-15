@@ -68,7 +68,10 @@ public class PublicKeyStorageManager {
     public static KeyWrapper getIdentityProviderKeyWrapper(KeycloakSession session, RealmModel realm, JWTAuthorizationGrantConfig idpConfig, JWSInput input) {
         String kid = input.getHeader().getKeyId();
         String alg = input.getHeader().getRawAlgorithm();
+        return getIdentityProviderKeyWrapper(session, realm, idpConfig, kid, alg);
+    }
 
+    public static KeyWrapper getIdentityProviderKeyWrapper(KeycloakSession session, RealmModel realm, JWTAuthorizationGrantConfig idpConfig, String kid, String alg) {
         PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
 
         String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(realm.getId(), idpConfig.getInternalId());

@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 set -euxo pipefail
 
 UUID=${1:-$(git rev-parse --short HEAD)}
@@ -17,7 +17,7 @@ VERSION="86400000.0.0"
 (
   cd $SCRIPT_DIR/../../quarkus/container
   
-  docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t "$REGISTRY/${UUID}keycloak:${VERSION}"
+  docker build --ulimit nofile=1024000 --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t "$REGISTRY/${UUID}keycloak:${VERSION}"
   docker push "$REGISTRY/${UUID}keycloak:${VERSION}"
 )
 

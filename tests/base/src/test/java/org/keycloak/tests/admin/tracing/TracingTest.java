@@ -22,6 +22,18 @@ public class TracingTest {
     RunOnServerClient runOnServer;
 
     @Test
+    public void tracedHttpClientProviderCanBeCreated() {
+        runOnServer.run(session -> {
+            var provider = session.getProvider(HttpClientProvider.class);
+            assertThat(provider, notNullValue());
+            assertThat(provider.getHttpClient(), notNullValue());
+
+            var factory = session.getKeycloakSessionFactory().getProviderFactory(HttpClientProvider.class);
+            assertThat(factory instanceof OTelHttpClientFactory, is(true));
+        });
+    }
+
+    @Test
     public void defaultSettingsIsUsed() {
         runOnServer.run(session -> {
             var defaultFactory = session.getKeycloakSessionFactory().getProviderFactory(HttpClientProvider.class, "default");

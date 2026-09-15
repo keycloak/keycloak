@@ -9,6 +9,8 @@ objectClass: organizationalUnit
 objectClass: top
 ou: People
 
+# Kerby's LdapIdentityGetHelper requires krb5AccountDisabled, krb5AccountLockedOut,
+# krb5AccountExpirationTime, and krb5KDCFlags on each entry — NPEs without them.
 dn: uid=krbtgt,ou=People,dc=kc2,dc=com
 objectClass: top
 objectClass: person
@@ -21,6 +23,10 @@ uid: krbtgt
 userPassword: secret
 krb5PrincipalName: krbtgt/KC2.COM@KC2.COM
 krb5KeyVersionNumber: 0
+krb5AccountDisabled: FALSE
+krb5AccountLockedOut: FALSE
+krb5AccountExpirationTime: 99991231235959Z
+krb5KDCFlags: 126
 
 # Cross-realm trust support! Realm KEYCLOAK.ORG will trust the realm KC2.COM
 dn: uid=krbtgt2,ou=People,dc=kc2,dc=com
@@ -35,6 +41,10 @@ uid: krbtgt2
 userPassword: secret
 krb5PrincipalName: krbtgt/KEYCLOAK.ORG@KC2.COM
 krb5KeyVersionNumber: 0
+krb5AccountDisabled: FALSE
+krb5AccountLockedOut: FALSE
+krb5AccountExpirationTime: 99991231235959Z
+krb5KDCFlags: 126
 
 dn: uid=ldap,ou=People,dc=kc2,dc=com
 objectClass: top
@@ -48,6 +58,10 @@ uid: ldap
 userPassword: randall
 krb5PrincipalName: ${ldapSaslPrincipal}
 krb5KeyVersionNumber: 0
+krb5AccountDisabled: FALSE
+krb5AccountLockedOut: FALSE
+krb5AccountExpirationTime: 99991231235959Z
+krb5KDCFlags: 126
 
 dn: uid=HTTP,ou=People,dc=kc2,dc=com
 objectClass: top
@@ -61,6 +75,10 @@ uid: HTTP
 userPassword: httppwd
 krb5PrincipalName: HTTP/${hostname}@KC2.COM
 krb5KeyVersionNumber: 0
+krb5AccountDisabled: FALSE
+krb5AccountLockedOut: FALSE
+krb5AccountExpirationTime: 99991231235959Z
+krb5KDCFlags: 126
 
 dn: uid=hnelson2,ou=People,dc=kc2,dc=com
 objectClass: top
@@ -75,6 +93,10 @@ uid: hnelson2
 userPassword: secret
 krb5PrincipalName: hnelson2@KC2.COM
 krb5KeyVersionNumber: 0
+krb5AccountDisabled: FALSE
+krb5AccountLockedOut: FALSE
+krb5AccountExpirationTime: 99991231235959Z
+krb5KDCFlags: 126
 
 dn: uid=jduke,ou=People,dc=kc2,dc=com
 objectClass: top
@@ -89,6 +111,10 @@ uid: jduke
 userPassword: theduke
 krb5PrincipalName: jdukekeycloak@KC2.COM
 krb5KeyVersionNumber: 0
+krb5AccountDisabled: FALSE
+krb5AccountLockedOut: FALSE
+krb5AccountExpirationTime: 99991231235959Z
+krb5KDCFlags: 126
 
 dn: uid=jduke2,ou=People,dc=kc2,dc=com
 objectClass: top
@@ -103,6 +129,10 @@ uid: jduke2
 userPassword: theduke2
 krb5PrincipalName: jduke@KC2.COM
 krb5KeyVersionNumber: 0
+krb5AccountDisabled: FALSE
+krb5AccountLockedOut: FALSE
+krb5AccountExpirationTime: 99991231235959Z
+krb5KDCFlags: 126
 
 dn: uid=gsstestserver,ou=People,dc=kc2,dc=com
 objectClass: top
@@ -116,3 +146,7 @@ uid: gsstestserver
 userPassword: gsstestpwd
 krb5PrincipalName: gsstestserver/xxx@KC2.COM
 krb5KeyVersionNumber: 0
+krb5AccountDisabled: FALSE
+krb5AccountLockedOut: FALSE
+krb5AccountExpirationTime: 99991231235959Z
+krb5KDCFlags: 126

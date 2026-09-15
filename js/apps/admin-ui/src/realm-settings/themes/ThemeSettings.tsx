@@ -57,6 +57,7 @@ export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
               themeTypes.login.map((theme) => ({
                 key: theme.name,
                 value: theme.name,
+                description: theme.description,
               })),
             )}
           />
@@ -71,6 +72,7 @@ export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
               themeTypes.account.map((theme) => ({
                 key: theme.name,
                 value: theme.name,
+                description: theme.description,
               })),
             )}
           />
@@ -85,6 +87,7 @@ export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
               themeTypes.admin.map((theme) => ({
                 key: theme.name,
                 value: theme.name,
+                description: theme.description,
               })),
             )}
           />
@@ -99,6 +102,7 @@ export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
               themeTypes.email.map((theme) => ({
                 key: theme.name,
                 value: theme.name,
+                description: theme.description,
               })),
             )}
           />

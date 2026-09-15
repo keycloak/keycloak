@@ -136,7 +136,7 @@ export default function EditClientScope() {
       try {
         await adminClient.clientScopes.del({ id });
         addAlert(t("deletedSuccessClientScope"), AlertVariant.success);
-        navigate(toClientScopes({ realm }));
+        void navigate(toClientScopes({ realm }));
       } catch (error) {
         addError("deleteErrorClientScope", error);
       }
@@ -179,7 +179,7 @@ export default function EditClientScope() {
   ): Promise<void> => {
     if (!Array.isArray(mappers)) {
       const mapper = mappers as ProtocolMapperTypeRepresentation;
-      navigate(
+      void navigate(
         toMapper({
           realm,
           id: clientScope!.id!,
@@ -288,7 +288,7 @@ export default function EditClientScope() {
               save={assignRoles}
             />
           </Tab>
-          {realmRepresentation?.adminEventsEnabled &&
+          {realmRepresentation.adminEventsEnabled &&
             hasAccess("view-events") && (
               <Tab
                 data-testid="admin-events-tab"

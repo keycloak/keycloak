@@ -20,9 +20,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
@@ -161,6 +164,20 @@ public interface OrganizationProvider extends Provider {
     boolean addMember(OrganizationModel organization, UserModel user);
 
     /**
+     * Updates the membership type of an existing member of the given {@link OrganizationModel}.
+     *
+     * <p>Returns {@code true} if the member exists and the operation was handled successfully,
+     * including the idempotent case where the membership type is already the requested value.
+     * Returns {@code false} only if the user is not a member of the organization.
+     *
+     * @param organization the organization
+     * @param member the member
+     * @param membershipType the new membership type
+     * @return {@code true} if the member exists and the operation succeeded. Otherwise, returns {@code false}
+     */
+    boolean updateMembershipType(OrganizationModel organization, UserModel member, MembershipType membershipType);
+
+    /**
      * Returns the members of a given {@link OrganizationModel} filtered according to the specified parameters.
      *
      * @param organization the organization
@@ -212,22 +229,189 @@ public interface OrganizationProvider extends Provider {
     Stream<OrganizationModel> getByMember(UserModel member);
 
     /**
-     * Associate the given {@link IdentityProviderModel} with the given {@link OrganizationModel}.
+     * Creates a new group within the given {@link OrganizationModel}.
+     * The internal ID of the group will be created automatically.
+     * The created group will be of type {@link org.keycloak.models.GroupModel.Type#ORGANIZATION}.
+     * If {@code toParent} is {@code null}, the group will be created as a top-level organization group,
+     * as a direct child of the organization's internal group structure.
+     * If {@code toParent} is provided, the group will be created as a subgroup of the specified parent.
+     *
+     * @param organization the organization to create the group in
+     * @param name the name of the group to create
+     * @param toParent the parent group under which to create the new group. If {@code null},
+     *                 the group is created as a top-level organization group. If provided, must be
+     *                 an organization group (type {@link org.keycloak.models.GroupModel.Type#ORGANIZATION})
+     *                 belonging to the same organization.
+     * @return the newly created {@link GroupModel}
+     * @throws ModelException if {@code organization} or {@code name} is {@code null}
+     * @throws ModelValidationException if {@code toParent} is not an organization group or does not
+     *                                  belong to the specified organization
+     */
+    default GroupModel createGroup(OrganizationModel organization, String name, GroupModel toParent) {
+        return createGroup(organization, null, name, toParent);
+    }
+
+    /**
+     * Creates a new group with the given {@code id} within the given {@link OrganizationModel}.
+     * The created group will be of type {@link org.keycloak.models.GroupModel.Type#ORGANIZATION}.
+     * If {@code toParent} is {@code null}, the group will be created as a top-level organization group,
+     * as a direct child of the organization's internal group structure.
+     * If {@code toParent} is provided, the group will be created as a subgroup of the specified parent.
+     *
+     * @param organization the organization to create the group in
+     * @param id the id of the group. If {@code null}, an id will be generated automatically.
+     * @param name the name of the group to create
+     * @param toParent the parent group under which to create the new group. If {@code null},
+     *                 the group is created as a top-level organization group. If provided, must be
+     *                 an organization group (type {@link org.keycloak.models.GroupModel.Type#ORGANIZATION})
+     *                 belonging to the same organization.
+     * @return the newly created {@link GroupModel}
+     * @throws ModelException if {@code organization} or {@code name} is {@code null}
+     * @throws ModelValidationException if {@code toParent} is not an organization group or does not
+     *                                  belong to the specified organization
+     */
+    GroupModel createGroup(OrganizationModel organization, String id, String name, GroupModel toParent);
+
+    /**
+     * Returns the top-level groups of the given {@link OrganizationModel}.
+     *
+     * @param organization the organization
+     * @param firstResult the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param maxResults the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @return Stream of top-level groups in the organization. Never returns {@code null}.
+     */
+    Stream<GroupModel> getTopLevelGroups(OrganizationModel organization, Integer firstResult, Integer maxResults);
+
+    /**
+     * Returns groups of the given {@link OrganizationModel} filtered by group name.
+     *
+     * @param organization the organization
+     * @param search the string to search for in group names. Case-sensitive.
+     * @param exact if {@code true}, the groups will be searched using exact match. If {@code false}, partial match is used.
+     * @param firstResult the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param maxResults the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @return Stream of groups matching the search criteria. Never returns {@code null}.
+     */
+    Stream<GroupModel> searchGroupsByName(OrganizationModel organization, String search, Boolean exact, Integer firstResult, Integer maxResults);
+
+    /**
+     * Returns groups of the given {@link OrganizationModel} filtered by group attributes.
+     *
+     * @param organization the organization
+     * @param attributes a {@code Map} containing the attributes (name/value) that must match group attributes.
+     * @param firstResult the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param maxResults the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @return Stream of groups matching the attribute criteria. Never returns {@code null}.
+     */
+    Stream<GroupModel> searchGroupsByAttributes(OrganizationModel organization, Map<String, String> attributes, Integer firstResult, Integer maxResults);
+
+    /**
+     * Returns all organization groups that the given {@code member} explicitly belongs to within the given {@code organization}.
+     * Only returns groups of type {@link org.keycloak.models.GroupModel.Type#ORGANIZATION} that belong to the specified organization.
+     *
+     * @param organization the organization whose groups to check
+     * @param member the user whose group memberships to retrieve
+     * @return Stream of organization groups the member belongs to. Never returns {@code null}.
+     */
+    Stream<GroupModel> getOrganizationGroupsByMember(OrganizationModel organization, UserModel member);
+
+    /**
+     * Returns organization groups that the given {@code member} explicitly belongs to within the given {@code organization},
+     * with pagination and search support.
+     * Only returns groups of type {@link org.keycloak.models.GroupModel.Type#ORGANIZATION} that belong to the specified organization.
+     *
+     * @param organization the organization whose groups to check
+     * @param member the user whose group memberships to retrieve
+     * @param search a case-insensitive search string to filter groups by name. If {@code null} or blank, no filtering is applied.
+     * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @return Stream of organization groups the member belongs to. Never returns {@code null}.
+     */
+    Stream<GroupModel> getOrganizationGroupsByMember(OrganizationModel organization, UserModel member, String search, Integer first, Integer max);
+
+    /**
+     * Returns the internal organization group for the given {@link OrganizationModel}.
+     * The internal group is a special group with the same name as the organization's ID,
+     * used as the root of the organization's group hierarchy.
+     *
+     * @param organization the organization
+     * @return the internal organization group
+     * @throws org.keycloak.models.ModelException if the organization or its internal group is not found
+     */
+    GroupModel getOrganizationGroup(OrganizationModel organization);
+
+    /**
+     * Associates the given {@link IdentityProviderModel} with the given {@link OrganizationModel}
+     * using default config (autoMembership=true, membershipType=UNMANAGED).
+     *
+     * <p>A single identity provider can be linked to multiple organizations, if the identity provider is
+     * already associated with this organization, the call is rejected. If it is associated with a different
+     * organization, the new link is created alongside the existing one.
+     *
+     * @param organization the organization
+     * @param identityProvider the identity provider
+     * @return {@code true} if the identity provider was associated with the organization. Otherwise, returns {@code false}
+     */
+    default boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider) {
+        return addIdentityProvider(organization, identityProvider, true, MembershipType.UNMANAGED);
+    }
+
+    /**
+     * Associate the given {@link IdentityProviderModel} with the given {@link OrganizationModel}
+     * using the specified per-association config.
+     *
+     * <p>A single identity provider can be linked to multiple organizations, if the identity provider is
+     * already associated with this organization, the call is rejected. If it is associated with a different
+     * organization, the new link is created alongside the existing one.
      *
      * @param organization the organization
      * @param identityProvider the identityProvider
+     * @param autoMembership whether users authenticating via this IdP should be auto-added to the organization
+     * @param membershipType the membership type for auto-added members
      * @return {@code true} if the identityProvider was associated with the organization. Otherwise, returns {@code false}
+     * @throws ModelValidationException if the config violates validation rules
      */
-    boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider);
+    boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                boolean autoMembership, MembershipType membershipType);
 
     /**
+     * Returns the per-association config for the link between the given organization and identity provider.
+     *
      * @param organization the organization
-     * @return Stream of the identity providers associated with the given {@code organization}. Never returns {@code null}.
+     * @param identityProvider the identity provider
+     * @return the link config, or {@code null} if no link exists
+     */
+    OrganizationIdentityProviderLinkModel getIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider);
+
+    /**
+     * Updates the per-association config on an existing link between the organization and identity provider.
+     *
+     * @param organization the organization
+     * @param identityProvider the identity provider
+     * @param autoMembership whether users authenticating via this IdP should be auto-added to the organization
+     * @param membershipType the membership type for auto-added members
+     * @throws ModelValidationException if the config violates validation rules
+     * @throws ModelException if no link exists between the organization and identity provider
+     */
+    void updateIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                    boolean autoMembership, MembershipType membershipType);
+
+    /**
+     * Returns all identity providers associated with the given organization.
+     *
+     * <p>Because the IdP-to-org relationship is many-to-many, the returned providers may also be linked
+     * to other organizations.
+     *
+     * @param organization the organization
+     * @return a stream of identity providers associated with the given {@code organization}; never {@code null}
      */
     Stream<IdentityProviderModel> getIdentityProviders(OrganizationModel organization);
 
     /**
-     * Removes the link between the given {@link OrganizationModel} and the identity provider associated with it if such a link exists.
+     * Removes the link between the given {@link OrganizationModel} and the given {@link IdentityProviderModel}.
+     *
+     * <p>Only the association is removed — the identity provider itself is not deleted from the realm and may
+     * remain linked to other organizations.
      *
      * @param organization the organization
      * @param identityProvider the identity provider
@@ -291,14 +475,16 @@ public interface OrganizationProvider extends Provider {
     long count();
 
     /**
-     * Returns an {@link OrganizationModel} with the given {@code alias}.
+     * <p>Returns an {@link OrganizationModel} with the given {@code alias}.
+     *
+     * <p>Like {@link #getById(String)} and {@link #getByDomainName(String)}, this is a lookup of a single, known
+     * organization and is not subject to fine-grained admin permissions. Callers running in an administrative context
+     * are expected to check access to the returned organization themselves.
      *
      * @param alias the alias
      * @return the organization
      */
-    default OrganizationModel getByAlias(String alias) {
-        return getAllStream(Map.of(OrganizationModel.ALIAS, alias), 0, 1).findAny().orElse(null);
-    }
+    OrganizationModel getByAlias(String alias);
 
     /**
      * Returns a {@link InvitationManager} for managing invitations
@@ -306,4 +492,13 @@ public interface OrganizationProvider extends Provider {
      * @return the invitation manager
      */
     InvitationManager getInvitationManager();
+
+    /**
+     * Used to provide an optimized check if any organization exists in the realm.
+     *
+     * @return true if any organization exists in the realm
+     */
+    default boolean hasOrganizations() {
+        return count() > 0;
+    }
 }

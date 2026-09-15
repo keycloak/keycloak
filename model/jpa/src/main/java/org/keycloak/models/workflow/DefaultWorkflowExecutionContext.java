@@ -5,19 +5,15 @@ import java.util.UUID;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 
-import org.jboss.logging.Logger;
-
 final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext {
-
-    private static final Logger log = Logger.getLogger(DefaultWorkflowExecutionContext.class);
 
     private final String resourceId;
     private final String executionId;
     private final Workflow workflow;
     private final WorkflowEvent event;
     private final KeycloakSession session;
-    private WorkflowStep currentStep;
-    private boolean restarted;
+    private final WorkflowStep step;
+    private Integer restartPosition;
 
     /**
      * A new execution context for a workflow event. The execution ID is randomly generated.
@@ -30,37 +26,58 @@ final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext 
     }
 
     /**
-     * A new execution context for a workflow event, resuming a previously scheduled step. The execution ID is taken from the scheduled step
-     * with no current step, indicating that the workflow is being restarted due to an event.
+     * A new execution context for a workflow event. The execution ID is provided as a parameter
      *
      * @param workflow the workflow
      * @param event the event
-     * @param step the scheduled step
+     * @param executionId the execution ID
      */
-    DefaultWorkflowExecutionContext(KeycloakSession session, Workflow workflow, WorkflowEvent event, ScheduledStep step) {
-        this(session, workflow, event, null, step.executionId(), event.getResourceId());
+    DefaultWorkflowExecutionContext(KeycloakSession session, Workflow workflow, WorkflowEvent event, String executionId) {
+        this(session, workflow, event, null, executionId, event.getResourceId());
     }
 
     /**
-     * A execution context for a scheduled step, resuming the workflow from that step. The execution ID is taken from the scheduled step.
+     * An execution context for a scheduled step, resuming the workflow from that step. The execution ID and resource ID are
+     * taken from the scheduled step.
      *
      * @param session the session
      * @param workflow the workflow
      * @param step the scheduled step
      */
     DefaultWorkflowExecutionContext(KeycloakSession session, Workflow workflow, ScheduledStep step) {
-        this(session, workflow, null, step, step.executionId(), step.resourceId());
+        this(session, workflow, null, step.stepId(), step.executionId(), step.resourceId());
     }
 
-    private DefaultWorkflowExecutionContext(KeycloakSession session, Workflow workflow, WorkflowEvent event, ScheduledStep step, String executionId, String resourceId) {
+    /**
+     * A copy constructor that creates a new execution context based on an existing one but bound to a different {@link KeycloakSession}.
+
+     * @param session the session
+     * @param context the existing context
+     */
+    DefaultWorkflowExecutionContext(KeycloakSession session, DefaultWorkflowExecutionContext context) {
+        this(session, new Workflow(session, context.getWorkflow()), context.getEvent(), context.getCurrentStepId(), context.getExecutionId(), context.getResourceId());
+    }
+
+    /**
+     * A copy constructor that creates a new execution context based on an existing one but bound to a different {@link KeycloakSession} and the given {@link WorkflowStep}.
+
+     * @param session the session
+     * @param context the existing context
+     * @param step the current step
+     */
+    DefaultWorkflowExecutionContext(KeycloakSession session, DefaultWorkflowExecutionContext context, WorkflowStep step) {
+        this(session, new Workflow(session, context.getWorkflow()), context.getEvent(), step.getId(), context.getExecutionId(), context.getResourceId());
+    }
+
+    private DefaultWorkflowExecutionContext(KeycloakSession session, Workflow workflow, WorkflowEvent event, String stepId, String executionId, String resourceId) {
         this.session = session;
         this.workflow = workflow;
         this.event = event;
 
-        if (step != null) {
-            this.currentStep = workflow.getStepById(step.stepId());
+        if (stepId != null) {
+            this.step = workflow.getStepById(stepId);
         } else {
-            this.currentStep = null;
+            this.step = null;
         }
 
         this.executionId = executionId;
@@ -77,6 +94,15 @@ final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext 
         return event;
     }
 
+    @Override
+    public WorkflowStep getNextStep() {
+        if (restartPosition != null) {
+            // we are restarting the workflow, so we ignore the current step and return the step at the restart position
+            return workflow.getSteps().skip(restartPosition).findFirst().orElse(null);
+        }
+        return workflow.getSteps(step.getId()).skip(1).findFirst().orElse(null);
+    }
+
     String getExecutionId() {
         return this.executionId;
     }
@@ -85,27 +111,19 @@ final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext 
         return workflow;
     }
 
-    WorkflowStep getCurrentStep() {
-        return currentStep;
+    WorkflowStep getStep() {
+        return step;
     }
 
-    void setCurrentStep(WorkflowStep step) {
-        this.currentStep = step;
-    }
-
-    boolean isRestarted() {
-        return this.restarted;
-    }
-
-    void restart() {
-        log.debugf("Restarting workflow '%s' for resource %s (execution id: %s)", workflow.getName(), resourceId, executionId);
-        this.restarted = false;
-        this.currentStep = null;
-        new RunWorkflowTask(this).run(session);
-        this.restarted = true;
+    void restart(int position) {
+        this.restartPosition = position;
     }
 
     KeycloakSession getSession() {
         return session;
+    }
+
+    private String getCurrentStepId() {
+        return step != null ? step.getId() : null;
     }
 }

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.keycloak.protocol.docker.DockerAuthV2Protocol;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -19,10 +18,11 @@ public final class DockerTestRealmSetup {
 
     public static RealmRepresentation createRealm(final String realmId) {
         final RealmRepresentation createdRealm = new RealmRepresentation();
-        createdRealm.setId(UUID.randomUUID().toString());
+        createdRealm.setId(realmId);
         createdRealm.setRealm(realmId);
         createdRealm.setEnabled(true);
         createdRealm.setAuthenticatorConfig(new ArrayList<>());
+        createdRealm.setEventsListeners(List.of("jboss-logging", "event-queue"));
 
         return createdRealm;
     }

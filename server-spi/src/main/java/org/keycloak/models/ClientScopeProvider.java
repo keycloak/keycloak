@@ -85,6 +85,21 @@ public interface ClientScopeProvider extends Provider, ClientScopeLookupProvider
     Stream<ClientScopeModel> getClientScopesByProtocol(RealmModel realm, String protocol);
 
     /**
+     * Retrieves all client scopes of the given realm that use the given protocol while holding a realm-scoped
+     * transactional lock. Concurrent callers for the same realm must be serialized until the current transaction
+     * completes, including when no matching client scopes exist.
+     * The default implementation performs an unlocked query for compatibility; transactional persistence providers
+     * must override it to provide the locking guarantee.
+     *
+     * @param realm the realm to retrieve the client scopes from
+     * @param protocol the protocol expected from the client scopes
+     * @return stream of client scopes reflecting the latest committed state
+     */
+    default Stream<ClientScopeModel> getClientScopesByProtocolForUpdate(RealmModel realm, String protocol) {
+        return getClientScopesByProtocol(realm, protocol);
+    }
+
+    /**
      * Allows us to filter for scopes by specific attributes
      *
      * @param realm     Realm.

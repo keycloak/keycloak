@@ -165,6 +165,14 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
     }
 
     @Override
+    public void sendVerifiableCredentialOffer(String link, long expirationInMinutes) throws EmailException {
+        Map<String, Object> attributes = new HashMap<>(this.attributes);
+        addLinkInfoIntoAttributes(link, expirationInMinutes, attributes);
+
+        send("verifiableCredentialOfferSubject", "verifiable-credential-offer.ftl", attributes);
+    }
+
+    @Override
     public void sendVerifyEmail(String link, long expirationInMinutes) throws EmailException {
         Map<String, Object> attributes = new HashMap<>(this.attributes);
         addLinkInfoIntoAttributes(link, expirationInMinutes, attributes);
@@ -245,10 +253,10 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             } catch (ContextNotActiveException e) {
                 log.debug("No active request, can't make url attribute available to the template");
                 // ignore when running without an active request context such as sending emails from an scheduled task
-                // TODO: make it possible to make the URL available to email templates based on the hostname configured in the realm or at the server level
             }
 
             String subject = new MessageFormat(messages.getProperty(subjectKey, subjectKey), locale).format(subjectAttributes.toArray());
+            attributes.put("subject", subject);
             String textTemplate = String.format("text/%s", template);
             String textBody;
             try {
@@ -279,7 +287,14 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         send(subjectFormatKey, subjectAttributes, bodyTemplate, bodyAttributes, null);
     }
 
-    protected void send(String subjectFormatKey, List<Object> subjectAttributes, String bodyTemplate, Map<String, Object> bodyAttributes, String address) throws EmailException {
+    @Override
+    public void send(String subjectFormatKey, String bodyTemplate, Map<String, Object> bodyAttributes, String destinationEmail) throws EmailException {
+        send(subjectFormatKey, Collections.emptyList(), bodyTemplate, bodyAttributes, destinationEmail);
+    }
+
+    @Override
+    public void send(String subjectFormatKey, List<Object> subjectAttributes, String bodyTemplate,
+        Map<String, Object> bodyAttributes, String address) throws EmailException {
         try {
             EmailTemplate email = processTemplate(subjectFormatKey, subjectAttributes, bodyTemplate, bodyAttributes);
             send(email.getSubject(), email.getTextBody(), email.getHtmlBody(), address);

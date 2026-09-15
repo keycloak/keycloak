@@ -17,20 +17,17 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import java.util.Optional;
-
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import io.quarkus.runtime.LaunchMode;
-import io.smallrye.config.ConfigValue;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
-import static org.keycloak.config.ClassLoaderOptions.QUARKUS_REMOVED_ARTIFACTS_PROPERTY;
 import static org.keycloak.config.DatabaseOptions.DB;
 import static org.keycloak.quarkus.runtime.Environment.getHomePath;
 import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
@@ -59,6 +56,8 @@ public final class Build extends AbstractCommand {
 
     public static final String NAME = "build";
 
+    public static final String QUARKUS_REMOVED_ARTIFACTS_PROPERTY = "quarkus.class-loading.removed-artifacts";
+
     @CommandLine.Mixin
     HelpAllMixin helpAllMixin;
 
@@ -70,17 +69,15 @@ public final class Build extends AbstractCommand {
         checkProfileAndDb();
 
         // validate before setting that we're rebuilding so that runtime options are still seen
+        // the validation and setting the artifacts to remove need to be done without the current persisted properties
         PersistedConfigSource.getInstance().runWithDisabled(() -> {
             validateConfig();
+            System.setProperty(QUARKUS_REMOVED_ARTIFACTS_PROPERTY, String.join(",", IgnoredArtifacts.getDefaultIgnoredArtifacts()));
             return null;
         });
-        Environment.setRebuild();
-
         picocli.println("Updating the configuration and installing your custom providers, if any. Please wait.");
 
         try {
-            configureBuildClassLoader();
-
             beforeReaugmentationOnWindows();
             if (!Boolean.TRUE.equals(dryRunMixin.dryRun)) {
                 picocli.build();
@@ -99,13 +96,6 @@ public final class Build extends AbstractCommand {
         }
     }
 
-    private static void configureBuildClassLoader() {
-        // ignored artifacts must be set prior to starting re-augmentation
-        Optional.ofNullable(Configuration.getNonPersistedConfigValue(QUARKUS_REMOVED_ARTIFACTS_PROPERTY))
-                .map(ConfigValue::getValue)
-                .ifPresent(s -> System.setProperty(QUARKUS_REMOVED_ARTIFACTS_PROPERTY, s));
-    }
-
     private void checkProfileAndDb() {
         if (Environment.isDevProfile()) {
             String cmd = picocli.getParsedCommand().map(AbstractCommand::getName).orElse(getName());
@@ -114,7 +104,7 @@ public final class Build extends AbstractCommand {
             if (Start.NAME.equals(cmd) || Build.NAME.equals(cmd)) {
                 executionError(spec.commandLine(), Messages.devProfileNotAllowedError(cmd));
             }
-        } else if (Configuration.getConfigValue(DB).getConfigSourceOrdinal() == 0) {
+        } else if (Configuration.isDefault(Configuration.getConfigValue(DB))) {
             picocli.warn("Usage of the default value for the db option in the production profile is deprecated. Please explicitly set the db instead.");
         }
     }

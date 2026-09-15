@@ -24,49 +24,52 @@ import java.util.function.Function;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.models.OrganizationModel;
-import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAdminTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.broker.BrokerConfiguration;
 import org.keycloak.testsuite.broker.KcOidcBrokerConfiguration;
 import org.keycloak.testsuite.organization.broker.BrokerConfigurationWrapper;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.SelectOrganizationPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.TestCleanup;
 
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Rule;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@Deprecated
 public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
 
     protected String organizationName = "neworg";
@@ -74,6 +77,8 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     protected String memberPassword = "password";
     protected Function<String, BrokerConfiguration> brokerConfigFunction = name -> new BrokerConfigurationWrapper(name, createBrokerConfiguration());
 
+    @Rule
+    public MailServer mail = new MailServer();
 
     @Page
     protected LoginPage loginPage;
@@ -89,9 +94,6 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
 
     @Page
     protected UpdateAccountInformationPage updateAccountInformationPage;
-
-    @Page
-    protected AppPage appPage;
 
     protected BrokerConfiguration bc = brokerConfigFunction.apply(organizationName);
 
@@ -123,7 +125,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     }
 
     protected OrganizationRepresentation createOrganization(String name, String... orgDomains) {
-        return createOrganization(testRealm(), name, orgDomains);
+        return createOrganization(managedRealm.admin(), name, orgDomains);
     }
 
     protected OrganizationRepresentation createOrganization(RealmResource realm, String name, String... orgDomains) {
@@ -133,7 +135,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     protected OrganizationRepresentation createOrganization(String name, boolean isBrokerPublic) {
         IdentityProviderRepresentation broker = brokerConfigFunction.apply(name).setUpIdentityProvider();
         broker.setHideOnLogin(!isBrokerPublic);
-        return createOrganization(testRealm(), getCleanup(), name, broker, name + ".org");
+        return createOrganization(managedRealm.admin(), getCleanup(), name, broker, name + ".org");
     }
 
     protected OrganizationRepresentation createOrganization(RealmResource testRealm, TestCleanup testCleanup, String name,
@@ -146,14 +148,23 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             id = ApiUtil.getCreatedId(response);
         }
 
-        if (orgDomains != null && orgDomains.length > 0) {
-            // set the idp domain to the first domain used to create the org.
-            broker.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomains[0]);
-            broker.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
-        }
         testRealm.identityProviders().create(broker).close();
         testCleanup.addCleanup(testRealm.identityProviders().get(broker.getAlias())::remove);
         testRealm.organizations().get(id).identityProviders().addIdentityProvider(broker.getAlias()).close();
+
+        if (orgDomains != null && orgDomains.length > 0) {
+            org = testRealm.organizations().get(id).toRepresentation();
+            String brokerAlias = broker.getAlias();
+            org.getDomains().stream()
+                    .filter(d -> d.getName().equals(orgDomains[0]))
+                    .findFirst()
+                    .ifPresent(d -> {
+                        d.setIdentityProviderAlias(brokerAlias);
+                        d.setAutoRedirect(true);
+                    });
+            testRealm.organizations().get(id).update(org).close();
+        }
+
         org = testRealm.organizations().get(id).toRepresentation();
         testCleanup.addCleanup(() -> testRealm.organizations().get(id).delete().close());
 
@@ -203,11 +214,11 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             Users.setPasswordFor(expected, memberPassword);
         }
 
-        try (Response response = testRealm().users().create(expected)) {
+        try (Response response = managedRealm.admin().users().create(expected)) {
             expected.setId(ApiUtil.getCreatedId(response));
         }
 
-        getCleanup().addCleanup(() -> testRealm().users().get(expected.getId()).remove());
+        getCleanup().addCleanup(() -> managedRealm.admin().users().get(expected.getId()).remove());
 
         String userId = expected.getId();
 
@@ -240,16 +251,15 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         if (firstTimeLogin) {
             waitForPage(driver, "update account information", false);
             updateAccountInformationPage.assertCurrent();
-            assertTrue("We must be on correct realm right now",
-                    driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+            assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                    "We must be on correct realm right now");
             log.debug("Updating info on updateAccount page");
             assertFalse(driver.getPageSource().contains("kc.org"));
             updateAccountInformationPage.updateAccountInformation(username, email, "Firstname", "Lastname");
         }
 
         if (redirectToApp) {
-            appPage.assertCurrent();
-            assertThat(appPage.getRequestType(), is(AppPage.RequestType.AUTH_RESPONSE));
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         }
 
         List<UserRepresentation> users = realmsResouce().realm(bc.consumerRealmName()).users().search(username, Boolean.TRUE);
@@ -262,7 +272,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     protected void assertIsMember(String userEmail, OrganizationResource organization) {
         UserRepresentation account = getUserRepresentation(userEmail);
         UserRepresentation member = organization.members().member(account.getId()).toRepresentation();
-        Assert.assertEquals(account.getId(), member.getId());
+        Assertions.assertEquals(account.getId(), member.getId());
     }
 
     protected UserRepresentation getUserRepresentation(String userEmail) {
@@ -273,7 +283,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         UsersResource users = adminClient.realm(realm).users();
         List<UserRepresentation> reps = users.searchByEmail(userEmail, true);
         assertFalse(reps.isEmpty());
-        Assert.assertEquals(1, reps.size());
+        Assertions.assertEquals(1, reps.size());
         return reps.get(0);
     }
 
@@ -302,8 +312,9 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     }
 
     protected void openIdentityFirstLoginPage(String username, boolean autoIDPRedirect, String idpAlias, boolean isVisible, boolean clickIdp) {
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         log.debug("Logging in");
         assertTrue(loginPage.isUsernameInputPresent());
         assertNull(loginPage.getUsernameInputError());
@@ -335,5 +346,28 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             assertThat("Driver should be on the consumer realm page right now",
                     driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.consumerRealmName() + "/"));
         }
+    }
+
+    protected void setMapperConfig(String key, String value) {
+        ClientScopeRepresentation orgScope = managedRealm.admin().clientScopes().findAll().stream()
+                .filter(s -> OIDCLoginProtocolFactory.ORGANIZATION.equals(s.getName()))
+                .findAny()
+                .orElseThrow();
+        ClientScopeResource orgScopeResource = managedRealm.admin().clientScopes().get(orgScope.getId());
+
+        ProtocolMapperRepresentation orgMapper = orgScopeResource.getProtocolMappers().getMappers().stream()
+                .filter(m -> OIDCLoginProtocolFactory.ORGANIZATION.equals(m.getName()))
+                .findAny()
+                .orElseThrow();
+
+        Map<String, String> config = orgMapper.getConfig();
+
+        if (value == null) {
+            config.remove(key);
+        } else {
+            config.put(key, value);
+        }
+
+        orgScopeResource.getProtocolMappers().update(orgMapper.getId(), orgMapper);
     }
 }

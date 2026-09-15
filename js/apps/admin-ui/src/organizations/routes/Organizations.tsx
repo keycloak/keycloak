@@ -12,9 +12,9 @@ const OrganizationsSection = lazy(() => import("../OrganizationsSection"));
 export const OrganizationsRoute: AppRouteObject = {
   path: "/:realm/organizations",
   element: <OrganizationsSection />,
-  breadcrumb: (t) => t("organizationsList"),
   handle: {
-    access: "query-groups",
+    access: "query-organizations",
+    breadcrumb: (t) => t("organizationsList"),
   },
 };
 

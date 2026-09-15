@@ -23,6 +23,7 @@ describe("Client Scopes", () => {
     currentClientScopeName = "best-of-the-bests-scope";
     await kcAdminClient.clientScopes.create({
       name: currentClientScopeName,
+      protocol: "openid-connect",
     });
     currentClientScope = (await kcAdminClient.clientScopes.findOneByName({
       name: currentClientScopeName,
@@ -75,6 +76,7 @@ describe("Client Scopes", () => {
 
     await kcAdminClient.clientScopes.create({
       name: currentClientScopeName,
+      protocol: "openid-connect",
     });
 
     const scope = (await kcAdminClient.clientScopes.findOneByName({
@@ -96,6 +98,7 @@ describe("Client Scopes", () => {
 
     const { id } = await kcAdminClient.clientScopes.create({
       name: currentClientScopeName,
+      protocol: "openid-connect",
     });
 
     const scope = (await kcAdminClient.clientScopes.findOne({

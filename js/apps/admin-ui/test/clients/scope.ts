@@ -1,6 +1,6 @@
 import { type Page, expect } from "@playwright/test";
-import { clickTableToolbarItem } from "../utils/table.ts";
 import { selectItem } from "../utils/form.ts";
+import { clickTableToolbarItem } from "../utils/table.ts";
 
 export async function goToClientScopesTab(page: Page) {
   await page.getByTestId("clientScopesTab").click();
@@ -11,7 +11,26 @@ export async function goToClientScopeEvaluateTab(page: Page) {
 }
 
 export async function clickAddClientScope(page: Page) {
-  await clickTableToolbarItem(page, "Add client scope");
+  const toolbar = page.getByTestId("table-toolbar");
+  const addClientScopeAction = toolbar
+    .getByRole("button", { name: /^Add client scope$/i })
+    .or(toolbar.getByRole("link", { name: /^Add client scope$/i }))
+    .first();
+  const addScopeAction = toolbar
+    .getByRole("button", { name: /^Add scope$/i })
+    .or(toolbar.getByRole("link", { name: /^Add scope$/i }))
+    .first();
+
+  await expect(addClientScopeAction.or(addScopeAction).first()).toBeVisible({
+    timeout: 5_000,
+  });
+
+  if (await addClientScopeAction.isVisible()) {
+    await clickTableToolbarItem(page, "Add client scope");
+    return;
+  }
+
+  await clickTableToolbarItem(page, "Add scope");
 }
 
 export async function clickAddScope(page: Page, option: string) {

@@ -10,9 +10,9 @@ const AddKubernetesConnect = lazy(() => import("../add/AddKubernetesConnect"));
 export const IdentityProviderKubernetesRoute: AppRouteObject = {
   path: "/:realm/identity-providers/kubernetes/add",
   element: <AddKubernetesConnect />,
-  breadcrumb: (t) => t("addKubernetesProvider"),
   handle: {
     access: "manage-identity-providers",
+    breadcrumb: (t) => t("addKubernetesProvider"),
   },
 };
 

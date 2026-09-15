@@ -17,9 +17,10 @@
 package org.keycloak.testsuite.model.infinispan;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Objects;
@@ -143,12 +144,26 @@ public class CacheExpirationTest extends KeycloakModelTest {
     // This is synchronized as it doesn't make sense to run this in parallel with multiple threads
     // as each invocation will run a garbage collection anyway.
     public synchronized Integer getNumberOfInstancesOfClass(Class<?> c, String pid) {
-        Process proc;
+        log.debug("PID: " + pid);
+
+        Path tempFile = null;
         try {
             // running jmap command will also trigger a garbage collection on the VM, but that might be VM specific
             // a test run with adding "-verbose:gc" showed the message "GC(23) Pause Full (Heap Inspection Initiated GC)" that
             // indicates a full GC run
-            proc = Runtime.getRuntime().exec("jmap -histo:live " + pid);
+
+            tempFile = Files.createTempFile("jmap-output", ".txt"); // not consuming the output directly to avoid potential deadlock
+
+            Process proc = new ProcessBuilder("jmap", "-histo:live", pid)
+                    .redirectOutput(tempFile.toFile())
+                    .redirectError(ProcessBuilder.Redirect.INHERIT)
+                    .start();
+
+            boolean finished = proc.waitFor(30, TimeUnit.SECONDS);
+            if (!finished) {
+                proc.destroyForcibly();
+                throw new RuntimeException("jmap timed out!");
+            }
 
             try (BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()))) {
                 AtomicInteger matchingLines = new AtomicInteger();
@@ -165,10 +180,18 @@ public class CacheExpirationTest extends KeycloakModelTest {
                   .map(m -> Integer.valueOf(m.group(1)))
                     .orElseGet(() -> matchingLines.get() == 0 ? null : 0);
             }
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             log.debug(ex);
-            Assume.assumeTrue("jmap not found or unsupported", false);
+            Assume.assumeTrue("jmap not found, unsupported or failed", false);
             return null;
+        } finally {
+            if (tempFile != null) {
+                try {
+                    Files.deleteIfExists(tempFile);
+                } catch (Exception ex) {
+                    log.debug(ex);
+                }
+            }
         }
     }
 }

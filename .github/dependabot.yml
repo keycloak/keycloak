@@ -1,7 +1,9 @@
 version: 2
 updates:
   - package-ecosystem: github-actions
-    directory: /
+    directories:
+      - "/"
+      - "/.github/actions/*"
     schedule:
       interval: weekly
       day: "sunday"
@@ -16,6 +18,9 @@ updates:
       actions-dependencies: # This name will be used in the PR title
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: npm
     directory: js
@@ -46,3 +51,6 @@ updates:
       npm-dependencies: # This name will be used in the PR title
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"

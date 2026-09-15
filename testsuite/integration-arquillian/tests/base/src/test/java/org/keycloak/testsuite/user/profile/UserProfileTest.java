@@ -58,11 +58,12 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.representations.userprofile.config.UPGroup;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.testframework.realm.ClientScopeBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
-import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.userprofile.Attributes;
@@ -82,8 +83,8 @@ import org.keycloak.validate.validators.LengthValidator;
 import org.keycloak.validate.validators.UriValidator;
 
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static java.util.Optional.ofNullable;
 
@@ -94,12 +95,12 @@ import static org.keycloak.userprofile.config.UPConfigUtils.parseSystemDefaultCo
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -132,7 +133,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute("foo", new UPAttributePermissions(Set.of(), Set.of(ROLE_ADMIN))));
         config.getAttribute(UserModel.EMAIL).setPermissions(new UPAttributePermissions(Set.of(ROLE_USER), Set.of(ROLE_ADMIN)));
-        RealmResource realmRes = testRealm();
+        RealmResource realmRes = managedRealm.admin();
         realmRes.users().userProfile().update(config);
 
         UserRepresentation userRep = new UserRepresentation();
@@ -144,7 +145,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         Response response = realmRes.users().create(userRep);
         final String userId = ApiUtil.getCreatedId(response);
         userRep = realmRes.users().get(userId).toRepresentation();
-        Assert.assertEquals(Collections.singletonList("123"), userRep.getAttributes().get("foo"));
+        Assertions.assertEquals(Collections.singletonList("123"), userRep.getAttributes().get("foo"));
 
         // it should work if foo is read-only in the context
         getTestingClient().server(TEST_REALM_NAME).run(session -> {
@@ -187,7 +188,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
             UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
             try {
                 profile.validate();
-                Assert.fail("Should fail validation on foo minimum length");
+                Assertions.fail("Should fail validation on foo minimum length");
             } catch (ValidationException ve) {
                 assertTrue(ve.isAttributeOnError("foo"));
                 assertTrue(ve.hasError(LengthValidator.MESSAGE_INVALID_LENGTH));
@@ -229,7 +230,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         try {
             profile.validate();
-            Assert.fail("Should fail validation");
+            Assertions.fail("Should fail validation");
         } catch (ValidationException ve) {
             // address is mandatory
             assertTrue(ve.isAttributeOnError("address"));
@@ -314,7 +315,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         try {
             profile.validate();
-            Assert.fail("Should fail validation");
+            Assertions.fail("Should fail validation");
         } catch (ValidationException ve) {
             // address is mandatory
             assertTrue(ve.isAttributeOnError("business.address"));
@@ -334,7 +335,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testAttributeValidation);
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAsUsernameValidation);
         getTestingClient().server(TEST_REALM_NAME).run((KeycloakSession session) -> testNonAsciiEmailValidator(session, false));
-        try (RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealm())
+        try (RealmAttributeUpdater updater = new RealmAttributeUpdater(managedRealm.admin())
                 .setSmtpServer(EmailSenderProvider.CONFIG_ALLOW_UTF8, Boolean.TRUE.toString()).update()) {
             getTestingClient().server(TEST_REALM_NAME).run((KeycloakSession session) -> testNonAsciiEmailValidator(session, true));
         }
@@ -349,7 +350,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         try {
             profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
             profile.validate();
-            Assert.fail("Should fail validation");
+            Assertions.fail("Should fail validation");
         } catch (ValidationException ve) {
             // username is mandatory
             assertTrue(ve.isAttributeOnError(UserModel.USERNAME));
@@ -362,7 +363,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
             attributes.put(UserModel.EMAIL, "profile-user@keycloak.org");
             profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
             profile.validate();
-            Assert.fail("Should fail validation");
+            Assertions.fail("Should fail validation");
         } catch (ValidationException ve) {
             // username is mandatory
             assertTrue(ve.isAttributeOnError(UserModel.USERNAME));
@@ -377,7 +378,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
             profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
             profile.validate();
         } catch (ValidationException ve) {
-            Assert.fail("Should be OK email as username");
+            Assertions.fail("Should be OK email as username");
         } finally {
             // we should probably avoid this kind of logic and make the test reset the realm to original state
             realm.setRegistrationEmailAsUsername(false);
@@ -433,7 +434,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
             profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
             profile.validate();
         } catch (ValidationException ve) {
-            Assert.fail("Should be OK email as username");
+            Assertions.fail("Should be OK email as username");
         } finally {
             realm.setRegistrationEmailAsUsername(false);
         }
@@ -482,7 +483,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         try {
             profile.validate();
-            Assert.fail("Should fail validation");
+            Assertions.fail("Should fail validation");
         } catch (ValidationException ve) {
             // username is mandatory
             assertTrue(ve.isAttributeOnError("address"));
@@ -523,7 +524,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         try {
             profile.validate();
-            Assert.fail("Should fail validation");
+            Assertions.fail("Should fail validation");
         } catch (ValidationException ve) {
             // username is mandatory
             assertTrue(ve.isAttributeOnError("address"));
@@ -750,7 +751,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         } catch (ValidationException ve) {
             assertTrue(ve.isAttributeOnError("email"));
         }
-        assertEquals("E-Mail address shouldn't be changed", "readonly@foo.bar", user.getEmail());
+        assertEquals("readonly@foo.bar", user.getEmail(), "E-Mail address shouldn't be changed");
 
         attributes.put(UserModel.EMAIL, "admin-can-change@foo.bar");
         profile = provider.create(UserProfileContext.USER_API, attributes, user);
@@ -1423,7 +1424,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         config.setAttributes(Collections.emptyList());
         try {
             provider.setConfiguration(config);
-            Assert.fail("Expected to fail as we are trying to remove required attributes email and username");
+            Assertions.fail("Expected to fail as we are trying to remove required attributes email and username");
         } catch (ComponentValidationException cve) {
             //ignore
         }
@@ -1584,12 +1585,12 @@ public class UserProfileTest extends AbstractUserProfileTest {
         UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         provider.setConfiguration(config);
         UPAttribute emailOrigConfig = config.getAttribute(UserModel.EMAIL);
-        Assert.assertEquals(emailOrigConfig.getRequired().getRoles(), Set.of(ROLE_USER)); // Should be required only for users by default
+        Assertions.assertEquals(emailOrigConfig.getRequired().getRoles(), Set.of(ROLE_USER)); // Should be required only for users by default
 
         try {
             profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
             profile.validate();
-            Assert.fail("Should not be here as email is required for users");
+            Assertions.fail("Should not be here as email is required for users");
         } catch (ValidationException ve) {
             // expected
         }
@@ -1597,7 +1598,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
             profile = provider.create(UserProfileContext.USER_API, attributes);
             profile.validate();
         } catch (ValidationException ve) {
-            Assert.fail("Should not be here as email is NOT required for administrators");
+            Assertions.fail("Should not be here as email is NOT required for administrators");
         }
 
         // Test email required in config, registrationEmailAsUsername = false : Email should be required
@@ -1607,14 +1608,14 @@ public class UserProfileTest extends AbstractUserProfileTest {
         try {
             profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
             profile.validate();
-            Assert.fail("Should not be here as email is required for users");
+            Assertions.fail("Should not be here as email is required for users");
         } catch (ValidationException ve) {
             // expected
         }
         try {
             profile = provider.create(UserProfileContext.USER_API, attributes);
             profile.validate();
-            Assert.fail("Should not be here as email is required for administrators");
+            Assertions.fail("Should not be here as email is required for administrators");
         } catch (ValidationException ve) {
             // expected
         }
@@ -1625,14 +1626,14 @@ public class UserProfileTest extends AbstractUserProfileTest {
             try {
                 profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
                 profile.validate();
-                Assert.fail("Should not be here as email is required for users");
+                Assertions.fail("Should not be here as email is required for users");
             } catch (ValidationException ve) {
                 // expected
             }
             try {
                 profile = provider.create(UserProfileContext.USER_API, attributes);
                 profile.validate();
-                Assert.fail("Should not be here as email is required for administrators");
+                Assertions.fail("Should not be here as email is required for administrators");
             } catch (ValidationException ve) {
                 // expected
             }
@@ -1648,14 +1649,14 @@ public class UserProfileTest extends AbstractUserProfileTest {
             try {
                 profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
                 profile.validate();
-                Assert.fail("Should not be here as email is required for users");
+                Assertions.fail("Should not be here as email is required for users");
             } catch (ValidationException ve) {
                 // expected
             }
             try {
                 profile = provider.create(UserProfileContext.USER_API, attributes);
                 profile.validate();
-                Assert.fail("Should not be here as email is required for administrators");
+                Assertions.fail("Should not be here as email is required for administrators");
             } catch (ValidationException ve) {
                 // expected
             }
@@ -1668,13 +1669,13 @@ public class UserProfileTest extends AbstractUserProfileTest {
             profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
             profile.validate();
         } catch (ValidationException ve) {
-            Assert.fail("Should not be here as email is required for users");
+            Assertions.fail("Should not be here as email is required for users");
         }
         try {
             profile = provider.create(UserProfileContext.USER_API, attributes);
             profile.validate();
         } catch (ValidationException ve) {
-            Assert.fail("Should not be here as email is required for administrators");
+            Assertions.fail("Should not be here as email is required for administrators");
         }
     }
 
@@ -1958,7 +1959,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         try {
             provider.setConfiguration(config);
-            Assert.fail("Expected to fail due to invalid client scope");
+            Assertions.fail("Expected to fail due to invalid client scope");
         } catch (ComponentValidationException cve) {
             //ignore
         }
@@ -2308,11 +2309,11 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     @Test
     public void testEmailAttributeInUpdateEmailContext() {
-        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+        AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
         try {
             getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAttributeInUpdateEmailContext);
         } finally {
-            ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
+            AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, false);
         }
     }
 
@@ -2398,11 +2399,11 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     @Test
     public void testEmailAnnotationsInAccountContext() {
-        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+        AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
         try {
             getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAnnotationsInAccountContext);
         } finally {
-            ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
+            AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, false);
         }
     }
 
@@ -2473,11 +2474,11 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     @Test
     public void testEmailFieldHiddenWhenEmptyAndReadOnlyWithUpdateEmailEnabled() {
-        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+        AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
         try {
             getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailFieldHiddenWhenEmptyAndReadOnlyWithUpdateEmailEnabled);
         } finally {
-            ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
+            AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, false);
         }
     }
 
@@ -2513,8 +2514,8 @@ public class UserProfileTest extends AbstractUserProfileTest {
         Map<String, List<String>> readableAttributes = profile.getAttributes().getReadable();
         
         // Email should NOT be visible in UPDATE_PROFILE context when empty and read-only
-        assertFalse("Email field should be hidden when empty, read-only, and UPDATE_EMAIL is enabled",
-                readableAttributes.containsKey(UserModel.EMAIL));
+        assertFalse(readableAttributes.containsKey(UserModel.EMAIL),
+                "Email field should be hidden when empty, read-only, and UPDATE_EMAIL is enabled");
     }
 
     @Test

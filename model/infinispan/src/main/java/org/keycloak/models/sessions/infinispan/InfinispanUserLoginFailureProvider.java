@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.sessions.infinispan;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 import org.keycloak.models.KeycloakSession;
@@ -31,7 +32,9 @@ import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.events.RemoveAllUserLoginFailuresEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
+import org.keycloak.models.sessions.infinispan.stream.LoginFailuresLifespanUpdate;
 import org.keycloak.models.sessions.infinispan.stream.Mappers;
+import org.keycloak.models.sessions.infinispan.stream.RemoveKeyConsumer;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
 
@@ -118,7 +121,7 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
                 .map(Mappers.loginFailureId())
                 .forEach(loginFailureKey -> {
                     // Remove loginFailure from remoteCache too. Use removeAsync for better perf
-                    Future<?> future = localCache.removeAsync(loginFailureKey);
+                    Future<?> future = removeKeyFromCache(localCache, loginFailureKey);
                     futures.addTask(future);
                 });
 
@@ -145,4 +148,28 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
     public void close() {
 
     }
+
+    @Override
+    public void updateWithLatestRealmSettings(RealmModel realm) {
+        var stream = loginFailuresTx.getCache()
+                .entrySet()
+                .stream()
+                .filter(SessionWrapperPredicate.create(realm.getId()));
+        if (realm.isBruteForceProtected()) {
+            var action = new LoginFailuresLifespanUpdate(
+                    realm.getMaxDeltaTimeSeconds() * 1000L,
+                    realm.getMaxTemporaryLockouts(),
+                    realm.isPermanentLockout()
+            );
+            stream.forEach(action);
+        } else {
+            stream.map(Mappers.loginFailureId())
+                    .forEach(RemoveKeyConsumer.getInstance());
+        }
+    }
+
+    private static CompletableFuture<SessionEntityWrapper<LoginFailureEntity>> removeKeyFromCache(Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> cache, LoginFailureKey key) {
+        return cache.removeAsync(key);
+    }
+
 }

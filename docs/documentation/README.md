@@ -46,7 +46,7 @@ To build the REST API documentation and the Javadoc:
 
 - Export the `JAVA_HOME` variable, for example:
   ```
-  export JAVA_HOME=/usr/lib/jvm/java-21-openjdk
+  export JAVA_HOME=/usr/lib/jvm/java-25-openjdk
   ```
   (without this, you may get the following error: `Unable to find javadoc command: The environment variable JAVA_HOME is not correctly set.`)
 - Run:

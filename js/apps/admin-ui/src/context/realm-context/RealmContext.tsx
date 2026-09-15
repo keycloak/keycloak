@@ -8,12 +8,12 @@ import {
 } from "@keycloak/keycloak-ui-shared";
 import { PropsWithChildren, useEffect, useState } from "react";
 import { useAdminClient } from "../../admin-client";
-import { i18n } from "../../i18n/i18n";
 import { useHash } from "./useHash";
+import { useTranslation } from "react-i18next";
 
 type RealmContextType = {
   realm: string;
-  realmRepresentation?: RealmRepresentation;
+  realmRepresentation: RealmRepresentation;
   refresh: () => void;
 };
 
@@ -25,13 +25,14 @@ export const RealmContext = createNamedContext<RealmContextType | undefined>(
 export const RealmContextProvider = ({ children }: PropsWithChildren) => {
   const { adminClient } = useAdminClient();
   const { environment } = useEnvironment();
+  const { i18n } = useTranslation();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
   const [realmRepresentation, setRealmRepresentation] =
     useState<RealmRepresentation>();
 
   const locationRealm = useHash();
-  const realm = locationRealm?.split("/")[1] ?? environment.realm;
+  const realm = locationRealm.split("/")[1] ?? environment.realm;
 
   // Configure admin client to use selected realm when it changes.
   useEffect(() => {
@@ -41,7 +42,7 @@ export const RealmContextProvider = ({ children }: PropsWithChildren) => {
       await i18n.loadNamespaces(namespace);
       i18n.setDefaultNamespace(namespace);
     })();
-  }, [realm]);
+  }, [realm, i18n, adminClient]);
   useFetch(
     () => adminClient.realms.findOne({ realm }),
     setRealmRepresentation,
@@ -53,7 +54,9 @@ export const RealmContextProvider = ({ children }: PropsWithChildren) => {
   }
 
   return (
-    <RealmContext.Provider value={{ realm, realmRepresentation, refresh }}>
+    <RealmContext.Provider
+      value={{ realm, realmRepresentation: realmRepresentation!, refresh }}
+    >
       {children}
     </RealmContext.Provider>
   );

@@ -16,14 +16,14 @@ public class GroupListQuery extends AbstractRevisioned implements GroupQuery {
     private final String realm;
     private final Map<String, Set<String>> searchKeys;
 
-    public GroupListQuery(Long revisioned, String id, RealmModel realm, String searchKey, Set<String> result) {
+    public GroupListQuery(long revisioned, String id, RealmModel realm, String searchKey, Set<String> result) {
         super(revisioned, id);
         this.realm = realm.getId();
         this.searchKeys = new HashMap<>();
         this.searchKeys.put(searchKey, result);
     }
 
-    public GroupListQuery(Long revisioned, String id, RealmModel realm, String searchKey, Set<String> result, GroupListQuery previous) {
+    public GroupListQuery(long revisioned, String id, RealmModel realm, String searchKey, Set<String> result, GroupListQuery previous) {
         super(revisioned, id);
         this.realm = realm.getId();
         this.searchKeys = new HashMap<>();
@@ -31,7 +31,7 @@ public class GroupListQuery extends AbstractRevisioned implements GroupQuery {
         this.searchKeys.put(searchKey, result);
     }
 
-    public GroupListQuery(Long revisioned, String id, RealmModel realm, Set<String> ids) {
+    public GroupListQuery(long revisioned, String id, RealmModel realm, Set<String> ids) {
         super(revisioned, id);
         this.realm = realm.getId();
         this.searchKeys = new HashMap<>();

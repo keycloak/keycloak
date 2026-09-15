@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa.session;
 
+import java.util.Objects;
+
 import org.keycloak.models.session.PersistentAuthenticatedClientSessionAdapter;
 import org.keycloak.storage.StorageId;
 
@@ -42,6 +44,20 @@ public final class JpaSessionUtil {
 
     public static String getClientId(PersistentClientSessionEntity entity) {
         return isExternalClient(entity) ? getExternalClientId(entity) : entity.getClientId();
+    }
+
+    /**
+     * Extracts the client ID from a UserSessionIdAndClientSessionId record.
+     * Handles both internal clients (stored in clientSessionId) and external clients
+     * (stored via clientStorageProvider and externalClientId).
+     *
+     * @param sessions the session ID record containing client information
+     * @return the client UUID, or null if no client session exists
+     */
+    public static String getClientId(UserSessionIdAndClientSessionId sessions) {
+        return Objects.equals(sessions.clientSessionId(), PersistentClientSessionEntity.EXTERNAL) ?
+                new StorageId(sessions.clientStorageProvider(), sessions.externalClientId()).getId() :
+                sessions.clientSessionId();
     }
 
     public static boolean hasClient(PersistentAuthenticatedClientSessionAdapter clientSession) {

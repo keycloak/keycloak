@@ -39,6 +39,7 @@ import org.keycloak.representations.idm.authorization.PermissionTicketRepresenta
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
 
 import org.junit.Test;
 
@@ -47,11 +48,11 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -327,6 +328,51 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
         assertNotNull(response.getTicket());
     }
 
+    @Test
+    public void testSearchTicket() throws Exception {
+        ResourceRepresentation resource = addResource("Resource A", "kolo", true);
+        AuthzClient authzClient = getAuthzClient();
+        PermissionResponse response = authzClient.protection("marta", "password").permission().create(new PermissionRequest(resource.getId()));
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.setTicket(response.getTicket());
+        request.setClaimToken(authzClient.obtainAccessToken("marta", "password").getToken());
+        try {
+            authzClient.authorization().authorize(request);
+        } catch (Exception e) {
+
+        }
+        List<PermissionTicketRepresentation> tickets = authzClient.protection("kolo", "password").permission().find(resource.getId(), null, null, null, null, true, -1, -1);
+        assertEquals(1, tickets.size());
+        tickets = authzClient.protection("marta", "password").permission().find(resource.getId(), null, null, null, null, true, -1, -1);
+        assertEquals(1, tickets.size());
+
+        response = authzClient.protection("alice", "password").permission().create(new PermissionRequest(resource.getId()));
+        request = new AuthorizationRequest();
+        request.setTicket(response.getTicket());
+        request.setClaimToken(authzClient.obtainAccessToken("alice", "password").getToken());
+        try {
+            authzClient.authorization().authorize(request);
+        } catch (Exception e) {
+        }
+        // two tickets open for kolo, one for alice and one for marta
+        tickets = authzClient.protection("kolo", "password").permission().find(resource.getId(), null, null, null, null, true, -1, -1);
+        assertEquals(2, tickets.size());
+        assertEquals(2L, (long) authzClient.protection("kolo", "password").permission().count(resource.getId(), null, null, null, null, true));
+        // one ticket for alice
+        tickets = authzClient.protection("alice", "password").permission().find(resource.getId(), null, null, null, null, true, -1, -1);
+        assertEquals(1, tickets.size());
+        assertEquals(1L, (long) authzClient.protection("alice", "password").permission().count(resource.getId(), null, null, null, null, true));
+        PermissionTicketRepresentation aliceTicket = tickets.get(0);
+        // one ticket for marta
+        tickets = authzClient.protection("marta", "password").permission().find(resource.getId(), null, null, null, null, true, -1, -1);
+        assertEquals(1, tickets.size());
+        assertEquals(1L, (long) authzClient.protection("marta", "password").permission().count(resource.getId(), null, null, null, null, true));
+        // the ticket for alice is different from the ticket for marta
+        assertFalse(aliceTicket.getId().equals(tickets.get(0).getId()));
+
+
+    }
+
     private void assertPersistence(PermissionResponse response, ResourceRepresentation resource, String... scopeNames) throws Exception {
         String ticket = response.getTicket();
         assertNotNull(ticket);
@@ -432,19 +478,19 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
       // start with fetching the second half of all permission tickets
       Collection<String> expectedScopes = new ArrayList(Arrays.asList(scopes));
       List<PermissionTicketRepresentation> tickets = getAuthzClient().protection().permission().find(resource.getId(), null, null, null, null, true, 2, 2);
-      assertEquals("Returned number of permissions tickets must match the specified page size (i.e., 'maxResult').", 2, tickets.size());
+      assertEquals(2, tickets.size(), "Returned number of permissions tickets must match the specified page size (i.e., 'maxResult').");
       boolean foundScope = expectedScopes.remove(tickets.get(0).getScopeName());
-      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
+      assertTrue(foundScope, "Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.");
       foundScope = expectedScopes.remove(tickets.get(1).getScopeName());
-      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
+      assertTrue(foundScope, "Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.");
 
       // fetch the first half of all permission tickets
       tickets = getAuthzClient().protection().permission().find(resource.getId(), null, null, null, null, true, 0, 2);
-      assertEquals("Returned number of permissions tickets must match the specified page size (i.e., 'maxResult').", 2, tickets.size());
+      assertEquals(2, tickets.size(), "Returned number of permissions tickets must match the specified page size (i.e., 'maxResult').");
       foundScope = expectedScopes.remove(tickets.get(0).getScopeName());
-      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
+      assertTrue(foundScope, "Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.");
       foundScope = expectedScopes.remove(tickets.get(1).getScopeName());
-      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
+      assertTrue(foundScope, "Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.");
     }
 
     @Test
@@ -464,6 +510,114 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
         }
 
         Long ticketCount = getAuthzClient().protection().permission().count(resource.getId(), null, null, null, null, true);
-        assertEquals("Returned number of permissions tickets must match the amount of permission tickets.", Long.valueOf(4), ticketCount);
+        assertEquals(Long.valueOf(4), ticketCount, "Returned number of permissions tickets must match the amount of permission tickets.");
+    }
+
+    @Test
+    public void testISAdminFilterRespectsResourceServer() {
+        // create a second resource server
+        getRealm().clients().create(
+                ClientBuilder.create()
+                        .clientId("resource-server-test-2")
+                        .secret("secret")
+                        .authorizationServicesEnabled(true)
+                        .redirectUris("http://localhost/resource-server-test-2")
+                        .defaultRoles("uma_protection")
+                        .directAccessGrantsEnabled()
+                        .serviceAccountsEnabled(true)
+                        .build()
+        ).close();
+
+        testingClient.server().run(session -> {
+            org.keycloak.models.RealmModel realm = session.realms().getRealmByName("authz-test");
+            session.getContext().setRealm(realm);
+            org.keycloak.authorization.AuthorizationProvider authorization =
+                    session.getProvider(org.keycloak.authorization.AuthorizationProvider.class);
+            org.keycloak.authorization.store.StoreFactory storeFactory = authorization.getStoreFactory();
+            org.keycloak.authorization.store.PermissionTicketStore ticketStore =
+                    storeFactory.getPermissionTicketStore();
+
+            org.keycloak.models.ClientModel client1 = session.clients()
+                    .getClientByClientId(realm, "resource-server-test");
+            org.keycloak.authorization.model.ResourceServer rs1 =
+                    storeFactory.getResourceServerStore().findByClient(client1);
+
+            org.keycloak.models.ClientModel client2 = session.clients()
+                    .getClientByClientId(realm, "resource-server-test-2");
+            org.keycloak.authorization.model.ResourceServer rs2 =
+                    storeFactory.getResourceServerStore().findByClient(client2);
+
+            org.keycloak.authorization.model.Resource resource1 =
+                    storeFactory.getResourceStore().create(rs1, "resource-rs1", client1.getId());
+            org.keycloak.authorization.model.Resource resource2 =
+                    storeFactory.getResourceStore().create(rs2, "resource-rs2", client2.getId());
+
+            String requester = session.users().getUserByUsername(realm, "marta").getId();
+
+            org.keycloak.authorization.model.PermissionTicket ticket1 =
+                    ticketStore.create(rs1, resource1, null, requester);
+            ticket1.setGrantedTimestamp(System.currentTimeMillis());
+
+            org.keycloak.authorization.model.PermissionTicket ticket2 =
+                    ticketStore.create(rs2, resource2, null, requester);
+            ticket2.setGrantedTimestamp(System.currentTimeMillis());
+
+            java.util.Map<org.keycloak.authorization.model.PermissionTicket.FilterOption, String> filters =
+                    new java.util.EnumMap<>(org.keycloak.authorization.model.PermissionTicket.FilterOption.class);
+            filters.put(org.keycloak.authorization.model.PermissionTicket.FilterOption.IS_ADMIN, "true");
+            filters.put(org.keycloak.authorization.model.PermissionTicket.FilterOption.GRANTED, "true");
+
+            java.util.List<org.keycloak.authorization.model.PermissionTicket> rs1Tickets =
+                    ticketStore.find(rs1, filters, null, null);
+            java.util.List<org.keycloak.authorization.model.PermissionTicket> rs2Tickets =
+                    ticketStore.find(rs2, filters, null, null);
+
+            assertEquals(1, rs1Tickets.size());
+            assertEquals(rs1.getId(), rs1Tickets.get(0).getResourceServer().getId());
+
+            assertEquals(1, rs2Tickets.size());
+            assertEquals(rs2.getId(), rs2Tickets.get(0).getResourceServer().getId());
+        });
+
+        testingClient.server().run(session -> {
+            org.keycloak.models.RealmModel realm = session.realms().getRealmByName("authz-test");
+            session.getContext().setRealm(realm);
+            org.keycloak.authorization.AuthorizationProvider authorization =
+                    session.getProvider(org.keycloak.authorization.AuthorizationProvider.class);
+            org.keycloak.authorization.store.StoreFactory storeFactory = authorization.getStoreFactory();
+            org.keycloak.authorization.store.PermissionTicketStore ticketStore =
+                    storeFactory.getPermissionTicketStore();
+            org.keycloak.models.ClientModel client1 = session.clients()
+                    .getClientByClientId(realm, "resource-server-test");
+            org.keycloak.authorization.model.ResourceServer rs1 =
+                    storeFactory.getResourceServerStore().findByClient(client1);
+
+            org.keycloak.models.ClientModel client2 = session.clients()
+                    .getClientByClientId(realm, "resource-server-test-2");
+            org.keycloak.authorization.model.ResourceServer rs2 =
+                    storeFactory.getResourceServerStore().findByClient(client2);
+            java.util.Map<org.keycloak.authorization.model.PermissionTicket.FilterOption, String> filters =
+                    new java.util.EnumMap<>(org.keycloak.authorization.model.PermissionTicket.FilterOption.class);
+            filters.put(org.keycloak.authorization.model.PermissionTicket.FilterOption.IS_ADMIN, "true");
+            filters.put(org.keycloak.authorization.model.PermissionTicket.FilterOption.GRANTED, "true");
+
+            java.util.List<org.keycloak.authorization.model.PermissionTicket> rs1Tickets =
+                    ticketStore.find(rs1, filters, null, null);
+            java.util.List<org.keycloak.authorization.model.PermissionTicket> rs2Tickets =
+                    ticketStore.find(rs2, filters, null, null);
+
+            assertEquals(1, rs1Tickets.size());
+            assertEquals(rs1.getId(), rs1Tickets.get(0).getResourceServer().getId());
+
+            assertEquals(1, rs2Tickets.size());
+            assertEquals(rs2.getId(), rs2Tickets.get(0).getResourceServer().getId());
+
+            rs1Tickets =
+                    ticketStore.find(null, filters, null, null);
+            assertEquals(2, rs1Tickets.size());
+            rs2Tickets =
+                    ticketStore.find(null, filters, null, null);
+            assertEquals(2, rs2Tickets.size());
+        });
     }
 }

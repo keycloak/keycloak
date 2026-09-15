@@ -1,6 +1,6 @@
 package org.keycloak.testframework.database;
 
-public class MariaDBDatabaseSupplier extends AbstractDatabaseSupplier {
+public class MariaDBDatabaseSupplier extends AbstractContainerDatabaseSupplier {
 
     @Override
     public String getAlias() {

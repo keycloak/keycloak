@@ -40,6 +40,12 @@ class VerifyMessagePropertiesTest {
     }
 
     @Test
+    void verifyDiscouragedWordDetected() throws MojoExecutionException {
+        List<String> verify = getFile("discouragedWord_en.properties").verify();
+        MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Discouraged word")));
+    }
+
+    @Test
     void verifyNoHtmlAllowed() throws MojoExecutionException {
         List<String> verify = getFile("noHtml_de.properties").verify();
         MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Illegal HTML")));

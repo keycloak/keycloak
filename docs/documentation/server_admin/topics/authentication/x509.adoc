@@ -111,7 +111,15 @@ image:images/x509-configuration.png[X509 Configuration]
 Defines the method for extracting the user identity from a client certificate.
 
 *Canonical DN representation enabled*::
-Defines whether to use canonical format to determine a distinguished name. The official link:https://docs.oracle.com/javase/8/docs/api/javax/security/auth/x500/X500Principal.html#getName-java.lang.String-[Java API documentation] describes the format. This option affects the two User Identity Sources _Match SubjectDN using regular expression_ and _Match IssuerDN using regular expression_ only. Enable this option when you set up a new {project_name} instance. Disable this option to retain backward compatibility with existing {project_name} instances.
+Defines whether to use the canonical format to determine a distinguished name. The format adds additional normalization rules to the RFC 2253 conformant string representation. The official link:https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/security/auth/x500/X500Principal.html#getName(java.lang.String)[Java API documentation] describes the additions in detail. This option affects the following User Identity Sources only:
+
+* _Match SubjectDN using regular expression_
+* _Match IssuerDN using regular expression_
+* _Certificate Serial Number and IssuerDN_ (the IssuerDN portion)
+
+WARNING: Do not enable this option to retain backward compatibility with existing {project_name} instances.
+
+WARNING: The `canonical` format performs modifications over the presented DN in the certificate (e.g., leading and trailing spaces are removed or the entire name is converted to uppercase and lowercase using the English locale). This behavior can lead to collisions in user matching if the Certificate Authorities (CA) that issue the certificates do not validate the assigned DN (e.g., if DNs are issued using any locale and present problems when performing the upper and lower case in English). Do not enable this option if you cannot guarantee that the canonical representation avoids duplications for later matching.
 
 *Enable Serial Number hexadecimal representation*::
 Represent the link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.1.2.2[serial number] as hexadecimal. The serial number with the sign bit set to 1 must be left padded with 00 octet. For example, a serial number with decimal value _161_, or _a1_ in hexadecimal representation is encoded as _00a1_, according to RFC 5280. See link:https://datatracker.ietf.org/doc/html/rfc5280#appendix-B[RFC 5280, appendix-B] for more details.
@@ -164,8 +172,10 @@ When more than one policy is specified in the `Validate Certificate Policy` sett
 *Bypass identity confirmation*::
 If enabled, X.509 client certificate authentication does not prompt the user to confirm the certificate identity. {project_name} signs in the user upon successful authentication.
 
-*Revalidate client certificate*::
-If set, the client certificate trust chain will be always verified at the application level using the certificates present in the configured trust store. This can be useful if the underlying web server does not enforce client certificate chain validation, for example because it is behind a non-validating load balancer or reverse proxy, or when the number of allowed CAs is too large for the mutual SSL negotiation (most browsers cap the maximum SSL negotiation packet size at 32767 bytes, which corresponds to about 200 advertised CAs). By default this option is off.
+*Certificate Authority subject DN*::
+Subject DN of the root Certificate Authority (or Authorities) (CA) that issued the user certificates (trust anchor). The CA Subject DN can be in the RFC4514 or RFC1779 format. This option allows you to identify the valid trust anchor names for the user certificates, differentiating them for anchors used for other usages or realms. This option is required.
++
+NOTE: Now the client certificate trust chain is always revalidated by {project_name} using the server trust-store or mTLS store in order to obtain the associated root CA.
 
 ==== Adding X.509 Client Certificate Authentication to a Direct Grant Flow
 

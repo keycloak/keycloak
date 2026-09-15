@@ -61,6 +61,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
@@ -72,18 +73,21 @@ import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
+import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.core.JsonParser;
 import org.hamcrest.CoreMatchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.OAuth2Constants.SCOPE_PROFILE;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
-import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
-import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findClientByClientId;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findClientResourceByClientId;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findUserByUsernameId;
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createAddressMapper;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createClaimMapper;
@@ -103,11 +107,11 @@ import static org.hamcrest.Matchers.in;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -188,7 +192,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertEquals("hello_test-user@localhost", accessToken.getOtherClaims().get("computed-via-script"));
             assertEquals(Arrays.asList("A","B"), accessToken.getOtherClaims().get("multiValued-via-script"));
             Object o = accessToken.getOtherClaims().get("computed-json-via-script");
-            assertTrue("Computed json object should be a map", o instanceof Map);
+            assertTrue(o instanceof Map, "Computed json object should be a map");
             Map<String,Object> map = (Map<String,Object>)o;
             assertEquals(map.get("int"), 42);
             assertEquals(map.get("bool"), true);
@@ -198,6 +202,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
     @Test
     public void testAddressMappingWithAdditionalMapper() {
+        //throws an exception if the json contains a duplicate claim
+        JsonSerialization.mapper.enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
         // prepare test
         {
             UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
@@ -215,13 +221,13 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
             ProtocolMapperRepresentation addressMapper = createAddressMapper(true, true, true, true);
             ProtocolMapperRepresentation addressTypeMapper = createClaimMapper("additional-address-field",
-                                                                               "address_type",
-                                                                               "address.type",
-                                                                               "String",
-                                                                               true,
-                                                                               true,
-                                                                               true,
-                                                                               false);
+                    "address_type",
+                    "address.type",
+                    "String",
+                    true,
+                    true,
+                    true,
+                    false);
 
 
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
@@ -256,6 +262,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         }
 
         events.clear();
+        JsonSerialization.mapper.disable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
     }
 
     @Test
@@ -276,13 +283,13 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             userResource.update(user);
 
             ProtocolMapperRepresentation addressTypeMapper = createClaimMapper("additional-address-field",
-                                                                               "address_type",
-                                                                               "address.type",
-                                                                               "String",
-                                                                               true,
-                                                                               true,
-                                                                               true,
-                                                                               false);
+                    "address_type",
+                    "address.type",
+                    "String",
+                    true,
+                    true,
+                    true,
+                    false);
             ProtocolMapperRepresentation addressMapper = createAddressMapper(true, true, true, true);
 
 
@@ -331,13 +338,13 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             userResource.update(user);
 
             ProtocolMapperRepresentation addressTypeMapper = createClaimMapper("additional-address-field",
-                                                                               "address_type",
-                                                                               "address.type",
-                                                                               "String",
-                                                                               true,
-                                                                               true,
-                                                                               true,
-                                                                               false);
+                    "address_type",
+                    "address.type",
+                    "String",
+                    true,
+                    true,
+                    true,
+                    false);
             ProtocolMapperRepresentation addressMapper = createAddressMapper(true, true, true, true);
 
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
@@ -485,11 +492,11 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertTrue(departments.contains("finance") && departments.contains("development"));
             assertTrue(accessToken.getRealmAccess().getRoles().contains("hardcoded"));
             assertTrue(accessToken.getRealmAccess().getRoles().contains("realm-user"));
-            Assert.assertNull(accessToken.getResourceAccess("test-app"));
+            Assertions.assertNull(accessToken.getResourceAccess("test-app"));
             assertTrue(accessToken.getResourceAccess("app").getRoles().contains("hardcoded"));
 
             // Assert audiences added through AudienceResolve mapper
-            assertThat(accessToken.getAudience(), arrayContainingInAnyOrder( "app", "account"));
+            assertThat(accessToken.getAudience(), arrayContainingInAnyOrder( "test-app", "app", "account", "confidential-cli"));
 
             // Assert allowed origins
             Assert.assertNames(accessToken.getAllowedOrigins(), "http://localhost:8180", "https://localhost:8543");
@@ -525,7 +532,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
                         || model.getName().equals("hard-app")
                         || model.getName().equals("test-script-mapper")
                         || model.getName().equals("json-attribute-mapper")
-                        ) {
+                ) {
                     app.getProtocolMappers().delete(model.getId());
                 }
             }
@@ -746,7 +753,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             for (ProtocolMapperRepresentation model : clientRepresentation.getProtocolMappers()) {
                 if (model.getName().equals("empty")
                         || model.getName().equals("null")
-                        ) {
+                ) {
                     app.getProtocolMappers().delete(model.getId());
                 }
             }
@@ -775,7 +782,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true, true);
         ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper("test-app", null, "Client roles mapper", "roles-custom.test-app", true, true, true);
 
-        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
+        ProtocolMappersResource protocolMappers = AdminApiUtil.findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
 
         // Login user
@@ -784,7 +791,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // Verify attribute is filled
         Map<String, Object> roleMappings = (Map<String, Object>)idToken.getOtherClaims().get("roles-custom");
-        assertThat(roleMappings.keySet(), containsInAnyOrder("realm", "test-app"));
+        assertThat(roleMappings.keySet(),  containsInAnyOrder("realm", "test-app"));
         List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
         List<String> testAppMappings = (List<String>) roleMappings.get("test-app");
         assertRolesString(realmRoleMappings,
@@ -805,7 +812,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
     public void testUserRolesMovedFromAccessTokenProperties() throws Exception {
         RealmResource realm = adminClient.realm("test");
-        ClientScopeResource rolesScope = ApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE);
+        ClientScopeResource rolesScope = AdminApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE);
 
         // Update builtin protocolMappers to put roles to different position (claim "custom.roles") for both realm and client roles
         ProtocolMapperRepresentation realmRolesMapper = null;
@@ -836,13 +843,13 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
 
             // Assert roles are not on their original positions
-            Assert.assertNull(accessToken.getRealmAccess());
-            Assert.assertTrue(accessToken.getResourceAccess().isEmpty());
+            Assertions.assertNull(accessToken.getRealmAccess());
+            Assertions.assertTrue(accessToken.getResourceAccess().isEmpty());
 
             // KEYCLOAK-8481 Assert that accessToken JSON doesn't have "realm_access" or "resource_access" fields in it
             String accessTokenJson = new String(new JWSInput(response.getAccessToken()).getContent(), StandardCharsets.UTF_8);
-            Assert.assertFalse(accessTokenJson.contains("realm_access"));
-            Assert.assertFalse(accessTokenJson.contains("resource_access"));
+            Assertions.assertFalse(accessTokenJson.contains("realm_access"));
+            Assertions.assertFalse(accessTokenJson.contains("resource_access"));
 
             // Assert both realm and client roles on the new position. Hardcoded role should be here as well
             Map<String, Object> cst1 = (Map<String, Object>) accessToken.getOtherClaims().get("custom");
@@ -850,7 +857,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             Assert.assertNames(roles, "offline_access", "user", "customer-user", "hardcoded", AccountRoles.VIEW_PROFILE, AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS);
 
             // Assert audience
-            Assert.assertNames(Arrays.asList(accessToken.getAudience()), "account");
+            Assert.assertNames(Arrays.asList(accessToken.getAudience()), "account", "confidential-cli", "test-app");
         } finally {
             // Revert
             rolesScope.getProtocolMappers().delete(hardcodedMapperId);
@@ -866,11 +873,11 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     @Test
     public void testRolesAndAllowedOriginsRemovedFromAccessToken() throws Exception {
         RealmResource realm = adminClient.realm("test");
-        ClientScopeRepresentation allowedOriginsScope = ApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE).toRepresentation();
-        ClientScopeRepresentation rolesScope = ApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
+        ClientScopeRepresentation allowedOriginsScope = AdminApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE).toRepresentation();
+        ClientScopeRepresentation rolesScope = AdminApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
 
         // Remove 'roles' and 'web-origins' scope from the client
-        ClientResource testApp = ApiUtil.findClientByClientId(realm, "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(realm, "test-app");
         testApp.removeDefaultClientScope(allowedOriginsScope.getId());
         testApp.removeDefaultClientScope(rolesScope.getId());
 
@@ -879,20 +886,22 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
 
             // Assert web origins are not in the token
-            Assert.assertNull(accessToken.getAllowedOrigins());
+            Assertions.assertNull(accessToken.getAllowedOrigins());
 
             // Assert roles are not in the token
-            Assert.assertNull(accessToken.getRealmAccess());
-            Assert.assertTrue(accessToken.getResourceAccess().isEmpty());
+            Assertions.assertNull(accessToken.getRealmAccess());
+            Assertions.assertTrue(accessToken.getResourceAccess().isEmpty());
 
             // Assert client not in the token audience. Just in "issuedFor"
+            Assertions.assertEquals("test-app", accessToken.getIssuedFor());
+            Assertions.assertTrue(accessToken.hasAudience("test-app"));
             Assert.assertEquals("test-app", accessToken.getIssuedFor());
-            Assert.assertFalse(accessToken.hasAudience("test-app"));
+            Assert.assertTrue(accessToken.hasAudience("test-app"));
 
             // Assert IDToken still has "test-app" as an audience
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
-            Assert.assertEquals("test-app", idToken.getIssuedFor());
-            Assert.assertTrue(idToken.hasAudience("test-app"));
+            Assertions.assertEquals("test-app", idToken.getIssuedFor());
+            Assertions.assertTrue(idToken.hasAudience("test-app"));
         } finally {
             // Revert
             testApp.addDefaultClientScope(allowedOriginsScope.getId());
@@ -911,7 +920,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true, true);
         ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper("test-app", null, "Client roles mapper", "roles-custom.test-app", true, true, true);
 
-        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
+        ProtocolMappersResource protocolMappers = AdminApiUtil.findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
 
         // Login user
@@ -949,14 +958,14 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true, true);
         ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper("test-app", null, "Client roles mapper", "roles-custom.test-app", true, true, true);
 
-        ClientResource client = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), "test-app");
+        ClientResource client = AdminApiUtil.findClientResourceByClientId(adminClient.realm("test"), "test-app");
 
         // Disable full-scope-allowed
         ClientRepresentation rep = client.toRepresentation();
         rep.setFullScopeAllowed(false);
         client.update(rep);
 
-        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
+        ProtocolMappersResource protocolMappers = AdminApiUtil.findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
 
         // Login user
@@ -997,12 +1006,12 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         String clientId = "test-app";
         ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(clientId, null, "Client roles mapper", "roles-custom.test-app", true, true, true);
 
-        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
+        ProtocolMappersResource protocolMappers = AdminApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
         protocolMappers.createMapper(Arrays.asList(clientMapper));
 
         // Add user 'level2GroupUser' to the group 'level2Group2'
         GroupRepresentation level2Group2 = adminClient.realm("test").getGroupByPath("/topGroup/level2group2");
-        UserResource level2GroupUser = ApiUtil.findUserByUsernameId(adminClient.realm("test"), "level2GroupUser");
+        UserResource level2GroupUser = AdminApiUtil.findUserByUsernameId(adminClient.realm("test"), "level2GroupUser");
         level2GroupUser.joinGroup(level2Group2.getId());
 
         oauth.client(clientId, "password");
@@ -1031,7 +1040,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true, true);
         ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(clientId, "ta.", "Client roles mapper", "roles-custom.test-app", true, true, true);
 
-        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
+        ProtocolMappersResource protocolMappers = AdminApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
 
         // Login user
@@ -1044,17 +1053,17 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
         List<String> testAppMappings = (List<String>) roleMappings.get(clientId);
         assertRolesString(realmRoleMappings,
-          "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
-          "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.customer-user-premium",     // from client role customer-admin-composite-role - realm role for test-app
-          "pref.realm-composite-role",      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.sample-realm-role"          // from realm role realm-composite-role
+                "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+                "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.customer-user-premium",     // from client role customer-admin-composite-role - realm role for test-app
+                "pref.realm-composite-role",      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.sample-realm-role"          // from realm role realm-composite-role
         );
         assertRolesString(testAppMappings,
-          "ta.customer-user",                  // from direct assignment to /roleRichGroup/level2group
-          "ta.customer-admin-composite-role",  // from direct assignment to /roleRichGroup/level2group
-          "ta.customer-admin",                 // from client role customer-admin-composite-role - client role for test-app
-          "ta.sample-client-role"              // from realm role realm-composite-role - client role for test-app
+                "ta.customer-user",                  // from direct assignment to /roleRichGroup/level2group
+                "ta.customer-admin-composite-role",  // from direct assignment to /roleRichGroup/level2group
+                "ta.customer-admin",                 // from client role customer-admin-composite-role - client role for test-app
+                "ta.sample-client-role"              // from realm role realm-composite-role - client role for test-app
         );
 
         // Revert
@@ -1067,7 +1076,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true, true);
         ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(clientId, null, "Client roles mapper", "roles-custom." + clientId, true, true, true);
 
-        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
+        ProtocolMappersResource protocolMappers = AdminApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
 
         // Login user
@@ -1089,11 +1098,11 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
         List<String> testAppAuthzMappings = (List<String>) roleMappings.get(clientId);
         assertRolesString(realmRoleMappings,
-          "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
-          "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.customer-user-premium",     // from client role customer-admin-composite-role - realm role for test-app
-          "pref.realm-composite-role",      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.sample-realm-role"          // from realm role realm-composite-role
+                "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+                "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.customer-user-premium",     // from client role customer-admin-composite-role - realm role for test-app
+                "pref.realm-composite-role",      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.sample-realm-role"          // from realm role realm-composite-role
         );
         assertNull(testAppAuthzMappings);  // There is no client role defined for test-app-authz
 
@@ -1107,7 +1116,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true, true);
         ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(clientId, null, "Client roles mapper", "roles-custom.test-app-scope", true, true, true);
 
-        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
+        ProtocolMappersResource protocolMappers = AdminApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
 
         // Login user
@@ -1122,12 +1131,12 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
         List<String> testAppScopeMappings = (List<String>) roleMappings.get(clientId);
         assertRolesString(realmRoleMappings,
-          "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
-          "pref.user",                       // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.customer-user-premium"
+                "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+                "pref.user",                       // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.customer-user-premium"
         );
         assertRolesString(testAppScopeMappings,
-          "test-app-allowed-by-scope",       // from direct assignment to roleRichUser, present as scope allows it
+                "test-app-allowed-by-scope",       // from direct assignment to roleRichUser, present as scope allows it
                 "test-app-disallowed-by-scope"
         );
 
@@ -1141,7 +1150,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true, true);
         ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(null, null, "Client roles mapper", "roles-custom.test-app-scope", true, true, true);
 
-        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
+        ProtocolMappersResource protocolMappers = AdminApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
 
         // Login user
@@ -1156,15 +1165,15 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
         List<String> testAppScopeMappings = (List<String>) roleMappings.get(clientId);
         assertRolesString(realmRoleMappings,
-          "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
-          "pref.user",  // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.customer-user-premium"
+                "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+                "pref.user",  // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.customer-user-premium"
         );
         assertRolesString(testAppScopeMappings,
-          "test-app-allowed-by-scope",      // from direct assignment to roleRichUser, present as scope allows it
-          "test-app-disallowed-by-scope",   // from direct assignment to /roleRichGroup/level2group, present as scope allows it
-          "customer-admin-composite-role",  // from the other application
-          "customer-admin"
+                "test-app-allowed-by-scope",      // from direct assignment to roleRichUser, present as scope allows it
+                "test-app-disallowed-by-scope",   // from direct assignment to /roleRichGroup/level2group, present as scope allows it
+                "customer-admin-composite-role",  // from the other application
+                "customer-admin"
         );
 
         // Revert
@@ -1177,7 +1186,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true, true,false);
         ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(null, null, "Client roles mapper", "roles-custom.test-app-scope", true, true, true, false);
 
-        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
+        ProtocolMappersResource protocolMappers = AdminApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
 
         // Login user
@@ -1866,10 +1875,10 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             hardcodedRoleClientMapperId = ApiUtil.getCreatedId(resp);
         }
         // modify the default role mappers to be included in access, ID and user-info
-        ClientScopeResource rolesScope = ApiUtil.findClientScopeByName(testRealm, OIDCLoginProtocolFactory.ROLES_SCOPE);
-        ProtocolMapperRepresentation realmRolesMapper = ApiUtil.findProtocolMapperByName(rolesScope, OIDCLoginProtocolFactory.REALM_ROLES);
+        ClientScopeResource rolesScope = AdminApiUtil.findClientScopeByName(testRealm, OIDCLoginProtocolFactory.ROLES_SCOPE);
+        ProtocolMapperRepresentation realmRolesMapper = AdminApiUtil.findProtocolMapperByName(rolesScope, OIDCLoginProtocolFactory.REALM_ROLES);
         Map<String, String> configRealmRoles = modifyScopeRolesMapperToBeIncludedInAll(rolesScope, realmRolesMapper);
-        ProtocolMapperRepresentation clientRolesMapper = ApiUtil.findProtocolMapperByName(rolesScope, OIDCLoginProtocolFactory.CLIENT_ROLES);
+        ProtocolMapperRepresentation clientRolesMapper = AdminApiUtil.findProtocolMapperByName(rolesScope, OIDCLoginProtocolFactory.CLIENT_ROLES);
         Map<String, String> configClientRoles = modifyScopeRolesMapperToBeIncludedInAll(rolesScope, clientRolesMapper);
 
         // check that the hardcoded mappers are in the three responses
@@ -1922,10 +1931,10 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             clientRoleNameMapperId = ApiUtil.getCreatedId(resp);
         }
         // modify the default role mappers to be included in access, ID and user-info
-        ClientScopeResource rolesScope = ApiUtil.findClientScopeByName(testRealm, OIDCLoginProtocolFactory.ROLES_SCOPE);
-        ProtocolMapperRepresentation realmRolesMapper = ApiUtil.findProtocolMapperByName(rolesScope, OIDCLoginProtocolFactory.REALM_ROLES);
+        ClientScopeResource rolesScope = AdminApiUtil.findClientScopeByName(testRealm, OIDCLoginProtocolFactory.ROLES_SCOPE);
+        ProtocolMapperRepresentation realmRolesMapper = AdminApiUtil.findProtocolMapperByName(rolesScope, OIDCLoginProtocolFactory.REALM_ROLES);
         Map<String, String> configRealmRoles = modifyScopeRolesMapperToBeIncludedInAll(rolesScope, realmRolesMapper);
-        ProtocolMapperRepresentation clientRolesMapper = ApiUtil.findProtocolMapperByName(rolesScope, OIDCLoginProtocolFactory.CLIENT_ROLES);
+        ProtocolMapperRepresentation clientRolesMapper = AdminApiUtil.findProtocolMapperByName(rolesScope, OIDCLoginProtocolFactory.CLIENT_ROLES);
         Map<String, String> configClientRoles = modifyScopeRolesMapperToBeIncludedInAll(rolesScope, clientRolesMapper);
 
         // check that the role mappers are executed in the three responses
@@ -1968,15 +1977,15 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
-    public void executeTokenMappersOnDynamicScopes() {
+    @EnableFeature(value = Profile.Feature.PARAMETERIZED_SCOPES, skipRestart = true)
+    public void executeTokenMappersOnParameterizedScopes() {
         ClientResource clientResource = findClientResourceByClientId(adminClient.realm("test"), "test-app");
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("dyn-scope-with-mapper");
         scopeRep.setProtocol("openid-connect");
         scopeRep.setAttributes(new HashMap<String, String>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dyn-scope-with-mapper:*");
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
         }});
         // create the attribute mapper
         ProtocolMapperRepresentation protocolMapperRepresentation = createHardcodedClaim("dynamic-scope-hardcoded-mapper", "hardcoded-foo", "hardcoded-bar", "String", true, true, true);
@@ -2006,12 +2015,12 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testStaticScopeUsingDynamicScopeFormatWithDedicatedMappers() {
+    public void testStaticScopeUsingParameterizedScopeFormatWithDedicatedMappers() {
         RealmResource realm = adminClient.realm("test");
         ClientResource clientResource = findClientResourceByClientId(realm, "test-app");
         ClientRepresentation client = clientResource.toRepresentation();
 
-        // make sure the name of the client maps to the prefix of the dynamic scope name
+        // make sure the name of the client maps to the prefix of the parameterized scope name
         client.setName("test");
         clientResource.update(client);
 
@@ -2048,16 +2057,16 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testStaticScopeUsingDynamicScopeFormatPrefixedWithScopeAsDefaultScope() {
+    public void testStaticScopeUsingParameterizedScopeFormatPrefixedWithScopeAsDefaultScope() {
         RealmResource realm = adminClient.realm("test");
         ClientResource clientResource = findClientResourceByClientId(realm, "test-app");
         ClientRepresentation client = clientResource.toRepresentation();
 
-        // make sure the name of the client maps to the prefix of the dynamic scope name
+        // make sure the name of the client maps to the prefix of the parameterized scope name
         client.setName("test");
         clientResource.update(client);
 
-        // creates a client scope using the dynamic scope format and add it to the client as default scope
+        // creates a client scope using the parameterized scope format and add it to the client as default scope
         createClientScope(realm, clientResource, "test", "from-scope-mapper", "value", true);
         createClientScope(realm, clientResource, "test:create", "from-dynamic-scope", "value", true);
 
@@ -2075,16 +2084,16 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testStaticScopeUsingDynamicScopeFormatPrefixedWithScopeAsOptionalScope() {
+    public void testStaticScopeUsingParameterizedScopeFormatPrefixedWithScopeAsOptionalScope() {
         RealmResource realm = adminClient.realm("test");
         ClientResource clientResource = findClientResourceByClientId(realm, "test-app");
         ClientRepresentation client = clientResource.toRepresentation();
 
-        // make sure the name of the client maps to the prefix of the dynamic scope name
+        // make sure the name of the client maps to the prefix of the parameterized scope name
         client.setName("test");
         clientResource.update(client);
 
-        // creates a client scope using the dynamic scope format and add it to the client as optional scope
+        // creates a client scope using the parameterized scope format and add it to the client as optional scope
         createClientScope(realm, clientResource, "test", "from-scope-mapper", "value", false);
         createClientScope(realm, clientResource, "test:create", "from-dynamic-scope", "value", false);
 

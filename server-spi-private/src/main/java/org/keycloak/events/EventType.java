@@ -129,7 +129,15 @@ public enum EventType implements EnumWithStableIndex {
     CUSTOM_REQUIRED_ACTION_ERROR(0x10000 + CUSTOM_REQUIRED_ACTION.getStableIndex(), true),
     EXECUTE_ACTIONS(37, true),
     EXECUTE_ACTIONS_ERROR(0x10000 + EXECUTE_ACTIONS.getStableIndex(), true),
-    EXECUTE_ACTION_TOKEN(38, true),
+
+    /**
+     * Marks a request to the {@code action-token} endpoint before the token has been parsed and the action
+     * identified. Only {@link #EXECUTE_ACTION_TOKEN_ERROR} is ever emitted, covering failures that occur
+     * before an action-specific type is known. Once the handler is resolved the event is retyped to the type
+     * declared by that handler, so this type itself is never emitted: it reaches neither the event store
+     * nor any {@link EventListenerProvider}.
+     */
+    EXECUTE_ACTION_TOKEN(38, false),
     EXECUTE_ACTION_TOKEN_ERROR(0x10000 + EXECUTE_ACTION_TOKEN.getStableIndex(), true),
 
     CLIENT_INFO(39, false),
@@ -189,6 +197,20 @@ public enum EventType implements EnumWithStableIndex {
 
     USER_SESSION_DELETED(61, false),
     USER_SESSION_DELETED_ERROR(0x10000 + USER_SESSION_DELETED.getStableIndex(), false),
+
+    VERIFIABLE_CREDENTIAL_REQUEST(62, true),
+    VERIFIABLE_CREDENTIAL_REQUEST_ERROR(0x10000 + VERIFIABLE_CREDENTIAL_REQUEST.getStableIndex(), true),
+    VERIFIABLE_CREDENTIAL_OFFER_REQUEST(63, true),
+    VERIFIABLE_CREDENTIAL_OFFER_REQUEST_ERROR(0x10000 + VERIFIABLE_CREDENTIAL_OFFER_REQUEST.getStableIndex(), true),
+    VERIFIABLE_CREDENTIAL_NONCE_REQUEST(64, false),
+    VERIFIABLE_CREDENTIAL_NONCE_REQUEST_ERROR(0x10000 + VERIFIABLE_CREDENTIAL_NONCE_REQUEST.getStableIndex(), false),
+    VERIFIABLE_CREDENTIAL_CREATE_OFFER(65, true),
+    VERIFIABLE_CREDENTIAL_CREATE_OFFER_ERROR(0x10000 + VERIFIABLE_CREDENTIAL_CREATE_OFFER.getStableIndex(), true),
+    VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED_GRANT(66, true),
+    VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED_GRANT_ERROR(0x10000 + VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED_GRANT.getStableIndex(), true),
+
+    JWT_AUTHORIZATION_GRANT(70, true),
+    JWT_AUTHORIZATION_GRANT_ERROR(0x10000 + JWT_AUTHORIZATION_GRANT.getStableIndex(), true),
     ;
 
     private final int stableIndex;

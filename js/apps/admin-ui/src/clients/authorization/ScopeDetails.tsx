@@ -44,9 +44,6 @@ export default function ScopeDetails() {
           id,
           scopeId,
         });
-        if (!scope) {
-          throw new Error(t("notFound"));
-        }
         return scope;
       }
     },
@@ -74,7 +71,9 @@ export default function ScopeDetails() {
             iconUri: scope.iconUri,
           },
         );
-        navigate(toAuthorizationTab({ realm, clientId: id, tab: "scopes" }));
+        void navigate(
+          toAuthorizationTab({ realm, clientId: id, tab: "scopes" }),
+        );
       }
       addAlert(
         t((scopeId ? "update" : "create") + "ScopeSuccess"),
@@ -93,7 +92,9 @@ export default function ScopeDetails() {
         toggleDialog={toggleDeleteDialog}
         selectedScope={scope}
         refresh={() =>
-          navigate(toAuthorizationTab({ realm, clientId: id, tab: "scopes" }))
+          void navigate(
+            toAuthorizationTab({ realm, clientId: id, tab: "scopes" }),
+          )
         }
       />
       <ViewHeader

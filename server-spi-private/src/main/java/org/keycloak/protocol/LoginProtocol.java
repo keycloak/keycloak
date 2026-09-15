@@ -69,7 +69,11 @@ public interface LoginProtocol extends Provider {
          * Passive authentication mode requested, user is logged in, but some other user interaction is necessary (eg. some required login actions exist or Consent approval is necessary for logged in
          * user)
          */
-        PASSIVE_INTERACTION_REQUIRED;
+        PASSIVE_INTERACTION_REQUIRED,
+        /**
+         * Level of Authentication invalid or minimum not reached.
+         */
+        LOA_INVALID;
     }
 
     LoginProtocol setSession(KeycloakSession session);
@@ -143,4 +147,10 @@ public interface LoginProtocol extends Provider {
         return false;
     }
 
+    /**
+     * Protocol specific handling of authentication completeness
+     */
+    default void authenticationComplete(AuthenticationSessionModel authSession) {
+        // do nothing
+    }
 }

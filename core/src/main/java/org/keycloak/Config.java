@@ -20,7 +20,9 @@ package org.keycloak;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.common.util.StringPropertyReplacer.PropertyResolver;
@@ -122,7 +124,7 @@ public class Config {
 
     }
 
-    public static class SystemPropertiesScope implements Scope {
+    public static class SystemPropertiesScope extends AbstractScope {
 
         protected String prefix;
 
@@ -132,64 +134,8 @@ public class Config {
 
         @Override
         public String get(String key) {
-            return get(key, null);
-        }
-
-        @Override
-        public String get(String key, String defaultValue) {
-            String v = System.getProperty(prefix + key, defaultValue);
+            String v = System.getProperty(prefix + key, null);
             return v != null && !v.isEmpty() ? v : null;
-        }
-
-        @Override
-        public String[] getArray(String key) {
-            String value = get(key);
-            if (value != null) {
-                String[] a = value.split(",");
-                for (int i = 0; i < a.length; i++) {
-                    a[i] = a[i].trim();
-                }
-                return a;
-            } else {
-                return null;
-            }
-        }
-
-        @Override
-        public Integer getInt(String key) {
-            return getInt(key, null);
-        }
-
-        @Override
-        public Integer getInt(String key, Integer defaultValue) {
-            String v = get(key, null);
-            return v != null ? Integer.valueOf(v) : defaultValue;
-        }
-
-        @Override
-        public Long getLong(String key) {
-            return getLong(key, null);
-        }
-
-        @Override
-        public Long getLong(String key, Long defaultValue) {
-            String v = get(key, null);
-            return v != null ? Long.valueOf(v) : defaultValue;
-        }
-
-        @Override
-        public Boolean getBoolean(String key) {
-            return getBoolean(key, null);
-        }
-
-        @Override
-        public Boolean getBoolean(String key, Boolean defaultValue) {
-            String v = get(key, null);
-            if (v != null) {
-                return Boolean.valueOf(v);
-            } else {
-                return defaultValue;
-            }
         }
 
         @Override
@@ -226,15 +172,21 @@ public class Config {
 
         String[] getArray(String key);
 
-        Integer getInt(String key);
+        default Integer getInt(String key) {
+            return getInt(key, null);
+        }
 
         Integer getInt(String key, Integer defaultValue);
 
-        Long getLong(String key);
+        default Long getLong(String key) {
+            return getLong(key, null);
+        }
 
         Long getLong(String key, Long defaultValue);
 
-        Boolean getBoolean(String key);
+        default Boolean getBoolean(String key) {
+            return getBoolean(key, null);
+        }
 
         Boolean getBoolean(String key, Boolean defaultValue);
 
@@ -256,5 +208,37 @@ public class Config {
          * @return a {@link Scope} with access to global configuration properties.
          */
         Scope root();
+    }
+
+    public static abstract class AbstractScope implements Scope {
+
+        @Override
+        public String get(String key, String defaultValue) {
+            return getValue(key, Function.identity(), String.class, defaultValue);
+        }
+
+        @Override
+        public Integer getInt(String key, Integer defaultValue) {
+            return getValue(key, Integer::valueOf, Integer.class, defaultValue);
+        }
+
+        @Override
+        public String[] getArray(String key) {
+            return getValue(key, s -> s.split("\\s*,\\s*"), String[].class, null);
+        }
+
+        @Override
+        public Long getLong(String key, Long defaultValue) {
+            return getValue(key, Long::valueOf, Long.class, defaultValue);
+        }
+
+        @Override
+        public Boolean getBoolean(String key, Boolean defaultValue) {
+            return getValue(key, Boolean::valueOf, Boolean.class, defaultValue);
+        }
+
+        protected <T> T getValue(String key, Function<String, T> conversion, Class<T> type, T defaultValue) {
+            return Optional.ofNullable(get(key)).map(conversion).orElse(defaultValue);
+        }
     }
 }

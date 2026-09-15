@@ -21,6 +21,7 @@ import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.matchers.Matchers;
 
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class ClientSearchJpaTest extends AbstractClientSearchTest {
 
     @Test
+    @DatabaseTest
     public void testJpaSearchableAttributesUnset() {
         try {
             search(String.format("%s:%s", "wrong_name", "wrong_value"));

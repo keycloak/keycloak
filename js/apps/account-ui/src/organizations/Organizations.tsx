@@ -8,16 +8,16 @@ import {
 } from "@keycloak/keycloak-ui-shared";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { AccountEnvironment } from "..";
 import { getUserOrganizations } from "../api/methods";
 import { Page } from "../components/page/Page";
-import { Environment } from "../environment";
 import { usePromise } from "../utils/usePromise";
 
 export const Organizations = () => {
   const { t } = useTranslation();
-  const context = useEnvironment<Environment>();
+  const context = useEnvironment<AccountEnvironment>();
 
-  const [userOrgs, setUserOrgs] = useState<OrganizationRepresentation[]>([]);
+  const [userOrgs, setUserOrgs] = useState<OrganizationRepresentation[]>();
 
   usePromise(
     (signal) => getUserOrganizations({ signal, context }),

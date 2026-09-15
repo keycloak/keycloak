@@ -23,8 +23,6 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.OAuth2Constants;
-import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
@@ -36,8 +34,6 @@ import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.TokenExchangeContext;
-import org.keycloak.services.ErrorResponseException;
 import org.keycloak.util.BasicAuthHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -239,20 +235,6 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
         }
     }
 
-    @Override
-    protected BrokeredIdentityContext exchangeExternalTokenV2Impl(TokenExchangeContext tokenExchangeContext) {
-        String subjectToken = tokenExchangeContext.getFormParams().getFirst(OAuth2Constants.SUBJECT_TOKEN);
-        if (subjectToken == null) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "token not set", Response.Status.BAD_REQUEST);
-        }
-        try {
-            verifyToken(subjectToken);
-            return doGetFederatedIdentity(subjectToken);
-        }
-        catch (Exception e) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, e.getMessage(), Response.Status.BAD_REQUEST);
-        }
-    }
 
     @Override
 	protected String getDefaultScopes() {

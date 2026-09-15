@@ -5,7 +5,7 @@ import java.util.Map;
 
 import static org.keycloak.broker.oidc.OIDCIdentityProviderConfig.JWKS_URL;
 import static org.keycloak.broker.oidc.OIDCIdentityProviderConfig.USE_JWKS_URL;
-import static org.keycloak.protocol.oidc.OIDCLoginProtocol.ISSUER;
+import static org.keycloak.models.IdentityProviderModel.ISSUER;
 
 public interface JWTAuthorizationGrantConfig {
 
@@ -16,6 +16,8 @@ public interface JWTAuthorizationGrantConfig {
     String JWT_AUTHORIZATION_GRANT_MAX_ALLOWED_ASSERTION_EXPIRATION = "jwtAuthorizationGrantMaxAllowedAssertionExpiration";
 
     String JWT_AUTHORIZATION_GRANT_ASSERTION_SIGNATURE_ALG = "jwtAuthorizationGrantAssertionSignatureAlg";
+
+    String JWT_AUTHORIZATION_GRANT_LIMIT_ACCESS_TOKEN_EXP = "jwtAuthorizationGrantLimitAccessTokenExp";
 
     String JWT_AUTHORIZATION_GRANT_ALLOWED_CLOCK_SKEW = "jwtAuthorizationGrantAllowedClockSkew";
 
@@ -43,6 +45,10 @@ public interface JWTAuthorizationGrantConfig {
 
     default String getJWTAuthorizationGrantAssertionSignatureAlg() {
         return getConfig().get(JWT_AUTHORIZATION_GRANT_ASSERTION_SIGNATURE_ALG);
+    }
+
+    default boolean isJwtAuthorizationGrantLimitAccessTokenExp() {
+        return Boolean.parseBoolean(getConfig().getOrDefault(JWT_AUTHORIZATION_GRANT_LIMIT_ACCESS_TOKEN_EXP, "false"));
     }
 
     default int getJWTAuthorizationGrantAllowedClockSkew() {

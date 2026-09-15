@@ -164,6 +164,7 @@ public class RoleByIdResource extends RoleResource {
     @Operation(summary = "Update the role")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public void updateRole(final @Parameter(description = "id of role") @PathParam("role-id") String id, final RoleRepresentation rep) {
@@ -196,6 +197,7 @@ public class RoleByIdResource extends RoleResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public void addComposites(final @PathParam("role-id") String id, List<RoleRepresentation> roles) {
+        // any role by ID
         RoleModel role = getRoleModel(id);
         auth.roles().requireManage(role);
         addComposites(auth, adminEvent, session.getContext().getUri(), roles, role);
@@ -229,11 +231,17 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.roles().requireView(role);
 
-        if (search == null && first == null && max == null) {
-            return role.getCompositesStream().map(ModelToRepresentation::toBriefRepresentation);
+        Stream<RoleModel> composites = role.getCompositesStream(search, null, null)
+                .filter(r -> auth.roles().canView(r));
+
+        if (first != null && first > 0) {
+            composites = composites.skip(first);
+        }
+        if (max != null && max >= 0) {
+            composites = composites.limit(max);
         }
 
-        return role.getCompositesStream(search, first, max).map(ModelToRepresentation::toBriefRepresentation);
+        return composites.map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
@@ -255,7 +263,7 @@ public class RoleByIdResource extends RoleResource {
     public Stream<RoleRepresentation> getRealmRoleComposites(final @PathParam("role-id") String id) {
         RoleModel role = getRoleModel(id);
         auth.roles().requireView(role);
-        return getRealmRoleComposites(role);
+        return getRealmRoleComposites(auth, role);
     }
 
     /**
@@ -285,7 +293,7 @@ public class RoleByIdResource extends RoleResource {
         if (clientModel == null) {
             throw new NotFoundException("Could not find client");
         }
-        return getClientRoleComposites(clientModel, role);
+        return getClientRoleComposites(auth, clientModel, role);
     }
 
     /**
@@ -307,7 +315,7 @@ public class RoleByIdResource extends RoleResource {
                                  @Parameter(description = "A set of roles to be removed") List<RoleRepresentation> roles) {
         RoleModel role = getRoleModel(id);
         auth.roles().requireManage(role);
-        deleteComposites(adminEvent, session.getContext().getUri(), roles, role);
+        deleteComposites(auth, adminEvent, session.getContext().getUri(), roles, role);
     }
 
     /**

@@ -10,10 +10,10 @@ import org.keycloak.models.cache.CachedObject;
  */
 public class AbstractRevisioned implements Revisioned, CachedObject {
     private final String id;
-    private Long revision;
+    private long revision;
     private final long cacheTimestamp = Time.currentTimeMillis();
 
-    public AbstractRevisioned(Long revision, String id) {
+    public AbstractRevisioned(long revision, String id) {
         this.revision = revision;
         this.id = id;
     }
@@ -24,12 +24,12 @@ public class AbstractRevisioned implements Revisioned, CachedObject {
     }
 
     @Override
-    public Long getRevision() {
+    public long getRevision() {
         return revision;
     }
 
     @Override
-    public void setRevision(Long revision) {
+    public void setRevision(long revision) {
         this.revision = revision;
     }
 

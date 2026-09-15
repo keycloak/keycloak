@@ -164,9 +164,12 @@ public class SPNEGOAuthenticator {
         GSSCredential gssCredential = manager.createCredential(null, GSSCredential.INDEFINITE_LIFETIME, supportedMechs, GSSCredential.ACCEPT_ONLY);
         GSSContext gssContext = manager.createContext(gssCredential);
 
-        byte[] inputToken = Base64.getDecoder().decode(spnegoToken);
+        byte[] inputToken = Base64.getMimeDecoder().decode(spnegoToken);
         byte[] respToken = gssContext.acceptSecContext(inputToken, 0, inputToken.length);
-        responseToken = Base64.getEncoder().encodeToString(respToken);
+        if (respToken != null && respToken.length > 0) {
+            // MIME Base64 can insert CRLF and must not be used for a value sent in an HTTP header.
+            responseToken = Base64.getEncoder().encodeToString(respToken);
+        }
 
         return gssContext;
     }

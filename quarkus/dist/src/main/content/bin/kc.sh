@@ -112,8 +112,10 @@ else
 fi
 
 # See also https://github.com/wildfly/wildfly-core/blob/7e5624cf92ebe4b64a4793a8c0b2a340c0d6d363/core-feature-pack/common/src/main/resources/content/bin/common.sh#L57-L60
+# java.base/java.lang=ALL-UNNAMED is required for JBoss Threads, see e.g. https://github.com/quarkusio/quarkus/pull/47637 and relevant https://github.com/quarkusio/quarkus/discussions/51041
+# --enable-native-access=ALL-UNNAMED is required for Infinispan: https://github.com/infinispan/infinispan/issues/15765#issuecomment-3839985807
 if [ -z "$JAVA_ADD_OPENS" ]; then
-   JAVA_ADD_OPENS="--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED"
+   JAVA_ADD_OPENS="--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --enable-native-access=ALL-UNNAMED"
 else
    echo "JAVA_ADD_OPENS already set in environment; overriding default settings"
 fi
@@ -151,8 +153,9 @@ esceval_args() {
 
 JAVA_RUN_OPTS=$(echo "$JAVA_OPTS" | xargs printf '%s\n' | esceval_args)
 
+# Capture the pid so that we can warn if running in a container without being PID 1, as signals may not be forwarded correctly and graceful shutdown may not work
 # The property 'java.util.concurrent.ForkJoinPool.common.threadFactory' is set here, as a Java Agent or enabling JMX might initialize the factory before Quarkus can set the property in JDK21+.
-JAVA_RUN_OPTS="-Djava.util.concurrent.ForkJoinPool.common.threadFactory=io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory $JAVA_RUN_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}"
+JAVA_RUN_OPTS="-Dkc.script.pid=$$ -Djava.util.concurrent.ForkJoinPool.common.threadFactory=io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory $JAVA_RUN_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}"
 
 if [ "$PRINT_ENV" = "true" ]; then
   echo "Using JAVA_OPTS: $JAVA_OPTS"

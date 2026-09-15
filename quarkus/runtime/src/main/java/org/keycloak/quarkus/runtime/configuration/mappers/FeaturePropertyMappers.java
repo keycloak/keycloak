@@ -10,6 +10,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.config.FeatureOptions;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.configuration.SimilarityUtil;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
@@ -36,7 +37,7 @@ public final class FeaturePropertyMappers implements PropertyMapperGrouping {
 
     public static void validateSingleFeature(String feature, String value) {
         if (!Profile.getAllUnversionedFeatureNames().contains(feature)) {
-            throw new PropertyException("'%s' is an unrecognized feature, it should be one of %s".formatted(feature, FeatureOptions.getFeatureValues(false, false)));
+            throw new PropertyException(unrecognizedFeatureMessage(feature, FeatureOptions.getFeatureValues(false, false)));
         }
 
         Matcher matcher = VERSION_SUFFIX_PATTERN.matcher(value);
@@ -62,12 +63,19 @@ public final class FeaturePropertyMappers implements PropertyMapperGrouping {
                         "%s has an invalid format for enabling a feature, expected format is feature:v{version}, e.g. docker:v1",
                         feature));
             }
-            throw new PropertyException(String.format("'%s' is an unrecognized feature, it should be one of %s", feature,
-                    FeatureOptions.getFeatureValues(false)));
+            throw new PropertyException(unrecognizedFeatureMessage(feature, FeatureOptions.getFeatureValues(false)));
         }
         String unversionedFeature = matcher.group(1);
         int version = Integer.parseInt(matcher.group(2));
         validateFeatureVersions(unversionedFeature, version);
+    }
+
+    private static String unrecognizedFeatureMessage(String feature, List<String> validFeatures) {
+        List<String> suggestions = SimilarityUtil.findSimilar(feature, validFeatures);
+        if (!suggestions.isEmpty()) {
+            return "'%s' is an unrecognized feature. Did you mean: %s?".formatted(feature, String.join(", ", suggestions));
+        }
+        return "'%s' is an unrecognized feature, it should be one of %s".formatted(feature, validFeatures);
     }
 
     private static void validateFeatureVersions(String feature, int version) {

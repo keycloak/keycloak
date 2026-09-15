@@ -45,6 +45,7 @@ public class SAML2ErrorResponseBuilder implements SamlProtocolExtensionsAwareBui
     protected String statusMessage;
     protected String destination;
     protected NameIDType issuer;
+    protected String inResponseTo;
     protected final List<NodeGenerator> extensions = new LinkedList<>();
 
     public SAML2ErrorResponseBuilder status(String status) {
@@ -71,6 +72,11 @@ public class SAML2ErrorResponseBuilder implements SamlProtocolExtensionsAwareBui
         return issuer(SAML2NameIDBuilder.value(issuer).build());
     }
 
+    public SAML2ErrorResponseBuilder inResponseTo(String inResponseTo) {
+        this.inResponseTo = inResponseTo;
+        return this;
+    }
+
     @Override
     public SAML2ErrorResponseBuilder addExtension(NodeGenerator extension) {
         this.extensions.add(extension);
@@ -81,6 +87,7 @@ public class SAML2ErrorResponseBuilder implements SamlProtocolExtensionsAwareBui
 
         try {
             StatusResponseType statusResponse = new ResponseType(IDGenerator.create("ID_"), XMLTimeUtil.getIssueInstant());
+            statusResponse.setInResponseTo(inResponseTo);
 
             StatusType statusType = JBossSAMLAuthnResponseFactory.createStatusTypeForResponder(status);
             statusType.setStatusMessage(statusMessage);

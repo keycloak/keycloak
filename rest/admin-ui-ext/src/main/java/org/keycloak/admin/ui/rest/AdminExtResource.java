@@ -45,6 +45,21 @@ public final class AdminExtResource {
         return new EffectiveRoleMappingResource(session, realm, auth);
     }
 
+    @Path("/effective-roles-all")
+    public AllEffectiveRoleMappingResource allEffectiveRoles() {
+        return new AllEffectiveRoleMappingResource(session, realm, auth);
+    }
+
+    @Path("/role-mappings")
+    public RoleCompositeResource roleMappings() {
+        return new RoleCompositeResource(session, realm, auth);
+    }
+
+    @Path("/role-mapping-delete")
+    public RoleMappingDeleteResource roleMappingDelete() {
+        return new RoleMappingDeleteResource(session, realm, auth, adminEvent);
+    }
+
     @Path("/sessions")
     public SessionsResource sessions() {
         return new SessionsResource(session, realm, auth);

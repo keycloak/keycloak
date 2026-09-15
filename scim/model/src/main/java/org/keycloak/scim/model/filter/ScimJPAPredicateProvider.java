@@ -1,0 +1,367 @@
+package org.keycloak.scim.model.filter;
+
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiPredicate;
+
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
+
+import org.keycloak.common.util.TriFunction;
+import org.keycloak.scim.filter.ScimFilterException;
+import org.keycloak.scim.resource.schema.ModelSchema;
+import org.keycloak.scim.resource.schema.attribute.Attribute;
+import org.keycloak.scim.resource.schema.attribute.ScimDateTimeUtil;
+import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
+
+import org.jboss.logging.Logger;
+
+/**
+ * Creates JPA predicates for SCIM filter operators. Handles both direct root entity fields and collection-backed
+ * attributes - custom attributes stored in an associated "attributes" collection, and resource-specific relations
+ * such as groups/members/roles resolved via {@link ScimAttributeJpaExpressionResolver}. Collection-backed attributes
+ * are evaluated using a correlated {@code EXISTS} subquery rather than a shared {@code JOIN}, so that conjunction
+ * across independent values and negation are evaluated per-resource rather than per-joined-row (see
+ * <a href="https://github.com/keycloak/keycloak/issues/51805">#51805</a>). Also handles necessary type conversions
+ * for temporal fields.
+ *
+ * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
+ */
+public class ScimJPAPredicateProvider {
+
+    private static final Logger logger = Logger.getLogger(ScimJPAPredicateProvider.class);
+
+    private final ScimResourceTypeProvider resourceTypeProvider;
+    private final List<ModelSchema<?, ?>> schemas;
+    private final CriteriaBuilder cb;
+    private final CriteriaQuery<?> query;
+    private final Root<?> root;
+    private final BiPredicate<String, String> filterAuthorizationCheck;
+
+    @SuppressWarnings("rawtypes,unchecked")
+    private final Map<String, TriFunction<CriteriaBuilder, Expression, Object, Predicate>> operatorMap = Map.of(
+            "eq", CriteriaBuilder::equal,
+            "ne", CriteriaBuilder::notEqual,
+            "pr", (cb, exp, val) -> cb.isNotNull(exp),
+            "gt", (cb, exp, val) -> cb.greaterThan(exp, asComparable(val)),
+            "ge", (cb, exp, val) -> cb.greaterThanOrEqualTo(exp, asComparable(val)),
+            "lt", (cb, exp, val) -> cb.lessThan(exp, asComparable(val)),
+            "le", (cb, exp, val) -> cb.lessThanOrEqualTo(exp, asComparable(val)),
+            "co", (cb, exp, val) -> cb.like(exp.as(String.class), "%" + escapeLike(val.toString()) + "%", '\\'),
+            "sw", (cb, exp, val) -> cb.like(exp.as(String.class), escapeLike(val.toString()) + "%", '\\'),
+            "ew", (cb, exp, val) -> cb.like(exp.as(String.class), "%" + escapeLike(val.toString()), '\\')
+    );
+
+    public ScimJPAPredicateProvider(ScimResourceTypeProvider resourceTypeProvider, List<ModelSchema<?, ?>> schemas, CriteriaBuilder cb, CriteriaQuery<?> query, Root<?> root) {
+        this(resourceTypeProvider, schemas, cb, query, root, null);
+    }
+
+    public ScimJPAPredicateProvider(ScimResourceTypeProvider resourceTypeProvider, List<ModelSchema<?, ?>> schemas, CriteriaBuilder cb, CriteriaQuery<?> query, Root<?> root,
+                                    BiPredicate<String, String> filterAuthorizationCheck) {
+        this.resourceTypeProvider = resourceTypeProvider;
+        this.schemas = schemas;
+        this.cb = cb;
+        this.query = query;
+        this.root = root;
+        this.filterAuthorizationCheck = filterAuthorizationCheck;
+    }
+
+    /**
+     * Create a predicate for SCIM operators (eq, ne, pr, gt, ge, lt, le, co, sw, ew). This method first resolves the SCIM
+     * attribute path to get the corresponding metadata, then validates that the operator is supported for the attribute type,
+     * normalizes the value to the correct type, and finally builds the appropriate predicate based on whether the attribute
+     * is a direct field or a custom attribute.
+     *
+     * @param path the SCIM attribute path to compare
+     * @param operator the comparison operator (eq, ne, pr, gt, ge, lt, le, co, sw, ew)
+     * @param value the value to compare against, as a string (will be normalized to the correct type based on the attribute metadata)
+     * @return a {@link JPAFilterResult} containing the comparison predicate if the attribute is known and mapped, or an unsupported
+     * result if the attribute is unknown
+     */
+    public JPAFilterResult createPredicate(String path, String operator, String value) {
+        Attribute<?,?> attrInfo = resolve(path);
+        if (attrInfo == null) {
+            logger.debugf("Filter attribute '%s' could not be resolved to a known SCIM attribute; filter will not match any resources", path);
+            return JPAFilterResult.unsupported(cb.disjunction());
+        }
+
+        String op = operator.toLowerCase();
+        // validate operator before normalization or predicate building
+        validateOperator(attrInfo, path, op);
+
+        boolean authzProtected = false;
+        if (filterAuthorizationCheck != null) {
+            if (!"eq".equals(op)) {
+                // Only eq can be safely authorized through value comparison. All other
+                // operators (ne, pr, gt, ge, lt, le, co, sw, ew) can match unauthorized
+                // rows. Call with null to let the callback detect protected paths and block.
+                if (!filterAuthorizationCheck.test(path, null)) {
+                    return JPAFilterResult.unsupported(cb.disjunction());
+                }
+            } else if (!filterAuthorizationCheck.test(path, value)) {
+                return JPAFilterResult.unsupported(cb.disjunction());
+            } else if (!filterAuthorizationCheck.test(path, null)) {
+                // eq on an authorization-protected path that passed the check - flag it
+                // so that wrapping this predicate in NOT is blocked at the evaluator level
+                // (negating an authorized eq produces the equivalent of ne, leaking hidden rows)
+                authzProtected = true;
+            }
+        }
+
+        // normalize the value (String -> Long, Boolean, etc.)
+        Object normalizedValue = normalizeValue(attrInfo, value);
+
+        // build the predicate
+        return JPAFilterResult.valid(getAttributePredicate(attrInfo, op, normalizedValue), authzProtected);
+    }
+
+    /**
+     * Normalize the string value from the filter expression to the correct type based on the attribute metadata. For timestamp attributes,
+     * this converts the ISO 8601 date/time string to a Long timestamp. For boolean attributes, this converts "true"/"false" strings to Boolean.
+     * For other types, it returns the original string value (no normalization needed).
+     *
+     * @param attrInfo the attribute metadata to determine the type for normalization
+     * @param value the original string value from the filter expression
+     * @return the normalized value, converted to the appropriate type based on the attribute metadata, or the original string if no normalization is needed
+     */
+    private Object normalizeValue(Attribute<?,?> attrInfo, String value) {
+        if (value == null) return null;
+        if (attrInfo.isTimestamp()) return parseDateTime(value);
+        if (attrInfo.isBoolean()) return parseBoolean(value);
+        return value;
+    }
+
+    /**
+     * Build a JPA predicate for the given attribute, operator, and value. Direct fields on the root entity are compared
+     * in place. Collection-backed attributes - custom attributes stored in the "attributes" collection, or a
+     * resource-specific relation resolved via {@link ScimAttributeJpaExpressionResolver} (e.g. groups/members/roles) -
+     * are compared using a correlated {@code EXISTS} subquery, so that each attribute-path comparison is evaluated as
+     * an independent existence check against the resource, rather than against a single shared joined row. This
+     * matters for two SCIM filtering scenarios that a plain {@code JOIN} cannot express correctly: conjunction across
+     * independent values of the same multivalued attribute (each side must be allowed to match a different value/row),
+     * and negation (a {@code NOT} must apply to the resource as a whole, including resources with no values at all,
+     * not to a single joined row).
+     *
+     * @param attrInfo the attribute metadata to determine how to build the predicate
+     * @param operation the comparison operator (eq, ne, gt, ge, lt, le, co, sw, ew)
+     * @param value the value to compare against, already normalized to the correct type
+     * @return the JPA {@link Predicate} representing the comparison for the given attribute, operator, and value
+     */
+    private Predicate getAttributePredicate(Attribute<?,?> attrInfo, String operation, Object value) {
+        String modelAttributeName = attrInfo.getModelAttributeName();
+
+        Expression<?> directExpression = null;
+        try {
+            directExpression = root.get(modelAttributeName);
+        } catch (IllegalArgumentException ignore) {
+            // not a primary attribute - continue to check for a collection-backed attribute
+        }
+
+        if (directExpression != null) {
+            return buildOperatorPredicate(directExpression, attrInfo, operation, value);
+        }
+
+        Subquery<Long> subquery = query.subquery(Long.class);
+        subquery.select(cb.literal(1L));
+
+        Expression<?> expression = null;
+        Predicate correlation = null;
+
+        if (resourceTypeProvider instanceof ScimAttributeJpaExpressionResolver mapper) {
+            // resolver implementations correlate their relation entity to "root" (the enclosing query's root, not a
+            // correlated root) via subquery.where(...); read that restriction back so it can be combined with the
+            // operator predicate below
+            expression = mapper.getAttributeExpression(attrInfo, cb, root, subquery);
+            if (expression != null && subquery.getRoots().isEmpty()) {
+                // the resolver returned a computed expression against the outer root directly (e.g. a derived
+                // field) rather than joining a relation collection into the subquery - no existential
+                // quantification is needed, so evaluate it as a plain predicate on the enclosing query
+                return buildOperatorPredicate(expression, attrInfo, operation, value);
+            }
+            correlation = subquery.getRestriction();
+            if (expression != null && correlation == null) {
+                // the resolver joined a relation collection into the subquery but never correlated it back to
+                // "root" via subquery.where(...) - left uncorrelated, the EXISTS below would silently match
+                // every resource instead of just the ones related to it, reintroducing the exact bug this
+                // subquery-based approach is meant to fix
+                throw new IllegalStateException(
+                        "ScimAttributeJpaExpressionResolver for attribute '" + attrInfo.getName()
+                                + "' joined a relation collection but did not correlate it to the enclosing query");
+            }
+        }
+
+        if (expression == null) {
+            Join<?, ?> join = subquery.correlate(root).join("attributes");
+            expression = join.get("value");
+            correlation = cb.equal(join.get("name"), modelAttributeName);
+        }
+
+        Predicate operatorPredicate = buildOperatorPredicate(expression, attrInfo, operation, value);
+        subquery.where(correlation != null ? cb.and(correlation, operatorPredicate) : operatorPredicate);
+
+        return cb.exists(subquery);
+    }
+
+    /**
+     * Apply case-folding (if applicable) and the comparison operator to the given expression.
+     *
+     * @param expression the expression to compare (a direct root field, or a collection element within a subquery)
+     * @param attrInfo the attribute metadata to determine case sensitivity
+     * @param operation the comparison operator (eq, ne, gt, ge, lt, le, co, sw, ew)
+     * @param value the value to compare against, already normalized to the correct type
+     * @return the JPA {@link Predicate} representing the comparison
+     */
+    @SuppressWarnings("unchecked")
+    private Predicate buildOperatorPredicate(Expression<?> expression, Attribute<?,?> attrInfo, String operation, Object value) {
+        if (value instanceof String && (attrInfo.isStoredLowerCase() || !attrInfo.isCaseExact())) {
+            value = value.toString().toLowerCase();
+            if (!attrInfo.isStoredLowerCase()) {
+                expression = cb.lower((Expression<String>) expression);
+            }
+        }
+        return operatorMap.get(operation).apply(cb, expression, value);
+    }
+
+    /**
+     * Validate that the operator is supported for the attribute type. For example, boolean attributes only support "eq" and "ne",
+     * while timestamp attributes do not support string-specific operators like "co", "sw", or "ew". If the operator is not valid for the attribute type,
+     * this method throws a {@link ScimFilterException} with a descriptive error message.
+     *
+     * @param attrInfo the attribute metadata to validate against
+     * @param scimAttribute the original SCIM attribute path (used for error messages)
+     * @param operator the operator to validate
+     * @throws ScimFilterException if the operator is not supported for the attribute type
+     */
+    private void validateOperator(Attribute<?,?> attrInfo, String scimAttribute, String operator) {
+        String op = operator.toLowerCase();
+
+        // boolean validation: only allows equality and presence operators
+        if (attrInfo.isBoolean()) {
+            if (!op.equals("eq") && !op.equals("ne") && !op.equals("pr")) {
+                throw new ScimFilterException(
+                        "Operator '" + operator + "' is not supported for boolean attribute: " + scimAttribute);
+            }
+        }
+
+        // timestamp/numeric validation: block string-specific operators
+        if (attrInfo.isTimestamp()) {
+            if (op.equals("co") || op.equals("sw") || op.equals("ew")) {
+                throw new ScimFilterException(
+                        "String operators (co, sw, ew) are not supported for timestamp attribute: " + scimAttribute);
+            }
+        }
+    }
+
+    /**
+     * Parse ISO 8601 date/time string to {@link Long} timestamp (milliseconds since epoch). SCIM uses ISO 8601 format
+     * (e.g., "2011-05-13T04:42:34Z") while Keycloak stores timestamps as Long (milliseconds).
+     *
+     * @param dateTimeString the date/time string to parse
+     * @return the parsed timestamp as {@link Long}
+     * @throws ScimFilterException if the input string is not a valid ISO 8601 date/time format or a valid numeric timestamp
+     */
+    private Long parseDateTime(String dateTimeString) {
+        try {
+            return ScimDateTimeUtil.parseDateTime(dateTimeString);
+        } catch (IllegalArgumentException e) {
+            throw new ScimFilterException(e.getMessage());
+        }
+    }
+
+    /**
+     * Parse boolean string ("true"/"false") to {@link Boolean}. This method also validates that the value is a valid boolean string.
+     *
+     * @param value the string to parse as boolean
+     * @return the parsed {@link Boolean} value
+     * @throws ScimFilterException if the value is not a valid boolean string
+     */
+    private Boolean parseBoolean(String value) {
+        if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
+            return Boolean.parseBoolean(value);
+        }
+        throw new ScimFilterException("Invalid boolean value found in boolean expression: " + value);
+    }
+
+    /**
+     * Helper method to cast an object to {@link Comparable}. This is used for comparison operators (gt, ge, lt, le) which
+     * require the value to be comparable.
+     *
+      * @param val the object to cast
+     * @return the object cast to {@link Comparable}
+     * @throws ScimFilterException if the object is not an instance of {@link Comparable}
+     */
+    @SuppressWarnings("unchecked")
+    private Comparable<Object> asComparable(Object val) {
+        if (val instanceof Comparable) {
+            return (Comparable<Object>) val;
+        }
+        throw new ScimFilterException("Value is not comparable: " + val);
+    }
+
+    /**
+     * Reject the {@code and} operator within a SCIM value-path filter (e.g. {@code attr[cond1 and cond2]}) when the
+     * bracketed attribute is multivalued or non-complex. Mirrors the equivalent restriction already enforced on the
+     * PATCH path (see {@code ScimFilterToJsonNodeConverter}): for a scalar multivalued attribute, one value cannot
+     * satisfy two conditions simultaneously; for a complex multivalued attribute (e.g. groups/members), filtering is
+     * restricted to the "value" sub-attribute, so {@code and} has no valid interpretation. Without this guard, each
+     * comparison inside the brackets is evaluated as an independent correlated {@code EXISTS} subquery, so different
+     * elements of the collection could satisfy each condition instead of a single element satisfying all of them.
+     *
+     * @param valuePathAttribute the SCIM attribute path of the enclosing value path (e.g. "groups")
+     * @throws ScimFilterException if the {@code and} operator is not valid for the given value path
+     */
+    public void validateAndOperatorInValuePath(String valuePathAttribute) {
+        Attribute<?, ?> attrInfo = resolve(valuePathAttribute);
+        if (attrInfo != null && (attrInfo.isMultivalued() || attrInfo.getComplexType() == null)) {
+            throw new ScimFilterException(
+                    "'and' operator is not supported within a value path filter for multivalued or non-complex attributes: " + valuePathAttribute);
+        }
+    }
+
+    /**
+     * Resolve the SCIM attribute path to the corresponding {@link Attribute} metadata. This method checks all registered schemas
+     * to find the attribute. If the attribute is found but does not have a model attribute name (i.e., it is not mapped to a model field),
+     * it returns {@code null} to indicate that this is an unknown attribute for filtering purposes. If the attribute is not found in any schema,
+     * it also returns {@code null}.
+     *
+     * @param path the SCIM attribute path to resolve
+     * @return the corresponding {@link Attribute} metadata if found and mapped to a model field, or {@code null} if not found or not mapped
+     */
+    public Attribute<?, ?> resolve(String path) {
+        Attribute<?, ?> metadata = null;
+
+        for (ModelSchema<?, ?> schema : schemas) {
+            metadata = schema.getAttributeByPath(path);
+            if (metadata != null    ) {
+                break;
+            }
+        }
+        if (metadata != null) {
+            String modelAttributeName = metadata.getModelAttributeName();
+            if (modelAttributeName != null) {
+                return metadata;
+            }
+        }
+        // haven't found the attribute - return null to indicate that this is an unknown attribute.
+        return null;
+    }
+
+    /**
+     * Escape special characters in a string for use in SQL LIKE expressions. This method escapes the backslash, percent,
+     * and underscore characters, which are special in SQL LIKE patterns.
+     *
+     * @param value the string value to escape
+     * @return the escaped string, safe for use in SQL LIKE expressions
+     */
+    private String escapeLike(String value) {
+        // Escape SQL LIKE special characters
+        return value.replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
+    }
+}

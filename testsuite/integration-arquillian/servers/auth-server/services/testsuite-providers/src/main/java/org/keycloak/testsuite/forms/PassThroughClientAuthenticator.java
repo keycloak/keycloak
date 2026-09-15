@@ -30,6 +30,7 @@ import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.client.AbstractClientAuthenticator;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 
 /**
@@ -40,7 +41,6 @@ public class PassThroughClientAuthenticator extends AbstractClientAuthenticator 
     public static final String PROVIDER_ID = "testsuite-client-passthrough";
 
     public static String clientId = "test-app";
-    public static String namedClientId = "named-test-app";
 
     // If this parameter is present in the HTTP request, the error will be thrown during authentication
     public static final String TEST_ERROR_PARAM = "test_error_param";
@@ -113,7 +113,7 @@ public class PassThroughClientAuthenticator extends AbstractClientAuthenticator 
     }
 
     @Override
-    public Map<String, Object> getAdapterConfiguration(ClientModel client) {
+    public Map<String, Object> getAdapterConfiguration(KeycloakSession session, ClientModel client) {
         Map<String, Object> props = new HashMap<>();
         props.put("foo", "some foo value");
         props.put("bar", true);

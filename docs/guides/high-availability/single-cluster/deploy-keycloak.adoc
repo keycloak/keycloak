@@ -17,16 +17,22 @@ Use it together with the other building blocks outlined in the <@links.ha id="si
 
 * {kubernetes} cluster deployed across multiple availability-zones with a worker-pool configured for each.
 * Understanding of a <@links.operator id="basic-deployment" /> of {project_name} with the {project_name} Operator.
-* AWS Aurora database deployed using the <@links.ha id="single-cluster-deploy-aurora" /> {section}.
+* A database deployed according to one of the following guides:
+** <@links.ha id="single-cluster-deploy-aurora" /> {section},
+** <@links.ha id="single-cluster-deploy-cnpg" /> {section}.
+** <@links.ha id="single-cluster-deploy-cnpg-with-backup" /> {section}.
+** <@links.ha id="single-cluster-deploy-cnpg-recovery" /> {section}.
 
 [#single-cluster-deploy-keycloak-procedure]
 == Procedure
 
+Depending on the database you deployed use the relevant procedure for deploying {project_name}.
+
+[#single-cluster-deploy-keycloak-with-aurora-procedure]
+=== Procedure for deploying {project_name} with AWS Aurora
 . Determine the sizing of the deployment using the <@links.ha id="single-cluster-concepts-memory-and-cpu-sizing" /> {section}.
 
 . Install the {project_name} Operator as described in the <@links.operator id="installation" /> {section}.
-
-. Notice the configuration file below contains options relevant for connecting to the Aurora database from <@links.ha id="single-cluster-deploy-aurora" anchor="single-cluster-aurora-connecting" />
 
 . Build a custom {project_name} image which is link:{links_server_db_url}#preparing-keycloak-for-amazon-aurora-postgresql[prepared for usage with the Amazon Aurora PostgreSQL database].
 
@@ -35,7 +41,116 @@ Create a `ConfigMap` with the certificate bundle using:
 +
 [source,bash]
 ----
-kubectl --namespace keycloak create configmap keycloak-aurora-rootcert --from-file aurora.pem=/path/to/bundle.pem
+kubectl --namespace keycloak create configmap keycloak-aurora-rootcert \
+  --from-file aurora.pem=/path/to/bundle.pem
+----
+
+. Create a generic secret `keycloak-db-secret` containing username and password values defined when creating the Aurora database.
++
+[source,bash]
+----
+kubectl --namespace keycloak create secret generic keycloak-db-secret \
+  --from-literal="username=keycloak" --from-literal="password=secret99" # <1>
+----
+<1> Note: These are sample values for demonstration purposes only. Please chose a unique password to secure your database.
+
+. Deploy the {project_name} CR with the following values with the resource requests and limits calculated in the first step:
++
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2beta1
+kind: Keycloak
+metadata:
+  labels:
+    app: keycloak
+  name: keycloak
+  namespace: keycloak
+spec:
+  hostname:
+    hostname: <KEYCLOAK_URL_HERE>
+  resources:
+    requests:
+      cpu: "2"
+      memory: "1250M"
+    limits:
+      cpu: "6"
+      memory: "2250M"
+  db:
+    vendor: postgres
+    url: jdbc:aws-wrapper:postgresql://<AWS_AURORA_URL_HERE>:5432/keycloak # <1>
+    poolMinSize: 30 # <2>
+    poolInitialSize: 30
+    poolMaxSize: 30
+    usernameSecret: # <3>
+      name: keycloak-db-secret
+      key: username
+    passwordSecret: # <3>
+      name: keycloak-db-secret
+      key: password
+  image: <KEYCLOAK_IMAGE_HERE> # <4>
+  startOptimized: false # <4>
+  additionalOptions:
+    - name: log-console-output
+      value: json
+    - name: metrics-enabled # <5>
+      value: 'true'
+    - name: event-metrics-user-enabled
+      value: 'true'
+    - name: db-driver
+      value: software.amazon.jdbc.Driver
+    - name: db-tls-mode # <6>
+      value: verify-server
+  http:
+    tlsSecret: keycloak-tls-secret
+  instances: 3
+  truststores:
+    aurora:
+      configMap:
+        name: keycloak-aurora-rootcert # <7>
+
+----
+<1> Set the Amazon Aurora PostgreSQL URL.
+<2> The database connection pool initial, max and min size should be identical to allow statement caching for the database.
+Adjust this number to meet the needs of your system.
+As most requests will not touch the database due to the {project_name} embedded cache, this change can serve several hundreds of requests per second.
+See the <@links.ha id="single-cluster-concepts-database-connections" /> {section} for details.
+<3> Utilise the Secret `keycloak-db-secret` created in the previous step for connecting to the database.
+<4> Specify the URL to your custom {project_name} image. If your image is optimized, set the `startOptimized` flag to `true`.
+<5> Enable the metrics endpoint in order to effectively monitor the system under load.
+<6> Secure the database connection.
+<7> Specify the `ConfigMap` name that contains the Amazon Aurora PostgreSQL database certificate bundle.
+The Operator will automatically mount the file in directory `/opt/keycloak/conf/truststores/configmap-<config map name>/<file-name>`
+
+[#single-cluster-deploy-keycloak-with-cnpg-procedure]
+=== Procedure for deploying {project_name} with CloudNativePG
+. Determine the sizing of the deployment using the <@links.ha id="single-cluster-concepts-memory-and-cpu-sizing" /> {section}.
+
+. Install the {project_name} Operator as described in the <@links.operator id="installation" /> {section}.
+
+. Create a `ConfigMap` containing the generated CA certificate of the CloudNativePG cluster so that {project_name} can secure the connection to the database.
++
+[source,bash]
+----
+kubectl --namespace keycloak create configmap cnpg-keycloak-ca \
+  --from-literal=cert.pem="$(kubectl --namespace cnpg-keycloak get secrets cnpg-keycloak-ca -o jsonpath='{.data.ca\.crt}' | base64 -d)"
+----
+
+. Create a generic secret `keycloak-db-secret` containing a username and password for accessing the database.
+We use the values from the `cnpg-keycloak-app` Secret which is automatically generated during the installation of the CloudNativePG database cluster.
++
+[source,bash]
+----
+kubectl get secret cnpg-keycloak-app --namespace cnpg-keycloak -o go-template='
+apiVersion: v1
+kind: Secret
+metadata:
+  name: keycloak-db-secret
+  namespace: keycloak
+type: Opaque
+data:
+  username: {{ .data.username }}
+  password: {{ .data.password }}
+' | kubectl apply -f -
 ----
 
 . Deploy the {project_name} CR with the following values with the resource requests and limits calculated in the first step:
@@ -61,18 +176,16 @@ spec:
       memory: "2250M"
   db:
     vendor: postgres
-    url: jdbc:aws-wrapper:postgresql://<AWS_AURORA_URL_HERE>:5432/keycloak?sslmode=verify-full&sslrootcert=/opt/keycloak/conf/truststores/configmap-keycloak-aurora-rootcert/aurora.pem # <1>
+    host: cnpg-keycloak-rw.cnpg-keycloak.svc.cluster.local # <1>
     poolMinSize: 30 # <2>
     poolInitialSize: 30
     poolMaxSize: 30
-    usernameSecret:
+    usernameSecret: # <3>
       name: keycloak-db-secret
       key: username
-    passwordSecret:
+    passwordSecret: # <3>
       name: keycloak-db-secret
       key: password
-  image: <KEYCLOAK_IMAGE_HERE> # <3>
-  startOptimized: false # <3>
   additionalOptions:
     - name: log-console-output
       value: json
@@ -80,26 +193,27 @@ spec:
       value: 'true'
     - name: event-metrics-user-enabled
       value: 'true'
-    - name: db-driver
-      value: software.amazon.jdbc.Driver
+    - name: db-tls-mode # <5>
+      value: verify-server
   http:
     tlsSecret: keycloak-tls-secret
   instances: 3
   truststores:
-    aurora:
+    cnpg:
       configMap:
-        name: keycloak-aurora-rootcert # <5>
+        name: cnpg-keycloak-ca # <6>
 
 ----
-<1> Secure the database connection with the `sslmode=verify-full` and `sslrootcert` properties.
+<1> Set CloudNativePG read-write service URL.
 <2> The database connection pool initial, max and min size should be identical to allow statement caching for the database.
 Adjust this number to meet the needs of your system.
-As most requests will not touch the database due to the {project_name} embedded cache, this change can server several hundreds of requests per second.
+As most requests will not touch the database due to the {project_name} embedded cache, this change can serve several hundreds of requests per second.
 See the <@links.ha id="single-cluster-concepts-database-connections" /> {section} for details.
-<3> Specify the URL to your custom {project_name} image. If your image is optimized, set the `startOptimized` flag to `true`.
-<4> To be able to analyze the system under load, enable the metrics endpoint.
-<5> Specify the `ConfigMap` name that contains the Amazon Aurora PostgreSQL database certificate bundle.
-The Operator will automatic mount the file in directory `/opt/keycloak/conf/truststores/configmap-<config map name>/<file-name>`
+<3> Utilise the Secret `keycloak-db-secret` created in the previous step for connecting to the database.
+<4> Enable the metrics endpoint in order to effectively monitor the system under load.
+<5> Secure the database connection.
+<6> Specify the `ConfigMap` name that contains the CloudNativePG CA certificate.
+The Operator will automatically mount the file in directory `/opt/keycloak/conf/truststores/configmap-<config map name>/<file-name>`
 
 <#include "/high-availability/partials/building-blocks/verifying-deployment.adoc" />
 

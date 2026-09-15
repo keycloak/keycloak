@@ -186,6 +186,15 @@ public final class Marshalling {
     public static final int EMBEDDED_CLIENT_SESSION_KEY = 65616;
     public static final int CLIENT_SESSION_USER_FILTER = 65617;
     public static final int REMOVE_KEY_BI_CONSUMER = 65618;
+    public static final int VALUE_IDENTITY_BI_FUNCTION = 65619;
+    public static final int LOGIN_FAILURES_LIFESPAN_UPDATE = 65620;
+
+    /** see {@link org.keycloak.models.workflow.WorkflowScheduleClusterEvent} */
+    public static final int WORKFLOW_SCHEDULE_CLUSTER_EVENT = 65621;
+    public static final int USER_VERIFIABLE_CREDENTIALS_UPDATED_EVENT = 65622;
+
+
+    public static final int AUTHENTICATED_USER_AUTH_SESSION_PREDICATE = 65623;
 
     public static void configure(GlobalConfigurationBuilder builder) {
         getSchemas().forEach(builder.serialization()::addContextInitializer);

@@ -10,13 +10,15 @@ public class ManagedRealmCleanup {
 
     private final List<RealmCleanup> cleanupTasks = new LinkedList<>();
 
+    /**
+     * Add a cleanup task to perform on the realm once the test has completed
+     *
+     * @param realmCleanup the cleanup to perform on the realm
+     * @return
+     */
     public ManagedRealmCleanup add(RealmCleanup realmCleanup) {
         this.cleanupTasks.add(realmCleanup);
         return this;
-    }
-
-    public ManagedRealmCleanup deleteUsers() {
-        return add(r -> r.users().list().forEach(u -> r.users().delete(u.getId()).close()));
     }
 
     void resetToOriginalRepresentation(RealmRepresentation rep) {

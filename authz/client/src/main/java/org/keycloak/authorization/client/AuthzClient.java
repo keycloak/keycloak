@@ -138,6 +138,7 @@ public class AuthzClient {
      * @return a {@link ProtectionResource}
      */
     public ProtectionResource protection(String userName, String password) {
+        patSupplier = null;
         return new ProtectionResource(this.http, this.serverConfiguration, configuration, createPatSupplier(userName, password));
     }
 

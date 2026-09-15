@@ -1,0 +1,20 @@
+<#-- Macro to display the supported databases table -->
+<#-- Parameters: -->
+<#--   detailed: boolean, defaults to false (set to true to show Option value and Tested Version columns) -->
+<#macro supportedDatabases detailed=false>
+[%autowidth]
+|===
+|Database <#if detailed>| Option value | Tested Version</#if> | Supported Versions
+
+|MariaDB Server <#if detailed>| `mariadb` | ${properties["mariadb.version"]}</#if> | 11.8 (LTS), 11.4 (LTS), 10.11 (LTS), 10.6 (LTS)
+|Microsoft SQL Server <#if detailed>| `mssql` | ${properties["mssql.version"]}</#if> | 2022, 2019
+|MySQL <#if detailed>| `mysql` | ${properties["mysql.version"]}</#if> | 8.4 (LTS), 8.0 (LTS)
+|Oracle Database <#if detailed>| `oracle` | ${properties["oracledb.version"]}</#if> | 23.x (i.e 23.5+), 19c (19.3+) (*Note:* Oracle RAC is also supported if using the same database engine version, e.g 23.5+, 19.3+)
+|PostgreSQL <#if detailed>| `postgres` | ${properties["postgresql.version"]}</#if> | 18.x, 17.x, 16.x, 15.x, 14.x
+|EnterpriseDB Advanced <#if detailed>| `postgres` | ${properties["edb.version"]}</#if> | 18.x, 17.x
+|Amazon Aurora PostgreSQL <#if detailed>| `postgres` | ${properties["aurora-postgresql.version"]}</#if> | 17.x, 16.x, 15.x
+|Azure SQL Database <#if detailed>| `mssql` | latest</#if> | latest
+|Azure SQL Managed Instance <#if detailed>| `mssql` | latest</#if> | latest
+|===
+</#macro>
+

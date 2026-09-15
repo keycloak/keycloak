@@ -9,6 +9,7 @@ import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class PartialImportRolesTest extends AbstractPartialImportTest {
 
     @Test
+    @DatabaseTest
     public void testAddRealmRoles() {
         setFail();
         addRealmRoles();
@@ -36,6 +38,7 @@ public class PartialImportRolesTest extends AbstractPartialImportTest {
     }
 
     @Test
+    @DatabaseTest
     public void testAddClientRoles() {
         setFail();
         addClientRoles();

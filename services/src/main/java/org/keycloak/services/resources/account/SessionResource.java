@@ -20,6 +20,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,12 +35,15 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.device.DeviceActivityManager;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
@@ -56,12 +61,14 @@ public class SessionResource {
     private final Auth auth;
     private final RealmModel realm;
     private final UserModel user;
+    private final EventBuilder event;
 
-    public SessionResource(KeycloakSession session, Auth auth) {
+    public SessionResource(KeycloakSession session, Auth auth, EventBuilder event) {
         this.session = session;
         this.auth = auth;
         this.realm = auth.getRealm();
         this.user = auth.getUser();
+        this.event = event;
     }
 
     /**
@@ -87,7 +94,15 @@ public class SessionResource {
     @NoCache
     public Collection<DeviceRepresentation> devices() {
         Map<String, DeviceRepresentation> reps = new HashMap<>();
-        session.sessions().getUserSessionsStream(realm, user).forEach(s -> {
+
+        // While we avoid it, there can be both an online and an offline session with the same ID.
+        // The user wouldn't know the difference between online and offline sessions, so we don't differentiate between them
+        // in the UI.
+
+        Stream.concat(
+            session.sessions().getUserSessionsStream(realm, user),
+            session.sessions().getOfflineUserSessionsStream(realm, user))
+            .forEach(s -> {
                 DeviceRepresentation device = getAttachedDevice(s);
                 DeviceRepresentation rep = reps
                         .computeIfAbsent(device.getOs() + device.getOsVersion(), key -> {
@@ -127,10 +142,19 @@ public class SessionResource {
     @NoCache
     public Response logout(@QueryParam("current") boolean removeCurrent) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
-        session.sessions().getUserSessionsStream(realm, user).filter(s -> removeCurrent || !isCurrentSession(s))
-                .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
-                .forEach(s -> AuthenticationManager.backchannelLogout(session, s, true));
-
+        Stream.concat(
+                session.sessions().getUserSessionsStream(realm, user),
+                session.sessions().getOfflineUserSessionsStream(realm, user))
+            .filter(s -> removeCurrent || !isCurrentSession(s))
+            .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
+            .forEach(s -> {
+                AuthenticationManager.backchannelLogout(session, s, true);
+                event.clone()
+                    .event(EventType.LOGOUT)
+                    .user(user)
+                    .session(s)
+                    .success();
+            });
         return Response.noContent().build();
     }
 
@@ -146,10 +170,21 @@ public class SessionResource {
     @NoCache
     public Response logout(@PathParam("id") String id) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
-        UserSessionModel userSession = session.sessions().getUserSession(realm, id);
-        if (userSession != null && userSession.getUser().equals(user)) {
-            AuthenticationManager.backchannelLogout(session, userSession, true);
-        }
+
+        // While we avoid it, there can be both an online and an offline session with the same ID.
+        // As those have been created from the same device, it is OK to log out both of them.
+        Stream.concat(
+                        Stream.ofNullable(session.sessions().getUserSession(realm, id)),
+                        Stream.ofNullable(session.sessions().getOfflineUserSession(realm, id))).
+                filter(userSession -> userSession.getUser().equals(user))
+                .forEach(userSession -> {
+                    AuthenticationManager.backchannelLogout(session, userSession, true);
+                    event.event(EventType.LOGOUT)
+                            .user(user)
+                            .session(id)
+                            .success();
+                });
+
         return Response.noContent().build();
     }
 
@@ -160,10 +195,20 @@ public class SessionResource {
         sessionRep.setIpAddress(s.getIpAddress());
         sessionRep.setStarted(s.getStarted());
         sessionRep.setLastAccess(s.getLastSessionRefresh());
-        int maxLifespan = s.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0
-                ? realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
-        int expires = s.getStarted() + maxLifespan;
-        sessionRep.setExpires(expires);
+        long expires = SessionExpirationUtils.calculateUserSessionMaxLifespanTimestamp(
+                        s.isOffline(),
+                        s.isRememberMe(),
+                        TimeUnit.SECONDS.toMillis(s.getStarted()),
+                        realm);
+        if (expires == -1) {
+            // Offline sessions can have no expiry time. If that is the case, use the idle timestamp instead
+            expires = SessionExpirationUtils.calculateUserSessionIdleTimestamp(
+                    s.isOffline(),
+                    s.isRememberMe(),
+                    TimeUnit.SECONDS.toMillis(s.getStarted()),
+                    realm);
+        }
+        sessionRep.setExpires((int) TimeUnit.MILLISECONDS.toSeconds(expires));
         sessionRep.setBrowser(device.getBrowser());
 
         if (isCurrentSession(s)) {
@@ -197,7 +242,7 @@ public class SessionResource {
 
     private boolean isCurrentSession(UserSessionModel session) {
         if (auth.getSession() == null) return false;
-        return session.getId().equals(auth.getSession().getId());
+        return session.getId().equals(auth.getSession().getId()) && Objects.equals(session.isOffline(), auth.getSession().isOffline());
     }
 
     private SessionRepresentation toRepresentation(UserSessionModel s) {

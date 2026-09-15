@@ -18,14 +18,26 @@ package org.keycloak.models.sessions.infinispan.remote;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Objects;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
+import org.keycloak.models.sessions.infinispan.query.LoginFailureQueries;
+import org.keycloak.models.sessions.infinispan.query.QueryHelper;
 import org.keycloak.models.sessions.infinispan.remote.transaction.LoginFailureChangeLogTransaction;
+import org.keycloak.models.sessions.infinispan.stream.ValueIdentityBiFunction;
+import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
+import io.reactivex.rxjava3.schedulers.Schedulers;
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.commons.api.query.Query;
+import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.infinispan.util.concurrent.WithinThreadExecutor;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
@@ -75,6 +87,33 @@ public class RemoteUserLoginFailureProvider implements UserLoginFailureProvider 
         }
 
         transaction.removeByRealmId(realm.getId());
+    }
+
+    @Override
+    public void updateWithLatestRealmSettings(RealmModel realm) {
+        if (!realm.isBruteForceProtected()) {
+            removeAllUserLoginFailures(realm);
+            return;
+        }
+        RemoteCache<LoginFailureKey, LoginFailureEntity> cache = transaction.getCache();
+        final long maxDeltaTimeMillis = realm.getMaxDeltaTimeSeconds() * 1000L;
+        final boolean isPermanentLockout = realm.isPermanentLockout();
+        final int maxTemporaryLockouts = realm.getMaxTemporaryLockouts();
+        Query<LoginFailureEntity> query = LoginFailureQueries.searchByRealmId(cache, realm.getId());
+        CompletionStages.performConcurrently(
+                QueryHelper.streamAll(query, 20, Function.identity()),
+                20,
+                Schedulers.from(new WithinThreadExecutor()),
+                entry -> updateLifetimeOfCacheEntry(entry, cache, isPermanentLockout, maxTemporaryLockouts, maxDeltaTimeMillis));
+
+    }
+
+    private static CompletionStage<?> updateLifetimeOfCacheEntry(LoginFailureEntity entry, RemoteCache<LoginFailureKey, LoginFailureEntity> cache, boolean isPermanentLockout, int maxTemporaryLockouts, long maxDeltaTimeMillis) {
+        long lifespan = SessionTimeouts.getLoginFailuresLifespanMs(isPermanentLockout, maxTemporaryLockouts, maxDeltaTimeMillis, entry);
+        return cache.computeIfPresentAsync(new LoginFailureKey(entry.getRealmId(), entry.getUserId()),
+                // Keep the original value - this should only update the lifespan and idle time
+                ValueIdentityBiFunction.getInstance(),
+                lifespan, TimeUnit.MILLISECONDS);
     }
 
     @Override

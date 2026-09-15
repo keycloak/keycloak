@@ -21,6 +21,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { MembershipTypeToggle } from "../organizations/MembershipTypeToggle";
 import { OrganizationModal } from "../organizations/OrganizationModal";
 import { toEditOrganization } from "../organizations/routes/EditOrganization";
 import useToggle from "../utils/useToggle";
@@ -29,15 +30,13 @@ import { toUsers } from "./routes/Users";
 import { CheckboxFilterComponent } from "../components/dynamic/CheckboxFilterComponent";
 import { capitalizeFirstLetterFormatter } from "../util";
 import { SearchInputComponent } from "../components/dynamic/SearchInputComponent";
+import { MembershipsModal } from "../groups/MembershipsModal";
+import { GroupResourceContext } from "../context/group-resource/GroupResourceContext";
+import OrganizationMemberRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationMemberRepresentation";
 
 type OrganizationProps = {
   user: UserRepresentation;
 };
-
-type MembershipTypeRepresentation = OrganizationRepresentation &
-  UserRepresentation & {
-    membershipType?: string;
-  };
 
 export const Organizations = ({ user }: OrganizationProps) => {
   const { adminClient } = useAdminClient();
@@ -61,6 +60,8 @@ export const Organizations = ({ user }: OrganizationProps) => {
     string[]
   >([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [showMemberships, toggleShowMemberships] = useToggle();
+  const [selectedOrg, setSelectedOrg] = useState<OrganizationRepresentation>();
 
   const membershipOptions = [
     { value: "Managed", label: "Managed" },
@@ -91,21 +92,15 @@ export const Organizations = ({ user }: OrganizationProps) => {
       const userOrganizationsWithMembershipTypes = await Promise.all(
         userOrganizations.map(async (org) => {
           const orgId = org.id;
-          const memberships: MembershipTypeRepresentation[] =
-            await adminClient.organizations.listMembers({
+          const membership: OrganizationMemberRepresentation =
+            await adminClient.organizations.getMember({
+              userId: user.id!,
               orgId: orgId!,
             });
 
-          const userMemberships = memberships.filter(
-            (membership) => membership.username === user.username,
+          const membershipType = capitalizeFirstLetterFormatter()(
+            membership.membershipType,
           );
-
-          const membershipType = userMemberships.map((membership) => {
-            const formattedMembershipType = capitalizeFirstLetterFormatter()(
-              membership.membershipType,
-            );
-            return formattedMembershipType;
-          });
 
           return { ...org, membershipType };
         }),
@@ -114,9 +109,7 @@ export const Organizations = ({ user }: OrganizationProps) => {
       let filteredOrgs = userOrganizationsWithMembershipTypes;
       if (filteredMembershipTypes.length > 0) {
         filteredOrgs = filteredOrgs.filter((org) =>
-          org.membershipType?.some((type) =>
-            filteredMembershipTypes.includes(type as string),
-          ),
+          filteredMembershipTypes.includes(org.membershipType as string),
         );
       }
 
@@ -165,7 +158,7 @@ export const Organizations = ({ user }: OrganizationProps) => {
         addAlert(t("organizationRemovedSuccess"));
         const user = await adminClient.users.findOne({ id: id! });
         if (!user) {
-          navigate(toUsers({ realm: realm }));
+          void navigate(toUsers({ realm: realm }));
         }
         setSelectedOrgs([]);
         refresh();
@@ -177,6 +170,17 @@ export const Organizations = ({ user }: OrganizationProps) => {
 
   return (
     <>
+      {showMemberships && selectedOrg && (
+        <GroupResourceContext
+          value={adminClient.organizations.groups(selectedOrg.id!)}
+        >
+          <MembershipsModal
+            user={user}
+            orgId={selectedOrg.id}
+            onClose={toggleShowMemberships}
+          />
+        </GroupResourceContext>
+      )}
       {openOrganizationPicker && (
         <OrganizationModal
           isJoin={shouldJoin}
@@ -232,6 +236,14 @@ export const Organizations = ({ user }: OrganizationProps) => {
           </Link>
         )}
         loader={userOrgs}
+        membershipTypeRenderer={(org) => (
+          <MembershipTypeToggle
+            orgId={org.id!}
+            userId={id!}
+            name={org.name}
+            isManaged={org.membershipType === "Managed"}
+          />
+        )}
         isSearching={
           searchTriggerText.length > 0 || filteredMembershipTypes.length > 0
         }
@@ -241,6 +253,15 @@ export const Organizations = ({ user }: OrganizationProps) => {
           setSelectedOrgs([org]);
           toggleDeleteDialog();
         }}
+        actions={[
+          {
+            title: t("showGroupMemberships"),
+            onRowClick: (org: OrganizationRepresentation) => {
+              setSelectedOrg(org);
+              toggleShowMemberships();
+            },
+          },
+        ]}
         toolbarItem={
           <>
             <ToolbarItem>

@@ -164,13 +164,16 @@ public class ConditionsValidator {
     private Result validateExpiration() {
         XMLGregorianCalendar notBefore = conditions.getNotBefore();
         XMLGregorianCalendar notOnOrAfter = conditions.getNotOnOrAfter();
+        return validateExpiration(assertionId, notBefore, notOnOrAfter, now, clockSkewInMillis)? Result.VALID : Result.INVALID;
+    }
 
+    protected static boolean validateExpiration(String assertionId, XMLGregorianCalendar notBefore, XMLGregorianCalendar notOnOrAfter, XMLGregorianCalendar now, int clockSkewInMillis) {
         if (notBefore == null && notOnOrAfter == null) {
-            return Result.VALID;
+            return true;
         }
 
         if (notBefore != null && notOnOrAfter != null && notBefore.compare(notOnOrAfter) != DatatypeConstants.LESSER) {
-            return Result.INVALID;
+            return false;
         }
 
         XMLGregorianCalendar updatedNotBefore = XMLTimeUtil.subtract(notBefore, clockSkewInMillis);
@@ -183,7 +186,7 @@ public class ConditionsValidator {
             LOG.infof("Assertion %s expired.", assertionId);
         }
 
-        return valid ? Result.VALID : Result.INVALID;
+        return valid;
     }
 
     /**

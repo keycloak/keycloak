@@ -17,11 +17,11 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.util.saml.SamlMessageReceiver;
@@ -62,7 +62,7 @@ public class KcSamlLogoutTest extends AbstractInitializedBaseBrokerTest {
                         .fullScopeEnabled(true)
                         .protocol(SamlProtocol.LOGIN_PROTOCOL)
                         .baseUrl(getProviderRoot() + "/sales-post")
-                        .addRedirectUri(getProviderRoot() + "/sales-post/*")
+                        .redirectUris(getProviderRoot() + "/sales-post/*")
                         .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
                         .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
                         .frontchannelLogout(true)

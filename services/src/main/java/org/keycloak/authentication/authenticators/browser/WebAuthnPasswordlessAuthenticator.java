@@ -27,6 +27,7 @@ import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.WebAuthnPasswordlessCredentialProvider;
@@ -110,6 +111,11 @@ public class WebAuthnPasswordlessAuthenticator extends WebAuthnAuthenticator {
             // user submitted an empty form without webauthn credential selection
             context.attempted();
             return;
+        }
+
+        // process rememberMe if present
+        if (formData.containsKey("rememberMe")) {
+            AuthenticatorUtils.processRememberMe(context, formData);
         }
 
         // user selected a webauthn credential, proceed with webauthn authentication

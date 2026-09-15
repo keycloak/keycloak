@@ -35,8 +35,7 @@ export const FormSubmitButton = ({
     <Button
       variant="primary"
       isDisabled={
-        (formState && !isSubmittable(formState, allowNonDirty, allowInvalid)) ||
-        isDisabled
+        !isSubmittable(formState, allowNonDirty, allowInvalid) || isDisabled
       }
       {...rest}
       type="submit"

@@ -26,7 +26,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -49,7 +51,7 @@ import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.AdminRoles;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -59,6 +61,7 @@ import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.oidc.scope.ParameterizedScopeTypeProvider;
 import org.keycloak.provider.ConfiguredPerClientProvider;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -75,6 +78,7 @@ import org.keycloak.representations.info.CryptoInfoRepresentation;
 import org.keycloak.representations.info.FeatureRepresentation;
 import org.keycloak.representations.info.FeatureType;
 import org.keycloak.representations.info.MemoryInfoRepresentation;
+import org.keycloak.representations.info.ParameterizedScopeTypeRepresentation;
 import org.keycloak.representations.info.ProfileInfoRepresentation;
 import org.keycloak.representations.info.ProviderRepresentation;
 import org.keycloak.representations.info.ServerInfoRepresentation;
@@ -84,6 +88,7 @@ import org.keycloak.representations.info.ThemeInfoRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminAuth;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.theme.Theme;
 
@@ -98,7 +103,7 @@ import org.jboss.resteasy.reactive.NoCache;
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN , value = "")
 public class ServerInfoAdminResource {
 
-    private static final Map<String, List<String>> ENUMS = createEnumsMap(EventType.class, OperationType.class, ResourceType.class);
+    private static final Map<String, List<String>> ENUMS = createEnumsMap(EventType.class, OperationType.class, ResourceType.class, GroupModel.Type.class);
 
     private final KeycloakSession session;
     private final AdminAuth auth;
@@ -121,13 +126,21 @@ public class ServerInfoAdminResource {
     public ServerInfoRepresentation getInfo() {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
         RealmModel userRealm = session.getContext().getRealm();
-        if (RealmManager.isAdministrationRealm(userRealm)
-                || AdminPermissions.evaluator(session, userRealm, auth).hasOneAdminRole(AdminRoles.VIEW_SYSTEM)) {
-            // system information is only for admins in the administration realm or fallback view-system role
-            info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp(), Version.VERSION));
-            info.setCpuInfo(CpuInfoRepresentation.create());
-            info.setMemoryInfo(MemoryInfoRepresentation.create());
+        AdminPermissionEvaluator adminEvaluator = AdminPermissions.evaluator(session, userRealm, auth);
+
+        if (adminEvaluator.realm().canManageRealm()) {
+            if (RealmManager.isAdministrationRealm(userRealm)) {
+                info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp(), Version.VERSION));
+                info.setCpuInfo(CpuInfoRepresentation.create());
+                info.setMemoryInfo(MemoryInfoRepresentation.create());
+            } else {
+                // If the user can manage his own realm just add the version information
+                SystemInfoRepresentation systemInfo = new SystemInfoRepresentation();
+                systemInfo.setVersion(Version.VERSION);
+                info.setSystemInfo(systemInfo);
+            }
         }
+
         info.setProfileInfo(createProfileInfo());
         info.setFeatures(createFeatureRepresentations());
 
@@ -157,7 +170,18 @@ public class ServerInfoAdminResource {
         setClientInstallations(info);
         setPasswordPolicies(info);
         info.setEnums(ENUMS);
+        info.setParameterizedScopeTypes(buildParameterizedScopeTypesList());
         return info;
+    }
+
+    private List<ParameterizedScopeTypeRepresentation> buildParameterizedScopeTypesList() {
+        return session.getKeycloakSessionFactory()
+                .getProviderFactoriesStream(ParameterizedScopeTypeProvider.class)
+                .map(f -> {
+                    ParameterizedScopeTypeProvider provider = session.getProvider(ParameterizedScopeTypeProvider.class, f.getId());
+                    return new ParameterizedScopeTypeRepresentation(provider.getTypeName(), provider.isRepeatable());
+                })
+                .collect(Collectors.toList());
     }
 
     private void setProviders(ServerInfoRepresentation info) {
@@ -233,7 +257,8 @@ public class ServerInfoAdminResource {
                 try {
                     Theme theme = session.theme().getTheme(name, type);
                     // Different name means the theme itself was not found and fallback to default theme was needed
-                    if (theme != null && name.equals(theme.getName())) {
+                    // Do not include abstract themes that can only be extended (like base)
+                    if (theme != null && name.equals(theme.getName()) && !theme.isAbstract()) {
                         ThemeInfoRepresentation ti = new ThemeInfoRepresentation();
                         ti.setName(name);
 
@@ -242,6 +267,8 @@ public class ServerInfoAdminResource {
                             ti.setLocales(locales.replaceAll(" ", "").split(","));
                         }
 
+                        ti.setDescription(getThemeDescription(theme));
+
                         themes.add(ti);
                     }
                 } catch (IOException e) {
@@ -249,6 +276,18 @@ public class ServerInfoAdminResource {
                 }
             }
         }
+    }
+
+    private String getThemeDescription(Theme theme) throws IOException {
+        Locale locale = session.getContext().resolveLocale(null);
+
+        Properties enhancedMessages = theme.getEnhancedMessages(session.getContext().getRealm(), locale);
+        if (enhancedMessages == null) {
+            return null;
+        }
+
+        String descriptionKey = "theme." + theme.getName() + "." + theme.getType().name().toLowerCase(Locale.ROOT) + ".description";
+        return enhancedMessages.getProperty(descriptionKey);
     }
 
     private LinkedList<String> filterThemes(Theme.Type type, LinkedList<String> themeNames) {
@@ -438,6 +477,7 @@ public class ServerInfoAdminResource {
         featureRep.setLabel(feature.getLabel());
         featureRep.setType(FeatureType.valueOf(feature.getType().name()));
         featureRep.setEnabled(isEnabled);
+        featureRep.setDeprecated(feature.isDeprecated());
         featureRep.setDependencies(feature.getDependencies() != null ?
                 feature.getDependencies().stream().map(Enum::name).collect(Collectors.toSet()) : Collections.emptySet());
         return featureRep;

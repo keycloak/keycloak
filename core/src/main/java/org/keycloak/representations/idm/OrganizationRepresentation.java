@@ -18,7 +18,7 @@
 package org.keycloak.representations.idm;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -37,6 +37,7 @@ public class OrganizationRepresentation {
     private Set<OrganizationDomainRepresentation> domains;
     private List<MemberRepresentation> members;
     private List<IdentityProviderRepresentation> identityProviders;
+    private List<GroupRepresentation> groups;
 
     public String getId() {
         return id;
@@ -96,7 +97,7 @@ public class OrganizationRepresentation {
 
     public OrganizationRepresentation singleAttribute(String name, String value) {
         if (this.attributes == null) attributes = new HashMap<>();
-        attributes.put(name, Arrays.asList(value));
+        attributes.put(name, Collections.singletonList(value));
         return this;
     }
 
@@ -156,6 +157,21 @@ public class OrganizationRepresentation {
             identityProviders = new ArrayList<>();
         }
         identityProviders.add(idp);
+    }
+
+    public List<GroupRepresentation> getGroups() {
+        return groups;
+    }
+
+    public void setGroups(List<GroupRepresentation> groups) {
+        this.groups = groups;
+    }
+
+    public void addGroup(GroupRepresentation group) {
+        if (groups == null) {
+            groups = new ArrayList<>();
+        }
+        groups.add(group);
     }
 
     @Override

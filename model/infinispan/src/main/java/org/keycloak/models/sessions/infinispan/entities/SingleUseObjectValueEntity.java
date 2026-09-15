@@ -63,4 +63,16 @@ public class SingleUseObjectValueEntity implements SingleUseObjectValueModel {
         return String.format("SingleUseObjectValueEntity [ notes=%s ]", notes.toString());
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SingleUseObjectValueEntity that = (SingleUseObjectValueEntity) o;
+        return notes.equals(that.notes);
+    }
+
+    @Override
+    public int hashCode() {
+        return notes.hashCode();
+    }
 }

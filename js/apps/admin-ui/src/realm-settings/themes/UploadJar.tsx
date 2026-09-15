@@ -2,7 +2,7 @@ import { Button } from "@patternfly/react-core";
 import JSZip from "jszip";
 import { ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { ThemeRealmRepresentation } from "./ThemesTab";
+import { ThemeRealmRepresentation } from "./QuickTheme";
 
 type UploadJarProps = {
   onUpload: (theme: ThemeRealmRepresentation) => void;
@@ -13,9 +13,7 @@ export const UploadJar = ({ onUpload }: UploadJarProps) => {
 
   const triggerUpload = () => {
     const input = document.getElementById("jarUpload") as HTMLInputElement;
-    if (input) {
-      input.click();
-    }
+    input.click();
   };
 
   const handleAcceptedFiles = async (files: ChangeEvent<HTMLInputElement>) => {

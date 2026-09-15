@@ -31,7 +31,11 @@ public class KubernetesIdentityProvider implements ClientAssertionIdentityProvid
     @Override
     public boolean verifyClientAssertion(ClientAuthenticationFlowContext context) throws Exception {
         FederatedJWTClientValidator validator = new FederatedJWTClientValidator(context, this::verifySignature, config.getIssuer(), config.getAllowedClockSkew(), true);
-        validator.setMaximumExpirationTime(3600); // Kubernetes defaults to 1 hour (https://kubernetes.io/docs/concepts/storage/projected-volumes/#serviceaccounttoken)
+        if (config.getFederatedClientAssertionMaxExpiration() != 0) {
+            validator.setMaximumExpirationTime(config.getFederatedClientAssertionMaxExpiration());
+        } else {
+            validator.setMaximumExpirationTime(3600); // Kubernetes defaults to 1 hour (https://kubernetes.io/docs/concepts/storage/projected-volumes/#serviceaccounttoken)
+        }
         return validator.validate();
     }
 
@@ -44,7 +48,16 @@ public class KubernetesIdentityProvider implements ClientAssertionIdentityProvid
 
             String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(validator.getContext().getRealm().getId(), config.getInternalId());
             PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
-            KeyWrapper publicKey = keyStorage.getPublicKey(modelKey, kid, alg, new KubernetesJwksEndpointLoader(session, config.getIssuer()));
+
+            KeyWrapper publicKey;
+            try {
+                publicKey = keyStorage.getPublicKey(modelKey, kid, alg, new KubernetesJwksEndpointLoader(session, config.getIssuer()));
+            } catch (Exception e) {
+                // Indicative of an infrastructure/configuration and can't be
+                // triggered by a client - worth WARN visibility.
+                LOGGER.warnf(e, "Failed to load public keys for Kubernetes IdP '%s' with issuer '%s'", config.getAlias(), config.getIssuer());
+                return false;
+            }
 
             SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, alg);
             if (signatureProvider == null) {

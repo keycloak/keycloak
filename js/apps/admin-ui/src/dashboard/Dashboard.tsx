@@ -1,7 +1,7 @@
 import FeatureRepresentation, {
   FeatureType,
 } from "@keycloak/keycloak-admin-client/lib/defs/featureRepresentation";
-import { HelpItem, label, useEnvironment } from "@keycloak/keycloak-ui-shared";
+import { HelpItem, useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   ActionList,
   ActionListItem,
@@ -40,7 +40,9 @@ import {
 } from "../components/routable-tabs/RoutableTabs";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import type { Environment } from "../environment-types";
 import helpUrls from "../help-urls";
+import { resolveDisplayName } from "../util";
 import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 import { ProviderInfo } from "./ProviderInfo";
 import { DashboardTab, toDashboard } from "./routes/Dashboard";
@@ -53,7 +55,7 @@ const EmptyDashboard = () => {
   const { t } = useTranslation();
   const { realm, realmRepresentation: realmInfo } = useRealm();
   const brandImage = environment.logo ? environment.logo : "/icon.svg";
-  const realmDisplayInfo = label(t, realmInfo?.displayName, realm);
+  const realmDisplayInfo = resolveDisplayName(t, realmInfo.displayName, realm);
 
   return (
     <PageSection variant="light">
@@ -77,26 +79,25 @@ type FeatureItemProps = {
 
 const FeatureItem = ({ feature }: FeatureItemProps) => {
   const { t } = useTranslation();
+  const color =
+    feature.type === FeatureType.Default ||
+    feature.type === FeatureType.DisabledByDefault
+      ? "green"
+      : feature.type === FeatureType.Preview ||
+          feature.type === FeatureType.PreviewDisabledByDefault
+        ? "blue"
+        : feature.type === FeatureType.Experimental
+          ? "orange"
+          : "grey";
   return (
     <ListItem className="pf-v5-u-mb-sm">
       {feature.name}&nbsp;
-      {feature.type === FeatureType.Experimental && (
-        <Label color="orange">{t("experimental")}</Label>
-      )}
-      {feature.type === FeatureType.Preview && (
-        <Label color="blue">{t("preview")}</Label>
-      )}
-      {feature.type === FeatureType.PreviewDisabledByDefault && (
-        <Label color="blue">{t("preview")}</Label>
-      )}
-      {feature.type === FeatureType.Default && (
-        <Label color="green">{t("supported")}</Label>
-      )}
-      {feature.type === FeatureType.DisabledByDefault && (
-        <Label color="green">{t("supported")}</Label>
-      )}
-      {feature.type === FeatureType.Deprecated && (
-        <Label color="grey">{t("deprecated")}</Label>
+      <Label color={color}>{t(feature.type.toLowerCase())}</Label>
+      {feature.deprecated && feature.type !== FeatureType.Deprecated && (
+        <>
+          &nbsp;
+          <Label color="grey">{t("deprecated")}</Label>
+        </>
       )}
     </ListItem>
   );
@@ -114,12 +115,12 @@ const Dashboard = () => {
   );
 
   const disabledFeatures = useMemo(
-    () => sortedFeatures.filter((f) => !f.enabled) || [],
+    () => sortedFeatures.filter((f) => !f.enabled),
     [serverInfo.features],
   );
 
   const enabledFeatures = useMemo(
-    () => sortedFeatures.filter((f) => f.enabled) || [],
+    () => sortedFeatures.filter((f) => f.enabled),
     [serverInfo.features],
   );
 
@@ -131,7 +132,7 @@ const Dashboard = () => {
       }),
     );
 
-  const realmDisplayInfo = label(t, realmInfo?.displayName, realm);
+  const realmDisplayInfo = resolveDisplayName(t, realmInfo.displayName, realm);
 
   const welcomeTab = useTab("welcome");
   const infoTab = useTab("info");
@@ -354,7 +355,8 @@ const Dashboard = () => {
 
 export default function DashboardSection() {
   const { realm } = useRealm();
-  const isMasterRealm = realm === "master";
+  const { environment } = useEnvironment<Environment>();
+  const isMasterRealm = realm === environment.masterRealm;
   return (
     <>
       {!isMasterRealm && <EmptyDashboard />}

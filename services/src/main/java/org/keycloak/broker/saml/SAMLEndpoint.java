@@ -34,7 +34,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.xml.crypto.dsig.XMLSignature;
-import javax.xml.namespace.QName;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.FormParam;
@@ -55,6 +54,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
@@ -91,6 +91,7 @@ import org.keycloak.protocol.saml.SamlMetadataKeyLocator;
 import org.keycloak.protocol.saml.SamlMetadataPublicKeyLoader;
 import org.keycloak.protocol.saml.SamlPrincipalType;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.protocol.saml.SamlProtocolFactory;
 import org.keycloak.protocol.saml.SamlProtocolUtils;
 import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.protocol.saml.SamlSessionUtils;
@@ -100,7 +101,6 @@ import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.saml.SAMLRequestParser;
 import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
@@ -115,6 +115,7 @@ import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.keycloak.saml.validators.ConditionsValidator;
 import org.keycloak.saml.validators.DestinationValidator;
+import org.keycloak.saml.validators.SubjectConfirmationDataValidator;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -149,13 +150,11 @@ public class SAMLEndpoint {
     protected final SAMLIdentityProviderConfig config;
     protected final UserAuthenticationIdentityProvider.AuthenticationCallback callback;
     protected final SAMLIdentityProvider provider;
-    private final DestinationValidator destinationValidator;
-
-    private final KeycloakSession session;
-
-    private final ClientConnection clientConnection;
-
-    private final HttpHeaders headers;
+    protected final DestinationValidator destinationValidator;
+    protected final KeycloakSession session;
+    protected final ClientConnection clientConnection;
+    protected final HttpHeaders headers;
+    protected final long maxInflatingSize;
 
 
     public SAMLEndpoint(KeycloakSession session, SAMLIdentityProvider provider, SAMLIdentityProviderConfig config, UserAuthenticationIdentityProvider.AuthenticationCallback callback, DestinationValidator destinationValidator) {
@@ -167,6 +166,8 @@ public class SAMLEndpoint {
         this.session = session;
         this.clientConnection = session.getContext().getConnection();
         this.headers = session.getContext().getRequestHeaders();
+        SamlProtocolFactory factory = (SamlProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, SamlProtocol.LOGIN_PROTOCOL);
+        this.maxInflatingSize = factory.getMaxInflatingSize();
     }
 
     @GET
@@ -256,6 +257,7 @@ public class SAMLEndpoint {
 
         protected abstract String getBindingType();
         protected abstract boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder);
+        protected abstract boolean isMessageFullySigned(SAMLDocumentHolder documentHolder);
         protected abstract void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException;
         protected abstract SAMLDocumentHolder extractRequestDocument(String samlRequest);
         protected abstract SAMLDocumentHolder extractResponseDocument(String response);
@@ -300,6 +302,12 @@ public class SAMLEndpoint {
 
         protected Response handleSamlRequest(String samlRequest, String relayState) {
             SAMLDocumentHolder holder = extractRequestDocument(samlRequest);
+            if (holder == null) {
+                event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                event.detail(Details.REASON, Errors.INVALID_SAML_DOCUMENT);
+                event.error(Errors.INVALID_REQUEST);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+            }
             RequestAbstractType requestAbstractType = (RequestAbstractType) holder.getSamlObject();
             // validate destination
             if (isDestinationRequired() &&
@@ -511,7 +519,7 @@ public class SAMLEndpoint {
             };
         }
 
-        private String getEntityId(UriInfo uriInfo, RealmModel realm) {
+        protected final String getEntityId(UriInfo uriInfo, RealmModel realm) {
             String configEntityId = config.getEntityId();
 
             if (configEntityId == null || configEntityId.isEmpty())
@@ -570,7 +578,7 @@ public class SAMLEndpoint {
                 } else {
                     /* We verify the assertion using original document to handle cases where the IdP
                     includes whitespace and/or newlines inside tags. */
-                    assertionElement = DocumentUtil.getElement(holder.getSamlDocument(), new QName(JBossSAMLConstants.ASSERTION.get()));
+                    assertionElement = AssertionUtil.getAssertionElement(holder);
                 }
 
                 // Validate the response Issuer
@@ -584,16 +592,10 @@ public class SAMLEndpoint {
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
                 }
 
-                // When artifact binding is used, the LoginResponse is embedded in the ArtifactResponse
-                // Therefore, the InResponseTo attribute of the LoginResponse cannot be validated
-                // Moreover, the LoginResponse is not signed
-                boolean isArtifactBinding = SamlProtocol.SAML_ARTIFACT_BINDING.equals(getBindingType());
-
                 // Validate InResponseTo attribute: must match the generated request ID
                 String expectedRequestId = authSession.getClientNote(SamlProtocol.SAML_REQUEST_ID_BROKER);
-                final boolean inResponseToValidationSuccess = validateInResponseToAttribute(responseType, expectedRequestId);
-                if (!isArtifactBinding && !inResponseToValidationSuccess)
-                {
+                if (!validateInResponseToAttribute(responseType, expectedRequestId)
+                        || !validateSubjectConfirmationData(responseType, expectedRequestId)) {
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SAML_RESPONSE);
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
@@ -602,7 +604,7 @@ public class SAMLEndpoint {
                 boolean signed = AssertionUtil.isSignedElement(assertionElement);
                 final boolean assertionSignatureNotExistsWhenRequired = config.isWantAssertionsSigned() && !signed;
                 final boolean signatureNotValid = signed && config.isValidateSignature() && !AssertionUtil.isSignatureValid(assertionElement, getIDPKeyLocator());
-                final boolean hasNoSignatureWhenRequired = ! signed && config.isValidateSignature() && ! containsUnencryptedSignature(holder);
+                final boolean hasNoSignatureWhenRequired = !signed && config.isValidateSignature() && !isMessageFullySigned(holder);
 
                 if (assertionSignatureNotExistsWhenRequired || signatureNotValid || hasNoSignatureWhenRequired) {
                     logger.error("validation failed");
@@ -644,7 +646,6 @@ public class SAMLEndpoint {
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
                 }
 
-                //Map<String, String> notes = new HashMap<>();
                 BrokeredIdentityContext identity = new BrokeredIdentityContext(principal, config);
                 identity.getContextData().put(SAML_LOGIN_RESPONSE, responseType);
                 identity.getContextData().put(SAML_ASSERTION, assertion);
@@ -657,7 +658,16 @@ public class SAMLEndpoint {
                     identity.setEmail(subjectNameID.getValue());
                 }
 
-                if (Booleans.isTrue(config.isStoreToken())) {
+                // set the token in session and model depending the brokering api version
+                if (Profile.isFeatureEnabled(Profile.Feature.IDENTITY_BROKERING_API_V2)) {
+                    final String assertionString = DocumentUtil.getNodeAsString(assertionElement);
+                    if (config.isStoreTokenInSession()) {
+                        identity.getContextData().put(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN, assertionString);
+                    }
+                    if (Booleans.isTrue(config.isStoreToken())) {
+                        identity.setToken(assertionString);
+                    }
+                } else if (Booleans.isTrue(config.isStoreToken())) {
                     identity.setToken(samlResponse);
                 }
 
@@ -720,11 +730,12 @@ public class SAMLEndpoint {
          * @param clientUrlName
          * @return see description
          */
-        private AuthenticationSessionModel samlIdpInitiatedSSO(final String clientUrlName) {
+        protected final AuthenticationSessionModel samlIdpInitiatedSSO(final String clientUrlName) {
             event.event(EventType.LOGIN);
             CacheControlUtil.noBackButtonCacheControlHeader(session);
             Optional<ClientModel> oClient = SAMLEndpoint.this.session.clients()
               .searchClientsByAttributes(realm, Collections.singletonMap(SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME, clientUrlName), 0, 1)
+              .filter(ClientModel::isEnabled)
               .findFirst();
 
             if (! oClient.isPresent()) {
@@ -746,7 +757,7 @@ public class SAMLEndpoint {
         }
 
 
-        private boolean isSuccessfulSamlResponse(ResponseType responseType) {
+        protected final boolean isSuccessfulSamlResponse(ResponseType responseType) {
             return responseType != null
               && responseType.getStatus() != null
               && responseType.getStatus().getStatusCode() != null
@@ -838,6 +849,11 @@ public class SAMLEndpoint {
         }
 
         @Override
+        protected boolean isMessageFullySigned(SAMLDocumentHolder documentHolder) {
+            return AssertionUtil.isSignedElement(documentHolder.getSamlDocument().getDocumentElement());
+        }
+
+        @Override
         protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
             if ((! containsUnencryptedSignature(documentHolder)) && (documentHolder.getSamlObject() instanceof ResponseType)) {
                 ResponseType responseType = (ResponseType) documentHolder.getSamlObject();
@@ -877,21 +893,24 @@ public class SAMLEndpoint {
         }
 
         @Override
+        protected boolean isMessageFullySigned(SAMLDocumentHolder documentHolder) {
+            return containsUnencryptedSignature(documentHolder);
+        }
+
+        @Override
         protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
             KeyLocator locator = getIDPKeyLocator();
             SamlProtocolUtils.verifyRedirectSignature(documentHolder, locator, session.getContext().getUri(), key);
         }
 
-
-
         @Override
         protected SAMLDocumentHolder extractRequestDocument(String samlRequest) {
-            return SAMLRequestParser.parseRequestRedirectBinding(samlRequest);
+            return SAMLRequestParser.parseRequestRedirectBinding(samlRequest, maxInflatingSize);
         }
 
         @Override
         protected SAMLDocumentHolder extractResponseDocument(String response) {
-            return SAMLRequestParser.parseResponseRedirectBinding(response);
+            return SAMLRequestParser.parseResponseRedirectBinding(response, maxInflatingSize);
         }
 
         @Override
@@ -903,20 +922,31 @@ public class SAMLEndpoint {
 
     protected class ArtifactBinding extends Binding {
 
-        private boolean unencryptedSignaturesVerified = false;
+        // artifact binding is processed twice, first with the art and then with the response, vars to store the first pass
+        private Boolean containsUnencryptedSignature = null;
+        private Boolean messageFullySigned = null;
+        private Boolean verified = null;
 
         @Override
         protected boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder) {
-            if (unencryptedSignaturesVerified) {
-                return true;
+            if (containsUnencryptedSignature != null) {
+                return containsUnencryptedSignature;
             }
             NodeList nl = documentHolder.getSamlDocument().getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
-            return (nl != null && nl.getLength() > 0);
+            containsUnencryptedSignature = (nl != null && nl.getLength() > 0);
+            messageFullySigned = AssertionUtil.isSignedElement(documentHolder.getSamlDocument().getDocumentElement());
+            return containsUnencryptedSignature;
+        }
+
+        @Override
+        protected boolean isMessageFullySigned(SAMLDocumentHolder documentHolder) {
+            containsUnencryptedSignature(documentHolder);
+            return messageFullySigned;
         }
 
         @Override
         protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
-            if (unencryptedSignaturesVerified) {
+            if (verified != null) {
                 // this is the second pass and signatures were already verified in the artifact response time
                 return;
             }
@@ -935,13 +965,14 @@ public class SAMLEndpoint {
                 }
             }
             SamlProtocolUtils.verifyDocumentSignature(documentHolder.getSamlDocument(), getIDPKeyLocator());
-            unencryptedSignaturesVerified = true; // mark signatures as verified
+            verified = true;
         }
 
         @Override
         protected SAMLDocumentHolder extractRequestDocument(String samlRequest) {
             throw new UnsupportedOperationException("SAML request is not compliant with Artifact binding");
         }
+
         @Override
         protected SAMLDocumentHolder extractResponseDocument(String response) {
             byte[] samlBytes = PostBindingUtil.base64Decode(response);
@@ -954,20 +985,20 @@ public class SAMLEndpoint {
         }
     }
 
-    private String getX500Attribute(AssertionType assertion, X500SAMLProfileConstants attribute) {
+    protected final String getX500Attribute(AssertionType assertion, X500SAMLProfileConstants attribute) {
         return getFirstMatchingAttribute(assertion, attribute::correspondsTo);
     }
 
-    private String getAttributeByName(AssertionType assertion, String name) {
+    protected final String getAttributeByName(AssertionType assertion, String name) {
         return getFirstMatchingAttribute(assertion, attribute -> Objects.equals(attribute.getName(), name));
     }
 
-    private String getAttributeByFriendlyName(AssertionType assertion, String friendlyName) {
+    protected final String getAttributeByFriendlyName(AssertionType assertion, String friendlyName) {
         return getFirstMatchingAttribute(assertion, attribute -> Objects.equals(attribute.getFriendlyName(), friendlyName));
     }
 
-    private String getPrincipal(AssertionType assertion) {
 
+    protected final String getPrincipal(AssertionType assertion) {
         SamlPrincipalType principalType = config.getPrincipalType();
 
         if (principalType == null || principalType.equals(SamlPrincipalType.SUBJECT)) {
@@ -981,7 +1012,7 @@ public class SAMLEndpoint {
 
     }
 
-    private String getFirstMatchingAttribute(AssertionType assertion, Predicate<AttributeType> predicate) {
+    protected final String getFirstMatchingAttribute(AssertionType assertion, Predicate<AttributeType> predicate) {
         return assertion.getAttributeStatements().stream()
                 .map(AttributeStatementType::getAttributes)
                 .flatMap(Collection::stream)
@@ -994,7 +1025,7 @@ public class SAMLEndpoint {
                 .orElse(null);
     }
 
-    private String expectedPrincipalType() {
+    protected final String expectedPrincipalType() {
         SamlPrincipalType principalType = config.getPrincipalType();
         switch (principalType) {
             case SUBJECT:
@@ -1007,13 +1038,13 @@ public class SAMLEndpoint {
         }
     }
 
-    private NameIDType getSubjectNameID(final AssertionType assertion) {
+    protected final NameIDType getSubjectNameID(final AssertionType assertion) {
         SubjectType subject = assertion.getSubject();
         SubjectType.STSubType subType = subject.getSubType();
         return subType != null ? (NameIDType) subType.getBaseID() : null;
     }
 
-    private boolean validateInResponseToAttribute(ResponseType responseType, String expectedRequestId) {
+    protected final boolean validateInResponseToAttribute(ResponseType responseType, String expectedRequestId) {
         // If we are not expecting a request ID, don't bother
         if (expectedRequestId == null || expectedRequestId.isEmpty())
             return true;
@@ -1038,34 +1069,33 @@ public class SAMLEndpoint {
             return false;
         }
 
+        return true;
+    }
+
+    private boolean validateSubjectConfirmationData(ResponseType responseType, String expectedRequestId) {
         // If present, Assertion > Subject > Confirmation > SubjectConfirmationData > InResponseTo must also be validated
         if (responseType.getAssertions().isEmpty())
             return true;
 
-        SubjectType subjectElement = responseType.getAssertions().get(0).getAssertion().getSubject();
+        AssertionType assertion = responseType.getAssertions().get(0).getAssertion();
+        SubjectType subjectElement = assertion.getSubject();
         if (subjectElement != null) {
-            if (subjectElement.getConfirmation() != null && !subjectElement.getConfirmation().isEmpty())
-            {
-                SubjectConfirmationType subjectConfirmationElement = subjectElement.getConfirmation().get(0);
+            if (subjectElement.getConfirmation() != null && !subjectElement.getConfirmation().isEmpty()) {
+                SubjectConfirmationType subjectConfirmationElement = subjectElement.getConfirmation().stream()
+                        .filter(c -> JBossSAMLURIConstants.SUBJECT_CONFIRMATION_BEARER.get().equals(c.getMethod()))
+                        .findFirst().orElse(null);
 
                 if (subjectConfirmationElement != null) {
                     SubjectConfirmationDataType subjectConfirmationDataElement = subjectConfirmationElement.getSubjectConfirmationData();
+                    SubjectConfirmationDataValidator.Builder scdvb = new SubjectConfirmationDataValidator.Builder(assertion.getID(), subjectConfirmationDataElement, destinationValidator)
+                            .inResponseTo(expectedRequestId)
+                            .clockSkewInMillis(1000 * config.getAllowedClockSkew());
+                    if (responseType.getDestination() != null) {
+                        scdvb.allowedRecipient(responseType.getDestination());
+                    }
 
-                    if (subjectConfirmationDataElement != null) {
-                        if (subjectConfirmationDataElement.getInResponseTo() != null) {
-                            // 3) Assertion > Subject > Confirmation > SubjectConfirmationData > InResponseTo is empty
-                            String subjectConfirmationDataInResponseToValue = subjectConfirmationDataElement.getInResponseTo();
-                            if (subjectConfirmationDataInResponseToValue.isEmpty()) {
-                                logger.error("Response Validation Error: SubjectConfirmationData InResponseTo attribute was expected but it is empty in received response");
-                                return false;
-                            }
-
-                            // 4) Assertion > Subject > Confirmation > SubjectConfirmationData > InResponseTo does not match request ID
-                            if (!subjectConfirmationDataInResponseToValue.equals(expectedRequestId)) {
-                                logger.error("Response Validation Error: received SubjectConfirmationData InResponseTo attribute does not match the expected request ID");
-                                return false;
-                            }
-                        }
+                    if (!scdvb.build().isValid()) {
+                        return false;
                     }
                 }
             }

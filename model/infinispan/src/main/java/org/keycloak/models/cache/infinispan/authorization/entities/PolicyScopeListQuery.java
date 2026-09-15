@@ -25,7 +25,7 @@ public class PolicyScopeListQuery extends PolicyListQuery implements InScope {
 
     private final String scopeId;
 
-    public PolicyScopeListQuery(Long revision, String id, String scopeId, Set<String> resources, String serverId) {
+    public PolicyScopeListQuery(long revision, String id, String scopeId, Set<String> resources, String serverId) {
         super(revision, id, resources, serverId);
         this.scopeId = scopeId;
     }

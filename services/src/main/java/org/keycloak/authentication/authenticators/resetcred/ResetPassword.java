@@ -37,7 +37,8 @@ public class ResetPassword extends AbstractSetRequiredActionAuthenticator {
                         configuredFor(context))) {
             context.getAuthenticationSession().addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
         }
-        context.success();
+        // send password category to force brute-force reset for temporary lockout
+        context.success(PasswordCredentialModel.TYPE);
     }
 
     protected boolean configuredFor(AuthenticationFlowContext context) {

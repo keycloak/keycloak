@@ -2,8 +2,7 @@ package org.keycloak.common.util;
 
 import java.io.IOException;
 
-import org.hamcrest.MatcherAssert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -75,28 +74,28 @@ public class Base64DecodeTest {
 
         try {
             Base64.decode(" ");
-            MatcherAssert.assertThat("Exception excepted", false);
+            assertThat("Exception excepted", false);
         } catch (final Exception e) {
             assertThat(e, instanceOf(IllegalArgumentException.class));
         }
 
         try {
             Base64.decode(" ".getBytes());
-            MatcherAssert.assertThat("Exception excepted", false);
+            assertThat("Exception excepted", false);
         } catch (final Exception e) {
             assertThat(e, instanceOf(IllegalArgumentException.class));
         }
 
         try {
             Base64.decode((String) null);
-            MatcherAssert.assertThat("Exception excepted", false);
+            assertThat("Exception excepted", false);
         } catch (final Exception e) {
             assertThat(e, instanceOf(NullPointerException.class));
         }
 
         try {
             Base64.decode((byte[]) null);
-            MatcherAssert.assertThat("Exception excepted", false);
+            assertThat("Exception excepted", false);
         } catch (final Exception e) {
             assertThat(e, instanceOf(NullPointerException.class));
         }
@@ -106,28 +105,28 @@ public class Base64DecodeTest {
     public void decode_lowLevelInvalidParams() {
         try {
             Base64.decode(null, 0, 1, Base64.NO_OPTIONS);
-            MatcherAssert.assertThat("Exception excepted", false);
+            assertThat("Exception excepted", false);
         } catch (final Exception e){
             assertThat(e, instanceOf(NullPointerException.class));
         }
 
         try {
             Base64.decode(new byte[2], 0, 1, Base64.NO_OPTIONS);
-            MatcherAssert.assertThat("Exception excepted", false);
+            assertThat("Exception excepted", false);
         } catch (final Exception e){
             assertThat(e, instanceOf(IllegalArgumentException.class));
         }
 
         try {
             Base64.decode(new byte[8], 0, 10, Base64.NO_OPTIONS);
-            MatcherAssert.assertThat("Exception excepted", false);
+            assertThat("Exception excepted", false);
         } catch (final Exception e){
             assertThat(e, instanceOf(IllegalArgumentException.class));
         }
 
         try {
             Base64.decode(new byte[8], 5, 5, Base64.NO_OPTIONS);
-            MatcherAssert.assertThat("Exception excepted", false);
+            assertThat("Exception excepted", false);
         } catch (final Exception e){
             assertThat(e, instanceOf(IllegalArgumentException.class));
         }

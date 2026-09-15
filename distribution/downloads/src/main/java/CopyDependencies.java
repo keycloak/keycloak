@@ -1,10 +1,14 @@
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 
 /**
  * Created by st on 06.02.17.
@@ -70,7 +74,37 @@ public class CopyDependencies {
         File[] files = artifactDir.listFiles((file, name) -> name.contains(".tar.gz") || name.contains(".tgz") || name.contains(".zip"));
 
         for (File f : files) {
-            Files.copy(f.toPath(), targetDir.resolve(f.getName().replace(artifactName, destinationName)), StandardCopyOption.REPLACE_EXISTING);
+            if (f.getName().endsWith(".md5") || f.getName().endsWith(".sha1")) {
+                continue;
+            }
+
+            Path dest = targetDir.resolve(f.getName().replace(artifactName, destinationName));
+            Files.copy(f.toPath(), dest, StandardCopyOption.REPLACE_EXISTING);
+
+            if (!f.getName().endsWith(".asc")) {
+                generateChecksums(dest);
+            }
+        }
+    }
+
+    private static void generateChecksums(Path file) throws IOException {
+        try {
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+
+            try (InputStream is = Files.newInputStream(file)) {
+                byte[] buf = new byte[8192];
+                for (int n; (n = is.read(buf)) != -1; ) {
+                    md5.update(buf, 0, n);
+                    sha1.update(buf, 0, n);
+                }
+            }
+
+            HexFormat hex = HexFormat.of();
+            Files.writeString(file.resolveSibling(file.getFileName() + ".md5"), hex.formatHex(md5.digest()));
+            Files.writeString(file.resolveSibling(file.getFileName() + ".sha1"), hex.formatHex(sha1.digest()));
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
     }
 

@@ -30,8 +30,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 
 import org.junit.jupiter.api.Test;
@@ -116,7 +116,7 @@ public class ClientScopeEvaluateTest {
     private static class ClientScopeUserConfig implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder config) {
+        public UserBuilder configure(UserBuilder config) {
             return config.username("test-user")
                     .name("Test", "User")
                     .email("test@user.com")

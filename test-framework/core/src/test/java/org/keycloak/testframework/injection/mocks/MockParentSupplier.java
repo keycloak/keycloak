@@ -25,7 +25,8 @@ public class MockParentSupplier implements Supplier<MockParentValue, MockParentA
 
     @Override
     public MockParentValue getValue(InstanceContext<MockParentValue, MockParentAnnotation> instanceContext) {
-        return new MockParentValue(configString, configBoolean);
+        String stringOption = instanceContext.getAnnotation().stringOption();
+        return new MockParentValue(stringOption.isEmpty() ? configString : stringOption, configBoolean);
     }
 
     @Override

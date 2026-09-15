@@ -1,8 +1,11 @@
 package org.keycloak.models.workflow;
 
+import java.util.Locale;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 
 import org.jboss.logging.Logger;
@@ -27,13 +30,34 @@ public class AddRequiredActionStepProvider implements WorkflowStepProvider {
         UserModel user = session.users().getUserById(realm, context.getResourceId());
 
         if (user != null) {
-            try {
-                UserModel.RequiredAction action = UserModel.RequiredAction.valueOf(stepModel.getConfig().getFirst(REQUIRED_ACTION_KEY));
-                log.debugv("Adding required action {0} to user {1})", action, user.getId());
-                user.addRequiredAction(action);
-            } catch (IllegalArgumentException e) {
-                log.warnv("Invalid required action {0} configured in AddRequiredActionProvider", stepModel.getConfig().getFirst(REQUIRED_ACTION_KEY));
+            String configuredAction = stepModel.getConfig().getFirst(REQUIRED_ACTION_KEY);
+            if (configuredAction == null) {
+                log.warnv("Missing required configuration option '{0}' in {1}", REQUIRED_ACTION_KEY, AddRequiredActionStepProviderFactory.ID);
+                return;
             }
+            RequiredActionProviderModel provider =
+                    realm.getRequiredActionProviderByAlias(configuredAction);
+
+            if (provider == null) {
+                String normalized = configuredAction.replace("-", "_").toUpperCase(Locale.ROOT);
+                provider = realm.getRequiredActionProviderByAlias(normalized);
+            }
+
+            if (provider == null) {
+                log.warnv("Required action {0} is not configured in realm {1}",
+                        configuredAction, realm.getName());
+                return;
+            }
+
+            if (!provider.isEnabled()) {
+                log.warnv("Required action {0} is not enabled in realm {1}",
+                        configuredAction, realm.getName());
+                return;
+            }
+
+            log.debugv("Adding required action {0} to user {1}", provider.getAlias(), user.getId());
+
+            user.addRequiredAction(provider.getAlias());
         }
     }
 

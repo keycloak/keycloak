@@ -12,20 +12,25 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CANCEL_IF_RUNNING;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CANCEL_IN_PROGRESS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONCURRENCY;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ENABLED;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_IF;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NAME;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ON_EVENT;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RESTART_IN_PROGRESS;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SCHEDULE;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SCHEDULE_AFTER;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SCHEDULE_BATCH_SIZE;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STATE;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STEPS;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SUPPORTS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
 
-@JsonPropertyOrder({"id", CONFIG_NAME, CONFIG_USES, CONFIG_ENABLED, CONFIG_ON_EVENT, CONFIG_CONCURRENCY, CONFIG_IF, CONFIG_STEPS, CONFIG_STATE})
-@JsonIgnoreProperties(CONFIG_WITH)
+@JsonPropertyOrder({"id", CONFIG_NAME, CONFIG_USES, CONFIG_ENABLED, CONFIG_ON_EVENT, CONFIG_SCHEDULE, CONFIG_CONCURRENCY, CONFIG_IF, CONFIG_STEPS, CONFIG_STATE})
+@JsonIgnoreProperties({CONFIG_WITH, CONFIG_SUPPORTS})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class WorkflowRepresentation extends AbstractWorkflowComponentRepresentation {
 
@@ -39,6 +44,9 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
 
     @JsonProperty(CONFIG_CONCURRENCY)
     private WorkflowConcurrencyRepresentation concurrency;
+
+    @JsonProperty(CONFIG_SCHEDULE)
+    private WorkflowScheduleRepresentation schedule;
 
     public WorkflowRepresentation() {
         super(null, null);
@@ -56,6 +64,29 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
 
     public void setOn(String eventConditions) {
         setConfigValue(CONFIG_ON_EVENT, eventConditions);
+    }
+
+    public WorkflowScheduleRepresentation getSchedule() {
+        if (schedule == null) {
+            String after = getConfigValue(CONFIG_SCHEDULE_AFTER, String.class);
+            Integer batchSize = getConfigValue(CONFIG_SCHEDULE_BATCH_SIZE, Integer.class);
+
+            if (after != null || batchSize != null) {
+                this.schedule = new WorkflowScheduleRepresentation();
+                this.schedule.setAfter(after);
+                this.schedule.setBatchSize(batchSize);
+            }
+        }
+
+        return this.schedule;
+    }
+
+    public void setSchedule(WorkflowScheduleRepresentation schedule) {
+        this.schedule = schedule;
+        if (schedule != null) {
+            setConfigValue(CONFIG_SCHEDULE_AFTER, schedule.getAfter());
+            setConfigValue(CONFIG_SCHEDULE_BATCH_SIZE, schedule.getBatchSize());
+        }
     }
 
     public String getName() {
@@ -108,11 +139,13 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
     }
 
     public WorkflowConcurrencyRepresentation getConcurrency() {
+        String cancelInProgress = getConfigValue(CONFIG_CANCEL_IN_PROGRESS, String.class);
+        String restartInProgress = getConfigValue(CONFIG_RESTART_IN_PROGRESS, String.class);
         if (this.concurrency == null) {
-            Boolean cancelIfRunning = getConfigValue(CONFIG_CANCEL_IF_RUNNING, Boolean.class);
-            if (cancelIfRunning != null) {
+            if (cancelInProgress != null || restartInProgress != null) {
                 this.concurrency = new WorkflowConcurrencyRepresentation();
-                this.concurrency.setCancelIfRunning(cancelIfRunning);
+                this.concurrency.setCancelInProgress(cancelInProgress);
+                this.concurrency.setRestartInProgress(restartInProgress);
             }
         }
         return this.concurrency;
@@ -121,13 +154,27 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
     public void setConcurrency(WorkflowConcurrencyRepresentation concurrency) {
         this.concurrency = concurrency;
         if (concurrency != null) {
-            setConfigValue(CONFIG_CANCEL_IF_RUNNING, concurrency.isCancelIfRunning());
+            setConfigValue(CONFIG_CANCEL_IN_PROGRESS, concurrency.getCancelInProgress());
+            setConfigValue(CONFIG_RESTART_IN_PROGRESS, concurrency.getRestartInProgress());
         }
     }
 
     @JsonIgnore
-    public boolean isCancelIfRunning() {
-        return concurrency != null && Boolean.TRUE.equals(concurrency.isCancelIfRunning());
+    public String getCancelInProgress() {
+        return concurrency != null ? concurrency.getCancelInProgress() : null;
+    }
+
+    @JsonIgnore
+    public String getRestartInProgress() {
+        return concurrency != null ? concurrency.getRestartInProgress() : null;
+    }
+
+    public String getSupports() {
+        return getConfigValue(CONFIG_SUPPORTS, String.class);
+    }
+
+    public void setSupports(String supports) {
+        setConfigValue(CONFIG_SUPPORTS, supports);
     }
 
     @Override
@@ -156,7 +203,7 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
         }
 
         public Builder onEvent(String... operation) {
-            return onEvent(String.join(" or ", operation).toUpperCase());
+            return onEvent(String.join(" or ", operation));
         }
 
         public Builder onCondition(String condition) {
@@ -165,16 +212,26 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
         }
 
         public Builder concurrency() {
-            representation.setConcurrency(new WorkflowConcurrencyRepresentation());
+            if (representation.getConcurrency() == null) {
+                representation.setConcurrency(new WorkflowConcurrencyRepresentation());
+            }
             return this;
         }
 
         // move this to its own builder if we expand the capabilities of the concurrency settings.
-        public Builder cancelIfRunning() {
+        public Builder cancelInProgress(String cancelInProgress) {
             if (representation.getConcurrency() == null) {
                 representation.setConcurrency(new WorkflowConcurrencyRepresentation());
             }
-            representation.getConcurrency().setCancelIfRunning(true);
+            representation.getConcurrency().setCancelInProgress(cancelInProgress);
+            return this;
+        }
+
+        public Builder restartInProgress(String restartInProgress) {
+            if (representation.getConcurrency() == null) {
+                representation.setConcurrency(new WorkflowConcurrencyRepresentation());
+            }
+            representation.getConcurrency().setRestartInProgress(restartInProgress);
             return this;
         }
 
@@ -195,6 +252,11 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
 
         public Builder withName(String name) {
             representation.setName(name);
+            return this;
+        }
+
+        public Builder schedule(WorkflowScheduleRepresentation schedule) {
+            representation.setSchedule(schedule);
             return this;
         }
 

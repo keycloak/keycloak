@@ -18,10 +18,13 @@
 package org.keycloak.tests.keys;
 
 import java.io.File;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -44,15 +47,20 @@ import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.JavaKeystoreKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation.KeyMetadataRepresentation;
 import org.keycloak.testframework.annotations.InjectCryptoHelper;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.crypto.CryptoHelper;
 import org.keycloak.testframework.crypto.KeystoreInfo;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -61,14 +69,16 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.KeyUtils;
 import org.keycloak.testsuite.util.saml.SamlConstants;
 
+import org.apache.commons.io.FileUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.logging.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -86,14 +96,31 @@ public class JavaKeystoreKeyProviderTest {
     @InjectCryptoHelper
     CryptoHelper cryptoHelper;
 
-    @TempDir
     public static File folder;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     protected Logger log = Logger.getLogger(this.getClass());
 
     private String keyAlgorithm;
 
     private KeystoreInfo generatedKeystore;
+
+    @TestSetup
+    public void configureTestRealm() throws IOException {
+        String kcHome = runOnServer.fetchString(session -> System.getProperty("kc.home.dir"));
+        Path path = Paths.get(kcHome).normalize().resolve("data").resolve(realm.getName());
+        if (!Files.exists(path)) {
+            Files.createDirectory(path);
+        }
+        folder = path.toFile();
+    }
+
+    @AfterAll
+    public static void afterAll() throws IOException {
+        FileUtils.deleteDirectory(folder);
+    }
 
     @Test
     public void createJksRSA() throws Exception {
@@ -149,6 +176,29 @@ public class JavaKeystoreKeyProviderTest {
     public void createHMAC() throws Exception {
         // BC provider fails storing HMAC in BCFKS (although BCFIPS works)
         createSuccess(cryptoHelper.isFips() ? KeystoreUtil.KeystoreFormat.BCFKS : KeystoreUtil.KeystoreFormat.PKCS12, AlgorithmType.HMAC, Algorithm.HS256, true);
+    }
+
+    @Test
+    public void testKidDoesNotChangeOnComponentUpdate() throws Exception {
+        KeystoreUtil.KeystoreFormat keystoreType = cryptoHelper.isFips() ? KeystoreUtil.KeystoreFormat.BCFKS : KeystoreUtil.KeystoreFormat.PKCS12;
+        cryptoHelper.keystore().assumeKeystoreTypeSupported(keystoreType);
+        generateKeystore(keystoreType, AlgorithmType.HMAC, Algorithm.HS256);
+
+        // Record the KID assigned at creation time
+        ComponentRepresentation rep = createRep(KeycloakModelUtils.generateId(), 100, Algorithm.HS256);
+        Response response = realm.admin().components().add(rep);
+        rep.setId(ApiUtil.getCreatedId(response));
+        String providerId = rep.getId();
+        realm.cleanup().add(r -> r.components().component(providerId).remove());
+        String expectedKid = getKeyKID(providerId);
+
+        // Update the component (change priority), re-triggers validateConfiguration
+        rep = realm.admin().components().component(providerId).toRepresentation();
+        rep.getConfig().putSingle("priority", "200");
+        realm.admin().components().component(providerId).update(rep);
+
+        // Verify the KID did not change after the update
+        assertEquals(expectedKid, getKeyKID(providerId));
     }
 
     @Test
@@ -215,16 +265,37 @@ public class JavaKeystoreKeyProviderTest {
         }
 
         assertEquals(priority, key.getProviderPriority());
+        assertNotNull(key.getKid());
     }
 
     @Test
     public void invalidKeystore() throws Exception {
         generateKeystore(cryptoHelper.keystore().getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
-        rep.getConfig().putSingle("keystore", "/nosuchfile");
+        rep.getConfig().putSingle("keystore", "nosuchfile");
 
         Response response = realm.admin().components().add(rep);
         assertError(response, "Failed to load keys. File not found on server.");
+    }
+
+    @Test
+    public void invalidKeystoreOutsideKeystoreDirectories() throws Exception {
+        generateKeystore(cryptoHelper.keystore().getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
+        ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
+        rep.getConfig().putSingle("keystore", "/invalid");
+
+        Response response = realm.admin().components().add(rep);
+        assertError(response, "is not under the realm directory");
+    }
+
+    @Test
+    public void invalidKeystoreOutsideKeystoreDirectoriesRelative() throws Exception {
+        generateKeystore(cryptoHelper.keystore().getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
+        ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
+        rep.getConfig().putSingle("keystore", "../invalid");
+
+        Response response = realm.admin().components().add(rep);
+        assertError(response, "is not under the realm directory");
     }
 
     @Test
@@ -389,6 +460,13 @@ public class JavaKeystoreKeyProviderTest {
         Certificate cert = CertificateUtils.generateV1SelfSignedCertificate(
                 keyPair, "test", new BigInteger("1"), Date.from(Instant.now().plus(1, ChronoUnit.HOURS)));
         this.generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, keystoreType, "keyalias", "password", "password", keyPair.getPrivate(), cert);
+    }
+
+    private String getKeyKID(String providerId) {
+        KeysMetadataRepresentation metadata = realm.admin().keys().getKeyMetadata();
+        KeyMetadataRepresentation key = metadata.getKeys().stream().filter(k -> k.getProviderId().equals(providerId)).findFirst().orElse(null);
+        assertNotNull(key);
+        return key.getKid();
     }
 
     public static class JavaKeystoreVaultConfig implements KeycloakServerConfig {

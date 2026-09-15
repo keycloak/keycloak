@@ -19,6 +19,7 @@ package org.keycloak.testsuite.authz;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -42,8 +43,8 @@ import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
@@ -78,6 +79,7 @@ public class PolicyEvaluationCompositeRoleTest extends AbstractAuthzTest {
 
         Scope scope = authz.getStoreFactory().getScopeStore().create(resourceServer, "myscope");
         Resource resource = authz.getStoreFactory().getResourceStore().create(resourceServer, "myresource", resourceServer.getClientId());
+        resource.updateScopes(Set.of(scope));
         addScopePermission(authz, resourceServer, "mypermission", resource, scope, policy);
 
         RoleModel composite = realm.addRole("composite");
@@ -132,7 +134,7 @@ public class PolicyEvaluationCompositeRoleTest extends AbstractAuthzTest {
         request.setClientId(resourceServerId);
         request.addResource("myresource", "myscope");
         PolicyEvaluationResponse result = realm.clients().get(resourceServerId).authorization().policies().evaluate(request);
-        Assert.assertEquals(DecisionEffect.PERMIT, result.getStatus());
+        Assertions.assertEquals(DecisionEffect.PERMIT, result.getStatus());
     }
 
 

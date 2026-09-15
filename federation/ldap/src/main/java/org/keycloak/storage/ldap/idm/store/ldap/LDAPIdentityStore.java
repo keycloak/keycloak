@@ -63,6 +63,8 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.IdentityStore;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Timer;
 import org.jboss.logging.Logger;
 
 /**
@@ -79,10 +81,20 @@ public class LDAPIdentityStore implements IdentityStore {
 
     private final LDAPConfig config;
     private final LDAPOperationManager operationManager;
+    private final Meter.MeterProvider<Timer> requestTimer;
 
     public LDAPIdentityStore(KeycloakSession session, LDAPConfig config) {
+        this(session, config, null);
+    }
+
+    public LDAPIdentityStore(KeycloakSession session, LDAPConfig config, Meter.MeterProvider<Timer> requestTimer) {
         this.config = config;
-        this.operationManager = new LDAPOperationManager(session, config);
+        this.requestTimer = requestTimer;
+        this.operationManager = new LDAPOperationManager(session, config, requestTimer);
+    }
+
+    public Meter.MeterProvider<Timer> getRequestTimer() {
+        return requestTimer;
     }
 
     @Override
@@ -522,13 +534,6 @@ public class LDAPIdentityStore implements IdentityStore {
                 .map(String::toLowerCase)
                 .collect(Collectors.toSet());
 
-        if (!isCreate) {
-            // for updates, assume the PWD_CHANGED_TIME attribute is an operational attribute and read-only
-            // otherwise, updates will fail when trying to modify the attribute
-            // vendors like AD, support the same type of attribute differently and using a mapper
-            ldapObject.addReadOnlyAttributeName(LDAPConstants.PWD_CHANGED_TIME);
-        }
-
         for (Map.Entry<String, Set<String>> attrEntry : ldapObject.getAttributes().entrySet()) {
             String attrName = attrEntry.getKey();
             Set<String> attrValue = attrEntry.getValue();
@@ -597,7 +602,7 @@ public class LDAPIdentityStore implements IdentityStore {
             }
 
             try {
-                byte[] bytes = Base64.getDecoder().decode(value);
+                byte[] bytes = Base64.getMimeDecoder().decode(value);
                 attr.add(bytes);
             } catch (IllegalArgumentException iae) {
                 logger.warnf("Wasn't able to Base64 decode the attribute value. Ignoring attribute update. Attribute: %s, Attribute value: %s", attrName, attrValue);
@@ -608,7 +613,13 @@ public class LDAPIdentityStore implements IdentityStore {
     }
 
     public String getPasswordModificationTimeAttributeName() {
-        return getConfig().isActiveDirectory() ? LDAPConstants.PWD_LAST_SET : LDAPConstants.PWD_CHANGED_TIME;
+        if (getConfig().isActiveDirectory()) {
+            return LDAPConstants.PWD_LAST_SET;
+        }
+        if (getConfig().isRHDS()) {
+            return LDAPConstants.PWD_UPDATE_TIME;
+        }
+        return LDAPConstants.PWD_CHANGED_TIME;
     }
 
 }

@@ -2,10 +2,14 @@ package org.keycloak.utils;
 
 import java.net.InetAddress;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.function.Supplier;
 
+import jakarta.ws.rs.core.HttpHeaders;
+
 import org.keycloak.device.DeviceRepresentationProvider;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.account.DeviceRepresentation;
 
@@ -22,7 +26,8 @@ public class SecureContextResolver {
      * @return Whether the session can be considered potentially trustworthy by user-agents.
      */
     public static boolean isSecureContext(KeycloakSession session) {
-        URI uri = session.getContext().getUri().getRequestUri();
+        KeycloakContext context = session.getContext();
+        URI uri = context.getUri().getRequestUri();
 
         // Use a Supplier so the user-agent is evaluated lazily, avoiding unnecessary parsing in production deployments.
         Supplier<DeviceRepresentation> deviceRepresentationSupplier = () -> {
@@ -30,11 +35,29 @@ public class SecureContextResolver {
             return deviceRepresentationProvider.deviceRepresentation();
         };
 
-        return isSecureContext(uri, deviceRepresentationSupplier);
+        HttpHeaders headers = context.getRequestHeaders();
+        String referer = headers.getHeaderString("Referer");
+        String secFetchDest = headers.getHeaderString("Sec-Fetch-Dest");
+
+        return isSecureContext(uri, deviceRepresentationSupplier, referer, secFetchDest);
     }
 
     static boolean isSecureContext(URI uri, Supplier<DeviceRepresentation> deviceRepresentationSupplier) {
+        return isSecureContext(uri, deviceRepresentationSupplier, null, null);
+    }
+
+    static boolean isSecureContext(URI uri, Supplier<DeviceRepresentation> deviceRepresentationSupplier, String referer, String secFetchDest) {
         if (uri.getScheme().equals("https")) {
+            // Per the W3C Secure Contexts spec, a page is only contextually secure if all its
+            // ancestor contexts are also secure. An HTTPS iframe embedded in an HTTP parent page
+            // is therefore not a secure context. Detect this using browser-sent fetch metadata.
+            // See:
+            // - https://github.com/keycloak/keycloak/issues/37355
+            // - https://w3c.github.io/webappsec-secure-contexts/#is-settings-object-contextually-secure
+            // - https://w3c.github.io/webappsec-secure-contexts/#examples-framed
+            if ("iframe".equals(secFetchDest) && isInsecureReferer(referer)) {
+                return false;
+            }
             return true;
         }
 
@@ -91,6 +114,18 @@ public class SecureContextResolver {
         }
 
         return false;
+    }
+
+    private static boolean isInsecureReferer(String referer) {
+        if (referer == null) {
+            return false;
+        }
+
+        try {
+            return "http".equals(new URI(referer).getScheme());
+        } catch (URISyntaxException e) {
+            return false;
+        }
     }
 
 }

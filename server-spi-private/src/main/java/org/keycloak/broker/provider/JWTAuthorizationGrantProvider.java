@@ -36,4 +36,6 @@ public interface JWTAuthorizationGrantProvider <C extends IdentityProviderModel>
     int getMaxAllowedExpiration();
 
     String getAssertionSignatureAlg();
+
+    boolean isLimitAccessTokenExpiration();
 }

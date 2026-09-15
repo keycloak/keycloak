@@ -22,6 +22,16 @@ The criteria used to match users depends on the syntax used on the search box:
 .. `\*somevalue*` -> performs infix search, akin to a `LIKE '%somevalue%'` DB query;
 .. `somevalue*` or `somevalue` -> performs prefix search, akin to a `LIKE 'somevalue%'` DB query.
 
+== Search by fields
+
+{project_name} supports direct user lookups for selected fields by prefixing the search term in the search box:
+
+* `id:myUUID` -> performs an exact user lookup by id for `"myUUID"`;
+* `username:myuser` -> performs an exact user lookup by username for `"myuser"`;
+* `email:myuser@domain.org` -> performs an exact user lookup by email for `"myuser@domain.org"`.
+
+Multiple values can be supplied separated by whitespace (for example `id:uuid1 uuid2`) to look up several users in a single request.
+
 == Attribute search
 
 .Procedure

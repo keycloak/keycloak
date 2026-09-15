@@ -5,10 +5,25 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.http.HttpRequest;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenResponseMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
+import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
+import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.x509.X509ClientCertificateLookup;
 
@@ -22,8 +37,17 @@ public class MtlsHoKTokenUtil {
 
     private static final String DIGEST_ALG = "SHA-256";
 
-    public static final String CERT_VERIFY_ERROR_DESC = "Client certificate missing, or its thumbprint and one in the refresh token did NOT match";
+    public static final String CERT_VERIFY_ERROR_DESC = "Client certificate missing, or its thumbprint and one in the token did NOT match";
 
+    public static Stream<Map.Entry<ProtocolMapperModel, ProtocolMapper>> getTransientProtocolMapper() {
+        ProtocolMapperModel protocolMapperModel = new ProtocolMapperModel();
+        protocolMapperModel.setId(MtlsHoKProtocolMapper.PROVIDER_ID);
+        protocolMapperModel.setName("mtls-hok");
+        protocolMapperModel.setProtocolMapper(MtlsHoKProtocolMapper.PROVIDER_ID);
+        protocolMapperModel.setProtocol("openid-connect");
+        protocolMapperModel.setConfig(Map.of());
+        return Stream.of(Map.entry(protocolMapperModel, new MtlsHoKProtocolMapper()));
+    }
 
     public static AccessToken.Confirmation bindTokenWithClientCertificate(HttpRequest request, KeycloakSession session) {
         X509Certificate[] certs = getCertificateChain(request, session);
@@ -83,7 +107,7 @@ public class MtlsHoKTokenUtil {
         }
 
         if (!MessageDigest.isEqual(x5ts256.getBytes(), DERX509Base64UrlEncoded.getBytes())) {
-            logger.warnf("certificate's thumbprint and one in the refresh token did not match.");
+            logger.warnf("certificate's thumbprint and one in the token did not match.");
             return false;
         }
 
@@ -135,6 +159,53 @@ public class MtlsHoKTokenUtil {
             logger.tracef(":: certs[%d] Certfication Type of first x509 Client Certificate in Certificate Chain = %s", i, certs[i].getType());
             logger.tracef(":: certs[%d] Issuer DN of first x509 Client Certificate in Certificate Chain = %s", i, certs[i].getIssuerDN().getName());
             logger.tracef(":: certs[%d] Subject DN of first x509 Client Certificate in Certificate Chain = %s", i, certs[i].getSubjectDN().getName());
+        }
+    }
+
+    /**
+     * Protocol mapper that binds access tokens to the client's mTLS certificate
+     * by adding the "cnf" (confirmation) claim with a "x5t#S256" certificate
+     * thumbprint. This ensures sender-constrained tokens for all grant types,
+     * including token exchange.
+     */
+    public static class MtlsHoKProtocolMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper,
+          OIDCIDTokenMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper, OIDCAccessTokenResponseMapper {
+
+        public static final String PROVIDER_ID = "mtls-hok-protocol-mapper";
+
+        @Override
+        public String getId() {
+            return PROVIDER_ID;
+        }
+
+        @Override
+        public String getDisplayCategory() {
+            return TOKEN_MAPPER_CATEGORY;
+        }
+
+        @Override
+        public String getDisplayType() {
+            return "mtls-hok";
+        }
+
+        @Override
+        public String getHelpText() {
+            return "Binds access tokens to the client's mTLS certificate by adding the cnf claim with x5t#S256 thumbprint.";
+        }
+
+        @Override
+        public List<ProviderConfigProperty> getConfigProperties() {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel,
+                                                KeycloakSession session, UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+            AccessToken.Confirmation confirmation = bindTokenWithClientCertificate(session.getContext().getHttpRequest(), session);
+            if (confirmation != null) {
+                token.setConfirmation(confirmation);
+            }
+            return token;
         }
     }
 }

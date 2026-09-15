@@ -24,13 +24,13 @@ public class NonExistentItem implements Revisioned {
 
     private final String id;
 
-    private Long revision;
+    private long revision;
 
     public NonExistentItem(String id) {
         this.id = id;
     }
 
-    public NonExistentItem(String id, Long revision) {
+    public NonExistentItem(String id, long revision) {
         this.id = id;
         this.revision = revision;
     }
@@ -41,12 +41,12 @@ public class NonExistentItem implements Revisioned {
     }
 
     @Override
-    public Long getRevision() {
+    public long getRevision() {
         return this.revision;
     }
 
     @Override
-    public void setRevision(Long revision) {
+    public void setRevision(long revision) {
         this.revision = revision;
     }
 

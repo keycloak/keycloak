@@ -1,6 +1,8 @@
 package org.keycloak.services.filters;
 
 import java.io.IOException;
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
 import java.util.List;
 import java.util.Map;
 
@@ -20,15 +22,13 @@ public class InvalidQueryParameterFilter implements ContainerRequestFilter {
 
     private static final Logger LOGGER = Logger.getLogger(InvalidQueryParameterFilter.class);
 
-    private static final String NUL_CHARACTER = "\u0000";
-
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
         final Map<String, List<String>> queryParams = requestContext.getUriInfo().getQueryParameters();
 
         for (final List<String> queryParamValues : queryParams.values()) {
             for (final String queryParamValue : queryParamValues) {
-                if (containsAnyNULCharacter(queryParamValue)) {
+                if (containsAnyASCIIControlCharacter(queryParamValue)) {
                     LOGGER.debugf("Request with invalid query parameter value is blocked");
                     throw new BadRequestException("Blocking invalid query parameter value");
                 }
@@ -39,15 +39,35 @@ public class InvalidQueryParameterFilter implements ContainerRequestFilter {
     /**
      * Unsafe character values we can safely assume is a bad request:
      * NUL	U+0000	Breaks encoding (esp. UTF-8)
+     * ESC  U+001B  Can lead to strange behavior in ANSI terminals
+     * ... or any other character below 0x20 excluding TAB (09) or LF/CR (0A/0D).
      *
      * @param input the value to check if contains unsafe characters
      * @return true if the input contains at least one of the unsafe characters
      */
-    private boolean containsAnyNULCharacter(String input) {
+    private boolean containsAnyASCIIControlCharacter(String input) {
         if (input == null) {
             return false;
         }
-        return input.contains(NUL_CHARACTER);
+        CharacterIterator it = new StringCharacterIterator(input);
+        while (true) {
+            char c = it.current();
+            if (c == CharacterIterator.DONE) {
+                break;
+            } else {
+                if (c < 32) {
+                    switch (c) {
+                        case 0x09: // TAB
+                        case 0x0A: // LF
+                        case 0x0D: // CR
+                            break;
+                        default:
+                            return true;
+                    }
+                }
+                it.next();
+            }
+        }
+        return false;
     }
-
 }

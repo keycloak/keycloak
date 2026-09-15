@@ -61,7 +61,9 @@ public class FeatureCompatibilityMetadataProviderTest extends AbstractCompatibil
         return Arrays.stream(Profile.Feature.values())
               // It's not possible to disable HOSTNAME_V2 so ignore it when testing
               .filter(f -> f != Profile.Feature.HOSTNAME_V2)
-              .filter(f -> f.getUpdatePolicy() == Profile.FeatureUpdatePolicy.ROLLING)
+                .filter(f -> f != Profile.Feature.ROLLING_UPDATES_V1)
+                .filter(f -> f != Profile.Feature.ROLLING_UPDATES_V2)
+                .filter(f -> f.getUpdatePolicy() == Profile.FeatureUpdatePolicy.ROLLING)
               .filter(f ->
                     // Filter features that have a dependency that does not support Rolling update as these will cause a cluster recreate
                     DEPENDENT_FEATURES.getOrDefault(f, Set.of())
@@ -195,19 +197,13 @@ public class FeatureCompatibilityMetadataProviderTest extends AbstractCompatibil
         public FeatureConfig getFeatureConfig(String featureName) {
             // No support for transitive dependencies but that should be fine for now
             if (enabled) {
-                if (DEPENDENT_FEATURES.containsKey(feature)) {
-                    for (Profile.Feature dep : DEPENDENT_FEATURES.get(feature)) {
-                        if (dep.getVersionedKey().equals(featureName))
-                            return FeatureConfig.ENABLED;
-                    }
-                }
                 for (Profile.Feature dep : feature.getDependencies()) { // Explicitly enable dependencies that might be disabled by default
                     if (dep.getVersionedKey().equals(featureName))
                         return FeatureConfig.ENABLED;
                 }
                 return feature.getVersionedKey().equals(featureName) ? FeatureConfig.ENABLED : FeatureConfig.UNCONFIGURED;
             } else {
-                if (DEPENDENT_FEATURES.containsKey(feature)) {
+                if (DEPENDENT_FEATURES.containsKey(feature)) { // Explicitly disable features that depend on the passed one
                     for (Profile.Feature dep : DEPENDENT_FEATURES.get(feature)) {
                         if (dep.getUnversionedKey().equals(featureName))
                             return FeatureConfig.DISABLED;

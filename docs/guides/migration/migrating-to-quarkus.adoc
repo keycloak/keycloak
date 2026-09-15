@@ -75,6 +75,11 @@ While the WildFly distribution automatically discovered custom providers, even s
 
 Depending on what APIs your providers use you may also need to make some changes to the providers. If you only leveraged classes from Keycloak SPIs you shouldn't need to, but if you used other APIs from WildFly you may need to make some changes. In addition, JavaEE APIs like session/stateless beans are no longer supported.
 
+== Migrating containers
+
+The container images for the Quarkus distribution derive from UBI Micro instead of UBI Minimal. This means that some binaries or configuration files (those not necessary for Keycloak's main functionality) may be missing. The solution is to add these files in as part of the container customization process explained in the https://www.keycloak.org/server/containers[Container guide].
+
+For example, for the Kerberos authentication features you will need to add `/etc/krb5.conf`. The `krb5-libs` RPM previously supplied this file, but was removed in the switch to UBI Micro. Note that binaries from `krb5-libs` are not required for Keycloak's Kerberos authentication features to work.
 
 == Migrating using the Operator
 

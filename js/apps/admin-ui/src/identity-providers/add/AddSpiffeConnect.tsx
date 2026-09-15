@@ -48,7 +48,7 @@ export default function AddSamlConnect() {
         providerId: id,
       });
       addAlert(t("createIdentityProviderSuccess"), AlertVariant.success);
-      navigate(
+      void navigate(
         toIdentityProvider({
           realm,
           providerId: id,
@@ -56,7 +56,7 @@ export default function AddSamlConnect() {
           tab: "settings",
         }),
       );
-    } catch (error: any) {
+    } catch (error) {
       addError("createIdentityProviderError", error);
     }
   };

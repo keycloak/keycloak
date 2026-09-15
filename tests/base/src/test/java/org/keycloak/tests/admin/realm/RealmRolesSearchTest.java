@@ -10,6 +10,7 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,7 @@ public class RealmRolesSearchTest extends AbstractRealmRolesTest {
     }
 
     @Test
+    @DatabaseTest
     public void testSearchForRoles() {
 
         for(int i = 0; i<15; i++) {
@@ -60,6 +62,7 @@ public class RealmRolesSearchTest extends AbstractRealmRolesTest {
     }
 
     @Test
+    @DatabaseTest
     public void testPaginationRoles() {
 
         for(int i = 0; i<15; i++) {

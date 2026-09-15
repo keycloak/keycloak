@@ -21,9 +21,9 @@ You can enable the specific feature `<name>` as follows:
 <@kc.build parameters="--feature-<name>=enabled|disabled|vX"/>
 
 Possible values are `enabled`, `disabled`, or a specific version of the feature that should be enabled.
-For example, to enable `rolling-updates:v2` and `token-exchange`, enter this command:
+For example, to enable `token-exchange`, enter this command:
 
-<@kc.build parameters="--feature-rolling-updates=v2 --feature-token-exchange=enabled"/>
+<@kc.build parameters="--feature-token-exchange=enabled"/>
 
 The single-option mechanism is useful when updating long feature lists is cumbersome or when you want to modify a specific feature without overriding the entire list in a pre-built image.
 

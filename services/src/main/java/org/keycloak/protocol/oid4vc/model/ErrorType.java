@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
  * Enum to handle potential errors in issuing credentials with the error types defined in OID4VCI
@@ -26,6 +27,9 @@ package org.keycloak.protocol.oid4vc.model;
  */
 public enum ErrorType {
 
+    INVALID_CLIENT("invalid_client"),
+    INVALID_REQUEST("invalid_request"),
+    INVALID_GRANT("invalid_grant"),
     INVALID_CREDENTIAL_OFFER_REQUEST("invalid_credential_offer_request"),
     INVALID_CREDENTIAL_REQUEST("invalid_credential_request"),
     INVALID_TOKEN("invalid_token"),
@@ -43,7 +47,13 @@ public enum ErrorType {
         this.value = value;
     }
 
+    @JsonValue
     public String getValue() {
+        return value;
+    }
+
+    @Override
+    public String toString() {
         return value;
     }
 }

@@ -204,7 +204,27 @@
         "https://localhost:8543/auth/realms/test/app/auth/*"
       ],
       "adminUrl": "http://localhost:8180/auth/realms/master/app/admin",
-      "secret": "password"
+      "secret": "password",
+      "protocolMappers": [
+        {
+          "name": "audience-confidential-cli",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "confidential-cli",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "audience-test-app",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "test-app",
+            "access.token.claim": "true"
+          }
+        }
+      ]
     },
     {
       "clientId": "root-url-client",
@@ -228,7 +248,18 @@
         "https://localhost:8543/auth/realms/master/app/*"
       ],
       "secret": "password",
-      "fullScopeAllowed": "false"
+      "fullScopeAllowed": "false",
+      "protocolMappers": [
+        {
+          "name": "audience-test-app-scope",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "test-app-scope",
+            "access.token.claim": "true"
+          }
+        }
+      ]
     },
     {
       "clientId" : "third-party",

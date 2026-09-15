@@ -24,19 +24,20 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.keycloak.operator.ContextUtils;
+import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
+import org.keycloak.operator.crds.v2beta1.CRDUtils;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.update.UpdateLogic;
+import org.keycloak.operator.update.UpdateType;
+
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkus.logging.Log;
-import org.keycloak.operator.ContextUtils;
-import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
-import org.keycloak.operator.crds.v2alpha1.CRDUtils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
-import org.keycloak.operator.update.UpdateLogic;
-import org.keycloak.operator.update.UpdateType;
 
 /**
  * Common {@link UpdateLogic} implementation that checks if the update logic needs to be run.

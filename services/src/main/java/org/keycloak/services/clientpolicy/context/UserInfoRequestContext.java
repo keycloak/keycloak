@@ -17,6 +17,7 @@
 
 package org.keycloak.services.clientpolicy.context;
 
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
@@ -24,11 +25,13 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class UserInfoRequestContext implements ClientPolicyContext {
+public class UserInfoRequestContext implements ClientPolicyContext, ClientPolicyClientSessionContext {
 
+    private AuthenticatedClientSessionModel clientSession;
     private UserInfoEndpoint.TokenForUserInfo tokenForUserInfo;
 
-    public UserInfoRequestContext(UserInfoEndpoint.TokenForUserInfo tokenForUserInfo) {
+    public UserInfoRequestContext(AuthenticatedClientSessionModel clientSession, UserInfoEndpoint.TokenForUserInfo tokenForUserInfo) {
+        this.clientSession = clientSession;
         this.tokenForUserInfo = tokenForUserInfo;
     }
 
@@ -41,4 +44,8 @@ public class UserInfoRequestContext implements ClientPolicyContext {
         return tokenForUserInfo;
     }
 
+    @Override
+    public AuthenticatedClientSessionModel getClientSession() {
+        return clientSession;
+    }
 }

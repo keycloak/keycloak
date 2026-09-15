@@ -106,6 +106,11 @@ public class UserAttributeUpdater extends ServerResourceUpdater<UserAttributeUpd
         return this;
     }
 
+    public UserAttributeUpdater setEnabled(Boolean enabled) {
+        rep.setEnabled(enabled);
+        return this;
+    }
+
     public UserAttributeUpdater setRequiredActions(UserModel.RequiredAction... requiredAction) {
         rep.setRequiredActions(Arrays.stream(requiredAction)
                 .map(action -> action.name())

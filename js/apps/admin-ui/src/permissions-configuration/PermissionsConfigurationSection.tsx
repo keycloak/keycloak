@@ -50,21 +50,21 @@ export default function PermissionsConfigurationSection() {
   const permissionsResourcesTab = useRoutableTab(
     toPermissionsConfigurationTabs({
       realm,
-      permissionClientId: realmRepresentation?.adminPermissionsClient?.id!,
+      permissionClientId: realmRepresentation.adminPermissionsClient?.id!,
       tab: "permissions",
     }),
   );
   const permissionsPoliciesTab = useRoutableTab(
     toPermissionsConfigurationTabs({
       realm,
-      permissionClientId: realmRepresentation?.adminPermissionsClient?.id!,
+      permissionClientId: realmRepresentation.adminPermissionsClient?.id!,
       tab: "policies",
     }),
   );
   const permissionsEvaluateTab = useRoutableTab(
     toPermissionsConfigurationTabs({
       realm,
-      permissionClientId: realmRepresentation?.adminPermissionsClient?.id!,
+      permissionClientId: realmRepresentation.adminPermissionsClient?.id!,
       tab: "evaluation",
     }),
   );

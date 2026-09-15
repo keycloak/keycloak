@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -152,10 +151,10 @@ public class DescriptionConverter {
             if (clientAuthFactory == null) {
                 throw new ClientRegistrationException("Not found clientAuthenticator for requested token_endpoint_auth_method");
             }
-            client.setClientAuthenticatorType(clientAuthFactory.getId());
+            clientAuthFactory.setClientAuthenticationMethod(client, authMethod);
         }
 
-        boolean publicKeySet = setPublicKey(clientOIDC, client);
+        boolean publicKeySet = setPublicKey(session, clientOIDC, client);
         if (authMethod != null && authMethod.equals(OIDCLoginProtocol.PRIVATE_KEY_JWT) && !publicKeySet) {
             throw new ClientRegistrationException("Didn't find key of supported keyType for use " + JWK.Use.SIG.asString());
         }
@@ -237,6 +236,10 @@ public class DescriptionConverter {
             configWrapper.setTosUri(clientOIDC.getTosUri());
         }
 
+        if (clientOIDC.getSectorIdentifierUri() != null) {
+            configWrapper.setSectorIdentifierUri(clientOIDC.getSectorIdentifierUri());
+        }
+
         if (clientOIDC.getPostLogoutRedirectUris() != null) {
             configWrapper.setPostLogoutRedirectUris(clientOIDC.getPostLogoutRedirectUris());
         }
@@ -308,7 +311,7 @@ public class DescriptionConverter {
         return supportedAlgorithms.collect(Collectors.toList());
     }
 
-    private static boolean setPublicKey(OIDCClientRepresentation clientOIDC, ClientRepresentation clientRep) {
+    private static boolean setPublicKey(KeycloakSession session, OIDCClientRepresentation clientOIDC, ClientRepresentation clientRep) {
         OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
 
         if (clientOIDC.getJwks() != null) {
@@ -320,7 +323,8 @@ public class DescriptionConverter {
             JWK publicKeyJWk = JWKSUtils.getKeyForUse(keySet, JWK.Use.SIG);
 
             try {
-                configWrapper.setJwksString(JsonSerialization.writeValueAsPrettyString(clientOIDC.getJwks()));
+                configWrapper.setJwksString(CertificateInfoHelper.stripPrivateKeyParams(session.getKeycloakSessionFactory(),
+                        JsonSerialization.writeValueAsPrettyString(clientOIDC.getJwks())));
             } catch (IOException e) {
                 throw new ClientRegistrationException("Illegal jwks format");
             }
@@ -357,9 +361,9 @@ public class DescriptionConverter {
             response.setTokenEndpointAuthMethod("none");
         } else {
             ClientAuthenticatorFactory clientAuth = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, client.getClientAuthenticatorType());
-            Set<String> oidcClientAuthMethods = clientAuth.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL);
-            if (oidcClientAuthMethods != null && !oidcClientAuthMethods.isEmpty()) {
-                response.setTokenEndpointAuthMethod(oidcClientAuthMethods.iterator().next());
+            String oidcClientAuthMethod = clientAuth.getProtocolAuthenticatorMethod(client);
+            if (oidcClientAuthMethod != null) {
+                response.setTokenEndpointAuthMethod(oidcClientAuthMethod);
             }
 
             if (clientAuth.supportsSecret()) {

@@ -34,7 +34,7 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
-            <artifactId>keycloak-test-framework-core</artifactId>
+            <artifactId>keycloak-test-framework-test-containers</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

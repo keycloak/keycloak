@@ -29,6 +29,7 @@ import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -55,6 +56,7 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
     private static final Logger logger = Logger.getLogger(ResetCredentialChooseUser.class);
 
     public static final String PROVIDER_ID = "reset-credentials-choose-user";
+    public static final String RESET_CREDENTIAL_USER_CHOSEN = "RESET_CREDENTIAL_USER_CHOSEN";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
@@ -109,7 +111,15 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
         }
 
         username = username.trim();
-        
+        if (AuthenticatorUtils.isUsernameTooLong(username)) {
+            event.error(Errors.USER_NOT_FOUND);
+            Response challengeResponse = context.form()
+                    .addError(new FormMessage(Validation.FIELD_USERNAME, Messages.INVALID_USER))
+                    .createPasswordReset();
+            context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
+            return;
+        }
+
         RealmModel realm = context.getRealm();
         UserModel user = context.getSession().users().getUserByUsername(realm, username);
         if (user == null && realm.isLoginWithEmailAllowed() && username.contains("@")) {
@@ -131,6 +141,7 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
                     .user(user).error(Errors.USER_DISABLED);
             context.clearUser();
         } else {
+            context.getAuthenticationSession().setAuthNote(RESET_CREDENTIAL_USER_CHOSEN, "true");
             context.setUser(user);
         }
 

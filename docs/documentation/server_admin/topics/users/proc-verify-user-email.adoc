@@ -1,0 +1,30 @@
+// Module included in the following assemblies:
+//
+// server_admin/topics/assembly-managing-users.adoc
+
+[id="proc-verify-user-email_{context}"]
+= Verifying a user's email address
+
+[roles="_abstract"]
+{project_name} can send a verification email to a user to confirm that the email address they registered is valid and accessible.
+This is useful when onboarding new users or when an administrator wants to ensure a user's email address is correct.
+
+.Prerequisites
+* Email is configured for the realm.
+See <<_email, Configuring email for a realm>>.
+
+.Procedure
+. Click *Users* in the menu.
+. Select the user whose email address you want to verify.
+. Click the *Credentials* tab.
+. Click *Credential Reset* in the top right corner.
+. In the *Credentials Reset* dialog, click the *Reset action* dropdown and select *Verify Email*.
++
+image::images/user-verify-email-credentials-reset.png[Credentials Reset dialog with Verify Email action selected]
+. Optional: Set the expiry duration in the *Expires In* field.
+. Click *Send Email*.
++
+{project_name} sends an email to the user containing a link.
+The user must click the link to confirm ownership of the email address.
+
+NOTE: If the user does not receive the verification email, check that the realm's SMTP settings are correctly configured and that the user's email address is valid.

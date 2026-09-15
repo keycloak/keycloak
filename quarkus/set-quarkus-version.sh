@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Copyright 2022 Red Hat, Inc. and/or its affiliates
 # and other contributors as indicated by the @author tags.
@@ -34,7 +35,7 @@ fi
 SCRIPT_DIR=$(dirname "$0")
 DEFAULT_QUARKUS_VERSION="999-SNAPSHOT"
 QUARKUS_VERSION=${1:-"$DEFAULT_QUARKUS_VERSION"}
-QUARKUS_BRANCH="$QUARKUS_VERSION"
+QUARKUS_BRANCH="${QUARKUS_BRANCH:-$QUARKUS_VERSION}"
 
 EXCLUDED_DEPENDENCIES=(
     "infinispan"

@@ -181,6 +181,15 @@ public class Urls {
                 .build(realmId);
     }
 
+    public static URI realmLoginRestartPage(URI baseUri, String realmName, String clientId, String tabId, String clientData, boolean skipLogout) {
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "restartSession")
+                .replaceQueryParam(Constants.CLIENT_ID, clientId)
+                .replaceQueryParam(Constants.CLIENT_DATA, clientData)
+                .replaceQueryParam(Constants.TAB_ID, tabId)
+                .queryParam(Constants.SKIP_LOGOUT, String.valueOf(skipLogout))
+                .build(realmName);
+    }
+
     private static UriBuilder realmLogout(URI baseUri) {
         return tokenBase(baseUri).path(OIDCLoginProtocolService.class, "logout");
     }

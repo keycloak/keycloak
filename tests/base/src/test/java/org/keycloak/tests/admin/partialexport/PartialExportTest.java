@@ -24,6 +24,7 @@ import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.util.JsonSerialization;
 
@@ -38,6 +39,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 @KeycloakIntegrationTest
+@DatabaseTest
 public class PartialExportTest {
 
     private static final String EXPORT_TEST_REALM = "partial-export-test";

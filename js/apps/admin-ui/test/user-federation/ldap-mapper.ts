@@ -18,25 +18,25 @@ export async function fillHardwareAttributeMapper(
   if (data.config?.["user.model.attribute"])
     await page
       .getByTestId("config.user🍺model🍺attribute")
-      .fill(data.config?.["user.model.attribute"][0] || "");
+      .fill(data.config["user.model.attribute"][0] || "");
 
   if (data.config?.["attribute.value"])
     await page
       .getByTestId("attribute.value")
-      .fill(data.config?.["attribute.value"][0] || "");
+      .fill(data.config["attribute.value"][0] || "");
 
   if (data.config?.group)
-    await page.getByTestId("group").fill(data.config?.group[0] || "");
+    await page.getByTestId("group").fill(data.config.group[0] || "");
 
   if (data.config?.["ldap.attribute.name"])
     await page
       .getByTestId("ldap.attribute.name")
-      .fill(data.config?.["ldap.attribute.name"][0] || "");
+      .fill(data.config["ldap.attribute.name"][0] || "");
 
   if (data.config?.["ldap.attribute.value"])
     await page
       .getByTestId("ldap.attribute.value")
-      .fill(data.config?.["ldap.attribute.value"][0] || "");
+      .fill(data.config["ldap.attribute.value"][0] || "");
 
   if (data.config?.role) {
     await pickRoleType(page, "roles");
@@ -45,7 +45,7 @@ export async function fillHardwareAttributeMapper(
   }
 
   if (data.config?.roleDn)
-    await page.getByTestId("roles.dn").fill(data.config?.roleDn[0] || "");
+    await page.getByTestId("roles.dn").fill(data.config.roleDn[0] || "");
 }
 
 export async function saveMapper(page: Page) {

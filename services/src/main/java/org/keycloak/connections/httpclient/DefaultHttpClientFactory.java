@@ -66,6 +66,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     private static final String HTTP_PROXY = "http_proxy";
     private static final String NO_PROXY = "no_proxy";
     public static final String MAX_CONSUMED_RESPONSE_SIZE = "max-consumed-response-size";
+    public static final String ALLOW_REDIRECTS = "allow-redirects";
 
     private volatile CloseableHttpClient httpClient;
     private Config.Scope config;
@@ -77,10 +78,12 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
 
     private static class InputStreamResponseHandler extends AbstractResponseHandler<InputStream> {
 
+        @Override
         public InputStream handleEntity(HttpEntity entity) throws IOException {
             return entity.getContent();
         }
 
+        @Override
         public InputStream handleResponse(HttpResponse response) throws IOException {
             return super.handleResponse(response);
         }
@@ -173,6 +176,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 if (httpClient == null) {
                     long socketTimeout = config.getLong("socket-timeout-millis", 5000L);
                     long establishConnectionTimeout = config.getLong("establish-connection-timeout-millis", -1L);
+                    long connectionRequestTimeout = config.getLong("connection-request-timeout-millis", HttpClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS);
                     int maxPooledPerRoute = config.getInt("max-pooled-per-route", 64);
                     int connectionPoolSize = config.getInt("connection-pool-size", 128);
                     long connectionTTL = config.getLong("connection-ttl-millis", -1L);
@@ -202,10 +206,11 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                         proxyMappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
                     }
 
-                    HttpClientBuilder builder = newHttpClientBuilder();
+                    HttpClientBuilder builder = newHttpClientBuilder(session);
 
                     builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
                             .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
+                            .connectionRequestTimeout(connectionRequestTimeout, TimeUnit.MILLISECONDS)
                             .maxPooledPerRoute(maxPooledPerRoute)
                             .connectionPoolSize(connectionPoolSize)
                             .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
@@ -232,6 +237,10 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     if (disableTrustManager) {
                     	logger.warn("TrustManager is disabled");
                     	builder.disableTrustManager();
+                    }
+
+                    if (!config.getBoolean(ALLOW_REDIRECTS, false)) {
+                        builder.disableRedirectHandling();
                     }
 
                     if (clientKeystore != null) {
@@ -298,8 +307,16 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 });
     }
 
+    /**
+     * @deprecated use {@link #newHttpClientBuilder(KeycloakSession)}
+     */
+    @Deprecated(since = "26.6.0")
     protected HttpClientBuilder newHttpClientBuilder() {
         return new HttpClientBuilder();
+    }
+
+    protected HttpClientBuilder newHttpClientBuilder(KeycloakSession session) {
+        return newHttpClientBuilder();
     }
 
     @Override
@@ -320,8 +337,14 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 .property()
                 .name("establish-connection-timeout-millis")
                 .type("long")
-                .helpText("When trying to make an initial socket connection, what is the timeout?")
+                .helpText("Timeout when making an initial socket connection. Only effective if less than the connection-request-timeout-millis.")
                 .defaultValue(-1L)
+                .add()
+                .property()
+                .name("connection-request-timeout-millis")
+                .type("long")
+                .helpText("Timeout when trying to obtain any connection, new or pooled.")
+                .defaultValue(HttpClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS)
                 .add()
                 .property()
                 .name("max-pooled-per-route")
@@ -390,6 +413,12 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 .type("long")
                 .helpText("Maximum size of a response consumed by the client (to prevent denial of service)")
                 .defaultValue(HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE)
+                .add()
+                .property()
+                .name(ALLOW_REDIRECTS)
+                .type("boolean")
+                .helpText("Whether to allow following HTTP redirects. Default: false. This option is deprecated, only provided for backwards compatibility, and will be removed in a future release.")
+                .defaultValue(false)
                 .add()
                 .property()
                 .name("max-retries")

@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,6 +38,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
@@ -49,6 +51,8 @@ import org.keycloak.services.util.ViteManifest;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.ThemeResourcesParser;
+import org.keycloak.theme.beans.LocaleBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
@@ -159,10 +163,12 @@ public class AccountConsole implements AccountResourceProvider {
         Locale locale = session.getContext().resolveLocale(user);
         map.put("locale", locale.toLanguageTag());
         Properties messages = theme.getEnhancedMessages(realm, locale);
+        map.put("localeDir", new LocaleBean(realm, locale, session.getContext().getUri().getRequestUriBuilder(), messages).isRtl() ? "rtl" : "ltr");
         map.put("msg", new MessageFormatterMethod(locale, messages));
         map.put("msgJSON", messagesToJsonString(messages));
         map.put("supportedLocales", supportedLocales(messages));
         map.put("properties", theme.getProperties());
+        map.put("themeResources", ThemeResourcesParser.parse(theme.getProperties()));
         map.put("darkMode", "true".equals(theme.getProperties().getProperty("darkMode"))
                 && realm.getAttribute("darkMode", true));
         map.put("theme", (Function<String, String>) file -> {
@@ -179,18 +185,24 @@ public class AccountConsole implements AccountResourceProvider {
 
         boolean deleteAccountAllowed = false;
         boolean isViewGroupsEnabled = false;
+        boolean isViewApplicationsEnabled = false;
+        boolean isOid4VciEnabled = false;
         if (user != null) {
-            RoleModel deleteAccountRole = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.DELETE_ACCOUNT);
-            deleteAccountAllowed = deleteAccountRole != null && user.hasRole(deleteAccountRole) && realm.getRequiredActionProviderByAlias(DeleteAccount.PROVIDER_ID).isEnabled();
-            RoleModel viewGrouRole = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.VIEW_GROUPS);
-            isViewGroupsEnabled = viewGrouRole != null && user.hasRole(viewGrouRole);
+            AccountRoleChecker roleChecker = new AccountRoleChecker(session, realm, user);
+            // the 'manage-account' role works on the API level (for the 'account' client) as some kind of composite role
+            deleteAccountAllowed = roleChecker.hasOneOfRole(AccountRoles.MANAGE_ACCOUNT, AccountRoles.DELETE_ACCOUNT) && realm.getRequiredActionProviderByAlias(DeleteAccount.PROVIDER_ID).isEnabled();
+            isViewGroupsEnabled = roleChecker.hasOneOfRole(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_GROUPS)
+                    && user.getGroupsCount() > 0;
+            isViewApplicationsEnabled = roleChecker.hasOneOfRole(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_APPLICATIONS);
+            isOid4VciEnabled = Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI) && realm.isVerifiableCredentialsEnabled()  && roleChecker.hasOneOfRole(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_VERIFIABLE_CREDENTIALS);
         }
 
         map.put("deleteAccountAllowed", deleteAccountAllowed);
 
+        map.put("isViewApplicationsEnabled", isViewApplicationsEnabled);
         map.put("isViewGroupsEnabled", isViewGroupsEnabled);
         map.put("isViewOrganizationsEnabled", realm.isOrganizationsEnabled());
-        map.put("isOid4VciEnabled", realm.isVerifiableCredentialsEnabled());
+        map.put("isOid4VciEnabled", isOid4VciEnabled);
 
         map.put("updateEmailFeatureEnabled", Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL));
         map.put("updateEmailActionEnabled", UpdateEmail.isEnabled(realm));
@@ -322,5 +334,34 @@ public class AccountConsole implements AccountResourceProvider {
                 .map(identityProviders::getByAlias);
 
         return Stream.concat(realmBrokers, linkedBrokers).findAny().isPresent();
+    }
+
+    /**
+     * Checks whether a user has account roles that will be present in the access token issued for the {@code account-console} client.
+     */
+    static class AccountRoleChecker {
+
+        private final ClientModel accountClient;
+        private final Set<RoleModel> scopeResolvedRoles;
+
+        AccountRoleChecker(KeycloakSession session, RealmModel realm, UserModel user) {
+            this.accountClient = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+            ClientModel accountConsoleClient = realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID);
+            this.scopeResolvedRoles = TokenManager.getAccess(user, accountConsoleClient, TokenManager.getRequestedClientScopes(session, null, accountConsoleClient, user));
+        }
+
+        boolean hasRole(String roleName) {
+            RoleModel role = accountClient.getRole(roleName);
+            return role != null && scopeResolvedRoles.contains(role);
+        }
+
+        boolean hasOneOfRole(String... roleNames) {
+            for (String roleName : roleNames) {
+                if (hasRole(roleName)) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }

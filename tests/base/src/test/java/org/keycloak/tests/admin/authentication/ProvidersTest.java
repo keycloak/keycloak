@@ -92,6 +92,8 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates client based on a X509 Certificate", false);
         addClientAuthenticatorProviderInfo(expected, "client-secret-jwt", "Signed JWT with Client Secret",
                 "Validates client based on signed JWT issued by client and signed with the Client Secret", true);
+        addClientAuthenticatorProviderInfo(expected, "federated-jwt", "Signed JWT - Federated",
+                "Validates client based on signed JWT issued and signed by an external identity provider", false);
 
         compareProviders(expected, result);
     }

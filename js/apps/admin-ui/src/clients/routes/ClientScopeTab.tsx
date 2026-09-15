@@ -16,9 +16,9 @@ const ClientDetails = lazy(() => import("../ClientDetails"));
 export const ClientScopesRoute: AppRouteObject = {
   path: "/:realm/clients/:clientId/clientScopes/:tab",
   element: <ClientDetails />,
-  breadcrumb: (t) => t("clientSettings"),
   handle: {
     access: "view-clients",
+    breadcrumb: (t) => t("clientSettings"),
   },
 };
 

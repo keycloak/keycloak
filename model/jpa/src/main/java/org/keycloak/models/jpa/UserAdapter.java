@@ -18,12 +18,10 @@
 package org.keycloak.models.jpa;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -41,6 +39,7 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.GroupMemberJoinEvent;
@@ -75,6 +74,12 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     protected EntityManager em;
     protected RealmModel realm;
     private final KeycloakSession session;
+
+    /**
+     * Listing the groups of a user is called frequently within a login session if users are not cached.
+     * Cache when it is first retrieved during a session and discard it when a group membership changes.
+     */
+    private List<String> groupIdsCache = null;
 
     public UserAdapter(KeycloakSession session, RealmModel realm, EntityManager em, UserEntity user) {
         this.em = em;
@@ -115,6 +120,16 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     }
 
     @Override
+    public Long getLastModifiedTimestamp() {
+        return user.getLastModifiedTimestamp();
+    }
+
+    @Override
+    public void setLastModifiedTimestamp(Long timestamp) {
+        user.setLastModifiedTimestamp(timestamp);
+    }
+
+    @Override
     public boolean isEnabled() {
         return user.isEnabled();
     }
@@ -141,10 +156,10 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         }
         // Remove all existing
         if (value == null) {
-            user.getAttributes().removeIf(a -> a.getName().equals(name));
+            removeAttribute(name);
         } else {
-            Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
-            Set<String> newEntries = Set.of(value);
+            List<String> oldEntries = getAttributeStream(name).sorted().collect(Collectors.toList());
+            List<String> newEntries = List.of(value);
             if (CollectionUtil.collectionEquals(oldEntries, newEntries)) {
                 return;
             }
@@ -194,13 +209,8 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
             return;
         }
 
-        Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
-        Set<String> newEntries;
-        if (values == null) {
-            newEntries = new HashSet<>();
-        } else {
-            newEntries = new HashSet<>(values);
-        }
+        List<String> oldEntries = getAttributeStream(name).sorted().collect(Collectors.toList());
+        List<String> newEntries = values == null ? List.of() : values.stream().sorted().toList();
         if (CollectionUtil.collectionEquals(oldEntries, newEntries)) {
             return;
         }
@@ -414,7 +424,10 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public Stream<GroupModel> getGroupsStream(String search, Integer first, Integer max) {
-        return session.groups().getGroupsStream(realm, closing(createGetGroupsQuery().getResultStream()), search, first, max);
+        if (groupIdsCache == null) {
+            groupIdsCache = createGetGroupsQuery().getResultList();
+        }
+        return session.groups().getGroupsStream(realm, groupIdsCache.stream(), search, first, max);
     }
 
     @Override
@@ -441,9 +454,21 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         joinGroup(group, null);
     }
 
+    private boolean hasDirectGroup(GroupModel group) {
+        UserGroupMembershipEntity membership = em.createNamedQuery("userMemberOf", UserGroupMembershipEntity.class)
+                .setParameter("user", user)
+                .setParameter("groupId", group.getId())
+                .getSingleResultOrNull();
+        // Avoid keeping it in the persistence context, as the user might be detached for example in a bulk delete
+        if (membership != null) {
+            em.detach(membership);
+        }
+        return membership != null;
+    }
+
     @Override
     public void joinGroup(GroupModel group, MembershipMetadata metadata) {
-        if (RoleUtils.isDirectMember(getGroupsStream(), group)) return;
+        if (hasDirectGroup(group)) return;
         joinGroupImpl(group, metadata);
     }
 
@@ -457,8 +482,11 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         entity.setGroupId(group.getId());
         entity.setMembershipType(metadata == null ? MembershipType.UNMANAGED : metadata.getMembershipType());
         em.persist(entity);
-        em.flush();
-        em.detach(entity);
+        if (!EntityManagers.isBatchMode()) {
+            em.flush();
+            em.detach(entity);
+        }
+        groupIdsCache = null;
         GroupMemberJoinEvent.fire(group, this, session);
     }
 
@@ -474,6 +502,9 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
             em.remove(entity);
         }
         em.flush();
+        if (groupIdsCache != null) {
+            groupIdsCache.remove(group.getId());
+        }
         GroupMemberLeaveEvent.fire(group, this, session);
     }
 
@@ -510,13 +541,28 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         RoleGrantedEvent.fire(role, this, session);
     }
 
+    @Override
+    public boolean hasDirectRole(RoleModel role) {
+        UserRoleMappingEntity membership = em.createNamedQuery("userHasRole", UserRoleMappingEntity.class)
+                .setParameter("user", user)
+                .setParameter("roleId", role.getId())
+                .getSingleResultOrNull();
+        // Avoid keeping it in the persistence context, as the user might be detached for example in a bulk delete
+        if (membership != null) {
+            em.detach(membership);
+        }
+        return membership != null;
+    }
+
     public void grantRoleImpl(RoleModel role) {
         UserRoleMappingEntity entity = new UserRoleMappingEntity();
         entity.setUser(getEntity());
         entity.setRoleId(role.getId());
         em.persist(entity);
-        em.flush();
-        em.detach(entity);
+        if (!EntityManagers.isBatchMode()) {
+            em.flush();
+            em.detach(entity);
+        }
     }
 
     @Override

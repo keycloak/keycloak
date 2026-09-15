@@ -23,6 +23,7 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -59,10 +60,10 @@ public class TimeClaimNormalizer {
     }
 
     private final Strategy strategy;
-    private final long randomizeWindowSeconds;
+    private final int randomizeWindowSeconds;
     private final RoundUnit roundUnit;
 
-    public static final long DEFAULT_RANDOMIZE_WINDOW = 86400; // 24h default
+    public static final int DEFAULT_RANDOMIZE_WINDOW = 86400; // 24h default
     public static final Strategy DEFAULT_STRATEGY = Strategy.OFF;
     public static final RoundUnit DEFAULT_ROUND_UNIT = RoundUnit.SECOND;
 
@@ -76,7 +77,7 @@ public class TimeClaimNormalizer {
         this.roundUnit = parseRoundUnit(realm.getAttribute(OID4VCIConstants.TIME_ROUND_UNIT));
     }
 
-    TimeClaimNormalizer(Strategy strategy, Long randomizeWindowSeconds, RoundUnit roundUnit) {
+    TimeClaimNormalizer(Strategy strategy, Integer randomizeWindowSeconds, RoundUnit roundUnit) {
         this.strategy = strategy == null ? DEFAULT_STRATEGY : strategy;
         this.randomizeWindowSeconds =
                 randomizeWindowSeconds == null ? DEFAULT_RANDOMIZE_WINDOW : randomizeWindowSeconds;
@@ -95,7 +96,7 @@ public class TimeClaimNormalizer {
     }
 
     private Instant randomize(Instant original) {
-        long randomOffset = (long) (Math.random() * (randomizeWindowSeconds + 1));
+        int randomOffset = SecretGenerator.nextInt(randomizeWindowSeconds + 1);
         return original.minusSeconds(randomOffset);
     }
 
@@ -122,12 +123,12 @@ public class TimeClaimNormalizer {
         }
     }
 
-    private static long parseRandomizeWindow(String value) {
+    private static int parseRandomizeWindow(String value) {
         if (StringUtil.isBlank(value)) {
             return DEFAULT_RANDOMIZE_WINDOW;
         }
         try {
-            long window = Long.parseLong(value.trim());
+            int window = Integer.parseInt(value.trim());
             if (window <= 0) {
                 logger.warnf("Randomization window is zero or negative (%d), will be using default value", window);
                 return DEFAULT_RANDOMIZE_WINDOW;

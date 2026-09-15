@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
@@ -34,7 +35,7 @@ import org.keycloak.sessions.StickySessionEncoderProvider;
 import org.keycloak.sessions.StickySessionEncoderProviderFactory;
 
 import org.infinispan.Cache;
-import org.infinispan.remoting.transport.jgroups.JGroupsAddress;
+import org.infinispan.remoting.transport.Address;
 import org.jboss.logging.Logger;
 import org.jgroups.util.NameCache;
 
@@ -46,7 +47,6 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.A
 public class InfinispanStickySessionEncoderProviderFactory implements StickySessionEncoderProviderFactory, EnvironmentDependentProviderFactory, StickySessionEncoderProvider {
 
     private static final Logger log = Logger.getLogger(InfinispanStickySessionEncoderProviderFactory.class);
-    private static final char SEPARATOR = '.';
 
     private boolean shouldAttachRoute;
     private boolean clustered;
@@ -67,10 +67,17 @@ public class InfinispanStickySessionEncoderProviderFactory implements StickySess
     public void setShouldAttachRoute(boolean shouldAttachRoute) {
         this.shouldAttachRoute = shouldAttachRoute;
         log.debugf("Should attach route to the sticky session cookie: %b", shouldAttachRoute);
+        if (shouldAttachRoute) {
+            log.warn("The option `shouldAttachRoute` is deprecated and will be removed in a future release. Disable it by setting `spi-sticky-session-encoder--infinispan--should-attach-route` to `false`");
+        }
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        if (Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
+            clustered = false;
+            return;
+        }
         try (var session = factory.create()) {
             var provider = session.getProvider(InfinispanConnectionProvider.class);
             authenticationCache = provider.getCache(AUTHENTICATION_SESSIONS_CACHE_NAME);
@@ -119,18 +126,7 @@ public class InfinispanStickySessionEncoderProviderFactory implements StickySess
     public String encodeSessionId(String message, String sessionId) {
         Objects.requireNonNull(message);
         String route = sessionIdRoute(sessionId);
-        return route == null ? message : message + SEPARATOR + route;
-    }
-
-    @Override
-    public SessionIdAndRoute decodeSessionIdAndRoute(String encodedSessionId) {
-        int index = encodedSessionId.indexOf(SEPARATOR);
-        int length = encodedSessionId.length();
-        if (index == -1 || index == (length - 1)) {
-            //route not present
-            return new SessionIdAndRoute(encodedSessionId, null);
-        }
-        return new SessionIdAndRoute(encodedSessionId.substring(0, index), encodedSessionId.substring(index + 1, length));
+        return route == null ? message : message + DEFAULT_SEPARATOR + route;
     }
 
     @Override
@@ -153,6 +149,6 @@ public class InfinispanStickySessionEncoderProviderFactory implements StickySess
         // Return null if the logical name is not available yet.
         // The following request may be redirected to the wrong instance, but that's ok.
         // In a healthy/stable cluster, the name cache is correctly populated.
-        return primaryOwner instanceof JGroupsAddress jgrpAddr ? NameCache.get(jgrpAddr.getJGroupsAddress()) : null;
+        return primaryOwner == null ? null : NameCache.get(Address.toExtendedUUID(primaryOwner));
     }
 }

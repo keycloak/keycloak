@@ -25,7 +25,9 @@
                challenge : ${challenge?c},
                userVerification : ${userVerification?c},
                rpId : ${rpId?c},
-               createTimeout : ${createTimeout?c}
+               createTimeout : ${createTimeout?c},
+               mediation : ${(mediation!'conditional')?c},
+               authenticatorAttachment : ${authenticatorAttachment?c},
            };
 
            document.addEventListener("DOMContentLoaded", (event) => initAuthenticate({errmsg : ${msg("passkey-unsupported-browser-text")?c}, ...args}));

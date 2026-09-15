@@ -66,7 +66,6 @@ public class SAMLRequestWriter extends BaseWriter {
         StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.AUTHN_REQUEST.get(), PROTOCOL_NSURI.get());
         StaxUtil.writeNameSpace(writer, PROTOCOL_PREFIX, PROTOCOL_NSURI.get());
         StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ASSERTION_NSURI.get());
-        StaxUtil.writeDefaultNameSpace(writer, ASSERTION_NSURI.get());
 
         // Attributes
         StaxUtil.writeAttribute(writer, JBossSAMLConstants.ID.get(), request.getID());
@@ -165,7 +164,6 @@ public class SAMLRequestWriter extends BaseWriter {
 
         StaxUtil.writeNameSpace(writer, PROTOCOL_PREFIX, PROTOCOL_NSURI.get());
         StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ASSERTION_NSURI.get());
-        StaxUtil.writeDefaultNameSpace(writer, ASSERTION_NSURI.get());
 
         // Attributes
         StaxUtil.writeAttribute(writer, JBossSAMLConstants.ID.get(), logOutRequest.getID());
@@ -290,7 +288,6 @@ public class SAMLRequestWriter extends BaseWriter {
         StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.ARTIFACT_RESOLVE.get(), PROTOCOL_NSURI.get());
         StaxUtil.writeNameSpace(writer, PROTOCOL_PREFIX, PROTOCOL_NSURI.get());
         StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ASSERTION_NSURI.get());
-        StaxUtil.writeDefaultNameSpace(writer, ASSERTION_NSURI.get());
 
         // Attributes
         StaxUtil.writeAttribute(writer, JBossSAMLConstants.ID.get(), request.getID());
@@ -332,7 +329,6 @@ public class SAMLRequestWriter extends BaseWriter {
         StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.ATTRIBUTE_QUERY.get(), PROTOCOL_NSURI.get());
         StaxUtil.writeNameSpace(writer, PROTOCOL_PREFIX, PROTOCOL_NSURI.get());
         StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ASSERTION_NSURI.get());
-        StaxUtil.writeDefaultNameSpace(writer, ASSERTION_NSURI.get());
 
         // Attributes
         StaxUtil.writeAttribute(writer, JBossSAMLConstants.ID.get(), request.getID());

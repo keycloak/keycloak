@@ -17,40 +17,41 @@
 
 package org.keycloak.operator.testsuite.integration;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.FeatureSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.UnsupportedSpec;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
+import org.keycloak.operator.testsuite.utils.TrustAllSSLContext;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.client.LocalPortForward;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
-import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
-import org.keycloak.operator.testsuite.utils.TrustAllSSLContext;
-import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-
 import static java.util.concurrent.TimeUnit.MINUTES;
-import static org.assertj.core.api.Assertions.assertThat;
+
 import static org.keycloak.operator.Constants.KEYCLOAK_HTTPS_PORT;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.inClusterCurl;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.inClusterCurlCommand;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @DisabledIfApiServerTest
 @Tag(BaseOperatorTest.SLOW)
@@ -120,7 +121,9 @@ public class KeycloakKubernetesJwtTest extends BaseOperatorTest {
             IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
             idp.setAlias("kubernetes");
             idp.setProviderId("kubernetes");
-            idp.getConfig().put("issuer", "https://kubernetes.default.svc.cluster.local");
+            String oidcConfig = k8sclient.raw("/.well-known/openid-configuration");
+            String issuer = (String) Serialization.unmarshal(oidcConfig, Map.class).get("issuer");
+            idp.getConfig().put("issuer", issuer);
             keycloak.realm("test").identityProviders().create(idp).close();
 
         }

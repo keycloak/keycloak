@@ -76,6 +76,8 @@ public interface EmailTemplateProvider extends Provider {
      */
     void sendExecuteActions(String link, long expirationInMinutes) throws EmailException;
 
+    void sendVerifiableCredentialOffer(String link, long expirationInMinutes) throws EmailException;
+
     void sendVerifyEmail(String link, long expirationInMinutes) throws EmailException;
 
     void sendOrgInviteEmail(OrganizationModel organization, String link, long expirationInMinutes) throws EmailException;
@@ -102,4 +104,26 @@ public interface EmailTemplateProvider extends Provider {
      * @throws EmailException
      */
     void send(String subjectFormatKey, List<Object> subjectAttributes, String bodyTemplate, Map<String, Object> bodyAttributes) throws EmailException;
+    /**
+     * Send formatted email to a specific address, ignoring the user's email
+     *
+     * @param subjectFormatKey message property that will be used to format email subject
+     * @param bodyTemplate freemarker template file
+     * @param bodyAttributes attributes used to fill template
+     * @param destinationEmail the email address to send the email to
+     * @throws EmailException
+     */
+    void send(String subjectFormatKey, String bodyTemplate, Map<String, Object> bodyAttributes, String destinationEmail) throws EmailException;
+
+    /**
+     * Send formatted email to a specific address, ignoring the user's email
+     *
+     * @param subjectFormatKey message property that will be used to format email subject
+     * @param subjectAttributes attributes used to fill subject format message
+     * @param bodyTemplate freemarker template file
+     * @param bodyAttributes attributes used to fill template
+     * @param destinationEmail the email address to send the email to
+     * @throws EmailException
+     */
+    void send(String subjectFormatKey, List<Object> subjectAttributes, String bodyTemplate, Map<String, Object> bodyAttributes, String destinationEmail) throws EmailException;
 }

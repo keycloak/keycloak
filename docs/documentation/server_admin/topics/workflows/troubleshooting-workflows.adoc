@@ -1,0 +1,77 @@
+[id="troubleshooting-workflows_{context}"]
+
+[[_troubleshooting_workflows_]]
+= Troubleshooting workflows
+
+When workflows are not behaving as expected, server logs are the primary tool for understanding what is happening.
+The workflow engine logs detailed information about workflow lifecycle events, step execution, and errors.
+
+== Enabling workflow debug logging
+
+By default, the workflow engine logs warnings and errors. To see the full execution flow, enable `DEBUG` level
+logging for the `org.keycloak.models.workflow` category by setting the following server configuration option:
+
+    --log-level=org.keycloak.models.workflow:debug
+
+This enables debug logging for the workflow engine, all step providers, and the workflow state provider.
+
+== What to look for in the logs
+
+=== Workflow activation and scheduling
+
+When a workflow is triggered by an event, the engine logs the activation and scheduling of the first step:
+
+* `Workflow '<name>' activated for resource <id> (execution id: <id>)` — the workflow execution has been created and is being processed.
+* `Scheduled step <step> to run in <duration> for resource <id> (execution id: <id>)` — a scheduled step has been queued to run after the specified duration.
+
+=== Step execution
+
+As steps are executed, the engine logs their progress:
+
+* `Running step <step> on resource <id> (execution id: <id>)` — a step is about to be executed.
+* `Step <step> completed successfully (execution id: <id>)` — the step finished without errors.
+* `Workflow '<name>' completed for resource <id> (execution id: <id>)` — all steps in the workflow have been executed.
+
+=== Step failures and timeouts
+
+When a step fails or the executor times out, the engine logs the error and fires a step failed event. The step will be
+retried in the next execution cycle (see <<_handling_failures_>> for more details).
+
+* `Step <step> failed (execution id: <id>) - error message: <message>` — the step threw an exception during execution.
+* `Workflow executor timed out during execution of step <step>` — runtime exception indicating that the step exceeded the configured executor task timeout. See <<_understanding_workflows_engine_>> for how to configure the timeout.
+* `Workflow executor was cancelled during execution of step <step>` — runtime exception indicating that the executor service was cancelled for a reason other than timeout.
+
+=== Skipped and cancelled workflows
+
+* `Skipping workflow <name> as it is disabled` — the workflow is disabled and will not process events.
+* `Workflow '<name>' cancelled for resource <id> (execution id: <id>)` — the workflow execution was cancelled.
+* `Resource <id> is no longer eligible for workflow <name>. Cancelling execution of the workflow.` — the resource no longer meets the workflow conditions upon resuming a scheduled step.
+
+=== Workflow errors
+
+* `Error processing event <event> for workflow <name>: <message>` — an error occurred while processing the event that triggers the workflow.
+* `Error resuming workflow <name> for resource <id>: <message>` — an error occurred while resuming a scheduled workflow execution.
+* `Could not find step <step> in workflow <name> for resource <id>. Cancelling execution of the workflow.` — the step scheduled to run could not be found in the workflow.
+
+=== Step-level warnings
+
+Individual step providers log warnings when configuration is missing or invalid. Examples include:
+
+* `Missing required configuration option '<key>' in <step>` — a required parameter was not provided in the step's `with` block.
+* `Invalid required action <action> configured in <step>` — the required action name is not recognized.
+* `User <id> has no email address, skipping notification` — the `notify-user` step could not send an email.
+* `Failed to send notification email to <recipient>` — an email delivery failure occurred.
+
+== Useful log categories
+
+If you need more targeted logging, you can enable debug logging for specific components:
+
+[cols="2*", options="header"]
+|===
+|Category
+|Description
+| `org.keycloak.models.workflow` | All workflow-related logging (engine, steps, state)
+| `org.keycloak.models.workflow.DefaultWorkflowProvider` | Workflow engine lifecycle (activation, conditions, event processing)
+| `org.keycloak.models.workflow.RunWorkflowTask` | Step execution, completion, failures, and timeouts
+| `org.keycloak.models.workflow.ScheduleWorkflowTask` | Step scheduling and delayed execution
+|===

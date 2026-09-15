@@ -215,6 +215,8 @@ public class SAML11ParserUtil {
                     subjectConfirmationType.setKeyInfo(keyInfo);
                 } else
                     throw logger.parserUnknownTag(startTag, startElement.getLocation());
+            } else {
+                throw logger.parserError(logger.parserFailed("Unexpected XML Event Type:" + Integer.valueOf(xmlEvent.getEventType())));
             }
         }
         return subjectConfirmationType;
@@ -710,6 +712,8 @@ public class SAML11ParserUtil {
                     query.setSubject((SAML11SubjectType) parser.parse(xmlEventReader));
                 } else
                     throw logger.parserUnknownTag(startTag, startElement.getLocation());
+            } else {
+                throw logger.parserError(logger.parserFailed("Unexpected XML Event Type:" + Integer.valueOf(xmlEvent.getEventType())));
             }
         }
         return query;
@@ -749,6 +753,8 @@ public class SAML11ParserUtil {
                     query.setSubject((SAML11SubjectType) parser.parse(xmlEventReader));
                 } else
                     throw logger.parserUnknownTag(startTag, startElement.getLocation());
+            } else {
+                throw logger.parserError(logger.parserFailed("Unexpected XML Event Type:" + Integer.valueOf(xmlEvent.getEventType())));
             }
         }
         return query;
@@ -801,6 +807,8 @@ public class SAML11ParserUtil {
                     query.add(action);
                 } else
                     throw logger.parserUnknownTag(startTag, startElement.getLocation());
+            } else {
+                throw logger.parserError(logger.parserFailed("Unexpected XML Event Type:" + Integer.valueOf(xmlEvent.getEventType())));
             }
         }
         return query;

@@ -20,6 +20,7 @@ package org.keycloak.models.cache.infinispan;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -164,7 +165,8 @@ public class ClientScopeAdapter implements ClientScopeModel {
     public Stream<RoleModel> getScopeMappingsStream() {
         if (isUpdated()) return updated.getScopeMappingsStream();
         return cached.getScope().stream()
-          .map(id -> cacheSession.getRoleById(cachedRealm, id));
+          .map(id -> cacheSession.getRoleById(cachedRealm, id))
+          .filter(Objects::nonNull);
     }
 
     @Override

@@ -97,7 +97,21 @@ public final class OIDCConfigAttributes {
 
     public static final String JWT_AUTHORIZATION_GRANT_ENABLED = "oauth2.jwt.authorization.grant.enabled";
     public static final String JWT_AUTHORIZATION_GRANT_IDP = "oauth2.jwt.authorization.grant.idp";
+    public static final String JWT_AUTHORIZATION_GRANT_AUDIENCE = "oauth2.jwt.authorization.grant.audience";
 
+    public static final String EXTERNAL_TOKEN_ENABLED = "external.token.enabled";
+    public static final String EXTERNAL_TOKEN_IDP = "external.token.idp";
+
+    public static final String LOGO_URI = "logoUri";
+    public static final String TOS_URI = "tosUri";
+    public static final String POLICY_URI = "policyUri";
+    public static final String SECTOR_IDENTIFIER_URI = "sectorIdentifierUri";
+
+    public static final String ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK = "allow.token.introspection.without.audience.check";
+
+    public static final String ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN = "allow.userinfo.with.lightweight.access.token";
+
+    public static final String ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS = "allow.oidc.params.in.redirect.uris";
 
     private OIDCConfigAttributes() {
     }

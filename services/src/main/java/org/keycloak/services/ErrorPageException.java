@@ -17,7 +17,6 @@
 
 package org.keycloak.services;
 
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.KeycloakSession;
@@ -26,7 +25,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ErrorPageException extends WebApplicationException {
+public class ErrorPageException extends RollbackWebApplicationException {
 
     public ErrorPageException(KeycloakSession session, Response.Status status, String errorMessage, Object... parameters) {
         super(errorMessage, ErrorPage.error(session, null, status, errorMessage, parameters));

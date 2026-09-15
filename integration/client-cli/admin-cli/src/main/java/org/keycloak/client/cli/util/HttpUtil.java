@@ -43,6 +43,7 @@ import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpOptions;
+import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -121,6 +122,10 @@ public class HttpUtil {
     }
 
     public static HeadersBodyStatus doRequest(String type, String url, HeadersBody request) throws IOException {
+        return doRequest(type, url, request, false);
+    }
+
+    public static HeadersBodyStatus doRequest(String type, String url, HeadersBody request, boolean allowJakartaValidation) throws IOException {
         HttpRequestBase req;
         switch (type) {
             case "get":
@@ -134,6 +139,9 @@ public class HttpUtil {
                 break;
             case "delete":
                 req = new HttpDelete(url);
+                break;
+            case "patch":
+                req = new HttpPatch(url);
                 break;
             case "options":
                 req = new HttpOptions(url);
@@ -173,7 +181,7 @@ public class HttpUtil {
             headers.add(header.getName(), header.getValue());
         }
 
-        return new HeadersBodyStatus(res.getStatusLine().toString(), headers, responseStream);
+        return new HeadersBodyStatus(res.getStatusLine().toString(), headers, responseStream, allowJakartaValidation);
     }
 
     private static void addHeaders(HttpRequestBase request, Headers headers) {
@@ -233,6 +241,11 @@ public class HttpUtil {
         if (authorization != null) {
             request.setHeader(HttpHeaders.AUTHORIZATION, authorization);
         }
+    }
+
+    public static void clearHttpClient() {
+        httpClient = null;
+        sslsf = null;
     }
 
     public static HttpClient getHttpClient() {

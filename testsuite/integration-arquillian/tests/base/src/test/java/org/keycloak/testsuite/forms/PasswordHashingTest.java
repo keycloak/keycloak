@@ -54,25 +54,24 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.DefaultPasswordHash;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -85,9 +84,6 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected LoginPage loginPage;
-
-    @Page
-    protected AppPage appPage;
 
     @Test
     public void testSetInvalidProvider() {
@@ -115,9 +111,9 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         setPasswordPolicy("hashAlgorithm(" + Pbkdf2PasswordHashProviderFactory.ID + ") and hashIterations(1)");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -150,9 +146,9 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
             session.getProvider(UserCache.class).clear();
         });
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -173,9 +169,9 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         setPasswordPolicy("");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -195,9 +191,9 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         setPasswordPolicy("hashIterations(2)");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -224,9 +220,9 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         setPasswordPolicy("hashIterations");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -237,9 +233,9 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         AccountHelper.logout(adminClient.realm("test"), username);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -265,11 +261,11 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         // Create a user with the encoded password, simulating a user import from a different system using a specific key size
         UserRepresentation user = UserBuilder.create().username(username).build();
         user.setCredentials(List.of(ExportUtils.exportCredential(passwordCredentialModel)));
-        ApiUtil.createUserWithAdminClient(adminClient.realm("test"), user);
+        AdminApiUtil.createUserWithAdminClient(adminClient.realm("test"), user);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         PasswordCredentialModel postLoginCredentials = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
         // Check that the password was rehashed and the secret string is now twice the size as before
@@ -298,22 +294,22 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
         PasswordCredentialData data = credential.getPasswordCredentialData();
 
-        Assert.assertEquals("argon2", data.getAlgorithm());
-        Assert.assertEquals(5, data.getHashIterations());
-        Assert.assertEquals("1.3", data.getAdditionalParameters().getFirst("version"));
-        Assert.assertEquals("id", data.getAdditionalParameters().getFirst("type"));
-        Assert.assertEquals("32", data.getAdditionalParameters().getFirst("hashLength"));
-        Assert.assertEquals("7168", data.getAdditionalParameters().getFirst("memory"));
-        Assert.assertEquals("1", data.getAdditionalParameters().getFirst("parallelism"));
+        Assertions.assertEquals("argon2", data.getAlgorithm());
+        Assertions.assertEquals(5, data.getHashIterations());
+        Assertions.assertEquals("1.3", data.getAdditionalParameters().getFirst("version"));
+        Assertions.assertEquals("id", data.getAdditionalParameters().getFirst("type"));
+        Assertions.assertEquals("32", data.getAdditionalParameters().getFirst("hashLength"));
+        Assertions.assertEquals("7168", data.getAdditionalParameters().getFirst("memory"));
+        Assertions.assertEquals("1", data.getAdditionalParameters().getFirst("parallelism"));
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("testArgon2", "invalid");
         loginPage.assertCurrent();
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         loginPage.login("testArgon2", password);
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     private static boolean notFips() {
@@ -383,14 +379,14 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
     private String createUser(String username) {
         final String password = generatePassword();
-        ApiUtil.createUserAndResetPasswordWithAdminClient(adminClient.realm("test"), UserBuilder.create().username(username).build(), password);
+        AdminApiUtil.createUserAndResetPasswordWithAdminClient(adminClient.realm("test"), UserBuilder.create().username(username).build(), password);
         return password;
     }
 
     private void setPasswordPolicy(String policy) {
-        RealmRepresentation realmRep = testRealm().toRepresentation();
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         realmRep.setPasswordPolicy(policy);
-        testRealm().update(realmRep);
+        managedRealm.admin().update(realmRep);
     }
 
     private CredentialModel fetchCredentials(String username) {
@@ -434,7 +430,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
             byte[] result = new byte[32];
             generator.generateBytes(password.toCharArray(), result);
-            Assert.assertEquals(Base64.getEncoder().encodeToString(result), credential.getPasswordSecretData().getValue());
+            Assertions.assertEquals(Base64.getEncoder().encodeToString(result), credential.getPasswordSecretData().getValue());
         }
     }
 

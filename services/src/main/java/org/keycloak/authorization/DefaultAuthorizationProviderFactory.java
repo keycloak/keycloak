@@ -18,19 +18,23 @@
 
 package org.keycloak.authorization;
 
+import java.util.List;
+
 import org.keycloak.Config;
 import org.keycloak.authorization.policy.evaluation.DefaultPolicyEvaluator;
 import org.keycloak.authorization.policy.evaluation.PolicyEvaluator;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.provider.ProviderConfigProperty;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class DefaultAuthorizationProviderFactory implements AuthorizationProviderFactory {
 
-    private PolicyEvaluator policyEvaluator = new DefaultPolicyEvaluator();
+    private final PolicyEvaluator policyEvaluator = new DefaultPolicyEvaluator();
+    private int inParametersLimitThreshold;
 
     @Override
     public AuthorizationProvider create(KeycloakSession session) {
@@ -39,6 +43,9 @@ public class DefaultAuthorizationProviderFactory implements AuthorizationProvide
 
     @Override
     public void init(Config.Scope config) {
+        this.inParametersLimitThreshold = config.getInt(
+                JPA_IN_PARAMETERS_LIMIT_THRESHOLD.getName(),
+                (Integer) JPA_IN_PARAMETERS_LIMIT_THRESHOLD.getDefaultValue());
     }
 
     @Override
@@ -58,5 +65,19 @@ public class DefaultAuthorizationProviderFactory implements AuthorizationProvide
     @Override
     public AuthorizationProvider create(KeycloakSession session, RealmModel realm) {
         return new AuthorizationProvider(session, realm, policyEvaluator);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <C> C getConfig(ProviderConfigProperty property) {
+        if (JPA_IN_PARAMETERS_LIMIT_THRESHOLD.getName().equals(property.getName())) {
+            return (C) Integer.valueOf(inParametersLimitThreshold);
+        }
+        return null;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return List.of(JPA_IN_PARAMETERS_LIMIT_THRESHOLD);
     }
 }

@@ -17,8 +17,6 @@
 
 package org.keycloak.organization.validator;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -45,7 +43,6 @@ import org.keycloak.validate.ValidatorConfig;
 
 import static java.util.Optional.ofNullable;
 
-import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
 import static org.keycloak.organization.utils.Organizations.resolveHomeBroker;
 import static org.keycloak.validate.BuiltinValidators.emailValidator;
 
@@ -102,28 +99,35 @@ public class OrganizationMemberValidator extends AbstractSimpleValidator impleme
         AttributeContext attributeContext = upContext.getAttributeContext();
         UserModel user = attributeContext.getUser();
         String emailDomain = email.substring(email.indexOf('@') + 1);
-        Set<String> expectedDomains = organization.getDomains().map(OrganizationDomainModel::getName).collect(Collectors.toSet());
-
-        if (expectedDomains.isEmpty()) {
-            // no domain to check
-            return;
-        }
 
         if (UserProfileContext.IDP_REVIEW.equals(attributeContext.getContext())) {
-            expectedDomains = resolveExpectedDomainsWhenReviewingFederatedUserProfile(organization, attributeContext);
+            Set<String> expectedDomains = resolveExpectedDomainsWhenReviewingFederatedUserProfile(organization, attributeContext);
+            if (expectedDomains.isEmpty() || validateEmailDomainMatch(emailDomain, organization, expectedDomains)) {
+                return;
+            }
         } else if (organization.isManaged(user)) {
-            expectedDomains = resolveExpectedDomainsForManagedUser(organization, context, user);
+            Set<String> expectedDomains = resolveExpectedDomainsForManagedUser(organization, context, user);
+            if (expectedDomains.isEmpty() || validateEmailDomainMatch(emailDomain, organization, expectedDomains)) {
+                return;
+            }
         } else {
             // no validation happens for unmanaged users as they are realm users linked to an organization
             return;
         }
 
-        if (expectedDomains.isEmpty() || expectedDomains.contains(emailDomain)) {
-            // valid email domain
-            return;
-        }
-
         context.addError(new ValidationError(ID, inputHint, "Email domain does not match any domain from the organization"));
+    }
+
+    private static boolean validateEmailDomainMatch(String emailDomain, OrganizationModel organization, Set<String> expectedDomains) {
+        // Check if the email domain matches any expected domain with wildcard support
+        for (String expectedDomain : expectedDomains) {
+            String domain = ofNullable(Organizations.getMatchingDomain(emailDomain, organization)).map(OrganizationDomainModel::getName).orElse(null);
+
+            if (expectedDomain.equals(domain)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static Set<String> resolveExpectedDomainsForManagedUser(OrganizationModel organization, ValidationContext context, UserModel user) {
@@ -133,19 +137,14 @@ public class OrganizationMemberValidator extends AbstractSimpleValidator impleme
             return Set.of();
         }
 
-        Set<String> domains = new HashSet<>();
+        Set<String> brokerAliases = brokers.stream()
+                .map(IdentityProviderModel::getAlias)
+                .collect(Collectors.toSet());
 
-        for (IdentityProviderModel broker : brokers) {
-            String domain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
-            if (ANY_DOMAIN.equals(domain)) {
-                organization.getDomains().map(OrganizationDomainModel::getName).forEach(domains::add);
-            }
-            else if (domain != null) {
-                domains.add(domain);
-            }
-        }
-
-        return Collections.unmodifiableSet(domains);
+        return organization.getDomains()
+                .filter(d -> brokerAliases.contains(d.getIdentityProviderAlias()))
+                .map(OrganizationDomainModel::getName)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     private static Set<String> resolveExpectedDomainsWhenReviewingFederatedUserProfile(OrganizationModel organization, AttributeContext attributeContext) {
@@ -168,11 +167,9 @@ public class OrganizationMemberValidator extends AbstractSimpleValidator impleme
             return Set.of();
         }
 
-        // expect the email domain to match the domain set to the broker or none if not set
-        String brokerDomain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
-        if (ANY_DOMAIN.equals(brokerDomain)) {
-            return organization.getDomains().map(OrganizationDomainModel::getName).collect(Collectors.toSet());
-        }
-        return  ofNullable(brokerDomain).map(Set::of).orElse(Set.of());
+        return organization.getDomains()
+                .filter(d -> alias.equals(d.getIdentityProviderAlias()))
+                .map(OrganizationDomainModel::getName)
+                .collect(Collectors.toSet());
     }
 }

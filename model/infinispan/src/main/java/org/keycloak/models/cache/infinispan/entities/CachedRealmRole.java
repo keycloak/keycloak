@@ -27,7 +27,7 @@ import org.keycloak.models.RoleModel;
 public class CachedRealmRole extends CachedRole {
 
 
-    public CachedRealmRole(Long revision, RoleModel model, RealmModel realm) {
+    public CachedRealmRole(long revision, RoleModel model, RealmModel realm) {
         super(revision, model, realm);
 
     }

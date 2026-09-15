@@ -1,0 +1,32 @@
+[id="understanding-workflow-expression_{context}"]
+
+[[_workflow_expression_language_]]
+= Understanding the workflow expression language
+
+Some settings from the workflow definition can be defined using a boolean expression language, the Workflow Expression Language.
+Expressions are defined using functions, operands, and logical operators. The functions available in an expression will
+depend on the setting where it is being defined.
+
+The functions can have zero or more arguments, and they can be combined with the following logical operators and symbols to define
+complex expressions:
+
+[cols="2*", options="header"]
+|===
+|Operator
+|Description
+| `and` | Logical `AND`
+| `or` | Logical `OR`
+| `not` | Logical `NOT`
+| `()` | Grouping and delimiting conditional logic
+|===
+
+These examples are all valid expressions:
+
+```yaml
+f1
+f1 and f2
+not (f1 and f2)
+(f1 and f2) or f3
+```
+
+The settings that supports expressions provide its own set of functions as you will see in the following sections.

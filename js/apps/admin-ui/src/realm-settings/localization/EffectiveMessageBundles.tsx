@@ -26,7 +26,7 @@ import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
-import { DEFAULT_LOCALE } from "../../i18n/i18n";
+import { DEFAULT_LOCALE } from "../../i18n/constants";
 import { localeToDisplayName } from "../../util";
 import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
 

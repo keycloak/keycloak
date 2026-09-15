@@ -29,13 +29,13 @@ public class RoleByNameQuery extends AbstractRevisioned implements RoleQuery, In
     private final String realm;
     private String client;
 
-    public RoleByNameQuery(Long revisioned, String id, RealmModel realm, String role) {
+    public RoleByNameQuery(long revisioned, String id, RealmModel realm, String role) {
         super(revisioned, id);
         this.realm = realm.getId();
         this.role = role;
     }
 
-    public RoleByNameQuery(Long revision, String id, RealmModel realm, String role, String client) {
+    public RoleByNameQuery(long revision, String id, RealmModel realm, String role, String client) {
         this(revision, id, realm, role);
         this.client = client;
     }

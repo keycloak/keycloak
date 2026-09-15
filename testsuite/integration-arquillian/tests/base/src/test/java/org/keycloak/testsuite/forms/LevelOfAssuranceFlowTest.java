@@ -55,20 +55,23 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.account.AccountRestClient;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.DeleteCredentialPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
@@ -81,7 +84,6 @@ import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.RealmRepUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
@@ -91,6 +93,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.actions.AppInitiatedActionDeleteCredentialTest.getKcActionParamForDeleteCredential;
 
@@ -137,9 +140,6 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
     @Page
     protected DeleteCredentialPage deleteCredentialPage;
 
-    @Page
-    protected AppPage appPage;
-
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         super.configureTestRealm(testRealm);
@@ -147,9 +147,8 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
             testRealm.setOtpPolicyCodeReusable(true);
             findTestApp(testRealm).setAttributes(Collections.singletonMap(Constants.ACR_LOA_MAP, getAcrToLoaMappingForClient()));
             UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
-            UserBuilder.edit(user)
-                    .totpSecret("totpSecret")
-                    .otpEnabled();
+            UserBuilder.update(user)
+                    .totpSecret("totpSecret");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -157,17 +156,16 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
     @Before
     public void beforeTest() {
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
         UserRepresentation userRep = user.toRepresentation();
         user.remove();
 
         userRep.setId(null);
-        UserBuilder.edit(userRep)
+        UserBuilder.update(userRep)
                 .password(generatePassword("test-user@localhost"))
-                .totpSecret("totpSecret")
-                .otpEnabled();
-        Response response = testRealm().users().create(userRep);
-        Assert.assertEquals(201, response.getStatus());
+                .totpSecret("totpSecret");
+        Response response = managedRealm.admin().users().create(userRep);
+        Assertions.assertEquals(201, response.getStatus());
         response.close();
     }
 
@@ -192,18 +190,26 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
     // Fixing this test with not reusable OTP codes would bring additional unwanted workarounds; not scope of this test
     private void canBeOtpCodesReusable(boolean state) {
-        new RealmAttributeUpdater(testRealm())
+        new RealmAttributeUpdater(managedRealm.admin())
                 .setOtpPolicyCodeReusable(state)
                 .update();
     }
 
     public static void configureStepUpFlow(KeycloakTestingClient testingClient) {
-        configureStepUpFlow(testingClient, ConditionalLoaAuthenticator.DEFAULT_MAX_AGE, 0, 0);
+        configureStepUpFlow(TEST_REALM_NAME, testingClient, ConditionalLoaAuthenticator.DEFAULT_MAX_AGE, 0, 0);
+    }
+
+    public static void configureStepUpFlow(String realmName, KeycloakTestingClient testingClient) {
+        configureStepUpFlow(realmName, testingClient, ConditionalLoaAuthenticator.DEFAULT_MAX_AGE, 0, 0);
     }
 
     private static void configureStepUpFlow(KeycloakTestingClient testingClient, int maxAge1, int maxAge2, int maxAge3) {
-        testingClient.server(TEST_REALM_NAME).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(FLOW_ALIAS));
-        testingClient.server(TEST_REALM_NAME)
+        configureStepUpFlow(TEST_REALM_NAME, testingClient, maxAge1, maxAge2, maxAge3);
+    }
+
+    public static void configureStepUpFlow(String realmName, KeycloakTestingClient testingClient, int maxAge1, int maxAge2, int maxAge3) {
+        testingClient.server(realmName).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(FLOW_ALIAS));
+        testingClient.server(realmName)
                 .run(session -> FlowUtil.inCurrentRealm(session).selectFlow(FLOW_ALIAS).inForms(forms -> forms.clear()
                         // level 1 authentication
                         .addSubFlowExecution("level1-subflow", AuthenticationFlow.BASIC_FLOW, Requirement.CONDITIONAL, subFlow -> {
@@ -245,7 +251,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
     }
 
     private void reconfigureStepUpFlow(int maxAge1, int maxAge2, int maxAge3) {
-        BrowserFlowTest.revertFlows(testRealm(), FLOW_ALIAS);
+        BrowserFlowTest.revertFlows(managedRealm.admin(), FLOW_ALIAS);
         configureStepUpFlow(testingClient, maxAge1, maxAge2, maxAge3);
     }
 
@@ -264,7 +270,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
     @After
     public void after() {
-        BrowserFlowTest.revertFlows(testRealm(), FLOW_ALIAS);
+        BrowserFlowTest.revertFlows(managedRealm.admin(), FLOW_ALIAS);
     }
 
     @Test
@@ -438,16 +444,16 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
     @Test
     public void testRealmAcrLoaMapping() throws IOException {
         // Setup realm acr-to-loa mapping
-        RealmRepresentation realmRep = testRealm().toRepresentation();
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         Map<String, Integer> acrLoaMap = new HashMap<>();
         acrLoaMap.put("realm:copper", 0);
         acrLoaMap.put("realm:silver", 1);
         acrLoaMap.put("realm:gold", 2);
         realmRep.getAttributes().put(Constants.ACR_LOA_MAP, JsonSerialization.writeValueAsString(acrLoaMap));
-        testRealm().update(realmRep);
+        managedRealm.admin().update(realmRep);
 
         // Remove acr-to-loa mapping from the client. It should use realm acr-to-loa mapping
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         testClientRep.getAttributes().put(Constants.ACR_LOA_MAP, "{}");
         testClient.update(testClientRep);
@@ -470,12 +476,12 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
         // Rollback
         realmRep.getAttributes().remove(Constants.ACR_LOA_MAP);
-        testRealm().update(realmRep);
+        managedRealm.admin().update(realmRep);
     }
 
     @Test
     public void testClientDefaultAcrValues() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, Arrays.asList("silver", "gold"));
         testClient.update(testClientRep);
@@ -508,20 +514,20 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
     @Test
     public void testClientDefaultAcrValuesValidation() throws IOException {
         // Setup realm acr-to-loa mapping
-        RealmRepresentation realmRep = testRealm().toRepresentation();
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         Map<String, Integer> acrLoaMap = new HashMap<>();
         acrLoaMap.put("realm:copper", 0);
         acrLoaMap.put("realm:silver", 1);
         realmRep.getAttributes().put(Constants.ACR_LOA_MAP, JsonSerialization.writeValueAsString(acrLoaMap));
-        testRealm().update(realmRep);
+        managedRealm.admin().update(realmRep);
 
         // Value "foo" not used in any ACR-To-Loa mapping
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, Arrays.asList("silver", "2", "foo"));
         try {
             testClient.update(testClientRep);
-            Assert.fail("Should not successfully update client");
+            Assertions.fail("Should not successfully update client");
         } catch (BadRequestException bre) {
             // Expected
         }
@@ -530,7 +536,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, Arrays.asList("silver", "2", "5"));
         try {
             testClient.update(testClientRep);
-            Assert.fail("Should not successfully update client");
+            Assertions.fail("Should not successfully update client");
         } catch (BadRequestException bre) {
             // Expected
         }
@@ -543,30 +549,30 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         testClientRep.getAttributes().put(Constants.DEFAULT_ACR_VALUES, null);
         testClient.update(testClientRep);
         realmRep.getAttributes().remove(Constants.ACR_LOA_MAP);
-        testRealm().update(realmRep);
+        managedRealm.admin().update(realmRep);
     }
 
     @Test
     public void testClientMinimumAcrValueValidation() throws IOException {
         // Setup realm acr-to-loa mapping
-        RealmRepresentation realmRep = testRealm().toRepresentation();
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         Map<String, Integer> acrLoaMap = new HashMap<>();
         acrLoaMap.put("realm:copper", 0);
         acrLoaMap.put("realm:silver", 1);
         realmRep.getAttributes().put(Constants.ACR_LOA_MAP, JsonSerialization.writeValueAsString(acrLoaMap));
-        testRealm().update(realmRep);
+        managedRealm.admin().update(realmRep);
 
         // Value "foo" not used in any ACR-To-Loa mapping
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("foo");
-        Assert.assertThrows(BadRequestException.class, () -> {
+        Assertions.assertThrows(BadRequestException.class, () -> {
             testClient.update(testClientRep);
         });
 
         // Realm value should not be considered either
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("realm:silver");
-        Assert.assertThrows(BadRequestException.class, () -> {
+        Assertions.assertThrows(BadRequestException.class, () -> {
             testClient.update(testClientRep);
         });
 
@@ -578,7 +584,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue(null);
         testClient.update(testClientRep);
         realmRep.getAttributes().remove(Constants.ACR_LOA_MAP);
-        testRealm().update(realmRep);
+        managedRealm.admin().update(realmRep);
     }
 
     // After initial authentication with "acr=2", there will be further re-authentication requests sent in different intervals
@@ -599,14 +605,14 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         assertLoggedInWithAcr("3");
 
         // Time offset to 210
-        setTimeOffset(210);
+        timeOffSet.set(210);
 
         // Re-auth 2: Should return level 2 (gold) due level 3 expired
         oauth.openLoginForm();
         assertLoggedInWithAcr("gold");
 
         // Time offset to 310
-        setTimeOffset(310);
+        timeOffSet.set(310);
 
         // Re-auth 3: Should return level 0 (copper) due levels 1 and 2 expired
         oauth.openLoginForm();
@@ -631,7 +637,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         assertLoggedInWithAcr("3");
 
         // Time offset to 210
-        setTimeOffset(210);
+        timeOffSet.set(210);
 
         // Re-auth 2: Should ask user for re-authentication with level2 and level3. Level1 did not yet expired and should be automatic
         openLoginFormWithAcrClaim(true, "3");
@@ -640,7 +646,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         assertLoggedInWithAcr("3");
 
         // Time offset to 310
-        setTimeOffset(310);
+        timeOffSet.set(310);
 
         // Re-auth 3: Should ask user for re-authentication with level1. Level2 and Level3 did not yet expired and should be automatic
         openLoginFormWithAcrClaim(true, "3");
@@ -684,7 +690,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         authenticateWithUsernamePassword();
         assertLoggedInWithAcr("silver");
 
-        setTimeOffset(120);
+        timeOffSet.set(120);
 
 
         // Change condition configuration to 60
@@ -706,7 +712,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
     @Test
     public void testBackwardsCompatibilityForLoaConditionConfig() {
         // Reconfigure to the format of Keycloak 17 with option "Store Loa in User Session"
-        BrowserFlowTest.revertFlows(testRealm(), FLOW_ALIAS);
+        BrowserFlowTest.revertFlows(managedRealm.admin(), FLOW_ALIAS);
         testingClient.server(TEST_REALM_NAME).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(FLOW_ALIAS));
         testingClient.server(TEST_REALM_NAME)
                 .run(session -> FlowUtil.inCurrentRealm(session).selectFlow(FLOW_ALIAS).inForms(forms -> forms.clear()
@@ -756,10 +762,10 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
     @Test
     @DisableFeature(value = Profile.Feature.STEP_UP_AUTHENTICATION, skipRestart = true)
     public void testDisableStepupFeatureTest() {
-        BrowserFlowTest.revertFlows(testRealm(), FLOW_ALIAS);
+        BrowserFlowTest.revertFlows(managedRealm.admin(), FLOW_ALIAS);
 
         // Login normal way - should return 1 (backwards compatibility before step-up was introduced)
-        loginPage.open();
+        oauth.openLoginForm();
         authenticateWithUsernamePassword();
         authenticateWithTotp(); // OTP required due the user has it
         assertLoggedInWithAcr("1");
@@ -805,8 +811,8 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         authenticateWithTotp();
         totpSetupPage.assertCurrent();
         totpSetupPage.configure(totp.generateTOTP(totpSetupPage.getTotpSecret()), "totp2-label");
-        events.expectRequiredAction(EventType.UPDATE_TOTP).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
         TokenCtx token2 = assertLoggedInWithAcr("gold");
 
         // Trying to add another OTP by "kc_action". Level 2 should be required and user can choose between 2 OTP codes
@@ -824,7 +830,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
                 .build()) {
             otpCredentialId = accountRestClient.getCredentialByUserLabel("totp2-label").getId();
             try (SimpleHttpResponse response = accountRestClient.removeCredential(otpCredentialId)) {
-                Assert.assertEquals(403, response.getStatus());
+                Assertions.assertEquals(403, response.getStatus());
             }
         }
 
@@ -835,9 +841,41 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
                 .build()) {
             otpCredentialId = accountRestClient.getCredentialByUserLabel("totp2-label").getId();
             try (SimpleHttpResponse response = accountRestClient.removeCredential(otpCredentialId)) {
-                Assert.assertEquals(204, response.getStatus());
+                Assertions.assertEquals(204, response.getStatus());
             }
-            Assert.assertNull(accountRestClient.getCredentialByUserLabel("totp2-label"));
+            Assertions.assertNull(accountRestClient.getCredentialByUserLabel("totp2-label"));
+        }
+    }
+
+    // Test that LoA enforcement works for the case when there is "AuthenticationFlowBindingOverride" with the enforced LoA flow for the particular client
+    @Test
+    public void testWithMultipleOTPCodes_clientSpecificAuthenticationFlow() throws Exception {
+        List<AuthenticationFlowRepresentation> flows = managedRealm.admin().flows().getFlows();
+
+        // Set default browser flow for realm
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
+        realm.setBrowserFlow(DefaultAuthenticationFlows.BROWSER_FLOW);
+        managedRealm.admin().update(realm);
+
+        // Override step-up flow just for the client
+        AuthenticationFlowRepresentation stepUpFlowRepresentation = AbstractAuthenticationTest.findFlowByAlias(FLOW_ALIAS, flows);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), CLIENT_ID);
+        ClientRepresentation testClientRep = testClient.toRepresentation();
+        testClientRep.setAuthenticationFlowBindingOverrides(
+                Map.of(DefaultAuthenticationFlows.BROWSER_FLOW, stepUpFlowRepresentation.getId())
+        );
+        testClient.update(testClientRep);
+
+        try {
+            testWithMultipleOTPCodes();
+        } finally {
+            // Revert
+            testClientRep.setAuthenticationFlowBindingOverrides(
+                    Map.of(DefaultAuthenticationFlows.BROWSER_FLOW, "")
+            );
+            testClient.update(testClientRep);
+            realm.setBrowserFlow(FLOW_ALIAS);
+            managedRealm.admin().update(realm);
         }
     }
 
@@ -853,8 +891,8 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         authenticateWithTotp();
         totpSetupPage.assertCurrent();
         totpSetupPage.configure(totp.generateTOTP(totpSetupPage.getTotpSecret()), "totp2-label");
-        events.expectRequiredAction(EventType.UPDATE_TOTP).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
         TokenCtx token2 = assertLoggedInWithAcr("gold");
 
         String otp2CredentialId = getCredentialIdByLabel("totp2-label");
@@ -868,8 +906,8 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         deleteCredentialPage.assertCredentialInMessage("totp2-label");
         deleteCredentialPage.confirm();
 
-        events.expectRequiredAction(EventType.REMOVE_TOTP).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
-        events.expectRequiredAction(EventType.REMOVE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.REMOVE_TOTP).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.REMOVE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
         assertLoggedInWithAcr("gold");
     }
 
@@ -885,14 +923,14 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
             // Trying to delete existing OTP. Should require authentication with this OTP
             String otpCredentialId = getCredentialIdByType(OTPCredentialModel.TYPE);
             oauth.loginForm().kcAction(getKcActionParamForDeleteCredential(otpCredentialId)).open();
-            Assert.assertEquals("Strong authentication required to continue", loginPage.getInfoMessage());
+            Assertions.assertEquals("Strong authentication required to continue", loginPage.getInfoMessage());
             authenticateWithTotp();
 
             deleteCredentialPage.assertCurrent();
             deleteCredentialPage.assertCredentialInMessage("otp");
             deleteCredentialPage.confirm();
-            events.expectRequiredAction(EventType.REMOVE_TOTP).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
-            events.expectRequiredAction(EventType.REMOVE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.REMOVE_TOTP).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.REMOVE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
             assertLoggedInWithAcr("gold");
 
             // Trying to add OTP. No 2nd factor should be required as user doesn't have any
@@ -900,8 +938,8 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
             totpSetupPage.assertCurrent();
             String totp2Secret = totpSetupPage.getTotpSecret();
             totpSetupPage.configure(totp.generateTOTP(totp2Secret), "totp2-label");
-            events.expectRequiredAction(EventType.UPDATE_TOTP).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
-            events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
             assertLoggedInWithAcr("silver");
 
             // set time offset for OTP as it is not permitted to authenticate with same OTP code multiple times
@@ -913,7 +951,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
             loginTotpPage.login(totp.generateTOTP(totp2Secret));
             setupRecoveryAuthnCodesPage.assertCurrent();
             setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
-            events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).assertEvent();
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL);
             assertLoggedInWithAcr("gold");
 
             // Removing recovery-code credential. User required to authenticate with 2nd-factor. He can choose between OTP or recovery-codes
@@ -922,7 +960,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
             loginTotpPage.assertCurrent();
             loginTotpPage.clickTryAnotherWayLink();
             selectAuthenticatorPage.assertCurrent();
-            Assert.assertEquals(Arrays.asList(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION, SelectAuthenticatorPage.RECOVERY_AUTHN_CODES), selectAuthenticatorPage.getAvailableLoginMethods());
+            Assertions.assertEquals(Arrays.asList(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION, SelectAuthenticatorPage.RECOVERY_AUTHN_CODES), selectAuthenticatorPage.getAvailableLoginMethods());
             selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION);
             loginTotpPage.assertCurrent();
             loginTotpPage.login(totp.generateTOTP(totp2Secret));
@@ -930,7 +968,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
             deleteCredentialPage.assertCurrent();
             deleteCredentialPage.assertCredentialInMessage("Recovery codes");
             deleteCredentialPage.confirm();
-            events.expectRequiredAction(EventType.REMOVE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE).assertEvent();
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.REMOVE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE);
             assertLoggedInWithAcr("gold");
         } finally {
             setOtpTimeOffset(0, totp);
@@ -939,7 +977,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
     @Test
     public void testLoginWithMinimumAcrWithoutAcrValues() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
         testClient.update(testClientRep);
@@ -957,7 +995,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
     @Test
     public void testLoginWithMinimumAcrWithLowerAcrValues() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
         testClient.update(testClientRep);
@@ -975,7 +1013,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
     @Test
     public void testLoginWithMinimumAcrWithHigherAcrValues() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
         testClient.update(testClientRep);
@@ -994,7 +1032,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
     @Test
     public void testEssentialAcrMinimumOk() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
         testClient.update(testClientRep);
@@ -1013,7 +1051,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
     @Test
     public void testEssentialAcrMinimumTooLow() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
         testClient.update(testClientRep);
@@ -1029,7 +1067,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
     @Test
     public void testNonEssentialAcrMinimumUpgrade() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
         testClient.update(testClientRep);
@@ -1049,8 +1087,8 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
     public void testClientOverrideLOAFlow() throws Exception {
         reconfigureStepUpFlow(300, 300, 300);
 
-        String flowId = testRealm().flows().getFlows().stream().filter(flow -> FLOW_ALIAS.equals(flow.getAlias())).findFirst().get().getId();
-        try (RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(testRealm()).setBrowserFlow(DefaultAuthenticationFlows.BROWSER_FLOW).update(); 
+        String flowId = managedRealm.admin().flows().getFlows().stream().filter(flow -> FLOW_ALIAS.equals(flow.getAlias())).findFirst().get().getId();
+        try (RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(managedRealm.admin()).setBrowserFlow(DefaultAuthenticationFlows.BROWSER_FLOW).update(); 
              ClientAttributeUpdater updater = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, CLIENT_ID)
                 .setAttribute(Constants.MINIMUM_ACR_VALUE, "gold")
                 .setAuthenticationFlowBindingOverrides(Collections.singletonMap(AuthenticationFlowBindings.BROWSER_BINDING, flowId))
@@ -1059,14 +1097,14 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
             authenticateWithUsernamePassword();
             authenticateWithTotp();
             assertLoggedInWithAcr("gold");
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             openLoginFormWithAcrClaim(true, "gold");
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         }
     }
 
     private String getCredentialIdByLabel(String credentialLabel) {
-        return ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost").credentials()
+        return AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost").credentials()
                 .stream()
                 .filter(credential -> "totp2-label".equals(credential.getUserLabel()))
                 .map(CredentialRepresentation::getId)
@@ -1074,7 +1112,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
     }
 
     private String getCredentialIdByType(String credentialType) {
-        return ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost").credentials()
+        return AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost").credentials()
                 .stream()
                 .filter(credential -> credentialType.equals(credential.getType()))
                 .map(CredentialRepresentation::getId)
@@ -1112,7 +1150,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
     private void reauthenticateWithPassword() {
         loginPage.assertCurrent();
-        Assert.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
+        Assertions.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
         loginPage.login(getPassword("test-user@localhost"));
     }
 
@@ -1127,16 +1165,17 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
     }
 
     private TokenCtx assertLoggedInWithAcr(String acr) {
-        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).details(Details.USERNAME, "test-user@localhost");
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         IDToken idToken = oauth.verifyIDToken(tokenResponse.getIdToken());
-        Assert.assertEquals(acr, idToken.getAcr());
+        Assertions.assertEquals(acr, idToken.getAcr());
         return new TokenCtx(tokenResponse.getAccessToken(), idToken);
     }
 
     private void assertErrorPage(String expectedError) {
-        assertThat(true, is(errorPage.isCurrent()));
-        Assert.assertEquals(expectedError, errorPage.getError());
+        errorPage.assertCurrent();
+        Assertions.assertEquals(expectedError, errorPage.getError());
         events.clear();
     }
 

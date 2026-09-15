@@ -24,18 +24,18 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Test for transient user session
@@ -69,9 +69,9 @@ public class TransientSessionTest extends AbstractChangeImportedUserPasswordsTes
 
         // Refresh will fail. There is no userSession on the server
         AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
-        Assert.assertNull(refreshedResponse.getAccessToken());
+        Assertions.assertNull(refreshedResponse.getAccessToken());
         assertNotNull(refreshedResponse.getError());
-        Assert.assertEquals("Session not active", refreshedResponse.getErrorDescription());
+        Assertions.assertEquals("Session not active", refreshedResponse.getErrorDescription());
     }
 
     private void setUpDirectGrantFlowWithSetClientNoteAuthenticator() {

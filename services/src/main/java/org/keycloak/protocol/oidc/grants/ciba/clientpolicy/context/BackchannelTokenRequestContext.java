@@ -20,13 +20,12 @@ package org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context;
 import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
-import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class BackchannelTokenRequestContext implements ClientPolicyContext {
+public class BackchannelTokenRequestContext implements CIBAContext {
 
     private final CIBAAuthenticationRequest parsedRequest;
     private final MultivaluedMap<String, String> requestParameters;
@@ -42,6 +41,7 @@ public class BackchannelTokenRequestContext implements ClientPolicyContext {
         return ClientPolicyEvent.BACKCHANNEL_TOKEN_REQUEST;
     }
 
+    @Override
     public CIBAAuthenticationRequest getParsedRequest() {
         return parsedRequest;
     }

@@ -10,7 +10,16 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.admin.ServerInfoTest;
 import org.keycloak.tests.admin.client.CredentialsTest;
+import org.keycloak.tests.cli.AbstractCliTest;
+import org.keycloak.tests.cli.admin.KcAdmCreateTest;
+import org.keycloak.tests.cli.admin.KcAdmTest;
+import org.keycloak.tests.cli.registration.KcRegCreateTest;
+import org.keycloak.tests.cli.registration.KcRegTest;
+import org.keycloak.tests.client.MutualTLSClientTest;
+import org.keycloak.tests.forms.LoginSSLTest;
+import org.keycloak.tests.forms.LoginTest;
 import org.keycloak.tests.keys.JavaKeystoreKeyProviderTest;
+import org.keycloak.tests.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest;
 
 import org.junit.platform.suite.api.AfterSuite;
 import org.junit.platform.suite.api.BeforeSuite;
@@ -21,7 +30,15 @@ import org.junit.platform.suite.api.Suite;
 @SelectClasses({
         CredentialsTest.class,
         JavaKeystoreKeyProviderTest.class,
-        ServerInfoTest.class
+        ServerInfoTest.class,
+        OID4VCSdJwtIssuingEndpointTest.class,
+        MutualTLSClientTest.class,
+        LoginTest.class,
+        LoginSSLTest.class,
+        KcAdmTest.class,
+        KcAdmCreateTest.class,
+        KcRegTest.class,
+        KcRegCreateTest.class
 })
 public class FipsStrictTestSuite {
 
@@ -31,6 +48,8 @@ public class FipsStrictTestSuite {
                 .registerServerConfig(FipsStrictServerConfig.class)
                 .registerSupplierConfig("certificates", FipsStrictCertificatesConfig.class)
                 .registerSupplierConfig("crypto", "fips", FipsMode.STRICT.name());
+        // the cli tests spawn kcadm/kcreg as external processes, so point them at the FIPS-enabled client tools
+        AbstractCliTest.useFipsClientTools();
     }
 
     @AfterSuite
@@ -42,7 +61,7 @@ public class FipsStrictTestSuite {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.FIPS).tlsEnabled(true)
+            return config.features(Profile.Feature.FIPS)
                 .option("fips-mode", "strict")
                 .option("spi-password-hashing-pbkdf2-max-padding-length", "14")
                 .option("spi-password-hashing-pbkdf2-sha256-max-padding-length", "14")
@@ -58,7 +77,11 @@ public class FipsStrictTestSuite {
 
         @Override
         public CertificatesConfigBuilder configure(CertificatesConfigBuilder config) {
-            return config.keystoreFormat(KeystoreUtil.KeystoreFormat.BCFKS);
+            return config
+                    .tlsEnabled(true)
+                    .mTlsEnabled(true)
+                    .keystoreFormat(KeystoreUtil.KeystoreFormat.BCFKS)
+                    .stores("keycloak.bcfks", "keycloak-truststore.bcfks", "client.bcfks", "keycloak-truststore.bcfks");
         }
     }
 }

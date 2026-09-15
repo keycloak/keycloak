@@ -10,6 +10,8 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -136,11 +138,13 @@ public class DockerAuthV2Protocol implements LoginProtocol {
                         .setIssued_at(expiresInIso8601String);
                 return new ResponseBuilderImpl().status(Response.Status.OK).header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON).entity(responseEntity).build();
             } else {
-                logger.errorv("Unable to handle request for event type {0}.  Currently only LOGIN event types are supported by docker protocol.", event.getEvent() == null ? "null" : event.getEvent().getType());
+                event.detail(Details.REASON, "Unable to handle request. Currently only LOGIN event types are supported by docker protocol.");
+                event.error(Errors.INVALID_REQUEST);
                 throw new ErrorResponseException("invalid_request", "Event type not supported", Response.Status.BAD_REQUEST);
             }
         } catch (final InstantiationException e) {
-            logger.errorv("Error attempting to create Key ID for Docker JOSE header: ", e.getMessage());
+            event.detail(Details.REASON, "Error attempting to create Key ID for Docker JOSE header: " + e.getMessage());
+            event.error(Errors.GENERIC_AUTHENTICATION_ERROR);
             throw new ErrorResponseException("token_error", "Unable to construct JOSE header for JWT", Response.Status.INTERNAL_SERVER_ERROR);
         }
 

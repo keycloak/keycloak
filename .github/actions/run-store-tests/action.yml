@@ -9,9 +9,6 @@ inputs:
 runs:
   using: composite
   steps:
-
-    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-
     - id: integration-test-setup
       name: Integration test setup
       uses: ./.github/actions/integration-test-setup
@@ -19,7 +16,7 @@ runs:
     - name: Run new base tests
       shell: bash
       run: |
-        KC_TEST_DATABASE=${{ inputs.db }} KC_TEST_DATABASE_REUSE=true TESTCONTAINERS_REUSE_ENABLE=true ./mvnw package -f tests/pom.xml -Dtest=DatabaseTestSuite -Dkeycloak.distribution.start.timeout=360
+        KC_TEST_DATABASE=${{ inputs.db }} KC_TEST_DATABASE_REUSE=true TESTCONTAINERS_REUSE_ENABLE=true ./mvnw package -f tests/pom.xml -Dtest=DatabaseTestSuite -Dkc.test.server.start.timeout=360
 
     - name: Database container port
       shell: bash
@@ -31,21 +28,6 @@ runs:
         done
         DATABASE_PORT=$(docker ps -l --format '{{ .ID }}' | xargs docker port | cut -d ':' -f 2)
         echo "DATABASE_PORT=$DATABASE_PORT" >> $GITHUB_ENV 
-
-    - name: Run base tests
-      shell: bash
-      run: |
-        TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
-        echo "Tests: $TESTS"
-        ./mvnw test ${{ env.SUREFIRE_RETRY }} \
-          -Pauth-server-quarkus -Pdb-${{ inputs.db }} \
-          "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" \
-          -Dtest=$TESTS \
-          -Ddocker.database.skip=true \
-          -Ddocker.database.port=$DATABASE_PORT \
-          -Ddocker.container.testdb.ip=localhost \
-          -Dkeycloak.distribution.start.timeout=360 \
-          -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
     - name: Run cluster JDBC_PING2 UDP smoke test
       shell: bash
@@ -76,6 +58,11 @@ runs:
           -Ddocker.container.testdb.ip=localhost \
           -pl testsuite/integration-arquillian/tests/base \
           2>&1 | misc/log/trimmer.sh
+
+    - name: Run stateless tests
+      shell: bash
+      run: |
+        KC_TEST_DATABASE=${{ inputs.db }} KC_TEST_DATABASE_REUSE=true TESTCONTAINERS_REUSE_ENABLE=true ./mvnw package -f tests/pom.xml -Dtest=StatelessTestSuite -Dkc.test.server.start.timeout=360
 
     - uses: ./.github/actions/upload-flaky-tests
       name: Upload flaky tests

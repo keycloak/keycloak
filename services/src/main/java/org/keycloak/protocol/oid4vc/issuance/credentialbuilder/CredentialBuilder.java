@@ -17,9 +17,15 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
+import java.util.Set;
+
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.Provider;
+
+import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_JWK;
 
 public interface CredentialBuilder extends Provider {
 
@@ -31,6 +37,13 @@ public interface CredentialBuilder extends Provider {
      * Returns the credential format supported by the builder.
      */
     String getSupportedFormat();
+
+    /**
+     * Returns list of supported binding methods for this credential format
+     */
+    default Set<String> getSupportedBindingMethods() {
+        return Set.of(CRYPTOGRAPHIC_BINDING_METHOD_JWK);
+    }
 
     /**
      * Builds a verifiable credential of a specific format from the basis of
@@ -48,4 +61,24 @@ public interface CredentialBuilder extends Provider {
             VerifiableCredential verifiableCredential,
             CredentialBuildConfig credentialBuildConfig
     ) throws CredentialBuilderException;
+
+    /**
+     * Allows the credential builder to contribute format-specific metadata
+     * to the OID4VCI well-known credential issuer metadata.
+     *
+     * <p>
+     * Implementations should add only the metadata fields required by the
+     * supported credential format (for example {@code vct} for {@code dc+sd-jwt}
+     * or {@code credential_definition} for {@code jwt_vc_json}).
+     * </p>
+     *
+     * <p>
+     * The default implementation is a no-op to preserve backward compatibility.
+     * </p>
+     *
+     * @param credentialConfig the credential configuration to populate with format-specific metadata
+     * @param credentialScope  the credential scope model containing the source data
+     */
+    default void contributeToMetadata(SupportedCredentialConfiguration credentialConfig, CredentialScopeModel credentialScope) {
+    }
 }

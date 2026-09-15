@@ -43,6 +43,7 @@ import static org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnfo
 import static org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory.ALLOW_PERMITTED_DOMAINS;
 import static org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory.ALLOW_PRIVATE_USE_URI_SCHEME;
 import static org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory.ALLOW_WILDCARD_CONTEXT_PATH;
+import static org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory.OAUTH_2_0_COMPLIANT;
 import static org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory.OAUTH_2_1_COMPLIANT;
 
 import static org.junit.Assert.assertEquals;
@@ -76,6 +77,7 @@ public class SecureRedirectUrisEnforcerExecutorTest {
         assertFalse(configuration.isAllowPrivateUseUriScheme());
         assertFalse(configuration.isAllowHttpScheme());
         assertFalse(configuration.isAllowWildcardContextPath());
+        assertFalse(configuration.isOAuth2_0Compliant());
         assertFalse(configuration.isOAuth2_1Compliant());
         assertFalse(configuration.isAllowOpenRedirect());
 
@@ -336,6 +338,72 @@ public class SecureRedirectUrisEnforcerExecutorTest {
                 "https://keycloak.org/sso/silent-callback.html",
                 "https://example.org/auth/realms/master/broker/oidc/endpoint",
                 "https://192.168.8.1:12345/auth/realms/master/broker/oidc/endpoint"
+        ).forEach(i->checkSuccess(i, false));
+    }
+
+    @Test
+    public void failNormalUri_OAuth2_0Compliant() {
+        enable(OAUTH_2_0_COMPLIANT);
+        Stream.of(
+                "https://oauth.redirect:8443/auth/callback#fragment",
+                "https://example.org/path#frag",
+                "https://example.org/*"
+        ).forEach(i->checkFail(i, false, SecureRedirectUrisEnforcerExecutor.ERR_NORMALURI));
+    }
+
+    @Test
+    public void successNormalUri_OAuth2_0Compliant() {
+        enable(OAUTH_2_0_COMPLIANT);
+        // HTTP is still allowed (unlike OAuth 2.1) when allow-http-scheme is on
+        enable(ALLOW_HTTP_SCHEME);
+        Stream.of(
+                "https://example.org/redirect",
+                "http://example.org/redirect",
+                "https://example.org:8443/auth/callback"
+        ).forEach(i->checkSuccess(i, false));
+    }
+
+    @Test
+    public void failLoopbackAddress_OAuth2_0Compliant() {
+        enable(ALLOW_IPV4_LOOPBACK_ADDRESS, ALLOW_IPV6_LOOPBACK_ADDRESS, ALLOW_HTTP_SCHEME, OAUTH_2_0_COMPLIANT);
+        Stream.of(
+                "http://127.0.0.1/auth/admin#fragment",
+                "http://[::1]/auth/admin#fragment",
+                "http://127.0.0.1/*",
+                "http://[::1]/*"
+        ).forEach(i->checkFail(i, false, SecureRedirectUrisEnforcerExecutor.ERR_LOOPBACK));
+    }
+
+    @Test
+    public void successLoopbackAddress_OAuth2_0Compliant() {
+        enable(ALLOW_IPV4_LOOPBACK_ADDRESS, ALLOW_IPV6_LOOPBACK_ADDRESS, ALLOW_HTTP_SCHEME, OAUTH_2_0_COMPLIANT);
+        // localhost is still allowed (unlike OAuth 2.1)
+        Stream.of(
+                "http://localhost/auth/admin",
+                "http://localhost:8080/auth/admin",
+                "http://127.0.0.1:8080/auth/admin",
+                "http://127.0.0.1/auth/admin",
+                "http://[::1]:8080/auth/admin",
+                "http://[::1]/auth/admin"
+        ).forEach(i->checkSuccess(i, false));
+    }
+
+    @Test
+    public void failPrivateUseUriScheme_OAuth2_0Compliant() {
+        enable(ALLOW_PRIVATE_USE_URI_SCHEME, OAUTH_2_0_COMPLIANT);
+        Stream.of(
+                "myapp:/oauth.redirect#pinpoint",
+                "com.example.app:/oauth.redirect/*"
+        ).forEach(i->checkFail(i, false, SecureRedirectUrisEnforcerExecutor.ERR_PRIVATESCHEME));
+    }
+
+    @Test
+    public void successPrivateUseUriScheme_OAuth2_0Compliant() {
+        enable(ALLOW_PRIVATE_USE_URI_SCHEME, OAUTH_2_0_COMPLIANT);
+        // single-word scheme is still allowed (unlike OAuth 2.1)
+        Stream.of(
+                "com.example.app:/oauth2redirect/example-provider",
+                "myapp:/oauth.redirect"
         ).forEach(i->checkSuccess(i, false));
     }
 

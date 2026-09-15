@@ -1,21 +1,21 @@
 package org.keycloak.common.crypto;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class CryptoIntegrationTest {
     private static CryptoProvider originalProvider;
 
-    @BeforeClass
+    @BeforeAll
     public static void keepOriginalProvider() {
         CryptoIntegrationTest.originalProvider = getSelectedProvider();
     }
 
     // doing our best to avoid any side effects on other tests by restoring the initial state of CryptoIntegration
-    @AfterClass
+    @AfterAll
     public static void restoreOriginalProvider() {
         CryptoIntegration.setProvider(originalProvider);
     }

@@ -10,14 +10,14 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 public final class WorkflowTask extends AbstractKeycloakTransaction implements Runnable {
 
-    private final Runnable task;
+    private final WorkflowTransactionalTask task;
     private final WorkflowExecutor executor;
     private final String id;
     private CompletableFuture<Void> future;
     private long startTime;
     private AtomicReference<Thread> thread;
 
-    WorkflowTask(WorkflowExecutor executor, Runnable task) {
+    WorkflowTask(WorkflowExecutor executor, WorkflowTransactionalTask task) {
         Objects.requireNonNull(executor, "executor");
         Objects.requireNonNull(task, "task");
         this.executor = executor;
@@ -78,7 +78,8 @@ public final class WorkflowTask extends AbstractKeycloakTransaction implements R
         return "id: " + id + ", executionTime: " + (System.currentTimeMillis() - startTime) + "ms , status: " + status + ", task: [" + task.toString() + "]";
     }
 
-    public void cancel() {
+    public void cancel(Throwable error) {
+        this.task.cancel(error);
         if (future != null) {
             future.cancel(true);
             if (thread.get() != null) {

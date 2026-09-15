@@ -65,6 +65,7 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
     public static final String ATTRIBUTE_FRIENDLY_NAME = "attribute.friendly.name";
     public static final String ATTRIBUTE_NAME_FORMAT = "attribute.name.format";
     public static final String USER_ATTRIBUTE = "user.attribute";
+    public static final String ALLOW_NULLABLE = "allow.nullable.property";
     private static final String EMAIL = "email";
     private static final String FIRST_NAME = "firstName";
     private static final String LAST_NAME = "lastName";
@@ -99,6 +100,14 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
         property.setHelpText("User attribute name to store saml attribute.  Use email, lastName, and firstName to map to those predefined user properties.");
         property.setType(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE);
         configProperties.add(property);
+        ProviderConfigProperty allowNullableProperty;
+        allowNullableProperty = new ProviderConfigProperty();
+        allowNullableProperty.setName(ALLOW_NULLABLE);
+        allowNullableProperty.setLabel("Allow Nullable Property");
+        allowNullableProperty.setHelpText("If true, the property will be set to null when the claim is empty.");
+        allowNullableProperty.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        allowNullableProperty.setDefaultValue(Boolean.FALSE.toString());
+        configProperties.add(allowNullableProperty); 
     }
 
     public static final String PROVIDER_ID = "saml-user-attribute-idp-mapper";
@@ -175,6 +184,13 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
         }
     }
 
+    private void setIfDifferent(Consumer<String> consumer, Supplier<String> currentValueSupplier, List<String> values) {
+        String newValue = (values == null || values.isEmpty()) ? null : values.get(0);
+        if (!Objects.equals(newValue, currentValueSupplier.get())) {
+            consumer.accept(newValue);
+        }
+    }
+
     private Predicate<AttributeStatementType.ASTChoiceType> elementWith(String attributeName) {
         return attributeType -> {
             AttributeType attribute = attributeType.getAttribute();
@@ -199,17 +215,31 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String attribute = mapperModel.getConfig().get(USER_ATTRIBUTE);
+        boolean isNullableProperty = Boolean.parseBoolean(mapperModel.getConfig().getOrDefault(ALLOW_NULLABLE, Boolean.FALSE.toString()));
+
         if (StringUtil.isNullOrEmpty(attribute)) {
             return;
         }
         String attributeName = getAttributeNameFromMapperModel(mapperModel);
         List<String> attributeValuesInContext = findAttributeValuesInContext(attributeName, context);
         if (attribute.equalsIgnoreCase(EMAIL)) {
-            setIfNotEmptyAndDifferent(user::setEmail, user::getEmail, attributeValuesInContext);
+            if (isNullableProperty) {
+                setIfDifferent(user::setEmail, user::getEmail, attributeValuesInContext);
+            } else {
+                setIfNotEmptyAndDifferent(user::setEmail, user::getEmail, attributeValuesInContext);
+            }
         } else if (attribute.equalsIgnoreCase(FIRST_NAME)) {
-            setIfNotEmptyAndDifferent(user::setFirstName, user::getFirstName, attributeValuesInContext);
+            if (isNullableProperty) {
+                setIfDifferent(user::setFirstName, user::getFirstName, attributeValuesInContext);
+            } else {
+                setIfNotEmptyAndDifferent(user::setFirstName, user::getFirstName, attributeValuesInContext);
+            }
         } else if (attribute.equalsIgnoreCase(LAST_NAME)) {
-            setIfNotEmptyAndDifferent(user::setLastName, user::getLastName, attributeValuesInContext);
+            if (isNullableProperty) {
+                setIfDifferent(user::setLastName, user::getLastName, attributeValuesInContext);
+            } else {
+                setIfNotEmptyAndDifferent(user::setLastName, user::getLastName, attributeValuesInContext);
+            }
         } else {
             List<String> currentAttributeValues = user.getAttributes().get(attribute);
             if (attributeValuesInContext == null) {

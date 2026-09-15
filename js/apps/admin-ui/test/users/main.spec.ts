@@ -160,6 +160,126 @@ test.describe("Existing users", () => {
     await assertNotificationMessage(page, "The user has been saved");
   });
 
+  test("formats Terms and Conditions accepted timestamp", async ({ page }) => {
+    const termsAcceptedTimestamp = "1700000000";
+    const email = "existing-user@example.com";
+    const firstName = "Existing";
+    const lastName = "User";
+
+    await using testBed = await createTestBed({
+      attributes: {
+        userProfileEnabled: "true",
+      },
+      requiredActions: [
+        {
+          alias: "TERMS_AND_CONDITIONS",
+          name: "Terms and Conditions",
+          providerId: "TERMS_AND_CONDITIONS",
+          enabled: true,
+          defaultAction: false,
+          priority: 20,
+          config: {},
+        },
+      ],
+      users: [
+        {
+          username: existingUserName,
+          email,
+          firstName,
+          lastName,
+          attributes: {
+            terms_and_conditions: [termsAcceptedTimestamp],
+          },
+        },
+      ],
+    });
+    const user = await adminClient.findUserByUsername(
+      testBed.realm,
+      existingUserName,
+    );
+
+    await login(page, {
+      to: toUser({ realm: testBed.realm, id: user.id!, tab: "settings" }),
+    });
+
+    const termsAcceptedField = page.getByTestId("terms_and_conditions");
+    await expect(termsAcceptedField).toBeVisible();
+    await expect(termsAcceptedField).not.toHaveText(termsAcceptedTimestamp);
+    await expect(
+      page.getByText(termsAcceptedTimestamp, { exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.locator(`input[value="${termsAcceptedTimestamp}"]`),
+    ).toHaveCount(0);
+
+    const displayedTimestamp = await termsAcceptedField.innerText();
+    expect(displayedTimestamp).toContain("2023");
+    expect(displayedTimestamp).toMatch(/\D/);
+    expect(displayedTimestamp).toMatch(/\d{1,2}:\d{2}/);
+
+    await expect(page.getByTestId("email")).toHaveValue(email);
+    await expect(page.getByTestId("firstName")).toHaveValue(firstName);
+    await expect(page.getByTestId("lastName")).toHaveValue(lastName);
+
+    await clickSaveButton(page);
+    await assertNotificationMessage(page, "The user has been saved");
+
+    const updatedUser = await adminClient.findUserByUsername(
+      testBed.realm,
+      existingUserName,
+    );
+    expect(updatedUser.attributes?.terms_and_conditions).toEqual([
+      termsAcceptedTimestamp,
+    ]);
+  });
+
+  test("shows validation error for empty required attribute", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed({
+      ...overrides,
+      attributes: {
+        userProfileEnabled: "true",
+      },
+    });
+
+    await adminClient.addUserProfile(testBed.realm, {
+      attributes: [
+        {
+          name: "customRequired",
+          displayName: "Custom Required Field",
+          required: {},
+          permissions: { view: ["admin", "user"], edit: ["admin", "user"] },
+        },
+      ],
+    });
+
+    const user = await adminClient.findUserByUsername(
+      testBed.realm,
+      existingUserName,
+    );
+
+    await login(page, {
+      to: toUser({ realm: testBed.realm, id: user.id!, tab: "settings" }),
+    });
+
+    const customField = page.locator("#customRequired");
+    await expect(customField).toBeVisible();
+
+    await clickSaveButton(page);
+
+    const fieldError = page.locator(
+      "#customRequired ~ .pf-v5-c-helper-text, [data-testid='customRequired-helper']",
+    );
+    await expect(fieldError).toBeVisible();
+
+    const notification = page.getByTestId("last-alert");
+    await expect(notification).toBeVisible();
+    const notificationText = await notification.textContent();
+    expect(notificationText).toContain("The user has not been saved:");
+    expect(notificationText?.split(":")[1]?.trim()).toBeTruthy();
+  });
+
   const attributesName = "unmanagedAttributes";
 
   test("adds unmanaged attributes to a user", async ({ page }) => {
@@ -189,9 +309,12 @@ test.describe("Existing users", () => {
     await clickAttributeSaveButton(page);
 
     await expect(page.getByText("Update of read-only attribute")).toHaveCount(
-      2,
+      3,
     );
-    await assertNotificationMessage(page, "The user has not been saved: ");
+    await assertNotificationMessage(
+      page,
+      "The user has not been saved: Update of read-only attribute rejected",
+    );
   });
 
   test("adds unmanaged attributes with multiple values to a user", async ({

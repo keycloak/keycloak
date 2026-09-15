@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
@@ -36,26 +37,32 @@ import org.keycloak.models.RealmModel;
     public static JSONWebKeySet getRealmJwks(KeycloakSession session, RealmModel realm){
         JWK[] jwks = session.keys().getKeysStream(realm)
                 .filter(k -> k.getStatus().isEnabled() && k.getPublicKey() != null)
-                .map(k -> {
-                    JWKBuilder b = JWKBuilder.create().kid(k.getKid()).algorithm(k.getAlgorithmOrDefault());
-                    List<X509Certificate> certificates = Optional.ofNullable(k.getCertificateChain())
-                            .filter(certs -> !certs.isEmpty())
-                            .orElseGet(() -> Optional.ofNullable(k.getCertificate()).map(Collections::singletonList)
-                                                     .orElseGet(Collections::emptyList));
-                    if (k.getType().equals(KeyType.RSA)) {
-                        return b.rsa(k.getPublicKey(), certificates, k.getUse());
-                    } else if (k.getType().equals(KeyType.EC)) {
-                        return b.ec(k.getPublicKey(), certificates, k.getUse());
-                    } else if (k.getType().equals(KeyType.OKP)) {
-                        return b.okp(k.getPublicKey(), k.getUse());
-                    }
-                    return null;
-                })
+                .map(JWKSServerUtils::toJwk)
                 .filter(Objects::nonNull)
                 .toArray(JWK[]::new);
 
         JSONWebKeySet keySet = new JSONWebKeySet();
         keySet.setKeys(jwks);
         return keySet;
+    }
+
+
+    public static JWK toJwk(KeyWrapper key) {
+        JWKBuilder b = JWKBuilder.create()
+                .kid(key.getKid())
+                .algorithm(key.getAlgorithmOrDefault());
+        List<X509Certificate> certificates = Optional.ofNullable(key.getCertificateChain())
+                .filter(certs -> !certs.isEmpty())
+                .orElseGet(() -> Optional.ofNullable(key.getCertificate())
+                        .map(Collections::singletonList)
+                        .orElseGet(Collections::emptyList));
+        if (key.getType().equals(KeyType.RSA)) {
+            return b.rsa(key.getPublicKey(), certificates, key.getUse());
+        } else if (key.getType().equals(KeyType.EC)) {
+            return b.ec(key.getPublicKey(), certificates, key.getUse());
+        } else if (key.getType().equals(KeyType.OKP)) {
+            return b.okp(key.getPublicKey(), key.getUse());
+        }
+        return null;
     }
 }

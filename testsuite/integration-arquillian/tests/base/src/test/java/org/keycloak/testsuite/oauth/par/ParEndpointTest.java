@@ -24,8 +24,8 @@ import jakarta.ws.rs.core.MultivaluedHashMap;
 
 import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
 
@@ -40,7 +40,7 @@ public class ParEndpointTest {
 
         ParEndpoint.flattenDecodedFormParametersToParamsMap(decodedFormParameters, params);
 
-        Assert.assertEquals(authorizationDetails, params.get(AUTHORIZATION_DETAILS));
+        Assertions.assertEquals(authorizationDetails, params.get(AUTHORIZATION_DETAILS));
     }
 
     @Test
@@ -51,7 +51,7 @@ public class ParEndpointTest {
 
         ParEndpoint.flattenDecodedFormParametersToParamsMap(decodedFormParameters, params);
 
-        Assert.assertEquals("paramValue1", params.get("param"));
+        Assertions.assertEquals("paramValue1", params.get("param"));
     }
 
     @Test
@@ -62,7 +62,7 @@ public class ParEndpointTest {
 
         ParEndpoint.flattenDecodedFormParametersToParamsMap(decodedFormParameters, params);
 
-        Assert.assertEquals("single", params.get("param"));
+        Assertions.assertEquals("single", params.get("param"));
     }
 
     @Test
@@ -73,7 +73,7 @@ public class ParEndpointTest {
 
         ParEndpoint.flattenDecodedFormParametersToParamsMap(decodedFormParameters, params);
 
-        Assert.assertNull(params.get("param"));
+        Assertions.assertNull(params.get("param"));
     }
 
     @Test
@@ -85,7 +85,7 @@ public class ParEndpointTest {
 
         ParEndpoint.flattenDecodedFormParametersToParamsMap(decodedFormParameters, params);
 
-        Assert.assertEquals("value", params.get("param"));
+        Assertions.assertEquals("value", params.get("param"));
     }
 
     @Test
@@ -97,6 +97,6 @@ public class ParEndpointTest {
 
         ParEndpoint.flattenDecodedFormParametersToParamsMap(decodedFormParameters, params);
 
-        Assert.assertEquals("valueAAA", params.get("param"));
+        Assertions.assertEquals("valueAAA", params.get("param"));
     }
 }

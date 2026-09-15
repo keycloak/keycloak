@@ -27,11 +27,12 @@ import jakarta.ws.rs.BadRequestException;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.admin.client.CreatedResponseUtil;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.client.registration.ClientRegistrationException;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -44,6 +45,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
@@ -59,23 +61,22 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesCond
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
@@ -89,16 +90,17 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createPKCEEnforceEx
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureClientAuthenticatorExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This test class is for testing a condition of client policies.
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-@EnableFeature(value = Profile.Feature.CLIENT_SECRET_ROTATION)
 public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
+
+    private static final String DUPLICATED_GROUP_PARENT_NAME = "duplicate-source-groups-parent";
 
     @Page
     protected OAuthGrantPage grantPage;
@@ -300,6 +302,71 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
     }
 
     @Test
+    public void testClientUpdateSourceGroupsConditionMatchesFullGroupPath() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Andre Profil")
+                        .addExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
+                                createSecureClientAuthenticatorExecutorConfig(
+                                        List.of(JWTClientAuthenticator.PROVIDER_ID),
+                                        null)
+                        )
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // make manage-clients a member of the subgroup /duplicate-source-groups-parent/topGroup, whose name
+        // duplicates the one of the top level group /topGroup the create-clients user belongs to
+        RealmResource realm = adminClient.realm(REALM_NAME);
+        GroupRepresentation parentGroup = new GroupRepresentation();
+        parentGroup.setName(DUPLICATED_GROUP_PARENT_NAME);
+        String parentGroupId = CreatedResponseUtil.getCreatedId(realm.groups().add(parentGroup));
+        testContext.getOrCreateCleanup(REALM_NAME).addGroupId(parentGroupId);
+        GroupRepresentation duplicatedGroup = new GroupRepresentation();
+        duplicatedGroup.setName("topGroup");
+        String duplicatedGroupId = CreatedResponseUtil.getCreatedId(realm.groups().group(parentGroupId).subGroup(duplicatedGroup));
+        String userId = realm.users().search("manage-clients", true).get(0).getId();
+        realm.users().get(userId).joinGroup(duplicatedGroupId);
+
+        // a simple name only matches the top level group, the subgroup with the duplicated name is not matched
+        updateClientUpdateSourceGroupsPolicy("topGroup");
+        authCreateClients();
+        assertClientRegistrationFails();
+        authManageClients();
+        createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+        });
+
+        // the subgroup is matched when it is configured by its full path
+        updateClientUpdateSourceGroupsPolicy("/" + DUPLICATED_GROUP_PARENT_NAME + "/topGroup");
+        authManageClients();
+        assertClientRegistrationFails();
+        authCreateClients();
+        createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+        });
+    }
+
+    private void updateClientUpdateSourceGroupsPolicy(String group) throws Exception {
+        String json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Andre Politik", Boolean.TRUE)
+                        .addCondition(ClientUpdaterSourceGroupsConditionFactory.PROVIDER_ID,
+                                createClientUpdateSourceGroupsConditionConfig(List.of(group)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+    }
+
+    private void assertClientRegistrationFails() throws Exception {
+        try {
+            createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+            });
+            fail();
+        } catch (ClientRegistrationException e) {
+            assertEquals(ERR_MSG_CLIENT_REG_FAIL, e.getMessage());
+        }
+    }
+
+    @Test
     public void testClientUpdateSourceRolesCondition() throws Exception {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
@@ -469,11 +536,11 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         ).toString();
 
         ClientPoliciesRepresentation clientPolicies = json==null ? null : JsonSerialization.readValue(json, ClientPoliciesRepresentation.class);
-        BadRequestException e = Assert.assertThrows(BadRequestException.class,
+        BadRequestException e = Assertions.assertThrows(BadRequestException.class,
                 () -> adminClient.realm(REALM_NAME).clientPoliciesPoliciesResource().updatePolicies(clientPolicies));
 
         ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
-        Assert.assertEquals("Invalid client-scopes configuration - Client scopes not allowed: [fake-client-scope]", error.getErrorMessage());
+        Assertions.assertEquals("Invalid client-scopes configuration - Client scopes not allowed: [fake-client-scope]", error.getErrorMessage());
     }
 
     @Test

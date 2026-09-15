@@ -41,9 +41,10 @@ import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.providers.actions.DummyConfigurableRequiredActionFactory;
+import org.keycloak.tests.providers.actions.DummyRequiredActionFactory;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.testsuite.actions.DummyConfigurableRequiredActionFactory;
-import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -104,6 +105,7 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testCRUDRequiredAction() {
         int lastPriority = authMgmtResource.getRequiredActions().get(authMgmtResource.getRequiredActions().size() - 1).getPriority();
 
@@ -196,6 +198,7 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testCRUDConfigurableRequiredAction() {
         int lastPriority = authMgmtResource.getRequiredActions().get(authMgmtResource.getRequiredActions().size() - 1).getPriority();
 

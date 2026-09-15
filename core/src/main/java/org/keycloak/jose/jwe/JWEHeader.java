@@ -22,12 +22,11 @@ import java.io.UncheckedIOException;
 
 import org.keycloak.jose.JOSEHeader;
 import org.keycloak.jose.jwk.ECPublicJWK;
+import org.keycloak.json.KeycloakJsonMapperFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -141,15 +140,9 @@ public class JWEHeader implements JOSEHeader {
         return agreementPartyVInfo;
     }
 
-    private static final ObjectMapper mapper = new ObjectMapper();
-
-    static {
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-    }
-
     public String toString() {
         try {
-            return mapper.writeValueAsString(this);
+            return KeycloakJsonMapperFactory.mapper().writeValueAsString(this);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

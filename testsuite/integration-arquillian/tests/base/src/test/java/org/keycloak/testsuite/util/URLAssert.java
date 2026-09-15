@@ -32,7 +32,7 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.awaitility.core.ThrowingRunnable;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebDriver;
 
 import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
@@ -41,7 +41,7 @@ import static org.keycloak.testsuite.util.URLUtils.currentUrlEquals;
 import static org.keycloak.testsuite.util.URLUtils.currentUrlStartsWith;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -69,8 +69,8 @@ public class URLAssert {
 
     public static void assertCurrentUrlEquals(final String url) {
         awaitUntilAsserted(() -> {
-            assertTrue("Expected URL: " + url + " ; actual: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
-                    currentUrlEquals(url));
+            assertTrue(currentUrlEquals(url),
+                    "Expected URL: " + url + " ; actual: " + DroneUtils.getCurrentDriver().getCurrentUrl());
         });
     }
 
@@ -90,8 +90,8 @@ public class URLAssert {
 
     public static void assertCurrentUrlStartsWith(final String url){
         awaitUntilAsserted(() -> {
-            assertTrue("URL expected to begin with: " + removeDefaultPorts(url) + " ; actual URL: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
-                    currentUrlStartsWith(removeDefaultPorts(url)));
+            assertTrue(currentUrlStartsWith(removeDefaultPorts(url)),
+                    "URL expected to begin with: " + removeDefaultPorts(url) + " ; actual URL: " + DroneUtils.getCurrentDriver().getCurrentUrl());
         });
     }
 
@@ -113,8 +113,8 @@ public class URLAssert {
 
     public static void assertCurrentUrlDoesntStartWith(final String url) {
         awaitUntilAsserted(() -> {
-            assertTrue("URL expected NOT to begin with: " + url + " ; actual URL: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
-                    currentUrlDoesntStartWith(url));
+            assertTrue(currentUrlDoesntStartWith(url),
+                    "URL expected NOT to begin with: " + url + " ; actual URL: " + DroneUtils.getCurrentDriver().getCurrentUrl());
         });
     }
 
@@ -148,7 +148,7 @@ public class URLAssert {
         public void assertResponse(CloseableHttpResponse response) throws IOException {
             HttpEntity entity = response.getEntity();
             Header contentType = entity.getContentType();
-            Assert.assertTrue(contentType.getValue().startsWith("application/json"));
+            Assertions.assertTrue(contentType.getValue().startsWith("application/json"));
 
             char [] buf = new char[8192];
             StringWriter out = new StringWriter();

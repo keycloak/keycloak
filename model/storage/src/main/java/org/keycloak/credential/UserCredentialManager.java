@@ -26,6 +26,8 @@ import org.keycloak.common.util.reflections.Types;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.storage.AbstractStorageManager;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.StorageId;
@@ -43,6 +45,13 @@ import io.opentelemetry.api.trace.StatusCode;
  * @author Alexander Schwartz
  */
 public class UserCredentialManager extends AbstractStorageManager<UserStorageProvider, UserStorageProviderModel> implements org.keycloak.models.UserCredentialManager {
+
+    private static final List<String> FIRST_FACTOR_CREDENTIAL_TYPES = List.of(
+            PasswordCredentialModel.TYPE,
+            CredentialModel.CLIENT_CERT,
+            CredentialModel.KERBEROS,
+            WebAuthnCredentialModel.TYPE_PASSWORDLESS
+    );
 
     private final UserModel user;
     private final KeycloakSession session;
@@ -307,4 +316,9 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
         }
     }
 
+    @Override
+    public Stream<CredentialModel> getFirstFactorCredentialsStream() {
+        return getStoredCredentialsStream()
+                .filter(c -> FIRST_FACTOR_CREDENTIAL_TYPES.contains(c.getType()));
+    }
 }

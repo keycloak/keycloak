@@ -19,13 +19,15 @@ package org.keycloak.models.sessions.infinispan;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
@@ -35,6 +37,7 @@ import org.keycloak.models.sessions.infinispan.changes.Tasks;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
+import org.keycloak.models.sessions.infinispan.stream.AuthenticatedUserAuthSessionPredicate;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionProvider;
@@ -96,6 +99,11 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     }
 
     @Override
+    public void removeRootAuthenticationSessionsByAuthenticatedUser(RealmModel realm, UserModel user, String rootAuthenticationSessionIdToKeep) {
+        sessionTx.getCache().values().removeIf(new AuthenticatedUserAuthSessionPredicate(realm.getId(), user.getId(), rootAuthenticationSessionIdToKeep));
+    }
+
+    @Override
     public void onRealmRemoved(RealmModel realm) {
         // Send message to all DCs. The remoteCache will notify client listeners on all DCs for remove authentication sessions
         clusterEventsSenderTx.addEvent(
@@ -117,17 +125,6 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         }
     }
 
-
-    @Override
-    public void onClientRemoved(RealmModel realm, ClientModel client) {
-        // No update anything on clientRemove for now. AuthenticationSessions of removed client will be handled at runtime if needed.
-
-//        clusterEventsSenderTx.addEvent(
-//                ClientRemovedSessionEvent.create(session, InfinispanAuthenticationSessionProviderFactory.CLIENT_REMOVED_AUTHSESSION_EVENT, realm.getId(), false, client.getId()),
-//                ClusterProvider.DCNotify.ALL_DCS);
-    }
-
-
     @Override
     public void updateNonlocalSessionAuthNotes(AuthenticationSessionCompoundId compoundId, Map<String, String> authNotesFragment) {
         if (compoundId == null) {
@@ -147,12 +144,18 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     @Override
     public RootAuthenticationSessionModel getRootAuthenticationSession(RealmModel realm, String authenticationSessionId) {
         RootAuthenticationSessionEntity entity = getRootAuthenticationSessionEntity(authenticationSessionId);
+        if (entity != null && !Objects.equals(realm.getId(), entity.getRealmId())) {
+            return null;
+        }
         return wrap(realm, entity);
     }
 
 
     @Override
     public void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession) {
+        if (!Objects.equals(realm.getId(), authenticationSession.getRealm().getId())) {
+            throw new ModelException("Authentication session with id '" + authenticationSession.getId() + "' does not belong to realm '" + realm.getId() + "'");
+        }
         SessionUpdateTask<RootAuthenticationSessionEntity> removeTask = Tasks.removeSync();
         sessionTx.addTask(authenticationSession.getId(), removeTask);
     }

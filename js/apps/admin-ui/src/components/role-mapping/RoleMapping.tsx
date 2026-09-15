@@ -24,8 +24,8 @@ import {
   AddRoleMappingModal,
   FilterType,
 } from "./AddRoleMappingModal";
-import { deleteMapping, getEffectiveRoles, getMapping } from "./queries";
-import { getEffectiveClientRoles } from "./resource";
+import { deleteMapping, getMapping } from "./queries";
+import { getAllEffectiveRoles } from "./resource";
 
 import "./role-mapping.css";
 
@@ -84,6 +84,7 @@ type RoleMappingProps = {
   type: ResourcesKey;
   isManager?: boolean;
   save: (rows: Row[]) => Promise<void>;
+  groupsResource?: any;
 };
 
 export const RoleMapping = ({
@@ -92,6 +93,7 @@ export const RoleMapping = ({
   type,
   isManager = true,
   save,
+  groupsResource,
 }: RoleMappingProps) => {
   const { adminClient } = useAdminClient();
 
@@ -112,31 +114,23 @@ export const RoleMapping = ({
   };
 
   const loader = async () => {
-    let effectiveRoles: Row[] = [];
-    let effectiveClientRoles: Row[] = [];
+    let allEffectiveRoles: Row[] = [];
 
     if (!hide) {
-      effectiveRoles = await getEffectiveRoles(adminClient, type, id);
+      const effectiveRoles = await getAllEffectiveRoles(adminClient, {
+        type,
+        id,
+      });
 
-      effectiveClientRoles = (
-        await getEffectiveClientRoles(adminClient, {
-          type,
-          id,
-        })
-      ).map((e) => ({
-        client: { clientId: e.client, id: e.clientId },
-        role: { id: e.id, name: e.role, description: e.description },
+      allEffectiveRoles = effectiveRoles.map((e) => ({
+        ...(e.clientRole && e.client && e.clientId
+          ? { client: { clientId: e.client, id: e.clientId } }
+          : {}),
+        role: { id: e.id, name: e.name, description: e.description },
       }));
-
-      effectiveRoles = effectiveRoles.filter(
-        (role) =>
-          !effectiveClientRoles.some(
-            (clientRole) => clientRole.role.id === role.role.id,
-          ),
-      );
     }
 
-    const roles = await getMapping(adminClient, type, id);
+    const roles = await getMapping(adminClient, type, id, groupsResource);
     const realmRolesMapping =
       roles.realmMappings?.map((role) => ({ role })) || [];
     const clientMapping = Object.values(roles.clientMappings || {})
@@ -151,7 +145,7 @@ export const RoleMapping = ({
     return [
       ...mapRoles(
         [...clientMapping, ...realmRolesMapping],
-        [...effectiveClientRoles, ...effectiveRoles],
+        allEffectiveRoles,
         hide,
       ),
     ];
@@ -188,6 +182,7 @@ export const RoleMapping = ({
           name={name}
           onAssign={assignRoles}
           onClose={() => setShowAssign(false)}
+          groupsResource={groupsResource}
         />
       )}
       <DeleteConfirm />

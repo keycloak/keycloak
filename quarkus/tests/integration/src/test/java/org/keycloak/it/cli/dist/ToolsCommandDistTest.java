@@ -22,6 +22,8 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -33,6 +35,13 @@ public class ToolsCommandDistTest {
     void initialCompletionShouldSucceed(LaunchResult result) {
         assertTrue(result.getOutput().contains("Define a completion specification"),
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
+    }
+
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Tests for non-windows failure")
+    @Test
+    @Launch({ "tools", "windows-service" })
+    void windowsSericeNotAvailable(LaunchResult result) {
+        assertTrue(result.getErrorOutput().contains("Unknown option: 'windows-service'"));
     }
 
 }

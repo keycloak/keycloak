@@ -18,12 +18,20 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
-            <artifactId>keycloak-test-framework-core</artifactId>
+            <artifactId>keycloak-test-framework-test-containers</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-http-proxy</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-junit</artifactId>
         </dependency>
     </dependencies>
 </project>

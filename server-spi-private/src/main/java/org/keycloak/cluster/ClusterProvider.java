@@ -123,4 +123,24 @@ public interface ClusterProvider extends Provider {
          ALL_BUT_LOCAL_DC
     }
 
+    /**
+     * Checks if the current cluster is the primary cluster.
+     *
+     * @return {@code true} if this node is the coordinator.
+     */
+    default boolean isPrimaryCluster() {
+        return false;
+    }
+
+    /**
+     * Checks if the primary cluster check is supported.
+     * <p>
+     * Not all configurations use JDBC_PING and can determine this information.
+     *
+     * @return {@code true} if the coordinator check is supported.
+     */
+    default boolean isPrimaryClusterSupported() {
+        return false;
+    }
+
 }

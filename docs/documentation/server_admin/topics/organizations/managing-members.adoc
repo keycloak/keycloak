@@ -4,7 +4,7 @@
 =  Managing members
 [role="_abstract"]
 
-An organization member is basically a realm user but with a link to a single organization. They are logically separated
+An organization member is basically a realm user but with a link to one or more organizations. They are logically separated
 from other users in a realm so that you know exactly which users belong to an organization.
 
 There are different ways to add, or onboard, a member to an organization:
@@ -20,6 +20,11 @@ However, you can narrow the users to only those associated with an organization 
 
 .Managing organization members
 image:images/organizations-manage-members.png[alt="Managing organization members"]
+
+You are also able to manage the membership of a user in an organization from the *Users* section. When you select a user, you can see the list of organizations that the user belongs to and manage those memberships.
+
+.Managing organization members
+image:images/organizations-users-section.png[alt="Managing organization members from the Users section"]
 
 [[_managed_unmanaged_members_]]
 == Managed and unmanaged members
@@ -42,6 +47,18 @@ On the other hand, unmanaged members are those that can exist without the organi
 realm user to an organization, the account belongs to the realm first and foremost and eventually linked to an organization. In this case,
 removing an organization or a member will not remove the account from the realm; the realm is
 the single-source of truth for the identity.
+
+== Changing membership type
+
+You can change the membership type of an existing organization member using the Admin REST API.
+
+`PUT /admin/realms/{realm}/organizations/{orgId}/members/{memberId}/membership-type`
+
+The request body should contain the membership type as a JSON string: `"MANAGED"` or `"UNMANAGED"`.
+
+WARNING: Changing the membership type affects the lifecycle of the member's account. When changing from *Unmanaged* to *Managed*,
+the member's account becomes bound to the organization -- removing the member from the organization or deleting the organization will also remove the account from the realm.
+Conversely, changing from *Managed* to *Unmanaged* means the account will persist in the realm even if the member is removed from the organization, but the user may lack local credentials if originally federated via an identity provider.
 
 == Adding an existing realm user as a member
 
@@ -89,7 +106,7 @@ to provide the same email address used to send the invitation.
 
 == Managing invitations
 
-{project_name} provides comprehensive invitation management capabilities that allow administrators to track, manage, and control 
+{project_name} provides comprehensive invitation management capabilities that allow administrators to track, manage, and control
 organization invitations throughout their lifecycle.
 
 === Viewing invitations
@@ -193,6 +210,37 @@ When removing a member from an organization, remember that the user may or may n
 that user is managed or unmanaged member, respectively.
 
 For more details, see <<_managed_unmanaged_members_,Managed and unmanaged members>>.
+
+[[viewing-organization-group-memberships]]
+== Viewing organization group memberships
+
+You can view which organization groups a member belongs to directly from the member's context menu.
+
+.Procedure
+
+. To view group memberships from the *Members* tab:
+.. Navigate to your organization.
+.. Click the *Members* tab.
+.. Locate the member.
+.. Click the kebab menu (⋮) next to the member.
+.. Select *Show organization group memberships*.
+. To view group memberships from a specific group:
+.. Navigate to your organization.
+.. Click the *Groups* tab.
+.. Select the group.
+.. Click the *Members* tab.
+.. Locate the member.
+.. Click the kebab menu (⋮) next to the member.
+.. Select *Show memberships*.
+. To view group memberships from the user's detail page:
+.. Click *Users* in the menu.
+.. Select the user.
+.. Click the *Organizations* tab.
+.. Locate the organization.
+.. Click the kebab menu (⋮) next to the organization.
+.. Select *Show organization group memberships*.
+
+This displays all groups from the specific organization the member is currently assigned to.
 
 == Support for federated members
 

@@ -4,8 +4,12 @@ import { useTranslation } from "react-i18next";
 import { FormPanel, HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import { WEBAUTHN_PASSWORDLESS_POLICY } from "../authentication/policies/Policies";
+import { toAuthentication } from "../authentication/routes/Authentication";
 import { FormAccess } from "../components/form/FormAccess";
+import { SettingsShortcut } from "../components/settings-shortcut/SettingsShortcut";
 import { useRealm } from "../context/realm-context/RealmContext";
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 
 type RealmSettingsLoginTabProps = {
   realm: RealmRepresentation;
@@ -21,10 +25,10 @@ export const RealmSettingsLoginTab = ({
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
-
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
-
+  const isFeatureEnabled = useIsFeatureEnabled();
+  const passkeysVisible = isFeatureEnabled(Feature.Passkeys);
   const updateSwitchValue = async (switches: SwitchType | SwitchType[]) => {
     const name = Array.isArray(switches)
       ? Object.keys(switches[0])[0]
@@ -126,6 +130,48 @@ export const RealmSettingsLoginTab = ({
               aria-label={t("rememberMe")}
             />
           </FormGroup>
+          {passkeysVisible && (
+            <FormGroup
+              label={t("webAuthnPolicyPasskeysEnabled")}
+              fieldId="kc-passkeys-enabled"
+              labelIcon={
+                <HelpItem
+                  helpText={t("webAuthnPolicyPasskeysEnabledHelp")}
+                  fieldLabelId="webAuthnPolicyPasskeysEnabled"
+                />
+              }
+              hasNoPaddingTop
+            >
+              <Switch
+                id="kc-passkeys-enabled-switch"
+                data-testid="passkeys-enabled-switch"
+                value={
+                  realm.webAuthnPolicyPasswordlessPasskeysEnabled ? "on" : "off"
+                }
+                label={t("on")}
+                labelOff={t("off")}
+                isChecked={
+                  realm.webAuthnPolicyPasswordlessPasskeysEnabled ?? false
+                }
+                onChange={async (_event, value) => {
+                  await updateSwitchValue({
+                    webAuthnPolicyPasswordlessPasskeysEnabled: value,
+                  });
+                }}
+                aria-label={t("webAuthnPolicyPasskeysEnabled")}
+              />{" "}
+              <SettingsShortcut
+                tooltip={t("passkeysSettingsTooltip")}
+                to={{
+                  ...toAuthentication({
+                    realm: realmName,
+                    tab: "policies",
+                  }),
+                  search: `?tab=${WEBAUTHN_PASSWORDLESS_POLICY}`,
+                }}
+              />
+            </FormGroup>
+          )}
         </FormAccess>
       </FormPanel>
       <FormPanel className="kc-email-settings" title={t("emailSettings")}>

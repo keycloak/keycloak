@@ -2,6 +2,7 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.function.BooleanSupplier;
 
 import org.keycloak.common.Profile;
 import org.keycloak.config.CachingOptions;
+import org.keycloak.config.CachingOptions.Mechanism;
 import org.keycloak.config.Option;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.quarkus.runtime.Environment;
@@ -30,11 +32,16 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
     private static final String MULTI_SITE_FEATURE_SET = "feature '%s' or '%s' is set".formatted(Profile.Feature.MULTI_SITE.getKey(), Profile.Feature.CLUSTERLESS.getKey());
 
     private static final String CACHE_STACK_SET_TO_ISPN = "'cache' type is set to '" + CachingOptions.Mechanism.ispn.name() + "'";
+    private static final String STATELESS_FEATURE_SET = "feature '%s' is set".formatted(Profile.Feature.STATELESS.getKey());
 
     @Override
     public List<PropertyMapper<?>> getPropertyMappers() {
         List<PropertyMapper<?>> staticMappers = List.of(
                 fromOption(CachingOptions.CACHE)
+                        .transformer(
+                                (value, context) -> org.keycloak.common.util.Environment.isNonServerMode()
+                                        ? Mechanism.local.name()
+                                        : Optional.ofNullable(value).orElse(Mechanism.ispn.name()))
                         .paramLabel("type")
                         .build(),
                 fromOption(CachingOptions.CACHE_STACK)
@@ -56,7 +63,11 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
                         .transformer(CachingPropertyMappers::resolveConfigFile)
                         .validator(s -> {
                             if (!Files.exists(Paths.get(resolveConfigFile(s, null)))) {
-                                throw new PropertyException("Cache config file '%s' does not exist in the conf directory".formatted(s));
+                                if (Path.of(s).isAbsolute()) {
+                                    throw new PropertyException("Cache config file '%s' does not exist".formatted(s));
+                                } else {
+                                    throw new PropertyException("Cache config file '%s' does not exist in the conf directory".formatted(s));
+                                }
                             }
                         })
                         .paramLabel("file")
@@ -65,7 +76,7 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
                         .to("kc.spi-cache-embedded--default--config-mutate")
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED)
-                        .to("kc.spi-jgroups-mtls--default--enabled")
+                        .to("kc.spi-jgroups-mtls--default--activated")
                         .isEnabled(CachingPropertyMappers::getDefaultMtlsEnabled, "a TCP based cache-stack is used")
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE.withRuntimeSpecificDefault(getConfPathValue("cache-mtls-keystore.p12")))
@@ -99,6 +110,18 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
                         .to("kc.spi-jgroups-mtls--default--rotation")
                         .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
                         .validator(CachingPropertyMappers::validateCertificateRotationIsPositive)
+                        .build(),
+                fromOption(CachingOptions.CACHE_EMBEDDED_NODE_NAME)
+                        .paramLabel("name")
+                        .to("kc.spi-cache-embedded--default--node-name")
+                        .isEnabled(CachingPropertyMappers::cacheSetToInfinispan, "Infinispan clustered embedded is enabled")
+                        .build(),
+                fromOption(CachingOptions.CACHE_EMBEDDED_CLUSTER_NAME)
+                        .paramLabel("name")
+                        .to("kc.spi-cache-embedded--default--cluster-name")
+                        .isEnabled(CachingPropertyMappers::cacheSetToInfinispan, "Infinispan clustered embedded is enabled")
+                        .isRequired(() -> isStatelessEnabled() && cacheSetToInfinispan(), STATELESS_FEATURE_SET + " and embedded Infinispan is enabled")
+                        .validator(CachingPropertyMappers::validateClusterName)
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS)
                         .paramLabel("address")
@@ -203,7 +226,12 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
     }
 
     private static String resolveConfigFile(String value, ConfigSourceInterceptorContext context) {
-        return Environment.getHomeDir().map(f -> Paths.get(f, "conf", value).toString()).orElse(null);
+        Path p = Path.of(value);
+        if (p.isAbsolute()) {
+            return p.toString();
+        } else {
+            return Environment.getHomeDir().map(f -> Paths.get(f, "conf", value).toString()).orElse(null);
+        }
     }
 
     private static String getConfPathValue(String file) {
@@ -241,6 +269,18 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
             return;
         }
         throw new PropertyException("The option '%s' requires '%s' to be enabled.".formatted(option.getKey(), requiredOption.getKey()));
+    }
+
+    private static boolean isStatelessEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.STATELESS);
+    }
+
+    private static void validateClusterName(String value) {
+        if (isStatelessEnabled() && "ISPN".equals(value)) {
+            throw new PropertyException("Option '%s' must be set to a value other than the default 'ISPN' when the stateless feature is enabled. "
+                    + "Each deployment sharing the same database must use a distinct cluster name."
+                    .formatted(CachingOptions.CACHE_EMBEDDED_CLUSTER_NAME_PROPERTY));
+        }
     }
 
     private static void validateCertificateRotationIsPositive(String value) {

@@ -26,11 +26,11 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.CacheDecorators;
+import org.keycloak.models.sessions.infinispan.SessionAffinityService;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
 import org.infinispan.Cache;
-import org.infinispan.affinity.KeyAffinityServiceFactory;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.infinispan.commons.util.concurrent.CompletableFutures;
 import org.infinispan.commons.util.concurrent.CompletionStages;
@@ -41,9 +41,6 @@ import org.jboss.logging.Logger;
  * Utility methods for embedded and change-log based transaction
  */
 public class InfinispanChangesUtils {
-
-    // by default, keep 128 keys ready to use
-    private static final int DEFAULT_KEY_BUFFER = 128;
 
     private InfinispanChangesUtils() {
     }
@@ -63,16 +60,7 @@ public class InfinispanChangesUtils {
         var connections = session.getProvider(InfinispanConnectionProvider.class);
         var cache = connections.<K, SessionEntityWrapper<V>>getCache(cacheName);
         var sequencer = new ActionSequencer(connections.getExecutor(cacheName + "Replace"), false, null);
-        if (!cache.getCacheConfiguration().clustering().cacheMode().isClustered() || keyGenerator == null) {
-            return new CacheHolder<>(cache, sequencer, lifespanFunction, maxIdleFunction, keyGenerator);
-        }
-        var local = cache.getAdvancedCache().getRpcManager().getAddress();
-        var affinity = KeyAffinityServiceFactory.newLocalKeyAffinityService(
-                cache,
-                keyGenerator::get,
-                connections.getExecutor(cacheName + "KeyGenerator"),
-                DEFAULT_KEY_BUFFER);
-        return new CacheHolder<>(cache, sequencer, lifespanFunction, maxIdleFunction, () -> affinity.getKeyForAddress(local));
+        return new CacheHolder<>(cache, sequencer, lifespanFunction, maxIdleFunction, SessionAffinityService.create(cache, keyGenerator));
     }
 
     public static <K, V extends SessionEntity> CacheHolder<K, V> createWithoutCache(SessionFunction<V> lifespanFunction,

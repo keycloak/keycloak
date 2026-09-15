@@ -1,0 +1,1637 @@
+package org.keycloak.tests.ssf.transmitter;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.common.Profile;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.ssf.Ssf;
+import org.keycloak.ssf.event.caep.CaepCredentialChange;
+import org.keycloak.ssf.event.caep.CaepSessionRevoked;
+import org.keycloak.ssf.transmitter.DefaultSsfTransmitterProviderFactory;
+import org.keycloak.ssf.transmitter.SsfScopes;
+import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
+import org.keycloak.ssf.transmitter.stream.StreamConfig;
+import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
+import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectHttpServer;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectSimpleHttp;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.util.HttpServerUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Integration tests for the synthetic SSF event emitter admin endpoint
+ * ({@code POST /admin/realms/{realm}/ssf/clients/{clientIdentifier}/events/emit}).
+ *
+ * <p>This endpoint lets a trusted IAM management client forward upstream
+ * events (e.g. LDAP credential changes that Keycloak didn't observe) to
+ * an SSF receiver. Auth is a custom pipeline layered on admin auth:
+ * <ol>
+ *     <li>Receiver must have {@code ssf.allowEmitEvents=true}.</li>
+ *     <li>Receiver must have a non-empty {@code ssf.emitEventsRole}.</li>
+ *     <li>Calling token must be a service-account token (M2M only).</li>
+ *     <li>Calling client must hold that client role on the receiver.</li>
+ * </ol>
+ *
+ * <p>After the gate, the receiver's normal dispatch filters still apply
+ * (subject subscription + {@code events_requested}). The tests here
+ * cover every branch of that matrix plus a SET shape regression guard.
+ *
+ * <p>Realm layout:
+ * <ul>
+ *     <li>{@link #RECEIVER} — receiver client with the feature opted in and
+ *         the emitter role configured.</li>
+ *     <li>{@link #MGMT_EMITTER} — management client whose service account
+ *         gets granted the emitter role in {@link #setup()}.</li>
+ *     <li>{@link #MGMT_NO_ROLE} — management client whose service account
+ *         does NOT hold the role, used to cover the missing-role branch.</li>
+ *     <li>{@link #TEST_USER} — subject of the synthetic events; pre-
+ *         subscribed to the receiver in {@link #setup()}.</li>
+ * </ul>
+ */
+@KeycloakIntegrationTest(config = SsfTransmitterEventEmitterTests.EmitServerConfig.class)
+public class SsfTransmitterEventEmitterTests {
+
+    static final String RECEIVER = "ssf-receiver-emit";
+    static final String RECEIVER_SECRET = "receiver-emit-secret";
+
+    static final String MGMT_EMITTER = "ssf-mgmt-emitter";
+    static final String MGMT_EMITTER_SECRET = "mgmt-emitter-secret";
+
+    static final String MGMT_NO_ROLE = "ssf-mgmt-no-role";
+    static final String MGMT_NO_ROLE_SECRET = "mgmt-no-role-secret";
+
+    static final String EMITTER_ROLE = "ssf-event-emitter";
+
+    static final String TEST_USER = "emit-tester";
+    static final String TEST_EMAIL = "emit-tester@local.test";
+    static final String TEST_PASSWORD = "test";
+
+    static final String PUSH_CONTEXT_PATH = "/ssf/push-emit";
+    static final String MOCK_PUSH_ENDPOINT = "http://127.0.0.1:8500" + PUSH_CONTEXT_PATH;
+    static final String PUSH_AUTH_HEADER = "Bearer dummy-emit-receiver";
+
+    static final long PUSH_WAIT_SECONDS = 5;
+
+    /** Transmitter-wide §9.3 removal grace — large enough that no
+     * wallclock drift can push the grace test past the window. */
+    static final int REMOVAL_GRACE_SECONDS = 300;
+
+    @InjectRealm(config = EmitRealm.class)
+    ManagedRealm realm;
+
+    @InjectOAuthClient
+    OAuthClient oauthClient;
+
+    @InjectSimpleHttp
+    SimpleHttp http;
+
+    @InjectAdminClient
+    Keycloak adminClient;
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
+
+    @InjectHttpServer
+    HttpServer mockReceiverServer;
+
+    private final BlockingQueue<String> pushes = new LinkedBlockingQueue<>();
+
+    @BeforeEach
+    public void setup() throws IOException {
+        pushes.clear();
+        mockReceiverServer.createContext(PUSH_CONTEXT_PATH, new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                try (InputStream is = exchange.getRequestBody()) {
+                    pushes.add(new String(is.readAllBytes(), StandardCharsets.UTF_8));
+                }
+                HttpServerUtil.sendResponse(exchange, 202, Map.of());
+            }
+        });
+
+        // Ensure a stable starting state for the attributes the auth
+        // pipeline reads. Tests that exercise the 403 branches override
+        // these temporarily and reset them back in finally blocks.
+        // Role value is stored in the same format the admin UI role
+        // picker produces ("clientId.roleName" for client roles), so
+        // SsfAuthUtil.hasRole looks it up under resource_access[receiver].
+        setReceiverAttributes(true, RECEIVER + "." + EMITTER_ROLE);
+
+        // SSF scopes + stream so the receiver can actually receive
+        // synthetic events. The receiver needs a registered stream for
+        // the dispatch path to find a delivery endpoint.
+        assignOptionalClientScopes(RECEIVER, SsfScopes.SCOPE_SSF_READ, SsfScopes.SCOPE_SSF_MANAGE);
+        createPushStream();
+
+        // Define the emitter client role on the receiver and grant it
+        // to MGMT_EMITTER's service account. This is the one-time wiring
+        // a customer would do manually in the admin console.
+        ensureReceiverRole(EMITTER_ROLE);
+        grantRoleToServiceAccount(MGMT_EMITTER, RECEIVER, EMITTER_ROLE);
+
+        // Pre-subscribe TEST_USER so the subject filter doesn't drop
+        // the happy-path event. Tests that cover the unsubscribed
+        // branch use a different subject lookup.
+        subscribeTestUser();
+    }
+
+    @AfterEach
+    public void cleanup() {
+        bestEffortDeleteStream();
+        bestEffortRemoveNotify();
+        bestEffortDeleteTestOrganizations();
+        try {
+            mockReceiverServer.removeContext(PUSH_CONTEXT_PATH);
+        } catch (IllegalArgumentException ignored) {
+        }
+    }
+
+    // ---- happy path ----
+
+    @Test
+    public void emit_happyPath_dispatchesAndPushes() throws Exception {
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+
+        try (SimpleHttpResponse res = emit(mgmtToken, "CaepCredentialChange", TEST_EMAIL,
+                Map.of("credential_type", "password", "change_type", "update"))) {
+            Assertions.assertEquals(200, res.getStatus(),
+                    "emit should succeed for a properly authorized management client");
+            JsonNode body = res.asJson();
+            Assertions.assertEquals("dispatched", body.get("status").asText(),
+                    "status should be 'dispatched' when all filters pass");
+            Assertions.assertNotNull(body.get("jti"), "response should include the SET jti for correlation");
+            Assertions.assertFalse(body.get("jti").asText().isBlank(), "jti should be non-blank");
+        }
+
+        String push = pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS);
+        Assertions.assertNotNull(push, "dispatched event should reach the mock receiver");
+
+        // Regression guard on SET shape: the synthetic event must come
+        // through as a fully-formed SSF 1.0 SET with iss/aud/events and
+        // the user sub_id that the receiver's configured user subject
+        // format dictates.
+        JsonNode set = decodeSet(push);
+        Assertions.assertEquals(realm.getBaseUrl(), set.get("iss").asText(),
+                "synthetic SET should carry the realm issuer");
+        JsonNode events = set.path("events");
+        Assertions.assertTrue(events.has(CaepCredentialChange.TYPE),
+                "synthetic SET should carry the caller-provided event type");
+        Assertions.assertEquals("password",
+                events.path(CaepCredentialChange.TYPE).path("credential_type").asText(),
+                "event payload fields should survive the round-trip");
+        Assertions.assertTrue(set.path("sub_id").isObject(),
+                "SSF 1.0 synthetic SET should carry a top-level sub_id for the resolved user");
+    }
+
+    // ---- auth matrix ----
+
+    @Test
+    public void emit_receiverOptedOut_returns403() throws Exception {
+        setReceiverAttributes(false, RECEIVER + "." + EMITTER_ROLE);
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+
+        try (SimpleHttpResponse res = emit(mgmtToken, "CaepCredentialChange", TEST_EMAIL,
+                Map.of("credential_type", "password"))) {
+            Assertions.assertEquals(403, res.getStatus(),
+                    "emit must be refused when receiver did not opt in");
+            Assertions.assertEquals("emit_not_allowed", res.asJson().get("error").asText());
+        }
+        Assertions.assertNull(pushes.poll(1, TimeUnit.SECONDS),
+                "refused call must not result in any push");
+    }
+
+    @Test
+    public void emit_roleNotConfigured_returns403() throws Exception {
+        setReceiverAttributes(true, "");
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+
+        try (SimpleHttpResponse res = emit(mgmtToken, "CaepCredentialChange", TEST_EMAIL,
+                Map.of("credential_type", "password"))) {
+            Assertions.assertEquals(403, res.getStatus(),
+                    "empty emit-events role must block dispatch — refuse rather than accept anonymously");
+            Assertions.assertEquals("emit_role_not_configured", res.asJson().get("error").asText());
+        }
+    }
+
+    @Test
+    public void emit_notServiceAccount_returns403() throws Exception {
+        // Note: the @InjectAdminClient token is itself a service-account
+        // token (the temp-admin client uses client_credentials), so it
+        // would slip past step 3. Use a real user-delegated token
+        // instead via password grant for TEST_USER, which the auth
+        // pipeline must refuse regardless of any roles the user holds.
+        AccessTokenResponse userTokenResponse =
+                oauthClient.passwordGrantRequest(TEST_USER, TEST_PASSWORD).send();
+        Assertions.assertNotNull(userTokenResponse.getAccessToken(),
+                "password grant for TEST_USER should succeed");
+        String userToken = userTokenResponse.getAccessToken();
+
+        try (SimpleHttpResponse res = emit(userToken, "CaepCredentialChange", TEST_EMAIL,
+                Map.of("credential_type", "password"))) {
+            Assertions.assertEquals(403, res.getStatus(),
+                    "user-delegated tokens must not be accepted as emitters");
+            Assertions.assertEquals("not_service_account", res.asJson().get("error").asText());
+        }
+    }
+
+    @Test
+    public void emit_missingRole_returns403() throws Exception {
+        String mgmtToken = obtainServiceAccountToken(MGMT_NO_ROLE, MGMT_NO_ROLE_SECRET);
+
+        try (SimpleHttpResponse res = emit(mgmtToken, "CaepCredentialChange", TEST_EMAIL,
+                Map.of("credential_type", "password"))) {
+            Assertions.assertEquals(403, res.getStatus(),
+                    "caller without the emitter role must be refused");
+            Assertions.assertEquals("emit_role_missing", res.asJson().get("error").asText());
+        }
+    }
+
+    @Test
+    public void emit_noBearerToken_returns401() throws Exception {
+        String url = emitEndpointUrl();
+        try (SimpleHttpResponse res = http.doPost(url)
+                .json(Map.of("eventType", "CaepCredentialChange",
+                        "sub_id", Map.of("format", "email", "email", TEST_EMAIL),
+                        "event", Map.of("credential_type", "password")))
+                .asResponse()) {
+            Assertions.assertEquals(401, res.getStatus(),
+                    "unauthenticated call must be rejected by the admin auth layer");
+        }
+    }
+
+    // ---- request validation ----
+
+    @Test
+    public void emit_missingEventType_returns400() throws Exception {
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "sub_id", Map.of("format", "email", "email", TEST_EMAIL),
+                        "event", Map.of("credential_type", "password")))
+                .asResponse()) {
+            Assertions.assertEquals(400, res.getStatus(),
+                    "eventType is required at the top level");
+            Assertions.assertEquals("invalid_request", res.asJson().get("error").asText());
+        }
+    }
+
+    @Test
+    public void emit_missingSubjectId_returns400() throws Exception {
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "event", Map.of("credential_type", "password")))
+                .asResponse()) {
+            Assertions.assertEquals(400, res.getStatus(),
+                    "sub_id is required");
+            Assertions.assertEquals("invalid_request", res.asJson().get("error").asText());
+        }
+    }
+
+    // ---- stream state ----
+
+    @Test
+    public void emit_streamWithoutDeliveryConfig_returns400NoDeliveryConfig() throws Exception {
+        // Simulate an incomplete stream — e.g. stream state seeded
+        // externally, or a KEYCLOAK-managed stream whose push/poll
+        // delivery was never configured — by stripping the delivery
+        // attributes the store reconstructs StreamDeliveryConfig from.
+        // The stream itself stays registered. Without the guard the
+        // dispatcher would skip delivery before the outbox enqueue and
+        // the emitter would still see "dispatched" plus a jti that
+        // resolves to nothing.
+        removeReceiverDeliveryAttributes();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = emit(mgmtToken, "CaepCredentialChange", TEST_EMAIL,
+                Map.of("credential_type", "password", "change_type", "update"))) {
+            Assertions.assertEquals(400, res.getStatus(),
+                    "emit against a delivery-less stream must not report success");
+            Assertions.assertEquals("no_delivery_config", res.asJson().get("error").asText(),
+                    "error code should name the missing delivery configuration");
+        }
+    }
+
+    // ---- dispatch filter branches ----
+
+    @Test
+    public void emit_unsubscribedSubject_returnsDroppedUnsubscribed() throws Exception {
+        // Remove the notify attribute so the subject is no longer
+        // subscribed — default_subjects=NONE means the subject filter
+        // will drop.
+        removeNotifySubscription();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = emit(mgmtToken, "CaepCredentialChange", TEST_EMAIL,
+                Map.of("credential_type", "password"))) {
+            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals("dropped_unsubscribed",
+                    res.asJson().get("status").asText(),
+                    "unsubscribed subject should be filtered, not dispatched");
+        }
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "dropped_unsubscribed must not result in a push");
+    }
+
+    @Test
+    public void emit_eventTypeNotRequested_returnsDroppedFiltered() throws Exception {
+        // The stream created in setup() only requests
+        // CaepCredentialChange. Emitting a CaepSessionRevoked should be
+        // dropped by the events_requested filter.
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = emit(mgmtToken, "CaepSessionRevoked", TEST_EMAIL,
+                Map.of())) {
+            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals("dropped_filtered",
+                    res.asJson().get("status").asText(),
+                    "event type outside events_requested should be filtered");
+        }
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "dropped_filtered must not result in a push");
+    }
+
+    @Test
+    public void emit_unknownEventType_returnsUnknownEventType() throws Exception {
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = emit(mgmtToken, "NotARegisteredEvent", TEST_EMAIL,
+                Map.of())) {
+            Assertions.assertEquals(400, res.getStatus());
+            Assertions.assertEquals("unknown_event_type",
+                    res.asJson().get("error").asText(),
+                    "unknown alias / URI should be reported distinctly");
+        }
+    }
+
+    @Test
+    public void emit_complexSubjectId_dispatchesAndForwardsVerbatim() throws Exception {
+        // The whole point of moving to RFC 9493 SubjectId on the wire is
+        // expressing things admin shorthand can't — e.g. a session-revoked
+        // event that names both the user and the revoked session. Build
+        // the receiver to accept session-revoked, then push a complex
+        // sub_id and assert the receiver sees the same nested shape.
+        setStreamEventsRequested(Set.of(CaepSessionRevoked.TYPE));
+
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepSessionRevoked",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                                "session", Map.of("format", "opaque", "id", "fake-session-id-123")),
+                        "event", Map.of("event_timestamp", System.currentTimeMillis() / 1000)))
+                .asResponse()) {
+            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals("dispatched", res.asJson().get("status").asText(),
+                    "complex sub_id should resolve via the user subject member and dispatch");
+        }
+
+        String push = pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS);
+        Assertions.assertNotNull(push, "complex-subject event should reach the mock receiver");
+        JsonNode set = decodeSet(push);
+        JsonNode subId = set.path("sub_id");
+        Assertions.assertEquals("complex", subId.path("format").asText(),
+                "transmitter must forward the emitter's complex sub_id verbatim");
+        Assertions.assertEquals("iss_sub", subId.path("user").path("format").asText());
+        Assertions.assertEquals(userUuid, subId.path("user").path("sub").asText());
+        Assertions.assertEquals("fake-session-id-123", subId.path("session").path("id").asText(),
+                "session subject member must round-trip through the dispatch + sign + push pipeline");
+    }
+
+    @Test
+    public void emit_orgSubjectViaTenant_dispatches() throws Exception {
+        // Org-only emission: the sub_id is a complex subject whose only
+        // subject member is the tenant (opaque = internal org id). The
+        // user subject member is omitted, so resolution lands on the
+        // org and the receiver's per-org notify attribute drives the
+        // subscription gate.
+        String orgAlias = createOrgWithNotify();
+        String orgId = findOrganizationIdByAlias(orgAlias);
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "tenant", Map.of("format", "opaque", "id", orgId)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals("dispatched", res.asJson().get("status").asText(),
+                    "tenant-only sub_id should dispatch when the org is subscribed to the receiver");
+        }
+
+        String push = pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS);
+        Assertions.assertNotNull(push, "org-subject event should reach the mock receiver");
+        JsonNode set = decodeSet(push);
+        Assertions.assertEquals("complex", set.path("sub_id").path("format").asText());
+        Assertions.assertEquals(orgId, set.path("sub_id").path("tenant").path("id").asText(),
+                "tenant subject member must be forwarded verbatim");
+    }
+
+    @Test
+    public void emit_opaqueTenantAlias_returnsSubjectNotFound() throws Exception {
+        // Opaque tenant values resolve strictly by internal org id —
+        // never by alias, which is addressed via the explicit
+        // urn:keycloak:org:alias: URN form instead. An alias fallback
+        // here would reintroduce alias/id shadowing (an alias equal to
+        // another organization's UUID routing the subject to the wrong
+        // org, or vice versa). The valid user member pins the failure
+        // to the tenant via params.subjectMember.
+        String orgAlias = createOrgWithNotify();
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        addUserToOrganization(orgAlias, userUuid);
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                                "tenant", Map.of("format", "opaque", "id", orgAlias)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(400, res.getStatus(),
+                    "opaque tenant carrying an alias must not resolve via alias fallback");
+            JsonNode body = res.asJson();
+            Assertions.assertEquals("subject_not_found", body.get("error").asText());
+            Assertions.assertEquals("tenant", body.path("params").path("subjectMember").asText());
+        }
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "alias-as-opaque tenant subject must not reach the receiver");
+    }
+
+    @Test
+    public void emit_orgSubjectNotSubscribed_returnsDroppedUnsubscribed() throws Exception {
+        // Org exists but has no ssf.notify attribute set for the receiver;
+        // default_subjects=NONE on the receiver means the dispatch is
+        // refused.
+        String orgAlias = createOrgWithoutNotify();
+        String orgId = findOrganizationIdByAlias(orgAlias);
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "tenant", Map.of("format", "opaque", "id", orgId)),
+                        "event", Map.of("credential_type", "password")))
+                .asResponse()) {
+            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals("dropped_unsubscribed",
+                    res.asJson().get("status").asText(),
+                    "unsubscribed org should be filtered like an unsubscribed user");
+        }
+    }
+
+    @Test
+    public void emit_complexUserTenantMismatch_returnsSubjectMismatch() throws Exception {
+        // Regression guard for keycloak/keycloak#50812: an unsubscribed
+        // user combined with a subscribed-but-unrelated tenant org must
+        // not dispatch. Before the fix, the tenant subject member alone counted
+        // as an allow signal, so the org's subscription carried the
+        // user subject past the per-user filter and the receiver got a
+        // SET asserting a user↔tenant association that doesn't exist.
+        // Setup and payload mirror the issue's proof test
+        // (emit_complexUserTenantMismatchDispatchesViaSubscribedTenant)
+        // with the assertions inverted to pin the fixed behaviour.
+        removeNotifySubscription();
+        String orgAlias = createOrgWithNotify();
+        String orgId = findOrganizationIdByAlias(orgAlias);
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                                "tenant", Map.of("format", "opaque", "id", orgId)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(400, res.getStatus(),
+                    "user+tenant subject whose user is not a member of the tenant must be rejected");
+            JsonNode mismatchBody = res.asJson();
+            Assertions.assertEquals("subject_mismatch", mismatchBody.get("error").asText(),
+                    "error code should name the user/tenant membership mismatch");
+            // Disclosure guard: emit is callable by service accounts
+            // holding only the configured emit role, so the response
+            // must not echo resolved entity data (username, org alias)
+            // for the otherwise-opaque ids the caller submitted.
+            String rawBody = mismatchBody.toString();
+            Assertions.assertFalse(rawBody.contains(TEST_USER),
+                    "mismatch response must not disclose the resolved username");
+            Assertions.assertFalse(rawBody.contains(orgAlias),
+                    "mismatch response must not disclose the resolved organization alias");
+        }
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "mismatched user+tenant subject must not reach the receiver");
+    }
+
+    @Test
+    public void emit_complexUserTenantMember_dispatchesViaOrgSubscription() throws Exception {
+        // Legitimate counterpart of the mismatch case: the user is not
+        // individually subscribed but IS a member of the subscribed
+        // tenant org, so the org subscription covers the user — the
+        // same "any of the user's organizations is notified" semantics
+        // the native dispatcher applies. Asserting removal — if the
+        // user stayed individually subscribed, isUserNotified would
+        // short-circuit the gate and this test would pass without
+        // exercising the org membership path at all.
+        removeNotifySubscription();
+        String orgAlias = createOrgWithNotify();
+        String orgId = findOrganizationIdByAlias(orgAlias);
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        addUserToOrganization(orgAlias, userUuid);
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                                "tenant", Map.of("format", "opaque", "id", orgId)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals("dispatched", res.asJson().get("status").asText(),
+                    "org membership + org subscription should dispatch for the member user");
+        }
+
+        String push = pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS);
+        Assertions.assertNotNull(push, "member user+tenant event should reach the mock receiver");
+        JsonNode set = decodeSet(push);
+        Assertions.assertEquals(userUuid, set.path("sub_id").path("user").path("sub").asText());
+        Assertions.assertEquals(orgId, set.path("sub_id").path("tenant").path("id").asText(),
+                "both subject members must be forwarded verbatim");
+    }
+
+    @Test
+    public void emit_complexUnresolvableUserWithSubscribedTenant_returnsSubjectNotFound() throws Exception {
+        // Sibling of the mismatch case: a user subject member that resolves to
+        // nothing must not silently degrade the subject to tenant-only —
+        // the sub_id is forwarded verbatim, so the receiver would see a
+        // user subject member Keycloak never validated, gated only by the org's
+        // subscription.
+        String orgAlias = createOrgWithNotify();
+        String orgId = findOrganizationIdByAlias(orgAlias);
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer,
+                                        "sub", "00000000-0000-0000-0000-000000000000"),
+                                "tenant", Map.of("format", "opaque", "id", orgId)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(400, res.getStatus(),
+                    "unresolvable user subject member must fail the whole subject, not fall back to tenant-only");
+            JsonNode body = res.asJson();
+            Assertions.assertEquals("subject_not_found", body.get("error").asText());
+            // Both subject member failures share the subject_not_found wire code —
+            // params.subjectMember is the machine-readable discriminator.
+            Assertions.assertEquals("user", body.path("params").path("subjectMember").asText(),
+                    "params.subjectMember should identify the user subject member as the one that failed to resolve");
+        }
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "subject with an unresolvable user subject member must not reach the receiver");
+    }
+
+    @Test
+    public void emit_complexSubscribedUserUnknownTenant_returnsSubjectNotFound() throws Exception {
+        // Inverse of the unresolvable-user case: a tenant subject member that
+        // resolves to no organization must fail the whole subject even
+        // when the user subject member is valid and subscribed — the sub_id is
+        // forwarded verbatim, so the receiver would otherwise see a
+        // tenant subject member Keycloak never validated. TEST_USER is
+        // pre-subscribed in setup(), so only the tenant is at fault.
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                                "tenant", Map.of("format", "opaque", "id", "no-such-org-" + System.nanoTime())),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(400, res.getStatus(),
+                    "unresolvable tenant subject member must fail the whole subject, not fall back to user-only");
+            JsonNode body = res.asJson();
+            Assertions.assertEquals("subject_not_found", body.get("error").asText());
+            // Both subject member failures share the subject_not_found wire code —
+            // params.subjectMember is the machine-readable discriminator.
+            Assertions.assertEquals("tenant", body.path("params").path("subjectMember").asText(),
+                    "params.subjectMember should identify the tenant subject member as the one that failed to resolve");
+        }
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "subject with an unresolvable tenant subject member must not reach the receiver");
+    }
+
+    @Test
+    public void emit_complexIgnoredMemberOfNotifiedOrg_returnsDroppedUnsubscribed() throws Exception {
+        // Per-user explicit settings must win over org-membership
+        // inheritance, exactly as the native filter and the
+        // subjects/check endpoint codify: a user ignored via
+        // ssf.notify.<clientId>=false who IS a member of a notified org
+        // must not be dispatched through the org's subscription.
+        String orgAlias = createOrgWithNotify();
+        String orgId = findOrganizationIdByAlias(orgAlias);
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        addUserToOrganization(orgAlias, userUuid);
+        ignoreTestUser();
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                                "tenant", Map.of("format", "opaque", "id", orgId)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals("dropped_unsubscribed", res.asJson().get("status").asText(),
+                    "per-user ignore must win over the member org's subscription");
+        }
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "ignored member's event must not reach the receiver despite the notified org");
+    }
+
+    @Test
+    public void emit_allModeExcludedViaOtherOrg_returnsDroppedUnsubscribed() throws Exception {
+        // In default_subjects=ALL the native filter drops a user when
+        // ANY of their organizations is excluded (getByMember scan). If
+        // the emitter honoured only the tenant the caller named, naming
+        // a different, non-excluded membership would sidestep an
+        // exclusion on another one.
+        setReceiverDefaultSubjects("ALL");
+        try {
+            removeNotifySubscription();
+            String plainOrgAlias = createOrgWithoutNotify();
+            String plainOrgId = findOrganizationIdByAlias(plainOrgAlias);
+            String excludedOrgAlias = createOrgWithExcludeNotify();
+            String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+            addUserToOrganization(plainOrgAlias, userUuid);
+            String issuer = realm.getBaseUrl();
+            String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+
+            Map<String, Object> body = Map.of(
+                    "eventType", "CaepCredentialChange",
+                    "sub_id", Map.of(
+                            "format", "complex",
+                            "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                            "tenant", Map.of("format", "opaque", "id", plainOrgId)),
+                    "event", Map.of("credential_type", "password", "change_type", "update"));
+
+            // Control: with no exclusion anywhere, ALL mode delivers —
+            // proves the mode switch took effect and the drop below is
+            // really caused by the other-org exclusion.
+            try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                    .auth(mgmtToken).json(body).asResponse()) {
+                Assertions.assertEquals(200, res.getStatus());
+                Assertions.assertEquals("dispatched", res.asJson().get("status").asText(),
+                        "ALL mode should deliver a user with no exclusions");
+            }
+            Assertions.assertNotNull(pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
+                    "control emit should reach the mock receiver");
+
+            // Now the user also joins the excluded org — the same
+            // request naming the non-excluded tenant must drop.
+            addUserToOrganization(excludedOrgAlias, userUuid);
+            try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                    .auth(mgmtToken).json(body).asResponse()) {
+                Assertions.assertEquals(200, res.getStatus());
+                Assertions.assertEquals("dropped_unsubscribed", res.asJson().get("status").asText(),
+                        "an exclusion on any membership must drop, regardless of which tenant the caller names");
+            }
+            Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                    "excluded-via-other-org user's event must not reach the receiver");
+        } finally {
+            setReceiverDefaultSubjects("NONE");
+        }
+    }
+
+    @Test
+    public void emit_issSubTenantFormat_resolvesAndDispatches() throws Exception {
+        // Tenant subject members follow the shared SubjectResolver contract, so
+        // formats beyond opaque (iss_sub, email/domain, uri) must
+        // resolve too — the mandatory subject-member-resolution gate would
+        // otherwise reject requests the subject-management endpoints
+        // consider valid. iss_sub carries the org UUID in `sub`.
+        String orgAlias = createOrgWithNotify();
+        String orgId = findOrganizationIdByAlias(orgAlias);
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        addUserToOrganization(orgAlias, userUuid);
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                                "tenant", Map.of("format", "iss_sub", "iss", issuer, "sub", orgId)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals("dispatched", res.asJson().get("status").asText(),
+                    "iss_sub tenant subject member naming an existing org must resolve, not subject_not_found");
+        }
+        Assertions.assertNotNull(pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
+                "iss_sub-tenant event should reach the mock receiver");
+    }
+
+    @Test
+    public void emit_issSubTenantForeignIssuer_returnsSubjectNotFound() throws Exception {
+        // Adversarial counterpart of the iss_sub happy path: the sub_id
+        // travels verbatim in the SET, so an iss_sub tenant whose iss
+        // is not this realm's issuer must not resolve even when its
+        // sub names an existing local org, because otherwise an emitter could
+        // have Keycloak sign a tenant assertion tying a local
+        // organization to a foreign issuer the server never validated.
+        // Unlike user iss_sub lookups there is no IdP fallback for
+        // organizations, so only the realm's own issuer is accepted.
+        String orgAlias = createOrgWithNotify();
+        String orgId = findOrganizationIdByAlias(orgAlias);
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        addUserToOrganization(orgAlias, userUuid);
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                                "tenant", Map.of("format", "iss_sub",
+                                        "iss", "https://foreign.example/realms/other", "sub", orgId)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(400, res.getStatus(),
+                    "iss_sub tenant with a foreign issuer must be rejected even when sub names a local org");
+            JsonNode body = res.asJson();
+            Assertions.assertEquals("subject_not_found", body.get("error").asText());
+            Assertions.assertEquals("tenant", body.path("params").path("subjectMember").asText(),
+                    "params.subjectMember should identify the tenant subject member as the one that failed to resolve");
+        }
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "foreign-issuer tenant subject must not reach the receiver");
+    }
+
+    @Test
+    public void emit_uriTenantAliasUrn_resolvesAndDispatches() throws Exception {
+        // The uri tenant format accepts only the explicit Keycloak URN
+        // forms; urn:keycloak:org:alias:<alias> resolves strictly by
+        // organization alias — the URN itself names the lookup, so no
+        // alias/id heuristic is involved.
+        String orgAlias = createOrgWithNotify();
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        addUserToOrganization(orgAlias, userUuid);
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                                "tenant", Map.of("format", "uri",
+                                        "uri", "urn:keycloak:org:alias:" + orgAlias)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals("dispatched", res.asJson().get("status").asText(),
+                    "alias URN naming an existing org must resolve and dispatch");
+        }
+        Assertions.assertNotNull(pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
+                "alias-URN tenant event should reach the mock receiver");
+    }
+
+    @Test
+    public void emit_uriTenantIdUrn_resolvesAndDispatches() throws Exception {
+        // Sibling of the alias-URN test: urn:keycloak:org:id:<id>
+        // resolves strictly by the internal organization id — the
+        // stable identifier that survives alias renames.
+        String orgAlias = createOrgWithNotify();
+        String orgId = findOrganizationIdByAlias(orgAlias);
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        addUserToOrganization(orgAlias, userUuid);
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                                "tenant", Map.of("format", "uri",
+                                        "uri", "urn:keycloak:org:id:" + orgId)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals("dispatched", res.asJson().get("status").asText(),
+                    "id URN naming an existing org must resolve and dispatch");
+        }
+        Assertions.assertNotNull(pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
+                "id-URN tenant event should reach the mock receiver");
+    }
+
+    @Test
+    public void emit_uriTenantIdUrnWithAlias_returnsSubjectNotFound() throws Exception {
+        // Strictness guard: the explicit URN segments must not fall
+        // back to the other identifier kind — an id URN carrying an
+        // alias value stays unresolved. Cross-fallback would reintroduce
+        // exactly the alias/id ambiguity the explicit grammar removes.
+        String orgAlias = createOrgWithNotify();
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        addUserToOrganization(orgAlias, userUuid);
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                                "tenant", Map.of("format", "uri",
+                                        "uri", "urn:keycloak:org:id:" + orgAlias)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(400, res.getStatus(),
+                    "id URN carrying an alias must not resolve via alias fallback");
+            JsonNode body = res.asJson();
+            Assertions.assertEquals("subject_not_found", body.get("error").asText());
+            Assertions.assertEquals("tenant", body.path("params").path("subjectMember").asText());
+        }
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "unresolved id-URN tenant subject must not reach the receiver");
+    }
+
+    @Test
+    public void emit_uriTenantBareUrn_returnsSubjectNotFound() throws Exception {
+        // The bare urn:keycloak:org:<value> shorthand from earlier
+        // revisions is gone — the feature is experimental, so the URN
+        // grammar requires an explicit alias:/id: segment instead of a
+        // heuristic lookup.
+        String orgAlias = createOrgWithNotify();
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        addUserToOrganization(orgAlias, userUuid);
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                                "tenant", Map.of("format", "uri",
+                                        "uri", "urn:keycloak:org:" + orgAlias)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(400, res.getStatus(),
+                    "bare urn:keycloak:org URN without alias:/id: segment must be rejected");
+            JsonNode body = res.asJson();
+            Assertions.assertEquals("subject_not_found", body.get("error").asText());
+            Assertions.assertEquals("tenant", body.path("params").path("subjectMember").asText());
+        }
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "bare-URN tenant subject must not reach the receiver");
+    }
+
+    @Test
+    public void emit_uriTenantForeignUri_returnsSubjectNotFound() throws Exception {
+        // Sibling of the foreign-iss_sub case for the uri format: an
+        // earlier resolver revision took any https URI and resolved its
+        // last path segment as an org alias, so a caller could pair
+        // "https://evil.example/orgs/<alias>" with a subscribed local
+        // org and have the SET assert a URI namespace Keycloak never
+        // validated (the sub_id is forwarded verbatim). Only the
+        // urn:keycloak:org:<alias> URN form may resolve.
+        String orgAlias = createOrgWithNotify();
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        addUserToOrganization(orgAlias, userUuid);
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                                "tenant", Map.of("format", "uri",
+                                        "uri", "https://evil.example/orgs/" + orgAlias)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(400, res.getStatus(),
+                    "non-URN tenant URI must be rejected even when its last path segment names a local org");
+            JsonNode body = res.asJson();
+            Assertions.assertEquals("subject_not_found", body.get("error").asText());
+            Assertions.assertEquals("tenant", body.path("params").path("subjectMember").asText(),
+                    "params.subjectMember should identify the tenant subject member as the one that failed to resolve");
+        }
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "foreign-URI tenant subject must not reach the receiver");
+    }
+
+    @Test
+    public void emit_userInRemovalGraceWindow_dispatches() throws Exception {
+        // The emit path delegates its user gate to the dispatcher's
+        // config-aware SubjectSubscriptionFilter, so the SSF §9.3
+        // removal-grace window must apply to synthetic events too: a
+        // receiver-driven remove leaves a tombstone, and events for the
+        // subject must keep flowing until the configured grace expires —
+        // exactly as native events do. A receiver that could silence
+        // synthetic events immediately by self-removing a subject would
+        // reopen the §9.3 malicious-removal hole for this path.
+        String receiverToken = obtainReceiverManageToken();
+        String streamId = readReceiverStreamId(receiverToken);
+
+        // setup() subscribed TEST_USER via the admin add endpoint. A
+        // receiver-driven remove clears that include marker AND stamps
+        // the grace tombstone (admin removes deliberately don't).
+        receiverRemoveSubject(receiverToken, streamId, TEST_EMAIL);
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = emit(mgmtToken, "CaepCredentialChange", TEST_EMAIL,
+                Map.of("credential_type", "password", "change_type", "update"))) {
+            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals("dispatched", res.asJson().get("status").asText(),
+                    "synthetic event for a subject inside the §9.3 grace window must still dispatch");
+        }
+        Assertions.assertNotNull(pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
+                "grace-window synthetic event should reach the mock receiver");
+    }
+
+    @Test
+    public void emit_streamLifecycleEvent_returnsEventTypeNotEmittable() throws Exception {
+        // SsfStreamVerificationEvent + SsfStreamUpdatedEvent are
+        // protocol-internal lifecycle signals owned by the transmitter.
+        // Letting an external emitter forge them would let it spoof
+        // transmitter behaviour towards the receiver, so the API must
+        // refuse them up front (regardless of whether the receiver
+        // requested them or the subject would resolve).
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = emit(mgmtToken, "SsfStreamVerificationEvent", TEST_EMAIL,
+                Map.of("state", "test"))) {
+            Assertions.assertEquals(400, res.getStatus());
+            Assertions.assertEquals("event_type_not_emittable",
+                    res.asJson().get("error").asText(),
+                    "stream lifecycle events must be rejected by the synthetic emitter");
+        }
+        Assertions.assertNull(pushes.poll(1, TimeUnit.SECONDS),
+                "rejected stream event must not produce a push");
+    }
+
+    @Test
+    public void emit_subjectNotFound_returnsSubjectNotFound() throws Exception {
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = emit(mgmtToken, "CaepCredentialChange",
+                "nonexistent@nowhere.test",
+                Map.of("credential_type", "password"))) {
+            Assertions.assertEquals(400, res.getStatus());
+            Assertions.assertEquals("subject_not_found",
+                    res.asJson().get("error").asText(),
+                    "unresolvable subject should be reported distinctly");
+        }
+    }
+
+    @Test
+    public void emit_adminShorthandSubjectNotFound_returnsSubjectNotFound() throws Exception {
+        String unknown = "nobody@nowhere.test";
+        String adminToken = adminClient.tokenManager().getAccessTokenString();
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(adminToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "subjectType", "user-email",
+                        "subjectValue", unknown,
+                        "event", Map.of("credential_type", "password")))
+                .asResponse()) {
+            Assertions.assertEquals(400, res.getStatus(),
+                    "admin shorthand with an unknown user should fail validation");
+            JsonNode body = res.asJson();
+            Assertions.assertEquals("subject_not_found", body.get("error").asText(),
+                    "admin-shorthand resolution failure must use the same wire code as the sub_id path");
+            JsonNode params = body.path("params");
+            Assertions.assertTrue(params.isObject(),
+                    () -> "subject_not_found response should carry a structured params object; body=" + body);
+            Assertions.assertEquals("user-email", params.path("subjectType").asText(),
+                    "params.subjectType should echo the rejected request input so the UI can parameterize the message");
+            Assertions.assertEquals(unknown, params.path("subjectValue").asText(),
+                    "params.subjectValue should echo the rejected request input so the UI can parameterize the message");
+        }
+        Assertions.assertNull(pushes.poll(1, TimeUnit.SECONDS),
+                "rejected admin emit must not produce a push");
+    }
+
+    @Test
+    public void emit_persistsOnlyExplicitlyAllowedEventPayloadInAdminEventRepresentation() throws Exception {
+        realm.admin().clearAdminEvents();
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+
+        try (SimpleHttpResponse res = emit(mgmtToken, "CaepCredentialChange", TEST_EMAIL,
+                Map.of(
+                        "credential_type", "MY_CREDENTIAL_TYPE",
+                        "change_type", "update",
+                        "sensitive_subject_email", TEST_EMAIL,
+                        "reason_admin", Map.of("en", TEST_EMAIL),
+                        "reason_user", Map.of("en", TEST_EMAIL)
+                        ))) {
+            Assertions.assertEquals(200, res.getStatus(),
+                    "emit should succeed for a properly authorized management client");
+        }
+
+        AdminEventRepresentation emitAdminEvent = realm.admin().getAdminEvents().stream()
+                .filter(event -> event.getResourcePath() != null)
+                .filter(event -> event.getResourcePath().endsWith("events/emit"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("emit admin event was not stored"));
+
+        JsonNode representation = JsonSerialization.mapper.readTree(emitAdminEvent.getRepresentation());
+
+        Assertions.assertTrue(representation.has("eventData"));
+        JsonNode eventDataNode = representation.path("eventData");
+        Assertions.assertEquals("custom", eventDataNode.get("credential_type").asText());
+        Assertions.assertEquals("update", eventDataNode.get("change_type").asText());
+
+        Assertions.assertFalse(eventDataNode.has("sensitive_subject_email"),
+                "admin event representation should NOT contain unknown caller-supplied event payload attributes");
+        Assertions.assertFalse(eventDataNode.has("reason_admin"));
+        Assertions.assertFalse(eventDataNode.has("reason_user"));
+    }
+
+
+    // --- helpers ---------------------------------------------------------
+
+    protected String emitEndpointUrl() {
+        // Emit endpoint looks the receiver up by OAuth clientId, not
+        // the internal UUID — consistent with how an IAM management
+        // client would configure a well-known target.
+        return keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                + "/ssf/clients/" + RECEIVER + "/events/emit";
+    }
+
+    protected SimpleHttpResponse emit(String token, String eventType,
+                                      String userEmail, Map<String, Object> event) throws IOException {
+        // Wire shape is an RFC 9493 SubjectId — pick the simplest
+        // format that fits the test user (email) so assertions stay
+        // readable. Tests covering other formats build their own
+        // sub_id payload inline.
+        return http.doPost(emitEndpointUrl())
+                .auth(token)
+                .json(Map.of(
+                        "eventType", eventType,
+                        "sub_id", Map.of("format", "email", "email", userEmail),
+                        "event", event))
+                .asResponse();
+    }
+
+    protected String obtainServiceAccountToken(String clientId, String secret) throws IOException {
+        String tokenUrl = realm.getBaseUrl() + "/protocol/openid-connect/token";
+        try (SimpleHttpResponse response = http.doPost(tokenUrl)
+                .authBasic(clientId, secret)
+                .param("grant_type", "client_credentials")
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus(),
+                    () -> "client_credentials grant should succeed for " + clientId);
+            return response.asJson().get("access_token").asText();
+        }
+    }
+
+    protected String obtainReceiverManageToken() throws IOException {
+        String tokenUrl = realm.getBaseUrl() + "/protocol/openid-connect/token";
+        try (SimpleHttpResponse response = http.doPost(tokenUrl)
+                .authBasic(RECEIVER, RECEIVER_SECRET)
+                .param("grant_type", "client_credentials")
+                .param("scope", SsfScopes.SCOPE_SSF_MANAGE + " " + SsfScopes.SCOPE_SSF_READ)
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus());
+            return response.asJson().get("access_token").asText();
+        }
+    }
+
+    /** Reads the receiver's registered stream id via GET /streams —
+     * needed for the receiver-driven subject endpoints, which key off
+     * the stream rather than the client. */
+    protected String readReceiverStreamId(String receiverToken) throws IOException {
+        try (SimpleHttpResponse response = http.doGet(SsfTransmitterUrls.getStreamsEndpointUrl(realm.getBaseUrl()))
+                .auth(receiverToken)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus());
+            JsonNode arr = response.asJson();
+            Assertions.assertTrue(arr.isArray() && arr.size() > 0,
+                    "expected /streams to return a non-empty array for the receiver");
+            return arr.get(0).get("stream_id").asText();
+        }
+    }
+
+    /**
+     * Receiver-driven subject remove (the SSF §7.1.3.3 endpoint the
+     * receiver calls on its own stream). Unlike the admin remove
+     * endpoint the other tests use, this stamps the §9.3 grace
+     * tombstone, so it's the setup for the grace-window emit test.
+     */
+    protected void receiverRemoveSubject(String receiverToken, String streamId, String email) throws IOException {
+        String url = realm.getBaseUrl() + "/ssf/transmitter/subjects/remove";
+        try (SimpleHttpResponse res = http.doPost(url)
+                .auth(receiverToken)
+                .json(Map.of("stream_id", streamId,
+                        "subject", Map.of("format", "email", "email", email)))
+                .asResponse()) {
+            Assertions.assertEquals(204, res.getStatus(),
+                    "receiver-driven subjects/remove should succeed");
+        }
+    }
+
+    protected void createPushStream() throws IOException {
+        StreamDeliveryConfig delivery = new StreamDeliveryConfig();
+        delivery.setMethod(Ssf.DELIVERY_METHOD_PUSH_URI);
+        delivery.setEndpointUrl(MOCK_PUSH_ENDPOINT);
+        delivery.setAuthorizationHeader(PUSH_AUTH_HEADER);
+
+        StreamConfig streamConfig = new StreamConfig();
+        streamConfig.setDelivery(delivery);
+        streamConfig.setEventsRequested(Set.of(CaepCredentialChange.TYPE));
+        streamConfig.setDescription("Synthetic emitter integration test");
+
+        String token = obtainReceiverManageToken();
+        try (SimpleHttpResponse response = http.doPost(SsfTransmitterUrls.getStreamsEndpointUrl(realm.getBaseUrl()))
+                .json(streamConfig)
+                .auth(token)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(201, response.getStatus(),
+                    "stream creation should succeed in test setup");
+        }
+    }
+
+    /**
+     * Re-creates the receiver's SSF stream with a different
+     * {@code events_requested} set. Used by tests that exercise event
+     * types other than the default {@link CaepCredentialChange} the
+     * baseline stream registers in {@link #createPushStream()}.
+     */
+    protected void setStreamEventsRequested(Set<String> eventsRequested) throws IOException {
+        bestEffortDeleteStream();
+
+        StreamDeliveryConfig delivery = new StreamDeliveryConfig();
+        delivery.setMethod(Ssf.DELIVERY_METHOD_PUSH_URI);
+        delivery.setEndpointUrl(MOCK_PUSH_ENDPOINT);
+        delivery.setAuthorizationHeader(PUSH_AUTH_HEADER);
+
+        StreamConfig streamConfig = new StreamConfig();
+        streamConfig.setDelivery(delivery);
+        streamConfig.setEventsRequested(eventsRequested);
+        streamConfig.setDescription("Synthetic emitter integration test (custom events)");
+
+        String token = obtainReceiverManageToken();
+        try (SimpleHttpResponse response = http.doPost(SsfTransmitterUrls.getStreamsEndpointUrl(realm.getBaseUrl()))
+                .json(streamConfig)
+                .auth(token)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(201, response.getStatus(),
+                    "stream re-creation should succeed");
+        }
+    }
+
+    protected void subscribeTestUser() throws IOException {
+        String url = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                + "/ssf/clients/" + RECEIVER + "/subjects/add";
+        try (SimpleHttpResponse ignored = http.doPost(url)
+                .auth(adminClient.tokenManager().getAccessTokenString())
+                .json(Map.of("type", "user-email", "value", TEST_EMAIL))
+                .asResponse()) {
+        }
+    }
+
+    /**
+     * Sets {@code ssf.notify.<receiverClientId>=false} on TEST_USER via
+     * the {@code /subjects/ignore} endpoint — the explicit per-user
+     * exclusion that must override any org-level subscription. The
+     * marker is reset by {@link #subscribeTestUser()} in the next
+     * test's setup.
+     */
+    protected void ignoreTestUser() throws IOException {
+        String url = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                + "/ssf/clients/" + RECEIVER + "/subjects/ignore";
+        try (SimpleHttpResponse ignored = http.doPost(url)
+                .auth(adminClient.tokenManager().getAccessTokenString())
+                .json(Map.of("type", "user-email", "value", TEST_EMAIL))
+                .asResponse()) {
+        }
+    }
+
+    protected void setReceiverAttributes(boolean allowEmit, String role) {
+        ClientResource clientResource = realm.admin().clients().get(findClientByClientId(RECEIVER).getId());
+        ClientRepresentation rep = clientResource.toRepresentation();
+        Map<String, String> attrs = rep.getAttributes();
+        attrs.put(ClientStreamStore.SSF_ALLOW_EMIT_EVENTS_KEY, String.valueOf(allowEmit));
+        attrs.put(ClientStreamStore.SSF_EMIT_EVENTS_ROLE_KEY, role);
+        rep.setAttributes(attrs);
+        clientResource.update(rep);
+    }
+
+    /**
+     * Switches the receiver's {@code default_subjects} mode. The realm
+     * config seeds {@code NONE}; tests that flip to {@code ALL} must
+     * restore {@code NONE} in a finally block since the attribute
+     * persists on the client across tests.
+     */
+    protected void setReceiverDefaultSubjects(String defaultSubjects) {
+        ClientResource clientResource = realm.admin().clients().get(findClientByClientId(RECEIVER).getId());
+        ClientRepresentation rep = clientResource.toRepresentation();
+        Map<String, String> attrs = rep.getAttributes();
+        attrs.put(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, defaultSubjects);
+        rep.setAttributes(attrs);
+        clientResource.update(rep);
+    }
+
+    /**
+     * Strips the stored delivery attributes off the receiver client so
+     * {@code ClientStreamStore} reconstructs the stream with
+     * {@code getDelivery() == null} — the incomplete-stream state the
+     * {@code no_delivery_config} emit guard reports on.
+     */
+    protected void removeReceiverDeliveryAttributes() {
+        ClientResource clientResource = realm.admin().clients().get(findClientByClientId(RECEIVER).getId());
+        ClientRepresentation rep = clientResource.toRepresentation();
+        Map<String, String> attrs = rep.getAttributes();
+        // Client update merges attributes — absent keys are left alone, so
+        // plain remove() would be a no-op. An empty value goes through
+        // setAttribute, which treats null/empty as removal.
+        attrs.put(ClientStreamStore.SSF_STREAM_DELIVERY_METHOD_KEY, "");
+        attrs.put(ClientStreamStore.SSF_STREAM_DELIVERY_ENDPOINT_URL_KEY, "");
+        attrs.put(ClientStreamStore.SSF_STREAM_DELIVERY_AUTHORIZATION_HEADER_KEY, "");
+        rep.setAttributes(attrs);
+        clientResource.update(rep);
+    }
+
+    protected void ensureReceiverRole(String roleName) {
+        ClientResource receiver = realm.admin().clients().get(findClientByClientId(RECEIVER).getId());
+        boolean exists = receiver.roles().list().stream().anyMatch(r -> roleName.equals(r.getName()));
+        if (exists) {
+            return;
+        }
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName(roleName);
+        role.setDescription("Grants the holder permission to push synthetic SSF events for this receiver.");
+        receiver.roles().create(role);
+    }
+
+    protected void grantRoleToServiceAccount(String mgmtClientId, String targetClientId, String roleName) {
+        ClientRepresentation mgmt = findClientByClientId(mgmtClientId);
+        UserRepresentation saUser = realm.admin().clients().get(mgmt.getId()).getServiceAccountUser();
+
+        String targetUuid = findClientByClientId(targetClientId).getId();
+        RoleRepresentation role = realm.admin().clients().get(targetUuid).roles().get(roleName).toRepresentation();
+
+        // The admin API is idempotent for add() — if the mapping already
+        // exists it's a no-op, which is what we want for @BeforeEach.
+        realm.admin().users().get(saUser.getId()).roles().clientLevel(targetUuid).add(List.of(role));
+    }
+
+    protected ClientRepresentation findClientByClientId(String clientId) {
+        List<ClientRepresentation> clients = realm.admin().clients().findByClientId(clientId);
+        Assertions.assertFalse(clients.isEmpty(),
+                () -> "expected client '" + clientId + "' to exist");
+        return clients.get(0);
+    }
+
+    protected void assignOptionalClientScopes(String clientId, String... scopeNames) {
+        ClientRepresentation client = findClientByClientId(clientId);
+        ClientResource clientResource = realm.admin().clients().get(client.getId());
+        Set<String> alreadyAssigned = clientResource.getOptionalClientScopes().stream()
+                .map(ClientScopeRepresentation::getName)
+                .collect(Collectors.toSet());
+        List<ClientScopeRepresentation> allScopes = realm.admin().clientScopes().findAll();
+        for (String scopeName : scopeNames) {
+            if (alreadyAssigned.contains(scopeName)) continue;
+            ClientScopeRepresentation scope = allScopes.stream()
+                    .filter(s -> scopeName.equals(s.getName()))
+                    .findFirst().orElse(null);
+            Assertions.assertNotNull(scope);
+            clientResource.addOptionalClientScope(scope.getId());
+        }
+    }
+
+    protected void bestEffortDeleteStream() {
+        try {
+            String url = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                    + "/ssf/clients/" + RECEIVER + "/stream";
+            http.doDelete(url).auth(adminClient.tokenManager().getAccessTokenString()).asResponse().close();
+        } catch (Exception ignored) {
+        }
+    }
+
+    /** Cleanup-only variant of {@link #removeNotifySubscription()} —
+     * swallows failures so {@code @AfterEach} never masks the test
+     * result. Tests whose behaviour depends on the user being
+     * unsubscribed must use the asserting variant instead. */
+    protected void bestEffortRemoveNotify() {
+        try {
+            String url = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                    + "/ssf/clients/" + RECEIVER + "/subjects/remove";
+            http.doPost(url)
+                    .auth(adminClient.tokenManager().getAccessTokenString())
+                    .json(Map.of("type", "user-email", "value", TEST_EMAIL))
+                    .asResponse().close();
+        } catch (Exception ignored) {
+        }
+    }
+
+    /**
+     * Removes TEST_USER's per-user subscription and asserts the
+     * resulting subject state, so a silently failing removal cannot
+     * leave the user notified and let a test pass on the wrong gate
+     * (isUserNotified short-circuits before the org checks). Call
+     * before creating member orgs — the reported state is the
+     * user-explicit one only while no org membership can influence it.
+     */
+    protected void removeNotifySubscription() throws IOException {
+        String url = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                + "/ssf/clients/" + RECEIVER + "/subjects/remove";
+        try (SimpleHttpResponse res = http.doPost(url)
+                .auth(adminClient.tokenManager().getAccessTokenString())
+                .json(Map.of("type", "user-email", "value", TEST_EMAIL))
+                .asResponse()) {
+            Assertions.assertEquals(200, res.getStatus(),
+                    "subject removal must succeed for tests that rely on an unsubscribed user");
+            Assertions.assertEquals("not_notified", res.asJson().get("status").asText(),
+                    "TEST_USER must not be individually notified after removal");
+        }
+    }
+
+    protected JsonNode decodeSet(String encoded) throws Exception {
+        JWSInput jws = new JWSInput(encoded);
+        return JsonSerialization.readValue(jws.getContent(), JsonNode.class);
+    }
+
+    /**
+     * Creates a test organization with a unique alias and pre-subscribes
+     * it to the receiver via the {@code ssf.notify.<receiverClientId>}
+     * org attribute. Returns the alias so the test can use it as the
+     * tenant id in the {@code sub_id} payload.
+     */
+    protected String createOrgWithNotify() {
+        String alias = "emit-org-notified-" + System.nanoTime();
+        return createTestOrganization(alias, "true");
+    }
+
+    protected String createOrgWithoutNotify() {
+        String alias = "emit-org-silent-" + System.nanoTime();
+        return createTestOrganization(alias, null);
+    }
+
+    protected String createOrgWithExcludeNotify() {
+        String alias = "emit-org-excluded-" + System.nanoTime();
+        return createTestOrganization(alias, "false");
+    }
+
+    protected String createTestOrganization(String alias, String notifyValue) {
+        OrganizationRepresentation rep = new OrganizationRepresentation();
+        rep.setName(alias);
+        rep.setAlias(alias);
+        rep.addDomain(new org.keycloak.representations.idm.OrganizationDomainRepresentation(alias + ".local.test"));
+        if (notifyValue != null) {
+            // ssf.notify.<receiverClientId> drives the emitter's org-level
+            // subscription gate: "true" subscribes the org
+            // (default_subjects=NONE include), "false" excludes it
+            // (default_subjects=ALL skip). The emitter implementation uses
+            // SsfNotifyAttributes.isOrganizationNotified/-Excluded, which
+            // read exactly this attribute.
+            rep.singleAttribute("ssf.notify." + RECEIVER, notifyValue);
+        }
+        try (Response response = realm.admin().organizations().create(rep)) {
+            Assertions.assertEquals(201, response.getStatus(),
+                    "test organization creation should succeed");
+        }
+        return alias;
+    }
+
+    protected String findOrganizationIdByAlias(String alias) {
+        return realm.admin().organizations().getAll().stream()
+                .filter(o -> alias.equals(o.getAlias()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("expected organization '" + alias + "' to exist"))
+                .getId();
+    }
+
+    protected void addUserToOrganization(String orgAlias, String userId) {
+        try (Response response = realm.admin().organizations()
+                .get(findOrganizationIdByAlias(orgAlias)).members().addMember(userId)) {
+            Assertions.assertEquals(201, response.getStatus(),
+                    "adding the test user as an org member should succeed");
+        }
+    }
+
+    protected void bestEffortDeleteTestOrganizations() {
+        try {
+            realm.admin().organizations().getAll().stream()
+                    .filter(o -> o.getAlias() != null && o.getAlias().startsWith("emit-org-"))
+                    .forEach(o -> realm.admin().organizations().get(o.getId()).delete());
+        } catch (Exception ignored) {
+        }
+    }
+
+    // --- config ----------------------------------------------------------
+
+    public static class EmitServerConfig extends DefaultKeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            KeycloakServerConfigBuilder configured = super.configure(config);
+            // ORGANIZATION feature is required for the tenant-subject
+            // emit test to exercise the OrganizationProvider lookup
+            // path. Without it, EventEmitterService.resolveOrganization
+            // short-circuits to null and the test would always fall to
+            // SUBJECT_NOT_FOUND.
+            config.features(Profile.Feature.SSF, Profile.Feature.ORGANIZATION);
+            config.log().categoryLevel("org.keycloak.ssf", "DEBUG");
+            // Async pushes flow through the outbox — without a fast
+            // drainer tick every happy-path assertion times out.
+            config.spiOption("ssf-transmitter", "default",
+                    DefaultSsfTransmitterProviderFactory.CONFIG_OUTBOX_DRAINER_INTERVAL, "500ms");
+            config.spiOption("ssf-transmitter", "default",
+                    SsfTransmitterConfig.CONFIG_MIN_VERIFICATION_INTERVAL_SECONDS, "0");
+            // Enable the SSF §9.3 removal-grace window transmitter-wide so
+            // emit_userInRemovalGraceWindow_dispatches can prove the emit
+            // path inherits the dispatcher's grace-aware subject gate. All
+            // other tests unsubscribe via the ADMIN remove endpoint, which
+            // stamps no tombstone, so they are unaffected by a positive
+            // grace. The window is large enough that wallclock drift can't
+            // make the grace test flaky.
+            config.spiOption("ssf-transmitter", "default",
+                    SsfTransmitterConfig.CONFIG_SUBJECT_REMOVAL_GRACE_SECONDS,
+                    String.valueOf(REMOVAL_GRACE_SECONDS));
+            // Test pushes to a local mock server on a loopback URL (http://127.0.0.1:NNNN/...).
+            // Relax the http-scheme + private-host gate so the mock URL is accepted; the
+            // per-client ssf.validPushUrls allow-list configured on each receiver below
+            // is still the SSRF defence.
+            config.spiOption("ssf-transmitter", "default",
+                    SsfTransmitterConfig.CONFIG_ALLOW_INSECURE_PUSH_TARGETS, "true");
+            return configured;
+        }
+    }
+
+    public static class EmitRealm implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.name("ssf-transmitter-emit");
+            realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
+            realm.organizationsEnabled(true);
+
+            realm.eventsEnabled(true);
+            realm.adminEventsEnabled(true);
+            realm.adminEventsDetailsEnabled(true);
+            realm.eventsListeners("jboss-logging", "ssf-events");
+
+            realm.users(
+                    UserBuilder.create(TEST_USER)
+                            .email(TEST_EMAIL)
+                            .firstName("Emit")
+                            .lastName("Tester")
+                            .enabled(true)
+                            .password(TEST_PASSWORD)
+                            .build()
+            );
+
+            // Receiver: opt-in attributes are set in @BeforeEach so each
+            // test can override them via setReceiverAttributes.
+            realm.clients(
+                    ClientBuilder.create(RECEIVER)
+                            .secret(RECEIVER_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, "http://127.0.0.1:8500/*")
+                            .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "NONE")
+                            .build()
+            );
+
+            // Management client that will be granted the emitter role
+            // in @BeforeEach. fullScopeEnabled is required so the token
+            // carries the receiver's client role in its resource_access
+            // claim — AdminAuth.hasAppRole checks both user.hasRole and
+            // client.hasScope, and the latter fails for fullScope=false
+            // unless the role is explicitly scope-mapped.
+            realm.clients(
+                    ClientBuilder.create(MGMT_EMITTER)
+                            .secret(MGMT_EMITTER_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .fullScopeEnabled(true)
+                            .build()
+            );
+
+            // Management client that never gets the role — covers the
+            // emit_role_missing branch.
+            realm.clients(
+                    ClientBuilder.create(MGMT_NO_ROLE)
+                            .secret(MGMT_NO_ROLE_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .fullScopeEnabled(true)
+                            .build()
+            );
+
+            return realm;
+        }
+    }
+}

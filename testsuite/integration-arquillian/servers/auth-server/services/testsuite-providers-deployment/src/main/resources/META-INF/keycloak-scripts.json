@@ -28,21 +28,6 @@
       "description": "A policy that grants access only for users within this realm"
     },
     {
-      "name": "Only Owner Policy",
-      "fileName": "scripts/only-owner-policy.js",
-      "description": "Defines that only the resource owner is allowed to do something"
-    },
-    {
-      "name": "Only From a Specific Client Address",
-      "fileName": "scripts/only-from-specific-address-policy.js",
-      "description": "Defines that only clients from a specific address can do something"
-    },
-    {
-      "name": "Only From @keycloak.org or Admin",
-      "fileName": "scripts/only-from-specific-domain-or-admin-policy.js",
-      "description": "Defines that only users from @keycloak.org"
-    },
-    {
       "name": "Claim A Policy",
       "fileName": "scripts/add-claim-a-policy.js"
     },
@@ -55,18 +40,11 @@
       "fileName": "scripts/add-claim-c-policy.js"
     },
     {
-      "name": "Deny Policy",
-      "fileName": "scripts/always-deny-policy.js"
-    },
-    {
       "name": "Deny Policy With Claim",
       "fileName": "scripts/always-deny-with-claim-policy.js"
     },
     {
       "fileName": "scripts/withdraw-limit-policy.js"
-    },
-    {
-      "fileName": "scripts/resource-visibility-attribute-policy.js"
     },
     {
       "fileName": "scripts/allow-group-name-in-role-policy.js"
@@ -130,15 +108,6 @@
     },
     {
       "fileName": "scripts/allow-group-in-role-policy.js"
-    },
-    {
-      "fileName": "scripts/deny-from-specific-address-policy.js"
-    },
-    {
-      "fileName": "scripts/allow-value-from-request-claim.js"
-    },
-    {
-      "fileName": "scripts/enforce-withdraw-limit-policy.js"
     }
   ]
 }

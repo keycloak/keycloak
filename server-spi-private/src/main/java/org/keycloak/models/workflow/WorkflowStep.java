@@ -21,12 +21,14 @@ import java.util.Objects;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.KeycloakSession;
 
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
 
 public class WorkflowStep implements Comparable<WorkflowStep> {
 
+    private KeycloakSession session;
     private String id;
     private final String providerId;
     private MultivaluedHashMap<String, String> config;
@@ -36,7 +38,8 @@ public class WorkflowStep implements Comparable<WorkflowStep> {
         this.config = config;
     }
 
-    public WorkflowStep(ComponentModel model) {
+    public WorkflowStep(KeycloakSession session, ComponentModel model) {
+        this.session = session;
         this.id = model.getId();
         this.providerId = model.getProviderId();
         this.config = model.getConfig();
@@ -87,6 +90,26 @@ public class WorkflowStep implements Comparable<WorkflowStep> {
 
     public String getAfter() {
         return getConfig().getFirst(CONFIG_AFTER);
+    }
+
+    public String getNotificationSubject() {
+        if (session != null) {
+            WorkflowStepProvider provider = Workflows.getStepProvider(session, this);
+            if (provider != null) {
+                return provider.getNotificationSubject();
+            }
+        }
+        return null;
+    }
+
+    public String getNotificationMessage() {
+        if (session != null) {
+            WorkflowStepProvider provider = Workflows.getStepProvider(session, this);
+            if (provider != null) {
+                return provider.getNotificationMessage();
+            }
+        }
+        return null;
     }
 
     @Override

@@ -11,6 +11,10 @@ describe("Organizations", () => {
   before(async () => {
     kcAdminClient = new KeycloakAdminClient();
     await kcAdminClient.auth(credentials);
+    await kcAdminClient.realms.update(
+      { realm: "master" },
+      { organizationsEnabled: true },
+    );
   });
 
   it("retrieves empty organizations list", async () => {
@@ -52,5 +56,22 @@ describe("Organizations", () => {
     allOrganizations = await kcAdminClient.organizations.find();
     expect(allOrganizations).to.be.ok;
     expect(allOrganizations).to.be.empty;
+  });
+
+  it("crud a group for organizations", async () => {
+    const org = await kcAdminClient.organizations.create({
+      name: "orgG",
+      enabled: true,
+      domains: [{ name: "orgg.com" }],
+    });
+
+    const group = await kcAdminClient.organizations.groups(org.id).create({
+      name: "cool-group",
+    });
+    expect(group.id).to.be.ok;
+
+    await kcAdminClient.organizations.groups(org.id).del({
+      id: group.id!,
+    });
   });
 });

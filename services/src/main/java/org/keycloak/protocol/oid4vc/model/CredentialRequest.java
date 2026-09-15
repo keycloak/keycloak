@@ -17,17 +17,14 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
-import java.util.Map;
-import java.util.Optional;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
@@ -52,10 +49,20 @@ public class CredentialRequest {
     /**
      * Deprecated: use {@link #proofs} instead.
      * This field is kept only for backward compatibility with clients sending a single 'proof'.
+     * Can be either {@link JwtProof} or {@link AttestationProof} depending on the proof type.
      */
     @Deprecated
     @JsonProperty("proof")
-    private JwtProof proof;
+    @JsonTypeInfo(
+            use = JsonTypeInfo.Id.NAME,
+            include = JsonTypeInfo.As.EXISTING_PROPERTY,
+            property = "proof_type"
+    )
+    @JsonSubTypes({
+            @JsonSubTypes.Type(value = JwtProof.class, name = "jwt"),
+            @JsonSubTypes.Type(value = AttestationProof.class, name = "attestation")
+    })
+    private Object proof;
 
     // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-format-identifier-3
     @JsonProperty("credential_definition")
@@ -91,11 +98,11 @@ public class CredentialRequest {
         return this;
     }
 
-    public JwtProof getProof() {
+    public Object getProof() {
         return proof;
     }
 
-    public CredentialRequest setProof(JwtProof proof) {
+    public CredentialRequest setProof(Object proof) {
         this.proof = proof;
         return this;
     }
@@ -116,23 +123,6 @@ public class CredentialRequest {
     public CredentialRequest setCredentialResponseEncryption(CredentialResponseEncryption credentialResponseEncryption) {
         this.credentialResponseEncryption = credentialResponseEncryption;
         return this;
-    }
-
-    public Optional<CredentialScopeModel> findCredentialScope(KeycloakSession keycloakSession) {
-        Map<String, String> searchAttributeMap =
-                Optional.ofNullable(credentialConfigurationId)
-                        .map(credentialIdentifier -> {
-                            return Map.of(CredentialScopeModel.CONFIGURATION_ID, credentialConfigurationId);
-                        }).orElseGet(() -> {
-                            return Map.of(CredentialScopeModel.CREDENTIAL_IDENTIFIER, credentialIdentifier);
-                        });
-
-        RealmModel currentRealm = keycloakSession.getContext().getRealm();
-        final boolean useOrExpression = false;
-        return keycloakSession.clientScopes()
-                .getClientScopesByAttributes(currentRealm, searchAttributeMap, useOrExpression)
-                .map(CredentialScopeModel::new)
-                .findAny();
     }
 
     @Override

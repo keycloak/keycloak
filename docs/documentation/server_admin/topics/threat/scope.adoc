@@ -12,4 +12,4 @@ Removing the offline scope for a client also removes the ability to issue long-l
 ==== Scope visibility
 
 By default, all scopes are included in the OpenID Connect discovery endpoint.
-To reduce the discoverability and OSINT-exposure, you can configure each scope to be excluded.
+To reduce the discoverability and OSINT-exposure, you can configure each scope to be excluded by disabling *Include in OpenID Provider Metadata*.

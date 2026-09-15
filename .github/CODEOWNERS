@@ -19,7 +19,7 @@
 # Testsuite
 ###################################################################################################
 
-/testsuite/                                                 @keycloak/core-clients-maintainers @keycloak/core-iam-maintainers @keycloak/cloud-native-maintainers @keycloak/maintainers
+/testsuite/                                                 @keycloak/core-protocols-maintainers @keycloak/core-iam-maintainers @keycloak/cloud-native-maintainers @keycloak/maintainers
 
 ###################################################################################################
 # Core (@keycloak/core-maintainers)
@@ -27,7 +27,7 @@
 
 
 ###################################################################################################
-# Core Clients (@keycloak/core-clients-maintainers)
+# Core Protocols (@keycloak/core-protocols-maintainers)
 ###################################################################################################
 
 

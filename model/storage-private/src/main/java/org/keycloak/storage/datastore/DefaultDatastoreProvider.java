@@ -23,6 +23,7 @@ import org.keycloak.models.GroupProvider;
 import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RevokedTokenProvider;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserLoginFailureProvider;
@@ -55,6 +56,7 @@ public class DefaultDatastoreProvider implements DatastoreProvider, StoreManager
     private RealmProvider realmProvider;
     private RoleProvider roleProvider;
     private SingleUseObjectProvider singleUseObjectProvider;
+    private RevokedTokenProvider revokedTokenProvider;
     private UserProvider userProvider;
     private UserSessionProvider userSessionProvider;
 
@@ -271,6 +273,14 @@ public class DefaultDatastoreProvider implements DatastoreProvider, StoreManager
     @Override
     public ExportImportManager getExportImportManager() {
         return new DefaultExportImportManager(session);
+    }
+
+    @Override
+    public RevokedTokenProvider revokedTokens() {
+        if (revokedTokenProvider == null) {
+            revokedTokenProvider = session.getProvider(RevokedTokenProvider.class);
+        }
+        return revokedTokenProvider;
     }
 
     public MigrationManager getMigrationManager() {

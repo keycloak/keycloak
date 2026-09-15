@@ -13,13 +13,13 @@ public class PolicyListQuery extends AbstractRevisioned implements PolicyQuery {
     private final Set<String> policies;
     private final String serverId;
 
-    public PolicyListQuery(Long revision, String id, String policyId, String serverId) {
+    public PolicyListQuery(long revision, String id, String policyId, String serverId) {
         super(revision, id);
         this.serverId = serverId;
         policies = new HashSet<>();
         policies.add(policyId);
     }
-    public PolicyListQuery(Long revision, String id, Set<String> policies, String serverId) {
+    public PolicyListQuery(long revision, String id, Set<String> policies, String serverId) {
         super(revision, id);
         this.serverId = serverId;
         this.policies = policies;

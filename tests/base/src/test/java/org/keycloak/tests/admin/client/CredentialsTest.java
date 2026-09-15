@@ -30,6 +30,7 @@ import jakarta.ws.rs.core.MediaType;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.PemUtils;
@@ -38,12 +39,12 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.KeyStoreConfig;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminEvents;
-import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectCryptoHelper;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -51,16 +52,20 @@ import org.keycloak.testframework.crypto.CryptoHelper;
 import org.keycloak.testframework.crypto.KeystoreInfo;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.events.AdminEvents;
-import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.tests.suites.DatabaseTest;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import static org.keycloak.representations.idm.ComponentRepresentation.SECRET_VALUE;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -79,72 +84,87 @@ public class CredentialsTest {
     @InjectAdminClient
     Keycloak adminClient;
 
-    @InjectClient(attachTo = "account")
-    ManagedClient managedClient;
-
     @InjectAdminEvents
     AdminEvents adminEvents;
 
     @InjectCryptoHelper
     CryptoHelper cryptoHelper;
 
+    private ClientResource accountClient;
+
     @TempDir
     public static File folder;
 
-    @BeforeAll
-    public static void init() {
+    @BeforeEach
+    public void init() {
+        accountClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), "account");
         if(!CryptoIntegration.isInitialised()) {
             CryptoIntegration.setProvider(new DefaultCryptoProvider());
         }
     }
 
     @Test
+    @DatabaseTest
     public void testGetAndRegenerateSecret() {
-        CredentialRepresentation oldCredential = managedClient.admin().getSecret();
-        CredentialRepresentation newCredential = managedClient.admin().generateNewSecret();
+        CredentialRepresentation oldCredential = accountClient.getSecret();
+        CredentialRepresentation newCredential = accountClient.generateNewSecret();
 
         CredentialRepresentation secretRep = new CredentialRepresentation();
         secretRep.setType(CredentialRepresentation.SECRET);
-        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.ACTION, AdminEventPaths.clientGenerateSecretPath(managedClient.getId()), secretRep, ResourceType.CLIENT);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.ACTION, AdminEventPaths.clientGenerateSecretPath(accountClient.toRepresentation().getId()), secretRep, ResourceType.CLIENT);
 
         assertNotNull(oldCredential);
         assertNotNull(newCredential);
         assertNotEquals(newCredential.getValue(), oldCredential.getValue());
-        assertEquals(newCredential.getValue(), managedClient.admin().getSecret().getValue());
+        assertEquals(newCredential.getValue(), accountClient.getSecret().getValue());
     }
 
     @Test
+    @DatabaseTest
     public void testGetAndRegenerateRegistrationAccessToken() {
-        ClientRepresentation rep = managedClient.admin().toRepresentation();
+        ClientRepresentation rep = accountClient.toRepresentation();
         String oldToken = rep.getRegistrationAccessToken();
-        String newToken = managedClient.admin().regenerateRegistrationAccessToken().getRegistrationAccessToken();
+        String newToken = accountClient.regenerateRegistrationAccessToken().getRegistrationAccessToken();
         assertNull(oldToken); // registration access token not saved in ClientRep
         assertNotNull(newToken); // it's only available via regenerateRegistrationAccessToken()
-        assertNull(managedClient.admin().toRepresentation().getRegistrationAccessToken());
+        assertNotEquals(SECRET_VALUE, newToken); // New token is not masked in the update-response
+        assertNull(accountClient.toRepresentation().getRegistrationAccessToken());
 
-        // Test event
+        // Test event - registration access token should be masked in the event
         ClientRepresentation testedRep = new ClientRepresentation();
         testedRep.setClientId(rep.getClientId());
-        testedRep.setRegistrationAccessToken(newToken);
-        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.ACTION, AdminEventPaths.clientRegenerateRegistrationAccessTokenPath(managedClient.getId()), testedRep, ResourceType.CLIENT);
+        testedRep.setRegistrationAccessToken(SECRET_VALUE);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.ACTION, AdminEventPaths.clientRegenerateRegistrationAccessTokenPath(accountClient.toRepresentation().getId()), testedRep, ResourceType.CLIENT);
     }
 
     @Test
+    @DatabaseTest
     public void testGetCertificateResource() {
-        ClientAttributeCertificateResource certRsc = managedClient.admin().getCertficateResource("jwt.credential");
+        ClientAttributeCertificateResource certRsc = accountClient.getCertficateResource("jwt.credential");
         CertificateRepresentation cert = certRsc.generate();
-        CertificateRepresentation certFromGet = certRsc.getKeyInfo();
-        assertEquals(cert.getCertificate(), certFromGet.getCertificate());
-        assertEquals(cert.getPrivateKey(), certFromGet.getPrivateKey());
 
-        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.ACTION, AdminEventPaths.clientCertificateGenerateSecretPath(managedClient.getId(), "jwt.credential"), cert, ResourceType.CLIENT);
+        // Response should contain the private key
+        assertNotNull(cert.getPrivateKey(), "generate should return private key");
+        assertNotNull(cert.getCertificate(), "generate should return certificate");
+
+        // But server should not have stored it
+        CertificateRepresentation certFromGet = certRsc.getKeyInfo();
+        assertNull(certFromGet.getPrivateKey(), "private key should not be stored on server");
+        assertEquals(cert.getCertificate(), certFromGet.getCertificate(), "certificate should match");
+        // Admin event should not contain the private key
+        AdminEventRepresentation event = adminEvents.poll();
+        assertFalse(event.getRepresentation().contains(cert.getPrivateKey()), "admin event should not contain private key");
+        CertificateRepresentation expectedEventRep = new CertificateRepresentation();
+        expectedEventRep.setCertificate(cert.getCertificate());
+        AdminEventAssertion.assertEvent(event, OperationType.ACTION, AdminEventPaths.clientCertificateGenerateSecretPath(accountClient.toRepresentation().getId(), "jwt.credential"), expectedEventRep, ResourceType.CLIENT);
     }
 
     @Test
+    @DatabaseTest
     public void testUploadKeyAndCertificate() throws Exception {
         String certificate2 = "MIICnTCCAYUCBgFPPQDGxTANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdjbGllbnQxMB4XDTE1MDgxNzE4NTAwNVoXDTI1MDgxNzE4NTE0NVowEjEQMA4GA1UEAwwHY2xpZW50MTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMMw3PaBffWxgS2PYSDDBp6As+cNvv9kt2C4f/RDAGmvSIHPFev9kuQiKs3Oaws3ZsV4JG3qHEuYgnh9W4vfe3DwNwtD1bjL5FYBhPBFTw0lAQECYxaBHnkjHwUKp957FqdSPPICm3LjmTcEdlH+9dpp9xHCMbbiNiWDzWI1xSxC8Fs2d0hwz1sd+Q4QeTBPIBWcPM+ICZtNG5MN+ORfayu4X+Me5d0tXG2fQO//rAevk1i5IFjKZuOjTwyKB5SJIY4b8QTeg0g/50IU7Ht00Pxw6CK02dHS+FvXHasZlD3ckomqCDjStTBWdhJo5dST0CbOqalkkpLlCCbGA1yEQRsCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAUIMeJ+EAo8eNpCG/nXImacjrKakbFnZYBGD/gqeTGaZynkX+jgBSructTHR83zSH+yELEhsAy+3BfK4EEihp+PEcRnK2fASVkHste8AQ7rlzC+HGGirlwrVhWCdizNUCGK80DE537IZ7nmZw6LFG9P5/Q2MvCsOCYjRUvMkukq6TdXBXR9tETwZ+0gpSfsOxjj0ZF7ftTRUSzx4rFfcbM9fRNdVizdOuKGc8HJPA5lLOxV6CyaYIvi3y5RlQI1OHeS34lE4w9CNPRFa/vdxXvN7ClyzA0HMFNWxBN7pC/Ht/FbhSvaAagJBHg+vCrcY5C26Oli7lAglf/zZrwUPs0w==";
 
-        ClientAttributeCertificateResource certRsc = managedClient.admin().getCertficateResource("jwt.credential");
+        ClientAttributeCertificateResource certRsc = accountClient.getCertficateResource("jwt.credential");
 
         KeystoreUtil.KeystoreFormat preferredKeystoreType = KeystoreUtil.KeystoreFormat.valueOf(adminClient.serverInfo().getInfo().getCryptoInfo().getSupportedKeystoreTypes().get(0));
 
@@ -166,12 +186,11 @@ public class CredentialsTest {
         // Returned cert is not the new state but rather what was extracted from inputs
         assertNotNull(cert, "cert not null");
         assertEquals(generatedKeystore.getCertificateInfo().getCertificate(), cert.getCertificate(), "cert properly extracted");
-        assertEquals(generatedKeystore.getCertificateInfo().getPrivateKey(), cert.getPrivateKey(), "privateKey properly extracted");
 
         // Get the certificate - to make sure cert was properly updated
         cert = certRsc.getKeyInfo();
         assertEquals(generatedKeystore.getCertificateInfo().getCertificate(), cert.getCertificate(), "cert properly set");
-        assertEquals(generatedKeystore.getCertificateInfo().getPrivateKey(), cert.getPrivateKey(), "privateKey properly set");
+        assertNull(cert.getPrivateKey(), "private key should not be stored on server");
 
         // Upload a different certificate via /upload-certificate, privateKey should be nullified
         MultipartFormDataOutput form = new MultipartFormDataOutput();
@@ -224,7 +243,7 @@ public class CredentialsTest {
 
     @Test
     public void testDownloadKeystore() throws Exception {
-        ClientAttributeCertificateResource certRsc = managedClient.admin().getCertficateResource("jwt.credential");
+        ClientAttributeCertificateResource certRsc = accountClient.getCertficateResource("jwt.credential");
 
         // generate a key pair first
         CertificateRepresentation certrep = certRsc.generate();
@@ -235,26 +254,23 @@ public class CredentialsTest {
         KeyStoreConfig config = new KeyStoreConfig();
         config.setFormat(preferredKeystoreType.toString());
         config.setKeyAlias("alias");
-        config.setKeyPassword("keyPass");
         config.setStorePassword("storePass");
         byte[] result = certRsc.getKeystore(config);
 
         KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(preferredKeystoreType);
         keyStore.load(new ByteArrayInputStream(result), "storePass".toCharArray());
-        Key key = keyStore.getKey("alias", "keyPass".toCharArray());
+        assertFalse(keyStore.isKeyEntry("alias"), "private key should not be in keystore");
         Certificate cert = keyStore.getCertificate("alias");
 
         assertInstanceOf(X509Certificate.class, cert, "Certificat is X509");
-        String keyPem = KeycloakModelUtils.getPemFromKey(key);
-        String certPem = KeycloakModelUtils.getPemFromCertificate((X509Certificate) cert);
 
-        assertEquals(certrep.getPrivateKey(), keyPem, "key match");
+        String certPem = KeycloakModelUtils.getPemFromCertificate((X509Certificate) cert);
         assertEquals(certrep.getCertificate(), certPem, "cert match");
     }
 
     @Test
     public void testGenerateAndDownloadKeystore() throws Exception {
-        ClientAttributeCertificateResource certRsc = managedClient.admin().getCertficateResource("jwt.credential");
+        ClientAttributeCertificateResource certRsc = accountClient.getCertficateResource("jwt.credential");
 
         // generate a key pair first
         CertificateRepresentation firstcert = certRsc.generate();

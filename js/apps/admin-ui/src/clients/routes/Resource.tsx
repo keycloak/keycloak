@@ -14,7 +14,6 @@ const ResourceDetails = lazy(() => import("../authorization/ResourceDetails"));
 export const ResourceDetailsRoute: AppRouteObject = {
   path: "/:realm/clients/:id/authorization/resource",
   element: <ResourceDetails />,
-  breadcrumb: (t) => t("resourceDetails"),
   handle: {
     access: (accessChecker) =>
       accessChecker.hasAny(
@@ -22,6 +21,7 @@ export const ResourceDetailsRoute: AppRouteObject = {
         "view-authorization",
         "manage-authorization",
       ),
+    breadcrumb: (t) => t("resourceDetails"),
   },
 };
 

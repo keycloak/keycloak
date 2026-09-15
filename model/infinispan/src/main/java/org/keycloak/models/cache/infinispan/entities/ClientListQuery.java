@@ -13,13 +13,13 @@ public class ClientListQuery extends AbstractRevisioned implements ClientQuery {
     private final Set<String> clients;
     private final String realm;
 
-    public ClientListQuery(Long revisioned, String id, RealmModel realm, Set<String> clients) {
+    public ClientListQuery(long revisioned, String id, RealmModel realm, Set<String> clients) {
         super(revisioned, id);
         this.realm = realm.getId();
         this.clients = clients;
     }
 
-    public ClientListQuery(Long revisioned, String id, RealmModel realm, String client) {
+    public ClientListQuery(long revisioned, String id, RealmModel realm, String client) {
         super(revisioned, id);
         this.realm = realm.getId();
         this.clients = new HashSet<>();

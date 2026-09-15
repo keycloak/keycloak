@@ -23,6 +23,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -38,8 +39,10 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -47,9 +50,9 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.TokenUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  *
@@ -71,7 +74,7 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
 
     @Test
     public void testNonceWithMapper() throws IOException {
-        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         String mapperId = createNonceMapper(testApp);
         try {
             testNonce(true, false);
@@ -82,7 +85,7 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
 
     @Test
     public void testOfflineSessionNonceWithMapper() throws IOException {
-        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         String mapperId = createNonceMapper(testApp);
         try {
             testNonce(true, true);
@@ -102,7 +105,7 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
 
     @Test
     public void testImplicitFlowWithMapper() throws Exception {
-        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         String mapperId = createNonceMapper(testApp);
         try (ClientAttributeUpdater client = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "test-app")
                 .setImplicitFlowEnabled(true)
@@ -117,16 +120,16 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
         ProtocolMapperModel nonceMapper = NonceBackwardsCompatibleMapper.create("nonce");
         ProtocolMapperRepresentation nonceMapperRep = ModelToRepresentation.toRepresentation(nonceMapper);
         try (Response res = testApp.getProtocolMappers().createMapper(nonceMapperRep)) {
-            Assert.assertEquals(Response.Status.CREATED.getStatusCode(), res.getStatus());
+            Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), res.getStatus());
             return ApiUtil.getCreatedId(res);
         }
     }
 
     private void checkNonce(String expectedNonce, String nonce, boolean expected) {
         if (expected) {
-            Assert.assertEquals(expectedNonce, nonce);
+            Assertions.assertEquals(expectedNonce, nonce);
         } else {
-            Assert.assertNull(nonce);
+            Assertions.assertNull(nonce);
         }
     }
 
@@ -141,7 +144,7 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
         oauth.responseType(OIDCResponseType.TOKEN + " " + OIDCResponseType.ID_TOKEN);
         AuthorizationEndpointResponse response = oauth.loginForm().nonce(nonce).doLogin("test-user@localhost", "password");
 
-        Assert.assertTrue(response.isRedirected());
+        Assertions.assertTrue(response.isRedirected());
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(response.getResponse());
 
         String accessTokenString = (String) responseToken.getOtherClaims().get("access_token");
@@ -161,7 +164,7 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         }
         oauth.loginForm().nonce(nonce).doLogin("test-user@localhost", "password");
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
@@ -173,14 +176,18 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
         checkNonce(nonce, refreshToken.getNonce(), mapper);
 
-        EventRepresentation tokenEvent = events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId())
-                .detail(Details.REFRESH_TOKEN_TYPE, offlineSession? TokenUtil.TOKEN_TYPE_OFFLINE : TokenUtil.TOKEN_TYPE_REFRESH)
-                .assertEvent();
+        EventRepresentation tokenEvent = EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(loginEvent.getSessionId())
+                .details(Details.CODE_ID, loginEvent.getDetails().get(Details.CODE_ID))
+                .details(Details.REFRESH_TOKEN_TYPE, offlineSession? TokenUtil.TOKEN_TYPE_OFFLINE : TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID).getEvent();
 
         response = oauth.doRefreshTokenRequest(response.getRefreshToken());
-        events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), loginEvent.getSessionId())
-                .detail(Details.REFRESH_TOKEN_TYPE, offlineSession? TokenUtil.TOKEN_TYPE_OFFLINE : TokenUtil.TOKEN_TYPE_REFRESH)
-                .assertEvent();
+        EventAssertion.expectRefreshTokenSuccess(events.poll())
+                .sessionId(loginEvent.getSessionId())
+                .details(Details.REFRESH_TOKEN_ID, tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID))
+                .details(Details.REFRESH_TOKEN_TYPE, offlineSession? TokenUtil.TOKEN_TYPE_OFFLINE : TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         token = oauth.verifyToken(response.getAccessToken());
         checkNonce(nonce, token.getNonce(), mapper);

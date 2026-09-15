@@ -26,7 +26,7 @@ public class SystemInfoRepresentation {
     private String version;
     private String serverTime;
     private String uptime;
-    private long uptimeMillis;
+    private Long uptimeMillis;
     private String javaVersion;
     private String javaVendor;
     private String javaVm;
@@ -91,11 +91,11 @@ public class SystemInfoRepresentation {
         this.uptime = uptime;
     }
 
-    public long getUptimeMillis() {
+    public Long getUptimeMillis() {
         return uptimeMillis;
     }
 
-    public void setUptimeMillis(long uptimeMillis) {
+    public void setUptimeMillis(Long uptimeMillis) {
         this.uptimeMillis = uptimeMillis;
     }
 

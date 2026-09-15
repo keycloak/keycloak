@@ -13,13 +13,13 @@ public class ScopeListQuery extends AbstractRevisioned implements InResourceServ
     private final Set<String> scopes;
     private final String serverId;
 
-    public ScopeListQuery(Long revision, String id, String scopeId, String serverId) {
+    public ScopeListQuery(long revision, String id, String scopeId, String serverId) {
         super(revision, id);
         this.serverId = serverId;
         scopes = new HashSet<>();
         scopes.add(scopeId);
     }
-    public ScopeListQuery(Long revision, String id, Set<String> scopes, String serverId) {
+    public ScopeListQuery(long revision, String id, Set<String> scopes, String serverId) {
         super(revision, id);
         this.serverId = serverId;
         this.scopes = scopes;

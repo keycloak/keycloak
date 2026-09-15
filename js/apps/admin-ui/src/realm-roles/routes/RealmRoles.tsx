@@ -10,9 +10,9 @@ const RealmRolesSection = lazy(() => import("../RealmRolesSection"));
 export const RealmRolesRoute: AppRouteObject = {
   path: "/:realm/roles",
   element: <RealmRolesSection />,
-  breadcrumb: (t) => t("realmRolesList"),
   handle: {
     access: "view-realm",
+    breadcrumb: (t) => t("realmRolesList"),
   },
 };
 

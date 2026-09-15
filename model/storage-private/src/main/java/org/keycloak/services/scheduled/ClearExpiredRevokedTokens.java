@@ -26,7 +26,9 @@ import org.jboss.logging.Logger;
 
 /**
  * Clear all expired revoked tokens.
+ * @deprecated The new {@link org.keycloak.models.RevokedTokenProvider} cleanups the expired events internally
  */
+@Deprecated(since = "26.7", forRemoval = true)
 public class ClearExpiredRevokedTokens implements ScheduledTask {
 
     protected static final Logger logger = Logger.getLogger(ClearExpiredRevokedTokens.class);

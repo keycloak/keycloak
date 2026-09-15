@@ -1,0 +1,174 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+    title="Run {project_name} as a Windows Service"
+    summary="Install and run {project_name} as a Windows service using Apache Commons Daemon.">
+
+This guide explains how to install and run {project_name} as a Windows service using Apache Commons Daemon. The service runs `kc.bat` in "exe" mode so behavior matches running `kc.bat start` manually. The service runs in "exe" mode, where Procrun executes `kc.bat start` as an external process. Environment variables, such as `KC_*`, along with `conf/keycloak.conf`, are respected. The `kc.bat` script handles augmentation and build logic, ensuring the service behaves exactly like a manual start.
+
+==  Apache Commons Daemon Setup
+To run {project_name} as a Windows service, you need the Apache Commons Daemon Procrun binary (`prunsrv.exe`). Download it for your platform: https://downloads.apache.org/commons/daemon/binaries/windows/
+
+Then place `prunsrv.exe` into the Keycloak `bin` folder.
+
+[source,bash]
+----
+copy "path\to\prunsrv.exe" "%KEYCLOAK_HOME%\bin\prunsrv.exe"
+----
+
+Use the amd64 binary for 64-bit and x86 for 32-bit systems.
+
+== Optional: Pre-build
+
+Pre-building is optional. If you do not pre-build, Keycloak will build automatically on first start, which takes longer.
+
+[source,bash]
+----
+bin/kc.bat build --db=postgres
+----
+
+== Installing the Service
+
+Keycloak includes a `tools windows-service` subcommand to simplify service installation and uninstallation.
+
+[source,bash]
+----
+bin\kc.bat tools windows-service install --help
+----
+
+[source,bash]
+----
+bin\kc.bat tools windows-service uninstall --help
+----
+
+=== Examples
+
+Install a basic service (runs as Local System by default):
+
+[source,bash]
+----
+bin\kc.bat tools windows-service install --name keycloak
+----
+
+Manual startup and longer stop timeout:
+
+[source,bash]
+----
+bin\kc.bat tools windows-service install --startup=manual --stop-timeout=60
+----
+
+Delayed auto-start:
+
+[source,bash]
+----
+bin\kc.bat tools windows-service install --startup=delayed
+----
+
+Custom display name:
+
+[source,bash]
+----
+bin\kc.bat tools windows-service install --name=my-keycloak --display-name="My Keycloak Server"
+----
+
+Use `--depends-on` to ensure required Windows services start before Keycloak (for example, a local database). By default Apache Commons Daemon may add `Tcpip` and `Afd` network dependencies.
+
+[source,bash]
+----
+bin\kc.bat tools windows-service install --depends-on="postgresql-x64-15;Tcpip;Afd"
+----
+
+The default is to run the service as the Local System account - `--service-user` and `--service-password` can be omitted (recommended). To run as a specific user, the account must have the "Log on as a service" right.
+
+[source,bash]
+----
+bin\kc.bat tools windows-service install --service-user="DOMAIN\Username" --service-password="password"
+----
+
+You can supply the service password securely via an environment variable, which is recommended:
+
+[source,bash]
+----
+set KC_SERVICE_PASSWORD=s3cret
+bin\kc.bat tools windows-service install --service-user="DOMAIN\Username"
+----
+
+Start the service:
+
+[source,bash]
+----
+net start keycloak
+----
+
+Stop the service:
+
+[source,bash]
+----
+net stop keycloak
+----
+
+Uninstall the service:
+
+[source,bash]
+----
+bin\kc.bat tools windows-service uninstall --name keycloak
+----
+
+Check status using the Windows Services console (`services.msc`).
+
+== Logging
+
+When {project_name} runs as a service, it is recommended to enable file logging - see <@links.server id="logging"/>.
+
+The service wrapper logs (e.g. `commons-daemon.YYYY-MM-DD.log`) respects the `log-path` option value during service creation.
+
+== Configuration Changes
+
+To change runtime configuration:
+
+1. Stop the service: `net stop keycloak`.
+2. Update environment variables or `conf/keycloak.conf`.
+3. Optionally re-run build: `bin\kc.bat build [new-options]`.
+4. Start the service: `net start keycloak`.
+
+== Troubleshooting
+
+=== Access Denied errors
+
+* Ensure the service runs as Local System (default) or that the specified account has "Log on as a service".
+
+=== Options defined as environment variables are ignored
+
+Windows Services run in a separate session (usually as the LocalSystem account) and do not inherit the environment variables of the user who created the service. Define the required `KC_*` environment variables as system-wide environment variables, so they are available to the service.
+
+=== Forcefully terminate the service
+
+If the Apache Commons Daemon wrapper becomes unresponsive:
+
+[source,bash]
+----
+taskkill /f /im prunsrv.exe
+----
+
+Use caution — this will affect all Procrun-managed services on the host.
+
+== Apache Commons Daemon configuration under the hood
+
+When you create the service, the following Apache Commons Daemon Procrun settings are applied:
+
+* StartMode: `exe` (runs `kc.bat` as an external process)
+* StartImage: `<KEYCLOAK_HOME>\bin\kc.bat`
+* StartParams: `start`
+* StopMode: `exe`
+* StopImage: `<KEYCLOAK_HOME>\bin\kc.bat`
+* StopParams: `stop`
+* StopTimeout: configurable (default: 30 seconds)
+
+Service configuration is stored in the Windows Registry under:
+
+----
+HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Apache Software Foundation\ProcRun 2.0\<ServiceName>
+----
+
+</@tmpl.guide>

@@ -8,6 +8,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../../admin-client";
 import { GroupPickerDialog } from "../../../components/group/GroupPickerDialog";
+import { GroupResourceContext } from "../../../context/group-resource/GroupResourceContext";
 
 type GroupForm = {
   groups?: GroupValue[];
@@ -67,25 +68,27 @@ export const Group = () => {
           render={({ field }) => (
             <>
               {open && (
-                <GroupPickerDialog
-                  type="selectMany"
-                  text={{
-                    title: "addGroupsToGroupPolicy",
-                    ok: "add",
-                  }}
-                  onConfirm={(groups) => {
-                    field.onChange([
-                      ...(field.value || []),
-                      ...(groups || []).map(({ id }) => ({ id })),
-                    ]);
-                    setSelectedGroups([...selectedGroups, ...(groups || [])]);
-                    setOpen(false);
-                  }}
-                  onClose={() => {
-                    setOpen(false);
-                  }}
-                  filterGroups={selectedGroups}
-                />
+                <GroupResourceContext value={adminClient.groups}>
+                  <GroupPickerDialog
+                    type="selectMany"
+                    text={{
+                      title: "addGroupsToGroupPolicy",
+                      ok: "add",
+                    }}
+                    onConfirm={(groups) => {
+                      field.onChange([
+                        ...(field.value || []),
+                        ...(groups || []).map(({ id }) => ({ id })),
+                      ]);
+                      setSelectedGroups([...selectedGroups, ...(groups || [])]);
+                      setOpen(false);
+                    }}
+                    onClose={() => {
+                      setOpen(false);
+                    }}
+                    filterGroups={selectedGroups}
+                  />
+                </GroupResourceContext>
               )}
               <Button
                 data-testid="select-group-button"

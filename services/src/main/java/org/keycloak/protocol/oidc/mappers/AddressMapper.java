@@ -124,12 +124,10 @@ public class AddressMapper extends AbstractOIDCProtocolMapper implements OIDCAcc
     @Override
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
         UserModel user = userSession.getUser();
-        Map<String, Object> addressSet = Optional.ofNullable(token.getAddressClaimsMap()).orElseGet(() -> {
-            return Optional.ofNullable(token.getOtherClaims().get(IDToken.ADDRESS))
-                           .filter(Map.class::isInstance)
-                           .map(o -> (HashMap<String, Object>) o)
-                           .orElseGet(HashMap::new);
-        });
+        Map<String, Object> addressSet = Optional.ofNullable(token.getAddressClaimsMap()).orElseGet(() -> Optional.ofNullable(token.getOtherClaims().get(IDToken.ADDRESS))
+                .filter(Map.class::isInstance)
+                .map(o -> (HashMap<String, Object>) o)
+                .orElseGet(HashMap::new));
         Optional.ofNullable(getUserModelAttributeValue(user, mappingModel, STREET))
                 .ifPresent(street -> addressSet.put(AddressClaimSet.STREET_ADDRESS, street));
         Optional.ofNullable(getUserModelAttributeValue(user, mappingModel, AddressClaimSet.LOCALITY))
@@ -145,7 +143,6 @@ public class AddressMapper extends AbstractOIDCProtocolMapper implements OIDCAcc
 
         if (!addressSet.isEmpty()) {
             token.setAddress(addressSet);
-            token.getOtherClaims().put(IDToken.ADDRESS, addressSet);
         }
     }
 

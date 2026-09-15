@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ * Copyright 2025 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet author="keycloak" id="26.8.0-auth-session-auth-user-id-index">
+        <!-- Index used when invalidating a user's in-progress authentication sessions on credential reset
+             with "sign out of other devices" (findRootAuthSessionIdsByUser filters on AUTH_USER_ID). -->
+        <createIndex tableName="AUTH_SESSION" indexName="IDX_AUTH_SESSION_AUTH_USER_ID">
+            <column name="AUTH_USER_ID"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Add SESSION_BUCKET and LAST_SESSION_REFRESH_COARSE columns to OFFLINE_USER_SESSION, then rebuild
+         expiration indexes. SESSION_BUCKET distributes inserts across multiple B-tree leaf pages,
+         reducing PAGELATCH_EX contention. LAST_SESSION_REFRESH_COARSE is a coarse-grained version of
+         LAST_SESSION_REFRESH (rounded to maxIdle/2 boundaries), reducing index repositions by ~83%
+         since the coarse value only changes every maxIdle/2 seconds instead of on every refresh. -->
+
+    <changeSet id="26.8.0-51851-add-session-bucket" author="keycloak">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="OFFLINE_USER_SESSION" columnName="SESSION_BUCKET"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="OFFLINE_USER_SESSION">
+            <column name="SESSION_BUCKET" type="SMALLINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="26.8.0-51900-add-last-session-refresh-coarse" author="keycloak">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="OFFLINE_USER_SESSION" columnName="LAST_SESSION_REFRESH_COARSE"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="OFFLINE_USER_SESSION">
+            <column name="LAST_SESSION_REFRESH_COARSE" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <modifySql dbms="mssql">
+            <replace replace="DEFAULT 0" with="DEFAULT 0 WITH VALUES"/>
+        </modifySql>
+    </changeSet>
+
+    <changeSet id="26.8.0-51851-drop-old-expiration-idx-created" author="keycloak">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_CREATED"/>
+        </preConditions>
+        <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_CREATED"/>
+    </changeSet>
+
+    <changeSet id="26.8.0-51851-drop-old-expiration-idx-last-refresh" author="keycloak">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_LAST_REFRESH"/>
+        </preConditions>
+        <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_LAST_REFRESH"/>
+    </changeSet>
+
+    <changeSet id="26.8.0-51851-add-bucketed-expiration-idx-created" author="keycloak">
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_CREATED">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
+            <column name="REMEMBER_ME" type="BOOLEAN"/>
+            <column name="SESSION_BUCKET" type="SMALLINT"/>
+            <column name="CREATED_ON" type="INT"/>
+            <column name="USER_SESSION_ID" type="VARCHAR(36)"/>
+            <column name="USER_ID" type="VARCHAR(255)"/>
+        </createIndex>
+        <!-- On databases that support INCLUDE, move USER_SESSION_ID and USER_ID out of the
+             B-tree key into leaf-only storage, reducing key size and page contention. -->
+        <modifySql dbms="postgresql">
+            <replace replace=", USER_SESSION_ID, USER_ID)" with=") INCLUDE (USER_SESSION_ID, USER_ID)"/>
+        </modifySql>
+        <modifySql dbms="mssql">
+            <replace replace=", USER_SESSION_ID, USER_ID)" with=") INCLUDE (USER_SESSION_ID, USER_ID) WITH (OPTIMIZE_FOR_SEQUENTIAL_KEY = ON)"/>
+        </modifySql>
+    </changeSet>
+
+    <changeSet id="26.8.0-51900-51851-add-bucketed-and-coarse-expiration-idx-last-refresh" author="keycloak">
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_LAST_REFRESH">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
+            <column name="REMEMBER_ME" type="BOOLEAN"/>
+            <column name="SESSION_BUCKET" type="SMALLINT"/>
+            <column name="LAST_SESSION_REFRESH_COARSE" type="BIGINT"/>
+            <column name="USER_SESSION_ID" type="VARCHAR(36)"/>
+            <column name="USER_ID" type="VARCHAR(255)"/>
+        </createIndex>
+        <modifySql dbms="postgresql">
+            <replace replace=", USER_SESSION_ID, USER_ID)" with=") INCLUDE (USER_SESSION_ID, USER_ID)"/>
+        </modifySql>
+        <modifySql dbms="mssql">
+            <replace replace=", USER_SESSION_ID, USER_ID)" with=") INCLUDE (USER_SESSION_ID, USER_ID) WITH (OPTIMIZE_FOR_SEQUENTIAL_KEY = ON)"/>
+        </modifySql>
+    </changeSet>
+
+    <!-- Issue 51854: Drop redundant client session index and add filtered broker session index
+         on databases that support it. -->
+
+    <changeSet id="26.8.0-51854-drop-css-user-session-offline-idx" author="keycloak">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <indexExists tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_BY_USER_SESSION_AND_OFFLINE"/>
+        </preConditions>
+        <dropIndex tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_BY_USER_SESSION_AND_OFFLINE"/>
+    </changeSet>
+
+    <changeSet id="26.8.0-51854-drop-broker-session-idx" author="keycloak">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <and>
+                <or>
+                    <dbms type="postgresql"/>
+                    <dbms type="mssql"/>
+                </or>
+                <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID"/>
+            </and>
+        </preConditions>
+        <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID"/>
+    </changeSet>
+
+    <changeSet id="26.8.0-51854-add-filtered-broker-session-idx" author="keycloak">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <and>
+                <or>
+                    <dbms type="postgresql"/>
+                    <dbms type="mssql"/>
+                </or>
+                <not>
+                    <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID"/>
+                </not>
+            </and>
+        </preConditions>
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID">
+            <column name="BROKER_SESSION_ID"/>
+            <column name="REALM_ID"/>
+        </createIndex>
+        <modifySql dbms="postgresql">
+            <append value=" WHERE BROKER_SESSION_ID IS NOT NULL"/>
+        </modifySql>
+        <modifySql dbms="mssql">
+            <append value=" WHERE BROKER_SESSION_ID IS NOT NULL"/>
+        </modifySql>
+    </changeSet>
+
+    <!-- Add REALM_ID column to ORG_DOMAIN (nullable first, populated next) -->
+    <changeSet author="keycloak" id="26.8.0-org-domain-add-realm-id">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="ORG_DOMAIN" columnName="REALM_ID"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="ORG_DOMAIN">
+            <column name="REALM_ID" type="VARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+
+    <!-- Populate REALM_ID from ORG table -->
+    <changeSet author="keycloak" id="26.8.0-org-domain-populate-realm-id">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <columnExists tableName="ORG_DOMAIN" columnName="REALM_ID"/>
+        </preConditions>
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_PopulateOrgDomainRealmId"/>
+    </changeSet>
+
+    <!-- Make REALM_ID NOT NULL + add unique constraint and index -->
+    <changeSet author="keycloak" id="26.8.0-org-domain-realm-id-not-null">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <columnExists tableName="ORG_DOMAIN" columnName="REALM_ID"/>
+        </preConditions>
+        <addNotNullConstraint tableName="ORG_DOMAIN" columnName="REALM_ID" columnDataType="VARCHAR(255)"/>
+        <addUniqueConstraint tableName="ORG_DOMAIN" columnNames="REALM_ID, NAME"
+                             constraintName="UK_ORG_DOMAIN_REALM_NAME"/>
+        <createIndex tableName="ORG_DOMAIN" indexName="IDX_ORG_DOMAIN_REALM">
+            <column name="REALM_ID" type="VARCHAR(255)"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Add IDP_ID and AUTO_REDIRECT columns to ORG_DOMAIN -->
+    <changeSet author="keycloak" id="26.8.0-org-domain-add-idp-columns">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="ORG_DOMAIN" columnName="IDP_ID"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="ORG_DOMAIN">
+            <column name="IDP_ID" type="VARCHAR(36)"/>
+            <column name="AUTO_REDIRECT" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- Add FK on ORG_ID to ORG with CASCADE delete -->
+    <changeSet author="keycloak" id="26.8.0-org-domain-add-org-fk">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="FK_ORG_DOMAIN_ORG"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="ORG_DOMAIN" baseColumnNames="ORG_ID"
+                                 constraintName="FK_ORG_DOMAIN_ORG"
+                                 referencedTableName="ORG" referencedColumnNames="ID"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- Create ORG_IDENTITY_PROVIDER join table -->
+    <changeSet author="keycloak" id="26.8.0-create-org-identity-provider">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <tableExists tableName="ORG_IDENTITY_PROVIDER"/>
+            </not>
+        </preConditions>
+        <createTable tableName="ORG_IDENTITY_PROVIDER">
+            <column name="ORGANIZATION_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="IDENTITY_PROVIDER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="AUTO_MEMBERSHIP" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="MEMBERSHIP_TYPE" type="VARCHAR(255)" defaultValue="UNMANAGED"/>
+        </createTable>
+        <addPrimaryKey tableName="ORG_IDENTITY_PROVIDER" columnNames="ORGANIZATION_ID, IDENTITY_PROVIDER_ID"
+                       constraintName="PK_ORG_IDP"/>
+        <addForeignKeyConstraint baseTableName="ORG_IDENTITY_PROVIDER" baseColumnNames="ORGANIZATION_ID"
+                                 constraintName="FK_ORG_IDP_ORG"
+                                 referencedTableName="ORG" referencedColumnNames="ID"
+                                 onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="ORG_IDENTITY_PROVIDER" baseColumnNames="IDENTITY_PROVIDER_ID"
+                                 constraintName="FK_ORG_IDP_IDP"
+                                 referencedTableName="IDENTITY_PROVIDER" referencedColumnNames="INTERNAL_ID"
+                                 onDelete="CASCADE"/>
+        <createIndex tableName="ORG_IDENTITY_PROVIDER" indexName="IDX_ORG_IDP_ORG_ID">
+            <column name="ORGANIZATION_ID" type="VARCHAR(255)"/>
+        </createIndex>
+        <createIndex tableName="ORG_IDENTITY_PROVIDER" indexName="IDX_ORG_IDP_IDP_ID">
+            <column name="IDENTITY_PROVIDER_ID" type="VARCHAR(36)"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Populate ORG_IDENTITY_PROVIDER + ORG_DOMAIN.IDP_ID routing -->
+    <changeSet author="keycloak" id="26.8.0-org-idp-and-domain-routing-migration">
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_DomainIdpRoutingMigration"/>
+    </changeSet>
+
+    <!-- Add FK from ORG_DOMAIN.IDP_ID to IDENTITY_PROVIDER -->
+    <changeSet author="keycloak" id="26.8.0-org-domain-add-idp-fk">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="FK_ORG_DOMAIN_IDP"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="ORG_DOMAIN" baseColumnNames="IDP_ID"
+                                 constraintName="FK_ORG_DOMAIN_IDP"
+                                 referencedTableName="IDENTITY_PROVIDER" referencedColumnNames="INTERNAL_ID"
+                                 onDelete="SET NULL"/>
+        <createIndex tableName="ORG_DOMAIN" indexName="IDX_ORG_DOMAIN_IDP_ID">
+            <column name="IDP_ID" type="VARCHAR(36)"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Drop IDENTITY_PROVIDER.ORGANIZATION_ID column and related indexes -->
+    <changeSet author="keycloak" id="26.8.0-drop-idp-organization-id">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <columnExists tableName="IDENTITY_PROVIDER" columnName="ORGANIZATION_ID"/>
+        </preConditions>
+        <dropIndex tableName="IDENTITY_PROVIDER" indexName="IDX_IDP_REALM_ORG"/>
+        <dropIndex tableName="IDENTITY_PROVIDER" indexName="IDX_IDP_FOR_LOGIN"/>
+        <dropColumn tableName="IDENTITY_PROVIDER" columnName="ORGANIZATION_ID"/>
+        <createIndex tableName="IDENTITY_PROVIDER" indexName="IDX_IDP_FOR_LOGIN">
+            <column name="REALM_ID"/>
+            <column name="ENABLED"/>
+            <column name="LINK_ONLY"/>
+            <column name="HIDE_ON_LOGIN"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Backfill KEYCLOAK_GROUP.ORG_ID for orgs created before 26.6.0 -->
+    <changeSet author="keycloak" id="26.8.0-backfill-group-org-id">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <and>
+                <columnExists tableName="KEYCLOAK_GROUP" columnName="ORG_ID"/>
+                <columnExists tableName="ORG" columnName="GROUP_ID"/>
+            </and>
+        </preConditions>
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_BackfillGroupOrgId"/>
+    </changeSet>
+
+</databaseChangeLog>

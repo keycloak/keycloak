@@ -34,12 +34,12 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
-            <artifactId>keycloak-test-framework-core</artifactId>
+            <artifactId>keycloak-test-framework-test-containers</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>mysql</artifactId>
+            <artifactId>testcontainers-mysql</artifactId>
         </dependency>
     </dependencies>
 </project>

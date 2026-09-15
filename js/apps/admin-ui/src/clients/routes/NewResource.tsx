@@ -10,10 +10,10 @@ const ResourceDetails = lazy(() => import("../authorization/ResourceDetails"));
 export const NewResourceRoute: AppRouteObject = {
   path: "/:realm/clients/:id/authorization/resource/new",
   element: <ResourceDetails />,
-  breadcrumb: (t) => t("createResource"),
   handle: {
     access: (accessChecker) =>
       accessChecker.hasAny("manage-clients", "manage-authorization"),
+    breadcrumb: (t) => t("createResource"),
   },
 };
 

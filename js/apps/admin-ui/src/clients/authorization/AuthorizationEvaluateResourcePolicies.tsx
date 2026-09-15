@@ -71,7 +71,7 @@ export const AuthorizationEvaluateResourcePolicies = ({
         <Td>
           {outerPolicy.status === DecisionEffect.Deny &&
           resource.policies?.[rowIndex]?.scopes?.length
-            ? resource.policies[rowIndex].scopes?.join(", ")
+            ? resource.policies[rowIndex].scopes.join(", ")
             : "-"}
         </Td>
       </Tr>

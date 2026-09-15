@@ -15,5 +15,5 @@
 # limitations under the License.
 #
 
-org.keycloak.testsuite.actions.DummyRequiredActionFactory
-org.keycloak.testsuite.actions.DummyConfigurableRequiredActionFactory
+org.keycloak.tests.providers.actions.DummyRequiredActionFactory
+org.keycloak.tests.providers.actions.DummyConfigurableRequiredActionFactory

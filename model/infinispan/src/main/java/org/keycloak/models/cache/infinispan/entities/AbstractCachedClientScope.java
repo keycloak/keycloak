@@ -19,7 +19,7 @@ abstract class AbstractCachedClientScope<D extends ClientScopeModel> extends Abs
     private final LazyLoader<D, Map<String, String>> mappersByName;
     private final LazyLoader<D, Map<String, List<String>>> mappersByType;
 
-    public AbstractCachedClientScope(Long revision, ClientScopeModel model) {
+    public AbstractCachedClientScope(long revision, ClientScopeModel model) {
         super(revision, model.getId());
         mappersById = new DefaultLazyLoader<>(scope -> scope.getProtocolMappersStream()
                 .collect(Collectors.toMap(ProtocolMapperModel::getId, ProtocolMapperModel::new)),

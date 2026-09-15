@@ -1,0 +1,160 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Deploying CloudNativePG in multiple availability zones"
+summary="Deploy CloudNativePG as the database building block in a single-cluster deployment."
+tileVisible="false" >
+
+This topic describes how to deploy a CloudNativePG cluster across multiple availability zones to tolerate one or more availability zone failures in a given AWS region.
+
+This deployment is intended to be used with the setup described in the <@links.ha id="single-cluster-concepts"/> {section}.
+Use this deployment with the other building blocks outlined in the <@links.ha id="single-cluster-building-blocks"/> {section}.
+
+include::../partials/blueprint-disclaimer.adoc[]
+
+== Architecture
+
+CloudNativePG is an opensource operator that manages PostgreSQL clusters on {kubernetes}. It is designed to operate one primary writer instance and optional reader instances.
+
+As this setup uses standard a PostgreSQL image that does not support Transparent Data Encryption (TDE), all storage devices for the database and write-ahead logs (WAL) should be placed on encrypted storage.
+See <@links.server id="db" anchor="encrypting-data-at-rest"/> for more information.
+
+image::high-availability/cnpg-multi-az.dio.svg[]
+
+== Install CloudNativePG
+
+[#single-cluster-cnpg-install-operator]
+=== Install the CloudNativePG Operator
+
+Install the operator directly using the operator manifest:
+
+.Command:
+[source,bash]
+----
+kubectl apply --server-side -f \
+  https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-${properties["cnpg.major-minor-version"]}/releases/cnpg-${properties["cnpg.version"]}.yaml
+----
+
+Use the following command to verify the installation status:
+
+.Command:
+[source,bash]
+----
+kubectl rollout status deployment \
+  -n cnpg-system cnpg-controller-manager
+----
+
+.Output:
+[source,bash]
+----
+deployment "cnpg-controller-manager" successfully rolled out
+----
+
+It is possible to install the operator using other supported methods such as Helm Chart, OLM, or `cnpg` plugin for `kubectl`. See the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/installation_upgrade[CloudNativePG documentation] for details.
+
+=== Install CloudNativePG Cluster
+
+[IMPORTANT]
+====
+We recommend enabling backups for the CloudNativePG cluster to protect against data loss.
+See <@links.ha id="single-cluster-deploy-cnpg-with-backup" /> for instructions on configuring scheduled backups to AWS S3.
+====
+
+Installation and configuration of CloudNativePG cluster is done via a `Cluster` resource.
+
+. Create a `cluster.yaml` file based on the following content:
++
+.Cluster resource:
+[source,yaml,indent=0]
+----
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: cnpg-keycloak
+spec:
+  instances: 3 # <1>
+
+  storage:
+    size: 8Gi # <2>
+
+  affinity: # <3>
+    podAntiAffinityType: required
+    topologyKey: topology.kubernetes.io/zone
+
+  postgresql:
+    synchronous: # <4>
+      method: any
+      number: 1
+    parameters:
+      max_connections: "100" # <5>
+
+  bootstrap:
+    initdb: # <6>
+      database: keycloak
+      owner: keycloak
+
+  managed:
+    services:
+      disabledDefaultServices: ["ro", "r"] # <7>
+----
+<1> Number of instances.
+<2> Pod storage size. This setting needs to take into account the expected size of the database and PostgreSQL WAL logs.
+<3> Pod affinity rules for Kubernetes scheduler. The `topology.kubernetes.io/zone` value ensures the scheduler will spread the pods across different availability zones.
+<4> Enable quorum-based synchronous replication with a single standby server. For more information about synchronous replication follow the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/replication/#synchronous-replication[CloudNativePG documentation].
+<5> Maximum number of concurrent connections to the database server. This value needs to be adjusted based on the expected maximum number of connections from the {project_name} cluster. For example, if the {project_name} cluster has 3 instances with a maximum of 30 JDBC connections per instance (see the {project_name} option `db-pool-max-size`), the value of `spec.postgresql.max_connections` needs to be at least `90` to account for the required connection capacity. For additional considerations about configuring database connections for {project_name} see <@links.ha id="single-cluster-concepts-database-connections" />.
+<6> Creates a database `keycloak` owned by the user `keycloak`.
+<7> Disables the `-ro` and `-r` default services which are intended for read-only applications. Since {project_name} requires a read-write access it only connects to the `-rw` service.
++
+. Create the `cnpg-keycloak` namespace.
++
+.Command:
+[source,bash]
+----
+kubectl create ns cnpg-keycloak
+----
++
+. Create the `cnpg-keycloak` cluster resource by applying the `cluster.yaml` file.
++
+.Command:
+[source,bash]
+----
+kubectl -n cnpg-keycloak apply -f cluster.yaml
+----
++
+. Wait for the `cnpg-keycloak` cluster to get into the `Ready` state.
++
+.Command:
+[source,bash]
+----
+kubectl -n cnpg-keycloak wait --for condition=Ready --timeout=300s cluster cnpg-keycloak
+----
++
+.Output:
+[source,bash]
+----
+cluster.postgresql.cnpg.io/cnpg-keycloak condition met
+----
++
+. Optionally, view the `cnpg-keycloak` cluster pods and their roles.
++
+.Command:
+[source,bash]
+----
+kubectl -n cnpg-keycloak get pods -L role
+----
++
+.Example output:
+[source,bash]
+----
+NAME              READY   STATUS    RESTARTS   AGE   ROLE
+cnpg-keycloak-1   1/1     Running   0          10m   primary
+cnpg-keycloak-2   1/1     Running   0          10m   replica
+cnpg-keycloak-3   1/1     Running   0          10m   replica
+----
+
+== Next steps
+
+After successful deployment of the CloudNativePG database continue with <@links.ha id="single-cluster-deploy-keycloak" />
+
+</@tmpl.guide>

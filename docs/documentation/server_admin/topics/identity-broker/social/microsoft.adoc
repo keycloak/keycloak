@@ -11,7 +11,7 @@
 image:images/microsoft-add-identity-provider.png[Add Identity Provider]
 +
 . Copy the value of *Redirect URI* to your clipboard.
-. In a separate browser tab, register an app on https://azure.microsoft.com/en-us/[Microsoft Azure] under *App registrations*.
+. In a separate browser tab, register an app on https://azure.microsoft.com/en-us[Microsoft Azure] under *App registrations*.
 .. In the Redirect URI section, select *Web* as a platform and paste the value of *Redirect URI* into the field.
 .. Find you application under *App registrations* and add a new client secret in the *Certificates & secrets* section.
 .. Note the *Value* of the created secret.

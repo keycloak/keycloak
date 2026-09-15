@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class AbstractExtendableRevisioned extends AbstractRevisioned {
     protected ConcurrentHashMap cachedWith = new ConcurrentHashMap();
 
-    public AbstractExtendableRevisioned(Long revision, String id) {
+    public AbstractExtendableRevisioned(long revision, String id) {
         super(revision, id);
     }
 

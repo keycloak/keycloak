@@ -13,9 +13,9 @@ const ClientProfileForm = lazy(() => import("../ClientProfileForm"));
 export const AddClientProfileRoute: AppRouteObject = {
   path: "/:realm/realm-settings/client-policies/:tab/add-profile",
   element: <ClientProfileForm />,
-  breadcrumb: (t) => t("newClientProfile"),
   handle: {
     access: "manage-realm",
+    breadcrumb: (t) => t("newClientProfile"),
   },
 };
 

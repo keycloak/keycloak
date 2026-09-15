@@ -121,10 +121,10 @@ public class Config implements ConfigProvider {
         }
 
         @Override
-        public String get(String key, String defaultValue) {
+        public String get(String key) {
             String v = replaceProperties(getConfig().get(prefix + key));
             if (v == null || v.isEmpty()) {
-                v = System.getProperty("keycloak." + prefix + key, defaultValue);
+                v = System.getProperty("keycloak." + prefix + key);
             }
             return v != null && ! v.isEmpty() ? v : null;
         }

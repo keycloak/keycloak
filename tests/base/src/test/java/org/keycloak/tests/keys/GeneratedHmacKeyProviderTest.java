@@ -34,7 +34,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.tests.utils.runonserver.RunHelpers;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import org.junit.jupiter.api.Test;
 

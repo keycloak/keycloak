@@ -30,7 +30,7 @@ import org.keycloak.provider.Provider;
  */
 public interface TokenContextEncoderProvider extends Provider {
 
-    AccessTokenContext getTokenContextFromClientSessionContext(ClientSessionContext clientSessionContext, String rawTokenId);
+    AccessTokenContext getTokenContextFromClientSessionContext(ClientSessionContext clientSessionContext, String rawTokenId, boolean isOffline);
 
     AccessTokenContext getTokenContextFromTokenId(String encodedTokenId);
 

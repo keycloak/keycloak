@@ -13,10 +13,10 @@ import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.api.trace.TraceFlags;
 import io.opentelemetry.sdk.trace.ReadableSpan;
 import io.opentelemetry.sdk.trace.data.ExceptionEventData;
 import io.opentelemetry.sdk.trace.data.StatusData;
+import io.opentelemetry.semconv.CodeAttributes;
 import io.opentelemetry.semconv.ExceptionAttributes;
 import org.junit.jupiter.api.Test;
 
@@ -42,6 +42,7 @@ public class TracingProviderTest {
             ReadableSpan readableSpan = (ReadableSpan) current;
             assertThat(readableSpan.getAttribute(AttributeKey.stringKey("code.function")), is("runOnServer"));
             assertThat(readableSpan.getAttribute(AttributeKey.stringKey("code.namespace")), is("org.keycloak.testframework.remote.providers.runonserver.RunOnServerRealmResourceProvider"));
+            assertThat(readableSpan.getAttribute(CodeAttributes.CODE_FUNCTION_NAME), is("org.keycloak.testframework.remote.providers.runonserver.RunOnServerRealmResourceProvider.runOnServer"));
             assertThat(readableSpan.getName(), is("RunOnServerRealmResourceProvider.runOnServer"));
         });
     }
@@ -82,7 +83,7 @@ public class TracingProviderTest {
 
                 var context = current.getSpanContext();
                 assertThat(context, is(span.getSpanContext()));
-                assertThat(context.getTraceFlags(), is(TraceFlags.getSampled()));
+                assertThat(context.getTraceFlags().isSampled(), is(true));
                 assertThat(current.isRecording(), is(true));
 
                 assertThat(current instanceof ReadableSpan, is(true));

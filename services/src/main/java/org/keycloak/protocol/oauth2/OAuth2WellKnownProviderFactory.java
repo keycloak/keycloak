@@ -30,4 +30,9 @@ public class OAuth2WellKnownProviderFactory extends OIDCWellKnownProviderFactory
     public String getId() {
         return PROVIDER_ID;
     }
+
+    @Override
+    public boolean isAvailableViaServerMetadata() {
+        return true;
+    }
 }

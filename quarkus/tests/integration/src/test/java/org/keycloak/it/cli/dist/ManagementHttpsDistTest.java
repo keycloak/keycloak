@@ -19,6 +19,7 @@ package org.keycloak.it.cli.dist;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
@@ -28,9 +29,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.when;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.containsString;
 
-@DistributionTest(keepAlive = true,
+@DistributionTest(stopServer = Mode.MANUAL,
         enableTls = true,
         defaultOptions = {"--db=dev-file", "--health-enabled=true", "--metrics-enabled=true"},
         requestPort = 9000)
@@ -53,7 +54,7 @@ public class ManagementHttpsDistTest {
         when().get(url).then()
                 .statusCode(200)
                 .and()
-                .body(is("Keycloak Management Interface"));
+                .body(containsString("Keycloak Management Interface"));
         when().get(url + "/health").then()
                 .statusCode(200);
         when().get(url + "/health/live").then()
@@ -74,7 +75,7 @@ public class ManagementHttpsDistTest {
         when().get(url).then()
                 .statusCode(200)
                 .and()
-                .body(is("Keycloak Management Interface"));
+                .body(containsString("Keycloak Management Interface"));
         when().get(url + "/health").then()
                 .statusCode(200);
         when().get(url + "/health/live").then()

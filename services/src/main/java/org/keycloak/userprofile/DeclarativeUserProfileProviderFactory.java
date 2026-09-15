@@ -70,14 +70,19 @@ import org.keycloak.userprofile.validator.UsernameMutationValidator;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.validators.EmailValidator;
+import org.keycloak.validate.validators.LengthValidator;
+
+import org.jspecify.annotations.NonNull;
 
 import static java.util.Optional.ofNullable;
 
 import static org.keycloak.common.util.ObjectUtil.isBlank;
+import static org.keycloak.services.validation.Validation.MAX_USERNAME_LENGTH;
 import static org.keycloak.userprofile.DefaultAttributes.READ_ONLY_ATTRIBUTE_KEY;
 import static org.keycloak.userprofile.UserProfileContext.ACCOUNT;
 import static org.keycloak.userprofile.UserProfileContext.IDP_REVIEW;
 import static org.keycloak.userprofile.UserProfileContext.REGISTRATION;
+import static org.keycloak.userprofile.UserProfileContext.SCIM;
 import static org.keycloak.userprofile.UserProfileContext.UPDATE_EMAIL;
 import static org.keycloak.userprofile.UserProfileContext.UPDATE_PROFILE;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
@@ -99,9 +104,11 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     private static final String[] DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES = { "KERBEROS_PRINCIPAL", "LDAP_ID", "LDAP_ENTRY_DN", "CREATED_TIMESTAMP", "createTimestamp", "modifyTimestamp" };
     private static final Pattern readOnlyAttributesPattern = getRegexPatternString(DEFAULT_READ_ONLY_ATTRIBUTES);
     private static final Pattern adminReadOnlyAttributesPattern = getRegexPatternString(DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES);
+    private static final String ANNOTATION_SCIM_SCHEMA_ATTRIBUTE = "kc.scim.schema.attribute";
 
     private static volatile UPConfig PARSED_DEFAULT_RAW_CONFIG;
     private final Map<UserProfileContext, UserProfileMetadata> contextualMetadataRegistry = new HashMap<>();
+    private UPConfig parsedConfig;
 
     public static void setDefaultConfig(UPConfig defaultConfig) {
         if (PARSED_DEFAULT_RAW_CONFIG == null) {
@@ -132,26 +139,24 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         KeycloakContext context = session.getContext();
         RealmModel realm = context.getRealm();
 
-        switch (c.getContext()) {
-            case REGISTRATION:
-            case IDP_REVIEW:
-                return !realm.isRegistrationEmailAsUsername();
-            case UPDATE_PROFILE:
+        return switch (c.getContext()) {
+            case REGISTRATION, IDP_REVIEW -> !realm.isRegistrationEmailAsUsername();
+            case UPDATE_PROFILE -> {
                 if (realm.isRegistrationEmailAsUsername()) {
-                    return false;
+                    yield false;
                 }
-                return realm.isEditUsernameAllowed();
-            case UPDATE_EMAIL:
-                return false;
-        }
+                yield realm.isEditUsernameAllowed();
+            }
+            case UPDATE_EMAIL -> false;
+            default -> true;
+        };
 
-        return true;
     }
 
     private static boolean editEmailCondition(AttributeContext c) {
         RealmModel realm = c.getSession().getContext().getRealm();
 
-        if (REGISTRATION.equals(c.getContext()) || USER_API.equals(c.getContext())) {
+        if (REGISTRATION.equals(c.getContext()) || c.getContext().isAdminContext()) {
             return true;
         }
 
@@ -177,17 +182,13 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
             return !(UPDATE_PROFILE.equals(c.getContext()) || ACCOUNT.equals(c.getContext()));
         }
 
-        if (!isNewUser(c) && realm.isRegistrationEmailAsUsername() && !realm.isEditUsernameAllowed()) {
-            return false;
-        }
-
-        return true;
+        return isNewUser(c) || !realm.isRegistrationEmailAsUsername() || realm.isEditUsernameAllowed();
     }
 
     private static boolean readEmailCondition(AttributeContext c) {
         UserProfileContext context = c.getContext();
 
-        if (REGISTRATION.equals(context) || USER_API.equals(c.getContext())) {
+        if (REGISTRATION.equals(context) || context.isAdminContext()) {
             return true;
         }
 
@@ -264,13 +265,42 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         }
 
         addContextualProfileMetadata(configureUserProfile(createBrokeringProfile(readOnlyValidator)));
-        addContextualProfileMetadata(configureUserProfile(createAccountProfile(ACCOUNT, readOnlyValidator)));
+        addContextualProfileMetadata(configureUserProfile(createAccountProfile(readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_PROFILE, readOnlyValidator)));
         if (Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
             addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_EMAIL, readOnlyValidator)));
         }
         addContextualProfileMetadata(configureUserProfile(createRegistrationUserCreationProfile(readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createUserResourceValidation(config)));
+        addContextualProfileMetadata(configureUserProfile(createScimProfile(readOnlyValidator)));
+    }
+
+    private @NonNull UserProfileMetadata createScimProfile(AttributeValidatorMetadata readOnlyValidator) {
+        UserProfileMetadata metadata = createDefaultProfile(SCIM, readOnlyValidator);
+        String coreSchema = "urn:ietf:params:scim:schemas:core:2.0:User";
+
+        metadata.getAttribute(UserModel.USERNAME).get(0)
+                .addAnnotations(Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "userName"));
+        metadata.getAttribute(UserModel.EMAIL).get(0)
+                .addAnnotations(Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "emails"));
+        metadata.addAttribute(UserModel.FIRST_NAME, -1, AttributeMetadata.ALWAYS_TRUE, AttributeMetadata.ALWAYS_TRUE)
+                .addAnnotations(Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.givenName"));
+        metadata.addAttribute(UserModel.LAST_NAME, -1, AttributeMetadata.ALWAYS_TRUE, AttributeMetadata.ALWAYS_TRUE)
+                .addAnnotations(Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.familyName"));
+        metadata.addAttribute(UserModel.ENABLED, -1, AttributeMetadata.ALWAYS_TRUE, AttributeMetadata.ALWAYS_TRUE)
+                .addAnnotations(Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "active"));
+        metadata.addAttribute(UserModel.CREATED_TIMESTAMP, -1, AttributeMetadata.ALWAYS_FALSE, AttributeMetadata.ALWAYS_TRUE)
+                .setRequired(AttributeMetadata.ALWAYS_FALSE)
+                .addAnnotations(Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "meta.created"));
+        metadata.addAttribute(UserModel.LOCALE, -1, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled)
+                .setRequired(AttributeMetadata.ALWAYS_FALSE)
+                .addAnnotations(Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "locale"))
+                .setSelector(c -> {
+                    RealmModel realm = c.getSession().getContext().getRealm();
+                    return realm.isInternationalizationEnabled();
+                });
+
+        return metadata;
     }
 
     @Override
@@ -324,7 +354,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         }
 
         // delete cache so new config is parsed and applied next time it is required
-        // throught #configureUserProfile(metadata, session)
+        // through #configureUserProfile(metadata, session)
         if (model != null) {
             model.removeNote(DeclarativeUserProfileProvider.PARSED_CONFIG_COMPONENT_KEY);
         }
@@ -367,7 +397,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
      */
     protected UserProfileMetadata configureUserProfile(UserProfileMetadata metadata) {
         // default metadata for each context is based on the default realm configuration
-        return new DeclarativeUserProfileProvider(null, this).decorateUserProfileForCache(metadata, PARSED_DEFAULT_RAW_CONFIG);
+        return new DeclarativeUserProfileProvider(null, this).decorateUserProfileForCache(metadata, parsedConfig);
     }
 
     private AttributeValidatorMetadata createReadOnlyAttributeUnchangedValidator(Pattern pattern) {
@@ -396,7 +426,9 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         UserProfileMetadata metadata = new UserProfileMetadata(IDP_REVIEW);
 
         metadata.addAttribute(UserModel.USERNAME, -2, DeclarativeUserProfileProviderFactory::editUsernameCondition,
-                DeclarativeUserProfileProviderFactory::readUsernameCondition, new AttributeValidatorMetadata(BrokeringFederatedUsernameHasValueValidator.ID)).setAttributeDisplayName("${username}");
+                DeclarativeUserProfileProviderFactory::readUsernameCondition,
+                new AttributeValidatorMetadata(BrokeringFederatedUsernameHasValueValidator.ID),
+                createUsernameLengthValidator()).setAttributeDisplayName("${username}");
 
         metadata.addAttribute(UserModel.EMAIL, -1,
                         new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_EMAIL, true)))
@@ -438,7 +470,8 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
                 DeclarativeUserProfileProviderFactory::readUsernameCondition,
                 new AttributeValidatorMetadata(UsernameHasValueValidator.ID),
                 new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
-                new AttributeValidatorMetadata(UsernameMutationValidator.ID)).setAttributeDisplayName("${username}");
+                new AttributeValidatorMetadata(UsernameMutationValidator.ID),
+                createUsernameLengthValidator()).setAttributeDisplayName("${username}");
 
         metadata.addAttribute(UserModel.EMAIL, -1,
                         DeclarativeUserProfileProviderFactory::editEmailCondition,
@@ -470,7 +503,8 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
         metadata.addAttribute(UserModel.USERNAME, -2,
                         new AttributeValidatorMetadata(UsernameHasValueValidator.ID),
-                        new AttributeValidatorMetadata(DuplicateUsernameValidator.ID))
+                        new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
+                        createUsernameLengthValidator())
                 .addWriteCondition(DeclarativeUserProfileProviderFactory::editUsernameCondition);
         metadata.addAttribute(UserModel.EMAIL, -1,
                         new AttributeValidatorMetadata(DuplicateEmailValidator.ID),
@@ -494,15 +528,15 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
 
         metadata.addAttribute(TermsAndConditions.USER_ATTRIBUTE, -1, AttributeMetadata.ALWAYS_FALSE,
-                DeclarativeUserProfileProviderFactory::isTermAndConditionsEnabled)
+                        DeclarativeUserProfileProviderFactory::isTermAndConditionsEnabled)
                 .setAttributeDisplayName("${termsAndConditionsUserAttribute}")
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
 
         return metadata;
     }
 
-    private UserProfileMetadata createAccountProfile(UserProfileContext context, AttributeValidatorMetadata readOnlyValidator) {
-        UserProfileMetadata defaultProfile = createDefaultProfile(context, readOnlyValidator);
+    private UserProfileMetadata createAccountProfile(AttributeValidatorMetadata readOnlyValidator) {
+        UserProfileMetadata defaultProfile = createDefaultProfile(UserProfileContext.ACCOUNT, readOnlyValidator);
 
         defaultProfile.addAttribute(UserModel.LOCALE, -1, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled)
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
@@ -513,7 +547,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     // GETTER METHODS FOR INTERNAL FIELDS
 
     protected UPConfig getParsedDefaultRawConfig() {
-        return PARSED_DEFAULT_RAW_CONFIG;
+        return parsedConfig;
     }
 
     protected Map<UserProfileContext, UserProfileMetadata> getContextualMetadataRegistry() {
@@ -521,21 +555,19 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     }
 
     private void initDefaultConfiguration(Scope config) {
+
         // The user-defined configuration is always parsed during init and should be avoided as much as possible
         // If no user-defined configuration is set, the system default configuration must have been set
         // In Quarkus, the system default configuration is set at build time for optimization purposes
-        UPConfig defaultConfig = ofNullable(config.get("configFile"))
+        parsedConfig = ofNullable(config.get("configFile"))
                 .map(Paths::get)
                 .map(UPConfigUtils::parseConfig)
                 .orElse(PARSED_DEFAULT_RAW_CONFIG);
 
-        if (defaultConfig == null) {
-            // as a fallback parse the system default config
-            defaultConfig = UPConfigUtils.parseSystemDefaultConfig();
+        // As fallback parse the system default config
+        if (parsedConfig == null) {
+            parsedConfig = UPConfigUtils.parseSystemDefaultConfig();
         }
-
-        PARSED_DEFAULT_RAW_CONFIG = null;
-        setDefaultConfig(defaultConfig);
     }
 
     private static Map<String, Object> getEmailAnnotationDecorator(AttributeContext c) {
@@ -585,5 +617,14 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         RealmModel realm = context1.getRealm();
 
         return UpdateEmail.isEnabled(realm);
+    }
+
+    private AttributeValidatorMetadata createUsernameLengthValidator() {
+        // IDP_REVIEW (brokering) profile has no UsernameHasValueValidator, provides the lower-bound guard.
+        return new AttributeValidatorMetadata(LengthValidator.ID,
+                ValidatorConfig.builder()
+                        .config(LengthValidator.KEY_MIN, "1")
+                        .config(LengthValidator.KEY_MAX, String.valueOf(MAX_USERNAME_LENGTH))
+                        .build());
     }
 }

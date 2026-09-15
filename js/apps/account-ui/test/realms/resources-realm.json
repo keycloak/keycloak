@@ -105,7 +105,14 @@
         "name": "admin",
         "description": "Administrator privileges"
       }
-    ]
+    ],
+    "client" : {
+      "photoz-restful-api": [
+        {
+          "name": "manage-albums"
+        }
+      ]
+    }
   },
   "clients": [
     {

@@ -37,11 +37,6 @@
             <version>${maven.plugins.version}</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.codehaus.plexus</groupId>
-            <artifactId>plexus-utils</artifactId>
-            <version>${version.plexus.utils}</version>
-        </dependency>
     </dependencies>
 
     <build>

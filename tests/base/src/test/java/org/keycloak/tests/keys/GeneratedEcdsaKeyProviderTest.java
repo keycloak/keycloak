@@ -237,7 +237,7 @@ public class GeneratedEcdsaKeyProviderTest {
 
     private String getCurveFromPublicKey(String publicEcdsaKeyBase64Encoded) throws Exception {
         KeyFactory kf = KeyFactory.getInstance("EC");
-        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(publicEcdsaKeyBase64Encoded));
+        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getMimeDecoder().decode(publicEcdsaKeyBase64Encoded));
         ECPublicKey ecKey = (ECPublicKey) kf.generatePublic(publicKeySpec);
         return "P-" + ecKey.getParams().getCurve().getField().getFieldSize();
     }

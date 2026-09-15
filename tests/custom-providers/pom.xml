@@ -49,12 +49,20 @@
             <artifactId>keycloak-services</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-ssf-core</artifactId>
+        </dependency>
+        <dependency>
              <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-storage</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-storage-private</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus.resteasy.reactive</groupId>
+            <artifactId>resteasy-reactive-common</artifactId>
         </dependency>
     </dependencies>
 </project>

@@ -26,7 +26,7 @@ public class CachedIdentityProviderMapper extends AbstractRevisioned implements 
     private final String realm;
     private final IdentityProviderMapperModel mapper;
 
-    public CachedIdentityProviderMapper(Long revision, RealmModel realm, String cacheKey, IdentityProviderMapperModel mapper) {
+    public CachedIdentityProviderMapper(long revision, RealmModel realm, String cacheKey, IdentityProviderMapperModel mapper) {
         super(revision, cacheKey);
         this.realm = realm.getId();
         this.mapper = mapper;

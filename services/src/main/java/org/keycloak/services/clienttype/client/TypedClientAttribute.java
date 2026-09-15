@@ -27,6 +27,8 @@ enum TypedClientSimpleAttribute implements TypedClientAttribute {
     REDIRECT_URIS("redirectUris", Set.of()),
     SERVICE_ACCOUNTS_ENABLED("serviceAccountsEnabled", false),
     WEB_ORIGINS("webOrigins", Set.of()),
+    FULL_SCOPE_ALLOWED("fullScopeAllowed", false),
+    NODE_RE_REGISTRATION_TIMEOUT("nodeReRegistrationTimeout", -1)
     ;
 
     private final String propertyName;

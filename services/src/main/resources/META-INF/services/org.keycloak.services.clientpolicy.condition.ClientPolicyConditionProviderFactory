@@ -11,3 +11,4 @@ org.keycloak.services.clientpolicy.condition.ClientAttributesConditionFactory
 org.keycloak.services.clientpolicy.condition.AcrConditionFactory
 org.keycloak.services.clientpolicy.condition.GrantTypeConditionFactory
 org.keycloak.services.clientpolicy.condition.IdentityProviderConditionFactory
+org.keycloak.protocol.oauth2.cimd.clientpolicy.condition.ClientIdUriSchemeConditionFactory

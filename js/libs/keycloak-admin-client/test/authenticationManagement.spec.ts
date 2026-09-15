@@ -153,7 +153,7 @@ describe("Authentication management", () => {
 
       expect(actionConfig).is.ok;
       expect(actionConfig.config).is.ok;
-      expect(actionConfig.config!["max_auth_age"]).to.be.eq(300); // default max_auth_age for update password
+      expect(actionConfig.config!["max_auth_age"]).to.be.undefined; // default max_auth_age for update password
     });
 
     it("should update required action config for update password", async () => {
@@ -175,7 +175,7 @@ describe("Authentication management", () => {
 
       expect(actionConfig).is.ok;
       expect(actionConfig.config).is.ok;
-      expect(actionConfig.config!["max_auth_age"]).to.be.eq(301); // updated value max_auth_age for update password
+      expect(actionConfig.config!["max_auth_age"]).to.be.eq("301"); // updated value max_auth_age for update password
     });
 
     it("should reset required action config for update password", async () => {
@@ -190,7 +190,7 @@ describe("Authentication management", () => {
 
       expect(actionConfig).is.ok;
       expect(actionConfig.config).is.ok;
-      expect(actionConfig.config!["max_auth_age"]).to.be.eq(300); // default max_auth_age for update password
+      expect(actionConfig.config!["max_auth_age"]).to.be.undefined; // default max_auth_age for update password
     });
 
     it("should get client authenticator providers", async () => {
@@ -198,14 +198,14 @@ describe("Authentication management", () => {
         await kcAdminClient.authenticationManagement.getClientAuthenticatorProviders();
 
       expect(authenticationProviders).is.ok;
-      expect(authenticationProviders.length).to.be.equal(4);
+      expect(authenticationProviders.length).to.be.equal(5);
     });
 
     it("should fetch form providers", async () => {
       const formProviders =
         await kcAdminClient.authenticationManagement.getFormActionProviders();
       expect(formProviders).is.ok;
-      expect(formProviders.length).to.be.eq(4);
+      expect(formProviders.length).to.be.eq(5);
     });
 
     it("should fetch authenticator providers", async () => {
@@ -279,11 +279,13 @@ describe("Authentication management", () => {
       const flow = flows.find((f) => f.alias === flowName)!;
       const description = "Updated description";
       flow.description = description;
-      const updatedFlow =
-        await kcAdminClient.authenticationManagement.updateFlow(
-          { flowId: flow.id! },
-          flow,
-        );
+      await kcAdminClient.authenticationManagement.updateFlow(
+        { flowId: flow.id! },
+        flow,
+      );
+      const updatedFlow = await kcAdminClient.authenticationManagement.getFlow({
+        flowId: flow.id!,
+      });
 
       expect(updatedFlow.description).to.be.eq(description);
     });

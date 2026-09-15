@@ -152,8 +152,19 @@ test.describe.serial("Client details - Client scopes subtab", () => {
     await assertRowExists(page, itemName);
   });
 
-  test("Should show items on next page are more than 11", async ({ page }) => {
+  test("Should show items on next page when there are more than 11 entries", async ({
+    page,
+  }) => {
+    const firstPageRows = await getTableData(page, tableName);
     await clickNextPageButton(page);
+    await expect
+      .poll(
+        async () => {
+          return await getTableData(page, tableName);
+        },
+        { message: "expected table data to change after clicking next page" },
+      )
+      .not.toEqual(firstPageRows);
     const rows = await getTableData(page, tableName);
     expect(rows.length).toBeGreaterThan(1);
   });

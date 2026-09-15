@@ -38,9 +38,6 @@ public class CredentialResponse {
     @JsonProperty("transaction_id")
     private String transactionId;
 
-    @JsonProperty("notification_id")
-    private String notificationId;
-
     public List<Credential> getCredentials() {
         return credentials;
     }
@@ -66,16 +63,6 @@ public class CredentialResponse {
         this.transactionId = transactionId;
         return this;
     }
-
-    public String getNotificationId() {
-        return notificationId;
-    }
-
-    public CredentialResponse setNotificationId(String notificationId) {
-        this.notificationId = notificationId;
-        return this;
-    }
-
 
     /**
      * Inner class to represent a single credential object within the credentials array.

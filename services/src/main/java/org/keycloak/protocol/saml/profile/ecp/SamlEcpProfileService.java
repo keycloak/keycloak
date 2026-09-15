@@ -59,12 +59,19 @@ public class SamlEcpProfileService extends SamlService {
     private static final String NS_PREFIX_SAML_PROTOCOL = "samlp";
     private static final String NS_PREFIX_SAML_ASSERTION = "saml";
 
-    public SamlEcpProfileService(KeycloakSession session, EventBuilder event, DestinationValidator destinationValidator) {
-        super(session, event, destinationValidator);
+    public static final String AUTHN_REQUEST_CANNOT_BE_PROCESSED = "Authentication request cannot be processed.";
+
+    public SamlEcpProfileService(KeycloakSession session, EventBuilder event, long maxInflatingSize, DestinationValidator destinationValidator) {
+        super(session, event, maxInflatingSize, destinationValidator);
     }
 
     public Response authenticate(InputStream inputStream) {
-        return authenticate(Soap.extractSoapMessage(inputStream));
+        try {
+            return authenticate(Soap.extractSoapMessage(inputStream));
+        } catch (Exception e) {
+            logger.debugf(e, "Error while processing SOAP request.");
+            return Soap.createFault().reason("Some error occurred while processing the SOAP request.").build();
+        }
     }
 
     public Response authenticate(Document soapMessage) {
@@ -73,7 +80,8 @@ public class SamlEcpProfileService extends SamlService {
 
                 @Override
                 protected Response error(KeycloakSession session, AuthenticationSessionModel authenticationSession, Response.Status status, String message, Object... parameters) {
-                    return Soap.createFault().code("error").reason(message).build();
+                    logger.debugf("Error while authenticating request. Reason '%s'", message);
+                    return Soap.createFault().code("error").reason(AUTHN_REQUEST_CANNOT_BE_PROCESSED).build();
                 }
 
                 @Override
@@ -96,7 +104,7 @@ public class SamlEcpProfileService extends SamlService {
                     // Do not allow ECP login when client does not support it
                     if (!new SamlClient(client).allowECPFlow()) {
                         logger.errorf("Client %s is not allowed to execute ECP flow", client.getClientId());
-                        throw new RuntimeException("Client is not allowed to use ECP profile.");
+                        return Soap.createFault().code("error").reason(AUTHN_REQUEST_CANNOT_BE_PROCESSED).build();
                     }
 
                     // force passive authentication when executing this profile
@@ -106,14 +114,8 @@ public class SamlEcpProfileService extends SamlService {
                 }
             }.execute(Soap.toSamlHttpPostMessage(soapMessage), null, null, null);
         } catch (Exception e) {
-            String reason = "Some error occurred while processing the AuthnRequest.";
-            String detail = e.getMessage();
-
-            if (detail == null) {
-                detail = reason;
-            }
-
-            return Soap.createFault().reason(reason).detail(detail).build();
+            logger.error("Some error occurred while processing the AuthnRequest.", e);
+            return Soap.createFault().code("error").reason(AUTHN_REQUEST_CANNOT_BE_PROCESSED).build();
         }
     }
 

@@ -45,7 +45,7 @@ public class WelcomePageTest {
     static class WelcomePageTestConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config;
+            return config.option("http-host", "0.0.0.0");
         }
     }
 
@@ -84,7 +84,10 @@ public class WelcomePageTest {
 
         Assertions.assertEquals("Create an administrative user", welcomePage.getWelcomeMessage());
         Assertions.assertTrue(welcomePage.getWelcomeDescription().startsWith("To get started with Keycloak, you first create an administrative user"));
-        Assertions.assertTrue(driver.page().getPageSource().contains("form"));
+        String pageSource = driver.page().getPageSource();
+        Assertions.assertTrue(pageSource.contains("form"));
+        Assertions.assertTrue(pageSource.contains("const DARK_MODE_CLASS = \""),
+                "DARK_MODE_CLASS should be assigned a double-quoted string via ?c");
     }
 
     @Test
@@ -101,7 +104,7 @@ public class WelcomePageTest {
     @Order(3)
     public void createAdminUser() {
         driver.open(keycloakUrls.getBaseUrl());
-        welcomePage.fillRegistration(Config.getAdminUsername(), Config.getAdminPassword());
+        welcomePage.fillRegistration(Config.getAdminUsername(), "Sebastian", "BestAdminInTheWorld", "admin@localhost", Config.getAdminPassword());
         welcomePage.submit();
 
         Assertions.assertTrue(welcomePage.getPageAlert().contains("User created"));
@@ -114,6 +117,11 @@ public class WelcomePageTest {
 
         List<UserRepresentation> users = adminClient.realm("master").users().search(Config.getAdminUsername(), true);
         Assertions.assertEquals(1, users.size());
+
+        UserRepresentation adminUser = users.get(0);
+        Assertions.assertEquals("Sebastian", adminUser.getFirstName());
+        Assertions.assertEquals("BestAdminInTheWorld", adminUser.getLastName());
+        Assertions.assertEquals("admin@localhost", adminUser.getEmail());
     }
 
     @Test

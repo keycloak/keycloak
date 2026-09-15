@@ -78,6 +78,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean organizationsEnabled;
     protected boolean adminPermissionsEnabled;
     protected boolean verifiableCredentialsEnabled;
+    protected boolean scimApiEnabled;
     //--- brute force settings
     protected boolean bruteForceProtected;
     protected boolean permanentLockout;
@@ -89,6 +90,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected long quickLoginCheckMilliSeconds;
     protected int maxDeltaTimeSeconds;
     protected int failureFactor;
+    protected int maxSecondaryAuthFailures;
     //--- end brute force settings
 
     protected String defaultSignatureAlgorithm;
@@ -176,7 +178,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     protected Map<String, Map<String,String>> realmLocalizationTexts;
 
-    public CachedRealm(Long revision, RealmModel model) {
+    public CachedRealm(long revision, RealmModel model) {
         super(revision, model.getId());
         name = model.getName();
         displayName = model.getDisplayName();
@@ -195,6 +197,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         organizationsEnabled = model.isOrganizationsEnabled();
         adminPermissionsEnabled = model.isAdminPermissionsEnabled();
         verifiableCredentialsEnabled = model.isVerifiableCredentialsEnabled();
+        scimApiEnabled = model.isScimApiEnabled();
         //--- brute force settings
         bruteForceProtected = model.isBruteForceProtected();
         permanentLockout = model.isPermanentLockout();
@@ -206,6 +209,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         quickLoginCheckMilliSeconds = model.getQuickLoginCheckMilliSeconds();
         maxDeltaTimeSeconds = model.getMaxDeltaTimeSeconds();
         failureFactor = model.getFailureFactor();
+        maxSecondaryAuthFailures = model.getMaxSecondaryAuthFailures();
         //--- end brute force settings
 
         defaultSignatureAlgorithm = model.getDefaultSignatureAlgorithm();
@@ -243,7 +247,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         emailTheme = model.getEmailTheme();
 
         requiredCredentials = model.getRequiredCredentialsStream().collect(Collectors.toList());
-        userActionTokenLifespans = Collections.unmodifiableMap(new HashMap<>(model.getUserActionTokenLifespans()));
+        userActionTokenLifespans = Map.copyOf(model.getUserActionTokenLifespans());
 
         smtpConfig = model.getSmtpConfig();
         browserSecurityHeaders = model.getBrowserSecurityHeaders();
@@ -288,11 +292,11 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
         authenticatorConfigs = model.getAuthenticatorConfigsStream()
                 .collect(Collectors.toMap(AuthenticatorConfigModel::getId, Function.identity()));
-        List<RequiredActionConfigModel> requiredActionConfigsList = model.getRequiredActionConfigsStream().collect(Collectors.toList());
-        for (RequiredActionConfigModel requiredActionConfig : requiredActionConfigsList) {
-            requiredActionProviderConfigs.put(requiredActionConfig.getId(), requiredActionConfig);
-            requiredActionProviderConfigsByAlias.put(requiredActionConfig.getAlias(), requiredActionConfig);
-        }
+        model.getRequiredActionConfigsStream()
+                .forEach(requiredActionConfig -> {
+                    requiredActionProviderConfigs.put(requiredActionConfig.getId(), requiredActionConfig);
+                    requiredActionProviderConfigsByAlias.put(requiredActionConfig.getAlias(), requiredActionConfig);
+                });
 
         requiredActionProviderList = model.getRequiredActionProvidersStream().collect(Collectors.toList());
         for (RequiredActionProviderModel action : requiredActionProviderList) {
@@ -316,7 +320,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         model.getComponentsStream().forEach(component ->
             componentsByParent.add(component.getParentId(), component)
         );
-        components = model.getComponentsStream().collect(Collectors.toMap(component -> component.getId(), Function.identity()));
+        components = model.getComponentsStream().collect(Collectors.toMap(ComponentModel::getId, Function.identity()));
 
         try {
             attributes = model.getAttributes();
@@ -408,6 +412,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public int getFailureFactor() {
         return failureFactor;
+    }
+
+    public int getMaxSecondaryAuthFailures() {
+        return maxSecondaryAuthFailures;
     }
 
     public boolean isVerifyEmail() {
@@ -528,11 +536,11 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     }
 
     public CibaConfig getCibaConfig(Supplier<RealmModel> modelSupplier) {
-        return new CibaConfig(modelSupplier.get());
+        return CibaConfig.fromCache(modelSupplier, Collections.unmodifiableMap(attributes));
     }
 
     public ParConfig getParConfig(Supplier<RealmModel> modelSupplier) {
-        return new ParConfig(modelSupplier.get());
+        return ParConfig.fromCache(modelSupplier, Collections.unmodifiableMap(attributes));
     }
 
     public int getActionTokenGeneratedByAdminLifespan() {
@@ -764,5 +772,9 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public Map<String, RequiredActionConfigModel> getRequiredActionProviderConfigs() {
         return requiredActionProviderConfigs;
+    }
+
+    public boolean isScimApiEnabled() {
+        return scimApiEnabled;
     }
 }

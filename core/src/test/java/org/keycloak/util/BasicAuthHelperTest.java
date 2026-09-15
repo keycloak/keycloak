@@ -50,4 +50,12 @@ public class BasicAuthHelperTest {
 
         assertArrayEquals(new String[] {username, password}, actual);
     }
+
+    @Test
+    public void testNull() {
+        assertArrayEquals(new String[]{"user", ""}, BasicAuthHelper.parseHeader(BasicAuthHelper.createHeader("user", null)));
+        assertArrayEquals(new String[]{"", "password"}, BasicAuthHelper.parseHeader(BasicAuthHelper.createHeader(null, "password")));
+        assertArrayEquals(new String[]{"user", ""}, BasicAuthHelper.RFC6749.parseHeader(BasicAuthHelper.RFC6749.createHeader("user", null)));
+        assertArrayEquals(new String[]{"", "password"}, BasicAuthHelper.RFC6749.parseHeader(BasicAuthHelper.RFC6749.createHeader(null, "password")));
+    }
 }

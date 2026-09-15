@@ -41,7 +41,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.openqa.selenium.WebDriver;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test of custom configurations of DirectGrant flow (Resource Owner Password Credentials Grant)
@@ -85,7 +85,7 @@ public class DirectGrantFlowTest extends AbstractTestRealmKeycloakTest {
         String login = "test-user@localhost";
 
         // User should not be able to login as there was required action added to authenticationSession by OTPFormAuthenticator
-        oauth.clientId(clientId);
+        oauth.client(clientId, "password");
         AccessTokenResponse response = oauth.doPasswordGrantRequest(login, "password");
 
         assertEquals(400, response.getStatusCode());

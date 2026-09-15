@@ -4,10 +4,15 @@ import { FormAccess } from "../../components/form/FormAccess";
 import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
 import { ClientDescription } from "../ClientDescription";
 import { getProtocolName } from "../utils";
+import { PROTOCOL_OID4VC } from "../constants";
 
 export const GeneralSettings = () => {
   const { t } = useTranslation();
   const providers = useLoginProviders();
+
+  const filteredProviders = providers.filter(
+    (provider) => provider !== PROTOCOL_OID4VC,
+  );
 
   return (
     <FormAccess isHorizontal role="manage-clients">
@@ -18,7 +23,7 @@ export const GeneralSettings = () => {
         controller={{
           defaultValue: "",
         }}
-        options={providers.map((option) => ({
+        options={filteredProviders.map((option) => ({
           key: option,
           value: getProtocolName(t, option),
         }))}

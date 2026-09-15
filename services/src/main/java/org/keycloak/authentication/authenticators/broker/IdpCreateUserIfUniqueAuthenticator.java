@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.util.ExistingUserInfo;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -66,8 +67,15 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
         }
 
         String username = getUsername(context, serializedCtx, brokerContext);
-        if (username == null) {
+        if (username == null || username.trim().isEmpty()) {
             ServicesLogger.LOGGER.resetFlow(realm.isRegistrationEmailAsUsername() ? "Email" : "Username");
+            context.getAuthenticationSession().setAuthNote(ENFORCE_UPDATE_PROFILE, "true");
+            context.resetFlow();
+            return;
+        }
+
+        if (AuthenticatorUtils.isUsernameTooLong(username)) {
+            ServicesLogger.LOGGER.resetFlow("Username exceeds maximum length");
             context.getAuthenticationSession().setAuthNote(ENFORCE_UPDATE_PROFILE, "true");
             context.resetFlow();
             return;
@@ -113,7 +121,7 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
         } else if (duplication != null) {
             UserModel user = session.users().getUserById(realm, duplication.getExistingUserId());
 
-            if (runIfUserVerified(session, user, broker,
+            if (runIfUserVerified(session, user, broker, brokerContext.getBrokerUserId(),
                     () -> {
                         context.setUser(user);
                         context.success();

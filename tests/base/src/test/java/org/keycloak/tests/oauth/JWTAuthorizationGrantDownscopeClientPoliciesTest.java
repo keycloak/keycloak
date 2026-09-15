@@ -11,7 +11,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientPolicyBuilder;
 import org.keycloak.testframework.realm.ClientProfileBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.hamcrest.MatcherAssert;
@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
  *
  * @author rmartinc
  */
-@KeycloakIntegrationTest(config = JWTAuthorizationGrantTest.JWTAuthorizationGrantServerConfig.class)
+@KeycloakIntegrationTest
 public class JWTAuthorizationGrantDownscopeClientPoliciesTest extends BaseAbstractJWTAuthorizationGrantTest {
 
     @InjectRealm(config = JWTAuthorizationGranthRealmConfig.class)
@@ -62,7 +62,7 @@ public class JWTAuthorizationGrantDownscopeClientPoliciesTest extends BaseAbstra
     public static class JWTAuthorizationGranthRealmConfig extends OIDCIdentityProviderJWTAuthorizationGrantTest.JWTAuthorizationGrantRealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             super.configure(realm);
 
             realm.clientProfile(ClientProfileBuilder.create()

@@ -48,6 +48,7 @@ public abstract class BasicDatabaseTest {
     @Launch({ "start", AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false" })
     protected void testSuccessful(CLIResult cliResult) {
         cliResult.assertStarted();
+        cliResult.assertNoMessage("charset encoding");
     }
 
     @Test

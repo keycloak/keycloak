@@ -1,25 +1,33 @@
 package org.keycloak.tests.client.authentication.external;
 
+import java.io.IOException;
 import java.util.UUID;
 
 import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthenticator;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
+import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthIdentityProvider;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@KeycloakIntegrationTest(config = ClientAuthIdpServerConfig.class)
+@KeycloakIntegrationTest
 public class BaseClientAuthTest extends AbstractBaseClientAuthTest {
 
     private static final String IDP_ALIAS = "external-idp";
@@ -35,7 +43,7 @@ public class BaseClientAuthTest extends AbstractBaseClientAuthTest {
     OAuthIdentityProvider identityProvider;
 
     public BaseClientAuthTest() {
-        super(TOKEN_ISSUER, INTERNAL_CLIENT_ID, EXTERNAL_CLIENT_ID);
+        super(TOKEN_ISSUER, INTERNAL_CLIENT_ID, EXTERNAL_CLIENT_ID, IDP_ALIAS);
     }
 
     @Test
@@ -74,7 +82,7 @@ public class BaseClientAuthTest extends AbstractBaseClientAuthTest {
 
     @Test
     public void testReusePermitted() {
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTION_REUSE, "true");
         });
 
@@ -87,7 +95,7 @@ public class BaseClientAuthTest extends AbstractBaseClientAuthTest {
 
     @Test
     public void testClientAssertionsNotSupported() {
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().remove(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTIONS);
         });
 
@@ -96,11 +104,93 @@ public class BaseClientAuthTest extends AbstractBaseClientAuthTest {
         assertFailure(null, TOKEN_ISSUER, EXTERNAL_CLIENT_ID, jwt.getId(), "client_not_found", events.poll());
     }
 
+    @Test
+    public void testClientIdAllowedAsAudience() {
+        JsonWebToken jwt = createDefaultToken();
+        jwt.audience("test-client");
+        assertFailure("Invalid token audience", doClientGrant(jwt));
+        assertFailure(INTERNAL_CLIENT_ID, TOKEN_ISSUER, EXTERNAL_CLIENT_ID, jwt.getId(), events.poll());
+
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.ALLOW_CLIENT_ID_AS_AUDIENCE, Boolean.TRUE.toString());
+        });
+
+        jwt = createDefaultToken();
+        jwt.audience("test-client");
+        assertSuccess(INTERNAL_CLIENT_ID, doClientGrant(jwt));
+        assertSuccess(INTERNAL_CLIENT_ID, jwt.getId(), TOKEN_ISSUER, EXTERNAL_CLIENT_ID, events.poll());
+
+        jwt = createDefaultToken();
+        assertFailure("Invalid token audience", doClientGrant(jwt));
+        assertFailure(INTERNAL_CLIENT_ID, TOKEN_ISSUER, EXTERNAL_CLIENT_ID, jwt.getId(), events.poll());
+    }
+
+    @Test
+    public void testDisabledIdentityProvider() {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
+            rep.setEnabled(false);
+        });
+
+        JsonWebToken jwt = createDefaultToken();
+        assertFailure(doClientGrant(jwt));
+        assertFailure(null, TOKEN_ISSUER, EXTERNAL_CLIENT_ID, jwt.getId(), "client_not_found", events.poll());
+    }
+
+    @Test
+    public void testHS256AlgorithmConfusion() {
+        JsonWebToken token = createDefaultToken();
+        String encodedToken = new JWSBuilder().type("JWT").jsonContent(token).hmac256(identityProvider.getKeys().getKeyWrapper().getPublicKey().getEncoded());
+
+        AccessTokenResponse response = doClientGrant(encodedToken);
+        assertFailure("Invalid signature algorithm", response);
+    }
+
+
+    @Test
+    public void testHS256AlgorithmConfusionWithHardcodedPublicKey() {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.FALSE.toString());
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL, "");
+            rep.getConfig().put(OIDCIdentityProviderConfig.PUBLIC_KEY_SIGNATURE_VERIFIER,
+                    PemUtils.encodeKey(identityProvider.getKeys().getKeyWrapper().getPublicKey()));
+        });
+
+        JsonWebToken token = createDefaultToken();
+        String encodedToken = new JWSBuilder().type("JWT").jsonContent(token).hmac256(identityProvider.getKeys().getKeyWrapper().getPublicKey().getEncoded());
+
+        AccessTokenResponse response = doClientGrant(encodedToken);
+        assertFailure("Invalid signature algorithm", response);
+    }
+
+    @Test
+    public void testHS256AlgorithmConfusionWithHardcodedJWKS() throws IOException {
+        // Remove "alg" from jwks (optional for RFC 7517)
+        JSONWebKeySet jwks = JsonSerialization.readValue(identityProvider.getKeys().getJwksString(), org.keycloak.jose.jwk.JSONWebKeySet.class);
+        // Remove alg
+        for (JWK key : jwks.getKeys()) {
+            key.setAlgorithm(null);
+        }
+        String jwksWithoutAlg = org.keycloak.util.JsonSerialization.writeValueAsString(jwks);
+
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.FALSE.toString());
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL, "");
+            rep.getConfig().put(OIDCIdentityProviderConfig.PUBLIC_KEY_SIGNATURE_VERIFIER, jwksWithoutAlg);
+        });
+
+        JsonWebToken token = createDefaultToken();
+        String encodedToken = new JWSBuilder().type("JWT").jsonContent(token).hmac256(identityProvider.getKeys().getKeyWrapper().getPublicKey().getEncoded());
+
+        AccessTokenResponse response = doClientGrant(encodedToken);
+        assertFailure("Invalid signature algorithm", response);
+    }
+
     @Override
     protected OAuthIdentityProvider getIdentityProvider() {
         return identityProvider;
     }
 
+    @Override
     protected JsonWebToken createDefaultToken() {
         JsonWebToken token = new JsonWebToken();
         token.id(UUID.randomUUID().toString());
@@ -115,26 +205,31 @@ public class BaseClientAuthTest extends AbstractBaseClientAuthTest {
     public static class ExernalClientAuthRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.identityProvider(
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.identityProviders(
                     IdentityProviderBuilder.create()
                             .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
                             .alias(IDP_ALIAS)
-                            .setAttribute("issuer", "http://127.0.0.1:8500")
-                            .setAttribute(OIDCIdentityProviderConfig.USE_JWKS_URL, "true")
-                            .setAttribute(OIDCIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")
-                            .setAttribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "true")
-                            .setAttribute(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTIONS, "true")
+                            .attribute("clientId", "test-client")
+                            .attribute("issuer", "http://127.0.0.1:8500")
+                            .attribute(OIDCIdentityProviderConfig.USE_JWKS_URL, "true")
+                            .attribute(OIDCIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")
+                            .attribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "true")
+                            .attribute(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTIONS, "true")
                             .build());
 
-            realm.addClient(INTERNAL_CLIENT_ID)
+            realm.clients(ClientBuilder.create(INTERNAL_CLIENT_ID)
                     .serviceAccountsEnabled(true)
                     .authenticatorType(FederatedJWTClientAuthenticator.PROVIDER_ID)
                     .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, IDP_ALIAS)
-                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, EXTERNAL_CLIENT_ID);
+                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, EXTERNAL_CLIENT_ID));
 
             return realm;
         }
     }
 
+    @Override
+    public ManagedRealm getRealm() {
+        return realm;
+    }
 }

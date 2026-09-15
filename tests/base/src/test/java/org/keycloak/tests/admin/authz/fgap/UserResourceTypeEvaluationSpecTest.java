@@ -113,8 +113,8 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         }
 
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        allowPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
-        denyPolicy = createUserPolicy(Logic.NEGATIVE, realm, client,"Not My Admin User Policy", myadmin.getId());
+        allowPolicy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        denyPolicy = createUserPolicy(Logic.NEGATIVE, realm, adminPermissionsClient,"Not My Admin User Policy", myadmin.getId());
         this.myadmin = new ManagedUser(myadmin, realm.admin().users().get(myadmin.getId()));
 
         ALL_USERS = new ArrayList<>();
@@ -955,35 +955,35 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
     }
 
     private void denyUser(ManagedUser user) {
-        createPermission(client, user.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), denyPolicy);
+        createPermission(adminPermissionsClient, user.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), denyPolicy);
     }
 
     private void allowAllUsers() {
-        createAllPermission(client, USERS_RESOURCE_TYPE, allowPolicy, Set.of(VIEW, MANAGE));
+        createAllPermission(adminPermissionsClient, USERS_RESOURCE_TYPE, allowPolicy, Set.of(VIEW, MANAGE));
     }
 
     private void allowUser(ManagedUser user) {
-        createPermission(client, user.getId() , USERS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), allowPolicy);
+        createPermission(adminPermissionsClient, user.getId() , USERS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), allowPolicy);
     }
 
     private void denyAllUsers() {
-        createAllPermission(client, USERS_RESOURCE_TYPE, denyPolicy, Set.of(VIEW, MANAGE));
+        createAllPermission(adminPermissionsClient, USERS_RESOURCE_TYPE, denyPolicy, Set.of(VIEW, MANAGE));
     }
 
     private void allowGroup(String name) {
-        createPermission(client, getGroup(name).getId() ,GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS, MANAGE_MEMBERS), allowPolicy);
+        createPermission(adminPermissionsClient, getGroup(name).getId() ,GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS, MANAGE_MEMBERS), allowPolicy);
     }
 
     private void denyAllGroups() {
-        createAllPermission(client, GROUPS_RESOURCE_TYPE, denyPolicy, Set.of(VIEW_MEMBERS, MANAGE_MEMBERS));
+        createAllPermission(adminPermissionsClient, GROUPS_RESOURCE_TYPE, denyPolicy, Set.of(VIEW_MEMBERS, MANAGE_MEMBERS));
     }
 
     private void allowAllGroups() {
-        createAllPermission(client, GROUPS_RESOURCE_TYPE, allowPolicy, Set.of(VIEW_MEMBERS, MANAGE_MEMBERS));
+        createAllPermission(adminPermissionsClient, GROUPS_RESOURCE_TYPE, allowPolicy, Set.of(VIEW_MEMBERS, MANAGE_MEMBERS));
     }
 
     private void denyGroup(String groupName) {
-        createPermission(client, getGroup(groupName).getId() ,GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS, MANAGE_MEMBERS), denyPolicy);
+        createPermission(adminPermissionsClient, getGroup(groupName).getId() ,GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS, MANAGE_MEMBERS), denyPolicy);
     }
 
     private GroupRepresentation getGroup(String groupName) {
@@ -1018,7 +1018,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         resource.setName(managedUser.getId());
         request.setResources(List.of(resource));
 
-        PolicyEvaluationResponse response = client.admin().authorization().policies().evaluate(request);
+        PolicyEvaluationResponse response = adminPermissionsClient.authorization().policies().evaluate(request);
         assertThat(response.getStatus(), is(effect));
 
         if (response.getResults().isEmpty()) {

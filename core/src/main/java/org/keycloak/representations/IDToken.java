@@ -18,10 +18,9 @@
 package org.keycloak.representations;
 
 import java.util.Map;
-import java.util.Optional;
 
 import org.keycloak.TokenCategory;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.json.KeycloakJsonMapperFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -62,6 +61,10 @@ public class IDToken extends JsonWebToken {
     // Financial API - Part 2: Read and Write API Security Profile
     // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
     public static final String S_HASH = "s_hash";
+
+    // RFC 8693 - OAuth 2.0 Token Exchange
+    public static final String MAY_ACT = "may_act";
+    public static final String ACT = "act";
 
     // NOTE!!!  WE used to use @JsonUnwrapped on a UserClaimSet object.  This screws up otherClaims and the won't work
     // anymore.  So don't have any @JsonUnwrapped!
@@ -129,9 +132,6 @@ public class IDToken extends JsonWebToken {
 
     @JsonProperty(PHONE_NUMBER_VERIFIED)
     protected Boolean phoneNumberVerified;
-
-    @JsonProperty(ADDRESS)
-    protected Map<String, Object> address;
 
     @JsonProperty(UPDATED_AT)
     protected Long updatedAt;
@@ -332,28 +332,30 @@ public class IDToken extends JsonWebToken {
         this.phoneNumberVerified = phoneNumberVerified;
     }
 
-    @JsonProperty("address")
+    @JsonIgnore
     public Map<String, Object> getAddressClaimsMap() {
-        return address;
+        Object value = getOtherClaims().get(ADDRESS);
+        return value instanceof Map ? (Map<String, Object>) value : null;
     }
 
     @JsonIgnore
     public AddressClaimSet getAddress() {
-        return Optional.ofNullable(address).map(a -> {
-                           return JsonSerialization.mapper.convertValue(a, AddressClaimSet.class);
-                       })
-                       .orElse(null);
-    }
+        Object value = getOtherClaims().get(ADDRESS);
+        if (value == null) {
+            return null;
+        }
 
-    public void setAddress(Map<String, Object> address) {
-        this.address = address;
+        return KeycloakJsonMapperFactory.mapper().convertValue(value, AddressClaimSet.class);
     }
 
     @JsonIgnore
     public void setAddress(AddressClaimSet address) {
-        this.address = Optional.ofNullable(address)
-                               .map(a -> JsonSerialization.mapper.convertValue(a, Map.class))
-                               .orElse(null);
+        getOtherClaims().put(ADDRESS, KeycloakJsonMapperFactory.mapper().convertValue(address, Map.class));
+    }
+
+    @JsonIgnore
+    public void setAddress(Map<String, Object> address) {
+        getOtherClaims().put(ADDRESS, address);
     }
 
     public Long getUpdatedAt() {

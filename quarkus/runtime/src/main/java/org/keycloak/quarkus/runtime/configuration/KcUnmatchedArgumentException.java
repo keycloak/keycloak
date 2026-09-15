@@ -17,9 +17,9 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
+import java.util.ArrayList;
 import java.util.List;
-
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+import java.util.Map;
 
 import picocli.CommandLine;
 
@@ -27,6 +27,9 @@ import picocli.CommandLine;
  * Custom CommandLine.UnmatchedArgumentException with amended suggestions
  */
 public class KcUnmatchedArgumentException extends CommandLine.UnmatchedArgumentException {
+
+    private static final int MAX_OPTION_SUGGESTIONS = 7;
+    private static final int MAX_COMMAND_SUGGESTIONS = 3;
 
     public KcUnmatchedArgumentException(CommandLine commandLine, List<String> args) {
         super(commandLine, args);
@@ -36,11 +39,28 @@ public class KcUnmatchedArgumentException extends CommandLine.UnmatchedArgumentE
         super(ex.getCommandLine(), ex.getUnmatched());
     }
 
+    /**
+     * see https://github.com/remkop/picocli/issues/2510 for issues with the
+     * default picocli logic
+     */
     @Override
     public List<String> getSuggestions() {
-        // filter out disabled mappers
-        return super.getSuggestions().stream()
-                .filter(f -> PropertyMappers.getKcKeyFromCliKey(f).filter(PropertyMappers::isDisabledMapper).isEmpty())
-                .toList();
+        String unmatched = this.getUnmatched().get(0);
+        List<String> candidates;
+        int maxSuggestions;
+        if (isUnknownOption()) {
+            candidates = super.getSuggestions(); // can be a lengthy list of all options
+            maxSuggestions = MAX_OPTION_SUGGESTIONS;
+        } else {
+            candidates = new ArrayList<String>();
+            for (Map.Entry<String, CommandLine> entry : commandLine.getCommandSpec().subcommands().entrySet()) {
+                if (!entry.getValue().getCommandSpec().usageMessage().hidden()) {
+                    candidates.add(entry.getKey());
+                }
+            }
+            maxSuggestions = MAX_COMMAND_SUGGESTIONS;
+        }
+
+        return SimilarityUtil.findSimilar(unmatched, candidates, maxSuggestions, 0);
     }
 }

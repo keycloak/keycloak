@@ -17,12 +17,11 @@
 
 package org.keycloak.models.workflow;
 
-import java.time.Duration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.keycloak.common.util.DurationConverter;
+import org.keycloak.common.util.StringPropertyReplacer.PropertyResolver;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
@@ -32,14 +31,9 @@ import org.keycloak.models.UserModel;
 
 import org.jboss.logging.Logger;
 
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
+import static org.keycloak.common.util.StringPropertyReplacer.replaceProperties;
 
 public class NotifyUserStepProvider implements WorkflowStepProvider {
-
-    private static final String ACCOUNT_DISABLE_NOTIFICATION_SUBJECT = "accountDisableNotificationSubject";
-    private static final String ACCOUNT_DELETE_NOTIFICATION_SUBJECT = "accountDeleteNotificationSubject";
-    private static final String ACCOUNT_DISABLE_NOTIFICATION_BODY = "accountDisableNotificationBody";
-    private static final String ACCOUNT_DELETE_NOTIFICATION_BODY = "accountDeleteNotificationBody";
 
     private final KeycloakSession session;
     private final ComponentModel stepModel;
@@ -59,14 +53,27 @@ public class NotifyUserStepProvider implements WorkflowStepProvider {
         RealmModel realm = session.getContext().getRealm();
         EmailTemplateProvider emailProvider = session.getProvider(EmailTemplateProvider.class).setRealm(realm);
 
-        String subjectKey = getSubjectKey();
+        String subjectKey = getSubjectKey(context);
         String bodyTemplate = getBodyTemplate();
-        Map<String, Object> bodyAttributes = getBodyAttributes();
+        Map<String, Object> bodyAttributes = getBodyAttributes(context);
         UserModel user = session.users().getUserById(realm, context.getResourceId());
+        
+        if (user != null) {
+            emailProvider.setUser(user);
+        }
 
-        if (user != null && user.getEmail() != null) {
+        String targetEmail = stepModel.getConfig().getFirst("to");
+
+        if (targetEmail != null && !targetEmail.trim().isEmpty()) {
             try {
-                emailProvider.setUser(user).send(subjectKey, bodyTemplate, bodyAttributes);
+                emailProvider.send(subjectKey, bodyTemplate, bodyAttributes, targetEmail);
+                log.debugv("Notification email sent to {0}", targetEmail);
+            } catch (EmailException e) {
+                log.errorv(e, "Failed to send notification email to {0}", targetEmail);
+            }
+        } else if (user != null && user.getEmail() != null) {
+            try {
+                emailProvider.send(subjectKey, bodyTemplate, bodyAttributes);
                 log.debugv("Notification email sent to user {0} ({1})", user.getUsername(), user.getEmail());
             } catch (EmailException e) {
                 log.errorv(e, "Failed to send notification email to user {0} ({1})", user.getUsername(), user.getEmail());
@@ -76,110 +83,109 @@ public class NotifyUserStepProvider implements WorkflowStepProvider {
         }
     }
 
-    private String getSubjectKey() {
-        String nextStepType = getNextStepType();
-        String customSubjectKey = stepModel.getConfig().getFirst("custom_subject_key");
+    private String getSubjectKey(WorkflowExecutionContext context) {
+        String customSubjectKey = stepModel.getConfig().getFirst("subject");
         
         if (customSubjectKey != null && !customSubjectKey.trim().isEmpty()) {
             return customSubjectKey;
         }
-        
-        // Return default subject key based on next step type
-        return getDefaultSubjectKey(nextStepType);
+
+        WorkflowStep nextStep = context.getNextStep();
+
+        if (nextStep == null || nextStep.getNotificationSubject() == null) {
+            return "accountNotificationSubject";
+        }
+
+        return nextStep.getNotificationSubject();
     }
 
     private String getBodyTemplate() {
         return "workflow-notification.ftl";
     }
 
-    private Map<String, Object> getBodyAttributes() {
+    private Map<String, Object> getBodyAttributes(WorkflowExecutionContext context) {
         RealmModel realm = session.getContext().getRealm();
         Map<String, Object> attributes = new HashMap<>();
-        
-        String nextStepType = getNextStepType();
-        
+        WorkflowStep nextStep = context.getNextStep();
+
         // Custom message override or default based on step type
-        String customMessage = stepModel.getConfig().getFirst("custom_message");
+        String customMessage = stepModel.getConfig().getFirst("message");
         if (customMessage != null && !customMessage.trim().isEmpty()) {
             attributes.put("messageKey", "customMessage");
-            attributes.put("customMessage", customMessage);
+            attributes.put("customMessage", replaceProperties(customMessage, new NotificationPropertyResolver(session, context)));
+        } else if (nextStep != null && nextStep.getNotificationMessage() != null) {
+            attributes.put("messageKey", nextStep.getNotificationMessage());
         } else {
-            attributes.put("messageKey", getDefaultMessageKey(nextStepType));
+            attributes.put("messageKey", "accountNotificationBody");
         }
         
         // Calculate days remaining until next step
-        int daysRemaining = calculateDaysUntilNextStep();
+        int daysRemaining = calculateDaysUntilNextStep(context);
         
         // Message parameters for internationalization
         attributes.put("daysRemaining", daysRemaining);
         attributes.put("reason", stepModel.getConfig().getFirstOrDefault("reason", "inactivity"));
         attributes.put("realmName", realm.getDisplayName() != null ? realm.getDisplayName() : realm.getName());
-        attributes.put("nextStepType", nextStepType);
-        attributes.put("subjectKey", getSubjectKey());
+
+        if (nextStep != null) {
+            attributes.put("nextStepType", nextStep.getProviderId());
+        }
+
+        attributes.put("subjectKey", getSubjectKey(context));
         
         return attributes;
     }
 
-    private String getNextStepType() {
-        Map<ComponentModel, Duration> nextStepMap = getNextNonNotificationStep();
-        return nextStepMap.isEmpty() ? "unknown-step" : nextStepMap.keySet().iterator().next().getProviderId();
-    }
+    private int calculateDaysUntilNextStep(WorkflowExecutionContext context) {
+        WorkflowStep nextStep = context.getNextStep();
 
-    private int calculateDaysUntilNextStep() {
-        Map<ComponentModel, Duration> nextStepMap = getNextNonNotificationStep();
-        if (nextStepMap.isEmpty()) {
+        if (nextStep == null || nextStep.getAfter() == null) {
             return 0;
         }
-        Duration timeToNextStep = nextStepMap.values().iterator().next();
-        return Math.toIntExact(timeToNextStep.toDays());
+
+        return Math.toIntExact(DurationConverter.parseDuration(nextStep.getAfter()).toDays());
     }
 
-    private Map<ComponentModel, Duration> getNextNonNotificationStep() {
-        Duration timeToNextNonNotificationStep = Duration.ZERO;
+    private class NotificationPropertyResolver implements PropertyResolver {
 
-        RealmModel realm = session.getContext().getRealm();
-        ComponentModel workflowModel = realm.getComponent(stepModel.getParentId());
-        
-        List<ComponentModel> steps = realm.getComponentsStream(workflowModel.getId(), WorkflowStepProvider.class.getName())
-            .sorted((a, b) -> {
-                int priorityA = Integer.parseInt(a.get("priority", "0"));
-                int priorityB = Integer.parseInt(b.get("priority", "0"));
-                return Integer.compare(priorityA, priorityB);
-            })
-            .toList();
-        
-        // Find current step and return next non-notification step
-        boolean foundCurrent = false;
-        for (ComponentModel step : steps) {
-            if (foundCurrent) {
-                Duration duration = DurationConverter.parseDuration(step.get(CONFIG_AFTER, "0"));
-                timeToNextNonNotificationStep = timeToNextNonNotificationStep.plus(duration != null ? duration : Duration.ZERO);
-                if (!step.getProviderId().equals("notify-user")) {
-                    // we found the next non-notification action, accumulate its time and break
-                    return Map.of(step, timeToNextNonNotificationStep);
-                }
-            }
-            if (step.getId().equals(stepModel.getId())) {
-                foundCurrent = true;
-            }
+        private final KeycloakSession session;
+        private final WorkflowExecutionContext context;
+
+        public NotificationPropertyResolver(KeycloakSession session, WorkflowExecutionContext context) {
+            this.session = session;
+            this.context = context;
         }
-        
-        return Map.of();
-    }
-    
-    private String getDefaultSubjectKey(String stepType) {
-        return switch (stepType) {
-            case DisableUserStepProviderFactory.ID -> ACCOUNT_DISABLE_NOTIFICATION_SUBJECT;
-            case DeleteUserStepProviderFactory.ID -> ACCOUNT_DELETE_NOTIFICATION_SUBJECT;
-            default -> "accountNotificationSubject";
-        };
-    }
 
-    private String getDefaultMessageKey(String stepType) {
-        return switch (stepType) {
-            case DisableUserStepProviderFactory.ID -> ACCOUNT_DISABLE_NOTIFICATION_BODY;
-            case DeleteUserStepProviderFactory.ID -> ACCOUNT_DELETE_NOTIFICATION_BODY;
-            default -> "accountNotificationBody";
-        };
+        @Override
+        public String resolve(String property) {
+            if (property.startsWith("user.")) {
+                String userId = context.getResourceId();
+                RealmModel realm = session.getContext().getRealm();
+                UserModel user = session.users().getUserById(realm, userId);
+
+                if (user == null) {
+                    return null;
+                }
+
+                String attributeKey = property.substring("user.".length());
+
+                return user.getFirstAttribute(attributeKey);
+            } else if (property.startsWith("realm.")) {
+                RealmModel realm = session.getContext().getRealm();
+                String attributeKey = property.substring("realm.".length());
+
+                if (attributeKey.equals("name")) {
+                    return realm.getName();
+                } else if (attributeKey.equals("displayName")) {
+                    return realm.getDisplayName();
+                }
+
+                return null;
+            } else if ("workflow.daysUntilNextStep".equals(property)) {
+                return String.valueOf(calculateDaysUntilNextStep(context));
+            }
+
+            return null;
+        }
     }
 }

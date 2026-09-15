@@ -130,6 +130,7 @@ export default function WorkflowsSection() {
               displayKey: "status",
               cellRenderer: (workflow: WorkflowRepresentation) => (
                 <Switch
+                  data-testid={`toggle-enabled-${workflow.name}`}
                   label={t("enabled")}
                   labelOff={t("disabled")}
                   isChecked={workflow.enabled ?? true}
@@ -150,7 +151,7 @@ export default function WorkflowsSection() {
               title: t("copy"),
               onRowClick: (workflow) => {
                 setSelectedWorkflow(workflow);
-                navigate(
+                void navigate(
                   toWorkflowDetail({ realm, mode: "copy", id: workflow.id! }),
                 );
               },
@@ -164,7 +165,9 @@ export default function WorkflowsSection() {
               instructions={t("emptyWorkflowsInstructions")}
               primaryActionText={t("createWorkflow")}
               onPrimaryAction={() =>
-                navigate(toWorkflowDetail({ realm, mode: "create", id: "new" }))
+                void navigate(
+                  toWorkflowDetail({ realm, mode: "create", id: "new" }),
+                )
               }
             />
           }

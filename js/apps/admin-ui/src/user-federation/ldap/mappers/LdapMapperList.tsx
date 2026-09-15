@@ -131,7 +131,7 @@ export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
             message={t("emptyMappers")}
             instructions={t("emptyMappersInstructions")}
             primaryActionText={t("emptyPrimaryAction")}
-            onPrimaryAction={() => navigate(toCreate)}
+            onPrimaryAction={() => void navigate(toCreate)}
           />
         }
       />

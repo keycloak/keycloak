@@ -36,6 +36,7 @@ import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.config.WildcardOptionsUtil;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
@@ -60,6 +61,7 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
 
 public class PropertyMapper<T> {
 
+    public static final int DEFAULT_VALUE_ORDINAL = 251; // keycloak defaults are logically higher than classpath entries
     protected final Option<T> option;
     private final String to;
     private Function<AbstractCommand, Boolean> enabled;
@@ -116,12 +118,18 @@ public class PropertyMapper<T> {
      * <p>
      * In preference order we are looking for:
      * <pre>
-     *  [ {@link #from} ] ---> [ {@link #mapFrom} ] ---> [ {@link #getDefaultValue()} ] ---> [ {@link #to} ]
-     * (explicit)     (derived)           (fallback)         (fallback)
+     *  [ {@link #from} ] ---> [ {@link #mapFrom} ] ---> [ {@link #getDefaultValue()} ]
+     * (explicit)      (derived)           (fallback)
      * </pre>
      * <p>
      *
-     * <b>2. Transform found value</b>
+     * <b>2. Use to</b>
+     * <p>
+     * If we are looking for the `to` value, and no value was found from step 1 or it is effectively a default value,
+     * then use the `to` value if it was set by the user.
+     * <p>
+     *
+     * <b>3. Transform found value</b>
      * <p>
      * If we found a value for the attribute name, it needs to be transformed via {@link #transformValue} method. How to transform it?
      * <ul>
@@ -129,6 +137,10 @@ public class PropertyMapper<T> {
      *   <li>If the value contains an expression, expand it using SmallRye logic
      *   <li>Finally the returned {@link ConfigValue} is made to match what was requested - with the name, value, rawValue, and ordinal set appropriately.
      * </ul>
+     *
+     * <b>4. Use to</b>
+     * <p>
+     * If no value is found or mapped, return the `to` value.
      */
     ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
         String from = getFrom();
@@ -136,7 +148,11 @@ public class PropertyMapper<T> {
         // try to obtain the value for the property we want to map first
         // we don't want the NestedPropertyMappingInterceptor to restart the chain here, so we force a proceed
         // this ensures that mapFrom transformers, and regular transformers are applied exclusively - not chained
-        ConfigValue config = convertValue(NestedPropertyMappingInterceptor.proceed(context, from));
+        ConfigValue config = null;
+        if (!option.isSynthetic()) {
+            config = convertValue(NestedPropertyMappingInterceptor.proceed(context, from));
+        }
+        Optional<ConfigValue> directValue = null;
 
         boolean parentValue = false;
         if (mapFrom != null && (config == null || config.getValue() == null)) {
@@ -147,12 +163,21 @@ public class PropertyMapper<T> {
             parentValue = true;
         }
 
+        // instead of using a default or mapping from a default, check if the value is already set and use that instead
+        // a warning should be emitted about this in picocli
+        if (!name.equals(from) && (config == null || config.getValue() == null || (parentValue && Configuration.isDefault(config)))) {
+            directValue = Optional.ofNullable(context.proceed(name));
+            if (directValue.filter(c -> c.getValue() != null && Configuration.isUserModifiable(c)).isPresent()) {
+                return directValue.get();
+            }
+        }
+
         if (config != null && config.getValue() != null) {
             config = transformValue(name, config, context, parentValue);
         } else {
             String defaultValue = this.option.getDefaultValue().map(Option::getDefaultValueString).orElse(null);
             config = transformValue(name, new ConfigValueBuilder().withName(name)
-                    .withValue(defaultValue).withRawValue(defaultValue).build(),
+                    .withValue(defaultValue).withRawValue(defaultValue).withConfigSourceOrdinal(DEFAULT_VALUE_ORDINAL).build(),
                     context, false);
         }
 
@@ -161,6 +186,9 @@ public class PropertyMapper<T> {
         }
 
         // now try any defaults from quarkus
+        if (directValue != null) {
+            return directValue.orElse(null);
+        }
         return context.proceed(name);
     }
 
@@ -229,7 +257,7 @@ public class PropertyMapper<T> {
     }
 
     public boolean isHidden() {
-        return this.option.isHidden() || this.getDescription() == null;
+        return this.option.isHidden();
     }
 
     public boolean isBuildTime() {
@@ -264,7 +292,7 @@ public class PropertyMapper<T> {
         return parentMapper;
     }
 
-    ValueMapper getMapper() {
+    public ValueMapper getMapper() {
         return mapper;
     }
 
@@ -292,7 +320,7 @@ public class PropertyMapper<T> {
         // fall back to the transformer when no mapper is explicitly specified in .mapFrom()
         var theMapper = parentValue && parentMapper != null ? this.parentMapper : this.mapper;
         // since our mapping logic assumes fully resolved values, we cannot reliably map if Expressions are disabled
-        if (Expressions.isEnabled() && theMapper != null && (!name.equals(getFrom()) || parentValue)) {
+        if (Expressions.isEnabled() && theMapper != null && (name.equals(getTo()) || parentValue)) {
             mappedValue = theMapper.map(getNamedProperty().orElse(null), value, context);
             mapped = true;
         }
@@ -559,13 +587,23 @@ public class PropertyMapper<T> {
             if (paramLabel == null && Boolean.class.equals(option.getType())) {
                 paramLabel = Boolean.TRUE + "|" + Boolean.FALSE;
             }
+            Option<T> opt = option;
+            if (Objects.equals(option.getKey(), mapFrom)) {
+                opt = option.toBuilder().synthetic().build();
+            }
+            if (this.description == null && !opt.isHidden()) {
+                throw new AssertionError("Non-hidden options require a description");
+            }
             if (option.getKey().contains(WildcardOptionsUtil.WILDCARD_START)) {
-                return new WildcardPropertyMapper<>(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, wildcardKeysTransformer, wildcardMapFrom);
+                return new WildcardPropertyMapper<>(opt, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, wildcardKeysTransformer, wildcardMapFrom);
             }
             if (wildcardKeysTransformer != null || wildcardMapFrom != null) {
                 throw new AssertionError("Wildcard operations not expected with non-wildcard mapper");
             }
-            return new PropertyMapper<>(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, null, null);
+            if (!option.isBuildTime() && to != null && PropertyMappers.isSpiBuildTimeProperty(to, true)) {
+                throw new AssertionError("A runtime option should not map to a build time spi option");
+            }
+            return new PropertyMapper<>(opt, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, null, null);
         }
     }
 
@@ -576,17 +614,20 @@ public class PropertyMapper<T> {
     /**
      * Create a property mapper from a feature.
      * The mapper maps to external properties the state of the feature.
-     * <p>
-     * If the feature is enabled, it returns {@code true}. Otherwise {@code null}.
      */
     public static PropertyMapper.Builder<Boolean> fromFeature(Profile.Feature feature) {
         final var option = new OptionBuilder<>(feature.getKey() + "-hidden-mapper", Boolean.class)
                 .buildTime(true)
-                .hidden()
+                .synthetic()
                 .build();
         return new Builder<>(option)
-                .isEnabled(() -> Profile.isFeatureEnabled(feature))
-                .transformer((v, ctx) -> Boolean.TRUE.toString()); // we know the feature is enabled due to .isEnabled()
+                .transformer((value, context) -> {
+                    if (Profile.getInstance() == null) {
+                        // can be null when running during augmentation
+                        Environment.getCurrentOrCreateFeatureProfile();
+                    }
+                    return Profile.isFeatureEnabled(feature) ? "true" : "false";
+                });
     }
 
     public void validate(ConfigValue value) {
@@ -694,7 +735,7 @@ public class PropertyMapper<T> {
         return !option.getConnectedOptions().isEmpty();
     }
 
-    String getMapFrom() {
+    public String getMapFrom() {
         return mapFrom;
     }
 

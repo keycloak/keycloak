@@ -115,8 +115,14 @@ public class ProxyMappings {
       // noProxy must be first as it's more specific than .*
       if (!isBlank(noProxy)) {
         for (String host : noProxy.split(NO_PROXY_DELIMITER)) {
-          // do not support regex in no_proxy
-          proxyMappings.add(new ProxyMapping(Pattern.compile("(?:.+\\.)?" + Pattern.quote(host)), null, null));
+          host = host.trim();
+          if (host.startsWith(".")) {
+            host = host.substring(1);
+          }
+          if (!host.isEmpty()) {
+            // do not support regex in no_proxy
+            proxyMappings.add(new ProxyMapping(Pattern.compile("(?:.+\\.)?" + Pattern.quote(host)), null, null));
+          }
         }
       }
 

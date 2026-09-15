@@ -19,9 +19,11 @@ package org.keycloak.authentication;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
@@ -97,7 +99,7 @@ public class AuthenticationProcessor {
     public static final String BROKER_USER_ID = "broker.user.id";
     public static final String FORWARDED_PASSIVE_LOGIN = "forwarded.passive.login";
 
-    // Boolean flag, which is true when authentication-selector screen should be rendered (typically displayed when user clicked on 'try another way' link)
+    // Flag with the model id when authentication-selector screen should be rendered (typically displayed when user clicked on 'try another way' link)
     public static final String AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED = "auth.selector.screen.rendered";
 
     // Boolean note in the client session indicating it was first created for offline session
@@ -764,11 +766,13 @@ public class AuthenticationProcessor {
         }
     }
 
-    public void logFailure() {
+    public void logFailure(String executionId) {
         if (realm.isBruteForceProtected()) {
             UserModel user = AuthenticationManager.lookupUserForBruteForceLog(session, realm, authenticationSession);
             if (user != null) {
-                getBruteForceProtector().failedLogin(realm, user, connection, session.getContext().getHttpRequest().getUri());
+                getBruteForceProtector().failedLogin(realm, user, connection, session.getContext().getHttpRequest().getUri(),
+                        Optional.ofNullable(AuthenticationManager.getAuthenticationCategory(session, executionId))
+                                .map(Collections::singleton).orElse(null));
             }
         }
     }
@@ -1062,7 +1066,7 @@ public class AuthenticationProcessor {
         AuthenticationExecutionModel model = realm.getAuthenticationExecutionById(execution);
         if (model == null) {
             logger.debug("Cannot find execution, reseting flow");
-            logFailure();
+            logFailure(null);
             resetFlow();
             return authenticate();
         }
@@ -1239,10 +1243,17 @@ public class AuthenticationProcessor {
 
         String nextRequiredAction = nextRequiredAction();
         if (nextRequiredAction != null) {
-            return AuthenticationManager.redirectToRequiredActions(session, realm, authenticationSession, uriInfo, nextRequiredAction);
+            Response response = AuthenticationManager.redirectToRequiredActions(session, realm, authenticationSession, uriInfo, nextRequiredAction);
+            return response;
         } else {
+
+            // Visit the LoginProtocol for authentication completeness
+            LoginProtocol loginProtocol = session.getProvider(LoginProtocol.class, authenticationSession.getProtocol());
+            loginProtocol.authenticationComplete(authenticationSession);
+
             event.detail(Details.CODE_ID, authenticationSession.getParentSession().getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
-            return AuthenticationManager.finishedRequiredActions(session, authenticationSession, userSession, connection, request, uriInfo, event);
+            Response response = AuthenticationManager.finishedRequiredActions(session, authenticationSession, userSession, connection, request, uriInfo, event);
+            return response;
         }
     }
 

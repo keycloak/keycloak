@@ -3,7 +3,7 @@ import type { Path } from "react-router-dom";
 import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
-export type ThemesTabType = "settings" | "lightColors" | "darkColors";
+export type ThemesTabType = "settings" | "quickTheme";
 
 export type ThemesParams = {
   realm: string;
@@ -15,9 +15,9 @@ const RealmSettingsSection = lazy(() => import("../RealmSettingsSection"));
 export const ThemeTabRoute: AppRouteObject = {
   path: "/:realm/realm-settings/themes/:tab",
   element: <RealmSettingsSection />,
-  breadcrumb: (t) => t("themes"),
   handle: {
     access: "view-realm",
+    breadcrumb: (t) => t("themes"),
   },
 };
 

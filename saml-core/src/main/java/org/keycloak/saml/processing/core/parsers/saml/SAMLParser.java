@@ -58,8 +58,8 @@ public class SAMLParser extends AbstractParser {
 
     private static final QName SAML_11_ASSERTION = new QName(SAML11Constants.ASSERTION_11_NSURI, JBossSAMLConstants.ASSERTION.get());
     private static final QName SAML_11_ENCRYPTED_ASSERTION = new QName(SAML11Constants.ASSERTION_11_NSURI, JBossSAMLConstants.ENCRYPTED_ASSERTION.get());
-    private static final QName SAML_11_RESPONSE = new QName(SAML11Constants.ASSERTION_11_NSURI, JBossSAMLConstants.RESPONSE__PROTOCOL.get());
-    private static final QName SAML_11_REQUEST = new QName(SAML11Constants.ASSERTION_11_NSURI, JBossSAMLConstants.REQUEST.get());
+    private static final QName SAML_11_RESPONSE = new QName(SAML11Constants.PROTOCOL_11_NSURI, JBossSAMLConstants.RESPONSE__PROTOCOL.get());
+    private static final QName SAML_11_REQUEST = new QName(SAML11Constants.PROTOCOL_11_NSURI, JBossSAMLConstants.REQUEST.get());
 
     // Since we have to support JDK 7, no lambdas are available
     private interface ParserFactory {
@@ -118,13 +118,18 @@ public class SAMLParser extends AbstractParser {
                     throw logger.parserException(new RuntimeException(ErrorCodes.UNKNOWN_START_ELEMENT + name + "::location="
                             + startElement.getLocation()));
                 }
+                try {
+                    return pf.create().parse(xmlEventReader);
+                } catch (RuntimeException e) {
+                     throw logger.parserException(e);
+                }
 
-                return pf.create().parse(xmlEventReader);
             }
 
             StaxParserUtil.getNextEvent(xmlEventReader);
         }
 
-        throw new RuntimeException(ErrorCodes.FAILED_PARSING + "SAML Parsing has failed");
+        throw logger.parserException(
+            new RuntimeException(ErrorCodes.FAILED_PARSING + "SAML Parsing has failed"));
     }
 }

@@ -41,7 +41,7 @@ import org.keycloak.testsuite.util.SamlClient.Step;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 
 import org.jboss.logging.Logger;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.w3c.dom.Document;
 
 /**
@@ -127,8 +127,8 @@ public abstract class SamlDocumentStepBuilder<T extends SAML2Object, This extend
             } else if (transformed instanceof StatusResponseType) {
                 new SAMLResponseWriter(xmlStreamWriter).write((StatusResponseType) transformed, SAMLProtocolQNames.LOGOUT_RESPONSE.getQName("samlp"));
             } else {
-                Assert.assertNotNull("Unknown type: <null>", transformed);
-                Assert.fail("Unknown type: " + transformed.getClass().getName());
+                Assertions.assertNotNull(transformed, "Unknown type: <null>");
+                Assertions.fail("Unknown type: " + transformed.getClass().getName());
             }
             return new String(bos.toByteArray(), GeneralConstants.SAML_CHARSET);
         } catch (ProcessingException ex) {

@@ -17,11 +17,6 @@
 
 package org.keycloak.operator.testsuite.utils;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -35,19 +30,16 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.assertj.core.api.ObjectAssert;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Assertions;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.controllers.KeycloakController;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpec;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatus;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.NetworkPolicySpec;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.update.impl.RecreateOnImageChangeUpdateLogic;
 
 import io.fabric8.kubernetes.api.model.Service;
@@ -62,6 +54,14 @@ import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.netty.util.NetUtil;
 import io.quarkus.logging.Log;
+import org.assertj.core.api.ObjectAssert;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Assertions;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -83,6 +83,10 @@ public final class CRAssert {
             Log.infof("Asserting CR: %s with status:\n%s", kc.getMetadata().getName(), Serialization.asYaml(kc.getStatus()));
             throw e;
         }
+    }
+
+    public static void assertKeycloakStatusCondition(KeycloakStatus kcStatus, String condition, Boolean status) {
+        assertKeycloakStatusCondition(kcStatus, condition, status, null);
     }
 
     public static void assertKeycloakStatusCondition(KeycloakStatus kcStatus, String condition, Boolean status, String containedMessage) {

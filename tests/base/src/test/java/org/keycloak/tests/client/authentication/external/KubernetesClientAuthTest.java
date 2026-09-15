@@ -4,8 +4,8 @@ import java.util.UUID;
 
 import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthenticator;
 import org.keycloak.broker.kubernetes.KubernetesIdentityProviderFactory;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -14,18 +14,19 @@ import org.keycloak.testframework.oauth.OAuthIdentityProvider;
 import org.keycloak.testframework.oauth.OAuthIdentityProviderConfig;
 import org.keycloak.testframework.oauth.OAuthIdentityProviderConfigBuilder;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-@KeycloakIntegrationTest(config = KubernetesClientAuthTest.KubernetesServerConfig.class)
+@KeycloakIntegrationTest
 @TestMethodOrder(MethodOrderer.MethodName.class)
 public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
 
@@ -41,7 +42,7 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
     OAuthIdentityProvider identityProvider;
 
     public KubernetesClientAuthTest() {
-        super(ISSUER, INTERNAL_CLIENT_ID, EXTERNAL_CLIENT_ID);
+        super(ISSUER, INTERNAL_CLIENT_ID, EXTERNAL_CLIENT_ID, IDP_ALIAS);
     }
 
     @Override
@@ -74,12 +75,47 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
     }
 
     @Test
+    public void testValidTokenWithClientId() {
+        JsonWebToken jwt = createDefaultToken();
+        String jws = getIdentityProvider().encodeToken(jwt);
+        AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest()
+                .client(INTERNAL_CLIENT_ID)
+                .clientJwt(jws, getClientAssertionType())
+                .send();
+        assertSuccess(internalClientId, response);
+        assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
+    }
+
+    @Test
+    public void testWrongClientIdFailsValidation() {
+        JsonWebToken jwt = createDefaultToken();
+        String jws = getIdentityProvider().encodeToken(jwt);
+        AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest()
+                .client("completely-wrong-id")
+                .clientJwt(jws, getClientAssertionType())
+                .send();
+        assertFailure(response);
+        assertFailure("completely-wrong-id", expectedTokenIssuer, externalClientId, jwt.getId(), "client_not_found", events.poll());
+    }
+
+    @Test
     public void testReuse() {
         JsonWebToken jwt = createDefaultToken();
         assertSuccess(internalClientId, doClientGrant(jwt));
         assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
         assertSuccess(internalClientId, doClientGrant(jwt));
         assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
+    }
+
+    @Test
+    public void testHS256AlgorithmConfusion() {
+        JsonWebToken token = createDefaultToken();
+        String encodedToken = new JWSBuilder()
+                .type("JWT")
+                .jsonContent(token)
+                .hmac256(identityProvider.getKeys().getKeyWrapper().getPublicKey().getEncoded());
+
+        assertFailure("Invalid signature algorithm", doClientGrant(encodedToken));
     }
 
     @Override
@@ -95,30 +131,27 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
         return token;
     }
 
-    public static class KubernetesServerConfig extends ClientAuthIdpServerConfig {
-
-        @Override
-        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return super.configure(config).features(Profile.Feature.KUBERNETES_SERVICE_ACCOUNTS);
-        }
+    @Override
+    public ManagedRealm getRealm() {
+        return realm;
     }
 
     public static class ExernalClientAuthRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.identityProvider(
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.identityProviders(
                     IdentityProviderBuilder.create()
                             .providerId(KubernetesIdentityProviderFactory.PROVIDER_ID)
                             .alias(IDP_ALIAS)
-                            .setAttribute(IdentityProviderModel.ISSUER, ISSUER)
+                            .attribute(IdentityProviderModel.ISSUER, ISSUER)
                             .build());
 
-            realm.addClient(INTERNAL_CLIENT_ID)
+            realm.clients(ClientBuilder.create(INTERNAL_CLIENT_ID)
                     .serviceAccountsEnabled(true)
                     .authenticatorType(FederatedJWTClientAuthenticator.PROVIDER_ID)
                     .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, IDP_ALIAS)
-                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, EXTERNAL_CLIENT_ID);
+                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, EXTERNAL_CLIENT_ID));
 
             return realm;
         }

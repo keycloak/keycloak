@@ -16,6 +16,14 @@
   ansible.builtin.shell: |
     set -o pipefail
     cd {{ kc_home }}
+    {% if lookup('env', 'JAVA_VERSION') != "" %}
+    {% if ansible_os_family == 'Debian' %}
+    export JAVA_HOME=/usr/lib/jvm/java-{{ lookup('env', 'JAVA_VERSION') }}-openjdk-amd64
+    {% else %}
+    export JAVA_HOME=/usr/lib/jvm/java-{{ lookup('env', 'JAVA_VERSION') }}-openjdk
+    {% endif %}
+    echo "Using JAVA_HOME: ${JAVA_HOME}"
+    {% endif %}
     echo "{{ mvn_params }}"
     ./mvnw {{ mvn_params }}
   args:
@@ -24,6 +32,8 @@
   async: 86400
   poll: 10
   register: result
+  # Allow playbook to continue to collect test results even when tests fail
+  ignore_errors: yes
 
 - debug: var=result
 
@@ -52,3 +62,8 @@
     mode: pull
   with_items:
     - "{{ output.files }}"
+
+- name: Fail if Maven command failed
+  fail:
+    msg: "Maven command failed with return code {{ result.rc }}: {{ result.stderr | default('') }}"
+  when: result.rc != 0

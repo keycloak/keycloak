@@ -35,6 +35,8 @@ public class OptionBuilder<T> {
     private DeprecatedMetadata deprecatedMetadata;
     private String wildcardKey;
 
+    private boolean synthetic;
+
     public static <A> OptionBuilder<List<A>> listOptionBuilder(String key, Class<A> type) {
         return new OptionBuilder(key, List.class, type);
     }
@@ -194,7 +196,12 @@ public class OptionBuilder<T> {
             }
         }
 
-        return new Option<T>(type, key, category, hidden, build, description, defaultValue, expectedValues, strictExpectedValues, caseInsensitiveExpectedValues, deprecatedMetadata, connectedOptions, wildcardKey, expected);
+        return new Option<T>(type, key, category, hidden || synthetic, build, description, defaultValue, expectedValues, strictExpectedValues, caseInsensitiveExpectedValues, deprecatedMetadata, connectedOptions, wildcardKey, expected, synthetic);
+    }
+
+    public OptionBuilder<T> synthetic() {
+        this.synthetic = true;
+        return this;
     }
 
 }

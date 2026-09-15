@@ -28,9 +28,8 @@ import java.security.spec.RSAPublicKeySpec;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.KeyType;
-import org.keycloak.util.JsonSerialization;
-
-import com.fasterxml.jackson.databind.JsonNode;
+import org.keycloak.json.KeycloakJsonMapperFactory;
+import org.keycloak.json.RawJsonValue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -56,7 +55,7 @@ public class JWKParser {
 
     public JWKParser parse(String jwk) {
         try {
-            this.jwk = JsonSerialization.mapper.readValue(jwk, JWK.class);
+            this.jwk = KeycloakJsonMapperFactory.mapper().readValue(jwk, JWK.class);
             return this;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -75,21 +74,21 @@ public class JWKParser {
 
         // subtypes may store properties differently while representing the same JWK, serializing it to nodes
         // makes sure there is no difference when creating the keys
-        JsonNode normalizedJwkNode = JsonSerialization.writeValueAsNode(jwk);
+        RawJsonValue normalizedJwk = KeycloakJsonMapperFactory.mapper().convertValue(jwk, RawJsonValue.class);
         if (KeyType.RSA.equals(keyType)) {
-            return createRSAPublicKey(normalizedJwkNode);
+            return createRSAPublicKey(normalizedJwk);
         } else if (KeyType.EC.equals(keyType)) {
-            return createECPublicKey(normalizedJwkNode);
+            return createECPublicKey(normalizedJwk);
         } else if (KeyType.OKP.equals(keyType)) {
             return JWKBuilder.EdEC_UTILS.createOKPPublicKey(jwk);
         } else if (KeyType.AKP.equals(keyType)) {
-            return createAPKPublicKey(normalizedJwkNode);
+            return createAPKPublicKey(normalizedJwk);
         } else {
             throw new RuntimeException("Unsupported keyType " + keyType);
         }
     }
 
-    private static PublicKey createECPublicKey(JsonNode jwk) {
+    private static PublicKey createECPublicKey(RawJsonValue jwk) {
 
 
         /* Try retrieving the necessary fields */
@@ -133,7 +132,7 @@ public class JWKParser {
         }
     }
 
-    private static PublicKey createRSAPublicKey(JsonNode jwk) {
+    private static PublicKey createRSAPublicKey(RawJsonValue jwk) {
         BigInteger modulus = new BigInteger(1, Base64Url.decode(jwk.path(RSAPublicJWK.MODULUS).asText(null)));
         BigInteger publicExponent = new BigInteger(1, Base64Url.decode(jwk.path(RSAPublicJWK.PUBLIC_EXPONENT).asText(null)));
 
@@ -145,7 +144,7 @@ public class JWKParser {
         }
     }
 
-    private static PublicKey createAPKPublicKey(JsonNode jwk) {
+    private static PublicKey createAPKPublicKey(RawJsonValue jwk) {
         String algorithm = jwk.path(JWK.ALGORITHM).asText();
         String publicKey = jwk.path(AKPPublicJWK.PUB).asText();
         return AKPUtils.fromEncodedPub(publicKey, algorithm);

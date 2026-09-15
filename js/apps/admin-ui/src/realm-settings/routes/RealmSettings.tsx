@@ -28,9 +28,9 @@ const RealmSettingsSection = lazy(() => import("../RealmSettingsSection"));
 export const RealmSettingsRoute: AppRouteObject = {
   path: "/:realm/realm-settings",
   element: <RealmSettingsSection />,
-  breadcrumb: (t) => t("realmSettings"),
   handle: {
     access: "view-realm",
+    breadcrumb: (t) => t("realmSettings"),
   },
 };
 

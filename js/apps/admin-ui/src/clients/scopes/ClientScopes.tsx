@@ -30,6 +30,8 @@ import {
   ClientScope,
   addClientScope,
   changeClientScope,
+  ParameterizedScopeLabel,
+  isParameterizedScope,
   removeClientScope,
 } from "../../components/client-scope/ClientScopeTypes";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
@@ -158,6 +160,7 @@ export const ClientScopes = ({
         ...c,
         type: ClientScope.optional,
         description: scope?.description,
+        attributes: scope?.attributes,
       };
       return row;
     });
@@ -168,6 +171,7 @@ export const ClientScopes = ({
         ...c,
         type: ClientScope.default,
         description: scope?.description,
+        attributes: scope?.attributes,
       };
       return row;
     });
@@ -372,7 +376,12 @@ export const ClientScopes = ({
                   </Link>
                 );
               }
-              return row.name!;
+              return (
+                <>
+                  {row.name}{" "}
+                  {isParameterizedScope(row) && <ParameterizedScopeLabel />}
+                </>
+              );
             },
           },
           {

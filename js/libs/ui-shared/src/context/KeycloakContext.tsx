@@ -27,7 +27,9 @@ let KeycloakEnvContext: any;
 export const useEnvironment = <
   T extends BaseEnvironment = BaseEnvironment,
 >() => {
-  const context = useContext<KeycloakContext<T>>(KeycloakEnvContext);
+  const context = useContext<KeycloakContext<T> | undefined>(
+    KeycloakEnvContext,
+  );
   if (!context)
     throw Error(
       "no environment provider in the hierarchy make sure to add the provider",
@@ -37,17 +39,22 @@ export const useEnvironment = <
 
 interface KeycloakContextProps<T extends BaseEnvironment> {
   environment: T;
+  keycloak?: Keycloak;
 }
 
 export const KeycloakProvider = <T extends BaseEnvironment>({
   environment,
+  keycloak: externalKeycloak,
   children,
 }: PropsWithChildren<KeycloakContextProps<T>>) => {
   KeycloakEnvContext = createKeycloakEnvContext<T>();
   const calledOnce = useRef(false);
-  const [init, setInit] = useState(false);
+  const [init, setInit] = useState(!!externalKeycloak);
   const [error, setError] = useState<unknown>();
   const keycloak = useMemo(() => {
+    if (externalKeycloak) {
+      return externalKeycloak;
+    }
     const keycloak = new Keycloak({
       url: environment.serverBaseUrl,
       realm: environment.realm,
@@ -57,9 +64,14 @@ export const KeycloakProvider = <T extends BaseEnvironment>({
     keycloak.onAuthLogout = () => keycloak.login();
 
     return keycloak;
-  }, [environment]);
+  }, [environment, externalKeycloak]);
 
   useEffect(() => {
+    // Skip initialization if using external keycloak (already initialized)
+    if (externalKeycloak) {
+      return;
+    }
+
     // only needed in dev mode
     if (calledOnce.current) {
       return;
@@ -78,7 +90,7 @@ export const KeycloakProvider = <T extends BaseEnvironment>({
       .catch((error) => setError(error));
 
     calledOnce.current = true;
-  }, [keycloak]);
+  }, [keycloak, externalKeycloak]);
 
   if (error) {
     return <ErrorPage error={error} />;

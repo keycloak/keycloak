@@ -23,10 +23,12 @@ import {
   ModalVariant,
 } from "@patternfly/react-core";
 import { AngleRightIcon } from "@patternfly/react-icons";
+import { NetworkError } from "@keycloak/keycloak-admin-client/lib/utils/fetchWithError";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import { GroupPath } from "./GroupPath";
+import { useGroupResource } from "../../context/group-resource/GroupResourceContext";
 
 import "./group-picker-dialog.css";
 
@@ -56,6 +58,8 @@ export const GroupPickerDialog = ({
   onConfirm,
 }: GroupPickerDialogProps) => {
   const { adminClient } = useAdminClient();
+  const groupResource = useGroupResource();
+  const isOrgGroups = groupResource.isOrgGroups();
 
   const { t } = useTranslation();
   const [selectedRows, setSelectedRows] = useState<SelectableGroup[]>([]);
@@ -87,10 +91,21 @@ export const GroupPickerDialog = ({
         if (filter !== "") {
           args.search = filter;
         }
-        groups = await adminClient.groups.find(args);
+        groups = await groupResource.find(args);
       } else {
         if (!navigation.map(({ id }) => id).includes(groupId)) {
-          group = await adminClient.groups.findOne({ id: groupId });
+          try {
+            group = await groupResource.findOne({ id: groupId });
+          } catch (error) {
+            if (
+              error instanceof NetworkError &&
+              error.response.status === 403
+            ) {
+              group = undefined;
+            } else {
+              throw error;
+            }
+          }
           if (!group) {
             throw new Error(t("notFound"));
           }
@@ -101,7 +116,7 @@ export const GroupPickerDialog = ({
           max,
           parentId: groupId,
         };
-        groups = await adminClient.groups.listSubGroups(args);
+        groups = await groupResource.listSubGroups(args);
       }
 
       if (id) {
@@ -234,21 +249,26 @@ export const GroupPickerDialog = ({
                     setFirst(0);
                   }}
                   type={type}
-                  isSearching={filter !== ""}
-                  setIsSearching={(boolean) => setFilter(boolean ? "" : filter)}
+                  isSearching={false}
                   selectedRows={selectedRows}
                   setSelectedRows={setSelectedRows}
                   canBrowse={canBrowse}
                 />
               ))
             : groups
-                ?.map((g) => deepGroup([g]))
+                .map((g) => deepGroup([g]))
                 .flat()
+                .filter((g) => isOrgGroups || g.access)
                 .map((g) => (
                   <GroupRow
                     key={g.id}
                     group={g}
                     isRowDisabled={isRowDisabled}
+                    onSelect={(group) => {
+                      setGroupId(group.id);
+                      setFilter("");
+                      setFirst(0);
+                    }}
                     type={type}
                     isSearching
                     selectedRows={selectedRows}

@@ -16,7 +16,8 @@ import { FineGrainOpenIdConnect } from "./advanced/FineGrainOpenIdConnect";
 import { FineGrainSamlEndpointConfig } from "./advanced/FineGrainSamlEndpointConfig";
 import { OpenIdConnectCompatibilityModes } from "./advanced/OpenIdConnectCompatibilityModes";
 import { OpenIdVerifiableCredentials } from "./advanced/OpenIdVerifiableCredentials";
-import { PROTOCOL_OIDC, PROTOCOL_OID4VC } from "./constants";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { PROTOCOL_OIDC } from "./constants";
 
 export const parseResult = (
   result: GlobalRequestResult,
@@ -53,6 +54,7 @@ export type AdvancedProps = {
 
 export const AdvancedTab = ({ save, client }: AdvancedProps) => {
   const { t } = useTranslation();
+  const { realmRepresentation } = useRealm();
   const isFeatureEnabled = useIsFeatureEnabled();
 
   const { setValue } = useFormContext();
@@ -136,6 +138,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                       "use.refresh.tokens",
                       "client_credentials.use_refresh_token",
                       "token.response.type.bearer.lower-case",
+                      "oauth2.jwt.authorization.grant.audience",
                     ])
                   }
                 />
@@ -206,8 +209,9 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
           {
             title: t("openIdVerifiableCredentials"),
             isHidden:
-              (protocol !== PROTOCOL_OIDC && protocol !== PROTOCOL_OID4VC) ||
-              !isFeatureEnabled(Feature.OpenId4VCI),
+              protocol !== PROTOCOL_OIDC ||
+              !isFeatureEnabled(Feature.OpenId4VCI) ||
+              !realmRepresentation.verifiableCredentialsEnabled,
             panel: (
               <>
                 <Text className="pf-v5-u-pb-lg">
@@ -216,7 +220,12 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                 <OpenIdVerifiableCredentials
                   client={client}
                   save={save}
-                  reset={() => resetFields(["oid4vci.enabled"])}
+                  reset={() =>
+                    resetFields([
+                      "oid4vci.enabled",
+                      "oid4vci.attester_trust_idps",
+                    ])
+                  }
                 />
               </>
             ),

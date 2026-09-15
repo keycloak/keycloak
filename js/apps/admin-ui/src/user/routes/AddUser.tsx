@@ -11,9 +11,9 @@ const CreateUser = lazy(() => import("../CreateUser"));
 export const AddUserRoute: AppRouteObject = {
   path: "/:realm/users/add-user",
   element: <CreateUser />,
-  breadcrumb: (t) => t("createUser"),
   handle: {
     access: ["query-users", "query-groups"],
+    breadcrumb: (t) => t("createUser"),
   },
 };
 

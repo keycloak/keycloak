@@ -16,6 +16,9 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -23,8 +26,6 @@ import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.GroupBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -70,34 +71,34 @@ public class ConditionalUserAttributeAuthenticatorTest extends AbstractTestRealm
 
     @Before
     public void configureUserProfile() {
-        UserProfileResource userProfileRes = testRealm().users().userProfile();
+        UserProfileResource userProfileRes = managedRealm.admin().users().userProfile();
         UserProfileUtil.enableUnmanagedAttributes(userProfileRes);
     }
 
     private void createUsers() {
         GroupRepresentation subGroup = GroupBuilder.create().name(SUBGROUP).build();
-        testRealm().groups().add(subGroup);
-        GroupRepresentation approvedGroup = GroupBuilder.create().name(APPROVED_GROUP).subGroups(List.of(subGroup))
-            .attributes(Map.of(X_APPROVE_ATTR, List.of(X_APPROVE_ATTR_VALUE)))
+        managedRealm.admin().groups().add(subGroup);
+        GroupRepresentation approvedGroup = GroupBuilder.create().name(APPROVED_GROUP).subGroups(subGroup)
+            .setAttributes(Map.of(X_APPROVE_ATTR, List.of(X_APPROVE_ATTR_VALUE)))
             .build();
-        testRealm().groups().add(approvedGroup);
+        managedRealm.admin().groups().add(approvedGroup);
         
         UserRepresentation approved = UserBuilder.create().username(APPROVED_USER).password(PASSWORD)
-            .addAttribute(X_APPROVE_ATTR, X_APPROVE_ATTR_VALUE)
+            .attribute(X_APPROVE_ATTR, X_APPROVE_ATTR_VALUE)
             .build();
-        testRealm().users().create(approved);
+        managedRealm.admin().users().create(approved);
 
         UserRepresentation approvedByGroup = UserBuilder.create().username(APPROVED_BY_GROUP_USER).password(PASSWORD)
-            .addAttribute(X_APPROVE_ATTR, X_APPROVE_ATTR_VALUE)
-            .addGroups(APPROVED_GROUP)
+            .attribute(X_APPROVE_ATTR, X_APPROVE_ATTR_VALUE)
+            .groups(APPROVED_GROUP)
             .build();
-        testRealm().users().create(approvedByGroup);
+        managedRealm.admin().users().create(approvedByGroup);
 
         UserRepresentation approvedBySubgroup = UserBuilder.create().username(APPROVED_BY_SUBGROUP_USER).password(PASSWORD)
-            .addAttribute(X_APPROVE_ATTR, X_APPROVE_ATTR_VALUE)
-            .addGroups(SUBGROUP)
+            .attribute(X_APPROVE_ATTR, X_APPROVE_ATTR_VALUE)
+            .groups(SUBGROUP)
             .build();
-        testRealm().users().create(approvedBySubgroup);
+        managedRealm.admin().users().create(approvedBySubgroup);
     }
 
     @Test
@@ -109,22 +110,20 @@ public class ConditionalUserAttributeAuthenticatorTest extends AbstractTestRealm
         configureBrowserFlowWithConditionalUserAttribute(flowAlias, errorMessage);
 
         for (String user : List.of(APPROVED_USER, APPROVED_BY_GROUP_USER, APPROVED_BY_SUBGROUP_USER)) {
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login(user);
     
-            final String testUserId = testRealm().users().search(user).get(0).getId();
+            final String testUserId = managedRealm.admin().users().search(user).get(0).getId();
     
             passwordPage.assertCurrent();
             passwordPage.login(PASSWORD);
 
-            events.expectLogin()
-                    .user(testUserId)
-                    .detail(Details.USERNAME, user)
-                    .removeDetail(Details.CONSENT)
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .userId(testUserId)
+                    .details(Details.USERNAME, user);
 
-            AccountHelper.logout(testRealm(), user);
+            AccountHelper.logout(managedRealm.admin(), user);
         }
     }
 
@@ -140,22 +139,22 @@ public class ConditionalUserAttributeAuthenticatorTest extends AbstractTestRealm
         configureBrowserFlowWithConditionalUserAttribute(flowAlias, errorMessage);
 
         try {
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login(user);
 
             errorPage.assertCurrent();
             assertThat(errorPage.getError(), is(errorMessage));
 
-            events.expectLogin()
-                    .user((String) null)
-                    .session((String) null)
+            EventAssertion.expectLoginError(events.poll())
+                    .userId(null)
+                    .sessionId(null)
                     .error(Errors.ACCESS_DENIED)
-                    .detail(Details.USERNAME, user)
-                    .removeDetail(Details.CONSENT)
-                    .assertEvent();
+                    .details(Details.USERNAME, user)
+                    .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                    .withoutDetails(Details.CONSENT);
         } finally {
-            revertFlows(testRealm(), flowAlias);
+            revertFlows(managedRealm.admin(), flowAlias);
         }
     }
 

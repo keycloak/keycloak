@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.rule.CryptoInitRule;
 
@@ -34,6 +35,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public abstract class SdJwsTest {
 
@@ -46,7 +48,7 @@ public abstract class SdJwsTest {
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode node = mapper.createObjectNode();
         node.put("sub", "test");
-        node.put("exp", Instant.now().plus(1, ChronoUnit.HOURS).getEpochSecond());
+        node.put("exp", Instant.ofEpochSecond(Time.currentTime()).plus(1, ChronoUnit.HOURS).getEpochSecond());
         node.put("name", "Test User");
         return node;
     }
@@ -72,7 +74,7 @@ public abstract class SdJwsTest {
     @Test
     public void testVerifyExpClaim_ExpiredJWT() {
         ObjectNode payload = createPayload();
-        payload.put("exp", Instant.now().minus(1, ChronoUnit.HOURS).getEpochSecond());
+        payload.put("exp", Instant.ofEpochSecond(Time.currentTime()).minus(1, ChronoUnit.HOURS).getEpochSecond());
         assertThrows(VerificationException.class, () -> {
             new ClaimVerifier.ExpCheck(0, false).test(payload);
         });
@@ -81,7 +83,7 @@ public abstract class SdJwsTest {
     @Test
     public void testVerifyExpClaim_Positive() throws Exception {
         ObjectNode payload = createPayload();
-        payload.put("exp", Instant.now().plus(1, ChronoUnit.HOURS).getEpochSecond());
+        payload.put("exp", Instant.ofEpochSecond(Time.currentTime()).plus(1, ChronoUnit.HOURS).getEpochSecond());
 
         new ClaimVerifier.ExpCheck(0, false).test(payload);
     }
@@ -89,7 +91,7 @@ public abstract class SdJwsTest {
     @Test
     public void testVerifyNotBeforeClaim_Negative() {
         ObjectNode payload = createPayload();
-        payload.put("nbf", Instant.now().plus(1, ChronoUnit.HOURS).getEpochSecond());
+        payload.put("nbf", Instant.ofEpochSecond(Time.currentTime()).plus(1, ChronoUnit.HOURS).getEpochSecond());
         assertThrows(VerificationException.class, () -> {
             new ClaimVerifier.NbfCheck(0, false).test(payload);
         });
@@ -98,7 +100,7 @@ public abstract class SdJwsTest {
     @Test
     public void testVerifyNotBeforeClaim_Positive() throws Exception {
         ObjectNode payload = createPayload();
-        payload.put("nbf", Instant.now().minus(1, ChronoUnit.HOURS).getEpochSecond());
+        payload.put("nbf", Instant.ofEpochSecond(Time.currentTime()).minus(1, ChronoUnit.HOURS).getEpochSecond());
 
         new ClaimVerifier.NbfCheck(0, false).test(payload);
     }
@@ -179,7 +181,7 @@ public abstract class SdJwsTest {
 
     @Test
     public void shouldValidateAgeSinceIssued() throws VerificationException {
-        long now = Instant.now().getEpochSecond();
+        long now = Time.currentTime();
         JwsToken sdJws = exampleSdJws(now);
 
         new ClaimVerifier.IatLifetimeCheck(0, 180).test(sdJws.getPayload());
@@ -187,19 +189,17 @@ public abstract class SdJwsTest {
 
     @Test
     public void shouldValidateAgeSinceIssued_IfJwtIsTooOld() {
-        long now = Instant.now().getEpochSecond();
+        long now = Time.currentTime();
         long iat = now - 1000;
         long maxLifetime = 180;
         JwsToken sdJws = exampleSdJws(iat); // that will be too old
         VerificationException exception = assertThrows(VerificationException.class, () -> {
             new ClaimVerifier.IatLifetimeCheck(0, maxLifetime).test(sdJws.getPayload());
         });
-        assertEquals(String.format("Token has expired by iat: now: '%s', expired at: '%s', "
-                                       + "iat: '%s', maxLifetime: '%s'",
-                                   now,
-                                   iat + maxLifetime,
-                                   iat,
-                                   maxLifetime), exception.getMessage());
+
+        assertTrue(String.format("Expected message '%s' does not match regex", exception.getMessage()),
+                exception.getMessage().matches("Token has expired by iat: now: '\\d+', expired at:"
+                        + " '\\d+', iat: '\\d+', maxLifetime: '180'"));
     }
 
     private JwsToken exampleSdJws(long iat) {

@@ -335,7 +335,7 @@ describe("Realms", () => {
       currentRealmName = created.realmName;
     });
 
-    it("get users management permissions", async () => {
+    it.skip("get users management permissions", async () => {
       const managementPermissions =
         await kcAdminClient.realms.getUsersManagementPermissions({
           realm: currentRealmName,

@@ -18,8 +18,10 @@ package org.keycloak.social.google;
 
 import java.util.List;
 
+import org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -44,7 +46,9 @@ public class GoogleIdentityProviderFactory extends AbstractIdentityProviderFacto
 
     @Override
     public GoogleIdentityProviderConfig createConfig() {
-        return new GoogleIdentityProviderConfig();
+        GoogleIdentityProviderConfig config = new  GoogleIdentityProviderConfig();
+        config.getConfig().put(IdentityProviderModel.ISSUER, GoogleIdentityProvider.ISSUER_URL);
+        return config;
     }
 
     @Override
@@ -56,7 +60,7 @@ public class GoogleIdentityProviderFactory extends AbstractIdentityProviderFacto
     public List<ProviderConfigProperty> getConfigProperties() {
         // The supported authentication URI parameters can be found in the google identity documentation
         // See: https://developers.google.com/identity/openid-connect/openid-connect#authenticationuriparameters
-        return ProviderConfigurationBuilder.create()
+        List<ProviderConfigProperty> providerConfigProperties = ProviderConfigurationBuilder.create()
                 .property().name("prompt")
                 .label("Prompt")
                 .helpText("Set 'prompt' query parameter when logging in with Google. The allowed values are 'none', 'consent' and 'select_account'. " +
@@ -80,5 +84,27 @@ public class GoogleIdentityProviderFactory extends AbstractIdentityProviderFacto
                         "Google token to access Google APIs when the user is not at the browser.")
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .add().build();
+
+        if (Profile.isFeatureEnabled(Profile.Feature.JWT_AUTHORIZATION_GRANT)) {
+            //easier to add to previous builder when feature will be supported
+            providerConfigProperties.addAll(ProviderConfigurationBuilder.create()
+                    .property().name(JWTAuthorizationGrantConfig.JWT_AUTHORIZATION_GRANT_ENABLED)
+                    .label("JWT Authorization Grant")
+                    .helpText("Enable the Google identity provider to act as a trust provider to validate " +
+                            "authorization grant JWT assertions (Google ID Token) according to RFC 7523, " +
+                            "except for the audience claim that must contain the client id of the configured client")
+                    .type(ProviderConfigProperty.BOOLEAN_TYPE).add().build());
+
+            providerConfigProperties.addAll(ProviderConfigurationBuilder.create()
+                    .property().name(JWTAuthorizationGrantConfig.JWT_AUTHORIZATION_GRANT_MAX_ALLOWED_ASSERTION_EXPIRATION)
+                    .label("Max allowed assertion expiration")
+                            .defaultValue("3600")
+                    .helpText("This property is used only for JWT Authorization Grant" +
+                            " to set the max accepted duration limit for the assertion. " +
+                            "Note that the Google ID Token expires after 1 hour, so this property can be used to limit the time during which the assertion can be used.")
+                    .type(ProviderConfigProperty.NUMBER_TYPE).add().build());
+        }
+
+        return providerConfigProperties;
     }
 }

@@ -73,13 +73,22 @@ public class Claim {
             OID4VCMapper mapper = (OID4VCMapper) protocolMapperImpl;
             mapper.setMapperModel(protocolMapper, credentialFormat);
 
+            if (!mapper.supportsCredentialFormat(credentialFormat)) {
+                return Optional.empty();
+            }
+
             if (!mapper.includeInMetadata()) {
                 return Optional.empty();
             }
 
-            claim.setName(String.join(".", mapper.getMetadataAttributePath()));
+            List<String> attributePath = mapper.getMetadataAttributePath();
+            if (attributePath == null || attributePath.isEmpty()) {
+                return Optional.empty();
+            }
 
-            claim.setPath(mapper.getMetadataAttributePath());
+            claim.setName(String.join(".", attributePath));
+
+            claim.setPath(attributePath);
             claim.setMandatory(protocolMapper.isMandatory());
 
             String displayString = protocolMapper.getDisplay();

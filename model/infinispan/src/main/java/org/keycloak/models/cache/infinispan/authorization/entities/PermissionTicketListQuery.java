@@ -14,13 +14,13 @@ public class PermissionTicketListQuery extends AbstractRevisioned implements Per
     private final Set<String> permissions;
     private final String serverId;
 
-    public PermissionTicketListQuery(Long revision, String id, String permissionId, String serverId) {
+    public PermissionTicketListQuery(long revision, String id, String permissionId, String serverId) {
         super(revision, id);
         this.serverId = serverId;
         permissions = new HashSet<>();
         permissions.add(permissionId);
     }
-    public PermissionTicketListQuery(Long revision, String id, Set<String> permissions, String serverId) {
+    public PermissionTicketListQuery(long revision, String id, Set<String> permissions, String serverId) {
         super(revision, id);
         this.serverId = serverId;
         this.permissions = permissions;

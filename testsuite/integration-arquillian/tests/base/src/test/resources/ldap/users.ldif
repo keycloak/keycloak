@@ -28,3 +28,13 @@ dn: ou=OtherPeople,dc=keycloak,dc=org
 objectclass: top
 objectclass: organizationalUnit
 ou: People
+
+dn: uid=keycloak-admin,dc=keycloak,dc=org
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: keycloak-admin
+cn: keycloak-admin
+sn: keycloak-admin
+userPassword: secret

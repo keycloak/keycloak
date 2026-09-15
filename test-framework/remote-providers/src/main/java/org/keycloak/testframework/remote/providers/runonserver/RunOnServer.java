@@ -11,6 +11,6 @@ import org.keycloak.models.KeycloakSession;
  */
 public interface RunOnServer extends Serializable {
 
-    void run(KeycloakSession session) throws IOException, VerificationException;
+    void run(KeycloakSession session) throws IOException, VerificationException, ClassNotFoundException;
 
 }
