@@ -84,10 +84,6 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
 
     @Override
     public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
-        if (shouldSkipSensitiveMapping()) {
-            return;
-        }
-
         String claimName = mapperModel.getConfig().get(CLAIM_NAME);
         String userAttribute = mapperModel.getConfig().get(USER_ATTRIBUTE_KEY);
         if (claimName == null && userAttribute == null) {
