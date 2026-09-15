@@ -3,6 +3,7 @@ import {
   convertAttributeNameToForm,
   convertFormValuesToObject,
   convertToFormValues,
+  normalizeNonNegativeIntegerOverride,
   resolveDisplayName,
 } from "./util";
 
@@ -173,5 +174,31 @@ describe("resolveDisplayName", () => {
 
   it("returns fallback when display name is empty", () => {
     expect(resolveDisplayName(mockT, "", "my-realm")).toBe("my-realm");
+  });
+});
+
+describe("normalizeNonNegativeIntegerOverride", () => {
+  it("keeps non-negative integers within Java's Integer range", () => {
+    expect(normalizeNonNegativeIntegerOverride("0")).toBe("0");
+    expect(normalizeNonNegativeIntegerOverride(" 42 ")).toBe("42");
+    expect(normalizeNonNegativeIntegerOverride(7)).toBe("7");
+    expect(normalizeNonNegativeIntegerOverride("2147483647")).toBe(
+      "2147483647",
+    );
+  });
+
+  it("treats values above Java's Integer.MAX_VALUE as unset", () => {
+    expect(normalizeNonNegativeIntegerOverride("2147483648")).toBe("");
+    expect(normalizeNonNegativeIntegerOverride("99999999999999999999")).toBe(
+      "",
+    );
+  });
+
+  it("treats non-integer values as unset", () => {
+    expect(normalizeNonNegativeIntegerOverride(undefined)).toBe("");
+    expect(normalizeNonNegativeIntegerOverride("")).toBe("");
+    expect(normalizeNonNegativeIntegerOverride("-1")).toBe("");
+    expect(normalizeNonNegativeIntegerOverride("1.5")).toBe("");
+    expect(normalizeNonNegativeIntegerOverride("abc")).toBe("");
   });
 });
