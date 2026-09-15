@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.broker;
+package org.keycloak.tests.broker;
 
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
@@ -12,16 +12,18 @@ import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.AuthenticationExecutionBuilder;
 import org.keycloak.testsuite.util.AccountHelper;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@KeycloakIntegrationTest(config = BrokerServerConfig.class)
 public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitializedBaseBrokerTest {
 
     @Override
@@ -30,7 +32,7 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
     }
 
     @Override
-    @Before
+    @BeforeEach
     public void beforeBrokerTest() {
         super.beforeBrokerTest();
         log.debug("creating detect existing user flow for realm " + bc.providerRealmName());
@@ -38,28 +40,27 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         final RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
         AuthenticationManagementResource authMgmtResource = consumerRealm.flows();
 
-        // Creates detectExistingUserFlow
         String detectExistingFlowAlias = "detectExistingUserFlow";
-        final AuthenticationFlowRepresentation authenticationFlowRepresentation = newFlow(detectExistingFlowAlias, detectExistingFlowAlias, "basic-flow", true, false);
+        final AuthenticationFlowRepresentation authenticationFlowRepresentation =
+                newFlow(detectExistingFlowAlias, detectExistingFlowAlias, "basic-flow", true, false);
         authMgmtResource.createFlow(authenticationFlowRepresentation);
 
         AuthenticationFlowRepresentation authenticationFlowRepresentation1 = getFlow(authMgmtResource, detectExistingFlowAlias);
         assertNotNull(authenticationFlowRepresentation1, "The authentication flow must exist");
 
-        String flowId = authenticationFlowRepresentation1.getId(); // retrieves the id of the newly created flow
+        String flowId = authenticationFlowRepresentation1.getId();
 
-        // Adds executions to the flow
         addExecution(authMgmtResource, flowId, IdpDetectExistingBrokerUserAuthenticatorFactory.PROVIDER_ID, 10);
         addExecution(authMgmtResource, flowId, IdpAutoLinkAuthenticatorFactory.PROVIDER_ID, 20);
 
-        // Updates the FirstBrokerLoginFlowAlias for the identity provider
         IdentityProviderResource identityConsumerResource = consumerRealm.identityProviders().get(bc.getIDPAlias());
         IdentityProviderRepresentation identityProviderRepresentation = consumerRealm.identityProviders().findAll().get(0);
         identityProviderRepresentation.setFirstBrokerLoginFlowAlias(detectExistingFlowAlias);
         identityProviderRepresentation.getConfig().put(IdentityProviderModel.SYNC_MODE, IdentityProviderSyncMode.FORCE.toString());
         identityConsumerResource.update(identityProviderRepresentation);
 
-        assertEquals(2, getFlow(authMgmtResource, detectExistingFlowAlias).getAuthenticationExecutions().size(), "Two executions must have been created");
+        assertEquals(2, getFlow(authMgmtResource, detectExistingFlowAlias).getAuthenticationExecutions().size(),
+                "Two executions must have been created");
     }
 
     private void addExecution(AuthenticationManagementResource authMgmtResource, String flowId, String providerId, int priority) {
@@ -79,9 +80,8 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
                 .findFirst().get();
     }
 
-
     private AuthenticationFlowRepresentation newFlow(String alias, String description,
-                                             String providerId, boolean topLevel, boolean builtIn) {
+            String providerId, boolean topLevel, boolean builtIn) {
         AuthenticationFlowRepresentation flow = new AuthenticationFlowRepresentation();
         flow.setAlias(alias);
         flow.setDescription(description);
@@ -93,28 +93,25 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
 
     @Test
     public void loginWhenUserDoesNotExistOnConsumer() {
-
-        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        updateExecutions(BrokerFirstLoginFlowMutators::disableUpdateProfileOnFirstLogin);
 
         String firstname = "Firstname";
         String lastname = "Lastname";
         String username = "firstandlastname";
         createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, firstname, lastname, "firstnamelastname@example.org");
 
-        oauth.client("broker-app");
-        oauth.realm(bc.consumerRealmName());
-        oauth.openLoginForm();
+        openConsumerBrokerLoginForm();
 
         logInWithIdp(bc.getIDPAlias(), username, BrokerTestConstants.USER_PASSWORD);
 
         errorPage.assertCurrent();
-
-        assertEquals("User " +  username + " authenticated with identity provider " + bc.getIDPAlias() + " does not exist. Please contact your administrator.", loginPage.getInstruction());
+        assertEquals("User " + username + " authenticated with identity provider " + bc.getIDPAlias()
+                + " does not exist. Please contact your administrator.", errorPage.getError());
     }
 
     @Test
     public void loginWhenUserExistsOnConsumer() {
-        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        updateExecutions(BrokerFirstLoginFlowMutators::disableUpdateProfileOnFirstLogin);
 
         final String firstname = "Firstname_loginWhenUserExistsOnConsumer";
         final String lastname = "Lastname_loginWhenUserExistsOnConsumer";
@@ -123,18 +120,16 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, firstname, lastname, email);
         createUser(bc.consumerRealmName(), username, "THIS PASSWORD IS USELESS", null, null, email);
 
-        oauth.client("broker-app");
-        oauth.realm(bc.consumerRealmName());
-        oauth.openLoginForm();
+        openConsumerBrokerLoginForm();
 
         logInWithIdp(bc.getIDPAlias(), username, BrokerTestConstants.USER_PASSWORD);
 
-        assertTrue(driver.getTitle().contains("AUTH_RESPONSE"));
+        assertTrue(oauth.parseLoginResponse().isSuccess(), "Broker login should complete successfully");
         UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(
                 adminClient.realm(bc.consumerRealmName()), username);
 
-        assertEquals(userRepresentation.getEmail(), email, "Email is not correct");
-        assertEquals(userRepresentation.getFirstName(), firstname, "Firstname is not correct");
-        assertEquals(userRepresentation.getLastName(), lastname, "Lastname is not correct");
+        assertEquals(email, userRepresentation.getEmail(), "Email is not correct");
+        assertEquals(firstname, userRepresentation.getFirstName(), "Firstname is not correct");
+        assertEquals(lastname, userRepresentation.getLastName(), "Lastname is not correct");
     }
 }
