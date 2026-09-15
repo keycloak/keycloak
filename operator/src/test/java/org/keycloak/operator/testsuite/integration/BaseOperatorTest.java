@@ -67,6 +67,7 @@ import org.keycloak.operator.testsuite.apiserver.ApiServerHelper;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.MicroTime;
@@ -439,21 +440,11 @@ public enum OperatorDeployment {local_apiserver,local,remote}
           throw KubernetesClientException.launderThrowable(e);
       }
 
-      // Foreground cascade deletion would simplify this to just deleting the CRs and waiting
-      // for them to disappear, but it requires blockOwnerDeletion=true on owner references.
-      // fabric8 defaults it to null and https://github.com/fabric8io/kubernetes-client/issues/5838
-      // was auto-closed as stale without a fix, so that path is not available.
       var roots = List.of(Keycloak.class, KeycloakRealmImport.class, KeycloakOIDCClient.class, KeycloakSAMLClient.class);
-      roots.forEach(c -> k8sclient.resources(c).delete());
-      // enforce that at least the statefulset are gone
-      try {
-          k8sclient
-                  .apps()
-                  .statefulSets()
-                  .withLabels(Constants.DEFAULT_LABELS).informOnCondition(List::isEmpty).get(20, TimeUnit.SECONDS);
-      } catch (Exception e) {
-          throw KubernetesClientException.launderThrowable(e);
-      }
+      // wait for foreground deletions to complete. Since we're marking resources as blockOnOwnerDeletion it's not possible for
+      // these deletions to complete while there are still owned resources
+      roots.forEach(c -> k8sclient.resources(c).withPropagationPolicy(DeletionPropagation.FOREGROUND)
+              .withTimeout(20, TimeUnit.SECONDS).delete());
   }
 
   @Override
