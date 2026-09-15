@@ -93,18 +93,27 @@ public class JpaUserLoginFailureProvider implements UserLoginFailureProvider {
     @Override
     public UserLoginFailureModel addUserLoginFailure(RealmModel realm, String userId) {
         var em = getEntityManager();
-        int inserted = em.createNamedQuery("insertLoginFailure")
-                .setParameter("realmId", realm.getId())
-                .setParameter("userId", userId)
-                .executeUpdate();
         var key = new LoginFailureKey(realm.getId(), userId);
         notInDatabaseCache.remove(key);
-        var entity = inserted == 0
-                ? em.find(LoginFailureEntity.class, key, LockModeType.PESSIMISTIC_WRITE)
-                : em.find(LoginFailureEntity.class, key);
+        // INSERT ON CONFLICT DO NOTHING does not lock the conflicting row, so a concurrent DELETE
+        // could remove it between the INSERT and the subsequent find. Retry if this happens.
+        LoginFailureEntity entity;
+        boolean inserted;
+        for (;;) {
+            int rows = em.createNamedQuery("insertLoginFailure")
+                    .setParameter("realmId", realm.getId())
+                    .setParameter("userId", userId)
+                    .executeUpdate();
+            inserted = rows > 0;
+            entity = inserted
+                    ? em.find(LoginFailureEntity.class, key)
+                    : em.find(LoginFailureEntity.class, key, LockModeType.PESSIMISTIC_WRITE);
+            if (entity != null) {
+                break;
+            }
+        }
         UserLoginFailureModel model = new UserLoginFailureAdapter(em, entity);
-        if (inserted == 0 && isExpired(realm, entity)) {
-            // The entity already existed but is expired — clear its stale data so new failure counting starts fresh.
+        if (!inserted && isExpired(realm, entity)) {
             model.clearPrimaryAndSecondaryAuthFailures();
         }
         entityInSession.put(key, model);

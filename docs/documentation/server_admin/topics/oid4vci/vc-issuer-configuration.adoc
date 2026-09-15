@@ -338,6 +338,13 @@ Once verifiable credential is created, administrator can send credential offer t
 This link is available in case user has email. It is also needed that SMTP is properly configured for the realm as described in the <<_email,dedicated section>>. The email will also
 inform user that he has some verifiable credential available. User can also visit <<_account-service,Account console>> and request issuance of some available verifiable credential by himself.
 
+[NOTE]
+====
+Creating a verifiable credential for a user stores a snapshot of the user's attributes with the credential entitlement.
+This snapshot does not freeze the values of claims mapped from user attributes. {project_name} reads the current user attributes when it issues or refreshes a credential.
+For details, see <<_oid4vci_attribute_snapshot,Understanding Attribute Snapshots and Credential Claims>>.
+====
+
 [[_oid4vci_client_scope]]
 === Create Client Scopes with Mappers
 

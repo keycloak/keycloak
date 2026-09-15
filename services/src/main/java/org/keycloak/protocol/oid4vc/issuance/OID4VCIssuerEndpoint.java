@@ -803,13 +803,13 @@ public class OID4VCIssuerEndpoint {
 
         cors = Cors.builder().auth().allowedMethods(HttpPost.METHOD_NAME).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
+        // Authenticate before any processing of the payload
+        AuthenticationManager.AuthResult authResult = getAuthResult();
+
         CredentialIssuer issuerMetadata = new OID4VCIssuerWellKnownProvider(session).getIssuerMetadata();
 
         // Validate request encryption
         CredentialRequest credentialRequest = validateRequestEncryption(requestPayload, issuerMetadata, eventBuilder);
-
-        // Authenticate first to fail fast on auth errors
-        AuthenticationManager.AuthResult authResult = getAuthResult();
 
         // Set client and user info in event
         ClientModel clientModel = session.getContext().getClient();
