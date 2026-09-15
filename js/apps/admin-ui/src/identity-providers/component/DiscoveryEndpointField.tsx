@@ -74,7 +74,7 @@ export const DiscoveryEndpointField = ({
       >
         <Switch
           id="kc-discovery-endpoint-switch"
-          label={t("on")}
+          label={discovery ? t("on") : t("off")}
           isChecked={discovery}
           onChange={(_event, checked) => {
             clearErrors("discoveryError");

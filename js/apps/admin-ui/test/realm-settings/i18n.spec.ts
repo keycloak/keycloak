@@ -6,7 +6,8 @@ import { goToUserFederation } from "../utils/sidebar.ts";
 import {
   assertProviderCardText,
   assertRealmSettingsText,
-  skipIfThemeLocalizationUnavailable,
+  skipIfAdminV3ThemeUnavailable,
+  skipIfGermanThemeLocalizationUnavailable,
 } from "./i18n.ts";
 
 // Test configuration
@@ -77,7 +78,7 @@ async function addLocalization(locale: string, key: string, value: string) {
 
 test.describe.serial("i18n tests", () => {
   test.beforeEach(async () => {
-    await skipIfThemeLocalizationUnavailable();
+    await skipIfAdminV3ThemeUnavailable();
   });
 
   // Constants for test assertions
@@ -110,6 +111,7 @@ test.describe.serial("i18n tests", () => {
   test("should use THEME localization for language with existing theme localization", async ({
     page,
   }) => {
+    await skipIfGermanThemeLocalizationUnavailable();
     await goToPage(page, "de");
     await assertRealmSettingsText(page, texts.themeLocalizationDe);
   });
