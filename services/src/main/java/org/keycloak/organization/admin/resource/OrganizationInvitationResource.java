@@ -126,7 +126,6 @@ public class OrganizationInvitationResource {
         }
 
         InvitationTarget invitationTarget = resolveInvitationTarget(clientId);
-        Set<String> roleIds = resolveRoleIds(roles);
 
         OrganizationProvider invitationProvider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = invitationProvider.getInvitationManager();
@@ -147,7 +146,7 @@ public class OrganizationInvitationResource {
                 throw ErrorResponse.error("User already a member of the organization", Status.CONFLICT);
             }
 
-            return sendInvitation(user, invitationTarget, roleIds);
+            return sendInvitation(user, invitationTarget, roles);
         }
 
         // Create temporary user for new registrations
@@ -159,7 +158,7 @@ public class OrganizationInvitationResource {
             user.setLastName(lastName);
         }
 
-        return sendInvitation(user, invitationTarget, roleIds);
+        return sendInvitation(user, invitationTarget, roles);
     }
 
     public Response inviteExistingUser(String id, List<String> roles) {
@@ -185,10 +184,11 @@ public class OrganizationInvitationResource {
             throw ErrorResponse.error("User does not have an email address", Status.BAD_REQUEST);
         }
 
-        return sendInvitation(user, resolveInvitationTarget(null), resolveRoleIds(roles));
+        return sendInvitation(user, resolveInvitationTarget(null), roles);
     }
 
-    private Response sendInvitation(UserModel user, InvitationTarget invitationTarget, Set<String> roleIds) {
+    private Response sendInvitation(UserModel user, InvitationTarget invitationTarget, List<String> roles) {
+        Set<String> roleIds = resolveRoleIds(user, roles);
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = provider.getInvitationManager();
         // Create persistent invitation record
@@ -198,7 +198,10 @@ public class OrganizationInvitationResource {
             user.getFirstName(),
             user.getLastName()
         );
-        invitation.setRoleIds(roleIds);
+
+        if (!roleIds.isEmpty()) {
+            invitation.setRoleIds(roleIds);
+        }
 
         String link = user.getId() == null ?
             createRegistrationLink(user, invitation, invitationTarget) :
@@ -223,10 +226,13 @@ public class OrganizationInvitationResource {
         return Response.noContent().build();
     }
 
-    private Set<String> resolveRoleIds(List<String> roles) {
-        if (roles == null || roles.isEmpty()) {
+    private Set<String> resolveRoleIds(UserModel user, List<String> roles) {
+        if (roles == null || roles.stream().allMatch(StringUtil::isBlank)) {
             return Set.of();
         }
+
+        // same checks as mapping the roles directly, the user has no id yet when invited to register
+        auth.users().requireMapRoles(user);
 
         Set<String> roleIds = new HashSet<>();
 

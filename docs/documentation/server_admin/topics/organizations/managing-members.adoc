@@ -112,9 +112,10 @@ When sending an invitation through the Admin REST API, you can include the ids o
 same transaction that adds the user as a member of the organization, whether the invitation is accepted through the
 invitation link, the registration flow, or an identity provider.
 
-The administrator sending the invitation must be allowed to map each of the roles, using the same permissions required to
-grant the roles directly to a user. Roles deleted before the invitation is accepted are not granted, and resending an
-invitation keeps the roles that still exist.
+The administrator sending the invitation must be allowed to map each of the roles to the user, using the same permissions
+required to grant the roles directly. When the invitation is for a user who does not have an account yet, the administrator
+must be allowed to map roles to any user in the realm. Roles deleted before the invitation is accepted are not granted, and
+resending an invitation keeps the roles that still exist.
 
 == Managing invitations
 
