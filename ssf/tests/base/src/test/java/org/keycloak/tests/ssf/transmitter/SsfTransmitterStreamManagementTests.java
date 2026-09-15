@@ -1385,8 +1385,10 @@ public class SsfTransmitterStreamManagementTests {
         try (SimpleHttpResponse response = postStream(userToken, request)) {
             Assertions.assertEquals(403, response.getStatus(),
                     "regular-user bearer must be rejected with 403 insufficient_scope when ssf.requireServiceAccount=true");
-            Assertions.assertTrue(String.valueOf(response.getFirstHeader("WWW-Authenticate")).contains("error=\"insufficient_scope\""),
-                    "valid token failing the service-account gate must be reported as insufficient_scope");
+            String challenge = response.getFirstHeader("WWW-Authenticate");
+            Assertions.assertNotNull(challenge, "403 must carry a WWW-Authenticate challenge");
+            Assertions.assertTrue(challenge.contains("error=\"insufficient_scope\""),
+                    "valid token failing the service-account gate must be reported as insufficient_scope: " + challenge);
         }
     }
 
