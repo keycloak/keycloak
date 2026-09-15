@@ -126,6 +126,17 @@ public class KeycloakServerConfigBuilder {
     }
 
     /**
+     * Enable the specified features by name. Names use the same format as the {@code --features} CLI option.
+     *
+     * @param features the feature names to enable
+     * @return
+     */
+    public KeycloakServerConfigBuilder features(String... features) {
+        this.features.addAll(Arrays.asList(features));
+        return this;
+    }
+
+    /**
      * Disable the specified features. In most cases used to disable features that are enabled by default
      *
      * @param features the features to disable
@@ -135,6 +146,17 @@ public class KeycloakServerConfigBuilder {
         this.featuresDisabled.addAll(Arrays.stream(features)
                 .map(Profile.Feature::getUnversionedKey)
                 .collect(Collectors.toSet()));
+        return this;
+    }
+
+    /**
+     * Disable the specified features by name. Names use the same format as the {@code --features-disabled} CLI option.
+     *
+     * @param features the feature names to disable
+     * @return
+     */
+    public KeycloakServerConfigBuilder featuresDisabled(String... features) {
+        this.featuresDisabled.addAll(Arrays.asList(features));
         return this;
     }
 
