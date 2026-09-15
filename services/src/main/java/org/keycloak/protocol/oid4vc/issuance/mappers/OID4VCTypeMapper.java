@@ -77,6 +77,12 @@ public class OID4VCTypeMapper extends OID4VCMapper {
     }
 
     @Override
+    public boolean mapsUserControlledData() {
+        // Writes the VC type container field, not a user-controlled claim name/value.
+        return false;
+    }
+
+    @Override
     public List<String> getMetadataAttributePath() {
         return List.of("type");
     }
