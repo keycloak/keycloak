@@ -17,6 +17,7 @@ import org.keycloak.models.credential.dto.PasswordSecretData;
 import org.keycloak.tracing.TracingProviderUtil;
 
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
+import org.bouncycastle.crypto.generators.Argon2BytesGenerator.FixedBlockPool;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.crypto.hash.Argon2PasswordHashProviderFactory.MEMORY_KEY;
@@ -115,7 +116,7 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
         return tracing.trace(Argon2PasswordHashProvider.class, "encode", span -> {
             try {
                 cpuCoreSemaphore.acquire();
-                Argon2BytesGenerator.BlockPool blockPool = blockPoolManager.acquire();
+                FixedBlockPool blockPool = blockPoolManager.acquire();
                 try {
                     org.bouncycastle.crypto.params.Argon2Parameters parameters = new org.bouncycastle.crypto.params.Argon2Parameters.Builder(Argon2Parameters.getTypeValue(type))
                             .withVersion(Argon2Parameters.getVersionValue(version))

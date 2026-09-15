@@ -1,11 +1,12 @@
 package org.keycloak.crypto.hash;
 
 import java.lang.ref.SoftReference;
-import java.util.ArrayDeque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Semaphore;
+
+import org.jboss.logging.Logger;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -18,6 +19,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
+import org.bouncycastle.crypto.generators.Argon2BytesGenerator.FixedBlockPool;
 
 public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFactory, EnvironmentDependentProviderFactory {
 
@@ -29,6 +31,8 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
     public static final String ITERATIONS_KEY = "iterations";
     public static final String PARALLELISM_KEY = "parallelism";
     public static final String CPU_CORES_KEY = "cpuCores";
+
+    private static final Logger logger = Logger.getLogger(Argon2PasswordHashProviderFactory.class);
 
     /**
      * The Argon2 password hashing is CPU bound, so it doesn't make sense to hash more values concurrently than there are cores on the machine.
@@ -59,7 +63,7 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
         iterations = config.getInt(ITERATIONS_KEY, Argon2Parameters.DEFAULT_ITERATIONS);
         parallelism = config.getInt(PARALLELISM_KEY, Argon2Parameters.DEFAULT_PARALLELISM);
         cpuCoreSemaphore = new Semaphore(config.getInt(CPU_CORES_KEY, Runtime.getRuntime().availableProcessors()));
-        blockPoolManager = new SoftBlockPool();
+        blockPoolManager = new SoftBlockPool(memory);
     }
 
     @Override
@@ -144,43 +148,43 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
 
     /**
      * Pool-of-pools for Argon2 memory blocks. Each hash operation acquires an exclusive
-     * {@link SimpleBlockPool} (no synchronization during hashing), uses it for all block
-     * allocations/deallocations, then releases it back. Each individual pool is wrapped in a
-     * {@link SoftReference} so the JVM can reclaim them independently under memory pressure
-     * (~7 MB per pool with default settings). Without pooling, each hash allocates and discards
-     * ~7 MB of {@code long[]} arrays, creating significant GC pressure under load.
+     * {@link FixedBlockPool}, uses it for all block allocations/deallocations, then releases it
+     * back. Each individual pool is wrapped in a {@link SoftReference} so the JVM can reclaim them
+     * independently under memory pressure (~7 MB per pool with default settings). Without pooling,
+     * each hash allocates and discards ~7 MB of {@code long[]} arrays, creating significant GC
+     * pressure under load.
+     *
+     * <p>{@link FixedBlockPool} is used instead of a custom {@link Argon2BytesGenerator.BlockPool}
+     * because {@link Argon2BytesGenerator.Block#clear()} is private — only {@code FixedBlockPool},
+     * as an inner class of {@code Argon2BytesGenerator}, can zero out block contents on
+     * deallocate/allocate to prevent password-derived data from lingering in pooled memory.
      */
     static class SoftBlockPool {
-        private final ConcurrentLinkedDeque<SoftReference<SimpleBlockPool>> pools = new ConcurrentLinkedDeque<>();
+        private final ConcurrentLinkedDeque<SoftReference<FixedBlockPool>> pools = new ConcurrentLinkedDeque<>();
+        private final int maxBlocks;
 
-        Argon2BytesGenerator.BlockPool acquire() {
-            SoftReference<SimpleBlockPool> ref;
+        SoftBlockPool(int memoryInKB) {
+            this.maxBlocks = memoryInKB;
+        }
+
+        FixedBlockPool acquire() {
+            SoftReference<FixedBlockPool> ref;
             while ((ref = pools.pollLast()) != null) {
-                SimpleBlockPool pool = ref.get();
+                FixedBlockPool pool = ref.get();
                 if (pool != null) {
                     return pool;
+                } else {
+                    // Soft references will be evicted via the SoftRefLRUPolicyMSPerMB rule:
+                    // For each 1 GB free heap, a soft reference is kept alive for 17 min
+                    // This is based on max heap, even if it hasn't been allocated yet.
+                    logger.debug("Soft reference was evicted");
                 }
             }
-            return new SimpleBlockPool();
+            return new FixedBlockPool(maxBlocks);
         }
 
-        void release(Argon2BytesGenerator.BlockPool pool) {
-            pools.offerLast(new SoftReference<>((SimpleBlockPool) pool));
-        }
-    }
-
-    private static class SimpleBlockPool implements Argon2BytesGenerator.BlockPool {
-        private final ArrayDeque<Argon2BytesGenerator.Block> blocks = new ArrayDeque<>();
-
-        @Override
-        public Argon2BytesGenerator.Block allocate() {
-            Argon2BytesGenerator.Block block = blocks.pollLast();
-            return block != null ? block : new Argon2BytesGenerator.Block();
-        }
-
-        @Override
-        public void deallocate(Argon2BytesGenerator.Block block) {
-            blocks.addLast(block);
+        void release(FixedBlockPool pool) {
+            pools.offerLast(new SoftReference<>(pool));
         }
     }
 }
