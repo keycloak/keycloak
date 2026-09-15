@@ -142,7 +142,55 @@ public class SsfTransmitterRateLimitTests {
                 .asResponse()) {
             Assertions.assertEquals(429, response.getStatus(),
                     "back-to-back verification request should be rate-limited with 429");
+            // RFC 6585 §4: the 429 tells the receiver how long to wait
+            String retryAfter = response.getFirstHeader("Retry-After");
+            Assertions.assertNotNull(retryAfter, "429 must carry a Retry-After header");
+            int retryAfterSeconds = Integer.parseInt(retryAfter);
+            Assertions.assertTrue(retryAfterSeconds > 0 && retryAfterSeconds <= 60,
+                    "Retry-After should be the remaining part of the 60s window, was " + retryAfter);
         }
+    }
+
+    @Test
+    public void testMinVerificationIntervalResetsForRecreatedStream() throws IOException, InterruptedException {
+
+        // SSF 1.0 §8.1.4.2: min_verification_interval is a per-stream
+        // property. The lastVerifiedAt stamp lives on the receiver
+        // client, so it must not leak from a deleted stream into the
+        // next one — otherwise the new stream's first verify is 429'd.
+        String token = obtainToken();
+        StreamConfig firstStream = createPushStream(token);
+
+        StreamVerificationRequest request = new StreamVerificationRequest();
+        request.setStreamId(firstStream.getStreamId());
+        request.setState("first-stream");
+
+        try (SimpleHttpResponse response = http.doPost(verificationEndpoint())
+                .json(request)
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus(),
+                    "verification on the first stream should succeed");
+        }
+        Assertions.assertNotNull(pushes.poll(5, TimeUnit.SECONDS),
+                "first stream verification should have dispatched a push");
+
+        deleteStream(token, firstStream.getStreamId());
+        StreamConfig secondStream = createPushStream(token);
+        Assertions.assertNotEquals(firstStream.getStreamId(), secondStream.getStreamId(),
+                "re-created stream should get a new stream id");
+
+        request.setStreamId(secondStream.getStreamId());
+        request.setState("second-stream");
+        try (SimpleHttpResponse response = http.doPost(verificationEndpoint())
+                .json(request)
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus(),
+                    "first verification on a re-created stream must not be rate-limited by the previous stream");
+        }
+        Assertions.assertNotNull(pushes.poll(5, TimeUnit.SECONDS),
+                "second stream verification should have dispatched a push");
     }
 
     // --- helpers ---------------------------------------------------------
@@ -178,6 +226,14 @@ public class SsfTransmitterRateLimitTests {
                 .asResponse()) {
             Assertions.assertEquals(201, response.getStatus(), "stream creation should succeed");
             return response.asJson(StreamConfig.class);
+        }
+    }
+
+    protected void deleteStream(String token, String streamId) throws IOException {
+        try (SimpleHttpResponse response = http.doDelete(SsfTransmitterUrls.getStreamsEndpointUrl(realm.getBaseUrl()) + "?stream_id=" + streamId)
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus(), "stream deletion should succeed");
         }
     }
 
