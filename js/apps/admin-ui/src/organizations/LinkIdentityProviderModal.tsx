@@ -7,12 +7,12 @@ import {
   Modal,
   ModalVariant,
 } from "@patternfly/react-core";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { DefaultSwitchControl } from "../components/SwitchControl";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   convertAttributeNameToForm,
   convertFormValuesToObject,
@@ -43,6 +43,13 @@ export const LinkIdentityProviderModal = ({
 
   const form = useForm<LinkRepresentation>({ mode: "onChange" });
   const { handleSubmit, formState, setValue } = form;
+  const [linkedAliases, setLinkedAliases] = useState<string[]>([]);
+
+  useFetch(
+    () => adminClient.organizations.listIdentityProviders({ orgId }),
+    (providers) => setLinkedAliases(providers.map(({ alias }) => alias!)),
+    [orgId],
+  );
 
   useEffect(
     () =>
@@ -129,6 +136,7 @@ export const LinkIdentityProviderModal = ({
             defaultValue={[]}
             isRequired
             isDisabled={!!identityProvider}
+            excludeAliases={identityProvider ? undefined : linkedAliases}
           />
           <DefaultSwitchControl
             name="hideOnLogin"

@@ -11,6 +11,12 @@ export enum IdentityProviderType {
   JWT_AUTHORIZATION_GRANT = "JWT_AUTHORIZATION_GRANT",
 }
 
+export interface OrganizationIdentityProviderLinkRepresentation {
+  organizationId?: string;
+  autoMembership?: boolean;
+  membershipType?: string;
+}
+
 export default interface IdentityProviderRepresentation {
   addReadTokenRoleOnCreate?: boolean;
   alias?: string;
@@ -25,6 +31,8 @@ export default interface IdentityProviderRepresentation {
   providerId?: string;
   storeToken?: boolean;
   trustEmail?: boolean;
+  /** @deprecated write-only; the server never returns it. Read `organizationLinks`. */
   organizationId?: string;
+  organizationLinks?: OrganizationIdentityProviderLinkRepresentation[];
   types?: string[];
 }

@@ -34,7 +34,7 @@ import {
 } from "../routes/EditMapper";
 import { toIdentityProvider } from "../routes/IdentityProvider";
 import { AddMapperForm } from "./AddMapperForm";
-import { GroupResourceContext } from "../../context/group-resource/GroupResourceContext";
+import { IdentityProviderContextProvider } from "../../context/identity-provider/IdentityProviderContext";
 
 export type IdPMapperRepresentationWithAttributes =
   IdentityProviderMapperRepresentation & AttributeForm;
@@ -225,15 +225,9 @@ export default function AddMapper() {
                 updateMapperType={setCurrentMapper}
                 mapperType={currentMapper}
               />
-              <GroupResourceContext
-                value={
-                  idp?.organizationId
-                    ? adminClient.organizations.groups(idp.organizationId)
-                    : adminClient.groups
-                }
-              >
+              <IdentityProviderContextProvider value={idp}>
                 <DynamicComponents properties={currentMapper.properties!} />
-              </GroupResourceContext>
+              </IdentityProviderContextProvider>
             </>
           )}
         </FormProvider>

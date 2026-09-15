@@ -1,5 +1,7 @@
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import type OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import type { IdentityProvidersQuery } from "@keycloak/keycloak-admin-client/lib/resources/identityProviders";
+import type { OrganizationQuery } from "@keycloak/keycloak-admin-client/lib/resources/organizations";
 import {
   Action,
   IconMapper,
@@ -21,6 +23,8 @@ import {
   DropdownList,
   Gallery,
   MenuToggle,
+  Modal,
+  ModalVariant,
   PageSection,
   Split,
   SplitItem,
@@ -42,6 +46,7 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import helpUrls from "../help-urls";
 import { toEditOrganization } from "../organizations/routes/EditOrganization";
 import { upperCaseFormatter } from "../util";
+import useToggle from "../utils/useToggle";
 import { ManageOrderDialog } from "./ManageOrderDialog";
 import { toIdentityProvider } from "./routes/IdentityProvider";
 import { toIdentityProviderCreate } from "./routes/IdentityProviderCreate";
@@ -74,25 +79,106 @@ const DetailLink = (identityProvider: IdentityProviderRepresentation) => {
   );
 };
 
-const OrganizationLink = (identityProvider: IdentityProviderRepresentation) => {
+const LinkedOrganizationsModal = ({
+  alias,
+  onClose,
+}: {
+  alias: string;
+  onClose: () => void;
+}) => {
+  const { adminClient } = useAdminClient();
   const { t } = useTranslation();
   const { realm } = useRealm();
 
-  if (!identityProvider.organizationId) {
+  const loader = async (first?: number, max?: number, search?: string) => {
+    const params: OrganizationQuery = {
+      identityProvider: alias,
+      first: first!,
+      max: max!,
+    };
+    if (search) {
+      params.search = search;
+    }
+    return await adminClient.organizations.find(params);
+  };
+
+  return (
+    <Modal
+      header={
+        <TextContent>
+          <Text component={TextVariants.h1}>{t("linkedOrganizations")}</Text>
+          <Text>{t("linkedOrganizationsDescription")}</Text>
+        </TextContent>
+      }
+      variant={ModalVariant.medium}
+      isOpen
+      onClose={onClose}
+      actions={[
+        <Button
+          id="modal-cancel"
+          data-testid="cancel"
+          key="cancel"
+          onClick={onClose}
+        >
+          {t("close")}
+        </Button>,
+      ]}
+    >
+      <KeycloakDataTable
+        loader={loader}
+        isPaginated
+        ariaLabelKey="linkedOrganizations"
+        searchPlaceholderKey="searchForOrganizations"
+        columns={[
+          {
+            name: "name",
+            displayKey: "name",
+            cellRenderer: ({ id, name }: OrganizationRepresentation) => (
+              <Link
+                to={toEditOrganization({
+                  realm,
+                  id: id!,
+                  tab: "identityProviders",
+                })}
+              >
+                {name}
+              </Link>
+            ),
+          },
+          {
+            name: "description",
+            displayKey: "description",
+          },
+        ]}
+      />
+    </Modal>
+  );
+};
+
+const OrganizationLink = ({
+  alias,
+  organizationLinks,
+}: IdentityProviderRepresentation) => {
+  const { t } = useTranslation();
+  const [open, toggle] = useToggle();
+  const count = organizationLinks?.length ?? 0;
+
+  if (count === 0) {
     return "—";
   }
 
   return (
-    <Link
-      key={identityProvider.providerId}
-      to={toEditOrganization({
-        realm,
-        id: identityProvider.organizationId,
-        tab: "identityProviders",
-      })}
-    >
-      {t("organization")}
-    </Link>
+    <>
+      {open && <LinkedOrganizationsModal alias={alias!} onClose={toggle} />}
+      <Button
+        variant="link"
+        isInline
+        data-testid={`${alias}-linked-organizations`}
+        onClick={toggle}
+      >
+        {t("linkedOrganizationsCount", { count })}
+      </Button>
+    </>
   );
 };
 
@@ -134,8 +220,7 @@ export default function IdentityProvidersSection() {
     if (search) {
       params.search = search;
     }
-    const providers = await adminClient.identityProviders.find(params);
-    return providers;
+    return await adminClient.identityProviders.find(params);
   };
 
   const navigateToCreate = (providerId: string) =>
@@ -316,7 +401,7 @@ export default function IdentityProvidersSection() {
                 cellFormatters: [upperCaseFormatter()],
               },
               {
-                name: "organizationId",
+                name: "organizationLinks",
                 displayKey: "linkedOrganization",
                 cellRenderer: OrganizationLink,
               },
