@@ -25,7 +25,7 @@ import jakarta.persistence.LockModeType;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
-import org.keycloak.connections.jpa.support.EntityManagerProxy;
+import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProvider;
 
@@ -49,8 +49,7 @@ public class JpaSingleUseObjectProvider implements SingleUseObjectProvider {
         if (lifespanSeconds <= 0) {
             throw new IllegalArgumentException("lifespanSeconds must be positive");
         }
-        var em = getEntityManager();
-        EntityManagerProxy.allowAsyncCommit(em, em.createNamedQuery("insertOrOverwriteSingleUseObject"))
+        getEntityManager().createNamedQuery("insertOrOverwriteSingleUseObject")
                 .setParameter("id", key)
                 .setParameter("notes", SingleUseObjectSerialization.notesToString(key, notes))
                 .setParameter("expire", Time.currentTimeSeconds() + lifespanSeconds)
@@ -88,8 +87,7 @@ public class JpaSingleUseObjectProvider implements SingleUseObjectProvider {
     @Override
     public boolean replace(String key, Map<String, String> notes) {
         Objects.requireNonNull(key);
-        var em = getEntityManager();
-        var rows = EntityManagerProxy.allowAsyncCommit(em, em.createNamedQuery("updateIfNotExpiredSingleUseObject"))
+        var rows = getEntityManager().createNamedQuery("updateIfNotExpiredSingleUseObject")
                 .setParameter("id", key)
                 .setParameter("notes", SingleUseObjectSerialization.notesToString(key, notes))
                 .setParameter("currentTime", Time.currentTimeSeconds())
@@ -104,14 +102,27 @@ public class JpaSingleUseObjectProvider implements SingleUseObjectProvider {
             throw new IllegalArgumentException("lifespanInSeconds must be positive");
         }
         var currentTime = Time.currentTimeSeconds();
-        // No ASYNC_COMMIT_ALLOWED hint: putIfAbsent is used for replay protection,
-        // so the insert must be durable before the response is sent to the client.
-        var rows = getEntityManager().createNamedQuery("insertIfAbsentOrExpiredSingleUseObject")
-                .setParameter("id", key)
-                .setParameter("notes", SingleUseObjectSerialization.notesToString(key, Map.of()))
-                .setParameter("expire", currentTime + lifespanInSeconds)
-                .setParameter("currentTime", currentTime)
-                .executeUpdate();
+        var em = getEntityManager();
+        int rows;
+        if (JpaUtils.isUpsertRowCountUnreliable(em)) {
+            String table = JpaUtils.getTableNameForNativeQuery("SINGLE_USE_OBJECT", em);
+            em.createNativeQuery("DELETE FROM " + table + " WHERE ID = ?1 AND EXPIRE <= ?2")
+                    .setParameter(1, key)
+                    .setParameter(2, currentTime)
+                    .executeUpdate();
+            rows = em.createNativeQuery("INSERT IGNORE INTO " + table + " (ID, NOTES, EXPIRE) VALUES (?1, ?2, ?3)")
+                    .setParameter(1, key)
+                    .setParameter(2, SingleUseObjectSerialization.notesToString(key, Map.of()))
+                    .setParameter(3, currentTime + lifespanInSeconds)
+                    .executeUpdate();
+        } else {
+            rows = em.createNamedQuery("insertIfAbsentOrExpiredSingleUseObject")
+                    .setParameter("id", key)
+                    .setParameter("notes", SingleUseObjectSerialization.notesToString(key, Map.of()))
+                    .setParameter("expire", currentTime + lifespanInSeconds)
+                    .setParameter("currentTime", currentTime)
+                    .executeUpdate();
+        }
         return rows == 1;
     }
 
