@@ -69,7 +69,10 @@ final class KubernetesUtils {
             return isTrustedKubernetesApiPort(uri, httpsServicePort, servicePort);
         }
 
-        if (!host.equals(serviceHost)) {
+        String normalizedHost = host.startsWith("[") && host.endsWith("]")
+                ? host.substring(1, host.length() - 1)
+                : host;
+        if (!normalizedHost.equals(serviceHost)) {
             return false;
         }
 

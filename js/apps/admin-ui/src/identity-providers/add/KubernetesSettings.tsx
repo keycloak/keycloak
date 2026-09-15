@@ -39,9 +39,7 @@ export const KubernetesSettings = () => {
   }, [issuerDiscoveryUrl]);
 
   useEffect(() => {
-    if (
-      getValues("config.automaticIssuerDiscovery")?.toLowerCase() !== "true"
-    ) {
+    if (getValues("config.automaticIssuerDiscovery") === undefined) {
       setValue("config.automaticIssuerDiscovery", "true", {
         shouldDirty: false,
       });
