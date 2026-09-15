@@ -243,7 +243,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
             if (isBlank(httpProxy)) {
                 httpProxy = getEnvVarValue("http_proxy");
             }
-            String noProxy = normalizeNoProxy(getEnvVarValue("no_proxy"));
+            String noProxy = getEnvVarValue("no_proxy");
 
             if (!isBlank(httpProxy)) {
                 mappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
@@ -254,26 +254,6 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
             this.proxyMappings = mappings;
             logger.info("Proxy mappings configured — per-request proxy routing enabled");
         }
-    }
-
-    static String normalizeNoProxy(String noProxy) {
-        if (isBlank(noProxy)) {
-            return noProxy;
-        }
-        StringBuilder result = new StringBuilder();
-        for (String entry : noProxy.split(",")) {
-            String host = entry.trim();
-            if (host.startsWith(".")) {
-                host = host.substring(1);
-            }
-            if (!host.isEmpty()) {
-                if (result.length() > 0) {
-                    result.append(",");
-                }
-                result.append(host);
-            }
-        }
-        return result.toString();
     }
 
     private String getEnvVarValue(String name) {
