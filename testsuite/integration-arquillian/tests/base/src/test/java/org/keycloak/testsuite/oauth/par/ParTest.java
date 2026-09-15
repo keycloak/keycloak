@@ -227,6 +227,61 @@ public class ParTest extends AbstractClientPoliciesTest {
         }
     }
 
+    // PAR object needs to be valid for the time of PAR lifespan together with the authenticationSession time as
+    // (See https://github.com/keycloak/keycloak/issues/48072 for the details)
+    @Test
+    public void requestUriLifetimeDoesNotLimitAuthenticationSessionLength() throws Exception {
+        try {
+            // setup PAR realm settings
+            int requestUriLifespan = 45;
+            setParRealmSettings(requestUriLifespan);
+
+            // create client dynamically
+            String clientId = createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+                clientRep.setRequirePushedAuthorizationRequests(Boolean.TRUE);
+                clientRep.setRedirectUris(new ArrayList<String>(Arrays.asList(CLIENT_REDIRECT_URI)));
+            });
+            OIDCClientRepresentation oidcCRep = getClientDynamically(clientId);
+            String clientSecret = oidcCRep.getClientSecret();
+            assertEquals(Boolean.TRUE, oidcCRep.getRequirePushedAuthorizationRequests());
+            assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
+            assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, oidcCRep.getTokenEndpointAuthMethod());
+
+            // Pushed Authorization Request
+            oauth.client(clientId, clientSecret);
+            oauth.redirectUri(CLIENT_REDIRECT_URI);
+            ParResponse pResp = oauth.doPushedAuthorizationRequest();
+            assertEquals(201, pResp.getStatusCode());
+            String requestUri = pResp.getRequestUri();
+            assertEquals(requestUriLifespan, pResp.getExpiresIn());
+
+            // Authorization Request with request_uri of PAR
+            // remove parameters as query strings of uri
+            oauth.redirectUri(null);
+            oauth.scope(null);
+            oauth.responseType(null);
+            String state = "testSuccessfulSinglePar";
+            oauth.loginForm().requestUri(requestUri).state(state).open();
+            assertThat(driver.getCurrentUrl(), startsWith(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + oauth.getRealm() + "/login-actions/authenticate"));
+            // make sure interactive login waits longer than requestUriLifespan
+            timeOffSet.set(requestUriLifespan * 2);
+            oauth.fillLoginForm(TEST_USER_NAME, TEST_USER_PASSWORD);
+            AuthorizationEndpointResponse loginResponse = oauth.parseLoginResponse();
+            assertEquals(state, loginResponse.getState());
+            String code = loginResponse.getCode();
+            String sessionId =loginResponse.getSessionState();
+
+            // For this test it's enough to check that Code2Token succesds
+            oauth.redirectUri(CLIENT_REDIRECT_URI); // get tokens, it needed. https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3
+            AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+            assertEquals(200, res.getStatusCode());
+
+        } finally {
+            restoreParRealmSettings();
+        }
+    }
+
+
     // success with one public client conducting one authz request
     @Test
     public void testSuccessfulSingleParPublicClient() throws Exception {

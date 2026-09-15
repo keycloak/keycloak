@@ -68,6 +68,7 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
         RealmModel realm = session.getContext().getRealm();
         int expiresIn = realm.getParPolicy().getRequestUriLifespan();
         long created = Long.parseLong(retrievedRequest.get(PAR_CREATED_TIME));
+
         if (System.currentTimeMillis() - created < (expiresIn * 1000L)) {
             requestParams = retrievedRequest;
         } else {
