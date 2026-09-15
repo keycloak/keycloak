@@ -35,4 +35,5 @@ org.keycloak.services.clientpolicy.executor.SecureClientAuthenticationAssertionE
 org.keycloak.services.clientpolicy.executor.DownscopeAssertionGrantEnforcerExecutorFactory
 org.keycloak.services.clientpolicy.executor.JWTClaimEnforcerExecutorFactory
 org.keycloak.services.clientpolicy.executor.TlsClientAuthCASubjectDNExecutorFactory
+org.keycloak.services.clientpolicy.executor.AllowedProtocolMappersExecutorFactory
 org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactory
