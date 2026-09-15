@@ -227,7 +227,7 @@ public class OrganizationInvitationResource {
     }
 
     private Set<String> resolveRoleIds(UserModel user, List<String> roles) {
-        if (roles == null || roles.stream().allMatch(StringUtil::isBlank)) {
+        if (roles == null || roles.isEmpty()) {
             return Set.of();
         }
 
@@ -237,10 +237,6 @@ public class OrganizationInvitationResource {
         Set<String> roleIds = new HashSet<>();
 
         for (String roleId : roles) {
-            if (StringUtil.isBlank(roleId)) {
-                continue;
-            }
-
             RoleModel role = realm.getRoleById(roleId.trim());
 
             if (role == null) {

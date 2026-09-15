@@ -315,7 +315,7 @@ public class Organizations {
     }
 
     /**
-     * Grants the roles recorded on an invitation to the user accepting it. Roles removed since the invitation was sent are skipped.
+     * Grants the roles recorded on an invitation to the user accepting it as direct role mappings. Roles removed since the invitation was sent are skipped.
      */
     public static void grantInvitationRoles(RealmModel realm, UserModel user, OrganizationInvitationModel invitation) {
         if (invitation == null) {
