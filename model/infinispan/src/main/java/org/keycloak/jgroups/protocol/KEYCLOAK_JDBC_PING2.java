@@ -21,6 +21,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -67,6 +70,12 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
             + "mechanism that makes multi-cluster setups safe.")
     protected boolean allow_multiple_clusters = false;
 
+    private static final Executor NETWORK_TIMEOUT_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "jdbc-ping-network-timeout");
+        t.setDaemon(true);
+        return t;
+    });
+
     private JpaConnectionProviderFactory factory;
     private volatile HealthStatus previousHealthStatus = HealthStatus.HEALTHY;
     private volatile int cyclesSinceLastLog = 0;
@@ -82,9 +91,19 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
 
     @Override
     protected Connection getConnection() throws SQLException {
+        Connection connection = null;
         try {
-            return factory.getConnection();
+            connection = factory.getConnection();
+            connection.setNetworkTimeout(NETWORK_TIMEOUT_EXECUTOR, (int) (staleness_timeout / 3));
+            return connection;
+        } catch (SQLFeatureNotSupportedException e) {
+            log.warn("JDBC driver does not support setNetworkTimeout. " +
+                     "Health check queries may hang during database outages.");
+            return connection;
         } catch (Exception e) {
+            if (connection != null) {
+                try { connection.close(); } catch (SQLException ignored) {}
+            }
             var cause = e.getCause();
             if (cause instanceof SQLException sql) {
                 // it should hit this branch 100% of the time
