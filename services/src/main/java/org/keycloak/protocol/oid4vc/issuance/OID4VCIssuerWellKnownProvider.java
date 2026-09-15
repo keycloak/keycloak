@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
@@ -66,7 +67,6 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 import org.keycloak.wellknown.WellKnownProvider;
 
-import org.apache.http.HttpHeaders;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.SIGNED_METADATA_JWT_TYPE;

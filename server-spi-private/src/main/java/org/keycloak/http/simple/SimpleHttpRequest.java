@@ -129,6 +129,10 @@ public class SimpleHttpRequest {
         return this;
     }
 
+    /**
+     * @deprecated Apache-specific entity type. Will be removed when Apache HTTP client dependency is dropped.
+     */
+    @Deprecated(since = "26.8", forRemoval = true)
     public SimpleHttpRequest entity(HttpEntity entity) {
         this.entity = entity;
         return this;
