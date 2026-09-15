@@ -110,8 +110,6 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 	private static final String LAST_NAME_MAPPER = "last-name";
 	private static final String FIRST_NAME_MAPPER = "first-name";
 
-    private static final String DEFAULT_INCLUDE_IN_TOKEN_SCOPE = "true";
-
 	public static final String PROTOCOL_ID = OID4VCIConstants.OID4VC_PROTOCOL;
     public static final String CREDENTIAL_TYPE_NATURAL_PERSON = "natural_person";
     public static final String NATURAL_PERSON_SCOPE_CONSENT_TEXT = "${naturalPersonScopeConsentText}";
@@ -248,7 +246,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         // Leaving vc.issuer_did undefined results in the realm's url being used as the value for the Issuer's ID (iss).
         // clientScope.getAttributes().computeIfAbsent(ISSUER_DID, k -> <generate did or use the realm url>)
 
-        clientScope.getAttributes().putIfAbsent(INCLUDE_IN_TOKEN_SCOPE, DEFAULT_INCLUDE_IN_TOKEN_SCOPE);
+        clientScope.getAttributes().putIfAbsent(INCLUDE_IN_TOKEN_SCOPE, "true");
         clientScope.getAttributes().putIfAbsent(VC_INCLUDE_IN_METADATA, "true");
         clientScope.getAttributes().put(VC_CONFIGURATION_ID, getEffectiveCredentialConfigurationId(clientScope));
         clientScope.getAttributes().putIfAbsent(VC_SUPPORTED_TYPES, credentialType);
@@ -403,13 +401,11 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
     private void validateIncludedInTokenScope(ClientScopeRepresentation clientScope) {
         if (clientScope.getAttributes() == null) {
-            clientScope.setAttributes(new HashMap<>());
+            return;
         }
 
         String includeInTokenScope = clientScope.getAttributes().get(INCLUDE_IN_TOKEN_SCOPE);
-        if (includeInTokenScope == null) {
-            clientScope.getAttributes().put(INCLUDE_IN_TOKEN_SCOPE, DEFAULT_INCLUDE_IN_TOKEN_SCOPE);
-        } else if (!Boolean.parseBoolean(includeInTokenScope)) {
+        if (includeInTokenScope != null && !Boolean.parseBoolean(includeInTokenScope)) {
             throw ErrorResponse.error("OID4VCI client scope must always have 'include in token scope' enabled", Response.Status.BAD_REQUEST);
         }
     }
