@@ -18,6 +18,7 @@ package org.keycloak.services.resources.admin;
 
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -123,10 +124,13 @@ public class ComponentResource {
         if (providerId != null && customComponents != null) {
             components = customComponents;
         } else if (customComponents != null) {
-            components = Stream.concat(
-                    realmComponents.filter(component -> !UiExtensionComponentStorage.usesCustomStorage(
-                            component.getProviderType(), component.getProviderId(), session)),
-                    customComponents);
+            Map<String, ComponentModel> mergedComponents = new LinkedHashMap<>();
+            realmComponents
+                    .filter(component -> !UiExtensionComponentStorage.usesCustomStorage(
+                            component.getProviderType(), component.getProviderId(), session))
+                    .forEach(component -> mergedComponents.putIfAbsent(component.getId(), component));
+            customComponents.forEach(component -> mergedComponents.put(component.getId(), component));
+            components = mergedComponents.values().stream();
         } else {
             components = realmComponents;
         }
