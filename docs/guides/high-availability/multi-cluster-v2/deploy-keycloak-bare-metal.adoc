@@ -10,6 +10,7 @@ previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
 
 This {section} describes advanced {project_name} configurations for bare-metal servers or virtual machines that will recover from single node failures or site failures.
 These instructions are intended for use with the setup described in the <@links.ha id="multi-cluster-v2-concepts"/> {section}.
+Ensure that the <@links.ha id="multi-cluster-v2-introduction" anchor="multi-cluster-v2-infrastructure-requirements" /> are met before proceeding.
 You should verify the performance and failure behavior of your specific environment.
 
 == Prerequisites
@@ -75,7 +76,7 @@ bin/kc.sh start \
     --db-pool-min-size=30 \ # <2>
     --db-pool-max-size=30 \ # <2>
     --features=stateless \ # <3>
-    --spi-cache-embedded--default--cluster-name=<CLUSTER_NAME> \ # <4>
+    --cache-embedded-cluster-name=<CLUSTER_NAME> \ # <4>
     --hostname=<KEYCLOAK_HOSTNAME> \ # <5>
     --https-certificate-file=/path/to/tls.crt \ # <6>
     --https-certificate-key-file=/path/to/tls.key \ # <6>

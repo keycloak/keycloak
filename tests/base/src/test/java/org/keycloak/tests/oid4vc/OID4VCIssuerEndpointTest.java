@@ -47,9 +47,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
-import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
-import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBuilder;
-import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
@@ -417,30 +414,12 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
 
     record OAuth2CodeEntry(String key, OAuth2Code code) {}
 
-
     protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(
             KeycloakSession session,
             AppAuthManager.BearerTokenAuthenticator authenticator) {
 
-        JwtCredentialBuilder jwtCredentialBuilder = new JwtCredentialBuilder(TIME_PROVIDER, session);
-        SdJwtCredentialBuilder sdJwtCredentialBuilder = new SdJwtCredentialBuilder();
-
-        Map<String, CredentialBuilder> credentialBuilders = Map.of(
-                jwtCredentialBuilder.getSupportedFormat(), jwtCredentialBuilder,
-                sdJwtCredentialBuilder.getSupportedFormat(), sdJwtCredentialBuilder
-        );
-
-        return prepareIssuerEndpoint(session, authenticator, credentialBuilders);
-    }
-
-    protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(
-            KeycloakSession session,
-            AppAuthManager.BearerTokenAuthenticator authenticator,
-            Map<String, CredentialBuilder> credentialBuilders) {
-
         return new OID4VCIssuerEndpoint(
                 session,
-                credentialBuilders,
                 authenticator,
                 TIME_PROVIDER,
                 30

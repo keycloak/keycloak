@@ -168,6 +168,13 @@ public final class WaitUtils {
         waitUntilElementIsNotPresent(By.className("modal-backdrop"));
     }
 
+    /**
+     * Wait for the brute force executor to finish processing all pending login failure tasks.
+     * Needed because {@code DefaultBlockingBruteForceProtector} processes failure counting asynchronously.
+     * Without this wait, a subsequent login request may race with the in-flight task and miss incrementing
+     * the failure counter (see <a href="https://github.com/keycloak/keycloak/issues/52428">#52428</a>).
+     * Once <a href="https://github.com/keycloak/keycloak/issues/52128">#52128</a> makes brute force processing synchronous, this method becomes unnecessary.
+     */
     public static void waitForBruteForceExecutors(KeycloakTestingClient testingClient) {
         testingClient.server().run(session -> {
             ExecutorsProvider provider = session.getProvider(ExecutorsProvider.class);
@@ -177,7 +184,7 @@ public final class WaitUtils {
                 CompletableFuture.runAsync(() -> {
                     do {
                         try {
-                            Thread.sleep(1000);
+                            Thread.sleep(100);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }

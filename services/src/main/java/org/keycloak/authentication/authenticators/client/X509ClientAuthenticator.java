@@ -4,14 +4,12 @@ import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.security.auth.x500.X500Principal;
 
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -38,28 +36,6 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
     public static final String ATTR_CA_SUBJECT_DN = ATTR_PREFIX + ".casubjectdn";
 
     public static final String ATTR_ALLOW_REGEX_PATTERN_COMPARISON = ATTR_PREFIX + ".allow.regex.pattern.comparison";
-
-    // Custom OIDs defined in the OpenBanking Brasil - https://openbanking-brasil.github.io/specs-seguranca/open-banking-brasil-certificate-standards-1_ID1.html#name-client-certificate
-    // These are not recognized by default in RFC1779 or RFC2253 and hence not read in the java by default
-    private static final Map<String, String> CUSTOM_OIDS = new HashMap<>();
-    private static final Map<String, String> CUSTOM_OIDS_REVERSED = new HashMap<>();
-
-    static {
-        CUSTOM_OIDS.put("2.5.4.5", "serialNumber".toUpperCase());
-        CUSTOM_OIDS.put("2.5.4.15", "businessCategory".toUpperCase());
-        CUSTOM_OIDS.put("1.3.6.1.4.1.311.60.2.1.3", "jurisdictionCountryName".toUpperCase());
-        CUSTOM_OIDS.put("1.2.840.113549.1.9.1", "emailAddress".toUpperCase());
-
-        // Reverse map
-        for (Map.Entry<String, String> entry : CUSTOM_OIDS.entrySet()) {
-            CUSTOM_OIDS_REVERSED.put(entry.getValue(), entry.getKey());
-        }
-        CUSTOM_OIDS_REVERSED.put("E", "1.2.840.113549.1.9.1"); // Another synonym for "EMAILADDRESS"
-    }
-
-    public static X500Principal constructX500Principal(String subjectDN) {
-        return new X500Principal(subjectDN, CUSTOM_OIDS_REVERSED);
-    }
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
@@ -164,19 +140,8 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
         }
 
         // validate the certificate against the CA
-        X509Certificate ca = validateCertificateChain(context.getSession(), certs);
+        X509Certificate ca = validateCertificateChain(context.getSession(), caSubjectDN, certs);
         if (ca == null) {
-            logger.debugf("[X509ClientCertificateAuthenticator:authenticate] Cert '%s' is not trusted by keycloak.", certificate.getSubjectDN().getName());
-            context.attempted();
-            return;
-        }
-
-        // check the ca name matches one of the configured DNs
-        if (!checkSubjectDNExact(ca, caSubjectDN)) {
-            if (logger.isDebugEnabled()) {
-                logger.debugf("[X509ClientCertificateAuthenticator:authenticate] Couldn't match CA certificate for expected Subject DNx %s with allow regex pattern '%s'.", caSubjectDN, clientCfg.getAllowRegexPatternComparison());
-                logger.debugf("[X509ClientCertificateAuthenticator:authenticate] CA Subject DN: %s", ca.getSubjectDN().getName());
-            }
             context.attempted();
             return;
         }
@@ -189,7 +154,7 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
         if (isRegExp) {
             return checkSubjectDNRegex(context, certificate, subjectDN);
         } else {
-            return checkSubjectDNExact(certificate, subjectDN);
+            return CertificateValidator.checkSubjectDNExact(certificate, subjectDN);
         }
     }
 
@@ -204,29 +169,23 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
         return subjectDNPattern.matcher(subjectdn).matches();
     }
 
-    private boolean checkSubjectDNExact(X509Certificate certificate, String subjectDN) {
-        // OIDC/OAuth2 does not use regex comparison as it expects exact DN given in the format according to RFC4514. See RFC8705 for the details.
-        // We allow custom OIDs attributes to be "expanded" or not expanded in the given Subject DN
-        X500Principal expectedDNPrincipal = constructX500Principal(subjectDN);
-
-        return (expectedDNPrincipal.getName(X500Principal.RFC2253, CUSTOM_OIDS).equals(certificate.getSubjectX500Principal().getName(X500Principal.RFC2253, CUSTOM_OIDS)));
-    }
-
-    private X509Certificate validateCertificateChain(KeycloakSession session, X509Certificate[] certs) {
+    private X509Certificate validateCertificateChain(KeycloakSession session, String caSubjectDN, X509Certificate[] certs) {
         try {
             CertificateValidator validator = new CertificateValidator.CertificateValidatorBuilder()
                     .session(session)
                     .trustValidation()
+                        .caSubjectDN(Collections.singletonList(caSubjectDN))
                         .enabled(true)
                     .timestampValidation()
                         .enabled(true)
                     .build(certs);
             validator.checkRevocationStatus()
                     .validateTimestamps()
-                    .validateTrust();
+                    .validateTrust()
+                    .validateCASubjectDN();
             return validator.getCertPathBuilderResult().getTrustAnchor().getTrustedCert();
         } catch (GeneralSecurityException e) {
-            logger.warnf(e, "Invalid certificate %s", certs[0].getSubjectX500Principal().getName(X500Principal.RFC2253, CUSTOM_OIDS));
+            logger.warnf(e, "Invalid certificate %s", CertificateValidator.getSubjectName(certs[0]));
             return null;
         }
     }

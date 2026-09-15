@@ -52,18 +52,21 @@ public class ResourceIndicatorsPostProcessor implements TokenPostProcessor {
             }
         }
 
-        String audienceToSet;
-        if (isClientUrn(requestedResource)) {
-            audienceToSet = findAudienceByClientUrn(requestedResource, context.accessToken().getAudience());
-        } else {
-            audienceToSet = findAudienceByClientAttribute(requestedResource, context.accessToken().getAudience());
+        String audienceToSet = null;
+        String[] audience = context.accessToken().getAudience();
+        if (audience != null && isClientUrn(requestedResource)) {
+            audienceToSet = findAudienceByClientUrn(requestedResource, audience);
+        } else if (audience != null) {
+            audienceToSet = findAudienceByClientAttribute(requestedResource, audience);
         }
 
         if (audienceToSet == null) {
             throw new TokenInterceptorException(OAuthErrorException.INVALID_TARGET, ResourceIndicatorConstants.ERROR_INVALID_RESOURCE);
         }
 
-        context.refreshToken().getOtherClaims().put(OAuth2Constants.RESOURCE, requestedResource);
+        if (context.refreshToken() != null) {
+            context.refreshToken().getOtherClaims().put(OAuth2Constants.RESOURCE, requestedResource);
+        }
         context.accessToken().audience(audienceToSet);
     }
 

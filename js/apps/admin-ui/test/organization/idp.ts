@@ -15,13 +15,7 @@ export async function fillForm(
   page: Page,
   data: {
     name: string;
-    domain: string;
   },
 ) {
   await selectItem(page, page.getByTestId("alias"), data.name);
-  await selectItem(
-    page,
-    page.locator("#config\\.kc🍺org🍺domain"),
-    data.domain,
-  );
 }

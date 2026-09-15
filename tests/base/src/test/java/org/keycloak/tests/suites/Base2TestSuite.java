@@ -9,8 +9,10 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.actions",
         "org.keycloak.tests.authz",
         "org.keycloak.tests.broker",
+        "org.keycloak.tests.cli",
         "org.keycloak.tests.client",
         "org.keycloak.tests.common",
+        "org.keycloak.tests.composites",
         "org.keycloak.tests.cookies",
         "org.keycloak.tests.cors",
         "org.keycloak.tests.db",
@@ -22,7 +24,8 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.infinispan",
         "org.keycloak.tests.keys",
         "org.keycloak.tests.login",
-        "org.keycloak.tests.loginfailures"
+        "org.keycloak.tests.loginfailures",
+        "org.keycloak.tests.migration"
 })
 public class Base2TestSuite {
 }

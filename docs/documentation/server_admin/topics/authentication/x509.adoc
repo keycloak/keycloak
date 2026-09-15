@@ -172,8 +172,10 @@ When more than one policy is specified in the `Validate Certificate Policy` sett
 *Bypass identity confirmation*::
 If enabled, X.509 client certificate authentication does not prompt the user to confirm the certificate identity. {project_name} signs in the user upon successful authentication.
 
-*Revalidate client certificate*::
-If set, the client certificate trust chain will be always verified at the application level using the certificates present in the configured trust store. This can be useful if the underlying web server does not enforce client certificate chain validation, for example because it is behind a non-validating load balancer or reverse proxy, or when the number of allowed CAs is too large for the mutual SSL negotiation (most browsers cap the maximum SSL negotiation packet size at 32767 bytes, which corresponds to about 200 advertised CAs). By default this option is off.
+*Certificate Authority subject DN*::
+Subject DN of the root Certificate Authority (or Authorities) (CA) that issued the user certificates (trust anchor). The CA Subject DN can be in the RFC4514 or RFC1779 format. This option allows you to identify the valid trust anchor names for the user certificates, differentiating them for anchors used for other usages or realms. This option is required.
++
+NOTE: Now the client certificate trust chain is always revalidated by {project_name} using the server trust-store or mTLS store in order to obtain the associated root CA.
 
 ==== Adding X.509 Client Certificate Authentication to a Direct Grant Flow
 

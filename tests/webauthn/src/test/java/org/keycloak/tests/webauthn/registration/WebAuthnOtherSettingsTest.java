@@ -61,8 +61,6 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void defaultValues() {
-        removeDefaultUser();
-
         registerDefaultUser("webauthn");
 
         Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
@@ -124,9 +122,6 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
     public void timeout() {
         final int timeout = 3; // seconds
 
-
-        removeDefaultUser();
-
         getVirtualAuthManager().removeAuthenticator();
         setWebAuthnPolicyCreateTimeout(timeout);
 
@@ -136,8 +131,10 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
         oAuthClient.openRegistrationForm();
         registerPage.assertCurrent();
         registerPage.register("firstName", "lastName", EMAIL, USERNAME, PASSWORD);
-
         webAuthnRegisterPage.assertCurrent();
+        String userId = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME).getId();
+        managedRealm.cleanup().add(r -> r.users().get(userId).remove());
+
         webAuthnRegisterPage.clickRegister();
 
 
@@ -159,8 +156,6 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void excludeCredentials() {
-        removeDefaultUser();
-
         setAcceptableAaguidsWithDirectAttestation(List.of(ALL_ZERO_AAGUID));
 
         disableTruststoreSpi();
@@ -178,8 +173,6 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void excludeCredentialsSuccess() {
-        removeDefaultUser();
-
         setAcceptableAaguidsWithDirectAttestation(List.of(CHROME_AAGUID));
 
         disableTruststoreSpi();
@@ -196,8 +189,6 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void excludeCredentialsUsingNone() {
-        removeDefaultUser();
-
         // Acceptable AAGUIDs restricted, but attestation left at the default (none): registration must be rejected
         setAcceptableAaguids(List.of(ALL_ZERO_AAGUID));
 
@@ -218,9 +209,6 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void apiInvalidStateErrorMessage() {
-
-        removeDefaultUser();
-
         registerDefaultUser();
         UserRepresentation user = userResource().toRepresentation();
         logout();
@@ -245,16 +233,15 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void apiSecurityErrorMessage() {
-
-        removeDefaultUser();
-
         setWebAuthnPolicyRpId("invalid.example.com");
 
         oAuthClient.openRegistrationForm();
         registerPage.assertCurrent();
         registerPage.register("firstName", "lastName", EMAIL, USERNAME, PASSWORD);
-
         webAuthnRegisterPage.assertCurrent();
+        String userId = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME).getId();
+        managedRealm.cleanup().add(r -> r.users().get(userId).remove());
+
         webAuthnRegisterPage.clickRegister();
 
         webAuthnErrorPage.assertCurrent();
@@ -262,9 +249,6 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
     }
 
     private void assertBrowserApiErrorMessage(Consumer<VirtualAuthenticatorOptions> optionsConsumer, String expectedMessage) {
-        // remove the pre-created default user to register it fresh
-        removeDefaultUser();
-
         getVirtualAuthManager().removeAuthenticator();
         VirtualAuthenticatorOptions options = getDefaultAuthenticatorOptions();
         optionsConsumer.accept(options);
@@ -273,8 +257,10 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
         oAuthClient.openRegistrationForm();
         registerPage.assertCurrent();
         registerPage.register("firstName", "lastName", EMAIL, USERNAME, PASSWORD);
-
         webAuthnRegisterPage.assertCurrent();
+        String userId = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME).getId();
+        managedRealm.cleanup().add(r -> r.users().get(userId).remove());
+
         webAuthnRegisterPage.clickRegister();
 
 
@@ -284,13 +270,6 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
     private String registerProviderId() {
         return isPasswordless() ? WebAuthnPasswordlessRegisterFactory.PROVIDER_ID : WebAuthnRegisterFactory.PROVIDER_ID;
-    }
-
-    private void removeDefaultUser() {
-        UserRepresentation defaultUser = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME);
-        if (defaultUser != null) {
-            managedRealm.admin().users().delete(defaultUser.getId());
-        }
     }
 
     private List<String> getAcceptableAaguids() {

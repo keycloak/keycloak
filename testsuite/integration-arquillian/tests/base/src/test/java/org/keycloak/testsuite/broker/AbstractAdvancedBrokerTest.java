@@ -34,13 +34,11 @@ import org.keycloak.testsuite.util.WaitUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
-import org.openqa.selenium.TimeoutException;
 
 import static org.keycloak.testsuite.admin.AdminApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.disablePostBrokerLoginFlow;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForElementEnabled;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -185,21 +183,9 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         oauth.realm(bc.consumerRealmName());
         oauth.openLoginForm();
 
-        try {
-            waitForPage(driver, "sign in to", true);
-        } catch (TimeoutException e) {
-            log.debug(driver.getTitle());
-            log.debug(driver.getPageSource());
-            Assertions.fail("Timeout while waiting for login page");
-        }
+        loginPage.assertCurrent();
 
         for (int i = 0; i < 3; i++) {
-            try {
-                waitForElementEnabled(driver, "login");
-            } catch (TimeoutException e) {
-                Assertions.fail("Timeout while waiting for login element enabled");
-            }
-
             loginPage.login(bc.getUserLogin(), "invalid");
         }
 
@@ -208,20 +194,12 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         WaitUtils.waitForBruteForceExecutors(testingClient);
 
         loginPage.clickSocial(bc.getIDPAlias());
-
-        try {
-            waitForPage(driver, "sign in to", true);
-        } catch (TimeoutException e) {
-            log.debug(driver.getTitle());
-            log.debug(driver.getPageSource());
-            Assertions.fail("Timeout while waiting for login page");
-        }
+        loginPage.assertCurrent();
 
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"), "Driver should be on the provider realm page right now");
 
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
-        waitForPage(driver, "sign in to", true);
         errorPage.assertCurrent();
         assertEquals("Account is disabled, contact your administrator.", errorPage.getError());
     }

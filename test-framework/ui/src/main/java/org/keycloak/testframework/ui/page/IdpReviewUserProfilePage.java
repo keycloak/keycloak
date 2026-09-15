@@ -30,8 +30,4 @@ public class IdpReviewUserProfilePage extends LoginUpdateProfilePage {
         return "login-idp-review-user-profile";
     }
 
-    @Override
-    public void assertCurrent() {
-        driver.waiting().waitForPage(this);
-    }
 }

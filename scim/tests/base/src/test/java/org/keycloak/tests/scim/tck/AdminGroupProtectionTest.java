@@ -19,7 +19,13 @@ package org.keycloak.tests.scim.tck;
 
 import java.util.List;
 
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.scim.client.ResourceFilter;
 import org.keycloak.scim.client.ScimClient;
@@ -31,6 +37,7 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
+import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Test;
 
@@ -157,6 +164,18 @@ public class AdminGroupProtectionTest {
     }
 
     @Test
+    public void testAdminParentGroupCannotBeDeleted() {
+        String parentGroupId = getGroupId(ADMIN_PARENT_GROUP);
+
+        try {
+            client.groups().delete(parentGroupId);
+            fail("Should not be able to delete admin parent group");
+        } catch (ScimClientException sce) {
+            assertEquals(403, sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
     public void testAdminViaCompositeRoleReturnsMinimalRepresentation() {
         String groupId = getGroupId(ADMIN_VIA_COMPOSITE_GROUP);
         Group result = client.groups().get(groupId);
@@ -269,6 +288,73 @@ public class AdminGroupProtectionTest {
             assertEquals(403, sce.getError().getStatusInt());
         } finally {
             realm.admin().users().get(adminUserId).leaveGroup(regularGroupId);
+        }
+    }
+
+    @Test
+    public void testDeletingRegularParentGroupIsRejectedWhenSubgroupIsAdminGroup() {
+        // Create a regular parent group
+        GroupRepresentation regularParent = new GroupRepresentation();
+        regularParent.setName("regular-parent");
+        try (Response response = realm.admin().groups().add(regularParent)) {
+            regularParent.setId(ApiUtil.getCreatedId(response));
+        }
+
+        // Create a child group under the regular parent
+        GroupRepresentation adminChild = new GroupRepresentation();
+        adminChild.setName("admin-child");
+        try (Response response = realm.admin().groups().group(regularParent.getId()).subGroup(adminChild)) {
+            adminChild.setId(ApiUtil.getCreatedId(response));
+        }
+
+        // Assign an admin role to the child group, making it an admin-protected group
+        ClientRepresentation realmMgmt = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation manageUsersRole = realm.admin().clients().get(realmMgmt.getId()).roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
+        realm.admin().groups().group(adminChild.getId()).roles().clientLevel(realmMgmt.getId()).add(List.of(manageUsersRole));
+
+        // Deleting the regular parent group via SCIM must be rejected because it would cascade
+        // and delete the admin-protected child group, bypassing admin-resource protection
+        try {
+            client.groups().delete(regularParent.getId());
+            fail("Should not be able to delete regular parent group when a subgroup is an admin group");
+        } catch (ScimClientException sce) {
+            assertEquals(403, sce.getError().getStatusInt());
+        } finally {
+            realm.admin().groups().group(regularParent.getId()).remove();
+        }
+    }
+
+    @Test
+    public void testDeletingRegularParentGroupIsRejectedWhenDeepDescendantIsAdminGroup() {
+        GroupRepresentation regularParent = new GroupRepresentation();
+        regularParent.setName("regular-parent-deep");
+        try (Response response = realm.admin().groups().add(regularParent)) {
+            regularParent.setId(ApiUtil.getCreatedId(response));
+        }
+
+        GroupRepresentation regularMiddle = new GroupRepresentation();
+        regularMiddle.setName("regular-middle");
+        try (Response response = realm.admin().groups().group(regularParent.getId()).subGroup(regularMiddle)) {
+            regularMiddle.setId(ApiUtil.getCreatedId(response));
+        }
+
+        GroupRepresentation adminLeaf = new GroupRepresentation();
+        adminLeaf.setName("admin-leaf");
+        try (Response response = realm.admin().groups().group(regularMiddle.getId()).subGroup(adminLeaf)) {
+            adminLeaf.setId(ApiUtil.getCreatedId(response));
+        }
+
+        ClientRepresentation realmMgmt = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation manageUsersRole = realm.admin().clients().get(realmMgmt.getId()).roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
+        realm.admin().groups().group(adminLeaf.getId()).roles().clientLevel(realmMgmt.getId()).add(List.of(manageUsersRole));
+
+        try {
+            client.groups().delete(regularParent.getId());
+            fail("Should not be able to delete regular parent when a deep descendant is an admin group");
+        } catch (ScimClientException sce) {
+            assertEquals(403, sce.getError().getStatusInt());
+        } finally {
+            realm.admin().groups().group(regularParent.getId()).remove();
         }
     }
 

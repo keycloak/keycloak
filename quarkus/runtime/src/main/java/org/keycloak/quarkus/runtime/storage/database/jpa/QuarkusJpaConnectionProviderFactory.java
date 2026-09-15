@@ -33,6 +33,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 
 import org.keycloak.ServerStartupError;
+import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
 import org.keycloak.config.DatabaseOptions;
@@ -109,6 +110,8 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
         }
 
         checkMySQLWaitTimeout();
+        checkMySQLBinlogFormat();
+        checkGaleraSyncWait();
         checkMSSQLIsolationLevel();
         checkUtf8Encoding();
 
@@ -358,6 +361,57 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
             }
         } catch (SQLException e) {
             logger.warnf(e, "Unable to validate %s 'wait_timeout' due to database exception", vendor);
+        }
+    }
+
+    private void checkMySQLBinlogFormat() {
+        if (!Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
+            // Only when we switch on stateless, the transaction isolation level for MySQL is set to READ COMMITTED,
+            // and only then we need to check the binlog format.
+            return;
+        }
+        String db = Configuration.getConfigValue(DatabaseOptions.DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElseThrow();
+        if (!(Database.Vendor.MYSQL == vendor || Database.Vendor.MARIADB == vendor)) {
+            return;
+        }
+
+        try (Connection connection = getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery("SHOW VARIABLES LIKE 'binlog_format'")) {
+            if (rs.next() && "STATEMENT".equalsIgnoreCase(rs.getString(2))) {
+                logger.errorf("%s 'binlog_format' is set to 'STATEMENT', which is incompatible with the READ COMMITTED transaction isolation level used by the stateless feature. "
+                        + "Change it to 'ROW' or 'MIXED' by running: SET GLOBAL binlog_format = 'ROW'", vendor);
+            }
+        } catch (SQLException e) {
+            logger.warnf(e, "Unable to validate %s 'binlog_format' due to database exception", vendor);
+        }
+    }
+
+    private void checkGaleraSyncWait() {
+        String db = Configuration.getConfigValue(DatabaseOptions.DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElseThrow();
+        if (!(Database.Vendor.MYSQL == vendor || Database.Vendor.MARIADB == vendor)) {
+            return;
+        }
+
+        try (Connection connection = getConnection();
+             Statement statement = connection.createStatement()) {
+            try (ResultSet rs = statement.executeQuery("SHOW VARIABLES LIKE 'wsrep_on'")) {
+                if (!rs.next() || !"ON".equalsIgnoreCase(rs.getString(2))) {
+                    // not a Galera node, no further checks needed
+                    return;
+                }
+            }
+            try (ResultSet rs = statement.executeQuery("SHOW VARIABLES LIKE 'wsrep_sync_wait'")) {
+                if (rs.next() && "0".equals(rs.getString(2))) {
+                    logger.errorf("Galera Cluster detected with 'wsrep_sync_wait = 0'. "
+                            + "This will cause stale reads when requests are routed to different nodes. "
+                            + "Set 'wsrep_sync_wait = 1' on all Galera nodes to enable causal reads.");
+                }
+            }
+        } catch (SQLException e) {
+            logger.warnf(e, "Unable to validate Galera 'wsrep_sync_wait' due to database exception");
         }
     }
 

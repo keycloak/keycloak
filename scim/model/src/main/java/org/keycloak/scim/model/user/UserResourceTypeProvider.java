@@ -1,21 +1,20 @@
 package org.keycloak.scim.model.user;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
@@ -26,17 +25,23 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.Permissions;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.filter.ScimFilterParser.FilterContext;
 import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
+import org.keycloak.scim.protocol.ForbiddenException;
+import org.keycloak.scim.protocol.request.PatchRequest.PatchOperation;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
+import org.keycloak.scim.resource.spi.MembershipChange;
+import org.keycloak.scim.resource.spi.ScimPatchException;
 import org.keycloak.scim.resource.user.User;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.userprofile.UserProfile;
@@ -47,11 +52,26 @@ import org.keycloak.userprofile.ValidationException.Error;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
+import static org.keycloak.utils.StringUtil.isBlank;
 
 public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<UserModel, User> implements ScimAttributeJpaExpressionResolver {
 
+    private final UserCoreModelSchema schema;
+
     public UserResourceTypeProvider(KeycloakSession session) {
-        super(session, new UserCoreModelSchema(session), List.of(new UserEnterpriseModelSchema(session), new UserExtensionModelSchema(session)));
+        this(session, new UserCoreModelSchema(session));
+    }
+
+    private UserResourceTypeProvider(KeycloakSession session, UserCoreModelSchema schema) {
+        super(session, schema, List.of(new UserEnterpriseModelSchema(session), new UserExtensionModelSchema(session)));
+        this.schema = schema;
+    }
+
+    @Override
+    public List<MembershipChange> pollMembershipChanges() {
+        List<MembershipChange> changes = List.copyOf(schema.getMembershipChanges());
+        schema.clearMembershipChanges();
+        return changes;
     }
 
     @Override
@@ -62,39 +82,94 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     public User onCreate(User resource) {
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-        String userName = resource.getUserName();
+        RealmModel realm = session.getContext().getRealm();
+        String username = realm.isRegistrationEmailAsUsername() ? resource.getEmail() : resource.getUserName();
 
-        if (userName == null) {
-            throw new ModelValidationException("username is required");
+        if (username == null) {
+            throw new ModelValidationException(realm.isRegistrationEmailAsUsername() ? "email is required" : "username is required");
         }
 
-        UserProfile profile = provider.create(UserProfileContext.SCIM, Map.of(UserModel.USERNAME, userName));
+        UserProfile profile = provider.create(UserProfileContext.SCIM, Map.of(UserModel.USERNAME, username));
         UserModel model = profile.create(false);
+        UserModelAttributeRecorder recorder = new UserModelAttributeRecorder(model, new HashMap<>());
 
-        populate(model, resource);
-
-        try {
-            profile = provider.create(UserProfileContext.SCIM, model);
-            profile.validate();
-        } catch (ValidationException ve) {
-            throw handleValidationException(ve);
-        }
+        populate(recorder, resource);
+        persist(recorder);
 
         return createResourceTypeInstance(model, null, null);
     }
 
     @Override
-    protected User onUpdate(UserModel model, User resource) {
+    public User update(User resource) {
+        UserModel model = getModel(resource.getId());
+
+        if (model == null || !hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
+            throw new ForbiddenException();
+        }
+
+        UserModelAttributeRecorder recorder = createUserModelAttributeRecorder(model);
+
+        populate(recorder, resource);
+        persist(recorder);
+
+        return onUpdate(model, resource);
+    }
+
+    @Override
+    public void patch(User existing, List<PatchOperation> operations) {
+        Objects.requireNonNull(existing, "existing cannot be null");
+        Objects.requireNonNull(operations, "operations cannot be null");
+
+        if (operations.size() > MAX_PATCH_OPERATIONS) {
+            throw new ScimPatchException(
+                    "PATCH request exceeds maximum allowed number of %d operations".formatted(MAX_PATCH_OPERATIONS));
+        }
+
+        UserModel model = getModel(existing.getId());
+
+        if (model == null || !hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
+            throw new ForbiddenException();
+        }
+
+        UserModelAttributeRecorder recorder = createUserModelAttributeRecorder(model);
+
+        applyPatch(existing, recorder, operations);
+
+        String stagedUsername = recorder.getUsername();
+
+        if (isBlank(stagedUsername) && isUsernameReadOnly(recorder)) {
+            throw new ModelValidationException("userName is required");
+        }
+
+        persist(recorder);
+        onUpdate(model, existing);
+    }
+
+    private UserModelAttributeRecorder createUserModelAttributeRecorder(UserModel model) {
+        return new UserModelAttributeRecorder(model, new HashMap<>(model.getAttributes()));
+    }
+
+    private boolean isUsernameReadOnly(UserModelAttributeRecorder recorder) {
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+        UserProfile profile = provider.create(UserProfileContext.SCIM, recorder.getAttributes(), recorder.getDelegate());
+        return profile.getAttributes().isReadOnly(UserModel.USERNAME);
+    }
+
+    private void persist(UserModelAttributeRecorder recorder) {
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+        UserProfile profile = provider.create(UserProfileContext.SCIM, recorder.getAttributes(), recorder.getDelegate());
+
         try {
-            UserProfileProvider userProfileProvider = session.getProvider(UserProfileProvider.class);
-            UserProfile profile = userProfileProvider.create(UserProfileContext.SCIM, model);
-            profile.update();
+            profile.validate();
+            profile.update(true);
         } catch (ValidationException ve) {
             throw handleValidationException(ve);
         }
+    }
 
+    @Override
+    protected User onUpdate(UserModel model, User resource) {
         model.setLastModifiedTimestamp(Time.currentTimeMillis());
-
         return createResourceTypeInstance(model, null, null);
     }
 
@@ -184,7 +259,7 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     public boolean onDelete(UserModel model) {
         RealmModel realm = session.getContext().getRealm();
-        return session.users().removeUser(realm, model);
+        return new UserManager(session).removeUser(realm, model);
     }
 
     @Override
@@ -213,28 +288,27 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         RealmModel realm = session.getContext().getRealm();
         Permissions permissions = session.getContext().getPermissions();
 
-        // When FGAP is enabled, only the eq operator is supported for groups.value filters. The callback
-        // verifies that the caller has VIEW permission on the specific group being matched. Other operators
-        // (ne, pr, gt, co, etc.) cannot be safely authorized through value comparison because they can match
-        // rows the caller is not permitted to see, so they silently return empty results for this path.
-        // This restriction only applies to the groups.value/groups paths; all other filter attributes are
-        // unaffected. When FGAP is disabled, all operators are allowed.
+        // Organization groups are always excluded from groups.value/groups filter paths, consistent with
+        // the serialization boundary in AbstractUserModelSchema. Only the eq operator can be safely
+        // authorized through a per-group check; other operators (ne, pr, gt, co, etc.) cannot be tied to a
+        // single group, so they are instead gated on whether the caller can view groups at all, regardless
+        // of whether FGAP is enabled.
         BiPredicate<String, String> authCheck = (path, value) -> {
             if ("groups.value".equalsIgnoreCase(path) || "groups".equalsIgnoreCase(path)) {
-                if (!realm.isAdminPermissionsEnabled()) {
-                    return true;
-                }
                 if (value == null) {
-                    return false;
+                    return permissions.hasPermission(AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
                 }
                 GroupModel group = session.groups().getGroupById(realm, value);
-                return group != null && permissions.hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
+                if (group == null || AbstractUserModelSchema.isOrganizationGroup(group)) {
+                    return false;
+                }
+                return permissions.hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
             }
             return true;
         };
 
         // create filter predicate using the same query and root that will be used for execution
-        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, root, authCheck);
+        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, query, root, authCheck);
         predicates.add(evaluator.visit(filterContext).predicate());
 
         // apply service account restriction
@@ -250,11 +324,22 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     }
 
     @Override
-    public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, Root<?> root, BiFunction<Class<?>, Supplier<Join<?, ?>>, Join<?, ?>> joinResolver) {
+    public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, Root<?> root, Subquery<?> subquery) {
         if ("groups".equals(attribute.getName())) {
-            Join<?, ?> join = joinResolver.apply(UserGroupMembershipEntity.class, () -> root.join(UserGroupMembershipEntity.class));
-            join.on(cb.equal(root.get("id"), join.get("user").get("id")));
-            return join.get("groupId");
+            Root<UserGroupMembershipEntity> membership = subquery.from(UserGroupMembershipEntity.class);
+            
+            // Organization group memberships are never exposed through the groups/groups.value paths
+            // (see AbstractUserModelSchema#getAttributeValue), so they must be excluded here;
+            // otherwise ne/pr/gt/etc. filters could match/leak on membership rows that are never
+            // returned in the resource representation.
+            Root<GroupEntity> group = subquery.from(GroupEntity.class);
+            
+            subquery.where(
+                    cb.equal(membership.get("user").get("id"), root.get("id")),
+                    cb.equal(membership.get("groupId"), group.get("id")),
+                    cb.equal(group.get("type"), GroupModel.Type.REALM.intValue())
+            );
+            return membership.get("groupId");
         }
         return null;
     }

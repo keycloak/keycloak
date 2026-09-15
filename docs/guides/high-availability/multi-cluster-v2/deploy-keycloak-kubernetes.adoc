@@ -11,13 +11,15 @@ previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
 This {section} describes advanced {project_name} configurations for {kubernetes} which are load tested and will recover from single Pod failures or site failures.
 
 These instructions are intended for use with the setup described in the <@links.ha id="multi-cluster-v2-concepts"/> {section}.
+Ensure that the <@links.ha id="multi-cluster-v2-introduction" anchor="multi-cluster-v2-infrastructure-requirements" /> are met before proceeding.
 
 While this blueprint uses {kubernetes}, the concepts are not limited to {kubernetes}.
 
 == Prerequisites
 
 * {kubernetes} clusters running. Each {kubernetes} cluster should have its own internal load balancing to leverage the startup, liveness and readiness probes of the {project_name} Pods.
-* A load balancer in front of the clusters that is probing the URL `/lb-check` of the {project_name} clusters.
+* A load balancer in front of the clusters.
+Each {kubernetes} cluster's ingress routes traffic to {project_name} Pods based on the `/health/ready` readiness probe, while the external load balancer probes `/lb-check` on each cluster to detect site-level failures.
 * A highly available database deployed with synchronous replication across sites, reachable from all {project_name} nodes in all clusters.
 The following example assumes a PostgreSQL database.
 Any database supported by {project_name} will work.
@@ -78,6 +80,7 @@ curl -sk https://<SITE_LB_HOSTNAME>/realms/master/.well-known/openid-configurati
 Afterward, verify that the external load balancer routes traffic to both clusters.
 The external load balancer should probe `GET /lb-check` on each cluster and expect an HTTP `200 OK` response to determine if a site is healthy.
 When a site's {project_name} nodes are all unavailable, `/lb-check` will not return `200 OK`, and the load balancer should stop routing traffic to that site.
+Kubernetes probes each Pod's `/health/ready` endpoint on management port 9000 and removes unready Pods from the Service endpoints, allowing the cluster ingress to avoid nodes affected by failures such as split-brain or loss of database connectivity.
 
 <#include "/high-availability/partials/building-blocks/sticky-sessions.adoc" />
 
