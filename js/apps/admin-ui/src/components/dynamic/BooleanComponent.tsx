@@ -29,21 +29,24 @@ export const BooleanComponent = ({
         data-testid={name}
         defaultValue={isNew ? defaultValue : false}
         control={control}
-        render={({ field }) => (
-          <Switch
-            id={name!}
-            isDisabled={isDisabled}
-            label={t("on")}
-            isChecked={
-              field.value === "true" ||
-              field.value === true ||
-              field.value?.[0] === "true"
-            }
-            onChange={(_event, value) => field.onChange("" + value)}
-            data-testid={name}
-            aria-label={t(label!)}
-          />
-        )}
+        render={({ field }) => {
+          const isChecked =
+            field.value === "true" ||
+            field.value === true ||
+            field.value?.[0] === "true";
+
+          return (
+            <Switch
+              id={name!}
+              isDisabled={isDisabled}
+              label={isChecked ? t("on") : t("off")}
+              isChecked={isChecked}
+              onChange={(_event, value) => field.onChange("" + value)}
+              data-testid={name}
+              aria-label={t(label!)}
+            />
+          );
+        }}
       />
     </FormGroup>
   );

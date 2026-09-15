@@ -131,7 +131,9 @@ export default function WorkflowsSection() {
               cellRenderer: (workflow: WorkflowRepresentation) => (
                 <Switch
                   data-testid={`toggle-enabled-${workflow.name}`}
-                  label={t("enabled")}
+                  label={
+                    (workflow.enabled ?? true) ? t("enabled") : t("disabled")
+                  }
                   isChecked={workflow.enabled ?? true}
                   onChange={() => toggleEnabled(workflow)}
                 />

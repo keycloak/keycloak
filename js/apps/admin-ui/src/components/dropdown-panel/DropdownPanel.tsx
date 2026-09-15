@@ -33,11 +33,13 @@ const DropdownPanel: React.FC<DropdownPanelProps> = ({
         return;
       }
 
-      // Ignore clicks on portaled menus (Select, Dropdown, etc.)
+      // Ignore clicks on portaled menus opened from within this panel.
+      const portaledMenu = target.closest(
+        '[role="listbox"], [role="menu"], .pf-v6-c-menu',
+      );
       if (
-        target.closest(
-          '[role="listbox"], [role="menu"], .pf-v6-c-menu, .pf-v6-c-menu',
-        )
+        portaledMenu &&
+        dropdownRef.current?.querySelector('[aria-expanded="true"]')
       ) {
         return;
       }

@@ -151,7 +151,7 @@ export const LdapSettingsSearching = ({
                 isDisabled={false}
                 onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
-                label={t("on")}
+                label={field.value[0] === "true" ? t("on") : t("off")}
                 aria-label={t("pagination")}
               />
             )}
