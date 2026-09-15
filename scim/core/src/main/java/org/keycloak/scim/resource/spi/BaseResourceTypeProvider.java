@@ -1,13 +1,13 @@
 package org.keycloak.scim.resource.spi;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Model;
 import org.keycloak.scim.protocol.ForbiddenException;
-import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.schema.ModelSchema;
 
 public abstract class BaseResourceTypeProvider<M extends Model, R> implements ScimResourceTypeProvider<R> {
@@ -70,13 +70,13 @@ public abstract class BaseResourceTypeProvider<M extends Model, R> implements Sc
     }
 
     @Override
-    public Stream<R> getAll(SearchRequest searchRequest) {
+    public Stream<R> getAll(SearchOptions searchOptions) {
         if (!canQuery()) {
             throw new ForbiddenException();
         }
 
-        return getModels(searchRequest)
-                .map(m -> createResourceTypeInstance(m, searchRequest.getAttributes(), searchRequest.getExcludedAttributes()));
+        return getModels(searchOptions)
+                .map(m -> createResourceTypeInstance(m, searchOptions.getAttributes(), searchOptions.getExcludedAttributes()));
     }
 
     @Override
@@ -101,7 +101,7 @@ public abstract class BaseResourceTypeProvider<M extends Model, R> implements Sc
 
     protected abstract boolean onDelete(M m);
 
-    protected abstract Stream<M> getModels(SearchRequest searchRequest);
+    protected abstract Stream<M> getModels(SearchOptions searchOptions);
 
     protected abstract M getModel(String id);
 
@@ -112,12 +112,16 @@ public abstract class BaseResourceTypeProvider<M extends Model, R> implements Sc
     protected abstract R createResourceTypeInstance(M model, List<String> attributes, List<String> excludedAttributes);
 
     protected boolean canQuery() {
-        return session.getContext().getPermissions().hasPermission(getRealmResourceType(), AdminPermissionsSchema.QUERY)
-                || session.getContext().getPermissions().hasPermission(getRealmResourceType(), AdminPermissionsSchema.VIEW);
+        return hasPermission(getRealmResourceType(), AdminPermissionsSchema.QUERY)
+                || hasPermission(getRealmResourceType(), AdminPermissionsSchema.VIEW);
+    }
+
+    public boolean hasPermission(R representation, String scope) {
+        return hasPermission(Optional.ofNullable(representation).map(this::getModelId).map(this::getModel).orElse(null), getRealmResourceType(), scope);
     }
 
     protected boolean hasPermission(String realmResourceType, String scope) {
-        return session.getContext().getPermissions().hasPermission(realmResourceType, scope);
+        return hasPermission(null, realmResourceType, scope);
     }
 
     protected boolean hasPermission(M model, String realmResourceType, String scope) {
@@ -125,7 +129,7 @@ public abstract class BaseResourceTypeProvider<M extends Model, R> implements Sc
             return session.getContext().getPermissions().hasPermission(model, realmResourceType, scope);
         }
 
-        return session.getContext().getPermissions().hasPermission(model, realmResourceType, scope) && isManageable(model);
+        return session.getContext().getPermissions().hasPermission(model, realmResourceType, scope) && (model == null || isManageable(model));
     }
     
     protected boolean isManageable(M model) {
