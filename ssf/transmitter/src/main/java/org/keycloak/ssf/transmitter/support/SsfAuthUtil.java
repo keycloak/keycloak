@@ -79,7 +79,7 @@ public class SsfAuthUtil {
             // as-is instead of routing it through KeycloakErrorHandler.
             entity = Map.of();
         }
-        return Response.status(Response.Status.UNAUTHORIZED)
+        return withNoStore(Response.status(Response.Status.UNAUTHORIZED))
                 .header(HttpHeaders.WWW_AUTHENTICATE, challenge.toString())
                 .type(MediaType.APPLICATION_JSON_TYPE)
                 .entity(entity)
@@ -100,11 +100,23 @@ public class SsfAuthUtil {
                 + ", error=" + quote(OAuthErrorException.INSUFFICIENT_SCOPE)
                 + ", error_description=" + quote(description)
                 + ", scope=" + quote(requiredScope);
-        return Response.status(Response.Status.FORBIDDEN)
+        return withNoStore(Response.status(Response.Status.FORBIDDEN))
                 .header(HttpHeaders.WWW_AUTHENTICATE, challenge)
                 .type(MediaType.APPLICATION_JSON_TYPE)
                 .entity(new OAuth2ErrorRepresentation(OAuthErrorException.INSUFFICIENT_SCOPE, description))
                 .build();
+    }
+
+    /**
+     * Auth error responses must not be cached. The resource methods carry
+     * {@code @NoCache}, but the 401 from {@link #authenticate()} is thrown
+     * inside the sub-resource locator before any annotated method runs, so
+     * the headers are set explicitly here. Mirrors {@code TokenEndpoint}.
+     */
+    private static Response.ResponseBuilder withNoStore(Response.ResponseBuilder builder) {
+        return builder
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .header("Pragma", "no-cache");
     }
 
     private static final Pattern HEADER_CONTROL_CHARS = Pattern.compile("[\\x00-\\x1F\\x7F]");
