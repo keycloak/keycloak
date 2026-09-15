@@ -57,6 +57,7 @@ import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
@@ -78,6 +79,7 @@ import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile
 import static org.keycloak.operator.testsuite.utils.K8sUtils.waitForKeycloakToBeReady;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -252,7 +254,18 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                 .withNewTemplate().withNewMetadata().withLabels(Constants.DEFAULT_LABELS).endMetadata()
                 .withNewSpec().addNewContainer().withName("pause").withImage("registry.k8s.io/pause:3.1")
                 .endContainer().endSpec().endTemplate().endSpec().build();
-        k8sclient.resource(statefulSet).create();
+        // retry on 409: a stale JOSDK reconciliation may briefly recreate the previous test's StatefulSet
+        Awaitility.await().atMost(30, SECONDS).untilAsserted(() -> {
+            try {
+                k8sclient.resource(statefulSet).create();
+            } catch (KubernetesClientException e) {
+                if (e.getCode() == 409) {
+                    k8sclient.apps().statefulSets().withName(deploymentName).delete();
+                    fail("StatefulSet already exists, deleted and retrying", e);
+                }
+                throw e;
+            }
+        });
 
         // start will not be successful because the statefulSet is in the way
         deployKeycloak(k8sclient, kc, false);
