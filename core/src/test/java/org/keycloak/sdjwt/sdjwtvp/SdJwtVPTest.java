@@ -29,6 +29,7 @@ import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.sdjwt.DisclosureSpec;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.SdJwt;
+import org.keycloak.sdjwt.SdJwtUtils;
 import org.keycloak.sdjwt.TestSettings;
 import org.keycloak.sdjwt.TestUtils;
 import org.keycloak.sdjwt.vp.SdJwtVP;
@@ -269,6 +270,46 @@ public abstract class SdJwtVPTest {
 
         // Assert only given_name and family_name claims disclosed in the new presentation
         assertExpectedClaims(presentedSdJwtVP, Arrays.asList("given_name", "family_name"));
+    }
+
+    @Test
+    public void testPresentationOfSpecifiedArrayClaimByName() throws VerificationException {
+        // Build an SD-JWT with an array claim whose elements are undisclosed individually.
+        DisclosureSpec disclosureSpec = DisclosureSpec.builder()
+                .withUndisclosedArrayElt("roles", 0, "salt-admin")
+                .withUndisclosedArrayElt("roles", 1, "salt-auditor")
+                .withUndisclosedArrayElt("roles", 2, "salt-user")
+                .build();
+
+        ObjectNode claims = SdJwtUtils.mapper.createObjectNode();
+        claims.put("vct", "https://credentials.example.com/identity_credential");
+        claims.put("roles", SdJwtUtils.mapper.createArrayNode()
+                .add("admin")
+                .add("auditor")
+                .add("user"));
+
+        IssuerSignedJWT issuerSignedJWT = IssuerSignedJWT.builder()
+                .withClaims(claims, disclosureSpec)
+                .build();
+        SdJwt sdJwt = SdJwt.builder()
+                .withIssuerSignedJwt(issuerSignedJWT)
+                .withIssuerSigningContext(TestSettings.getInstance().getIssuerSignerContext())
+                .withUseDefaultDecoys(false)
+                .build();
+
+        SdJwtVP sdJwtVP = SdJwtVP.of(sdJwt.toSdJwtString());
+
+        // Requesting the array claim by name must disclose all of its elements,
+        // not silently disclose nothing.
+        String presentation = sdJwtVP.presentWithSpecifiedClaims(
+                Arrays.asList("roles"), false, null, null);
+
+        SdJwtVP presentedSdJwtVP = SdJwtVP.of(presentation);
+        Set<String> disclosedValues = presentedSdJwtVP.getClaims().values().stream()
+                .filter(node -> node.size() == 2)
+                .map(node -> node.get(1).asText())
+                .collect(Collectors.toSet());
+        assertEquals(new HashSet<>(Arrays.asList("admin", "auditor", "user")), disclosedValues);
     }
 
     private void assertExpectedClaims(SdJwtVP presentedSdJwtVP, List<String> expectedClaims) {
