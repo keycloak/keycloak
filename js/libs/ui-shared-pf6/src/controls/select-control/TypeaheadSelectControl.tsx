@@ -121,13 +121,15 @@ export const TypeaheadSelectControl = <
           break;
         }
 
+        const optionKey = key(focusedItem);
+
         if (!isTypeaheadMulti) {
           setFilterValue(getValue(focusedItem));
+          field.onChange(optionKey);
         } else {
           setFilterValue("");
+          updateValue(optionKey, field);
         }
-
-        updateValue(key(focusedItem), field);
 
         setOpen(false);
         setFocusedItemIndex(0);
@@ -308,7 +310,11 @@ export const TypeaheadSelectControl = <
                   key={key(option)}
                   value={key(option)}
                   isFocused={focusedItemIndex === index}
-                  isActive={field.value.includes(getValue(option))}
+                  isActive={
+                    Array.isArray(field.value)
+                      ? field.value.includes(getValue(option))
+                      : field.value === key(option)
+                  }
                   description={
                     !isString(option) && "description" in option
                       ? option.description

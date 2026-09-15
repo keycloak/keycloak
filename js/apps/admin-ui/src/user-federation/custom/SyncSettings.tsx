@@ -35,7 +35,7 @@ export const SyncSettings = () => {
                 field.onChange(value ? "604800" : "-1");
               }}
               isChecked={field.value !== "-1"}
-              label={t("on")}
+              label={field.value !== "-1" ? t("on") : t("off")}
               aria-label={t("periodicFullSync")}
             />
           )}
@@ -74,7 +74,7 @@ export const SyncSettings = () => {
                 field.onChange(value ? "86400" : "-1");
               }}
               isChecked={field.value !== "-1"}
-              label={t("on")}
+              label={field.value !== "-1" ? t("on") : t("off")}
               aria-label={t("periodicChangedUsersSync")}
             />
           )}
