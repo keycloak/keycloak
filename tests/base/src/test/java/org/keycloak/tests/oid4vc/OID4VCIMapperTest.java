@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.VCFormat;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
@@ -165,6 +166,20 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
         assertReservedClaimMapperIsAccepted(ProtocolMapperUtils.getIssuedAtTimeMapper(CLAIM_NAME_IAT, null, "COMPUTE"));
     }
 
+    @Test
+    public void testJwtVcScopeMayMapToReservedClaimName() {
+        // For JWT VC, mapper claims live under credentialSubject rather than the SD-JWT top level, so 'exp' is a
+        // legitimate data element and must not be rejected. Only SD-JWT top-level claims are protected.
+        ProtocolMapperRepresentation mapper = ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, CLAIM_NAME_EXP);
+        String scopeId = createCredentialScope("jwt-vc-reserved-claim-scope-" + UUID.randomUUID(), List.of(), VCFormat.JWT_VC);
+
+        try (Response response = testRealm.admin().clientScopes().get(scopeId)
+                .getProtocolMappers().createMapper(mapper)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus(),
+                    "A JWT-VC mapper targeting 'exp' must be accepted (claim lives under credentialSubject)");
+        }
+    }
+
     // ---- Helpers ----
 
     /**
@@ -248,13 +263,26 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
 
     /**
      * Creates a credential scope with the given protocol mappers, registers its cleanup, and returns its
-     * server-assigned id.
+     * server-assigned id. The scope uses the default (SD-JWT) format.
      */
     private String createCredentialScope(String scopeName, List<ProtocolMapperRepresentation> mappers) {
+        return createCredentialScope(scopeName, mappers, VCFormat.SD_JWT_VC);
+    }
+
+    /**
+     * Creates a credential scope of the given format with the given protocol mappers, registers its cleanup, and
+     * returns its server-assigned id.
+     */
+    private String createCredentialScope(String scopeName, List<ProtocolMapperRepresentation> mappers, String format) {
         CredentialScopeRepresentation scope = new CredentialScopeRepresentation(scopeName)
                 .setIncludeInTokenScope(true)
                 .setCredentialConfigurationId(scopeName + "-config-id")
                 .setCredentialIdentifier(scopeName);
+
+        if (format != null) {
+            scope.setFormat(format);
+        }
+
         scope.setProtocolMappers(mappers);
 
         String scopeId;

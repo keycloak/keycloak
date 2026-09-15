@@ -127,20 +127,24 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
     public void validateConfig(KeycloakSession session, RealmModel realm, ProtocolMapperContainerModel client,
                               ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
         // OID4VC mappers are configured on the credential client scope, which carries the credential format.
-        if (client instanceof ClientScopeModel clientScope) {
-            validateMdocNamespace(new CredentialScopeModel(clientScope).getFormat(), mapperModel);
-        }
+        String credentialFormat = client instanceof ClientScopeModel clientScope
+                ? new CredentialScopeModel(clientScope).getFormat() : null;
 
-        // Prevent mappings of user-controlled data to reserved claims
-        validateAgainstSensitiveMappings(mapperModel);
+        validateMdocNamespace(credentialFormat, mapperModel);
+        validateAgainstSensitiveMappings(credentialFormat, mapperModel);
     }
 
     /**
      * Rejects a mapper that maps user-controlled data and whose configured claim name targets a reserved,
      * issuer-controlled claim (e.g. exp, iat, sub, jti). Such a mapper could let a user-controlled value
-     * override issuer-controlled claims (see keycloak/keycloak#52667).
+     * override issuer-controlled claims (see keycloak/keycloak#52667). Mapper claims are emitted at the
+     * credential top level only for SD-JWT, so only mappers for this format are guarded.
      */
-    protected void validateAgainstSensitiveMappings(ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
+    protected void validateAgainstSensitiveMappings(String credentialFormat, ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
+        if (!SD_JWT_VC.equals(credentialFormat)) {
+            return;
+        }
+
         String claimName = resolveClaimName(mapperModel);
         if (mapsUserControlledData() && RESERVED_CLAIM_NAMES.contains(claimName)) {
             throw new ProtocolMapperConfigException(
@@ -156,7 +160,7 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
      */
     protected boolean shouldSkipSensitiveMapping() {
         try {
-            validateAgainstSensitiveMappings(mapperModel);
+            validateAgainstSensitiveMappings(format, mapperModel);
             return false;
         } catch (ProtocolMapperConfigException e) {
             LOGGER.warnf(e, "OID4VC mapper '%s' targets a reserved claim. This sensitive mapping will be skipped",
