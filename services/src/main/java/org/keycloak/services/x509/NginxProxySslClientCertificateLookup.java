@@ -180,8 +180,9 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
             pkixParams.setMaxPathLength(certificateChainLength);
 
             // Adding the list of intermediate certificates + end user certificate
-            intermediateCerts.add(endUserAuthCert);
-            CollectionCertStoreParameters intermediateCAUserCert = new CollectionCertStoreParameters(intermediateCerts);
+            Set<X509Certificate> intermediateCertsAndUser = new HashSet<>(intermediateCerts);
+            intermediateCertsAndUser.add(endUserAuthCert);
+            CollectionCertStoreParameters intermediateCAUserCert = new CollectionCertStoreParameters(intermediateCertsAndUser);
             CertStore intermediateCertStore = CryptoIntegration.getProvider().getCertStore(intermediateCAUserCert);
             pkixParams.addCertStore(intermediateCertStore);
 
@@ -199,11 +200,6 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
                 log.debug(e.getLocalizedMessage(),e);
             } else {
                 log.warn(e.getLocalizedMessage());
-            }
-        } finally {
-            if (isTruststoreLoaded) {
-                //Remove end user certificate
-                intermediateCerts.remove(endUserAuthCert);
             }
         }
 
@@ -227,5 +223,13 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
 
         return trustedX509Chain.toArray(x509certChain);
 
+    }
+
+    Set<X509Certificate> getTrustedRootCerts() {
+        return trustedRootCerts;
+    }
+
+    Set<X509Certificate> getIntermediateCerts() {
+        return intermediateCerts;
     }
 }
