@@ -102,6 +102,7 @@ public class OrganizationGroupSamlIdpMapperTest extends AbstractOrganizationTest
                 .put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.IMPORT.toString())
                 .put(ConfigConstants.GROUP, groupPath)
                 .put(ConfigConstants.GROUP_TYPE, GroupModel.Type.ORGANIZATION.name())
+                .put(ConfigConstants.ORGANIZATION_ID, orgRep.getId())
                 .build());
 
         try (Response response = managedRealm.admin().identityProviders().get(idp.getAlias()).addMapper(mapper)) {
