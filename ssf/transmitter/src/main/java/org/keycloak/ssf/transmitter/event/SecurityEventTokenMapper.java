@@ -441,7 +441,7 @@ public class SecurityEventTokenMapper {
             // silently, and a missed lookup here means the suppression never fires. Also
             // null-safe: an NPE would be swallowed by the catch below and turn every
             // purge into a silent "error generating" null.
-            PurgedUserSnapshot snapshot = PurgedUserSnapshot.lookup(session, purgeRealm(adminEvent), userId);
+            PurgedUserSnapshot snapshot = PurgedUserSnapshot.lookup(session, resolveRealm(adminEvent), userId);
             if (snapshot == null) {
                 // The snapshot is the only evidence that this deletion was a real purge.
                 // Without it the check below cannot run, and a federated READ_ONLY /
@@ -489,7 +489,7 @@ public class SecurityEventTokenMapper {
      * The realm a purge snapshot was captured under: the admin event's realm when there
      * is one, otherwise the context realm that the self-service path runs in.
      */
-    protected RealmModel purgeRealm(AdminEvent adminEvent) {
+    protected RealmModel resolveRealm(AdminEvent adminEvent) {
         if (session == null) {
             return null;
         }
