@@ -1,5 +1,6 @@
 import type { KeycloakAdminClient } from "../client.js";
 import IdentityProviderRepresentation from "../defs/identityProviderRepresentation.js";
+import type OrganizationIdentityProviderLinkRepresentation from "../defs/organizationIdentityProviderLinkRepresentation.js";
 import type OrganizationRepresentation from "../defs/organizationRepresentation.js";
 import type OrganizationInvitationRepresentation from "../defs/organizationInvitationRepresentation.js";
 import Resource from "./resource.js";
@@ -178,6 +179,16 @@ export class Organizations extends Resource<{ realm?: string }> {
     path: "/{orgId}/identity-providers",
     urlParamKeys: ["orgId"],
     payloadKey: "alias",
+  });
+
+  public updateIdentityProviderLink = this.makeUpdateRequest<
+    { orgId: string; alias: string },
+    OrganizationIdentityProviderLinkRepresentation,
+    void
+  >({
+    method: "PUT",
+    path: "/{orgId}/identity-providers/{alias}",
+    urlParamKeys: ["orgId", "alias"],
   });
 
   public unLinkIdp = this.makeRequest<{ orgId: string; alias: string }, string>(
