@@ -430,7 +430,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @NoCache
     public void disableTruststoreSpi() {
         FileTruststoreProviderFactory factory = (FileTruststoreProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(TruststoreProvider.class);
-        this.factory.truststoreProvider = factory.create(session);
+        this.factory.truststoreProvider = factory.getDelegate();
         factory.setProvider(null);
     }
 
@@ -439,7 +439,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @NoCache
     public void modifyTruststoreSpiHostnamePolicy(@QueryParam("hostnamePolicy") final HostnameVerificationPolicy hostnamePolicy) {
         FileTruststoreProviderFactory fact = (FileTruststoreProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(TruststoreProvider.class);
-        this.factory.truststoreProvider = fact.create(session);
+        this.factory.truststoreProvider = fact.getDelegate();
         FileTruststoreProvider origTrustProvider = (FileTruststoreProvider) this.factory.truststoreProvider;
         TruststoreProvider newTrustProvider = new FileTruststoreProvider(
                 origTrustProvider.getTruststore(), hostnamePolicy,
