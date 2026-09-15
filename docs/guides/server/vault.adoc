@@ -20,13 +20,9 @@ Secrets stored in the vaults can be used at the following places of the Administ
 * Obtain the OIDC identity providers Client Secret when integrating external identity providers
 
 == Enabling a vault
-For enabling the file-based vault you need to build {project_name} first using the following build option:
+To enable the file-based vault you need to set the build time option `vault` to `file`.
 
-<@kc.build parameters="--vault=file"/>
-
-Analogically, for the Java KeyStore-based you need to specify the following build option:
-
-<@kc.build parameters="--vault=keystore"/>
+For the Java KeyStore-based vault you need to instead specify the value `keystore`.
 
 == Configuring the file-based vault
 

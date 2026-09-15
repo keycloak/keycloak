@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import picocli.CommandLine;
@@ -48,6 +49,9 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
     protected Optional<Integer> callCommand() {
         if (isRebuildCheck()) {
             if (requiresReAugmentation()) {
+                if (picocli.isOptimizedSet()) {
+                    throw new PropertyException("TODO - this will be aligned with another pr so that validateBuildtime is used as a common method");
+                }
                 runReAugmentation();
                 return Optional.of(REBUILT_EXIT_CODE);
             }
@@ -71,7 +75,7 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
         var current = Picocli.getNonPersistedBuildTimeOptions();
 
         // everything but the optimized value must match
-        String key = Configuration.KC_OPTIMIZED;
+        String key = Configuration.KC_OPTIMIZED_BUILD;
         Optional.ofNullable(rawPersistedProperties.get(key)).ifPresentOrElse(value -> current.put(key, value), () -> current.remove(key));
         return !rawPersistedProperties.equals(current);
     }
