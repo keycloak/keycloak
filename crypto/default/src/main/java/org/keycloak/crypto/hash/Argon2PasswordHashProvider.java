@@ -17,6 +17,7 @@ import org.keycloak.models.credential.dto.PasswordSecretData;
 import org.keycloak.tracing.TracingProviderUtil;
 
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
+import org.bouncycastle.crypto.generators.Argon2BytesGenerator.FixedBlockPool;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.crypto.hash.Argon2PasswordHashProviderFactory.MEMORY_KEY;
@@ -115,24 +116,27 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
         return tracing.trace(Argon2PasswordHashProvider.class, "encode", span -> {
             try {
                 cpuCoreSemaphore.acquire();
-                Argon2BytesGenerator.BlockPool blockPool = blockPoolManager.acquire();
                 try {
-                    org.bouncycastle.crypto.params.Argon2Parameters parameters = new org.bouncycastle.crypto.params.Argon2Parameters.Builder(Argon2Parameters.getTypeValue(type))
-                            .withVersion(Argon2Parameters.getVersionValue(version))
-                            .withSalt(salt)
-                            .withParallelism(parallelism)
-                            .withMemoryAsKB(memory)
-                            .withIterations(iterations)
-                            .withBlockPool(blockPool).build();
+                    FixedBlockPool blockPool = blockPoolManager.acquire();
+                    try {
+                        org.bouncycastle.crypto.params.Argon2Parameters parameters = new org.bouncycastle.crypto.params.Argon2Parameters.Builder(Argon2Parameters.getTypeValue(type))
+                                .withVersion(Argon2Parameters.getVersionValue(version))
+                                .withSalt(salt)
+                                .withParallelism(parallelism)
+                                .withMemoryAsKB(memory)
+                                .withIterations(iterations)
+                                .withBlockPool(blockPool).build();
 
-                    Argon2BytesGenerator generator = new Argon2BytesGenerator();
-                    generator.init(parameters);
+                        Argon2BytesGenerator generator = new Argon2BytesGenerator();
+                        generator.init(parameters);
 
-                    byte[] result = new byte[hashLength];
-                    generator.generateBytes(rawPassword.toCharArray(), result);
-                    return Base64.getEncoder().encodeToString(result);
+                        byte[] result = new byte[hashLength];
+                        generator.generateBytes(rawPassword.toCharArray(), result);
+                        return Base64.getEncoder().encodeToString(result);
+                    } finally {
+                        blockPoolManager.release(blockPool);
+                    }
                 } finally {
-                    blockPoolManager.release(blockPool);
                     cpuCoreSemaphore.release();
                 }
             } catch (InterruptedException e) {
