@@ -117,16 +117,17 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
             // to do the same, including declaring their dependsOn() dependencies.
             InfinispanConnectionProvider ispnConnections = session.getProvider(InfinispanConnectionProvider.class);
             var cm = ispnConnections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME).getCacheManager();
-            var jgrp = (JGroupsTransport) GlobalComponentRegistry.componentOf(cm, Transport.class);
-            if (jgrp == null) {
-                throw new IllegalStateException("Stateless mode must not run in cache=local mode as this will not allow health probes, cluster events and cache clearing");
-            } else {
+            var transport = GlobalComponentRegistry.componentOf(cm, Transport.class);
+            if (transport instanceof JGroupsTransport jgrp) {
                 KEYCLOAK_JDBC_PING2 ping = jgrp.getChannel().getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2.class);
                 if (ping == null) {
-                    throw new IllegalStateException("Stateless mode must run with jdbc-ping as this will allow health probes, cluster events and cache clearing");
+                    logger.warn("jdbc-ping protocol not found in JGroups stack; multi-cluster v2 functionality is not available. Configure cache-stack=jdbc-ping instead.");
+                } else {
+                    KeycloakSessionFactory keycloakSessionFactory = session.getKeycloakSessionFactory();
+                    ping.setOnHealthRestored(() -> localExecutor.execute(() -> broadcastCacheClear(keycloakSessionFactory)));
                 }
-                KeycloakSessionFactory keycloakSessionFactory = session.getKeycloakSessionFactory();
-                ping.setOnHealthRestored(() -> localExecutor.execute(() -> broadcastCacheClear(keycloakSessionFactory)));
+            } else {
+                logger.warn("No JGroups transport found (local cache mode); multi-cluster v2 functionality is not available. Configure cache=ispn instead.");
             }
 
             return cp;
