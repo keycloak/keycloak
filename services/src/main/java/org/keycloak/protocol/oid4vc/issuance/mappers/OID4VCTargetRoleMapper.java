@@ -163,10 +163,6 @@ public class OID4VCTargetRoleMapper extends OID4VCMapper {
 	@Override
 	public void setClaim(Map<String, Object> claims,
 						 UserSessionModel userSessionModel) {
-		if (shouldSkipSensitiveMapping()) {
-			return;
-		}
-
 		String propertyName = resolveClaimName(mapperModel);
 		String client = mapperModel.getConfig().get(CLIENT_CONFIG_KEY);
 		ClientModel clientModel = userSessionModel.getRealm().getClientByClientId(client);

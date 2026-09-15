@@ -146,7 +146,14 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
         }
 
         String claimName = resolveClaimName(mapperModel);
-        if (mapsUserControlledData() && RESERVED_CLAIM_NAMES.contains(claimName)) {
+        if (claimName == null) {
+            return;
+        }
+
+        List<String> claimPath = JsonUtils.splitClaimPath(claimName);
+        String topLevelClaim = claimPath.isEmpty() ? null : claimPath.get(0);
+
+        if (mapsUserControlledData() && topLevelClaim != null && RESERVED_CLAIM_NAMES.contains(topLevelClaim)) {
             throw new ProtocolMapperConfigException(
                     String.format("Claim name '%s' is reserved and must not be used by this OID4VC mapper.",
                             claimName),
@@ -155,17 +162,16 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
     }
 
     /**
-     * Returns {@code true} when this mapper should be skipped at issuance because it maps user-controlled
-     * data and targets a reserved, issuer-controlled claim name. Logs a warning in that case.
+     * Returns {@code true} when this mapper passes all issuance-time guards.
      */
-    protected boolean shouldSkipSensitiveMapping() {
+    public boolean passesMappingGuards() {
         try {
             validateAgainstSensitiveMappings(format, mapperModel);
-            return false;
+            return true;
         } catch (ProtocolMapperConfigException e) {
             LOGGER.warnf(e, "OID4VC mapper '%s' targets a reserved claim. This sensitive mapping will be skipped",
                     getMapperName());
-            return true;
+            return false;
         }
     }
 

@@ -142,8 +142,13 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
 
     @Test
     public void testUserAttributeMapperCannotMapToReservedClaim() {
-        ProtocolMapperRepresentation mapper = ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, CLAIM_NAME_EXP);
-        assertReservedClaimMapperIsRejected(mapper);
+        ProtocolMapperRepresentation mapper1 = ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, CLAIM_NAME_EXP);
+        assertReservedClaimMapperIsRejected(mapper1);
+
+        // The user-attribute mapper interprets dotted claim names as nested paths, so "cnf.jwk" emits a top-level
+        // "cnf" claim. Validation must guard the actual top-level path segment, not the literal claim name.
+        ProtocolMapperRepresentation mapper2 = ProtocolMapperUtils.getUserAttributeMapper("cnf.jwk", "cnf.jwk");
+        assertReservedClaimMapperIsRejected(mapper2);
     }
 
     @Test

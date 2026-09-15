@@ -1737,6 +1737,7 @@ public class OID4VCIssuerEndpoint {
                 })
                 .filter(Objects::nonNull)
                 .filter(mapper -> mapper.supportsCredentialFormat(credentialScopeModel.getFormat()))
+                .filter(OID4VCMapper::passesMappingGuards)
                 .toList();
 
         VCIssuanceContext vcIssuanceContext = getVCToSign(protocolMappers, credentialConfig, authResult, authDetail, credentialRequestVO, credentialScopeModel, eventBuilder);
