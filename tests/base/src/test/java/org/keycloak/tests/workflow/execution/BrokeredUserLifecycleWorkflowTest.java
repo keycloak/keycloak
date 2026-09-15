@@ -177,10 +177,11 @@ public class BrokeredUserLifecycleWorkflowTest extends AbstractWorkflowTest {
         // workflow should have been restarted due to reauthentication
         assertScheduledWorkflows(federatedUser.getId(), NotifyUserStepProviderFactory.ID, 3);
 
-        // now simulate the workflow to its end - alice should be deleted
-        runScheduledSteps(Duration.ofDays(5)); // notify
-        runScheduledSteps(Duration.ofDays(10)); // disable
-        runScheduledSteps(Duration.ofDays(10)); // delete
+        // now simulate the workflow to its end - alice should be deleted. The offsets are cumulative: each
+        // step is scheduled relative to the (offset) time the previous step ran.
+        runScheduledSteps(Duration.ofDays(5)); // notify (due on day 3)
+        runScheduledSteps(Duration.ofDays(15)); // disable (due 10 days after notify ran on day 5)
+        runScheduledSteps(Duration.ofDays(25)); // delete (due 10 days after disable ran on day 15)
 
         runOnServer.run((session -> {
             RealmModel realm = session.getContext().getRealm();
