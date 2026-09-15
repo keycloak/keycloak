@@ -51,6 +51,10 @@ export async function assertHasAccessTokenGenerated(
   username: string,
 ) {
   await goToGenerateAccessTokenTab(page);
+  await assertAccessTokenContent(page, username);
+}
+
+export async function assertAccessTokenContent(page: Page, username: string) {
   await expect(page.getByLabel("generatedAccessToken")).toContainText(
     formatUsername(username),
   );
