@@ -113,12 +113,19 @@ public class OIDCIdentityProviderJWTAuthorizationGrantTest extends AbstractJWTAu
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Invalid token audience", response, events.poll());
 
-        // test two audiences are always wrong
-        JsonWebToken jwtToken = createAuthorizationGrantToken("basic-user-id", "test-client", IDP_ISSUER);
-        jwtToken.addAudience("allowed-aud2");
+        // test multiple audiences works if one matches
+        JsonWebToken jwtToken = createAuthorizationGrantToken("basic-user-id", "allowed-aud1", IDP_ISSUER);
+        jwtToken.addAudience("other-aud");
         jwt = getIdentityProvider().encodeToken(jwtToken);
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertFailure("Multiple audiences not allowed", response, events.poll());
+        assertSuccess("test-app", response);
+
+        // test multiple audiences fails if none match
+        jwtToken = createAuthorizationGrantToken("basic-user-id", "test-client", IDP_ISSUER);
+        jwtToken.addAudience("other-aud");
+        jwt = getIdentityProvider().encodeToken(jwtToken);
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Invalid token audience", response, events.poll());
     }
 
     public static class JWTAuthorizationGrantRealmConfig extends AbstractJWTAuthorizationGrantTest.JWTAuthorizationGrantRealmConfig {
