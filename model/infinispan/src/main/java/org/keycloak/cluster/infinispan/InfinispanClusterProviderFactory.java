@@ -48,6 +48,7 @@ import org.infinispan.notifications.cachemanagerlistener.event.ViewChangedEvent;
 import org.infinispan.remoting.transport.Address;
 import org.jboss.logging.Logger;
 
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
 
 /**
@@ -57,12 +58,14 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.W
  */
 public class InfinispanClusterProviderFactory implements ClusterProviderFactory, EnvironmentDependentProviderFactory {
 
+    public static final String CLEAR_ALL_LOCAL_CACHES_EVENT = "CLEAR_ALL_LOCAL_CACHES_EVENT";
+
     protected static final Logger logger = Logger.getLogger(InfinispanClusterProviderFactory.class);
 
     private volatile Cache<String, Object> workCache;
-    private volatile ClusterProvider clusterProvider;
+    protected volatile ClusterProvider clusterProvider;
 
-    private final ExecutorService localExecutor = Executors.newCachedThreadPool(r -> {
+    protected final ExecutorService localExecutor = Executors.newCachedThreadPool(r -> {
         Thread thread = Executors.defaultThreadFactory().newThread(r);
         thread.setName(this.getClass().getName() + "-" + thread.getName());
         return thread;
@@ -75,7 +78,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
         return lazyInit(session);
     }
 
-    private ClusterProvider lazyInit(KeycloakSession session) {
+    protected ClusterProvider lazyInit(KeycloakSession session) {
         if (clusterProvider != null)
             return clusterProvider;
 
@@ -94,6 +97,14 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
             // We need CacheEntryListener for communication within current DC
             workCache.addListener(cp.new CacheEntryListener());
             logger.debugf("Added listener for infinispan cache: %s", workCache.getName());
+
+            cp.registerListener(CLEAR_ALL_LOCAL_CACHES_EVENT, event -> localExecutor.execute(() ->
+                    Arrays.stream(LOCAL_CACHE_NAMES)
+                            .filter(workCache.getCacheManager()::cacheExists)
+                            .map(name -> workCache.getCacheManager().getCache(name))
+                            .filter(cache -> cache.getCacheConfiguration().clustering().cacheMode() == CacheMode.LOCAL)
+                            .forEach(Cache::clear)
+            ));
 
             this.clusterProvider = cp;
             return clusterProvider;

@@ -61,8 +61,9 @@ When planning for large batch updates of realm data, consider shutting down all 
 
 Invalidation messages are queued for up to 60 seconds, which is in line with the cluster membership mechanism, which updates its information in the database every 30–45 seconds.
 
-To handle edge cases and to avoid permanently out-of-sync caches, any cached realm information expires by default after one hour.
-The data is then fetched again from the database on the next call that requires it.
+When a {project_name} instance temporarily loses its database connection, it may miss cache invalidation messages sent by other clusters during the outage.
+Once the database connection is restored, all local caches are cleared automatically to ensure consistency.
+As an additional safeguard, any cached realm information expires by default after one hour so that stale entries do not persist indefinitely.
 
 == Causes of data and service loss
 
