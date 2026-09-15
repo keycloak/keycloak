@@ -17,6 +17,7 @@ import org.keycloak.ssf.transmitter.delivery.poll.PollResponse;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -90,10 +91,11 @@ public class SsfStreamPollResource {
             PollRequest request) {
 
         // 1. Standard SSF receiver-facing auth — same gate the other
-        //    transmitter endpoints use. Returns 401 on a bad token,
-        //    missing scope, etc.
+        //    transmitter endpoints use. A bad or missing token was
+        //    already rejected with 401 by SsfAuthUtil.authenticate();
+        //    a valid token that lacks ssf.read gets 403 insufficient_scope.
         if (!SsfAuthUtil.canRead()) {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
+            return SsfAuthUtil.insufficientScopeResponse(session, Ssf.SCOPE_SSF_READ);
         }
 
         ClientModel callerClient = session.getContext().getClient();

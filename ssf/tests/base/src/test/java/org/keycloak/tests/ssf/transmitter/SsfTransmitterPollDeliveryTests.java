@@ -487,6 +487,11 @@ public class SsfTransmitterPollDeliveryTests {
                 .asResponse()) {
             Assertions.assertEquals(401, response.getStatus(),
                     "unauthenticated poll must be rejected at the auth layer");
+            // RFC 6750 §3.1: no credentials presented -> bare challenge without an error code
+            String challenge = response.getFirstHeader("WWW-Authenticate");
+            Assertions.assertNotNull(challenge, "401 must carry a WWW-Authenticate challenge");
+            Assertions.assertTrue(challenge.startsWith("Bearer realm=\""), "challenge must use the Bearer scheme: " + challenge);
+            Assertions.assertFalse(challenge.contains("error="), "bare request must not carry an error code: " + challenge);
         }
     }
 

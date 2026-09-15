@@ -17,6 +17,7 @@ import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationRequest;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 import org.keycloak.ssf.transmitter.support.SsfErrorRepresentation;
 
@@ -73,6 +74,7 @@ public class SsfStreamVerificationResource {
             @APIResponse(responseCode = "204", description = "No Content"),
             @APIResponse(responseCode = "400", description = "Bad Request"),
             @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "403", description = "Forbidden — token lacks the required scope, role, or receiver configuration"),
             @APIResponse(responseCode = "404", description = "Stream not found"),
             @APIResponse(responseCode = "429", description = "Too Many Requests — minimum verification interval not yet elapsed")
     })
@@ -80,7 +82,7 @@ public class SsfStreamVerificationResource {
         try {
 
             if (!SsfAuthUtil.canManage()) {
-                return Response.status(Response.Status.UNAUTHORIZED).build();
+                return SsfAuthUtil.insufficientScopeResponse(session, Ssf.SCOPE_SSF_MANAGE);
             }
 
             String streamId = verificationRequest.getStreamId();
