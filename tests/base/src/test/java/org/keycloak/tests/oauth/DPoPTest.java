@@ -116,6 +116,7 @@ import org.apache.http.Header;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
+import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -136,6 +137,7 @@ import static org.keycloak.tests.utils.ClientPoliciesUtil.createRsaJwk;
 import static org.keycloak.tests.utils.ClientPoliciesUtil.generateEcdsaKey;
 import static org.keycloak.tests.utils.ClientPoliciesUtil.generateSignedDPoPProof;
 
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -353,7 +355,7 @@ public class DPoPTest {
         response = oauth.refreshRequest(response.getRefreshToken()).dpopProof(dpopProofEcEncoded).send();
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
-        assertEquals("DPoP proof is not active", response.getErrorDescription());
+        MatcherAssert.assertThat(response.getErrorDescription(), startsWith("DPoP proof is not active: iat="));
 
         oauth.logoutForm().idTokenHint(response.getIdToken()).open();
     }
@@ -586,7 +588,7 @@ public class DPoPTest {
 
     @Test
     public void testDPoPProofExpired() throws Exception {
-        testDPoPProofFailure(generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), (long) (Time.currentTimeSeconds() - 100000), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate(), null), "DPoP proof is not active");
+        testDPoPProofFailure(generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), (long) (Time.currentTimeSeconds() - 100000), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate(), null), startsWith("DPoP proof is not active: iat="));
     }
 
     @Test
@@ -1265,6 +1267,10 @@ public class DPoPTest {
     }
 
     private void testDPoPProofFailure(String dpopProofEncoded, String errorDescription) throws Exception {
+        testDPoPProofFailure(dpopProofEncoded, is(errorDescription));
+    }
+
+    private void testDPoPProofFailure(String dpopProofEncoded, Matcher<String> errorDescription) throws Exception {
         oauth.client(TEST_CONFIDENTIAL_CLIENT_ID, TEST_CONFIDENTIAL_CLIENT_SECRET);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
@@ -1273,7 +1279,7 @@ public class DPoPTest {
 
         assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
-        assertEquals(errorDescription, response.getErrorDescription());
+        MatcherAssert.assertThat(response.getErrorDescription(), errorDescription);
     }
 
     private String createClientByAdmin(String clientName, Consumer<ClientRepresentation> op) throws ClientPolicyException {
