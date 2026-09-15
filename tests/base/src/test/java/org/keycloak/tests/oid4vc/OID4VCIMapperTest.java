@@ -260,9 +260,10 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
                     "Creating a mapper that targets a reserved claim must be rejected");
             OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
             assertNotNull(error, "The rejection response must carry an error representation");
-            assertTrue(error.getError() != null
-                            && error.getError().contains("is reserved and must not be used by this OID4VC mapper"),
-                    "Rejection should report the reserved claim, but was: " + error.getError());
+            assertNotNull(error.getError(), "The rejection must carry an error code");
+            assertTrue(error.getErrorDescription() != null
+                            && error.getErrorDescription().contains("is reserved and must not be used by this OID4VC mapper"),
+                    "Rejection should report the reserved claim in the error description, but was: " + error.getErrorDescription());
         }
     }
 

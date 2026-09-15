@@ -669,8 +669,8 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
      * Verifies that a user-controlled 'exp' attribute cannot extend the SD-JWT refresh expiration time.
      * A legacy user-attribute mapper targeting the reserved 'exp' claim is attached via the scope update path
      * (bypassing config-time validation, which only runs on the dedicated protocol-mappers endpoints), but the
-     * issuer-controlled refresh interval must still govern the credential expiration. Other sensitive
-     * claims must not be mapped equally.
+     * issuer-controlled refresh interval must still govern the credential expiration. Other sensitive claims
+     * must not be mapped either.
      */
     @Test
     public void testUserControlledExpAttributeDoesNotExtendRefreshExpiration() throws Exception {
@@ -686,11 +686,13 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
             scopeRep.setRefreshIntervalInSeconds(refreshInterval);
             return ClientScopeBuilder.update(scopeRep).mappers(
                     ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, CLAIM_NAME_EXP),
-                    ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_CNF, UserModel.USERNAME));
+                    ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_CNF, "cnfSource"));
         });
 
-        // Set a user-controlled attribute to a far-future timestamp to attempt to extend the refresh expiration.
-        user.updateWithCleanup(u -> u.attribute(CLAIM_NAME_EXP, String.valueOf(farFuture)));
+        // Set a user-controlled attribute to a far-future timestamp to attempt to extend the refresh expiration,
+        // and a real source attribute for the sensitive 'cnf' mapper so it would be populated if not blocked.
+        user.updateWithCleanup(u -> u.attribute(CLAIM_NAME_EXP, String.valueOf(farFuture))
+                .attribute("cnfSource", "sensitive-value"));
 
         // Issue the SD-JWT.
         AccessTokenResponse tokenResponse = authzCodeFlow();
@@ -714,7 +716,7 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
                 "A user-controlled 'exp' attribute must NOT extend the refresh expiration time");
 
         assertNull(issuerSignedJWT.getPayload().get(CLAIM_NAME_CNF),
-                "Sensitive claim must not have been mapped by user attribute mapper");
+                "Sensitive 'cnf' claim must not be mapped even though its source attribute is present");
     }
 
     /**
