@@ -28,6 +28,7 @@ import jakarta.persistence.LockModeType;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.connections.jpa.support.EntityManagerProxy;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -80,7 +81,7 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
         // could remove it between the INSERT and the subsequent find. Retry if this happens.
         RootAuthenticationSessionEntity entity;
         for (;;) {
-            em.createNamedQuery("insertRootAuthSessionIfAbsent")
+            EntityManagerProxy.allowAsyncCommit(em, em.createNamedQuery("insertRootAuthSessionIfAbsent"))
                     .setParameter("id", id)
                     .setParameter("realmId", realm.getId())
                     .setParameter("timestamp", Time.currentTimeSeconds())
