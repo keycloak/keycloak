@@ -123,7 +123,10 @@ public class ComponentResource {
         if (providerId != null && customComponents != null) {
             components = customComponents;
         } else if (customComponents != null) {
-            components = Stream.concat(realmComponents, customComponents);
+            components = Stream.concat(
+                    realmComponents.filter(component -> !UiExtensionComponentStorage.usesCustomStorage(
+                            component.getProviderType(), component.getProviderId(), session)),
+                    customComponents);
         } else {
             components = realmComponents;
         }
