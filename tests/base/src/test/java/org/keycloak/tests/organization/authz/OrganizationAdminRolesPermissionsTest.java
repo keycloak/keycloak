@@ -1005,9 +1005,6 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
         }
     }
 
-    /**
-     * Realm configuration with organizations enabled and test users
-     */
     @Test
     public void testInvitationRolesRequireRoleMappingPermission() {
         String orgId;
@@ -1048,6 +1045,9 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
         }
     }
 
+    /**
+     * Realm configuration with organizations enabled and test users
+     */
     public static class OrganizationAdminPermissionsRealmConfig extends OrganizationRealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {

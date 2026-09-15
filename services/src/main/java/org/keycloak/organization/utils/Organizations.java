@@ -325,7 +325,7 @@ public class Organizations {
         for (String roleId : invitation.getRoleIds()) {
             RoleModel role = realm.getRoleById(roleId);
 
-            if (role != null && !user.hasDirectRole(role)) {
+            if (role != null) {
                 user.grantRole(role);
             }
         }

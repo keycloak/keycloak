@@ -305,7 +305,7 @@
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_BackfillGroupOrgId"/>
     </changeSet>
 
-    <changeSet author="keycloak" id="26.8.0-45238-org-invitation-role">
+    <changeSet author="keycloak" id="26.8.0-org-invitation-role">
         <createTable tableName="ORG_INVITATION_ROLE">
             <column name="INVITATION_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
