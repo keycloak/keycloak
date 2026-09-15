@@ -221,6 +221,17 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
+    public Stream<OrganizationModel> getByIdentityProvider(IdentityProviderModel identityProvider, String search, Boolean exact, Integer first, Integer max) {
+        // Return cache delegates to ensure cache invalidation during write operations
+        return getCacheDelegates(getDelegate().getByIdentityProvider(identityProvider, search, exact, first, max));
+    }
+
+    @Override
+    public long countByIdentityProvider(IdentityProviderModel identityProvider, String search, Boolean exact) {
+        return getDelegate().countByIdentityProvider(identityProvider, search, exact);
+    }
+
+    @Override
     public void removeAll() {
         //TODO: won't scale, requires a better mechanism for bulk deleting organizations within a realm
         //this way, all organizations in the realm will be invalidated ... or should it be invalidated whole realm instead?

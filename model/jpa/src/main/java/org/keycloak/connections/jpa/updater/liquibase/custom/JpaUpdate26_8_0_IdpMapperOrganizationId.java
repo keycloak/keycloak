@@ -83,7 +83,7 @@ public class JpaUpdate26_8_0_IdpMapperOrganizationId extends CustomKeycloakTask 
 
             confirmationMessage.append("Recorded the target organization on " + count + " organization group IdP mappers.");
         } catch (Exception e) {
-            throw new CustomChangeException(getTaskId() + ": Exception when populating IDP_MAPPER_CONFIG." + ORGANIZATION_ID, e);
+            throw new CustomChangeException(getTaskId() + ": Exception when populating IDP_MAPPER_CONFIG with '" + ORGANIZATION_ID + "'", e);
         }
     }
 
