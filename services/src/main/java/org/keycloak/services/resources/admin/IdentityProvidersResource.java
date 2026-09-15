@@ -33,12 +33,10 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
@@ -63,6 +61,7 @@ import org.keycloak.organization.utils.Organizations;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
@@ -71,6 +70,7 @@ import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
 
+import org.apache.http.client.HttpResponseException;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -200,13 +200,13 @@ public class IdentityProvidersResource {
         try {
             file = session.getProvider(HttpClientProvider.class).getString(from);
         } catch (IOException | IllegalArgumentException e) {
-            // The URL is the caller's, so the failure is theirs to fix. IOException covers a
-            // network error or a non-2xx status, IllegalArgumentException a URL that does not
-            // parse; both escaped uncaught and every cause reached the client alike.
+            // Only report the response status, transport errors can reveal internal addresses
             logger.debugf(e, "Failed to fetch identity provider metadata from %s", from);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST,
-                    "Cannot fetch identity provider metadata from " + from + ": " + e.getMessage(),
-                    Response.Status.BAD_REQUEST);
+            String message = "Cannot fetch identity provider metadata from " + from;
+            if (e instanceof HttpResponseException responseException) {
+                message += ": HTTP " + responseException.getStatusCode();
+            }
+            throw ErrorResponse.error(message, BAD_REQUEST);
         }
 
         IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
@@ -214,23 +214,13 @@ public class IdentityProvidersResource {
         Map<String, String> config;
         try {
             config = providerFactory.parseConfig(session, file);
-        } catch (WebApplicationException e) {
-            // A factory that already reported properly keeps its own status.
-            throw e;
         } catch (RuntimeException e) {
-            if (e.getCause() == null) {
-                // Both metadata parsers wrap the underlying failure. A factory raising on its
-                // own account, such as one that does not implement import at all, is reporting
-                // about itself rather than about the document, and stays a server error.
+            // The OIDC and SAML factories wrap the parser failure, anything else is a server error
+            if (!(e.getCause() instanceof IOException || e.getCause() instanceof ParsingException)) {
                 throw e;
             }
-            // The wrapper leaves KeycloakErrorHandler able to label the response
-            // invalid_request while still answering 500, because getResponseStatus only maps a
-            // JsonProcessingException thrown directly.
             logger.debugf(e, "Failed to parse identity provider metadata from %s", from);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST,
-                    "Cannot parse identity provider metadata from " + from,
-                    Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Cannot parse identity provider metadata from " + from, BAD_REQUEST);
         }
 
         // add the URL just if needed by the identity provider

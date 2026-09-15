@@ -26,7 +26,6 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
@@ -42,7 +41,6 @@ import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectHttpServer;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -598,56 +596,59 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
     }
 
     @Test
-    public void importConfigShouldReportAMetadataUrlThatCannotBeFetched() {
+    public void importConfigShouldReportAnUnreachableMetadataUrl() {
         String url = "http://localhost:1/.well-known/openid-configuration";
 
-        OAuth2ErrorRepresentation error = assertImportConfigFails(url);
-
-        assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
-        assertThat(error.getErrorDescription(), containsString("Cannot fetch"));
-        assertThat(error.getErrorDescription(), containsString(url));
+        assertImportConfigFails("oidc", url, "Cannot fetch identity provider metadata from " + url);
     }
 
     @Test
-    public void importConfigShouldReportAMetadataUrlThatDoesNotParse() {
+    public void importConfigShouldReportAMalformedMetadataUrl() {
         String url = "http://localhost:1/ .well-known";
 
-        OAuth2ErrorRepresentation error = assertImportConfigFails(url);
-
-        assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
-        assertThat(error.getErrorDescription(), containsString("Cannot fetch"));
+        assertImportConfigFails("oidc", url, "Cannot fetch identity provider metadata from " + url);
     }
 
     @Test
-    public void importConfigShouldReportAUrlThatIsNotMetadata() {
-        String path = "/not-a-discovery-document";
-        httpServer.createContext(path, exchange -> HttpServerUtil.sendResponse(exchange, 200,
-                Map.of("Content-Type", List.of("text/html")), "<html>not metadata</html>"));
+    public void importConfigShouldReportTheStatusOfAFailedMetadataRequest() {
+        String path = "/missing-discovery-document";
+        String url = serve(path, 404, "not found");
 
         try {
-            String url = "http://" + httpServer.getAddress().getHostString() + ":"
-                    + httpServer.getAddress().getPort() + path;
-
-            OAuth2ErrorRepresentation error = assertImportConfigFails(url);
-
-            assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
-            assertThat(error.getErrorDescription(), containsString("Cannot parse"));
-            assertThat(error.getErrorDescription(), containsString(url));
+            assertImportConfigFails("oidc", url, "Cannot fetch identity provider metadata from " + url + ": HTTP 404");
         } finally {
             httpServer.removeContext(path);
         }
     }
 
-    private OAuth2ErrorRepresentation assertImportConfigFails(String fromUrl) {
+    @Test
+    public void importConfigShouldReportAUrlThatIsNotMetadata() {
+        String path = "/not-a-discovery-document";
+        String url = serve(path, 200, "<html>not metadata</html>");
+
+        try {
+            assertImportConfigFails("oidc", url, "Cannot parse identity provider metadata from " + url);
+            assertImportConfigFails("saml", url, "Cannot parse identity provider metadata from " + url);
+        } finally {
+            httpServer.removeContext(path);
+        }
+    }
+
+    private String serve(String path, int status, String body) {
+        httpServer.createContext(path, exchange -> HttpServerUtil.sendResponse(exchange, status,
+                Map.of("Content-Type", List.of("text/html")), body));
+        return "http://" + httpServer.getAddress().getHostString() + ":" + httpServer.getAddress().getPort() + path;
+    }
+
+    private void assertImportConfigFails(String providerId, String fromUrl, String expectedMessage) {
         Map<String, Object> data = new HashMap<>();
-        data.put("providerId", "oidc");
+        data.put("providerId", providerId);
         data.put("fromUrl", fromUrl);
 
         BadRequestException error = assertThrows(BadRequestException.class,
                 () -> managedRealm.admin().identityProviders().importFrom(data));
 
-        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), error.getResponse().getStatus());
-        return error.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+        assertEquals(expectedMessage, error.getResponse().readEntity(ErrorRepresentation.class).getErrorMessage());
     }
 
     public static class ExternalRealmConfig implements RealmConfig {
