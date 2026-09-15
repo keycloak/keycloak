@@ -433,82 +433,8 @@ and argument: `-p 8181`
 
 ## Run Docker Authentication test
 
-First, validate that your machine has a valid docker installation and that it is available to the JVM running the test.
-The exact steps to configure Docker depend on the operating system.
-
-By default, the test will run against Undertow based embedded Keycloak Server, thus no distribution build is required beforehand.
-The exact command line arguments depend on the operating system.
-
-
-### General guidelines
-
-If you're running a Docker fork that always lists a host component of an image on `docker images` (e.g. Fedora / RHEL Docker)
-use `-Ddocker.io-prefix-explicit=true` argument when running the test.
-
-
-### Fedora
-
-On Fedora one way to set up Docker server is the following:
-
-    # install docker
-    sudo dnf install docker
-
-    # configure docker
-    # remove --selinux-enabled from OPTIONS
-    sudo vi /etc/sysconfig/docker
-
-    # create docker group and add your user (so docker wouldn't need root permissions)
-    sudo groupadd docker && sudo gpasswd -a ${USER} docker && sudo systemctl restart docker
-    newgrp docker
-
-    # you need to login again after this
-
-
-    # make sure Docker is available
-    docker pull registry:2
-
-You may also need to add an iptables rule to allow container to host traffic
-
-    sudo iptables -I INPUT -i docker0 -j ACCEPT
-
-Then, run the test passing `-Ddocker.io-prefix-explicit=true`:
-
-    mvn -f tests/base/pom.xml \
-        clean test \
-        -Dtest=DockerClientTest \
-        -Ddocker.io-prefix-explicit=true
-
-
-### macOS
-
-On macOS all you need to do is install Docker for Mac, start it up, and check that it works:
-
-    # make sure Docker is available
-    docker pull registry:2
-
-Be especially careful to restart Docker server after every sleep / suspend to ensure system clock of Docker VM is synchronized with
-that of the host operating system - Docker for Mac runs inside a VM.
-
-
-Then, run the test:
-
-    mvn -f tests/base/pom.xml \
-        clean test \
-        -Dtest=DockerClientTest
-
-
-
-### Running Docker test against Keycloak Server distribution
-
-Make sure to build the distribution:
-
-    mvn clean install -f distribution
-
-Then run the test from the new test framework:
-
-    mvn -f tests/base/pom.xml \
-        clean test \
-        -Dtest=DockerClientTest
+The Docker authentication test was migrated to the Keycloak Test Framework.
+See [tests/docs/DOCKER_AUTHENTICATION_TEST.md](../../tests/docs/DOCKER_AUTHENTICATION_TEST.md) for setup and execution instructions.
 
 ## Java 11 support
 Java 11 requires some arguments to be passed to JVM. Those can be activated using `-Pjava11-auth-server` and
