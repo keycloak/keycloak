@@ -31,6 +31,7 @@ public class OID4VCConstants {
     public static final String CLAIM_NAME_SUB = "sub";
     public static final String CLAIM_NAME_VC = "vc";
     public static final String CLAIM_NAME_VCT = "vct";
+    public static final String CLAIM_NAME_STATUS = "status";
 
     // The JWT identifier uniquely identifies a SD_JWT credential
     // It is useful for:
@@ -50,7 +51,7 @@ public class OID4VCConstants {
     // a user-controlled value bypass the issuer-configured credential lifetime (see keycloak/keycloak#52667).
     public static final Set<String> RESERVED_CLAIM_NAMES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             CLAIM_NAME_EXP, CLAIM_NAME_IAT, CLAIM_NAME_NBF, CLAIM_NAME_ISSUER, CLAIM_NAME_SUB, CLAIM_NAME_JTI,
-            CLAIM_NAME_VCT, CLAIM_NAME_CNF, CLAIM_NAME_SD, CLAIM_NAME_SD_HASH_ALGORITHM, CLAIM_NAME_SD_UNDISCLOSED_ARRAY
+            CLAIM_NAME_VCT, CLAIM_NAME_CNF, CLAIM_NAME_STATUS, CLAIM_NAME_SD, CLAIM_NAME_SD_HASH_ALGORITHM, CLAIM_NAME_SD_UNDISCLOSED_ARRAY
     )));
 
     public static final String KEYBINDING_JWT_TYP = "kb+jwt";
