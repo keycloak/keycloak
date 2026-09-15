@@ -39,15 +39,17 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
         List<PropertyMapper<?>> staticMappers = List.of(
                 fromOption(CachingOptions.CACHE)
                         .transformer(
-                                (value, context) -> org.keycloak.common.util.Environment.isNonServerMode()
+                                (value, context) -> org.keycloak.common.util.Environment.isNonServerMode() && !isStatelessEnabled()
                                         ? Mechanism.local.name()
                                         : Optional.ofNullable(value).orElse(Mechanism.ispn.name()))
                         .paramLabel("type")
+                        .validator(CachingPropertyMappers::validateCacheType)
                         .build(),
                 fromOption(CachingOptions.CACHE_STACK)
                         .isEnabled(CachingPropertyMappers::cacheSetToInfinispan, CACHE_STACK_SET_TO_ISPN)
                         .to("kc.spi-cache--embedded--default-stack")
                         .paramLabel("stack")
+                        .validator(CachingPropertyMappers::validateCacheStack)
                         .build(),
                 fromOption(CachingOptions.CACHE_CONFIG_FILE)
                         .mapFrom(CachingOptions.CACHE, (value, context) -> {
@@ -269,6 +271,20 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
             return;
         }
         throw new PropertyException("The option '%s' requires '%s' to be enabled.".formatted(option.getKey(), requiredOption.getKey()));
+    }
+
+    private static void validateCacheType(String value) {
+        if (isStatelessEnabled() && Mechanism.local.name().equals(value)) {
+            throw new PropertyException("The stateless feature requires '%s' to be set to '%s'."
+                    .formatted(CachingOptions.CACHE.getKey(), Mechanism.ispn.name()));
+        }
+    }
+
+    private static void validateCacheStack(String value) {
+        if (isStatelessEnabled() && !CachingOptions.Stack.jdbc_ping.toString().equals(value)) {
+            throw new PropertyException("The stateless feature requires '%s' to be set to '%s'."
+                    .formatted(CachingOptions.CACHE_STACK.getKey(), CachingOptions.Stack.jdbc_ping));
+        }
     }
 
     private static boolean isStatelessEnabled() {

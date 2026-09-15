@@ -119,9 +119,12 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
             var cm = ispnConnections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME).getCacheManager();
             var jgrp = (JGroupsTransport) GlobalComponentRegistry.componentOf(cm, Transport.class);
             if (jgrp == null) {
-                throw new IllegalStateException("Stateless mode must not run in cache=local mode as this will not allow health probes and cache clearing");
+                throw new IllegalStateException("Stateless mode must not run in cache=local mode as this will not allow health probes, cluster events and cache clearing");
             } else {
                 KEYCLOAK_JDBC_PING2 ping = jgrp.getChannel().getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2.class);
+                if (ping == null) {
+                    throw new IllegalStateException("Stateless mode must run with jdbc-ping as this will allow health probes, cluster events and cache clearing");
+                }
                 KeycloakSessionFactory keycloakSessionFactory = session.getKeycloakSessionFactory();
                 ping.setOnHealthRestored(() -> localExecutor.execute(() -> broadcastCacheClear(keycloakSessionFactory)));
             }
