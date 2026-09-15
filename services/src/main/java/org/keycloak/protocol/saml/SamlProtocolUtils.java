@@ -183,7 +183,10 @@ public class SamlProtocolUtils {
     public static KeyLocator createKeyLocatorForClient(KeycloakSession session, SamlClient samlClient, KeyUse use) throws VerificationException {
         if (StringUtil.isNotBlank(samlClient.getMetadataDescriptorUrl()) && samlClient.isUseMetadataDescriptorUrl()) {
             // configured to use the metadata
-            String modelKey = PublicKeyStorageUtils.getClientModelCacheKey(samlClient.getClient().getRealm().getId(), samlClient.getClient().getClientId());
+            // Use the internal client UUID (client.getId()) so the cache key matches the one
+            // targeted by client update/removal invalidation in InfinispanPublicKeyStorageProviderFactory.
+            // Using the SAML clientId here would leave stale metadata keys cached after client updates.
+            String modelKey = PublicKeyStorageUtils.getClientModelCacheKey(samlClient.getClient().getRealm().getId(), samlClient.getClient().getId());
             PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
             PublicKeyLoader keyLoader = new SamlMetadataPublicKeyLoader(session, samlClient.getMetadataDescriptorUrl(), false);
             return new SamlMetadataKeyLocator(modelKey, keyLoader, use, keyStorage);
