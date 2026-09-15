@@ -58,7 +58,7 @@ const ShownOnLoginPageCheck = ({
 
   return (
     <Switch
-      label={t("on")}
+      label={row.hideOnLogin ? t("on") : t("off")}
       isChecked={row.hideOnLogin}
       onChange={(_, value) => toggle(value)}
     />

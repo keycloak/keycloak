@@ -17,6 +17,10 @@ parent=keycloak.v3
 
 If your theme extends `rh-sso.v2`, change the parent to `rh-sso.v3` if available in your distribution, or extend `keycloak.v3` instead.
 
+== Update admin console feature flags
+
+If you explicitly enable or disable the admin console through startup features, replace `admin:v2` with `admin:v3` in `--features` or `--features-disabled`. The `admin:v2` feature flag was removed with the PatternFly 6 admin console migration.
+
 == Update PatternFly dependencies and imports
 
 The admin console now uses PatternFly 6 React components and design tokens. Custom admin themes that bundle their own React components should:

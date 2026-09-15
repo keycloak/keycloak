@@ -66,7 +66,7 @@ export const EventConfigForm = ({
             <Switch
               data-testid={eventKey}
               id={`${eventKey}-switch`}
-              label={t("on")}
+              label={field.value ? t("on") : t("off")}
               isChecked={field.value}
               onChange={(_event, value) => {
                 if (!value) {
