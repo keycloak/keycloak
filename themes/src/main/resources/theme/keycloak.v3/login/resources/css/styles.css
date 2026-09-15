@@ -1,0 +1,198 @@
+:root {
+    --keycloak-logo-url: url('../img/keycloak-logo-text.svg');
+    --keycloak-bg-logo-url: url("../img/keycloak-bg-darken.svg");
+    --keycloak-logo-height: 63px;
+    --keycloak-logo-width: 300px;
+    --keycloak-card-top-color: var(--pf-t--global--color--brand--default);
+}
+
+.pf-v6-c-login__container {
+    grid-template-columns: 34rem;
+    grid-template-areas: "header"
+                         "main"
+}
+
+.pf-v6-c-login__main {
+    border-top: 4px solid var(--keycloak-card-top-color);
+}
+
+.pf-v6-c-login__main-header {
+    border-top: none;
+}
+
+/* Info section - top margin + bottom padding */
+.pf-v6-c-login__main-footer-band:first-child {
+    margin-block-start: var(--pf-t--global--spacer--lg);
+}
+
+.pf-v6-c-login__main-footer-band:last-child {
+    padding-bottom: 0;
+}
+/* Info section */
+
+.login-pf body {
+    background: var(--keycloak-bg-logo-url) no-repeat center center fixed;
+    background-size: cover;
+    height: 100%;
+}
+
+div.kc-logo-text {
+    background-image: var(--keycloak-logo-url);
+    height: var(--keycloak-logo-height);
+    width: var(--keycloak-logo-width);
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center;
+    margin: 0 auto;
+}
+
+div.kc-logo-text span {
+    display: none;
+}
+
+.kc-login-tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.kc-login-tooltip .kc-tooltip-text{
+    top:-3px;
+    left:160%;
+    background-color: black;
+    visibility: hidden;
+    color: #fff;
+
+    min-width:130px;
+    text-align: center;
+    border-radius: 2px;
+    box-shadow:0 1px 8px rgba(0,0,0,0.6);
+    padding: 5px;
+
+    position: absolute;
+    opacity:0;
+    transition:opacity 0.5s;
+}
+
+/* Show tooltip */
+.kc-login-tooltip:hover .kc-tooltip-text {
+    visibility: visible;
+    opacity:0.7;
+}
+
+/* Arrow for tooltip */
+.kc-login-tooltip .kc-tooltip-text::after {
+    content: " ";
+    position: absolute;
+    top: 15px;
+    right: 100%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+
+#kc-recovery-codes-list {
+    columns: 2;
+}
+
+#certificate_subjectDN {
+    overflow-wrap: break-word
+}
+
+#kc-verify-email-form {
+    margin-top: 24px;
+}
+
+#kc-header-wrapper {
+    font-size: 29px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    line-height: 1.2em;
+    white-space: normal;
+    color: #fff !important;
+    text-align: center;
+}
+
+#kc-code pre code {
+    word-break: break-all;
+}
+
+hr {
+    margin-top: var(--pf-t--global--spacer--sm);
+    margin-bottom: var(--pf-t--global--spacer--md);
+}
+
+/* Social/identity providers */
+
+#kc-social-providers img,
+#kc-social-providers picture {
+    height: var(--pf-t--global--font--size--xl);
+    width: var(--pf-t--global--font--size--xl);
+    object-fit: contain;
+}
+
+/* Remove bottom padding when no info section follows (e.g. registration disabled) */
+#kc-social-providers:last-child .pf-v6-c-login__main-body {
+    padding-bottom: 0 !important;
+}
+
+/* Use a gray border instead of the tertiary default (near-black in light theme) */
+#kc-social-providers .pf-v6-c-button.pf-m-tertiary {
+    --pf-v6-c-button--m-tertiary--BorderColor: var(--pf-t--global--border--color--default);
+    --pf-v6-c-button--m-tertiary--hover--BorderColor: var(--pf-t--global--border--color--hover);
+}
+
+#kc-social-providers ul > li:last-child {
+    padding-bottom: 0 !important;
+}
+
+/* Named divider */
+
+.kc-login-divider {
+    display: flex;
+    align-items: center;
+    gap: var(--pf-t--global--spacer--md);
+    margin: var(--pf-t--global--spacer--md) 0 var(--pf-t--global--spacer--md);
+}
+
+.kc-login-divider::before,
+.kc-login-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--pf-t--global--border--color--default);
+}
+
+/* QR code */
+
+.kc-qr-code img {
+    width: 200px;
+    height: 200px;
+    border-radius: 10px;
+    border: 2px solid var(--pf-t--global--border--color--default);
+    box-shadow: var(--pf-t--global--box-shadow--lg--right);
+}
+
+@media (prefers-color-scheme: dark) {
+    .kc-qr-code img {
+        border: none;
+        box-shadow: none;
+    }
+}
+
+@media (min-width: 768px) {
+    div.pf-v6-c-login__main-header:has(.pf-v6-c-login__main-header-utilities) {
+        grid-template-columns: 70% 30%;
+    }
+}
+
+#kc-form-webauthn {
+    gap: 0.875rem;
+}
+p.instruction {
+  margin: var(--pf-t--global--spacer--lg) 0;
+}
+
+.form-actions {
+  margin-bottom: var(--pf-t--global--spacer--md);
+}
+
