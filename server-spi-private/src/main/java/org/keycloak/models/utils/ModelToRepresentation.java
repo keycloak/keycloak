@@ -989,6 +989,10 @@ public class ModelToRepresentation {
         providerRep.setTrustEmail(identityProviderModel.isTrustEmail());
         providerRep.setAuthenticateByDefault(identityProviderModel.isAuthenticateByDefault());
         Map<String, String> config = new HashMap<>(identityProviderModel.getConfig());
+        if (!config.containsKey(IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING)) {
+            // If ALLOW_ADMIN_ROLE_MAPPING is not set it needs to default to the value provided by the model (i.e. enabled by default).
+            config.put(IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING, String.valueOf(identityProviderModel.isAllowAdminRoleMapping()));
+        }
         providerRep.setConfig(config);
         providerRep.setAddReadTokenRoleOnCreate(identityProviderModel.isAddReadTokenRoleOnCreate());
 
