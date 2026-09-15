@@ -1,5 +1,7 @@
 package org.keycloak.authentication.authenticators.x509;
 
+import java.io.File;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -325,6 +327,44 @@ public class CertificateValidatorTest {
     @Test
     public void testCertificatePolicyModeAnyTwoRequestedAndTwoPresent() throws GeneralSecurityException {
         testCertificatePolicyValidation("1.3.76.16.2.1,1.2.3.4.5.6", CERTIFICATE_POLICY_MODE_ANY, "1.3.76.16.2.1", "1.2.3.4.5.6");
+    }
+
+    /**
+     * A CRL distribution point is taken verbatim from the presented client certificate. When it is loaded
+     * as a local file it must stay within the configuration directory; a value containing parent references
+     * must not resolve to a file outside of it.
+     */
+    @Test
+    public void testCRLDistributionPointFilePathTraversalIsRejected() {
+        String baseDir = new File("target", "crl-base").getAbsolutePath();
+
+        Assert.assertNull(CertificateValidator.CRLFileLoader.resolveCRLPath(baseDir, "../../../../etc/passwd"));
+        Assert.assertNull(CertificateValidator.CRLFileLoader.resolveCRLPath(baseDir, "crls/../../../../../etc/passwd"));
+        Assert.assertNull(CertificateValidator.CRLFileLoader.resolveCRLPath(baseDir, ".."));
+        Assert.assertNull(CertificateValidator.CRLFileLoader.resolveCRLPath(baseDir, "../crl-base-sibling/x.crl"));
+    }
+
+    /**
+     * A CRL path that stays inside the configuration directory keeps resolving as before, including a value
+     * with a leading slash (which was already treated as relative to the base dir) and an internal parent
+     * reference that does not escape.
+     */
+    @Test
+    public void testCRLDistributionPointFilePathWithinBaseIsResolved() {
+        String baseDir = new File("target", "crl-base").getAbsolutePath();
+        Path basePath = Path.of(baseDir).toAbsolutePath().normalize();
+
+        File direct = CertificateValidator.CRLFileLoader.resolveCRLPath(baseDir, "my.crl");
+        Assert.assertNotNull(direct);
+        MatcherAssert.assertThat(direct.toPath().normalize().startsWith(basePath), Matchers.is(true));
+
+        File internalParent = CertificateValidator.CRLFileLoader.resolveCRLPath(baseDir, "sub/../my.crl");
+        Assert.assertNotNull(internalParent);
+        Assert.assertEquals(direct.getPath(), internalParent.getPath());
+
+        File leadingSlash = CertificateValidator.CRLFileLoader.resolveCRLPath(baseDir, "/nested/my.crl");
+        Assert.assertNotNull(leadingSlash);
+        MatcherAssert.assertThat(leadingSlash.toPath().normalize().startsWith(basePath), Matchers.is(true));
     }
 
     // Helper to test various certificate policy validation combinations
