@@ -13,6 +13,9 @@ class KubernetesIdentityProviderConfigTest {
 
         assertTrue(config.isAutomaticIssuerDiscovery());
 
+        config.getConfig().put(KubernetesIdentityProviderConfig.AUTOMATIC_ISSUER_DISCOVERY, "");
+        assertTrue(config.isAutomaticIssuerDiscovery());
+
         config.getConfig().put(KubernetesIdentityProviderConfig.AUTOMATIC_ISSUER_DISCOVERY, "FALSE");
         assertFalse(config.isAutomaticIssuerDiscovery());
 

@@ -44,7 +44,7 @@ public class KubernetesIdentityProviderConfig extends IdentityProviderModel impl
 
     public boolean isAutomaticIssuerDiscovery() {
         String automaticIssuerDiscovery = getConfig().get(AUTOMATIC_ISSUER_DISCOVERY);
-        return automaticIssuerDiscovery == null || Boolean.parseBoolean(automaticIssuerDiscovery);
+        return Strings.isEmpty(automaticIssuerDiscovery) || Boolean.parseBoolean(automaticIssuerDiscovery);
     }
 
     public String getIssuerDiscoveryUrl() {
