@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -590,9 +591,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
         String prompt = getConfig().getPrompt();
         if (prompt == null || prompt.isEmpty()) {
-            prompt = authenticationSession.getClientNote(OAuth2Constants.PROMPT);
+            prompt = removeCreatePrompt(authenticationSession.getClientNote(OAuth2Constants.PROMPT));
         }
-        if (prompt != null) {
+        if (prompt != null && !prompt.isEmpty()) {
             uriBuilder.queryParam(OAuth2Constants.PROMPT, prompt);
         }
 
@@ -610,6 +611,17 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         appendForwardedParameters(authenticationSession, uriBuilder);
 
         return uriBuilder;
+    }
+
+    // prompt=create only asks this server to show its registration page. Identity providers that do not
+    // support it may reject the request, so it is not forwarded.
+    private static String removeCreatePrompt(String prompt) {
+        if (prompt == null) {
+            return null;
+        }
+        return Arrays.stream(prompt.split(" "))
+                .filter(value -> !value.isEmpty() && !OIDCLoginProtocol.PROMPT_VALUE_CREATE.equals(value))
+                .collect(Collectors.joining(" "));
     }
 
     private void appendForwardedParameters(AuthenticationSessionModel authenticationSession, UriBuilder uriBuilder) {
