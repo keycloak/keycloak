@@ -40,6 +40,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -494,6 +495,33 @@ public class PermissionsTest extends AbstractPermissionsTest {
             invoke(realm -> realm.users().userProfile().getConfiguration(), clients.get(role), true);
             invoke(realm -> realm.users().userProfile().getMetadata(), clients.get(role), true);
         }
+    }
+
+    /**
+     * Realm role mappings on a user are user data, guarded by {@code view-users}. They are not realm configuration,
+     * so viewing them must not require {@code view-realm}.
+     */
+    @Test
+    public void realmRoleMappingsVisibleWithViewUsers() {
+        String roleName = "role-mapping-visibility";
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName(roleName);
+        managedRealm1.admin().roles().create(role);
+        managedRealm1.cleanup().add(r -> r.roles().deleteRole(roleName));
+
+        String userUuid = ApiUtil.getCreatedId(managedRealm1.admin().users()
+                .create(UserBuilder.create().username("role-mapping-target").enabled(true).build()));
+        managedRealm1.cleanup().add(r -> r.users().delete(userUuid).close());
+
+        managedRealm1.admin().users().get(userUuid).roles().realmLevel()
+                .add(List.of(managedRealm1.admin().roles().get(roleName).toRepresentation()));
+
+        MappingsRepresentation mappings = clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME)
+                .users().get(userUuid).roles().getAll();
+
+        assertThat(mappings.getRealmMappings(), Matchers.notNullValue());
+        assertThat(mappings.getRealmMappings().stream().map(RoleRepresentation::getName).toList(),
+                Matchers.hasItem(roleName));
     }
 
     @Test
