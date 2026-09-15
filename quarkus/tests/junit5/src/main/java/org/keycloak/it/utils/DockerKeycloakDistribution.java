@@ -225,30 +225,64 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
 
     @Override
     public void stop() {
+        stop(true);
+    }
+
+    public void stopKeepContainer() {
+        stop(false);
+    }
+
+    public boolean isRunning() {
+        return keycloakContainer != null && keycloakContainer.isRunning();
+    }
+
+    public void restartContainer() {
+        if (keycloakContainer == null) {
+            throw new IllegalStateException("Container has not been started");
+        }
+        if (keycloakContainer.isRunning()) {
+            return;
+        }
+        try {
+            String id = containerId != null ? containerId : keycloakContainer.getContainerId();
+            keycloakContainer.getDockerClient().startContainerCmd(id).exec();
+            Wait.forListeningPorts(8080)
+                    .withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT_SECONDS))
+                    .waitUntilReady(keycloakContainer);
+            containerId = id;
+        } catch (Exception cause) {
+            throw new RuntimeException("Failed to restart the server", cause);
+        }
+    }
+
+    private void stop(boolean removeContainer) {
         try {
             if (keycloakContainer != null) {
                 containerId = keycloakContainer.getContainerId();
                 this.stdout = fetchOutputStream();
                 this.stderr = fetchErrorStream();
 
-                // A graceful shutdown will help with cleaning up resources, for example JDBC_PING table entries.
-                // Shutdown is fast (less than 100 ms), waiting for a stale JDBC_PING is slow (10+ seconds).
                 if (keycloakContainer.isRunning()) {
+                    String signal = removeContainer ? "TERM" : "KILL";
                     try (KillContainerCmd killContainerCmd = keycloakContainer.getDockerClient().killContainerCmd(keycloakContainer.getContainerId())) {
-                        killContainerCmd.withSignal("TERM").exec();
+                        killContainerCmd.withSignal(signal).exec();
                     }
                     Awaitility.await().atMost(Duration.ofSeconds(2)).untilAsserted(() -> Assertions.assertFalse(keycloakContainer.isRunning()));
                 }
 
-                keycloakContainer.stop();
+                if (removeContainer) {
+                    keycloakContainer.stop();
+                }
                 this.exitCode = 0;
             }
         } catch (Exception cause) {
             this.exitCode = -1;
             throw new RuntimeException("Failed to stop the server", cause);
         } finally {
-            cleanupContainer();
-            keycloakContainer = null;
+            if (removeContainer) {
+                cleanupContainer();
+                keycloakContainer = null;
+            }
         }
     }
 

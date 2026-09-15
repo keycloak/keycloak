@@ -1,20 +1,17 @@
-package org.keycloak.testsuite.cluster;
+package org.keycloak.tests.cluster;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.openqa.selenium.Cookie;
-
-import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/**
- *
- * @author tkyjovsk
- */
+@KeycloakIntegrationTest
 public class SessionFailoverClusterTest extends AbstractFailoverClusterTest {
 
-    @Before
+    @BeforeEach
     public void beforeSessionFailover() {
         log.info("Initial node failure");
         failure();
@@ -23,35 +20,26 @@ public class SessionFailoverClusterTest extends AbstractFailoverClusterTest {
 
     @Test
     public void sessionFailover() {
-
         boolean expectSuccessfulFailover = SESSION_CACHE_OWNERS >= 2;
 
-        log.info("SESSION FAILOVER TEST: cluster size = " + getClusterSize() + ", session-cache owners = " + SESSION_CACHE_OWNERS
-                + " --> Testsing for " + (expectSuccessfulFailover ? "" : "UN") + "SUCCESSFUL session failover.");
+        log.infof("SESSION FAILOVER TEST: cluster size = %d, session-cache owners = %d --> testing for %sSUCCESSFUL session failover",
+                getClusterSize(), SESSION_CACHE_OWNERS, expectSuccessfulFailover ? "" : "UN");
 
         assertEquals(2, getClusterSize());
-        
-        sessionFailover(expectSuccessfulFailover);
+        runSessionFailoverFlow(expectSuccessfulFailover);
     }
 
-    protected void sessionFailover(boolean expectSuccessfulFailover) {
-
-        // LOGIN
+    private void runSessionFailoverFlow(boolean expectSuccessfulFailover) {
         Cookie sessionCookie = login();
 
         switchFailedNode();
-
-        // VERIFY
         if (expectSuccessfulFailover) {
             verifyLoggedIn(sessionCookie);
         } else {
             verifyLoggedOut();
-            // FIXME test fails if I put re-login here
         }
 
         switchFailedNode();
-
-        // VERIFY again
         if (expectSuccessfulFailover) {
             verifyLoggedIn(sessionCookie);
         } else {
@@ -59,15 +47,10 @@ public class SessionFailoverClusterTest extends AbstractFailoverClusterTest {
             login();
         }
 
-        // LOGOUT
         logout();
         verifyLoggedOut();
 
         switchFailedNode();
-
-        // VERIFY
         verifyLoggedOut();
-
     }
-
 }

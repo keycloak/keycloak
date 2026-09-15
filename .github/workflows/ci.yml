@@ -923,9 +923,12 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
+      - name: Build tar keycloak-quarkus-dist
+        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+
       - name: Run cluster tests
         run: |
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-cluster-quarkus,db-postgres "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+          KC_TEST_SERVER=cluster KC_TEST_DATABASE=postgres ./mvnw package -f tests/pom.xml -Dtest=ClusterTestSuite -Dsession.cache.owners=2 2>&1 | misc/log/trimmer.sh
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
