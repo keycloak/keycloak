@@ -24,6 +24,7 @@ import jakarta.persistence.EntityManager;
 import org.keycloak.cache.LocalCache;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RevokedTokenProvider;
 
@@ -42,11 +43,24 @@ public class JpaRevokedTokenProvider implements RevokedTokenProvider {
         var em = getEntityManager();
         var currentTime = Time.currentTime();
         var expire = currentTime + lifespanSeconds;
-        var rows = em.createNamedQuery("insertRevokeTokenIfAbsent")
-                .setParameter("id", id)
-                .setParameter("currentTime", currentTime)
-                .setParameter("expire", expire)
-                .executeUpdate();
+        int rows;
+        if (JpaUtils.isUpsertRowCountUnreliable(em)) {
+            String table = JpaUtils.getTableNameForNativeQuery("REVOKED_TOKEN", em);
+            em.createNativeQuery("DELETE FROM " + table + " WHERE ID = ?1 AND EXPIRE <= ?2")
+                    .setParameter(1, id)
+                    .setParameter(2, currentTime)
+                    .executeUpdate();
+            rows = em.createNativeQuery("INSERT IGNORE INTO " + table + " (ID, EXPIRE) VALUES (?1, ?2)")
+                    .setParameter(1, id)
+                    .setParameter(2, expire)
+                    .executeUpdate();
+        } else {
+            rows = em.createNamedQuery("insertRevokeTokenIfAbsent")
+                    .setParameter("id", id)
+                    .setParameter("currentTime", currentTime)
+                    .setParameter("expire", expire)
+                    .executeUpdate();
+        }
         return rows == 1;
     }
 
@@ -79,4 +93,5 @@ public class JpaRevokedTokenProvider implements RevokedTokenProvider {
     private EntityManager getEntityManager() {
         return session.getProvider(JpaConnectionProvider.class).getEntityManager();
     }
+
 }

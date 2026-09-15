@@ -39,6 +39,7 @@ import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
 import org.keycloak.models.KeycloakSession;
 
 import org.hibernate.dialect.Dialect;
+import org.hibernate.dialect.MySQLDialect;
 import org.hibernate.engine.jdbc.env.spi.IdentifierHelper;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.internal.SessionFactoryImpl;
@@ -57,6 +58,17 @@ public class JpaUtils {
     public static final String QUERY_NATIVE_SUFFIX = "[native]";
     public static final String QUERY_JPQL_SUFFIX = "[jpql]";
     private static final Logger logger = Logger.getLogger(JpaUtils.class);
+
+    /**
+     * MySQL/MariaDB drivers default to CLIENT_FOUND_ROWS, which makes ON DUPLICATE KEY UPDATE
+     * return 1 for rows that were matched but not changed. Hibernate translates the HQL
+     * {@code on conflict ... do update ... where} clause into a CASE self-assignment, so a
+     * no-op update on an active row is indistinguishable from a successful insert (both return 1).
+     */
+    public static boolean isUpsertRowCountUnreliable(EntityManager em) {
+        return em.getEntityManagerFactory().unwrap(SessionFactoryImplementor.class)
+                .getJdbcServices().getDialect() instanceof MySQLDialect;
+    }
 
     public static String getTableNameForNativeQuery(String tableName, EntityManager em) {
         final Dialect dialect = em.getEntityManagerFactory().unwrap(SessionFactoryImpl.class).getJdbcServices().getDialect();
