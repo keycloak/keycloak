@@ -239,7 +239,7 @@ export const AdvancedSettings = ({
             render={({ field }) => (
               <Switch
                 id="filteredByClaim"
-                label={t("on")}
+                label={field.value === "true" ? t("on") : t("off")}
                 isChecked={field.value === "true"}
                 onChange={(_event, value) => {
                   field.onChange(value.toString());
@@ -326,7 +326,7 @@ export const AdvancedSettings = ({
             render={({ field }) => (
               <Switch
                 id="doNotStoreUsers"
-                label={t("on")}
+                label={field.value === "true" ? t("on") : t("off")}
                 isChecked={field.value === "true"}
                 onChange={(_event, value) => {
                   field.onChange(value.toString());

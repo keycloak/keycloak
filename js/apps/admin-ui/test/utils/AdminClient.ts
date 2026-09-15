@@ -368,7 +368,7 @@ class AdminClient {
     );
   }
 
-  async isThemeLocalizationAvailable(
+  async isAdminV3ThemeAvailable(
     realm: string = this.#client.realmName,
   ): Promise<boolean> {
     await this.#login();
@@ -381,7 +381,19 @@ class AdminClient {
       (theme) => theme.name === "keycloak.v3",
     );
 
-    return adminV3Enabled && (v3Theme?.locales?.includes("de") ?? false);
+    return adminV3Enabled && v3Theme !== undefined;
+  }
+
+  async isGermanThemeLocalizationAvailable(
+    realm: string = this.#client.realmName,
+  ): Promise<boolean> {
+    await this.#login();
+    const serverInfo = await this.#client.serverInfo.find({ realm });
+    const v3Theme = serverInfo.themes?.admin.find(
+      (theme) => theme.name === "keycloak.v3",
+    );
+
+    return v3Theme?.locales?.includes("de") ?? false;
   }
 
   async deleteIdentityProvider(idpAlias: string) {
