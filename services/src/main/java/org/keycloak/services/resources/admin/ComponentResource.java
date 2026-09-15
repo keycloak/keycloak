@@ -18,6 +18,7 @@ package org.keycloak.services.resources.admin;
 
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -60,6 +61,7 @@ import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.services.ui.extend.UiExtensionSupport;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -106,21 +108,36 @@ public class ComponentResource {
                                                        @QueryParam("type") String type,
                                                        @QueryParam("name") String name,
                                                        @QueryParam("providerId") String providerId) {
-        auth.realm().requireViewRealm();
-        Stream<ComponentModel> components;
+        requireViewForProviderType(type, providerId);
+        Stream<ComponentModel> customComponents = UiExtensionComponentStorage.listComponents(session, realm, parent, type, providerId);
+        Stream<ComponentModel> realmComponents;
         if (parent == null && type == null) {
-            components = realm.getComponentsStream();
-
+            realmComponents = realm.getComponentsStream();
         } else if (type == null) {
-            components = realm.getComponentsStream(parent);
+            realmComponents = realm.getComponentsStream(parent);
         } else if (parent == null) {
-            components = realm.getComponentsStream(realm.getId(), type);
+            realmComponents = realm.getComponentsStream(realm.getId(), type);
         } else {
-            components = realm.getComponentsStream(parent, type);
+            realmComponents = realm.getComponentsStream(parent, type);
+        }
+        Stream<ComponentModel> components;
+        if (providerId != null && customComponents != null) {
+            components = customComponents;
+        } else if (customComponents != null) {
+            Map<String, ComponentModel> mergedComponents = new LinkedHashMap<>();
+            realmComponents
+                    .filter(component -> !UiExtensionComponentStorage.usesCustomStorage(
+                            component.getProviderType(), component.getProviderId(), session))
+                    .forEach(component -> mergedComponents.putIfAbsent(component.getId(), component));
+            customComponents.forEach(component -> mergedComponents.put(component.getId(), component));
+            components = mergedComponents.values().stream();
+        } else {
+            components = realmComponents;
         }
 
         return components
                 .filter(component -> !isInternalComponent(component.getProviderType(), component.getProviderId()))
+                .filter(this::canViewComponent)
                 .filter(component -> Objects.isNull(name) || Objects.equals(component.getName(), name))
                 .filter(component -> Objects.isNull(providerId) || Objects.equals(component.getProviderId(), providerId))
                 .map(component -> {
@@ -138,13 +155,18 @@ public class ComponentResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
     @Operation()
     public Response create(ComponentRepresentation rep) {
-        auth.realm().requireManageRealm();
+        requireManageForProviderType(rep.getProviderType(), rep.getProviderId());
         try {
             rejectInternalComponent(rep.getProviderType(), rep.getProviderId());
             ComponentModel model = RepresentationToModel.toModel(session, rep);
             if (model.getParentId() == null) model.setParentId(realm.getId());
 
-            model = realm.addComponentModel(model);
+            ComponentModel customModel = UiExtensionComponentStorage.createComponent(session, realm, model);
+            if (customModel != null) {
+                model = customModel;
+            } else {
+                model = realm.addComponentModel(model);
+            }
 
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), model.getId()).representation(rep).success();
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
@@ -162,10 +184,15 @@ public class ComponentResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
     @Operation()
     public ComponentRepresentation getComponent(@PathParam("id") String id) {
-        auth.realm().requireViewRealm();
-        ComponentModel model = realm.getComponent(id);
+        ComponentModel model = resolveComponentModel(id);
         if (model == null || isInternalComponent(model.getProviderType(), model.getProviderId())) {
+            requireViewForProviderType(null, null);
             throw new NotFoundException("Could not find component");
+        }
+        requireViewForProviderType(model.getProviderType(), model.getProviderId());
+        ComponentModel customModel = UiExtensionComponentStorage.getComponent(session, realm, model);
+        if (customModel != null) {
+            model = customModel;
         }
         ComponentRepresentation rep = ModelToRepresentation.toRepresentation(session, model, false);
         return rep;
@@ -177,16 +204,40 @@ public class ComponentResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
     @Operation()
     public Response updateComponent(@PathParam("id") String id, ComponentRepresentation rep) {
-        auth.realm().requireManageRealm();
         try {
-            ComponentModel model = realm.getComponent(id);
+            ComponentModel model = resolveComponentModel(id);
             if (model == null) {
+                requireManageForProviderType(null, null);
                 throw new NotFoundException("Could not find component");
             }
             rejectInternalComponent(model.getProviderType(), model.getProviderId());
+            requireManageForProviderType(model.getProviderType(), model.getProviderId());
+            ComponentModel oldModel = new ComponentModel(model);
+            String oldProviderType = model.getProviderType();
+            String oldProviderId = model.getProviderId();
+            String newProviderType = rep.getProviderType() != null ? rep.getProviderType() : oldProviderType;
+            String newProviderId = rep.getProviderId() != null ? rep.getProviderId() : oldProviderId;
+            if (!Objects.equals(oldProviderType, newProviderType)
+                    || !Objects.equals(oldProviderId, newProviderId)) {
+                boolean oldCustom = UiExtensionComponentStorage.usesCustomStorage(
+                        oldProviderType, oldProviderId, session);
+                boolean newCustom = UiExtensionComponentStorage.usesCustomStorage(
+                        newProviderType, newProviderId, session);
+                if (oldCustom || newCustom) {
+                    throw new BadRequestException(
+                            "Cannot change provider type or ID for components with custom storage");
+                }
+            }
             RepresentationToModel.updateComponent(session, rep, model, false);
+            rejectInternalComponent(model.getProviderType(), model.getProviderId());
+            requireManageForProviderType(model.getProviderType(), model.getProviderId());
+            ComponentModel customModel = UiExtensionComponentStorage.updateComponent(session, realm, oldModel, model);
+            if (customModel != null) {
+                model = customModel;
+            } else {
+                realm.updateComponent(model);
+            }
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
-            realm.updateComponent(model);
             return Response.noContent().build();
         } catch (ComponentValidationException e) {
             return localizedErrorResponse(e);
@@ -199,14 +250,19 @@ public class ComponentResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
     @Operation()
     public void removeComponent(@PathParam("id") String id) {
-        auth.realm().requireManageRealm();
-        ComponentModel model = realm.getComponent(id);
+        ComponentModel model = resolveComponentModel(id);
         if (model == null) {
+            requireManageForProviderType(null, null);
             throw new NotFoundException("Could not find component");
         }
         rejectInternalComponent(model.getProviderType(), model.getProviderId());
+        requireManageForProviderType(model.getProviderType(), model.getProviderId());
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
-        realm.removeComponent(model);
+        if (UiExtensionComponentStorage.usesCustomStorage(model.getProviderType(), model.getProviderId(), session)) {
+            UiExtensionComponentStorage.removeComponent(session, realm, model);
+        } else {
+            realm.removeComponent(model);
+        }
     }
 
     private Response localizedErrorResponse(ComponentValidationException cve) {
@@ -276,6 +332,46 @@ public class ComponentResource {
     private void rejectInternalComponent(String providerType, String providerId) {
         if (isInternalComponent(providerType, providerId)) {
             throw new ForbiddenException("Components managed through internal APIs cannot be managed through the component endpoint");
+        }
+    }
+
+    private ComponentModel resolveComponentModel(String id) {
+        ComponentModel model = realm.getComponent(id);
+        if (model != null) {
+            return model;
+        }
+        return UiExtensionComponentStorage.getComponentById(session, realm, id);
+    }
+
+    private void requireViewForProviderType(String providerType, String providerId) {
+        UiExtensionSupport extension = UiExtensionComponentStorage.getExtensionFactory(session, providerType, providerId);
+        if (extension != null) {
+            UiExtensionPermissions.requireView(auth, extension);
+            return;
+        }
+        auth.realm().requireViewRealm();
+    }
+
+    private void requireManageForProviderType(String providerType, String providerId) {
+        UiExtensionSupport extension = UiExtensionComponentStorage.getExtensionFactory(session, providerType, providerId);
+        if (extension != null) {
+            UiExtensionPermissions.requireManage(auth, extension);
+            return;
+        }
+        auth.realm().requireManageRealm();
+    }
+
+    private boolean canViewComponent(ComponentModel component) {
+        UiExtensionSupport extension = UiExtensionComponentStorage.getExtensionFactory(
+                session, component.getProviderType(), component.getProviderId());
+        if (extension == null) {
+            return true;
+        }
+        try {
+            UiExtensionPermissions.requireView(auth, extension);
+            return true;
+        } catch (ForbiddenException e) {
+            return false;
         }
     }
 
