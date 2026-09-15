@@ -8,7 +8,16 @@ It lives in the `tests/base` module and uses the Keycloak Test Framework.
 Validate that your machine has a working Docker installation that is accessible to the JVM running the test.
 The exact setup depends on the operating system.
 
-By default, the test runs against the embedded Undertow-based Keycloak server, so no distribution build is required beforehand.
+By default, the test framework runs in `distribution` mode and expects a built Keycloak distribution ZIP.
+Build it once from the repository root:
+
+    ./mvnw -pl quarkus/deployment,quarkus/dist -am -DskipTests clean install
+
+To run without building a distribution, use embedded mode instead:
+
+    KC_TEST_SERVER=embedded
+
+See [Running tests](../../test-framework/docs/RUNNING_TESTS.md#server-type) for details on server modes.
 
 ## General guidelines
 
@@ -44,10 +53,12 @@ You may also need to add an iptables rule to allow container to host traffic:
 
 Then, run the test passing `-Ddocker.io-prefix-explicit=true`:
 
-    mvn -f tests/base/pom.xml \
+    ./mvnw -f tests/base/pom.xml \
         clean test \
         -Dtest=DockerClientTest \
         -Ddocker.io-prefix-explicit=true
+
+To skip the distribution build, add `KC_TEST_SERVER=embedded` to the command.
 
 ## macOS
 
@@ -60,18 +71,8 @@ Be especially careful to restart Docker after every sleep / suspend to ensure th
 
 Then, run the test:
 
-    mvn -f tests/base/pom.xml \
+    ./mvnw -f tests/base/pom.xml \
         clean test \
         -Dtest=DockerClientTest
 
-## Running against Keycloak Server distribution
-
-Build the distribution first:
-
-    mvn clean install -f distribution
-
-Then run the test:
-
-    mvn -f tests/base/pom.xml \
-        clean test \
-        -Dtest=DockerClientTest
+To skip the distribution build, add `KC_TEST_SERVER=embedded` to the command.
