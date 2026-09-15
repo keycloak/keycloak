@@ -26,5 +26,10 @@ export default interface IdentityProviderRepresentation {
   storeToken?: boolean;
   trustEmail?: boolean;
   organizationId?: string;
+  organizationLinks?: {
+    organizationId: string;
+    autoMembership?: boolean;
+    membershipType?: string;
+  }[];
   types?: string[];
 }

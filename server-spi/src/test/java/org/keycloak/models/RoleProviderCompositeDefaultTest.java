@@ -61,16 +61,38 @@ public class RoleProviderCompositeDefaultTest {
 
         // --- unused RoleProvider / RoleLookupProvider surface --------------------------------
 
+
+        @Override
+        public RoleModel addRole(RoleContainerModel container, String id, String name) {
+            throw new UnsupportedOperationException();
+        }
         @Override public RoleModel addRealmRole(RealmModel realm, String id, String name) { throw new UnsupportedOperationException(); }
+        @Override
+        public Stream<RoleModel> getRolesStream(RoleContainerModel container, Integer first, Integer max) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public long getRolesCount(RoleContainerModel container, String search) {
+            throw new UnsupportedOperationException();
+        }
         @Override public Stream<RoleModel> getRealmRolesStream(RealmModel realm, Integer first, Integer max) { throw new UnsupportedOperationException(); }
         @Override public Stream<RoleModel> getRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) { throw new UnsupportedOperationException(); }
         @Override public boolean removeRole(RoleModel role) { throw new UnsupportedOperationException(); }
         @Override public void removeRoles(RealmModel realm) { throw new UnsupportedOperationException(); }
+        @Override
+        public void removeRoles(RoleContainerModel container) {
+            throw new UnsupportedOperationException();
+        }
         @Override public RoleModel addClientRole(ClientModel client, String id, String name) { throw new UnsupportedOperationException(); }
         @Override public Stream<RoleModel> getClientRolesStream(ClientModel client, Integer first, Integer max) { throw new UnsupportedOperationException(); }
         @Override public void removeRoles(ClientModel client) { throw new UnsupportedOperationException(); }
         @Override public RoleModel getRealmRole(RealmModel realm, String name) { throw new UnsupportedOperationException(); }
+        @Override
+        public RoleModel getRole(RoleContainerModel container, String name) {
+            throw new UnsupportedOperationException();
+        }
         @Override public Stream<RoleModel> searchForRolesStream(RealmModel realm, String search, Integer first, Integer max) { throw new UnsupportedOperationException(); }
+        @Override public Stream<RoleModel> searchForRolesStream(RoleContainerModel container, String search, Integer first, Integer max) { throw new UnsupportedOperationException(); }
         @Override public RoleModel getClientRole(ClientModel client, String name) { throw new UnsupportedOperationException(); }
         @Override public Stream<RoleModel> searchForClientRolesStream(ClientModel client, String search, Integer first, Integer max) { throw new UnsupportedOperationException(); }
         @Override public Stream<RoleModel> searchForClientRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) { throw new UnsupportedOperationException(); }
@@ -105,7 +127,6 @@ public class RoleProviderCompositeDefaultTest {
         @Override public void addCompositeRole(RoleModel role) { throw new UnsupportedOperationException(); }
         @Override public void removeCompositeRole(RoleModel role) { throw new UnsupportedOperationException(); }
         @Override public Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max) { throw new UnsupportedOperationException(); }
-        @Override public boolean isClientRole() { throw new UnsupportedOperationException(); }
         @Override public String getContainerId() { throw new UnsupportedOperationException(); }
         @Override public RoleContainerModel getContainer() { throw new UnsupportedOperationException(); }
         @Override public boolean hasRole(RoleModel role) { throw new UnsupportedOperationException(); }

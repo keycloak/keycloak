@@ -418,7 +418,7 @@ public class UserAdapter implements CachedUserModel {
         if (updated != null) return updated.hasRole(role);
         return cached.getRoleMappings(keycloakSession, modelSupplier).contains(role.getId()) ||
                 getRoleMappingsStream().anyMatch(r -> r.hasRole(role)) ||
-                RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
+                RoleUtils.hasRoleFromGroup(getRoleMappingsGroupsStream(), role, true);
     }
 
     @Override
@@ -458,10 +458,17 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public Stream<GroupModel> getGroupsStream() {
+        return getRoleMappingsGroupsStream()
+                .filter(g -> Type.REALM.equals(g.getType()))
+                .sorted(Comparator.comparing(GroupModel::getName));
+    }
+
+    @Override
+    public Stream<GroupModel> getRoleMappingsGroupsStream() {
         Stream<GroupModel> result = Stream.empty();
 
         if (updated != null) {
-            result = updated.getGroupsStream();
+            result = updated.getRoleMappingsGroupsStream();
         } else {
             Set<GroupModel> groups = null;
             for (String id : cached.getGroups(keycloakSession, modelSupplier)) {
@@ -469,7 +476,7 @@ public class UserAdapter implements CachedUserModel {
                 if (groupModel == null) {
                     // chance that role was removed, so just delegate to persistence and get user invalidated
                     getDelegateForUpdate();
-                    result = updated.getGroupsStream();
+                    result = updated.getRoleMappingsGroupsStream();
                     break;
                 } else {
                     if (groups == null) {
@@ -484,7 +491,7 @@ public class UserAdapter implements CachedUserModel {
             }
         }
 
-        return result.filter(g -> Type.REALM.equals(g.getType())).sorted(Comparator.comparing(GroupModel::getName));
+        return result.sorted(Comparator.comparing(GroupModel::getName));
     }
 
     @Override
@@ -517,7 +524,7 @@ public class UserAdapter implements CachedUserModel {
     @Override
     public boolean isMemberOf(GroupModel group) {
         if (updated != null) return updated.isMemberOf(group);
-        return cached.getGroups(keycloakSession, modelSupplier).contains(group.getId()) || RoleUtils.isMember(getGroupsStream(), group);
+        return cached.getGroups(keycloakSession, modelSupplier).contains(group.getId()) || RoleUtils.isMember(getRoleMappingsGroupsStream(), group);
     }
 
     @Override

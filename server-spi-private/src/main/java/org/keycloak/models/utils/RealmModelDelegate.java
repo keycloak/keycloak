@@ -60,6 +60,11 @@ public class RealmModelDelegate implements RealmModel {
         return delegate.getId();
     }
 
+    @Override
+    public RealmModel getRealm() {
+        return delegate.getRealm();
+    }
+
     public String getName() {
         return delegate.getName();
     }

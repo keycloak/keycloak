@@ -712,19 +712,31 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
         @Override
         public boolean hasRole(RoleModel role) {
-            return super.hasRole(role) || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
+            return super.hasRole(role) || RoleUtils.hasRoleFromGroup(getRoleMappingsGroupsStream(), role, true);
         }
 
         @Override
         public Stream<GroupModel> getGroupsStream() {
-            Stream<GroupModel> ldapGroupMappings = getLDAPGroupMappingsConverted();
             if (config.isTopLevelGroupsPath() && config.getMode() == LDAPGroupMapperMode.LDAP_ONLY) {
-                // Use just group mappings from LDAP
-                return ldapGroupMappings;
-            } else {
-                // Merge mappings from both DB and LDAP (including groups assigned from other group mappers)
-                return Stream.concat(ldapGroupMappings, super.getGroupsStream());
+                // Preserve the LDAP-only public view while allowing internal role resolution to include local groups.
+                return getLDAPGroupMappingsConverted()
+                        .filter(group -> GroupModel.Type.REALM.equals(group.getType()));
             }
+            return getRoleMappingsGroupsStream()
+                    .filter(group -> GroupModel.Type.REALM.equals(group.getType()));
+        }
+
+        @Override
+        public Stream<GroupModel> getRoleMappingsGroupsStream() {
+            Stream<GroupModel> ldapGroupMappings = getLDAPGroupMappingsConverted();
+            Stream<GroupModel> localGroupMappings = super.getRoleMappingsGroupsStream();
+            if (config.isTopLevelGroupsPath() && config.getMode() == LDAPGroupMapperMode.LDAP_ONLY) {
+                // Keep LDAP_ONLY semantics for realm groups while retaining internal organization role mappings.
+                localGroupMappings = localGroupMappings
+                        .filter(group -> GroupModel.Type.ORGANIZATION.equals(group.getType()));
+            }
+            // Merge mappings from both DB and LDAP (including internal groups assigned outside this mapper).
+            return Stream.concat(ldapGroupMappings, localGroupMappings).distinct();
         }
 
         @Override
@@ -780,7 +792,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
                 // this mapper doesn't manage the group - delegate to the next mapper or the JPA store.
                 return super.isMemberOf(group);
             }
-            return RoleUtils.isDirectMember(getGroupsStream(),group);
+            return RoleUtils.isDirectMember(getRoleMappingsGroupsStream(),group);
         }
 
         protected Stream<GroupModel> getLDAPGroupMappingsConverted() {

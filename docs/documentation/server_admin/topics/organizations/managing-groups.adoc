@@ -297,7 +297,9 @@ Group attributes are stored separately from user attributes. To include group at
 
 == Assigning roles to groups
 
-Organization groups support realm and client role mappings, just like realm groups. This lets you define role-based access that applies to all members of a group.
+Organization groups support realm, client, and organization role mappings. This lets you define access that applies to all members of a group. Organization role mappings are limited to regular roles from the same organization. Every member inherits the default organization role through the hidden internal root group, so the default role cannot be assigned to a visible group.
+
+=== Assigning realm and client roles
 
 .Procedure
 
@@ -311,7 +313,19 @@ Roles assigned to organization groups are automatically included in `realm_acces
 
 To also include these roles within the `organization` claim (organized per organization), enable the *Add group role mappings* option on the *Organization Group Membership* mapper. See <<oidc-token-with-roles,Token structure with roles>> and <<saml-assertion-with-roles,SAML assertion structure with roles>> for details.
 
-NOTE: Assigning roles to organization groups requires the `manage-organizations` realm admin role (or equivalent Fine-Grained Admin Permission on the organization) and the `map-role` permission on the specific role being assigned.
+=== Assigning organization roles
+
+.Procedure
+
+. Select an organization group.
+. Click the *Role mapping* tab.
+. Click *Assign role* and select *Organization roles*.
+. Select one or more roles from the organization.
+. Click *Assign*.
+
+Members inherit these roles from the selected group and its parent groups. The roles appear in the `organization` claim when the *Organization Role Membership* mapper is enabled. The role picker only lists regular roles from the current organization that the administrator is allowed to map; it does not list the default role.
+
+NOTE: Assigning organization roles to an organization group requires permission to manage the organization and to map each selected role.
 
 == Important distinctions
 
@@ -329,7 +343,7 @@ NOTE: Assigning roles to organization groups requires the `manage-organizations`
 |Fully isolated—same paths can exist across organizations
 
 |Role assignment
-|Supported—realm and client roles can be assigned to organization groups via the Admin API and Admin Console
+|Supported—realm, client, and regular roles from the same organization can be assigned via the Admin API and Admin Console
 
 |Authorization policies
 |Cannot be used in authorization policies—use realm groups instead

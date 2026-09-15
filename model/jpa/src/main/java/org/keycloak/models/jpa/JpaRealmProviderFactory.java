@@ -24,6 +24,7 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RealmProviderFactory;
@@ -83,6 +84,8 @@ public class JpaRealmProviderFactory implements RealmProviderFactory, ProviderEv
                 realm = (RealmModel) container;
             } else if (container instanceof ClientModel) {
                 realm = ((ClientModel) container).getRealm();
+            } else if (container instanceof OrganizationModel) {
+                realm = ((OrganizationModel) container).getRealm();
             } else {
                 return;
             }

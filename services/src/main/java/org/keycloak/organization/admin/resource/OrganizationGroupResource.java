@@ -18,7 +18,9 @@
 package org.keycloak.organization.admin.resource;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -50,6 +52,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -105,12 +108,17 @@ public class OrganizationGroupResource {
     @Operation(summary = "Get organization group representation")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public GroupRepresentation getGroup(@Parameter(description = "Whether to return the count of subgroups (default: false)") @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount) {
-        GroupRepresentation rep = ModelToRepresentation.toRepresentation(group, true);
-        if (subGroupsCount) rep.setSubGroupCount(group.getSubGroupsCount());
-        return rep;
+        try {
+            GroupRepresentation rep = toAdminRepresentation(group, false);
+            if (subGroupsCount) rep.setSubGroupCount(group.getSubGroupsCount());
+            return rep;
+        } catch (ModelException me) {
+            throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+        }
     }
 
     @Path("role-mappings")
@@ -216,7 +224,7 @@ public class OrganizationGroupResource {
             @Parameter(description = "Whether to return the count of subgroups (default: false)") @QueryParam("subGroupsCount") boolean subGroupsCount) {
         return group.getSubGroupsStream(search, exact, first, max)
                 .map(group -> {
-                    GroupRepresentation rep = ModelToRepresentation.groupToBriefRepresentation(group);
+                    GroupRepresentation rep = toAdminRepresentation(group, true);
                     if (subGroupsCount) {
                         rep.setSubGroupCount(group.getSubGroupsCount());
                     }
@@ -260,6 +268,7 @@ public class OrganizationGroupResource {
                 if (child == null) {
                     throw new NotFoundException("Could not find child by id");
                 }
+                rejectInternalGroup(child);
 
                 // Validate it's an organization group
                 if (!GroupModel.Type.ORGANIZATION.equals(child.getType())) {
@@ -271,6 +280,7 @@ public class OrganizationGroupResource {
                         !child.getOrganization().getId().equals(organization.getId())) {
                     throw ErrorResponse.error("Group does not belong to this organization", Response.Status.BAD_REQUEST);
                 }
+                requireVisibleGroup(child);
 
                 // Move the group if it's not already a child of this group
                 if (!Objects.equals(child.getParentId(), group.getId())) {
@@ -289,7 +299,7 @@ public class OrganizationGroupResource {
             }
 
             adminEvent.resourcePath(session.getContext().getUri()).representation(rep).success();
-            GroupRepresentation childRep = ModelToRepresentation.toGroupHierarchy(child, true);
+            GroupRepresentation childRep = decorateHierarchy(ModelToRepresentation.toGroupHierarchy(child, true));
             return builder.type(MediaType.APPLICATION_JSON_TYPE).entity(childRep).build();
 
         } catch (ModelDuplicateException e) {
@@ -428,5 +438,62 @@ public class OrganizationGroupResource {
         } else {
             throw ErrorResponse.error("User not a member", Status.BAD_REQUEST);
         }
+    }
+
+    private GroupRepresentation decorateHierarchy(GroupRepresentation representation) {
+        GroupModel model = session.groups().getGroupById(session.getContext().getRealm(), representation.getId());
+        if (model == null) throw new NotFoundException("Group does not exist");
+        applyAccessAndVisibleOrganizationRoles(representation, model);
+        representation.getSubGroups().forEach(this::decorateHierarchy);
+        return representation;
+    }
+
+    private GroupRepresentation toAdminRepresentation(GroupModel model, boolean briefRepresentation) {
+        GroupRepresentation representation = briefRepresentation
+                ? ModelToRepresentation.groupToBriefRepresentation(model)
+                : ModelToRepresentation.toRepresentation(model, true);
+        applyAccessAndVisibleOrganizationRoles(representation, model);
+        return representation;
+    }
+
+    private void applyAccessAndVisibleOrganizationRoles(GroupRepresentation representation, GroupModel model) {
+        representation.setAccess(auth.orgs().getAccess(organization));
+        if (representation.getOrganizationRoles() == null) {
+            return;
+        }
+        Map<String, List<String>> visible = new LinkedHashMap<>();
+        model.getRoleMappingsStream()
+                .filter(role -> role.isType(RoleModel.Type.ORGANIZATION))
+                .filter(role -> Objects.equals(organization.getId(), role.getContainerId()))
+                .filter(auth.roles()::canView)
+                .forEach(role -> visible.computeIfAbsent(organization.getAlias(), ignored -> new ArrayList<>())
+                        .add(role.getName()));
+        representation.setOrganizationRoles(visible.isEmpty() ? null : visible);
+    }
+
+    private void rejectInternalGroup(GroupModel candidate) {
+        GroupModel internalGroup = organizationProvider.getOrganizationGroup(organization);
+        if (internalGroup != null && Objects.equals(internalGroup.getId(), candidate.getId())) {
+            throw new NotFoundException("Group does not exist");
+        }
+    }
+
+    private void requireVisibleGroup(GroupModel candidate) {
+        GroupModel root = organizationProvider.getOrganizationGroup(organization);
+        Set<String> visited = new HashSet<>();
+        GroupModel current = candidate;
+        boolean visible = false;
+        while (current != null && visited.add(current.getId())) {
+            OrganizationModel owner = current.getOrganization();
+            if (!GroupModel.Type.ORGANIZATION.equals(current.getType()) || owner == null || owner.getRealm() == null
+                    || !Objects.equals(organization.getId(), owner.getId())
+                    || !Objects.equals(session.getContext().getRealm().getId(), owner.getRealm().getId())) break;
+            if (root != null && Objects.equals(root.getId(), current.getId()) && current.getParent() == null) {
+                visible = true;
+                break;
+            }
+            current = current.getParent();
+        }
+        if (!visible) throw new NotFoundException("Group does not exist");
     }
 }

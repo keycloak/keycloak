@@ -1,4 +1,5 @@
 import RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import type { Groups } from "@keycloak/keycloak-admin-client/lib/resources/groups";
 import {
   KeycloakDataTable,
   ListEmptyState,
@@ -35,10 +36,11 @@ type AddRoleMappingModalProps = {
   onClose: () => void;
   title?: string;
   actionLabel?: string;
-  groupsResource?: any;
+  groupsResource?: Groups;
+  canMapOrganizationRoles?: boolean;
 };
 
-export type FilterType = "roles" | "clients";
+export type FilterType = "roles" | "clients" | "orgRoles";
 
 const RoleDescription = ({ role }: { role: RoleRepresentation }) => {
   const { t } = useTranslation();
@@ -56,6 +58,7 @@ type AddRoleButtonProps = Omit<
   label?: string;
   variant?: "default" | "plain" | "primary" | "plainText" | "secondary";
   isDisabled?: boolean;
+  canMapOrganizationRoles?: boolean;
   onFilerTypeChange: (type: FilterType) => void;
 };
 
@@ -63,6 +66,7 @@ export const AddRoleButton = ({
   label,
   variant,
   isDisabled,
+  canMapOrganizationRoles = false,
   onFilerTypeChange,
   ...rest
 }: AddRoleButtonProps) => {
@@ -110,6 +114,17 @@ export const AddRoleButton = ({
             {t("realmRoles")}
           </DropdownItem>
         )}
+        {canMapOrganizationRoles && (
+          <DropdownItem
+            data-testid="org-roles"
+            component="button"
+            onClick={() => {
+              onFilerTypeChange("orgRoles");
+            }}
+          >
+            {t("organizationRoles")}
+          </DropdownItem>
+        )}
       </DropdownList>
     </Dropdown>
   );
@@ -126,6 +141,7 @@ export const AddRoleMappingModal = ({
   title,
   actionLabel,
   groupsResource,
+  canMapOrganizationRoles = false,
 }: AddRoleMappingModalProps) => {
   const { adminClient } = useAdminClient();
 
@@ -187,6 +203,40 @@ export const AddRoleMappingModal = ({
     );
   };
 
+  const orgRolesLoader = async (
+    _first?: number,
+    _max?: number,
+    search?: string,
+  ): Promise<Row[]> => {
+    if (
+      type !== "groups" ||
+      !groupsResource?.isOrgGroups() ||
+      !groupsResource.getOrgId() ||
+      !canMapOrganizationRoles
+    ) {
+      return [];
+    }
+    const roles = await groupsResource.listAvailableOrganizationRoleMappings({
+      id,
+    });
+    const filtered = search
+      ? roles.filter(
+          (role) =>
+            role.name?.toLowerCase().includes(search.toLowerCase()) ||
+            role.description?.toLowerCase().includes(search.toLowerCase()),
+        )
+      : roles;
+
+    return localeSort(
+      filtered.map((role) => ({
+        org: { id: groupsResource.getOrgId() },
+        role,
+        id: role.id,
+      })),
+      compareRow,
+    );
+  };
+
   const columns = [
     {
       name: "role.name",
@@ -204,7 +254,7 @@ export const AddRoleMappingModal = ({
     },
   ];
 
-  if (filterType === "roles") {
+  if (filterType === "roles" || filterType === "orgRoles") {
     columns.splice(1, 1);
   }
 
@@ -214,7 +264,12 @@ export const AddRoleMappingModal = ({
       title={
         title ||
         t("assignRolesTo", {
-          type: filterType === "roles" ? t("realm") : t("client"),
+          type:
+            filterType === "roles"
+              ? t("realm")
+              : filterType === "orgRoles"
+                ? t("organization")
+                : t("client"),
           client: name,
         })
       }
@@ -246,12 +301,23 @@ export const AddRoleMappingModal = ({
       <KeycloakDataTable
         onSelect={(rows) => setSelectedRows([...rows])}
         searchPlaceholderKey={
-          filterType === "roles" ? "searchByRoleName" : "search"
+          filterType === "roles" || filterType === "orgRoles"
+            ? "searchByRoleName"
+            : "search"
         }
-        isPaginated={!(filterType === "roles" && type !== "roles")}
+        isPaginated={
+          !(filterType === "roles" && type !== "roles") &&
+          filterType !== "orgRoles"
+        }
         canSelectAll
         isRadio={isRadio}
-        loader={filterType === "roles" ? loader : clientRolesLoader}
+        loader={
+          filterType === "roles"
+            ? loader
+            : filterType === "orgRoles"
+              ? orgRolesLoader
+              : clientRolesLoader
+        }
         ariaLabelKey="associatedRolesText"
         columns={columns}
         emptyState={

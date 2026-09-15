@@ -37,21 +37,29 @@ import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.HardcodedOrganizationRoleMapper;
+import org.keycloak.broker.provider.OrganizationRoleMapperHelper;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.AbstractUserRepresentation;
 import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
@@ -90,6 +98,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -99,6 +108,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -134,6 +144,122 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @InjectAdminEvents
     AdminEvents adminEvents;
+
+    @Test
+    public void testBrokerMapperGrantsOrganizationRoleAndValidatesConfiguration() {
+        String providerAlias = organizationName + "-identity-provider";
+        OrganizationRepresentation orgRep = createOrganization(realm, organizationName,
+                createRealOrgBroker(providerAlias, providerRealm), organizationName + ".org");
+        OrganizationResource organization = realm.admin().organizations().get(orgRep.getId());
+        RoleRepresentation role = new RoleRepresentation("broker-member", "", false);
+        try (Response response = organization.roles().create(role)) {
+            role = organization.roles().get(ApiUtil.getCreatedId(response)).toRepresentation();
+        }
+        RoleRepresentation defaultRole = organization.roles().getDefault().toRepresentation();
+        String defaultRoleId = defaultRole.getId();
+        String organizationId = orgRep.getId();
+        String roleId = role.getId();
+
+        IdentityProviderMapperRepresentation mapper = organizationRoleMapper(providerAlias, role.getId());
+        try (Response response = realm.admin().identityProviders().get(providerAlias).addMapper(mapper)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            mapper.setId(ApiUtil.getCreatedId(response));
+        }
+        mapper.getConfig().put(OrganizationRoleMapperHelper.ORGANIZATION, orgRep.getAlias());
+        realm.admin().identityProviders().get(providerAlias).update(mapper.getId(), mapper);
+        mapper.getConfig().put(OrganizationRoleMapperHelper.ORGANIZATION, orgRep.getId());
+        realm.admin().identityProviders().get(providerAlias).update(mapper.getId(), mapper);
+        mapper.getConfig().remove(OrganizationRoleMapperHelper.ORGANIZATION);
+        realm.admin().identityProviders().get(providerAlias).update(mapper.getId(), mapper);
+
+        IdentityProviderMapperRepresentation missingRole = organizationRoleMapper(providerAlias, "missing-role");
+        try (Response response = realm.admin().identityProviders().get(providerAlias).addMapper(missingRole)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        IdentityProviderMapperRepresentation defaultRoleMapper = organizationRoleMapper(providerAlias, defaultRole.getId());
+        try (Response response = realm.admin().identityProviders().get(providerAlias).addMapper(defaultRoleMapper)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        mapper.getConfig().put(OrganizationRoleMapperHelper.ORGANIZATION_ROLE, defaultRole.getId());
+        var identityProvider = realm.admin().identityProviders().get(providerAlias);
+        assertThrows(BadRequestException.class, () -> identityProvider.update(mapper.getId(), mapper));
+        mapper.getConfig().put(OrganizationRoleMapperHelper.ORGANIZATION_ROLE, roleId);
+
+        OrganizationRepresentation otherRep = createOrganization("other");
+        OrganizationResource other = realm.admin().organizations().get(otherRep.getId());
+        RoleRepresentation otherRole = new RoleRepresentation("other-broker-member", "", false);
+        try (Response response = other.roles().create(otherRole)) {
+            otherRole = other.roles().get(ApiUtil.getCreatedId(response)).toRepresentation();
+        }
+        IdentityProviderMapperRepresentation foreignRole = organizationRoleMapper(providerAlias, otherRole.getId());
+        try (Response response = realm.admin().identityProviders().get(providerAlias).addMapper(foreignRole)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        IdentityProviderMapperRepresentation wrongOrganization = organizationRoleMapper(providerAlias, role.getId());
+        wrongOrganization.getConfig().put(OrganizationRoleMapperHelper.ORGANIZATION, otherRep.getAlias());
+        try (Response response = realm.admin().identityProviders().get(providerAlias).addMapper(wrongOrganization)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        loginViaBroker(aliceFromProviderRealm.getEmail(), aliceFromProviderRealm.getUsername(),
+                aliceFromProviderRealm.getPassword(), oauth, loginUsernamePage, loginPage, providerRealm);
+
+        UserRepresentation brokeredUser = getUserRepresentation(aliceFromProviderRealm.getEmail());
+        assertIsMember(aliceFromProviderRealm.getEmail(), organization);
+        assertThat(organization.roles().get(role.getId()).getUserMembers().stream().map(UserRepresentation::getId).toList(),
+                hasItem(brokeredUser.getId()));
+
+        role.setName("renamed-broker-member");
+        organization.roles().get(role.getId()).update(role).close();
+        IdentityProviderMapperRepresentation persistedMapper = realm.admin().identityProviders().get(providerAlias).getMapperById(mapper.getId());
+        assertEquals(role.getId(), persistedMapper.getConfig().get(OrganizationRoleMapperHelper.ORGANIZATION_ROLE));
+
+        String mapperId = mapper.getId();
+        String brokeredUserId = brokeredUser.getId();
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            IdentityProviderMapperModel staleMapper = session.identityProviders().getMapperById(mapperId);
+            staleMapper.getConfig().put(OrganizationRoleMapperHelper.ORGANIZATION_ROLE, defaultRoleId);
+            session.identityProviders().updateMapper(staleMapper);
+
+            UserModel user = session.users().getUserById(realm, brokeredUserId);
+            RoleModel regularRole = realm.getRoleById(roleId);
+            user.deleteRoleMapping(regularRole);
+            IdentityProviderModel identityProviderModel = session.identityProviders().getByAlias(providerAlias);
+            OrganizationRoleMapperHelper.grantUserRole(session, realm, user, staleMapper,
+                    new BrokeredIdentityContext(identityProviderModel));
+        });
+
+        realm.admin().users().get(brokeredUserId).logout();
+        providerRealm.admin().logoutAll();
+        loginViaBroker(aliceFromProviderRealm.getEmail(), aliceFromProviderRealm.getUsername(),
+                aliceFromProviderRealm.getPassword(), oauth, loginUsernamePage, loginPage, providerRealm);
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            OrganizationModel currentOrganization = session.getProvider(OrganizationProvider.class).getById(organizationId);
+            UserModel user = session.users().getUserById(realm, brokeredUserId);
+            RoleModel currentDefault = currentOrganization.getDefaultRole();
+
+            assertTrue(user.hasRole(currentDefault));
+            assertFalse(user.hasDirectRole(currentDefault));
+            assertFalse(user.hasDirectRole(realm.getRoleById(roleId)));
+        });
+    }
+
+    private static IdentityProviderMapperRepresentation organizationRoleMapper(String providerAlias, String roleId) {
+        IdentityProviderMapperRepresentation mapper = new IdentityProviderMapperRepresentation();
+        mapper.setIdentityProviderAlias(providerAlias);
+        mapper.setName("organization-role-" + roleId);
+        mapper.setIdentityProviderMapper(HardcodedOrganizationRoleMapper.PROVIDER_ID);
+        mapper.setConfig(new HashMap<>(Map.of(
+                OrganizationRoleMapperHelper.ORGANIZATION_ROLE, roleId,
+                IdentityProviderMapperModel.SYNC_MODE, "INHERIT")));
+        return mapper;
+    }
 
     @Test
     public void testUserProfileAttributePermissions() {

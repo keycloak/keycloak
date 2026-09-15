@@ -23,6 +23,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -81,6 +82,51 @@ public class OrganizationGroupUserQueryTest extends AbstractOrganizationTest {
         // Should only contain realm group, not org group
         assertThat(userGroups, hasItem("RealmGroup"));
         assertThat(userGroups, not(hasItem("Engineering")));
+    }
+
+    @Test
+    public void testAdminUserGroupsFilterInternalGroupsBeforePagination() {
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization("pagination-org").getId());
+        MemberRepresentation member = addMember(organization, "pagination-member@example.com");
+        UserResource user = realm.admin().users().get(member.getId());
+
+        for (String name : List.of("10-match-one", "20-match-two", "30-other")) {
+            GroupRepresentation group = new GroupRepresentation();
+            group.setName(name);
+            try (Response response = realm.admin().groups().add(group)) {
+                String groupId = ApiUtil.getCreatedId(response);
+                realm.cleanup().add(r -> r.groups().group(groupId).remove());
+                user.joinGroup(groupId);
+            }
+        }
+
+        List<GroupRepresentation> hiddenGroups = List.of("00-match-hidden", "05-other-hidden").stream().map(name -> {
+            GroupRepresentation group = new GroupRepresentation();
+            group.setName(name);
+            try (Response response = organization.groups().addTopLevelGroup(group)) {
+                String groupId = ApiUtil.getCreatedId(response);
+                organization.groups().group(groupId).addMember(member.getId());
+                return organization.groups().group(groupId).toRepresentation(false);
+            }
+        }).toList();
+
+        assertThat(groupNames(user.groups()), is(List.of("10-match-one", "20-match-two", "30-other")));
+        assertThat(groupNames(user.groups(null, 0, 1)), is(List.of("10-match-one")));
+        assertThat(groupNames(user.groups(null, 1, 1)), is(List.of("20-match-two")));
+        assertThat(groupNames(user.groups("MATCH", 0, 1)), is(List.of("10-match-one")));
+        assertThat(groupNames(user.groups("match", 1, 1)), is(List.of("20-match-two")));
+        assertThat(user.groups("missing", 0, 1), hasSize(0));
+        assertThat(user.groups(null, 3, 1), hasSize(0));
+        assertThat(user.groups(null, 0, 0), hasSize(0));
+        assertThat(user.groupsCount(null).get("count"), is(3L));
+        assertThat(user.groupsCount("MATCH").get("count"), is(2L));
+        assertThat(user.groupsCount("missing").get("count"), is(0L));
+
+        List<GroupRepresentation> publicGroups = user.groups();
+        assertThat(publicGroups.stream().noneMatch(group -> hiddenGroups.stream()
+                .anyMatch(hidden -> hidden.getId().equals(group.getId()) || hidden.getPath().equals(group.getPath()))), is(true));
+        assertThat(hiddenGroups.stream().map(GroupRepresentation::getName).toList(),
+                is(List.of("00-match-hidden", "05-other-hidden")));
     }
 
     @Test
@@ -227,5 +273,9 @@ public class OrganizationGroupUserQueryTest extends AbstractOrganizationTest {
         } catch (Exception e) {
             assertThat(e.getMessage(), containsString(Response.Status.NOT_FOUND.toString()));
         }
+    }
+
+    private static List<String> groupNames(List<GroupRepresentation> groups) {
+        return groups.stream().map(GroupRepresentation::getName).toList();
     }
 }

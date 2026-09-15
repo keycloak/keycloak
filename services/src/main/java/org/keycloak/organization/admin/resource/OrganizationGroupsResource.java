@@ -18,8 +18,13 @@
 package org.keycloak.organization.admin.resource;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -44,6 +49,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
@@ -118,6 +124,7 @@ public class OrganizationGroupsResource {
                 if (group == null) {
                     throw new NotFoundException("Could not find group by id");
                 }
+                rejectInternalGroup(group);
 
                 // Validate it's an organization group
                 if (!GroupModel.Type.ORGANIZATION.equals(group.getType())) {
@@ -129,6 +136,7 @@ public class OrganizationGroupsResource {
                         !group.getOrganization().getId().equals(organization.getId())) {
                     throw ErrorResponse.error("Group does not belong to this organization", Response.Status.BAD_REQUEST);
                 }
+                requireVisibleGroup(group);
 
                 // Get internal org group (the real top-level parent for org groups)
                 GroupModel internalGroup = organizationProvider.getOrganizationGroup(organization);
@@ -210,13 +218,12 @@ public class OrganizationGroupsResource {
         // builds hierarchy mainly for admin UI
         if (populateHierarchy) {
             String internalGroupId = organizationProvider.getOrganizationGroup(organization).getId();
-            return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, groups, !briefRepresentation, subGroupsCount, internalGroupId);
+            return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, groups, !briefRepresentation, subGroupsCount, internalGroupId)
+                    .map(this::decorateHierarchy);
         }
 
         return groups.map(group -> {
-            GroupRepresentation rep = briefRepresentation ?
-                    ModelToRepresentation.groupToBriefRepresentation(group) :
-                    ModelToRepresentation.toRepresentation(group, true);
+            GroupRepresentation rep = toAdminRepresentation(group, briefRepresentation);
             if (subGroupsCount) {
                 rep.setSubGroupCount(group.getSubGroupsCount());
             }
@@ -245,9 +252,9 @@ public class OrganizationGroupsResource {
         if (found == null) {
             throw new NotFoundException("Group path does not exist");
         }
-        GroupRepresentation rep = briefRepresentation ?
-                ModelToRepresentation.groupToBriefRepresentation(found) :
-                ModelToRepresentation.toRepresentation(found, true);
+        rejectInternalGroup(found);
+        requireVisibleGroup(found);
+        GroupRepresentation rep = toAdminRepresentation(found, briefRepresentation);
         if (subGroupsCount) {
             rep.setSubGroupCount(found.getSubGroupsCount());
         }
@@ -263,12 +270,71 @@ public class OrganizationGroupsResource {
         if (group == null) {
             throw ErrorResponse.error("Group does not exist", Response.Status.NOT_FOUND);
         }
+        rejectInternalGroup(group);
 
         if (!Organizations.isOrganizationGroup(group) ||
                 !Objects.equals(group.getOrganization().getId(), organization.getId())) {
             throw ErrorResponse.error("Group does not belong to the organization", Status.BAD_REQUEST);
         }
+        requireVisibleGroup(group);
 
         return new OrganizationGroupResource(session, organizationProvider, organization, group, adminEvent, auth);
+    }
+
+    private GroupRepresentation decorateHierarchy(GroupRepresentation representation) {
+        GroupModel model = realm.getGroupById(representation.getId());
+        if (model == null) throw new NotFoundException("Group does not exist");
+        applyAccessAndVisibleOrganizationRoles(representation, model);
+        representation.getSubGroups().forEach(this::decorateHierarchy);
+        return representation;
+    }
+
+    private GroupRepresentation toAdminRepresentation(GroupModel group, boolean briefRepresentation) {
+        GroupRepresentation representation = briefRepresentation
+                ? ModelToRepresentation.groupToBriefRepresentation(group)
+                : ModelToRepresentation.toRepresentation(group, true);
+        applyAccessAndVisibleOrganizationRoles(representation, group);
+        return representation;
+    }
+
+    private void applyAccessAndVisibleOrganizationRoles(GroupRepresentation representation, GroupModel group) {
+        representation.setAccess(auth.orgs().getAccess(organization));
+        if (representation.getOrganizationRoles() == null) {
+            return;
+        }
+        Map<String, List<String>> visible = new LinkedHashMap<>();
+        group.getRoleMappingsStream()
+                .filter(role -> role.isType(RoleModel.Type.ORGANIZATION))
+                .filter(role -> Objects.equals(organization.getId(), role.getContainerId()))
+                .filter(auth.roles()::canView)
+                .forEach(role -> visible.computeIfAbsent(organization.getAlias(), ignored -> new ArrayList<>())
+                        .add(role.getName()));
+        representation.setOrganizationRoles(visible.isEmpty() ? null : visible);
+    }
+
+    private void rejectInternalGroup(GroupModel group) {
+        GroupModel internalGroup = organizationProvider.getOrganizationGroup(organization);
+        if (internalGroup != null && Objects.equals(internalGroup.getId(), group.getId())) {
+            throw new NotFoundException("Group does not exist");
+        }
+    }
+
+    private void requireVisibleGroup(GroupModel group) {
+        GroupModel root = organizationProvider.getOrganizationGroup(organization);
+        Set<String> visited = new HashSet<>();
+        GroupModel current = group;
+        boolean visible = false;
+        while (current != null && visited.add(current.getId())) {
+            OrganizationModel owner = current.getOrganization();
+            if (!GroupModel.Type.ORGANIZATION.equals(current.getType()) || owner == null || owner.getRealm() == null
+                    || !Objects.equals(organization.getId(), owner.getId())
+                    || !Objects.equals(realm.getId(), owner.getRealm().getId())) break;
+            if (root != null && Objects.equals(root.getId(), current.getId()) && current.getParent() == null) {
+                visible = true;
+                break;
+            }
+            current = current.getParent();
+        }
+        if (!visible) throw new NotFoundException("Group does not exist");
     }
 }

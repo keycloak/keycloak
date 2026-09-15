@@ -31,6 +31,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
 import org.keycloak.models.cache.infinispan.LazyLoader;
 import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
@@ -46,12 +47,15 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
     private final String description;
     private final String redirectUrl;
     private final boolean enabled;
+    private final String defaultRoleId;
+    private final String groupId;
     private final LazyLoader<OrganizationModel, MultivaluedHashMap<String, String>> attributes;
     private final Set<OrganizationDomainModel> domains;
     private final Map<String, String> domainNames;
     private final Set<IdentityProviderModel> idps;
 
-    public CachedOrganization(long revision, RealmModel realm, OrganizationModel organization, Consumer<String> invalidateDomain) {
+    public CachedOrganization(long revision, RealmModel realm, OrganizationModel organization, String groupId,
+            Consumer<String> invalidateDomain) {
         super(revision, organization.getId());
         this.realm = realm.getId();
         this.name = organization.getName();
@@ -59,6 +63,9 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
         this.description = organization.getDescription();
         this.redirectUrl = organization.getRedirectUrl();
         this.enabled = organization.isEnabled();
+        RoleModel defaultRole = organization.getDefaultRole();
+        this.defaultRoleId = defaultRole == null ? null : defaultRole.getId();
+        this.groupId = groupId;
         this.attributes = new DefaultLazyLoader<>(orgModel -> new MultivaluedHashMap<>(orgModel.getAttributes()), MultivaluedHashMap::new);
         this.domains = organization.getDomains().collect(Collectors.toSet());
         this.domainNames = Collections.synchronizedMap(new LinkedHashMap<>(16, 0.75f, true) {
@@ -101,6 +108,14 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public String getDefaultRoleId() {
+        return defaultRoleId;
+    }
+
+    public String getGroupId() {
+        return groupId;
     }
 
     public MultivaluedHashMap<String, String> getAttributes(KeycloakSession session, Supplier<OrganizationModel> organizationModel) {
