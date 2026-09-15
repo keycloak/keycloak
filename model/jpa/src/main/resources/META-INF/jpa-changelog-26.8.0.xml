@@ -278,6 +278,14 @@
         </createIndex>
     </changeSet>
 
+    <!-- Record the target organization on organization group IdP mappers. Must run before ORGANIZATION_ID is dropped -->
+    <changeSet author="keycloak" id="26.8.0-idp-mapper-organization-id">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <columnExists tableName="IDENTITY_PROVIDER" columnName="ORGANIZATION_ID"/>
+        </preConditions>
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_IdpMapperOrganizationId"/>
+    </changeSet>
+
     <!-- Drop IDENTITY_PROVIDER.ORGANIZATION_ID column and related indexes -->
     <changeSet author="keycloak" id="26.8.0-drop-idp-organization-id">
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
