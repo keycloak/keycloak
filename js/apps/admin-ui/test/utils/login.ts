@@ -43,13 +43,25 @@ export async function navigateTo(
   to: Partial<Path>,
   rootRealm = DEFAULT_REALM,
 ): Promise<void> {
-  const url = new URL(
-    generatePath(ROOT_PATH, { realm: rootRealm }),
-    SERVER_URL,
+  const rootPath = generatePath(ROOT_PATH, { realm: rootRealm }).replace(
+    /\/+$/,
+    "",
   );
+  const url = new URL(rootPath, SERVER_URL);
 
   if (to.pathname) {
-    url.hash = to.pathname;
+    const destinationPath = to.pathname.startsWith("/")
+      ? to.pathname
+      : `/${to.pathname}`;
+    url.pathname = `${rootPath}${destinationPath}`;
+  }
+
+  if (to.search) {
+    url.search = to.search;
+  }
+
+  if (to.hash) {
+    url.hash = to.hash;
   }
 
   await page.goto(url.toString());
