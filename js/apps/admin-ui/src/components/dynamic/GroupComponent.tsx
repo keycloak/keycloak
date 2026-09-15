@@ -1,4 +1,5 @@
 import GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import {
   ActionList,
   ActionListItem,
@@ -7,16 +8,14 @@ import {
   ChipGroup,
   FormGroup,
 } from "@patternfly/react-core";
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { HelpItem, useFetch } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
-import {
-  GroupsResourceContext,
-  GroupResourceContext,
-} from "../../context/group-resource/GroupResourceContext";
+import { GroupResourceContext } from "../../context/group-resource/GroupResourceContext";
+import { useIdentityProvider } from "../../context/identity-provider/IdentityProviderContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { GroupPickerDialog } from "../group/GroupPickerDialog";
 import type { ComponentProps } from "./components";
@@ -32,12 +31,14 @@ export const GroupComponent = ({
   const [open, setOpen] = useState(false);
   const [openOrgGroups, setOpenOrgGroups] = useState(false);
   const [groups, setGroups] = useState<GroupRepresentation[]>();
+  const [organization, setOrganization] =
+    useState<OrganizationRepresentation>();
   const { control, setValue } = useFormContext();
   const { adminClient } = useAdminClient();
   const serverInfo = useServerInfo();
-  const groupResource = useContext(GroupsResourceContext);
-  const hasLinkedOrganization = groupResource?.isOrgGroups() ?? false;
+  const identityProvider = useIdentityProvider();
   const groupTypeFieldName = convertToName("groupType");
+  const orgIdFieldName = convertToName("orgId");
 
   // Get group type enum values from server
   const groupTypes = serverInfo.enums?.["type"] || [];
@@ -51,9 +52,25 @@ export const GroupComponent = ({
     control,
     defaultValue: GROUP_TYPE_REALM,
   });
+  const orgId = useWatch({ name: orgIdFieldName, control });
 
+  // a mapper targets one organization, so the picker is only offered when the identity provider is linked to some
+  const canSelectOrgGroup =
+    !!identityProvider?.alias && !!identityProvider.organizationLinks?.length;
   const shouldRenderOrgField =
-    groupResource && (hasLinkedOrganization || groupType == GROUP_TYPE_ORG);
+    canSelectOrgGroup || groupType === GROUP_TYPE_ORG;
+
+  useFetch(
+    async () =>
+      orgId
+        ? await adminClient.organizations
+            .findOne({ id: orgId })
+            .catch(() => undefined)
+        : undefined,
+    setOrganization,
+    [orgId],
+  );
+
   return (
     <Controller
       name={convertToName(name!)}
@@ -72,6 +89,7 @@ export const GroupComponent = ({
                 onConfirm={(groups) => {
                   field.onChange(groups?.[0].path);
                   setValue(groupTypeFieldName, GROUP_TYPE_REALM);
+                  setValue(orgIdFieldName, undefined);
                   setGroups(groups);
                   setOpen(false);
                 }}
@@ -87,9 +105,11 @@ export const GroupComponent = ({
                 title: "selectOrgGroup",
                 ok: "select",
               }}
-              onConfirm={(groups) => {
+              identityProviderAlias={identityProvider!.alias}
+              onConfirm={(groups, organization) => {
                 field.onChange(groups?.[0].path);
                 setValue(groupTypeFieldName, GROUP_TYPE_ORG);
+                setValue(orgIdFieldName, organization?.id);
                 setGroups(groups);
                 setOpenOrgGroups(false);
               }}
@@ -114,13 +134,14 @@ export const GroupComponent = ({
                       onClick={() => {
                         field.onChange(undefined);
                         setValue(groupTypeFieldName, undefined);
+                        setValue(orgIdFieldName, undefined);
                       }}
                     >
                       {shouldRenderOrgField && (
                         <>
                           {groupType === GROUP_TYPE_REALM
                             ? t("realm")
-                            : t("organization")}
+                            : (organization?.name ?? t("organization"))}
                           :&nbsp;
                         </>
                       )}
@@ -139,7 +160,7 @@ export const GroupComponent = ({
                   {t("selectGroup")}
                 </Button>
               </ActionListItem>
-              {shouldRenderOrgField && (
+              {canSelectOrgGroup && (
                 <ActionListItem>
                   <Button
                     id="kc-join-org-groups-button"

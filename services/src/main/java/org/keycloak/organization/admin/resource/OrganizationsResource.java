@@ -37,6 +37,7 @@ import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelValidationException;
@@ -133,6 +134,7 @@ public class OrganizationsResource {
      * @param exact if {@code true}, the organizations will be searched using exact match for the {@code search} param - i.e.
      *              either the organization name or one of its domains must match exactly the {@code search} param. If false,
      *              the method returns all organizations whose name or (domains) partially match the {@code search} param.
+     * @param identityProviderAlias the alias of an identity provider, to only return the organizations linked to it.
      * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
      * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
      * @return a non-null {@code Stream} of matched organizations.
@@ -151,6 +153,7 @@ public class OrganizationsResource {
             @Parameter(description = "A String representing either an organization name or domain") @QueryParam("search") String search,
             @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
             @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact,
+            @Parameter(description = "The alias of an identity provider, to only return the organizations linked to it. Cannot be combined with 'q'") @QueryParam("identityProvider") String identityProviderAlias,
             @Parameter(description = "The position of the first result to be processed (pagination offset)") @QueryParam("first") @DefaultValue("0") Integer first,
             @Parameter(description = "The maximum number of results to be returned - defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
             @Parameter(description = "if false, return the full representation. Otherwise, only the basic fields are returned.") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation
@@ -163,6 +166,11 @@ public class OrganizationsResource {
             return Stream.empty();
         }
 
+        if (StringUtil.isNotBlank(identityProviderAlias)) {
+            return provider.getByIdentityProvider(resolveIdentityProvider(identityProviderAlias, searchQuery), search, exact, first, max)
+                    .map(model -> ModelToRepresentation.toRepresentation(model, briefRepresentation));
+        }
+
         // check if are searching orgs by attribute.
         if (StringUtil.isNotBlank(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
@@ -170,6 +178,20 @@ public class OrganizationsResource {
         } else {
             return provider.getAllStream(search, exact, first, max).map(model -> ModelToRepresentation.toRepresentation(model, briefRepresentation));
         }
+    }
+
+    private IdentityProviderModel resolveIdentityProvider(String alias, String searchQuery) {
+        if (StringUtil.isNotBlank(searchQuery)) {
+            throw ErrorResponse.error("The 'identityProvider' and 'q' parameters cannot be combined.", Response.Status.BAD_REQUEST);
+        }
+
+        IdentityProviderModel identityProvider = session.identityProviders().getByAlias(alias);
+
+        if (identityProvider == null) {
+            throw ErrorResponse.error("Identity provider '" + alias + "' not found.", Response.Status.BAD_REQUEST);
+        }
+
+        return identityProvider;
     }
 
     /**
@@ -215,7 +237,8 @@ public class OrganizationsResource {
     public long getOrganizationCount(
             @Parameter(description = "A String representing either an organization name or domain") @QueryParam("search") String search,
             @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
-            @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact
+            @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact,
+            @Parameter(description = "The alias of an identity provider, to only count the organizations linked to it. Cannot be combined with 'q'") @QueryParam("identityProvider") String identityProviderAlias
     ) {
         auth.orgs().requireQuery();
         Organizations.checkEnabled(provider, auth);
@@ -223,6 +246,10 @@ public class OrganizationsResource {
         // if a dedicated admin can query, but cannot view (and FGAP is not enabled) - we can return 0L right away to save a roundtrip to the DB
         if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(session.getContext().getRealm()) && !auth.orgs().canView()) {
             return 0L;
+        }
+
+        if (StringUtil.isNotBlank(identityProviderAlias)) {
+            return provider.countByIdentityProvider(resolveIdentityProvider(identityProviderAlias, searchQuery), search, exact);
         }
 
         if (StringUtil.isNotBlank(searchQuery)) {
