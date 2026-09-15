@@ -84,7 +84,8 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
 
-        if (authSession.getAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME) != null) {
+        if (authSession.getAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME) != null
+                && authSession.getAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_EXTERNAL_ID) != null) {
             return sendLinkConfirmedAlready(session, event, user, token);
         }
 
@@ -95,7 +96,9 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
             ClientModel originalClient = realm.getClientById(compoundId.getClientUUID());
             AuthenticationSessionModel origAuthSession = asm.getAuthenticationSessionByIdAndClient(realm,
                     compoundId.getRootSessionId(), originalClient, compoundId.getTabId());
-            if (origAuthSession == null || origAuthSession.getAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME) != null) {
+            if (origAuthSession == null
+                    || (origAuthSession.getAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME) != null
+                        && origAuthSession.getAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_EXTERNAL_ID) != null)) {
                 return sendLinkConfirmedAlready(session, event, user, token);
             }
 
@@ -126,6 +129,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             if (authSession != null) {
                 authSession.setAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME, token.getIdentityProviderUsername());
+                authSession.setAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_EXTERNAL_ID, token.getExternalId());
             }
 
             setUserVerifiedSingleObject(token, realm, session, user);
@@ -139,6 +143,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         }
 
         authSession.setAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME, token.getIdentityProviderUsername());
+        authSession.setAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_EXTERNAL_ID, token.getExternalId());
 
         return tokenContext.brokerFlow(null, null, authSession.getAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH));
     }
