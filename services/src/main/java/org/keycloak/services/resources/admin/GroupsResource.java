@@ -198,6 +198,10 @@ public class GroupsResource {
     public Response addTopLevelGroup(GroupRepresentation rep) {
         auth.groups().requireManage();
 
+        if (rep == null) {
+            throw ErrorResponse.error("Group representation is missing", Response.Status.BAD_REQUEST);
+        }
+
         GroupModel child;
         Response.ResponseBuilder builder = Response.status(204);
         String groupName = rep.getName();
