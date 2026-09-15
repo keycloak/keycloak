@@ -104,6 +104,14 @@ On the other hand, if no user is associated with the given email address, the st
 will involve creating a new account through the realm's self-registration flow. In this case, the user is forced
 to provide the same email address used to send the invitation.
 
+Instead of registering, the user can also authenticate through an identity provider. The user joins the organization as an
+<<_managed_unmanaged_members_,unmanaged member>> once the first broker login flow completes, but only if the email of the account
+matches the email address used to send the invitation. Users already linked to that identity provider skip the first broker login
+flow, so the invitation is not accepted for them.
+
+IMPORTANT: Anyone with the invitation link who creates an account through any identity provider using the invited email address
+joins the organization.
+
 == Managing invitations
 
 {project_name} provides comprehensive invitation management capabilities that allow administrators to track, manage, and control
