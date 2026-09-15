@@ -24,6 +24,7 @@ import org.keycloak.ssf.transmitter.stream.StreamConfigInputRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamConfigUpdateRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 import org.keycloak.ssf.transmitter.support.SsfErrorRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -73,12 +74,13 @@ public class SsfStreamManagementResource {
             @APIResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = StreamConfig.class))),
             @APIResponse(responseCode = "400", description = "Bad Request"),
             @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "403", description = "Forbidden — token lacks the required scope, role, or receiver configuration"),
             @APIResponse(responseCode = "409", description = "Duplicate stream configuration")
     })
     public Response createStream(StreamConfigInputRepresentation input) {
 
         if (!SsfAuthUtil.canManage()) {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
+            return SsfAuthUtil.insufficientScopeResponse(session, Ssf.SCOPE_SSF_MANAGE);
         }
 
         try {
@@ -124,6 +126,7 @@ public class SsfStreamManagementResource {
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = StreamConfig.class))),
             @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "403", description = "Forbidden — token lacks the required scope, role, or receiver configuration"),
             @APIResponse(responseCode = "404", description = "Stream not found")
     })
     public Response getStream(
@@ -131,7 +134,7 @@ public class SsfStreamManagementResource {
             @QueryParam("stream_id") String streamId) {
 
         if (!SsfAuthUtil.canRead()) {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
+            return SsfAuthUtil.insufficientScopeResponse(session, Ssf.SCOPE_SSF_READ);
         }
 
         try {
@@ -185,12 +188,13 @@ public class SsfStreamManagementResource {
             @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = StreamConfig.class))),
             @APIResponse(responseCode = "400", description = "Bad Request"),
             @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "403", description = "Forbidden — token lacks the required scope, role, or receiver configuration"),
             @APIResponse(responseCode = "404", description = "Stream not found")
     })
     public Response updateStream(StreamConfigUpdateRepresentation update) {
 
         if (!SsfAuthUtil.canManage()) {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
+            return SsfAuthUtil.insufficientScopeResponse(session, Ssf.SCOPE_SSF_MANAGE);
         }
 
         if (update == null || update.getStreamId() == null) {
@@ -245,12 +249,13 @@ public class SsfStreamManagementResource {
             @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = StreamConfig.class))),
             @APIResponse(responseCode = "400", description = "Bad Request"),
             @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "403", description = "Forbidden — token lacks the required scope, role, or receiver configuration"),
             @APIResponse(responseCode = "404", description = "Stream not found")
     })
     public Response replaceStream(StreamConfigUpdateRepresentation update) {
 
         if (!SsfAuthUtil.canManage()) {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
+            return SsfAuthUtil.insufficientScopeResponse(session, Ssf.SCOPE_SSF_MANAGE);
         }
 
         if (update == null || update.getStreamId() == null) {
@@ -303,6 +308,7 @@ public class SsfStreamManagementResource {
             @APIResponse(responseCode = "204", description = "No Content"),
             @APIResponse(responseCode = "400", description = "Bad Request"),
             @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "403", description = "Forbidden — token lacks the required scope, role, or receiver configuration"),
             @APIResponse(responseCode = "404", description = "Stream not found")
     })
     public Response deleteStream(
@@ -310,7 +316,7 @@ public class SsfStreamManagementResource {
             @QueryParam("stream_id") String streamId) {
 
         if (!SsfAuthUtil.canManage()) {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
+            return SsfAuthUtil.insufficientScopeResponse(session, Ssf.SCOPE_SSF_MANAGE);
         }
 
         if (streamId == null) {

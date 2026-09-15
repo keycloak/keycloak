@@ -3,12 +3,18 @@ package org.keycloak.ssf.transmitter.support;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.OAuthErrorException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.ssf.Ssf;
@@ -27,13 +33,80 @@ public class SsfAuthUtil {
 
     public static AuthenticationManager.AuthResult authenticate() {
         KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
-        var authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
-        var auth = authenticator.authenticate();
+        AuthenticationManager.AuthResult auth;
+        try {
+            auth = new AppAuthManager.BearerTokenAuthenticator(session).authenticate();
+        } catch (NotAuthorizedException e) {
+            // Thrown by AppAuthManager.extractAuthorizationHeaderToken for a
+            // non-Bearer Authorization header. Its response has no entity and
+            // would be rewritten by KeycloakErrorHandler without the challenge.
+            throw unauthorized(session, "Invalid Authorization header");
+        }
         if (auth == null) {
-            throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+            // RFC 6750 §3.1: a request without any credentials gets a bare
+            // challenge; only a request that presented a bad token gets
+            // error="invalid_token".
+            boolean tokenPresent = session.getContext().getRequestHeaders().getHeaderString(HttpHeaders.AUTHORIZATION) != null;
+            throw unauthorized(session, tokenPresent ? "Token verification failed" : null);
         }
         SsfAuthUtil.setAuth(session, auth);
         return auth;
+    }
+
+    /**
+     * Builds a 401 response carrying the RFC 6750 {@code WWW-Authenticate: Bearer}
+     * challenge for the current realm. When {@code errorDescription} is
+     * {@code null} the challenge carries no error code (no credentials were
+     * presented); otherwise it carries {@code error="invalid_token"}.
+     */
+    public static Response unauthorizedResponse(KeycloakSession session, String errorDescription) {
+        StringBuilder challenge = new StringBuilder("Bearer realm=\"")
+                .append(session.getContext().getRealm().getName()).append('"');
+        String description = errorDescription;
+        if (description != null) {
+            challenge.append(", error=\"").append(OAuthErrorException.INVALID_TOKEN)
+                    .append("\", error_description=\"").append(description).append('"');
+        } else {
+            description = "Bearer token required";
+        }
+        return Response.status(Response.Status.UNAUTHORIZED)
+                .header(HttpHeaders.WWW_AUTHENTICATE, challenge.toString())
+                .type(MediaType.APPLICATION_JSON_TYPE)
+                .entity(new OAuth2ErrorRepresentation(OAuthErrorException.INVALID_TOKEN, description))
+                .build();
+    }
+
+    /**
+     * Builds a 403 response for a bearer token that verified but lacks the
+     * privileges required by the endpoint (RFC 6750 §3.1 {@code insufficient_scope}).
+     * Used for every {@link #canRead()} / {@link #canManage()} failure: missing
+     * scope, missing required role, non-service-account bearer, or a client
+     * that is not configured as an SSF receiver. The challenge advertises the
+     * required scope so the receiver knows what to request.
+     */
+    public static Response insufficientScopeResponse(KeycloakSession session, String requiredScope) {
+        String description = "Token is not authorized for the " + requiredScope + " scope";
+        String challenge = "Bearer realm=\"" + session.getContext().getRealm().getName()
+                + "\", error=\"" + OAuthErrorException.INSUFFICIENT_SCOPE
+                + "\", error_description=\"" + description
+                + "\", scope=\"" + requiredScope + '"';
+        return Response.status(Response.Status.FORBIDDEN)
+                .header(HttpHeaders.WWW_AUTHENTICATE, challenge)
+                .type(MediaType.APPLICATION_JSON_TYPE)
+                .entity(new OAuth2ErrorRepresentation(OAuthErrorException.INSUFFICIENT_SCOPE, description))
+                .build();
+    }
+
+    /**
+     * Exception variant of {@link #unauthorizedResponse(KeycloakSession, String)}
+     * for sub-resource locators that cannot return a {@link Response}. The
+     * response carries an entity, so RESTEasy returns it as-is instead of
+     * handing the exception to {@code KeycloakErrorHandler}, which would
+     * drop the {@code WWW-Authenticate} header. {@link ErrorResponseException}
+     * still marks the transaction rollback-only.
+     */
+    private static WebApplicationException unauthorized(KeycloakSession session, String errorDescription) {
+        return new ErrorResponseException(unauthorizedResponse(session, errorDescription));
     }
 
     private static void setAuth(KeycloakSession session, AuthenticationManager.AuthResult auth) {
