@@ -25,7 +25,6 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.conformance.runner.BrowserInteraction;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.testframework.conformance.runner.ConformanceResult;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 
 import org.junit.jupiter.api.Disabled;
@@ -42,7 +41,7 @@ import static org.keycloak.tests.conformance.vp.VpConformanceRealmConfig.TEST_PL
 @KeycloakIntegrationTest(config = VpConformanceRealmConfig.ServerConfig.class)
 public class VerifierRequestUriMethodPostTest extends AbstractVpConformanceTest {
 
-    @InjectRealm(config = VpConformanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(config = VpConformanceRealmConfig.class)
     ManagedRealm realm;
 
     @Override

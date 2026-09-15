@@ -45,6 +45,7 @@ import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.group.Member;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
+import org.keycloak.scim.resource.spi.MembershipChange;
 import org.keycloak.scim.resource.spi.SearchOptions;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
@@ -52,8 +53,22 @@ import static org.keycloak.utils.StreamsUtil.closing;
 
 public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<GroupModel, Group> implements ScimAttributeJpaExpressionResolver {
 
+    private final GroupCoreModelSchema schema;
+
     public GroupResourceTypeProvider(KeycloakSession session) {
-        super(session, new GroupCoreModelSchema(session));
+        this(session, new GroupCoreModelSchema(session));
+    }
+
+    private GroupResourceTypeProvider(KeycloakSession session, GroupCoreModelSchema schema) {
+        super(session, schema);
+        this.schema = schema;
+    }
+
+    @Override
+    public List<MembershipChange> pollMembershipChanges() {
+        List<MembershipChange> changes = List.copyOf(schema.getMembershipChanges());
+        schema.clearMembershipChanges();
+        return changes;
     }
 
     @Override
@@ -201,14 +216,11 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
         // (ne, pr, gt, co, etc.) cannot be safely authorized through value comparison because they can match
         // rows the caller is not permitted to see, so they silently return empty results for this path.
         // This restriction only applies to the members.value/members paths; all other filter attributes are
-        // unaffected. When FGAP is disabled, all operators are allowed.
+        // unaffected. Permission checks are required regardless of whether FGAP is enabled.
         BiPredicate<String, String> authCheck = (path, value) -> {
             if ("members.value".equalsIgnoreCase(path) || "members".equalsIgnoreCase(path)) {
-                if (!realm.isAdminPermissionsEnabled()) {
-                    return true;
-                }
                 if (value == null) {
-                    return false;
+                    return permissions.hasPermission(AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
                 }
                 UserModel user = session.users().getUserById(realm, value);
                 return user != null && permissions.hasPermission(user, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);

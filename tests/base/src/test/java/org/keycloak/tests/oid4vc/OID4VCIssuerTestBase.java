@@ -181,7 +181,7 @@ public abstract class OID4VCIssuerTestBase {
 
     public static final String mdocTypeCredentialScopeName = "mdoc-credential";
     public static final String mdocTypeCredentialConfigurationIdName = "mdoc-credential-config-id";
-    public static final String mdocTypeCredentialDocType = "org.iso.18013.5.1.mDL";
+    public static final String mdocTypeCredentialDocType = "org.example.credential.mdoc";
 
     public static final String CONTEXT_URL = "https://www.w3.org/2018/credentials/v1";
     public static final List<String> TEST_TYPES = List.of("VerifiableCredential");
@@ -299,32 +299,8 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
-    private CredentialScopeRepresentation createBaseMdocCredentialScope(RealmResource realmResource) {
-        CredentialScopeRepresentation scope = new CredentialScopeRepresentation(mdocTypeCredentialScopeName)
-                .setIncludeInTokenScope(true)
-                .setExpiryInSeconds(CREDENTIALS_EXPIRATION_IN_SECONDS)
-                .setCredentialConfigurationId(mdocTypeCredentialConfigurationIdName)
-                .setCredentialIdentifier(mdocTypeCredentialScopeName)
-                .setFormat(VCFormat.MSO_MDOC)
-                .setVct(mdocTypeCredentialDocType)
-                .setSigningAlg("ES256")
-                .setBindingRequired(true)
-                .setCryptographicBindingMethods(List.of(CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY));
-        scope.setProtocolMappers(List.of(
-                ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.iso.18013.5.1"),
-                ProtocolMapperUtils.getUserAttributeMapper("family_name", "lastName", "org.iso.18013.5.1"),
-                ProtocolMapperUtils.getSubjectIdMapper("id", UserModel.USERNAME, "org.iso.18013.5.1")
-        ));
-        scope.getAttributes().put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
-
-        try (Response response = realmResource.clientScopes().create(scope)) {
-            String scopeId = ApiUtil.getCreatedId(response);
-            return new CredentialScopeRepresentation(realmResource.clientScopes().get(scopeId).toRepresentation());
-        }
-    }
-
     @BeforeEach
-    void beforeEachBase() {
+    protected void beforeEachBase() {
 
         client = managedClient.admin().toRepresentation();
         pubClient = managedPublicClient.admin().toRepresentation();
@@ -639,6 +615,37 @@ public abstract class OID4VCIssuerTestBase {
         clientPoliciesResource.updatePolicies(policies);
     }
 
+    /**
+     * Persistently add an ES256 signing key with a CA issued certificate, as mdoc issuance rejects
+     * the self signed certificates of generated realm keys.
+     */
+    protected void ensureMdocCompliantSigningConfiguration() {
+        final String providerName = "mdoc-signing-key-provider";
+        var components = testRealm.admin().components();
+        if (!components.query(testRealm.getId(), KeyProvider.class.getName(), providerName).isEmpty()) {
+            return;
+        }
+
+        ComponentRepresentation component = new ComponentRepresentation();
+        component.setProviderType(KeyProvider.class.getName());
+        component.setName(providerName);
+        component.setId(UUID.randomUUID().toString());
+        component.setProviderId("java-keystore");
+        component.setConfig(new MultivaluedHashMap<>(Map.of(
+                "keystore", List.of(MdocTestSigningKey.keyStorePath()),
+                "keystorePassword", List.of(MdocTestSigningKey.PASSWORD),
+                "keystoreType", List.of("PKCS12"),
+                "keyAlias", List.of(MdocTestSigningKey.KEY_ALIAS),
+                "keyPassword", List.of(MdocTestSigningKey.PASSWORD),
+                "algorithm", List.of(Algorithm.ES256),
+                "keyUse", List.of(KeyUse.SIG.name()),
+                "priority", List.of("300"),
+                "enabled", List.of("true"),
+                "active", List.of("true")
+        )));
+        components.add(component).close();
+    }
+
     // Private ---------------------------------------------------------------------------------------------------------
 
     private ComponentRepresentation createRsaKeyProviderComponent(KeyWrapper keyWrapper, String name, int priority) {
@@ -727,6 +734,30 @@ public abstract class OID4VCIssuerTestBase {
         if (!enabledEventTypes.contains(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST.name())) {
             enabledEventTypes.add(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST.name());
             testRealm.admin().updateRealmEventsConfig(realmEventsConfig);
+        }
+    }
+
+    private CredentialScopeRepresentation createBaseMdocCredentialScope(RealmResource realmResource) {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation(mdocTypeCredentialScopeName)
+                .setIncludeInTokenScope(true)
+                .setExpiryInSeconds(CREDENTIALS_EXPIRATION_IN_SECONDS)
+                .setCredentialConfigurationId(mdocTypeCredentialConfigurationIdName)
+                .setCredentialIdentifier(mdocTypeCredentialScopeName)
+                .setFormat(VCFormat.MSO_MDOC)
+                .setVct(mdocTypeCredentialDocType)
+                .setSigningAlg("ES256")
+                .setBindingRequired(true)
+                .setCryptographicBindingMethods(List.of(CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY));
+        scope.setProtocolMappers(List.of(
+                ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.example.credential"),
+                ProtocolMapperUtils.getUserAttributeMapper("family_name", "lastName", "org.example.credential"),
+                ProtocolMapperUtils.getSubjectIdMapper("id", UserModel.USERNAME, "org.example.credential")
+        ));
+        scope.getAttributes().put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
+
+        try (Response response = realmResource.clientScopes().create(scope)) {
+            String scopeId = ApiUtil.getCreatedId(response);
+            return new CredentialScopeRepresentation(realmResource.clientScopes().get(scopeId).toRepresentation());
         }
     }
 

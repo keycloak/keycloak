@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -79,6 +80,8 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectKeyModel;
 import org.keycloak.models.UserConsentModel;
@@ -981,7 +984,7 @@ public class LoginActionsService {
 
         };
 
-        configureOrganization(brokerContext);
+        configureOrganization(brokerContext, authSession);
 
         Response response = processFlow(checks.isActionRequest(), execution, authSession, flowPath, brokerLoginFlow, null, processor);
         event.success();
@@ -989,15 +992,41 @@ public class LoginActionsService {
         return response;
     }
 
-    private void configureOrganization(BrokeredIdentityContext brokerContext) {
-        if (Organizations.isEnabled(session)) {
-            String organizationId = brokerContext.getIdpConfig().getOrganizationIds().stream().findFirst().orElse(null);
+    private void configureOrganization(BrokeredIdentityContext brokerContext, AuthenticationSessionModel authSession) {
+        if (!Organizations.isEnabled(session)) {
+            return;
+        }
 
-            if (organizationId != null) {
-                OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
-                session.getContext().setOrganization(provider.getById(organizationId));
-                session.setAttribute(BrokeredIdentityContext.class.getName(), brokerContext);
+        session.setAttribute(BrokeredIdentityContext.class.getName(), brokerContext);
+
+        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+        OrganizationModel organization = null;
+
+        String orgId = authSession.getAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+        if (orgId != null) {
+            organization = provider.getById(orgId);
+        }
+
+        if (organization == null) {
+            String emailDomain = Organizations.getEmailDomain(brokerContext.getEmail());
+            if (emailDomain != null) {
+                try {
+                    organization = provider.getByDomainName(emailDomain);
+                } catch (ModelValidationException e) {
+                    // malformed domain from unvalidated broker email — treat as no match
+                }
             }
+        }
+
+        if (organization == null) {
+            Set<String> orgIds = brokerContext.getIdpConfig().getOrganizationIds();
+            if (orgIds.size() == 1) {
+                organization = provider.getById(orgIds.iterator().next());
+            }
+        }
+
+        if (organization != null) {
+            session.getContext().setOrganization(organization);
         }
     }
 

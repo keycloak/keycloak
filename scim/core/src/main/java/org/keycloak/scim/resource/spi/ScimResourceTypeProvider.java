@@ -147,6 +147,16 @@ public interface ScimResourceTypeProvider<R> extends Provider {
     }
 
     /**
+     * Returns the group membership changes recorded while processing the last {@link #patch} or {@link #update}
+     * call, then clears them. Providers whose resource type can change group membership (e.g. a SCIM Group's
+     * {@code members} or a SCIM User's {@code groups}) override this to report each change, so the caller can emit
+     * a dedicated {@code GROUP_MEMBERSHIP} admin event, consistently with the equivalent Admin REST API operation.
+     */
+    default List<MembershipChange> pollMembershipChanges() {
+        return List.of();
+    }
+
+    /**
      * Returns the admin event {@link ResourceType} for this SCIM resource type.
      * By default, derives it from {@link #getName()} by converting to uppercase and matching against known values.
      * Providers can override this to map to a different {@link ResourceType} value.
