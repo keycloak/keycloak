@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -1047,7 +1048,8 @@ public final class KeycloakModelUtils {
      * @return the validated organization if all checks pass, null otherwise
      */
     public static OrganizationModel getOrganizationForIdpMapper(KeycloakSession session, IdentityProviderMapperModel mapperModel, IdentityProviderModel idpModel) {
-        String idpOrgId = mapperModel.getConfig().get(ConfigConstants.ORGANIZATION_ID);
+        Map<String, String> config = mapperModel.getConfig();
+        String idpOrgId = config == null ? null : config.get(ConfigConstants.ORGANIZATION_ID);
 
         if (idpOrgId == null) {
             logger.warnf("Mapper '%s' does not reference the organization it applies to.", mapperModel.getName());

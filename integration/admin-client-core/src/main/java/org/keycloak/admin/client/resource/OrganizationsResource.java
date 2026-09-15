@@ -124,6 +124,29 @@ public interface OrganizationsResource {
     );
 
     /**
+     * Returns the organizations linked to the given identity provider that match the specified filters.
+     *
+     * @param identityProviderAlias the alias of the identity provider the organizations are linked to.
+     * @param search a {@code String} representing either an organization name or domain.
+     * @param exact if {@code true}, the organizations will be searched using exact match for the {@code search} param.
+     * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @param briefRepresentation if {@code false} the full representation is to be returned. Otherwise, only the basic fields are returned.
+     * @return a list containing the matched organizations.
+     * @since Keycloak 26.8
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<OrganizationRepresentation> searchByIdentityProvider(
+            @QueryParam("identityProvider") String identityProviderAlias,
+            @QueryParam("search") String search,
+            @QueryParam("exact") Boolean exact,
+            @QueryParam("first") Integer first,
+            @QueryParam("max") Integer max,
+            @QueryParam("briefRepresentation") Boolean briefRepresentation
+    );
+
+    /**
      * Returns all organizations that contain attributes matching the specified query.
      *
      * @param searchQuery a query to search for organization attributes, in the format 'key1:value2 key2:value2'.
@@ -177,6 +200,25 @@ public interface OrganizationsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     long count(
+            @QueryParam("search") String search,
+            @QueryParam("exact") Boolean exact
+    );
+
+    /**
+     * Counts the organizations linked to the given identity provider that match the specified filters.
+     *
+     * @param identityProviderAlias the alias of the identity provider the organizations are linked to.
+     * @param search a {@code String} representing either an organization name or domain.
+     * @param exact if {@code true}, the organizations will be searched using exact match for the {@code search} param.
+     * @return the number of organizations that match the filters.
+     * @since Keycloak 26.8
+     */
+    @GET
+    @Path("count")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    long countByIdentityProvider(
+            @QueryParam("identityProvider") String identityProviderAlias,
             @QueryParam("search") String search,
             @QueryParam("exact") Boolean exact
     );

@@ -333,6 +333,9 @@ public class IdentityProviderResource {
 
         IdentityProviderMapperModel model = RepresentationToModel.toModel(mapper);
 
+        // the mapper belongs to the identity provider from the path, whatever alias the representation carries
+        model.setIdentityProviderAlias(identityProviderModel.getAlias());
+
         Organizations.validateGroupMapperOrganization(session, identityProviderModel, model);
 
         try {
@@ -395,6 +398,7 @@ public class IdentityProviderResource {
         IdentityProviderMapperModel model = session.identityProviders().getMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         model = RepresentationToModel.toModel(rep);
+        model.setIdentityProviderAlias(identityProviderModel.getAlias());
 
         Organizations.validateGroupMapperOrganization(session, identityProviderModel, model);
 

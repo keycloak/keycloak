@@ -1,8 +1,10 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import type OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import {
   GroupQuery,
   SubGroupQuery,
 } from "@keycloak/keycloak-admin-client/lib/resources/groups";
+import { OrganizationQuery } from "@keycloak/keycloak-admin-client/lib/resources/organizations";
 import {
   ListEmptyState,
   PaginatingTableToolbar,
@@ -24,11 +26,11 @@ import {
 } from "@patternfly/react-core";
 import { AngleRightIcon } from "@patternfly/react-icons";
 import { NetworkError } from "@keycloak/keycloak-admin-client/lib/utils/fetchWithError";
-import { useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import { GroupPath } from "./GroupPath";
-import { useGroupResource } from "../../context/group-resource/GroupResourceContext";
+import { GroupsResourceContext } from "../../context/group-resource/GroupResourceContext";
 
 import "./group-picker-dialog.css";
 
@@ -39,7 +41,15 @@ export type GroupPickerDialogProps = {
   text: { title: string; ok: string };
   canBrowse?: boolean;
   isMove?: boolean;
-  onConfirm: (groups: GroupRepresentation[] | undefined) => void;
+  /**
+   * When set, the dialog opens on the organizations linked to this identity provider and the groups are the ones of
+   * the organization picked there. Without it the dialog browses the groups of the resource from the context.
+   */
+  identityProviderAlias?: string;
+  onConfirm: (
+    groups: GroupRepresentation[] | undefined,
+    organization?: OrganizationRepresentation,
+  ) => void;
   onClose: () => void;
 };
 
@@ -54,12 +64,12 @@ export const GroupPickerDialog = ({
   text,
   canBrowse = true,
   isMove = false,
+  identityProviderAlias,
   onClose,
   onConfirm,
 }: GroupPickerDialogProps) => {
   const { adminClient } = useAdminClient();
-  const groupResource = useGroupResource();
-  const isOrgGroups = groupResource.isOrgGroups();
+  const contextGroupResource = useContext(GroupsResourceContext);
 
   const { t } = useTranslation();
   const [selectedRows, setSelectedRows] = useState<SelectableGroup[]>([]);
@@ -70,15 +80,76 @@ export const GroupPickerDialog = ({
   const [joinedGroups, setJoinedGroups] = useState<GroupRepresentation[]>([]);
   const [groupId, setGroupId] = useState<string>();
 
+  const [organizations, setOrganizations] = useState<
+    OrganizationRepresentation[]
+  >([]);
+  const [organization, setOrganization] =
+    useState<OrganizationRepresentation>();
+
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
 
   const [count, setCount] = useState(0);
 
+  // the organizations are the root level of the dialog, the groups of the picked one the levels below it
+  const isPickingOrganization = !!identityProviderAlias && !organization;
+
+  const groupResource = useMemo(
+    () =>
+      organization
+        ? adminClient.organizations.groups(organization.id!)
+        : contextGroupResource,
+    [adminClient, organization, contextGroupResource],
+  );
+  const isOrgGroups = groupResource?.isOrgGroups() ?? false;
+
   const currentGroup = () => navigation[navigation.length - 1];
+
+  const resetPagination = () => {
+    setFirst(0);
+    setMax(10);
+  };
+
+  const resetToGroupRoot = () => {
+    setGroupId(undefined);
+    setNavigation([]);
+    resetPagination();
+  };
 
   useFetch(
     async () => {
+      if (!isPickingOrganization) {
+        return undefined;
+      }
+
+      const params: OrganizationQuery = {
+        identityProvider: identityProviderAlias,
+        first,
+        max: max + 1,
+      };
+      if (filter !== "") {
+        params.search = filter;
+      }
+
+      return await adminClient.organizations.find(params);
+    },
+    (organizations) => {
+      if (!organizations) {
+        return;
+      }
+
+      setOrganizations(organizations);
+      setCount(organizations.length);
+    },
+    [identityProviderAlias, organization?.id, filter, first, max],
+  );
+
+  useFetch(
+    async () => {
+      if (isPickingOrganization || !groupResource) {
+        return undefined;
+      }
+
       let group;
       let groups;
       let existingUserGroups;
@@ -127,7 +198,13 @@ export const GroupPickerDialog = ({
 
       return { group, groups, existingUserGroups };
     },
-    async ({ group: selectedGroup, groups, existingUserGroups }) => {
+    async (result) => {
+      if (!result) {
+        return;
+      }
+
+      const { group: selectedGroup, groups, existingUserGroups } = result;
+
       setJoinedGroups(existingUserGroups || []);
       if (selectedGroup) {
         setNavigation([...navigation, selectedGroup]);
@@ -142,7 +219,7 @@ export const GroupPickerDialog = ({
         setCount(groups.length);
       }
     },
-    [groupId, filter, first, max],
+    [organization?.id, groupId, filter, first, max],
   );
 
   const isRowDisabled = (row?: GroupRepresentation) => {
@@ -174,9 +251,14 @@ export const GroupPickerDialog = ({
                 : navigation.length
                   ? [currentGroup()]
                   : undefined,
+              organization,
             );
           }}
-          isDisabled={type === "selectMany" && selectedRows.length === 0}
+          isDisabled={
+            // in the organization flow there is nothing to confirm until a group below the organization is picked
+            (!!identityProviderAlias && navigation.length === 0) ||
+            (type === "selectMany" && selectedRows.length === 0)
+          }
         >
           {t(text.ok)}
         </Button>,
@@ -195,25 +277,43 @@ export const GroupPickerDialog = ({
         inputGroupName={"search"}
         inputGroupOnEnter={(search) => {
           setFilter(search);
-          setFirst(0);
-          setMax(10);
-          setNavigation([]);
-          setGroupId(undefined);
+          resetToGroupRoot();
         }}
-        inputGroupPlaceholder={t("searchForGroups")}
+        inputGroupPlaceholder={
+          isPickingOrganization
+            ? t("searchForOrganizations")
+            : t("searchForGroups")
+        }
       >
         <Breadcrumb>
-          {navigation.length > 0 && (
+          {organization && (
+            <>
+              <BreadcrumbItem key="organizations">
+                <Button
+                  variant="link"
+                  onClick={() => {
+                    setOrganization(undefined);
+                    setFilter("");
+                    resetToGroupRoot();
+                  }}
+                >
+                  {t("organizations")}
+                </Button>
+              </BreadcrumbItem>
+              <BreadcrumbItem key="organization">
+                {navigation.length > 0 ? (
+                  <Button variant="link" onClick={resetToGroupRoot}>
+                    {organization.name}
+                  </Button>
+                ) : (
+                  organization.name
+                )}
+              </BreadcrumbItem>
+            </>
+          )}
+          {!identityProviderAlias && navigation.length > 0 && (
             <BreadcrumbItem key="home">
-              <Button
-                variant="link"
-                onClick={() => {
-                  setGroupId(undefined);
-                  setNavigation([]);
-                  setFirst(0);
-                  setMax(10);
-                }}
-              >
+              <Button variant="link" onClick={resetToGroupRoot}>
                 {t("groups")}
               </Button>
             </BreadcrumbItem>
@@ -237,61 +337,141 @@ export const GroupPickerDialog = ({
             </BreadcrumbItem>
           ))}
         </Breadcrumb>
-        <DataList aria-label={t("groups")} isCompact>
-          {filter == ""
-            ? groups.slice(0, max).map((group: SelectableGroup) => (
-                <GroupRow
-                  key={group.id}
-                  group={group}
-                  isRowDisabled={isRowDisabled}
-                  onSelect={(group) => {
-                    setGroupId(group.id);
-                    setFirst(0);
+        {isPickingOrganization ? (
+          <>
+            <DataList aria-label={t("organizations")} isCompact>
+              {organizations.slice(0, max).map((organization) => (
+                <OrganizationRow
+                  key={organization.id}
+                  organization={organization}
+                  onSelect={() => {
+                    setOrganization(organization);
+                    setFilter("");
+                    resetToGroupRoot();
                   }}
-                  type={type}
-                  isSearching={false}
-                  selectedRows={selectedRows}
-                  setSelectedRows={setSelectedRows}
-                  canBrowse={canBrowse}
                 />
-              ))
-            : groups
-                .map((g) => deepGroup([g]))
-                .flat()
-                .filter((g) => isOrgGroups || g.access)
-                .map((g) => (
-                  <GroupRow
-                    key={g.id}
-                    group={g}
-                    isRowDisabled={isRowDisabled}
-                    onSelect={(group) => {
-                      setGroupId(group.id);
-                      setFilter("");
-                      setFirst(0);
-                    }}
-                    type={type}
-                    isSearching
-                    selectedRows={selectedRows}
-                    setSelectedRows={setSelectedRows}
-                    canBrowse={false}
-                  />
-                ))}
-        </DataList>
-        {groups.length === 0 && filter === "" && (
-          <ListEmptyState
-            hasIcon={false}
-            message={t("moveGroupEmpty")}
-            instructions={isMove ? t("moveGroupEmptyInstructions") : undefined}
-          />
-        )}
-        {groups.length === 0 && filter !== "" && (
-          <ListEmptyState
-            message={t("noSearchResults")}
-            instructions={t("noSearchResultsInstructions")}
-          />
+              ))}
+            </DataList>
+            {organizations.length === 0 && (
+              <ListEmptyState
+                hasIcon={false}
+                message={
+                  filter === ""
+                    ? t("noLinkedOrganizations")
+                    : t("noSearchResults")
+                }
+                instructions={
+                  filter === "" ? undefined : t("noSearchResultsInstructions")
+                }
+              />
+            )}
+          </>
+        ) : (
+          <>
+            <DataList aria-label={t("groups")} isCompact>
+              {filter == ""
+                ? groups.slice(0, max).map((group: SelectableGroup) => (
+                    <GroupRow
+                      key={group.id}
+                      group={group}
+                      isRowDisabled={isRowDisabled}
+                      onSelect={(group) => {
+                        setGroupId(group.id);
+                        setFirst(0);
+                      }}
+                      type={type}
+                      isSearching={false}
+                      selectedRows={selectedRows}
+                      setSelectedRows={setSelectedRows}
+                      canBrowse={canBrowse}
+                    />
+                  ))
+                : groups
+                    .map((g) => deepGroup([g]))
+                    .flat()
+                    .filter((g) => isOrgGroups || g.access)
+                    .map((g) => (
+                      <GroupRow
+                        key={g.id}
+                        group={g}
+                        isRowDisabled={isRowDisabled}
+                        onSelect={(group) => {
+                          setGroupId(group.id);
+                          setFilter("");
+                          setFirst(0);
+                        }}
+                        type={type}
+                        isSearching
+                        selectedRows={selectedRows}
+                        setSelectedRows={setSelectedRows}
+                        canBrowse={false}
+                      />
+                    ))}
+            </DataList>
+            {groups.length === 0 && filter === "" && (
+              <ListEmptyState
+                hasIcon={false}
+                message={t("moveGroupEmpty")}
+                instructions={
+                  isMove ? t("moveGroupEmptyInstructions") : undefined
+                }
+              />
+            )}
+            {groups.length === 0 && filter !== "" && (
+              <ListEmptyState
+                message={t("noSearchResults")}
+                instructions={t("noSearchResultsInstructions")}
+              />
+            )}
+          </>
         )}
       </PaginatingTableToolbar>
     </Modal>
+  );
+};
+
+type OrganizationRowProps = {
+  organization: OrganizationRepresentation;
+  onSelect: () => void;
+};
+
+const OrganizationRow = ({ organization, onSelect }: OrganizationRowProps) => {
+  const { t } = useTranslation();
+  const labelId = `select-${organization.id}`;
+
+  return (
+    <DataListItem
+      aria-labelledby={labelId}
+      key={organization.id}
+      id={organization.id}
+      onClick={onSelect}
+    >
+      <DataListItemRow
+        className="join-group-dialog-row"
+        data-testid={organization.name}
+      >
+        <DataListItemCells
+          dataListCells={[
+            <DataListCell
+              key={`name-${organization.id}`}
+              className="keycloak-groups-group-path"
+            >
+              <span id={labelId}>{organization.name}</span>
+            </DataListCell>,
+          ]}
+        />
+        <DataListAction
+          id="actions"
+          aria-labelledby={labelId}
+          aria-label={t("organization")}
+          isPlainButtonAction
+        >
+          <Button variant="link" aria-label={t("select")}>
+            <AngleRightIcon />
+          </Button>
+        </DataListAction>
+      </DataListItemRow>
+    </DataListItem>
   );
 };
 
