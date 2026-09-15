@@ -10,6 +10,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.transmitter.delivery.poll.PollDeliveryService;
 import org.keycloak.ssf.transmitter.delivery.poll.PollErrorRepresentation;
 import org.keycloak.ssf.transmitter.delivery.poll.PollRequest;
@@ -17,7 +18,6 @@ import org.keycloak.ssf.transmitter.delivery.poll.PollResponse;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
-import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
