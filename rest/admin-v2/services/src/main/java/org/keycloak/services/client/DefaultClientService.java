@@ -31,6 +31,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.StripSecretsUtilsV2;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
@@ -126,10 +127,19 @@ public class DefaultClientService implements ClientService {
         
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientViewContext(client, permissions.adminAuth()));
-            return Optional.ofNullable(getSchema(client.getProtocol()).fromModel(client, includeReadOnlyFields));
+            BaseClientRepresentation rep = getSchema(client.getProtocol()).fromModel(client, includeReadOnlyFields);
+            if (rep != null && !permissions.clients().canManage(client)) {
+                rep = StripSecretsUtilsV2.stripSecrets(session, rep);
+            }
+            return Optional.ofNullable(rep);
         } catch (ClientPolicyException e) {
             throw new ServiceException(e.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
+    }
+
+    /** Returns client representation without masking secrets — for internal use where unmasked data is required. */
+    private BaseClientRepresentation getClientUnmasked(ClientModel client) {
+        return getSchema(client.getProtocol()).fromModel(client, false);
     }
 
     @Override
@@ -169,7 +179,11 @@ public class DefaultClientService implements ClientService {
                     .<BaseClientRepresentation>map(client -> {
                         BaseClientModelSchema<?> schema = resourceTypeProvider.getSchemaMap().get(client.getProtocol());
                         if (schema == null) return null;
-                        return populateFromSchema(schema, client, includeList);
+                        BaseClientRepresentation rep = populateFromSchema(schema, client, includeList);
+                        if (!permissions.clients().canManage(client)) {
+                            rep = StripSecretsUtilsV2.stripSecrets(session, rep);
+                        }
+                        return rep;
                     })
                     .filter(Objects::nonNull);
 
@@ -233,8 +247,12 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public BaseClientRepresentation patchClient(RealmModel realm, String clientId, PatchType patchType, InputStream patch) throws ServiceException {
-        Supplier<BaseClientRepresentation> getOriginalClient = () -> getClient(realm, clientId, false)
-                .orElseThrow(() -> new ServiceException("Cannot find the specified client", Response.Status.NOT_FOUND));
+        ClientModel targetClient = realm.getClientByClientId(clientId);
+        if (targetClient == null) {
+            throw new ServiceException("Cannot find the specified client", Response.Status.NOT_FOUND);
+        }
+        permissions.clients().requireConfigure(targetClient);
+        Supplier<BaseClientRepresentation> getOriginalClient = () -> getClientUnmasked(targetClient);
 
         BaseClientRepresentation updated;
         boolean patchExplicitNullSecret = false;
