@@ -52,29 +52,31 @@
         <label for="kcRecoveryCodesConfirmationCheck">${msg("recovery-codes-confirmation-message")}</label>
     </div>
 
-    <form action="${url.loginAction}" class="${properties.kcFormGroupClass!}" id="kc-recovery-codes-settings-form" method="post">
+    <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-recovery-codes-settings-form" method="post">
         <input type="hidden" name="generatedRecoveryAuthnCodes" value="${recoveryAuthnCodesConfigBean.generatedRecoveryAuthnCodesAsString}" />
         <input type="hidden" name="generatedAt" value="${recoveryAuthnCodesConfigBean.generatedAt?c}" />
         <input type="hidden" id="userLabel" name="userLabel" value="${msg("recovery-codes-label-default")}" />
         <@passwordCommons.logoutOtherSessions/>
 
-        <#if isAppInitiatedAction??>
-            <input type="submit"
-            class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}"
-            id="saveRecoveryAuthnCodesBtn" value="${msg("recovery-codes-action-complete")}"
-            disabled
-            />
-            <button type="submit"
-                class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!} pf-m-link"
-                id="cancelRecoveryAuthnCodesBtn" name="cancel-aia" value="true">${msg("recovery-codes-action-cancel")}
-            </button>
-        <#else>
-            <input type="submit"
-            class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-            id="saveRecoveryAuthnCodesBtn" value="${msg("recovery-codes-action-complete")}"
-            disabled
-            />
-        </#if>
+        <div class="${properties.kcFormButtonsClass!}">
+            <#if isAppInitiatedAction??>
+                <input type="submit"
+                class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}"
+                id="saveRecoveryAuthnCodesBtn" value="${msg("recovery-codes-action-complete")}"
+                disabled
+                />
+                <button type="submit"
+                    class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}"
+                    id="cancelRecoveryAuthnCodesBtn" name="cancel-aia" value="true">${msg("recovery-codes-action-cancel")}
+                </button>
+            <#else>
+                <input type="submit"
+                class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
+                id="saveRecoveryAuthnCodesBtn" value="${msg("recovery-codes-action-complete")}"
+                disabled
+                />
+            </#if>
+        </div>
     </form>
 
     <script>
