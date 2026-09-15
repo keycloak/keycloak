@@ -1073,4 +1073,13 @@ public class GroupTest extends AbstractGroupTest {
             return realm;
         }
     }
+
+    @Test
+    public void testAddTopLevelGroupNullRepresentation() {
+        try (Response response = managedRealm.admin().groups().add(null)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            assertEquals("Group representation is missing", error.getErrorMessage());
+        }
+    }
 }
