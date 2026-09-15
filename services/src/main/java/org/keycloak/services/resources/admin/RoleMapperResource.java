@@ -149,9 +149,6 @@ public class RoleMapperResource {
         roleMapper.getRoleMappingsStream().forEach(roleMapping -> {
             RoleContainerModel container = roleMapping.getContainer();
             if (container instanceof RealmModel) {
-                if (realm.isAdminPermissionsEnabled() && !auth.roles().canView(roleMapping)) {
-                    return;
-                }
                 realmRolesRepresentation.add(ModelToRepresentation.toBriefRepresentation(roleMapping));
             } else if (container instanceof ClientModel) {
                 ClientModel clientModel = (ClientModel) container;
