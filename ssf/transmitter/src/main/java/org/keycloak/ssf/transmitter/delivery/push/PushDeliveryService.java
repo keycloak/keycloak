@@ -139,7 +139,9 @@ public class PushDeliveryService {
                 .build();
         var httpRequest = SimpleHttp.create(httpClient)
                 .withRequestConfig(requestConfig)
-                .doPost(endpointUrl);
+                .doPost(endpointUrl)
+                // RFC 8935 §2.1: the push request MUST include Accept: application/json
+                .acceptJson();
         if (authorizationHeader != null) {
             // we use the push authorization header as is
             httpRequest.header(HttpHeaders.AUTHORIZATION, authorizationHeader);
