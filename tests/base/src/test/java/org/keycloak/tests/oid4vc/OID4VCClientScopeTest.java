@@ -327,6 +327,14 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
     }
 
     @Test
+    public void testIncludeInTokenScopeMustBeEnabled() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("scope-without-include-in-token-scope");
+        scope.setIncludeInTokenScope(false);
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains("include in token scope"));
+    }
+
+    @Test
     public void testCredentialFormatWithoutBuilderRejected() {
         CredentialScopeRepresentation scope = new CredentialScopeRepresentation("issue-52515-unsupported-format");
         scope.setFormat("unsupported-format");
