@@ -19,6 +19,7 @@ package org.keycloak.models;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.keycloak.credential.CredentialInput;
@@ -53,6 +54,22 @@ public interface SubjectCredentialManager {
      * @return <code>true</code> if credentials have been updated successfully
      */
     boolean updateCredential(CredentialInput input);
+
+    /**
+     * Updates a credential of the entity with the inputs provided by the entity, and returns the credential as
+     * written to the Keycloak credential store.
+     * <p>
+     * The default implementation performs the update and reports no stored credential. Implementations writing
+     * credentials to the Keycloak credential store are expected to override it; leaving the default in place only
+     * means callers cannot identify the credential that was written.
+     *
+     * @return the credential written to the Keycloak credential store, or an empty {@link Optional} when nothing
+     * has been written there, for example because a user-storage provider handled the update
+     */
+    default Optional<CredentialModel> updateCredentialAndGet(CredentialInput input) {
+        updateCredential(input);
+        return Optional.empty();
+    }
 
     /**
      * Updates a credential of the entity with an updated {@link CredentialModel}.

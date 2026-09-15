@@ -9,6 +9,10 @@ As part of ongoing secure-by-default improvements to impersonation, token lifecy
 
 Additionally, tokens issued from impersonation sessions now include the `act` (actor) claim (https://datatracker.ietf.org/doc/html/rfc8693#section-4.1[RFC 8693 Section 4.1]) in both access tokens and ID tokens. This allows downstream resource servers to identify the impersonator for audit purposes. The claim is always present and cannot be disabled.
 
+== Credential ID in credential update events
+
+The `UPDATE_CREDENTIAL` events emitted by built-in required actions now carry the `credential_id` detail when a credential was created or updated in the {project_name} credential store, as the `REMOVE_CREDENTIAL` event already did. The detail is omitted when a user-storage provider handles the update because there is no {project_name} credential ID to report.
+
 = Administration
 
 == Client Secret Rotation (supported)
