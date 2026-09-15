@@ -15,21 +15,20 @@
  * the License.
  */
 
-package org.keycloak.testsuite.composites;
+package org.keycloak.tests.composites;
 
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 
 /**
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public abstract class AbstractCompositeKeycloakTest extends AbstractKeycloakTest {
+public abstract class AbstractCompositeKeycloakTest {
 
-    protected ManagedRealm managedRealm = new ManagedRealm(this, "test");
+    protected abstract ManagedRealm managedRealm();
 
     protected String getUserId(String username) {
-        return AdminApiUtil.findUserByUsername(managedRealm.admin(), username).getId();
+        return AdminApiUtil.findUserByUsername(managedRealm().admin(), username).getId();
     }
 }
