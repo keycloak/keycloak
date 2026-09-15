@@ -169,7 +169,7 @@ export default function AddMapper() {
   }
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <DeleteMapperConfirm />
       <ViewHeader
         className="kc-add-mapper-title"
@@ -199,7 +199,7 @@ export default function AddMapper() {
         role="manage-identity-providers"
         isHorizontal
         onSubmit={handleSubmit(save)}
-        className="pf-v5-u-mt-lg"
+        className="pf-v6-u-mt-lg"
       >
         <FormProvider {...form}>
           {id && (

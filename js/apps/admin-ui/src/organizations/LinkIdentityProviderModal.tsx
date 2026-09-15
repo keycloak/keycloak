@@ -5,6 +5,9 @@ import {
   ButtonVariant,
   Form,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
 } from "@patternfly/react-core";
 import { useEffect } from "react";
@@ -96,10 +99,48 @@ export const LinkIdentityProviderModal = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("linkIdentityProvider")}
       isOpen
       onClose={onClose}
-      actions={[
+      aria-label={t("linkIdentityProvider")}
+    >
+      <ModalHeader title={t("linkIdentityProvider")} />
+      <ModalBody>
+        <FormProvider {...form}>
+          <Form id="form" onSubmit={handleSubmit(submitForm)}>
+            <IdentityProviderSelect
+              name="alias"
+              label={t("identityProvider")}
+              defaultValue={[]}
+              isRequired
+              isDisabled={!!identityProvider}
+            />
+
+            <DefaultSwitchControl
+              name="hideOnLogin"
+              label={t("hideOnLoginPage")}
+              labelIcon={t("hideOnLoginPageHelp")}
+              defaultValue={true}
+            />
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm(
+                "config.kc.org.broker.login.hide-when-org-unknown",
+              )}
+              label={t("hideOnLoginWhenOrgNotResolved")}
+              labelIcon={t("hideOnLoginWhenOrgNotResolvedHelp")}
+              stringify
+            />
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm(
+                "config.kc.org.broker.login.show-when-linked-elsewhere",
+              )}
+              label={t("showOnLoginForUnlinkedMembers")}
+              labelIcon={t("showOnLoginForUnlinkedMembersHelp")}
+              stringify
+            />
+          </Form>
+        </FormProvider>
+      </ModalBody>
+      <ModalFooter>
         <FormSubmitButton
           formState={formState}
           data-testid="confirm"
@@ -109,7 +150,7 @@ export const LinkIdentityProviderModal = ({
           allowNonDirty
         >
           {t("save")}
-        </FormSubmitButton>,
+        </FormSubmitButton>
         <Button
           id="modal-cancel"
           data-testid="cancel"
@@ -118,42 +159,8 @@ export const LinkIdentityProviderModal = ({
           onClick={onClose}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <FormProvider {...form}>
-        <Form id="form" onSubmit={handleSubmit(submitForm)}>
-          <IdentityProviderSelect
-            name="alias"
-            label={t("identityProvider")}
-            defaultValue={[]}
-            isRequired
-            isDisabled={!!identityProvider}
-          />
-          <DefaultSwitchControl
-            name="hideOnLogin"
-            label={t("hideOnLoginPage")}
-            labelIcon={t("hideOnLoginPageHelp")}
-            defaultValue={true}
-          />
-          <DefaultSwitchControl
-            name={convertAttributeNameToForm(
-              "config.kc.org.broker.login.hide-when-org-unknown",
-            )}
-            label={t("hideOnLoginWhenOrgNotResolved")}
-            labelIcon={t("hideOnLoginWhenOrgNotResolvedHelp")}
-            stringify
-          />
-          <DefaultSwitchControl
-            name={convertAttributeNameToForm(
-              "config.kc.org.broker.login.show-when-linked-elsewhere",
-            )}
-            label={t("showOnLoginForUnlinkedMembers")}
-            labelIcon={t("showOnLoginForUnlinkedMembersHelp")}
-            stringify
-          />
-        </Form>
-      </FormProvider>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

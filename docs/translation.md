@@ -131,8 +131,8 @@ When reviewing translations, compare against the English source files (ground tr
 Community translations live in parallel `-community` directories.
 
 **Admin UI** (the React-based admin console):
-- English: `js/apps/admin-ui/maven-resources/theme/keycloak.v2/admin/messages/messages_en.properties`
-- Translations: `js/apps/admin-ui/maven-resources-community/theme/keycloak.v2/admin/messages/messages_<lang>.properties`
+- English: `js/apps/admin-ui/maven-resources/theme/keycloak.v3/admin/messages/messages_en.properties`
+- Translations: `js/apps/admin-ui/maven-resources-community/theme/keycloak.v3/admin/messages/messages_<lang>.properties`
 
 **Account UI** (the React-based account console):
 - English: `js/apps/account-ui/maven-resources/theme/keycloak.v3/account/messages/messages_en.properties`

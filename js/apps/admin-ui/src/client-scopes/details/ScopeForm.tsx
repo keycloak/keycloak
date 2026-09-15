@@ -502,7 +502,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                     stringify
                   />
                 )}
-                <Divider className="pf-v5-u-mb-sm" />
+                <Divider className="pf-v6-u-mb-sm" />
               </>
             )}
           </>

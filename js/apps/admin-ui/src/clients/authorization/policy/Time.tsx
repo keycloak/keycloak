@@ -130,7 +130,7 @@ const FromTo = ({ name, ...rest }: NumberControlProps) => {
     <FormGroup
       label={t(name)}
       fieldId={name}
-      labelIcon={<HelpItem helpText={t(`${name}Help`)} fieldLabelId={name} />}
+      labelHelp={<HelpItem helpText={t(`${name}Help`)} fieldLabelId={name} />}
     >
       <Split hasGutter>
         <SplitItem>
@@ -157,7 +157,7 @@ export const Time = () => {
       <FormGroup
         label={t("repeat")}
         fieldId="repeat"
-        labelIcon={
+        labelHelp={
           <HelpItem helpText={t("repeatHelp")} fieldLabelId="repeat" />
         }
       >
@@ -170,7 +170,7 @@ export const Time = () => {
               name="repeat"
               onChange={() => setRepeat(false)}
               label={t("notRepeat")}
-              className="pf-v5-u-mb-md"
+              className="pf-v6-u-mb-md"
             />
           </FlexItem>
           <FlexItem>
@@ -181,7 +181,7 @@ export const Time = () => {
               name="repeat"
               onChange={() => setRepeat(true)}
               label={t("repeat")}
-              className="pf-v5-u-mb-md"
+              className="pf-v6-u-mb-md"
             />
           </FlexItem>
         </Flex>
@@ -197,7 +197,7 @@ export const Time = () => {
       <FormGroup
         label={t("startTime")}
         fieldId="notBefore"
-        labelIcon={
+        labelHelp={
           <HelpItem helpText={t("startTimeHelp")} fieldLabelId="startTime" />
         }
         isRequired
@@ -208,7 +208,7 @@ export const Time = () => {
       <FormGroup
         label={t("expireTime")}
         fieldId="notOnOrAfter"
-        labelIcon={
+        labelHelp={
           <HelpItem helpText={t("expireTimeHelp")} fieldLabelId="expireTime" />
         }
         isRequired

@@ -62,7 +62,7 @@ export const AddMapperForm = ({
       />
       <FormGroup
         label={t("mapperType")}
-        labelIcon={
+        labelHelp={
           <HelpItem helpText={mapperType.helpText} fieldLabelId="mapperType" />
         }
         fieldId="identityProviderMapper"

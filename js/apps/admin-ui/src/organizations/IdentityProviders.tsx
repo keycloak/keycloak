@@ -58,8 +58,7 @@ const ShownOnLoginPageCheck = ({
 
   return (
     <Switch
-      label={t("on")}
-      labelOff={t("off")}
+      label={row.hideOnLogin ? t("on") : t("off")}
       isChecked={row.hideOnLogin}
       onChange={(_, value) => toggle(value)}
     />
@@ -128,7 +127,7 @@ export const IdentityProviders = () => {
           }}
         />
       )}
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <UnlinkConfirm />
         {open && (
           <LinkIdentityProviderModal
