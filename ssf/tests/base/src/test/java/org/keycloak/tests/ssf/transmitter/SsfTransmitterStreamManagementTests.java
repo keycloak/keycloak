@@ -204,6 +204,36 @@ public class SsfTransmitterStreamManagementTests {
     }
 
     @Test
+    public void testCreateStreamWithoutDeliveryDefaultsToPoll() throws IOException {
+
+        // SSF 1.0 §8.1.1.1: "If the request does not contain the delivery
+        // property, then the Transmitter MUST assume that the method is
+        // urn:ietf:rfc:8936 (poll)" and respond with a delivery object
+        // carrying that method plus a transmitter-supplied endpoint_url.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+
+        StreamConfigUpdateRepresentation request = new StreamConfigUpdateRepresentation();
+        request.setEventsRequested(Set.of(CaepCredentialChange.TYPE));
+        request.setDescription("Stream without delivery");
+
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(201, response.getStatus(),
+                    "stream creation without a delivery property must succeed and default to poll");
+
+            StreamConfig created = response.asJson(StreamConfig.class);
+            Assertions.assertNotNull(created.getDelivery(), "response must carry a delivery object");
+            Assertions.assertEquals(Ssf.DELIVERY_METHOD_POLL_URI, created.getDelivery().getMethod(),
+                    "omitted delivery must default to the RFC 8936 poll method");
+            String endpointUrl = created.getDelivery().getEndpointUrl();
+            Assertions.assertNotNull(endpointUrl, "poll delivery must carry a transmitter-supplied endpoint_url");
+            Assertions.assertTrue(endpointUrl.startsWith(realm.getBaseUrl()),
+                    "poll endpoint_url must point at this transmitter: " + endpointUrl);
+            Assertions.assertTrue(endpointUrl.contains(created.getStreamId()),
+                    "poll endpoint_url must be scoped to the created stream: " + endpointUrl);
+        }
+    }
+
+    @Test
     public void testCreateStreamReturnsFullEventTypeUris() throws IOException {
 
         String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
