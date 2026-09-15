@@ -46,8 +46,10 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationDomainModel;
+import org.keycloak.models.OrganizationInvitationModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
@@ -310,6 +312,23 @@ public class Organizations {
         }
 
         return false;
+    }
+
+    /**
+     * Grants the roles recorded on an invitation to the user accepting it as direct role mappings. Roles removed since the invitation was sent are skipped.
+     */
+    public static void grantInvitationRoles(RealmModel realm, UserModel user, OrganizationInvitationModel invitation) {
+        if (invitation == null) {
+            return;
+        }
+
+        for (String roleId : invitation.getRoleIds()) {
+            RoleModel role = realm.getRoleById(roleId);
+
+            if (role != null) {
+                user.grantRole(role);
+            }
+        }
     }
 
     public static String getEmailDomain(String email) {

@@ -162,6 +162,7 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
 
         // if we made it this far then go ahead and add the user to the organization
         orgProvider.addMember(orgProvider.getById(token.getOrgId()), user);
+        Organizations.grantInvitationRoles(realm, user, invitation);
 
         // Delete the invitation since it has been used
         invitationManager.remove(token.getId());

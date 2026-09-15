@@ -18,7 +18,11 @@ package org.keycloak.organization.admin.resource;
 
 import java.net.URI;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -51,7 +55,9 @@ import org.keycloak.models.OrganizationInvitationModel;
 import org.keycloak.models.OrganizationInvitationModel.Filter;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.InvitationManager;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -103,7 +109,7 @@ public class OrganizationInvitationResource {
         this.auth = auth;
     }
 
-    public Response inviteUser(String email, String firstName, String lastName, String clientId) {
+    public Response inviteUser(String email, String firstName, String lastName, String clientId, List<String> roles) {
         auth.orgs().requireManage(organization);
 
         if (!organization.isEnabled()) {
@@ -140,7 +146,7 @@ public class OrganizationInvitationResource {
                 throw ErrorResponse.error("User already a member of the organization", Status.CONFLICT);
             }
 
-            return sendInvitation(user, invitationTarget);
+            return sendInvitation(user, invitationTarget, roles);
         }
 
         // Create temporary user for new registrations
@@ -152,10 +158,10 @@ public class OrganizationInvitationResource {
             user.setLastName(lastName);
         }
 
-        return sendInvitation(user, invitationTarget);
+        return sendInvitation(user, invitationTarget, roles);
     }
 
-    public Response inviteExistingUser(String id) {
+    public Response inviteExistingUser(String id, List<String> roles) {
         auth.orgs().requireManage(organization);
 
         if (!organization.isEnabled()) {
@@ -178,10 +184,11 @@ public class OrganizationInvitationResource {
             throw ErrorResponse.error("User does not have an email address", Status.BAD_REQUEST);
         }
 
-        return sendInvitation(user, resolveInvitationTarget(null));
+        return sendInvitation(user, resolveInvitationTarget(null), roles);
     }
 
-    private Response sendInvitation(UserModel user, InvitationTarget invitationTarget) {
+    private Response sendInvitation(UserModel user, InvitationTarget invitationTarget, List<String> roles) {
+        Set<String> roleIds = resolveRoleIds(user, roles);
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = provider.getInvitationManager();
         // Create persistent invitation record
@@ -191,6 +198,10 @@ public class OrganizationInvitationResource {
             user.getFirstName(),
             user.getLastName()
         );
+
+        if (!roleIds.isEmpty()) {
+            invitation.setRoleIds(roleIds);
+        }
 
         String link = user.getId() == null ?
             createRegistrationLink(user, invitation, invitationTarget) :
@@ -213,6 +224,30 @@ public class OrganizationInvitationResource {
                 .success();
 
         return Response.noContent().build();
+    }
+
+    private Set<String> resolveRoleIds(UserModel user, List<String> roles) {
+        if (roles == null || roles.isEmpty()) {
+            return Set.of();
+        }
+
+        // same checks as mapping the roles directly, the user has no id yet when invited to register
+        auth.users().requireMapRoles(user);
+
+        Set<String> roleIds = new HashSet<>();
+
+        for (String roleId : roles) {
+            RoleModel role = realm.getRoleById(roleId.trim());
+
+            if (role == null) {
+                throw ErrorResponse.error("Role not found", Status.BAD_REQUEST);
+            }
+
+            auth.roles().requireMapRole(role);
+            roleIds.add(role.getId());
+        }
+
+        return roleIds;
     }
 
     private int getActionTokenLifespan() {
@@ -425,8 +460,11 @@ public class OrganizationInvitationResource {
         OrganizationInvitationModel invitation = verifyInvitationById(invitationManager, id);
         String clientId = resolveClientIdFromInviteLink(invitation.getInviteLink());
         resolveInvitationTarget(clientId);
+        List<String> roles = invitation.getRoleIds().stream()
+                .filter(roleId -> realm.getRoleById(roleId) != null)
+                .toList();
         invitationManager.remove(id);
-        return inviteUser(invitation.getEmail(), invitation.getFirstName(), invitation.getLastName(), clientId);
+        return inviteUser(invitation.getEmail(), invitation.getFirstName(), invitation.getLastName(), clientId, roles);
     }
 
     private OrganizationInvitationModel verifyInvitationById(InvitationManager invitationManager, String id) {
@@ -455,6 +493,11 @@ public class OrganizationInvitationResource {
                 EXPIRED :
                 PENDING;
         rep.setStatus(dynamicStatus);
+        rep.setRoles(model.getRoleIds().stream()
+                .map(realm::getRoleById)
+                .filter(Objects::nonNull)
+                .map(ModelToRepresentation::toBriefRepresentation)
+                .toList());
 
         return rep;
     }

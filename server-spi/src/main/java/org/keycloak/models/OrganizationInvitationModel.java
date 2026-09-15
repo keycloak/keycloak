@@ -16,6 +16,8 @@
  */
 package org.keycloak.models;
 
+import java.util.Set;
+
 import org.keycloak.common.util.Time;
 
 /**
@@ -139,6 +141,20 @@ public interface OrganizationInvitationModel {
      * @param inviteLink the invitation link
      */
     void setInviteLink(String inviteLink);
+
+    /**
+     * Returns the ids of the roles granted to the invitee when the invitation is accepted.
+     */
+    default Set<String> getRoleIds() {
+        return Set.of();
+    }
+
+    /**
+     * Sets the ids of the roles granted to the invitee when the invitation is accepted.
+     */
+    default void setRoleIds(Set<String> roleIds) {
+        throw new UnsupportedOperationException("Roles are not supported by this invitation model");
+    }
 
     /**
      * Returns the current status of this invitation.
