@@ -365,6 +365,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
                 // Delete the invitation since it has been used
                 InvitationManager invitationManager = provider.getInvitationManager();
+                Organizations.grantInvitationRoles(context.getRealm(), user, invitationManager.getById(token.getId()));
                 invitationManager.remove(token.getId());
 
                 context.getEvent()

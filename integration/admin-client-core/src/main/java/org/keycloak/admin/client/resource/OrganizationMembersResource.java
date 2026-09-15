@@ -201,10 +201,31 @@ public interface OrganizationMembersResource {
                         @FormParam("lastName") String lastName,
                         @QueryParam("client_id") String clientId);
 
+    /**
+     * Invites a user by e-mail, granting the given realm or client roles when the invitation is accepted.
+     */
+    @POST
+    @Path("invite-user")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    Response inviteUser(@FormParam("email") String email,
+                        @FormParam("firstName") String firstName,
+                        @FormParam("lastName") String lastName,
+                        @QueryParam("client_id") String clientId,
+                        @FormParam("roles") List<String> roleIds);
+
     @POST
     @Path("invite-existing-user")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     Response inviteExistingUser(@FormParam("id") String id);
+
+    /**
+     * Invites an existing user, granting the given realm or client roles when the invitation is accepted.
+     */
+    @POST
+    @Path("invite-existing-user")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    Response inviteExistingUser(@FormParam("id") String id,
+                                @FormParam("roles") List<String> roleIds);
 
     /**
      * @since Keycloak server 26

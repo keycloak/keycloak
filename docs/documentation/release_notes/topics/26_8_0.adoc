@@ -17,6 +17,10 @@ Client Secret Rotation enables confidential clients to rotate their secrets thro
 
 In this release, Client Secret Rotation is promoted from preview to supported. For more details, see the link:{adminguide_link}#_secret_rotation[{adminguide_name}].
 
+== Roles granted with organization invitations
+
+Organization invitations can now carry realm roles and client roles that are granted when the invitee joins the organization. This removes the need for event listeners or manual role assignment after an invitation is accepted. For details, see the link:{adminguide_link}#_organization_invitation_roles[{adminguide_name}].
+
 = Configuring and Running
 
 == Support for encrypted PEM private keys

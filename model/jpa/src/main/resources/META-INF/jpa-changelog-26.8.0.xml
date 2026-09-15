@@ -305,4 +305,26 @@
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_BackfillGroupOrgId"/>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.8.0-45238-org-invitation-role">
+        <createTable tableName="ORG_INVITATION_ROLE">
+            <column name="INVITATION_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ROLE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey tableName="ORG_INVITATION_ROLE"
+                       columnNames="INVITATION_ID, ROLE_ID"
+                       constraintName="CONSTR_ORG_INVITATION_ROLE"/>
+
+        <addForeignKeyConstraint baseTableName="ORG_INVITATION_ROLE"
+                                 baseColumnNames="INVITATION_ID"
+                                 constraintName="FK_ORG_INVITATION_ROLE_INV"
+                                 referencedTableName="ORG_INVITATION"
+                                 referencedColumnNames="ID"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
 </databaseChangeLog>

@@ -60,6 +60,7 @@ public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthentica
             OrganizationModel invited = provider.getById(invitation.getOrgId());
 
             provider.addMember(invited, user);
+            Organizations.grantInvitationRoles(context.getRealm(), user, provider.getInvitationManager().getById(invitation.getId()));
             provider.getInvitationManager().remove(invitation.getId());
             context.getAuthenticationSession().setRedirectUri(invitation.getRedirectUri());
 
