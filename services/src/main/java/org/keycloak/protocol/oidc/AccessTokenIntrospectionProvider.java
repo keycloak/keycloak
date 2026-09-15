@@ -41,6 +41,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.verifier.TokenVerifierProvider;
+import org.keycloak.protocol.oidc.verifier.TokenVerifierProviderManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.util.DefaultClientSessionContext;
@@ -290,9 +292,11 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
             } else {
 
                 try {
-                    TokenVerifier.createWithoutSignature(token)
-                            .withChecks(TokenManager.NotBeforeCheck.forModel(realm), TokenManager.NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE, new TokenManager.TokenRevocationCheck(session))
-                            .verify();
+                    TokenVerifier<T> verifier = TokenVerifier.createWithoutSignature(token)
+                            .withChecks(TokenManager.NotBeforeCheck.forModel(realm), TokenManager.NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE, new TokenManager.TokenRevocationCheck(session));
+                    addAdditionalVerifications(verifier);
+
+                    verifier.verify();
                     this.client = client;
                     return true;
                 } catch (VerificationException e) {
@@ -303,6 +307,12 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
                 }
             }
         }
+    }
+
+    // Note: This might be possibly removed once option for skip-audience-check for introspection is removed from client and server options
+    protected void addAdditionalVerifications(TokenVerifier<T> verifier) {
+        TokenVerifierProvider.TokenVerifierProviderContext ctx = new TokenVerifierProvider.TokenVerifierProviderContext((TokenVerifier<AccessToken>) verifier, session, realm, session.getContext().getUri());
+        new TokenVerifierProviderManager().additionalAccessTokenVerifications(ctx);
     }
 
     protected boolean verifyAudience() {
