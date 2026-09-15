@@ -172,6 +172,11 @@ Use the new `--https-certificate-key-file-password` option to provide the decryp
 The management interface also supports this via `--https-management-certificate-key-file-password`.
 For details, see <@links.server id="enabletls"/>.
 
+== Reloadable system truststore
+// https://github.com/keycloak/keycloak/issues/51680
+
+The system truststore can now be reloaded at runtime, so rotated CA certificates are picked up without restarting {project_name}. Set the new `--truststore-paths-reload-period` option to a duration and {project_name} periodically re-reads the certificates referenced by `--truststore-paths` and the automatically discovered CA certificates, and rebuilds the system truststore. Reloading is opt-in and disabled unless the option is set. For details, see <@links.server id="keycloak-truststore"/>.
+
 == Login failures now stored in the database
 // https://github.com/keycloak/keycloak/issues/52126
 
