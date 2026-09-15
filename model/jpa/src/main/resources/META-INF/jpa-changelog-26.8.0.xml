@@ -319,6 +319,10 @@
                        columnNames="INVITATION_ID, ROLE_ID"
                        constraintName="CONSTR_ORG_INVITATION_ROLE"/>
 
+        <createIndex indexName="IDX_ORG_INVITATION_ROLE_ROLE" tableName="ORG_INVITATION_ROLE">
+            <column name="ROLE_ID" type="VARCHAR(36)"/>
+        </createIndex>
+
         <addForeignKeyConstraint baseTableName="ORG_INVITATION_ROLE"
                                  baseColumnNames="INVITATION_ID"
                                  constraintName="FK_ORG_INVITATION_ROLE_INV"
