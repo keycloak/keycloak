@@ -8,17 +8,23 @@ import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import IdentityProviderRepresentation from "libs/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 
 const DEFAULT_KUBERNETES_API_SERVER_URL = "https://kubernetes.default.svc";
+const DEFAULT_KUBERNETES_DISCOVERY_URL = `${DEFAULT_KUBERNETES_API_SERVER_URL}/.well-known/openid-configuration`;
 
 type DiscoveryMode = "inCluster" | "external";
 
 const normalizeDiscoveryUrl = (url: string) => url.replace(/\/+$/, "");
 
-const discoveryMode = (issuerDiscoveryUrl?: string): DiscoveryMode =>
-  !issuerDiscoveryUrl ||
-  normalizeDiscoveryUrl(issuerDiscoveryUrl) ===
-    DEFAULT_KUBERNETES_API_SERVER_URL
+const discoveryMode = (issuerDiscoveryUrl?: string): DiscoveryMode => {
+  const normalizedUrl = issuerDiscoveryUrl
+    ? normalizeDiscoveryUrl(issuerDiscoveryUrl)
+    : undefined;
+
+  return !issuerDiscoveryUrl ||
+    normalizedUrl === DEFAULT_KUBERNETES_API_SERVER_URL ||
+    normalizedUrl === DEFAULT_KUBERNETES_DISCOVERY_URL
     ? "inCluster"
     : "external";
+};
 
 export const KubernetesSettings = () => {
   const { t } = useTranslation();
