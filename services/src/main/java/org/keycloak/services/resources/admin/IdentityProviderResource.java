@@ -333,6 +333,8 @@ public class IdentityProviderResource {
 
         IdentityProviderMapperModel model = RepresentationToModel.toModel(mapper);
 
+        Organizations.validateGroupMapperOrganization(session, identityProviderModel, model);
+
         try {
 //            model = realm.addIdentityProviderMapper(model);
             model = session.identityProviders().createMapper(model);
@@ -393,6 +395,8 @@ public class IdentityProviderResource {
         IdentityProviderMapperModel model = session.identityProviders().getMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         model = RepresentationToModel.toModel(rep);
+
+        Organizations.validateGroupMapperOrganization(session, identityProviderModel, model);
 
         session.identityProviders().updateMapper(model);
         adminEvent.operation(OperationType.UPDATE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(session.getContext().getUri()).representation(rep).success();
