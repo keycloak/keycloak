@@ -178,10 +178,13 @@ public class SsfStreamVerificationResource {
             long lastVerifiedAtTime = Long.parseLong(lastVerifiedAt);
             long timeSinceLastVerification = currentTime - lastVerifiedAtTime;
             if (timeSinceLastVerification < minVerificationIntervalSeconds) {
+                long retryAfterSeconds = minVerificationIntervalSeconds - timeSinceLastVerification;
                 throw new WebApplicationException(Response.status(Response.Status.TOO_MANY_REQUESTS)
+                        // RFC 6585 §4: tell the receiver when it may retry
+                        .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds))
                         .type(MediaType.APPLICATION_JSON)
                         .entity(new SsfErrorRepresentation("too_many_requests",
-                                "Wait at least " + (minVerificationIntervalSeconds - timeSinceLastVerification)
+                                "Wait at least " + retryAfterSeconds
                                         + " seconds before triggering another verification"))
                         .build());
             }
