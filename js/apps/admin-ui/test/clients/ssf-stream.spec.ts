@@ -1,9 +1,21 @@
-import { expect, test, type Page } from "@playwright/test";
+import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import { toSsfClientTab } from "../../src/clients/routes/ClientSsfTab.tsx";
 import adminClient from "../utils/AdminClient.ts";
-import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
+import {
+  assertCreateSsfStreamEndpointErrorHidden,
+  assertCreateSsfStreamEndpointErrorVisible,
+  assertCreateSsfStreamEndpointVisible,
+  assertCreateSsfStreamSubmitDisabled,
+  assertCreateSsfStreamSubmitEnabled,
+  assertRegisteredSsfStreamView,
+  assertSsfStreamEmptyStateVisible,
+  fillCreateSsfStreamDescription,
+  fillCreateSsfStreamEndpoint,
+  loginToSsfTab,
+  openCreateSsfStreamForm,
+  submitCreateSsfStream,
+} from "./ssf.ts";
 
 // Exercises the admin-console "Create stream" flow on a client's SSF Stream
 // sub-tab. The integration server is always started with the `ssf` feature
@@ -42,65 +54,51 @@ test.describe.serial("Client SSF stream creation", () => {
     await adminClient.deleteRealm(realmName);
   });
 
-  /**
-   * Navigate to the client's SSF Stream sub-tab. The integration server is
-   * always started with the `ssf` feature enabled (see
-   * js/apps/keycloak-server/scripts/start-server.js, #49977), so the SSF tab
-   * must render — assert it rather than skip, so a missing tab fails loudly.
-   */
-  async function goToStreamTab(page: Page) {
-    await login(page, {
-      to: toSsfClientTab({
-        realm: realmName,
-        clientId: clientUuid,
-        tab: "stream",
-      }),
-    });
-
-    await expect(page.getByTestId("ssfTab")).toBeVisible({ timeout: 15_000 });
-  }
-
   test("validates the push endpoint URL before allowing submit", async ({
     page,
   }) => {
-    await goToStreamTab(page);
+    await loginToSsfTab(page, {
+      realm: realmName,
+      clientUuid,
+      tab: "stream",
+    });
 
     // Open the create-stream form from the empty state.
-    await expect(page.getByTestId("empty-state")).toBeVisible();
-    await page.getByRole("button", { name: "Create stream" }).click();
+    await assertSsfStreamEmptyStateVisible(page);
+    await openCreateSsfStreamForm(page);
 
     // PUSH is the default delivery method, so the endpoint URL field is
     // shown. With it empty, the submit button stays disabled.
-    const submit = page.getByTestId("ssfCreateStreamSubmit");
-    await expect(page.getByTestId("ssfCreateStreamEndpointUrl")).toBeVisible();
-    await expect(submit).toBeDisabled();
+    await assertCreateSsfStreamEndpointVisible(page);
+    await assertCreateSsfStreamSubmitDisabled(page);
 
     // A non-http(s) URL is rejected inline and submit remains disabled.
-    await page.getByTestId("ssfCreateStreamEndpointUrl").fill("ftp://nope");
-    await expect(page.getByTestId("endpointUrl-helper")).toBeVisible();
-    await expect(submit).toBeDisabled();
+    await fillCreateSsfStreamEndpoint(page, "ftp://nope");
+    await assertCreateSsfStreamEndpointErrorVisible(page);
+    await assertCreateSsfStreamSubmitDisabled(page);
 
     // A valid https URL clears the error and enables submit.
-    await page.getByTestId("ssfCreateStreamEndpointUrl").fill(pushEndpoint);
-    await expect(page.getByTestId("endpointUrl-helper")).toBeHidden();
-    await expect(submit).toBeEnabled();
+    await fillCreateSsfStreamEndpoint(page, pushEndpoint);
+    await assertCreateSsfStreamEndpointErrorHidden(page);
+    await assertCreateSsfStreamSubmitEnabled(page);
   });
 
   test("creates a push stream", async ({ page }) => {
-    await goToStreamTab(page);
+    await loginToSsfTab(page, {
+      realm: realmName,
+      clientUuid,
+      tab: "stream",
+    });
 
-    await page.getByRole("button", { name: "Create stream" }).click();
-    await page.getByTestId("ssfCreateStreamEndpointUrl").fill(pushEndpoint);
-    await page
-      .getByTestId("ssfCreateStreamDescription")
-      .fill("Created by test");
-    await page.getByTestId("ssfCreateStreamSubmit").click();
+    await openCreateSsfStreamForm(page);
+    await fillCreateSsfStreamEndpoint(page, pushEndpoint);
+    await fillCreateSsfStreamDescription(page, "Created by test");
+    await submitCreateSsfStream(page);
 
     await assertNotificationMessage(page, "SSF stream created successfully.");
 
     // The empty state is replaced by the registered-stream view, which
     // surfaces the stream id and a refresh action.
-    await expect(page.getByTestId("ssfRefresh")).toBeVisible();
-    await expect(page.getByTestId("empty-state")).toBeHidden();
+    await assertRegisteredSsfStreamView(page);
   });
 });
