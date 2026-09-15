@@ -205,6 +205,75 @@ public class DefaultHttpClientFactoryTest {
             }
         }
 
+        @Test
+        public void createHttpClientWithCustomKeyManagersInheritsServerSettings() throws Exception {
+            // The per-IdP mTLS path (tls_client_auth) builds a dedicated client via createHttpClient(keyManagers).
+            // It must inherit the server-wide settings: here we verify the disabled-by-default redirect handling
+            // is still applied (i.e. the builder configuration ran) and the client is usable.
+            HttpClientProvider provider = createDefaultProvider();
+            javax.net.ssl.SSLContext ctx = javax.net.ssl.SSLContext.getInstance("TLS");
+            ctx.init(null, null, null);
+            javax.net.ssl.KeyManagerFactory kmf =
+                    javax.net.ssl.KeyManagerFactory.getInstance(javax.net.ssl.KeyManagerFactory.getDefaultAlgorithm());
+            java.security.KeyStore ks = java.security.KeyStore.getInstance(java.security.KeyStore.getDefaultType());
+            ks.load(null, null);
+            kmf.init(ks, new char[0]);
+
+            try (CloseableHttpClient httpClient = provider.createHttpClient(kmf.getKeyManagers());
+                    CloseableHttpResponse res = httpClient.execute(new HttpGet("http://localhost:8280/redirect"))) {
+                // redirects disabled by default -> the 302 is returned as-is instead of being followed
+                Assert.assertEquals(302, res.getStatusLine().getStatusCode());
+            }
+        }
+
+        @Test
+        public void mtlsClientDoesNotRepeatTruststoreDisabledWarning() {
+            // Each per-IdP mTLS backchannel call builds a dedicated client via createHttpClient(keyManagers).
+            // Without a configured truststore, the "TruststoreProvider is disabled" warning must NOT be emitted
+            // per request (log flooding); it belongs on the shared, once-per-server initialization path only.
+            HttpClientProvider provider = createDefaultProvider();
+
+            java.util.logging.Logger julLogger =
+                    java.util.logging.Logger.getLogger(DefaultHttpClientFactory.class.getName());
+            java.util.List<String> warnings = new java.util.concurrent.CopyOnWriteArrayList<>();
+            java.util.logging.Handler handler = new java.util.logging.Handler() {
+                @Override public void publish(java.util.logging.LogRecord record) {
+                    if (record.getLevel().intValue() >= java.util.logging.Level.WARNING.intValue()) {
+                        warnings.add(record.getMessage());
+                    }
+                }
+                @Override public void flush() { }
+                @Override public void close() { }
+            };
+            julLogger.addHandler(handler);
+            julLogger.setLevel(java.util.logging.Level.ALL);
+            try {
+                javax.net.ssl.KeyManager[] keyManagers = defaultKeyManagers();
+                // Two mTLS client builds, as would happen across two backchannel requests.
+                provider.createHttpClient(keyManagers).close();
+                provider.createHttpClient(keyManagers).close();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            } finally {
+                julLogger.removeHandler(handler);
+            }
+
+            long truststoreWarnings = warnings.stream()
+                    .filter(m -> m != null && m.contains("TruststoreProvider is disabled"))
+                    .count();
+            assertEquals("per-request mTLS client builds must not re-emit the truststore-disabled warning",
+                    0, truststoreWarnings);
+        }
+
+        private static javax.net.ssl.KeyManager[] defaultKeyManagers() throws Exception {
+            javax.net.ssl.KeyManagerFactory kmf =
+                    javax.net.ssl.KeyManagerFactory.getInstance(javax.net.ssl.KeyManagerFactory.getDefaultAlgorithm());
+            java.security.KeyStore ks = java.security.KeyStore.getInstance(java.security.KeyStore.getDefaultType());
+            ks.load(null, null);
+            kmf.init(ks, new char[0]);
+            return kmf.getKeyManagers();
+        }
+
 	private Optional<String> getTestURL() {
 		try {
 			// Convert domain name to ip to make request by ip
