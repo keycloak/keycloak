@@ -492,6 +492,8 @@ public class SsfTransmitterPollDeliveryTests {
             Assertions.assertNotNull(challenge, "401 must carry a WWW-Authenticate challenge");
             Assertions.assertTrue(challenge.startsWith("Bearer realm=\""), "challenge must use the Bearer scheme: " + challenge);
             Assertions.assertFalse(challenge.contains("error="), "bare request must not carry an error code: " + challenge);
+            // ...and the body must not claim one either
+            Assertions.assertNull(response.asJson().get("error"), "bare request body must not carry an error code");
         }
     }
 
