@@ -62,6 +62,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -575,5 +576,20 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
             fail("Should have failed with BadRequestException");
         } catch (BadRequestException expected) {
         }
+
+        // switching the mapper back to a realm group does not leave a stale organization behind
+        GroupRepresentation realmGroup = new GroupRepresentation();
+        realmGroup.setName("realm-test-group");
+        try (Response response = realm.admin().groups().add(realmGroup)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+        }
+
+        mapper.getConfig().put(ConfigConstants.GROUP, realm.admin().getGroupByPath("/realm-test-group").getPath());
+        mapper.getConfig().put(ConfigConstants.GROUP_TYPE, GroupModel.Type.REALM.name());
+        mapper.getConfig().put(ConfigConstants.ORGANIZATION_ID, orgRep.getId());
+        realm.admin().identityProviders().get(idpAlias).update(mapperId, mapper);
+
+        IdentityProviderMapperRepresentation updated = realm.admin().identityProviders().get(idpAlias).getMapperById(mapperId);
+        assertThat(updated.getConfig().get(ConfigConstants.ORGANIZATION_ID), nullValue());
     }
 }

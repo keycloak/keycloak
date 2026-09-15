@@ -30,6 +30,7 @@ import useToggle from "../utils/useToggle";
 type IdentityProviderSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: "typeaheadMulti" | "typeahead";
   isRequired?: boolean;
+  excludeAliases?: string[];
 };
 
 export const IdentityProviderSelect = ({
@@ -40,6 +41,7 @@ export const IdentityProviderSelect = ({
   isRequired,
   variant = "typeahead",
   isDisabled,
+  excludeAliases,
 }: IdentityProviderSelectProps) => {
   const { adminClient } = useAdminClient();
 
@@ -65,7 +67,6 @@ export const IdentityProviderSelect = ({
     async () => {
       const params: IdentityProvidersQuery = {
         max: 20,
-        realmOnly: true,
       };
       if (search) {
         params.search = search;
@@ -73,8 +74,13 @@ export const IdentityProviderSelect = ({
 
       return await adminClient.identityProviders.find(params);
     },
-    setIdps,
-    [search],
+    (identityProviders) =>
+      setIdps(
+        identityProviders.filter(
+          (idp) => !excludeAliases?.includes(idp.alias!),
+        ),
+      ),
+    [search, excludeAliases?.join(",")],
   );
 
   const convert = (

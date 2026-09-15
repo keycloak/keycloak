@@ -15,6 +15,7 @@ interface PaginatedQuery {
 export interface OrganizationQuery extends PaginatedQuery {
   q?: string; // A query to search for custom attributes, in the format 'key1:value2 key2:value2'
   exact?: boolean; // Boolean which defines whether the param 'search' must match exactly or not
+  identityProvider?: string; // Alias of an identity provider, to only return the organizations linked to it. Cannot be combined with 'q'
 }
 
 interface MemberQuery extends PaginatedQuery {
@@ -54,6 +55,14 @@ export class Organizations extends Resource<{ realm?: string }> {
   >({
     method: "GET",
     path: "/",
+  });
+
+  public count = this.makeRequest<
+    Pick<OrganizationQuery, "search" | "q" | "exact" | "identityProvider">,
+    number
+  >({
+    method: "GET",
+    path: "/count",
   });
 
   public findOne = this.makeRequest<{ id: string }, OrganizationRepresentation>(

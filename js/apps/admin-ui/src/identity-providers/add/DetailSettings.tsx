@@ -76,7 +76,6 @@ import { KubernetesSettings } from "./KubernetesSettings";
 import { JWTAuthorizationGrantAssertionSettings } from "./JWTAuthorizationGrantAssertionSettings";
 import JWTAuthorizationGrantSettings from "./JWTAuthorizationGrantSettings";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
-import { GroupResourceContext } from "../../context/group-resource/GroupResourceContext";
 import DefaultTrustSettings from "./DefaultTrustSettings";
 import Oid4VpSettings from "./Oid4VpSettings";
 
@@ -447,9 +446,6 @@ export default function DetailSettings() {
     (isOAuth2 || isOIDC) &&
     !!provider.types?.includes(IdentityProviderType.JWT_AUTHORIZATION_GRANT) &&
     isFeatureEnabled(Feature.JWTAuthorizationGrant);
-  const groupResource = provider.organizationId
-    ? adminClient.organizations.groups(provider.organizationId)
-    : adminClient.groups;
 
   const loader = async () => {
     const [loaderMappers, loaderMapperTypes] = await Promise.all([
@@ -733,78 +729,76 @@ export default function DetailSettings() {
             title={<TabTitleText>{t("mappers")}</TabTitleText>}
             {...mappersTab}
           >
-            <GroupResourceContext value={groupResource}>
-              <KeycloakDataTable
-                emptyState={
-                  <ListEmptyState
-                    message={t("noMappers")}
-                    instructions={t("noMappersInstructions")}
-                    primaryActionText={t("addMapper")}
-                    onPrimaryAction={() =>
-                      void navigate(
-                        toIdentityProviderAddMapper({
+            <KeycloakDataTable
+              emptyState={
+                <ListEmptyState
+                  message={t("noMappers")}
+                  instructions={t("noMappersInstructions")}
+                  primaryActionText={t("addMapper")}
+                  onPrimaryAction={() =>
+                    void navigate(
+                      toIdentityProviderAddMapper({
+                        realm,
+                        alias: alias!,
+                        providerId: provider.providerId!,
+                        tab: "mappers",
+                      }),
+                    )
+                  }
+                />
+              }
+              loader={loader}
+              key={key}
+              ariaLabelKey="mappersList"
+              searchPlaceholderKey="searchForMapper"
+              toolbarItem={
+                <ToolbarItem>
+                  <Button
+                    id="add-mapper-button"
+                    component={(props) => (
+                      <Link
+                        {...props}
+                        to={toIdentityProviderAddMapper({
                           realm,
                           alias: alias!,
                           providerId: provider.providerId!,
                           tab: "mappers",
-                        }),
-                      )
-                    }
-                  />
-                }
-                loader={loader}
-                key={key}
-                ariaLabelKey="mappersList"
-                searchPlaceholderKey="searchForMapper"
-                toolbarItem={
-                  <ToolbarItem>
-                    <Button
-                      id="add-mapper-button"
-                      component={(props) => (
-                        <Link
-                          {...props}
-                          to={toIdentityProviderAddMapper({
-                            realm,
-                            alias: alias!,
-                            providerId: provider.providerId!,
-                            tab: "mappers",
-                          })}
-                        />
-                      )}
-                      data-testid="addMapper"
-                    >
-                      {t("addMapper")}
-                    </Button>
-                  </ToolbarItem>
-                }
-                columns={[
-                  {
-                    name: "name",
-                    displayKey: "name",
-                    cellRenderer: (row) => (
-                      <MapperLink {...row} provider={provider} />
-                    ),
+                        })}
+                      />
+                    )}
+                    data-testid="addMapper"
+                  >
+                    {t("addMapper")}
+                  </Button>
+                </ToolbarItem>
+              }
+              columns={[
+                {
+                  name: "name",
+                  displayKey: "name",
+                  cellRenderer: (row) => (
+                    <MapperLink {...row} provider={provider} />
+                  ),
+                },
+                {
+                  name: "category",
+                  displayKey: "category",
+                },
+                {
+                  name: "type",
+                  displayKey: "type",
+                },
+              ]}
+              actions={[
+                {
+                  title: t("delete"),
+                  onRowClick: (mapper) => {
+                    setSelectedMapper(mapper);
+                    toggleDeleteMapperDialog();
                   },
-                  {
-                    name: "category",
-                    displayKey: "category",
-                  },
-                  {
-                    name: "type",
-                    displayKey: "type",
-                  },
-                ]}
-                actions={[
-                  {
-                    title: t("delete"),
-                    onRowClick: (mapper) => {
-                      setSelectedMapper(mapper);
-                      toggleDeleteMapperDialog();
-                    },
-                  } as Action<IdPWithMapperAttributes>,
-                ]}
-              />
-            </GroupResourceContext>
+                } as Action<IdPWithMapperAttributes>,
+              ]}
+            />
           </Tab>
           {isFeatureEnabled(Feature.AdminFineGrainedAuthz) && (
             <Tab
