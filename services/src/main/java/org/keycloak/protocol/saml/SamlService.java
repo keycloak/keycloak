@@ -703,6 +703,14 @@ public class SamlService extends AuthorizationEndpointBase {
             // default
             String logoutBinding = getBindingType();
             String logoutBindingUri = SamlProtocol.getLogoutServiceUrl(session, client, logoutBinding, true);
+            if (! SamlProtocol.SAML_SOAP_BINDING.equals(logoutBinding) && (logoutBindingUri == null || logoutBindingUri.trim().isEmpty())) {
+                // no logout service URL (or management URL fallback) is configured for this client/binding,
+                // so there is nowhere to send the LogoutResponse to; fail the same way validateDestination()
+                // does above instead of letting the response builders below throw on a null destination.
+                event.detail(Details.REASON, "logout_binding_uri_missing");
+                event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
+                return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+            }
             String logoutRelayState = relayState;
             SAML2LogoutResponseBuilder builder = new SAML2LogoutResponseBuilder();
             builder.logoutRequestID(logoutRequest.getID());
