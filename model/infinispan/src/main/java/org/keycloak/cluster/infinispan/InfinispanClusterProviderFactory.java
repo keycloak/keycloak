@@ -100,6 +100,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
             cp.registerListener(CLEAR_ALL_LOCAL_CACHES_EVENT, event -> localExecutor.execute(() ->
                     Arrays.stream(LOCAL_CACHE_NAMES)
+                            .filter(workCache.getCacheManager()::cacheExists)
                             .map(name -> workCache.getCacheManager().getCache(name))
                             .filter(cache -> cache.getCacheConfiguration().clustering().cacheMode() == CacheMode.LOCAL)
                             .forEach(Cache::clear)
