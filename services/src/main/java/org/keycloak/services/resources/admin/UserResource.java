@@ -53,6 +53,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
+import org.keycloak.authentication.actiontoken.impersonate.ImpersonateActionToken;
 import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
 import org.keycloak.authentication.requiredactions.util.RequiredActionsValidator;
 import org.keycloak.common.ClientConnection;
@@ -63,8 +64,6 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Details;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -136,8 +135,6 @@ import org.jboss.resteasy.reactive.NoCache;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 
-import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
-import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
 
 /**
@@ -403,37 +400,34 @@ public class UserResource {
         }
 
         RealmModel authenticatedRealm = auth.adminAuth().getRealm();
-        // if same realm logout before impersonation
+        // When impersonating within the same realm, the administrator's own session has to be terminated because their
+        // identity cookie will be replaced by the impersonated user's session. This is deferred until the impersonation
+        // link is actually redeemed (see ImpersonateActionTokenHandler) so that merely requesting a link - e.g. from a
+        // non-browser API integration - does not log the administrator out.
         boolean sameRealm = false;
+        String impersonatorSessionId = null;
         String sessionState = auth.adminAuth().getToken().getSessionState();
         if (authenticatedRealm.getId().equals(realm.getId()) && sessionState != null) {
             sameRealm = true;
-            UserSessionModel userSession = session.sessions().getUserSession(authenticatedRealm, sessionState);
-            AuthenticationManager.expireIdentityCookie(session);
-            AuthenticationManager.expireRememberMeCookie(session);
-            AuthenticationManager.expireAuthSessionCookie(session);
-            AuthenticationManager.backchannelLogout(session, authenticatedRealm, userSession, session.getContext().getUri(), clientConnection, headers, true);
+            impersonatorSessionId = sessionState;
         }
-        EventBuilder event = new EventBuilder(realm, session, clientConnection);
-
-        UserSessionModel userSession = new UserSessionManager(session).createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteHost(), "impersonate", false, null, null);
 
         UserModel adminUser = auth.adminAuth().getUser();
         String impersonatorId = adminUser.getId();
         String impersonator = adminUser.getUsername();
-        userSession.setNote(IMPERSONATOR_ID.toString(), impersonatorId);
-        userSession.setNote(IMPERSONATOR_USERNAME.toString(), impersonator);
 
-        AuthenticationManager.createLoginCookie(session, realm, userSession.getUser(), userSession, session.getContext().getUri(), clientConnection);
         URI redirect = Urls.accountBase(session.getContext().getUri().getBaseUri()).build(realm.getName());
+        int expires = (int) Time.currentTimeSeconds() + 60;
+
+        ImpersonateActionToken token = new ImpersonateActionToken(user.getId(), impersonator, impersonatorId, authenticatedRealm.getName(), redirect.toString(), expires, impersonatorSessionId);
+        String impersonateAction = LoginActionsService.actionTokenProcessor(session.getContext().getUri())
+                .queryParam(Constants.KEY, token.serialize(session, realm, session.getContext().getUri()))
+                .build(realm.getName())
+                .toString();
+
         Map<String, Object> result = new HashMap<>();
         result.put("sameRealm", sameRealm);
-        result.put("redirect", redirect.toString());
-        event.event(EventType.IMPERSONATE)
-                .session(userSession)
-                .user(user)
-                .detail(Details.IMPERSONATOR_REALM, authenticatedRealm.getName())
-                .detail(Details.IMPERSONATOR, impersonator).success();
+        result.put("redirect", impersonateAction);
 
         return result;
     }
