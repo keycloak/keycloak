@@ -186,10 +186,6 @@ public class EventStoreProviderTest {
         Assertions.assertEquals(0, eventHelper.queryEvents(realm2.getId(), null, null, null, d08, d10, null, null, null).length);
     }
 
-    /**
-     * See <a href="https://github.com/keycloak/keycloak/issues/52632">#52632</a> -
-     * this test can be removed or changed once we throw an exception instead of a warning.
-     */
     @Test
     public void testEventBuilderDeferredListenerKeepsEventType() {
         realm1.updateWithCleanup(r -> r.eventsListeners(TestEventsListenerDeferredProviderFactory.ID));

@@ -234,7 +234,7 @@ public class EventBuilder {
     }
 
     public void success() {
-        // Clone the event to make it immutable, so asynchronous processors are not confused.
+        // Clone the event to avoid further modifications by the builder
         send(event.clone(), this.storeImmediately == null ? false : this.storeImmediately);
     }
 
@@ -243,7 +243,7 @@ public class EventBuilder {
             throw new IllegalStateException("Attempted to define event error without first setting the event type");
         }
 
-        // Clone the event to make it immutable, so type is not modified for the builder,
+        // Clone the event to avoid further modifications by the builder,
         // and asynchronous processors are not confused.
         Event event = this.event.clone();
         if (!event.getType().name().endsWith("_ERROR")) {
@@ -288,7 +288,7 @@ public class EventBuilder {
             }
         }
 
-        traceEvent();
+        traceEvent(session, event);
 
         for (EventListenerProvider l : targetListeners) {
             try {
@@ -299,7 +299,7 @@ public class EventBuilder {
         }
     }
 
-    private void traceEvent() {
+    private static void traceEvent(KeycloakSession session, Event event) {
         var tracing = session.getProvider(TracingProvider.class);
         var span = tracing.getCurrentSpan();
 
