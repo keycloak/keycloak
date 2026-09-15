@@ -51,6 +51,9 @@ import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -246,6 +249,54 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnErrorPage.assertCurrent();
         assertThat(webAuthnErrorPage.getError(), containsString("A security error occurred during the Passkey operation. Please ensure you are on the correct site and try again."));
+    }
+
+    @Test
+    public void registrationFailsWhenChallengeAlreadyClaimed() {
+        oAuthClient.openRegistrationForm();
+        registerPage.assertCurrent();
+        registerPage.register("firstName", "lastName", EMAIL, USERNAME, PASSWORD);
+
+        webAuthnRegisterPage.assertCurrent();
+        String userId = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME).getId();
+        managedRealm.cleanup().add(r -> r.users().get(userId).remove());
+
+        String challenge = webAuthnRegisterPage.getChallenge();
+        assertThat("Challenge should be present in the page", challenge, is(notNullValue()));
+        String claimKey = WebAuthnConstants.AUTH_CHALLENGE_NOTE + ":" + challenge;
+
+        // Verify the single-use object was created for this challenge
+        boolean exists = runOnServer.fetch(session -> session.singleUseObjects().contains(claimKey), Boolean.class);
+        assertThat("Single-use object should exist for the issued challenge", exists, is(true));
+
+        // Simulate a concurrent request on another node that already consumed this challenge
+        runOnServer.run(session -> session.singleUseObjects().remove(claimKey));
+
+        webAuthnRegisterPage.clickRegister();
+
+        webAuthnErrorPage.assertCurrent();
+        assertThat(webAuthnErrorPage.getError(), containsString("Failed to register your Passkey."));
+
+        assertThat("No credential should be created when challenge was already claimed", getWebAuthnCredentialCount(userId), is(0L));
+
+        // Retry should issue a new challenge and succeed
+        webAuthnErrorPage.clickTryAgain();
+        webAuthnRegisterPage.assertCurrent();
+
+        String newChallenge = webAuthnRegisterPage.getChallenge();
+        assertThat("Retry should generate a new challenge", newChallenge, is(not(challenge)));
+
+        webAuthnRegisterPage.clickRegister();
+        webAuthnRegisterPage.registerWebAuthnCredential("test-credential");
+        assertThat(oAuthClient.parseLoginResponse().isSuccess(), is(true));
+
+        assertThat("Exactly one credential after successful retry", getWebAuthnCredentialCount(userId), is(1L));
+    }
+
+    private long getWebAuthnCredentialCount(String userId) {
+        return managedRealm.admin().users().get(userId).credentials().stream()
+                .filter(c -> getCredentialType().equals(c.getType()))
+                .count();
     }
 
     private void assertBrowserApiErrorMessage(Consumer<VirtualAuthenticatorOptions> optionsConsumer, String expectedMessage) {
