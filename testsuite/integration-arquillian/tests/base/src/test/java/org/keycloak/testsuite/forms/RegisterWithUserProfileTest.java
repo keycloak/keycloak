@@ -477,7 +477,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
 
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
-        UserRepresentation user = VerifyProfileTest.getUserByUsername(managedRealm.admin(),"attributeRequiredAndSelectedByScopeMustBeSet");
+        UserRepresentation user = UserProfileUtil.getUserByUsername(managedRealm.admin(),"attributeRequiredAndSelectedByScopeMustBeSet");
         assertEquals("FirstAA", user.getFirstName());
         assertEquals("LastAA", user.getLastName());
         assertEquals("DepartmentAA", user.firstAttribute(ATTRIBUTE_DEPARTMENT));
