@@ -12,6 +12,7 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.cli",
         "org.keycloak.tests.client",
         "org.keycloak.tests.common",
+        "org.keycloak.tests.composites",
         "org.keycloak.tests.cookies",
         "org.keycloak.tests.cors",
         "org.keycloak.tests.db",

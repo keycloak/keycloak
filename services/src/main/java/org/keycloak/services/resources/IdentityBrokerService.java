@@ -125,7 +125,6 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.services.managers.GrantTypeEndpointRestrictionValidator;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.services.util.BrowserHistoryHelper;
@@ -545,7 +544,6 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                 session, realmModel, session.getContext().getUri(), clientConnection, true, true, null, false, tokenString, headers,
                 verifier -> {
                     DPoPUtil.withDPoPVerifier(verifier, realmModel, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenString));
-                    verifier.withChecks(GrantTypeEndpointRestrictionValidator.check(session));
                 });
         if (authResult == null) {
             event.error(Errors.INVALID_TOKEN);

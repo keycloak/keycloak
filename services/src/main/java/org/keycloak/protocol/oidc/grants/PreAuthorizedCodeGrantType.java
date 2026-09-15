@@ -38,8 +38,6 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -288,28 +286,6 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
     @Override
     public Set<String> getTokenParameterNames() {
         return Collections.emptySet();
-    }
-
-    /**
-     * Restrict pre-authorized tokens to the VC credential endpoint.
-     */
-    @Override
-    public boolean isTokenAllowed(KeycloakSession session, AccessToken token) {
-        // Check if the request path ends with the credential endpoint path
-        boolean isCredentialEndpoint = Optional.ofNullable(session.getContext().getUri())
-                .map(KeycloakUriInfo::getPath)
-                .map(path -> path.endsWith("/" + OID4VCIssuerEndpoint.CREDENTIAL_PATH))
-                .orElse(false);
-
-        if (!isCredentialEndpoint) {
-            return false;
-        }
-
-        // Check if token has exactly one audience and it matches the credential endpoint
-        // Being strict about audience prevents potential security issues with multi-audience tokens
-        String expectedAudience = OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
-        String[] audiences = token.getAudience();
-        return audiences != null && audiences.length == 1 && expectedAudience.equals(audiences[0]);
     }
 
     /**
