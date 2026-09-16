@@ -23,6 +23,7 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Calendar;
@@ -114,6 +115,7 @@ public final class KeycloakModelUtils {
 
     public static final String AUTH_TYPE_CLIENT_SECRET = "client-secret";
     public static final String AUTH_TYPE_CLIENT_SECRET_JWT = "client-secret-jwt";
+    private static final String CANT_FIND_GROUP_MSG_FORMAT = "Unable to find group by path '%s' referenced by mapper '%s' on realm '%s'.";
 
     public static final String GROUP_PATH_SEPARATOR = "/";
     public static final String GROUP_PATH_ESCAPE = "~";
@@ -1101,11 +1103,65 @@ public final class KeycloakModelUtils {
         }
 
         if (group == null) {
-            logger.warnf("Unable to find group by path '%s' referenced by mapper '%s' on realm '%s'.", groupPath, mapperModel.getName(), realm.getName());
+            logger.warnf(CANT_FIND_GROUP_MSG_FORMAT, groupPath, mapperModel.getName(), realm.getName());
             return null;
         }
 
         return group;
+    }
+
+    public static List<GroupModel> getGroupsForIdpMapper(KeycloakSession session,
+                                                        RealmModel realm,
+                                                        IdentityProviderMapperModel mapperModel,
+                                                        BrokeredIdentityContext context) {
+        final var groupPathsStr = mapperModel.getConfig().get(ConfigConstants.GROUP);
+        final var groupTypeStr = mapperModel.getConfig().get(ConfigConstants.GROUP_TYPE);
+        List<GroupModel> groups = new ArrayList<>();
+
+        // Parse the group type from config
+        GroupModel.Type groupType = null;
+        if (groupTypeStr != null) {
+            try {
+                groupType = GroupModel.Type.valueOf(groupTypeStr);
+            } catch (IllegalArgumentException e) {
+                // Invalid group type, treat as null
+            }
+        }
+
+        List<String> groupPaths = new ArrayList<>();
+        if (groupPathsStr != null) {
+            groupPaths = Arrays.stream(groupPathsStr.split(","))
+                    .filter(path -> !path.isEmpty())
+                    .toList();
+        }
+
+        if (groupType == GroupModel.Type.ORGANIZATION) {
+            final var organization = getOrganizationForIdpMapper(session, context.getIdpConfig());
+            if (organization != null) {
+                groupPaths.forEach(groupPath -> {
+                    final var group = findGroupByPath(session, realm, organization, groupPath);
+                    if (group != null) {
+                        groups.add(group);
+                    } else {
+                        logger.warnf(CANT_FIND_GROUP_MSG_FORMAT, groupPath, mapperModel.getName(), realm.getName());
+                    }
+                });
+            }
+
+            return groups;
+        }
+
+        // GroupModel.Type.REALM or null → search realm groups
+        groupPaths.forEach(groupPath -> {
+            final var group = findGroupByPath(session, realm, groupPath);
+            if (group != null) {
+                groups.add(group);
+            } else {
+                logger.warnf(CANT_FIND_GROUP_MSG_FORMAT, groupPath, mapperModel.getName(), realm.getName());
+            }
+        });
+
+        return groups;
     }
 
     public static Stream<RoleModel> getClientScopeMappingsStream(ClientModel client, ScopeContainerModel container) {

@@ -36,7 +36,8 @@ public class AdvancedClaimToGroupMapper extends AbstractClaimToGroupMapper {
     public static final String CLAIM_PROPERTY_NAME = "claims";
     public static final String ARE_CLAIM_VALUES_REGEX_PROPERTY_NAME = "are.claim.values.regex";
 
-    public static final String[] COMPATIBLE_PROVIDERS = {KeycloakOIDCIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID};
+    public static final String[] COMPATIBLE_PROVIDERS = {KeycloakOIDCIdentityProviderFactory.PROVIDER_ID,
+            OIDCIdentityProviderFactory.PROVIDER_ID};
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
@@ -53,12 +54,12 @@ public class AdvancedClaimToGroupMapper extends AbstractClaimToGroupMapper {
         isClaimValueRegexProperty.setHelpText("If enabled claim values are interpreted as regular expressions.");
         isClaimValueRegexProperty.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         configProperties.add(isClaimValueRegexProperty);
-        ProviderConfigProperty groupProperty = new ProviderConfigProperty();
-        groupProperty.setName(ConfigConstants.GROUP);
-        groupProperty.setLabel("Group");
-        groupProperty.setHelpText("Group to assign the user to if claim is present.");
-        groupProperty.setType(ProviderConfigProperty.GROUP_TYPE);
-        configProperties.add(groupProperty);
+        ProviderConfigProperty groupsProperty = new ProviderConfigProperty();
+        groupsProperty.setName(ConfigConstants.GROUP);
+        groupsProperty.setLabel("Groups");
+        groupsProperty.setHelpText("Groups to assign the user to if claim is present.");
+        groupsProperty.setType(ProviderConfigProperty.GROUP_LIST_TYPE);
+        configProperties.add(groupsProperty);
     }
 
     public static final String PROVIDER_ID = "oidc-advanced-group-idp-mapper";
