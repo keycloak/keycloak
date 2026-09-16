@@ -8,7 +8,7 @@ import {
   searchItem,
 } from "../utils/table.ts";
 import { login } from "../utils/login.ts";
-import { toClientScopes } from "../utils/routes.ts";
+import { toClientScopes } from "../../src/client-scopes/routes/ClientScopes.routes.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 
 async function goToMappersTab(page: Page) {

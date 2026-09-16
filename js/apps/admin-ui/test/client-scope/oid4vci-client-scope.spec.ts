@@ -11,7 +11,7 @@ import {
 } from "../utils/form.ts";
 import { clickTableRowItem, clickTableToolbarItem } from "../utils/table.ts";
 import { login } from "../utils/login.ts";
-import { toClientScopes } from "../utils/routes.ts";
+import { toClientScopes } from "../../src/client-scopes/routes/ClientScopes.routes.ts";
 import {
   OID4VCI_MDOC_SERVER_FEATURE,
   OID4VCI_PROTOCOL,
