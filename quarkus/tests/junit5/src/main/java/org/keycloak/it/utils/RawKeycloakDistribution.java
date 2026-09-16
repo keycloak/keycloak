@@ -211,7 +211,9 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 destroyDescendantsOnWindows(keycloak, false);
 
                 keycloak.destroy();
-                keycloak.waitFor(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                if (!keycloak.waitFor(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    throw new RuntimeException("Server process did not stop within " + DEFAULT_SHUTDOWN_TIMEOUT_SECONDS + " seconds");
+                }
             } catch (Exception cause) {
                 destroyDescendantsOnWindows(keycloak, true);
                 keycloak.destroyForcibly();
@@ -236,7 +238,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         if (descendants.isEmpty()) {
             return;
         }
-        
+
         LOG.debugf("Found %d descendant processes to terminate", descendants.size());
         CompletableFuture<?> allProcesses = CompletableFuture.completedFuture(null);
 
@@ -402,7 +404,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     private long getStartTimeout() {
-        return TimeUnit.SECONDS.toMillis(Long.getLong("keycloak.distribution.start.timeout", 120L));
+        return TimeUnit.SECONDS.toMillis(Long.getLong("keycloak.distribution.start.timeout", 300L));
     }
 
     private HostnameVerifier createInsecureHostnameVerifier() {
