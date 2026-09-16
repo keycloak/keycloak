@@ -64,6 +64,10 @@ public class DelegationScopeType extends UsernameScopeType {
     @Override
     public void validateParameterWithUser(@Nonnull UserModel currentUser, @Nonnull ClientScopeModel scope, @Nonnull String parameter) throws InvalidScopeParameterException {
         UserModel targetUser = resolveUser(scope, parameter);
+        if (targetUser.getServiceAccountClientLink() != null) {
+            throw new InvalidScopeParameterException(
+                    String.format("User '%s' is a service account. Use 'delegation:client:<client-id>' scope for client/service-account delegation", parameter));
+        }
         if (targetUser.getId().equals(currentUser.getId())) {
             throw new InvalidScopeParameterException("User cannot target themselves");
         }
