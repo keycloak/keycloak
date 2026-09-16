@@ -210,6 +210,212 @@ public class OrganizationSharedIdpBrokerTest {
         });
     }
 
+    /**
+     * Scenario 1.6 — Non-Federated Domain.
+     * Org-A owns acme.com (IDP_ID=IdP-X) and internal.acme.com (IDP_ID=NULL).
+     * bob@internal.acme.com → IDP_ID=NULL → password form, no broker, no auto-membership.
+     */
+    @Test
+    public void testNonFederatedDomainShowsPasswordForm() {
+        String idpAlias = "idp-x";
+        IdentityProviderRepresentation idp = AbstractOrganizationTest.createRealOrgBroker(idpAlias, providerRealm);
+        consumerRealm.admin().identityProviders().create(idp).close();
+        consumerRealm.cleanup().add(r -> {
+            try { r.identityProviders().get(idpAlias).remove(); } catch (Exception ignored) {}
+        });
+
+        String orgId = createOrganization(ORG_A_NAME, "acme.com", "internal.acme.com");
+        consumerRealm.admin().organizations().get(orgId).identityProviders().addIdentityProvider(idpAlias).close();
+        setDomainRouting(orgId, "acme.com", idpAlias);
+        // internal.acme.com has no IDP_ID → non-federated
+
+        createProviderUser("bob", "bob@internal.acme.com", "password");
+
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly("bob@internal.acme.com");
+        loginUsernamePage.submit();
+
+        // should NOT be redirected to provider realm — non-federated domain has no IdP routing
+        assertTrue(Objects.requireNonNull(driver.getCurrentUrl()).contains("/realms/" + consumerRealm.getName() + "/"),
+                "Non-federated domain should stay on consumer realm, not redirect to IdP");
+    }
+
+    /**
+     * Scenario 1.7 — Wildcard Domain with Specific Override.
+     * Org-A owns *.acme.com (IdP-X) and hr.acme.com (IdP-Y).
+     * carol@hr.acme.com → most specific wins → hr.acme.com → IdP-Y.
+     * dave@sales.acme.com → wildcard match → *.acme.com → IdP-X.
+     */
+    @Test
+    public void testWildcardDomainWithSpecificOverride() {
+        String idpXAlias = "idp-x";
+        String idpYAlias = "idp-y";
+        IdentityProviderRepresentation idpX = AbstractOrganizationTest.createRealOrgBroker(idpXAlias, providerRealm);
+        IdentityProviderRepresentation idpY = AbstractOrganizationTest.createRealOrgBroker(idpYAlias, providerRealm);
+        consumerRealm.admin().identityProviders().create(idpX).close();
+        consumerRealm.admin().identityProviders().create(idpY).close();
+        consumerRealm.cleanup().add(r -> {
+            try { r.identityProviders().get(idpXAlias).remove(); } catch (Exception ignored) {}
+        });
+        consumerRealm.cleanup().add(r -> {
+            try { r.identityProviders().get(idpYAlias).remove(); } catch (Exception ignored) {}
+        });
+
+        String orgId = createOrganization(ORG_A_NAME, "*.acme.com", "hr.acme.com");
+        consumerRealm.admin().organizations().get(orgId).identityProviders().addIdentityProvider(idpXAlias).close();
+        consumerRealm.admin().organizations().get(orgId).identityProviders().addIdentityProvider(idpYAlias).close();
+        setDomainRouting(orgId, "*.acme.com", idpXAlias);
+        setDomainRouting(orgId, "hr.acme.com", idpYAlias);
+
+        createProviderUser("carol", "carol@hr.acme.com", "password");
+
+        // carol@hr.acme.com → most specific wins → hr.acme.com → IdP-Y
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly("carol@hr.acme.com");
+        loginUsernamePage.submit();
+
+        assertTrue(Objects.requireNonNull(driver.getCurrentUrl()).contains("/realms/" + providerRealm.getName() + "/"),
+                "Should be redirected to provider realm via IdP-Y");
+
+        loginPage.fillLogin("carol", "password");
+        loginPage.submit();
+
+        String code = oauth.parseLoginResponse().getCode();
+        assertNotNull(code, "Should have received an auth code for carol");
+
+        String carolId = consumerRealm.admin().users().searchByEmail("carol@hr.acme.com", true).get(0).getId();
+        // verify carol was routed through IdP-Y (the specific override)
+        assertEquals(idpYAlias,
+                consumerRealm.admin().users().get(carolId).getFederatedIdentity().get(0).getIdentityProvider(),
+                "carol should have been routed through IdP-Y (specific domain match)");
+
+        consumerRealm.admin().users().get(carolId).logout();
+        consumerRealm.cleanup().add(r -> {
+            try { r.users().get(carolId).remove(); } catch (Exception ignored) {}
+        });
+        List<UserRepresentation> providerCarolList = providerRealm.admin().users().search("carol");
+        if (!providerCarolList.isEmpty()) {
+            providerRealm.admin().users().get(providerCarolList.get(0).getId()).logout();
+        }
+
+        // dave@sales.acme.com → wildcard match → *.acme.com → IdP-X
+        createProviderUser("dave", "dave@sales.acme.com", "password");
+
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly("dave@sales.acme.com");
+        loginUsernamePage.submit();
+
+        assertTrue(Objects.requireNonNull(driver.getCurrentUrl()).contains("/realms/" + providerRealm.getName() + "/"),
+                "Should be redirected to provider realm via IdP-X");
+
+        loginPage.fillLogin("dave", "password");
+        loginPage.submit();
+
+        code = oauth.parseLoginResponse().getCode();
+        assertNotNull(code, "Should have received an auth code for dave");
+
+        String daveId = consumerRealm.admin().users().searchByEmail("dave@sales.acme.com", true).get(0).getId();
+        assertEquals(idpXAlias,
+                consumerRealm.admin().users().get(daveId).getFederatedIdentity().get(0).getIdentityProvider(),
+                "dave should have been routed through IdP-X (wildcard match)");
+
+        consumerRealm.cleanup().add(r -> {
+            try { r.users().get(daveId).remove(); } catch (Exception ignored) {}
+        });
+    }
+
+    /**
+     * Scenario 1.8 — Multiple Domains, Different IdPs, One Non-Federated.
+     * Org-A owns acme.com (IdP-X), partner.com (IdP-Y), internal.acme.com (IDP_ID=NULL).
+     * alice@acme.com → IdP-X. bob@partner.com → IdP-Y. carol@internal.acme.com → password form.
+     */
+    @Test
+    public void testMultipleDomainsMixedFederationRouting() {
+        String idpXAlias = "idp-x";
+        String idpYAlias = "idp-y";
+        IdentityProviderRepresentation idpX = AbstractOrganizationTest.createRealOrgBroker(idpXAlias, providerRealm);
+        IdentityProviderRepresentation idpY = AbstractOrganizationTest.createRealOrgBroker(idpYAlias, providerRealm);
+        consumerRealm.admin().identityProviders().create(idpX).close();
+        consumerRealm.admin().identityProviders().create(idpY).close();
+        consumerRealm.cleanup().add(r -> {
+            try { r.identityProviders().get(idpXAlias).remove(); } catch (Exception ignored) {}
+        });
+        consumerRealm.cleanup().add(r -> {
+            try { r.identityProviders().get(idpYAlias).remove(); } catch (Exception ignored) {}
+        });
+
+        String orgId = createOrganization(ORG_A_NAME, "acme.com", "partner.com", "internal.acme.com");
+        consumerRealm.admin().organizations().get(orgId).identityProviders().addIdentityProvider(idpXAlias).close();
+        consumerRealm.admin().organizations().get(orgId).identityProviders().addIdentityProvider(idpYAlias).close();
+        setDomainRouting(orgId, "acme.com", idpXAlias);
+        setDomainRouting(orgId, "partner.com", idpYAlias);
+        // internal.acme.com has no IDP_ID → non-federated
+
+        // alice@acme.com → IdP-X
+        createProviderUser("alice", "alice@acme.com", "password");
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly("alice@acme.com");
+        loginUsernamePage.submit();
+
+        assertTrue(Objects.requireNonNull(driver.getCurrentUrl()).contains("/realms/" + providerRealm.getName() + "/"),
+                "alice should be redirected to provider realm via IdP-X");
+
+        loginPage.fillLogin("alice", "password");
+        loginPage.submit();
+
+        String code = oauth.parseLoginResponse().getCode();
+        assertNotNull(code, "Should have received an auth code for alice");
+        String aliceId = consumerRealm.admin().users().searchByEmail("alice@acme.com", true).get(0).getId();
+        assertEquals(idpXAlias,
+                consumerRealm.admin().users().get(aliceId).getFederatedIdentity().get(0).getIdentityProvider(),
+                "alice should have been routed through IdP-X");
+        consumerRealm.admin().users().get(aliceId).logout();
+        consumerRealm.cleanup().add(r -> {
+            try { r.users().get(aliceId).remove(); } catch (Exception ignored) {}
+        });
+
+        // bob@partner.com → IdP-Y
+        createProviderUser("bob", "bob@partner.com", "password");
+        List<UserRepresentation> providerAliceList = providerRealm.admin().users().search("alice");
+        if (!providerAliceList.isEmpty()) {
+            providerRealm.admin().users().get(providerAliceList.get(0).getId()).logout();
+        }
+
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly("bob@partner.com");
+        loginUsernamePage.submit();
+
+        assertTrue(Objects.requireNonNull(driver.getCurrentUrl()).contains("/realms/" + providerRealm.getName() + "/"),
+                "bob should be redirected to provider realm via IdP-Y");
+
+        loginPage.fillLogin("bob", "password");
+        loginPage.submit();
+
+        code = oauth.parseLoginResponse().getCode();
+        assertNotNull(code, "Should have received an auth code for bob");
+        String bobId = consumerRealm.admin().users().searchByEmail("bob@partner.com", true).get(0).getId();
+        assertEquals(idpYAlias,
+                consumerRealm.admin().users().get(bobId).getFederatedIdentity().get(0).getIdentityProvider(),
+                "bob should have been routed through IdP-Y");
+        consumerRealm.admin().users().get(bobId).logout();
+        consumerRealm.cleanup().add(r -> {
+            try { r.users().get(bobId).remove(); } catch (Exception ignored) {}
+        });
+
+        // carol@internal.acme.com → non-federated → password form
+        List<UserRepresentation> providerBobList = providerRealm.admin().users().search("bob");
+        if (!providerBobList.isEmpty()) {
+            providerRealm.admin().users().get(providerBobList.get(0).getId()).logout();
+        }
+
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly("carol@internal.acme.com");
+        loginUsernamePage.submit();
+
+        assertTrue(Objects.requireNonNull(driver.getCurrentUrl()).contains("/realms/" + consumerRealm.getName() + "/"),
+                "carol should stay on consumer realm (non-federated domain)");
+    }
+
     private void createSharedIdpSetup() {
         IdentityProviderRepresentation idp = AbstractOrganizationTest.createRealOrgBroker(SHARED_IDP_ALIAS, providerRealm);
         consumerRealm.admin().identityProviders().create(idp).close();
@@ -227,13 +433,15 @@ public class OrganizationSharedIdpBrokerTest {
         setDomainRouting(orgBId, ORG_B_DOMAIN, SHARED_IDP_ALIAS);
     }
 
-    private String createOrganization(String name, String domain) {
+    private String createOrganization(String name, String... domains) {
         OrganizationRepresentation org = new OrganizationRepresentation();
         org.setName(name);
         org.setAlias(name);
-        OrganizationDomainRepresentation domainRep = new OrganizationDomainRepresentation();
-        domainRep.setName(domain);
-        org.addDomain(domainRep);
+        for (String domain : domains) {
+            OrganizationDomainRepresentation domainRep = new OrganizationDomainRepresentation();
+            domainRep.setName(domain);
+            org.addDomain(domainRep);
+        }
 
         String orgId;
         try (Response response = consumerRealm.admin().organizations().create(org)) {
