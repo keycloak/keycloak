@@ -29,6 +29,7 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.agroal.DataSource;
 import io.quarkus.arc.Arc;
+import io.quarkus.datasource.common.runtime.DataSourceUtil;
 import org.jboss.logging.Logger;
 
 public final class NamedJpaConnectionProviderFactory extends AbstractJpaConnectionProviderFactory {
@@ -42,13 +43,15 @@ public final class NamedJpaConnectionProviderFactory extends AbstractJpaConnecti
     public void postInit(KeycloakSessionFactory factory) {
         // Skip an inactive datasource's persistence unit instead of failing to resolve its (deactivated) EntityManagerFactory.
         String dsName = dataSourceName != null ? dataSourceName : unitName;
-        var dsInstance = Arc.requireContainer().select(AgroalDataSource.class, new DataSource.DataSourceLiteral(dsName));
-        if (dsInstance.isResolvable() && !dsInstance.getHandle().getBean().isActive()) {
-            if (!isExplicitlyDisabled(dsName)) {
-                logger.warnf("Datasource '%s' is not active, so the '%s' persistence unit is skipped."
-                        + " If it should be active, configure it using datasource options like 'db-kind-%s'.", dsName, unitName, dsName);
+        if (!DataSourceUtil.isDefault(dsName)) { // default DS is always active
+            var dsInstance = Arc.requireContainer().select(AgroalDataSource.class, new DataSource.DataSourceLiteral(dsName));
+            if (dsInstance.isResolvable() && !dsInstance.getHandle().getBean().isActive()) {
+                if (!isExplicitlyDisabled(dsName)) {
+                    logger.warnf("Datasource '%s' is not active, so the '%s' persistence unit is skipped."
+                            + " If it should be active, configure it using datasource options like 'db-kind-%s'.", dsName, unitName, dsName);
+                }
+                return;
             }
-            return;
         }
         super.postInit(factory);
     }
