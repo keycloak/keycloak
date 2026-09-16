@@ -30,49 +30,61 @@ import org.keycloak.authorization.config.UmaWellKnownProviderFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testsuite.AbstractAdminTest;
-import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class UmaDiscoveryDocumentTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public class UmaDiscoveryDocumentTest extends AbstractAuthzTest {
 
-    @ArquillianResource
-    protected OAuthClient oauth;
+    @InjectOAuthClient
+    OAuthClient oauth;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realm = AbstractAdminTest.loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
+        RealmRepresentation realm = AbstractAdminTest.loadJson(
+                getClass().getResourceAsStream("/org/keycloak/tests/testrealm.json"), RealmRepresentation.class);
+        if (realm.getEventsListeners() != null) {
+            realm.setEventsListeners(realm.getEventsListeners().stream()
+                    .filter(listener -> !"event-queue".equals(listener))
+                    .toList());
+        }
         testRealms.add(realm);
     }
 
     @Test
     public void testFetchDiscoveryDocument() {
         Client client = AdminClientUtil.createResteasyClient();
-        UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
+        String authServerRoot = oauth.getBaseUrl();
+        int realmSegmentIndex = authServerRoot.indexOf("/realms/");
+        if (realmSegmentIndex >= 0) {
+            authServerRoot = authServerRoot.substring(0, realmSegmentIndex);
+        }
+
+        UriBuilder builder = UriBuilder.fromUri(authServerRoot);
         URI oidcDiscoveryUri = RealmsResource.wellKnownProviderUrl(builder).build("test", UmaWellKnownProviderFactory.PROVIDER_ID);
         WebTarget oidcDiscoveryTarget = client.target(oidcDiscoveryUri);
 
         try (Response response = oidcDiscoveryTarget.request().get()) {
             assertEquals("no-cache, must-revalidate, no-transform, no-store", response.getHeaders().getFirst("Cache-Control"));
 
-
             UmaConfiguration configuration = response.readEntity(UmaConfiguration.class);
 
-
-            assertEquals(configuration.getAuthorizationEndpoint(), OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT)).build("test").toString());
+            assertEquals(configuration.getAuthorizationEndpoint(), OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(authServerRoot)).build("test").toString());
             assertEquals(configuration.getTokenEndpoint(), oauth.getEndpoints().getToken());
             assertEquals(configuration.getJwksUri(), oauth.getEndpoints().getJwks());
             assertEquals(configuration.getIntrospectionEndpoint(), oauth.getEndpoints().getIntrospection());
 
             String registrationUri = UriBuilder
-                    .fromUri(OAuthClient.AUTH_SERVER_ROOT)
-                    .path(RealmsResource.class).path(RealmsResource.class, "getRealmResource").build(realmsResouce().realm("test").toRepresentation().getRealm()).toString();
+                    .fromUri(authServerRoot)
+                    .path(RealmsResource.class).path(RealmsResource.class, "getRealmResource")
+                    .build(adminClient.realm("test").toRepresentation().getRealm()).toString();
 
             assertEquals(registrationUri + "/authz/protection/permission", configuration.getPermissionEndpoint().toString());
             assertEquals(registrationUri + "/authz/protection/resource_set", configuration.getResourceRegistrationEndpoint().toString());
@@ -81,7 +93,7 @@ public class UmaDiscoveryDocumentTest extends AbstractKeycloakTest {
 
     @Test
     public void testFetchDiscoveryDocumentUsingFrontEndUrl() {
-        RealmRepresentation test = realmsResouce().realm("test").toRepresentation();
+        RealmRepresentation test = adminClient.realm("test").toRepresentation();
 
         if (test.getAttributes() == null) {
             test.setAttributes(new HashMap<>());
@@ -91,10 +103,16 @@ public class UmaDiscoveryDocumentTest extends AbstractKeycloakTest {
 
         test.getAttributes().put("frontendUrl", frontendUrl);
 
-        realmsResouce().realm("test").update(test);
+        adminClient.realm("test").update(test);
 
         Client client = AdminClientUtil.createResteasyClient();
-        UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
+        String authServerRoot = oauth.getBaseUrl();
+        int realmSegmentIndex = authServerRoot.indexOf("/realms/");
+        if (realmSegmentIndex >= 0) {
+            authServerRoot = authServerRoot.substring(0, realmSegmentIndex);
+        }
+
+        UriBuilder builder = UriBuilder.fromUri(authServerRoot);
         URI oidcDiscoveryUri = RealmsResource.wellKnownProviderUrl(builder).build("test", UmaWellKnownProviderFactory.PROVIDER_ID);
         WebTarget oidcDiscoveryTarget = client.target(oidcDiscoveryUri);
 
@@ -105,12 +123,14 @@ public class UmaDiscoveryDocumentTest extends AbstractKeycloakTest {
 
             String baseBackendUri = UriBuilder
                     .fromUri(frontendUrl)
-                    .path(RealmsResource.class).path(RealmsResource.class, "getRealmResource").build(realmsResouce().realm("test").toRepresentation().getRealm()).toString();
+                    .path(RealmsResource.class).path(RealmsResource.class, "getRealmResource")
+                    .build(adminClient.realm("test").toRepresentation().getRealm()).toString();
             String baseFrontendUri = UriBuilder
                     .fromUri(frontendUrl)
-                    .path(RealmsResource.class).path(RealmsResource.class, "getRealmResource").scheme("https").host("mykeycloak").port(-1).build(realmsResouce().realm("test").toRepresentation().getRealm()).toString();
+                    .path(RealmsResource.class).path(RealmsResource.class, "getRealmResource")
+                    .scheme("https").host("mykeycloak").port(-1)
+                    .build(adminClient.realm("test").toRepresentation().getRealm()).toString();
 
-            // we're not setting hostname-backchannel-dynamic=true which implies frontend URL is used for backend as well
             assertEquals(baseBackendUri + "/authz/protection/permission", configuration.getPermissionEndpoint());
             assertEquals(baseBackendUri + "/authz/protection/permission", configuration.getPermissionEndpoint());
             assertEquals(baseFrontendUri + "/protocol/openid-connect/auth", configuration.getAuthorizationEndpoint());

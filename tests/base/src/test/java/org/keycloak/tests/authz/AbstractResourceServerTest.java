@@ -45,8 +45,6 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -86,7 +84,6 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
                 .clients(ClientBuilder.create().clientId("test-app")
                         .redirectUris("http://localhost:8180/auth/realms/master/app/auth", "https://localhost:8543/auth/realms/master/app/auth")
                         .publicClient())
-                .eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID)
                 .build());
     }
 
