@@ -44,6 +44,12 @@ Only the conditions configured with the simple name of a subgroup need to be upd
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
+=== `kcadm` and `kcreg` now enforce owner-only permissions on existing configuration files
+
+The `kcadm` and `kcreg` CLI tools now set owner-only file permissions (`0600`) on their configuration files every time credentials are written, not only when the file is first created. Previously, if a configuration file already existed with broader permissions (for example, `0644`), the tools would store access tokens and other sensitive credentials without restricting the file permissions, which posed a security risk as it allowed other users on the same system to read the stored tokens.
+
+After upgrading, any pre-existing configuration file with group- or world-readable permissions will be automatically restricted to owner-only access the next time `kcadm config credentials` or `kcreg config credentials` is executed. No manual action is required.
+
 === Login failures now stored in the database by default
 
 Login failure data for brute force detection is now stored in the database by default, instead of only in the embedded Infinispan `loginFailures` cache. This ensures that temporarily locked-out users remain locked out across cluster restarts, and reduces memory consumption from accumulated login failure entries.
