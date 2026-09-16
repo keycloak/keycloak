@@ -25,6 +25,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
+import java.util.List;
+
 /**
  * @author <a href="mailto:artur.baltabayev@bosch.io">Artur Baltabayev</a>,
  * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
@@ -35,13 +37,13 @@ public abstract class AbstractClaimToGroupMapper extends AbstractClaimMapper {
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user,
             IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
 
-        GroupModel group = KeycloakModelUtils.getGroupForIdpMapper(session, realm, mapperModel, context);
-        if (group == null) {
+        List<GroupModel> groups = KeycloakModelUtils.getGroupsForIdpMapper(session, realm, mapperModel, context);
+        if (groups.isEmpty()) {
             return;
         }
 
         if (applies(mapperModel, context)) {
-            user.joinGroup(group);
+            groups.forEach(user::joinGroup);
         }
     }
 
@@ -49,20 +51,22 @@ public abstract class AbstractClaimToGroupMapper extends AbstractClaimMapper {
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user,
             IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
 
-        GroupModel group = KeycloakModelUtils.getGroupForIdpMapper(session, realm, mapperModel, context);
-        if (group == null) {
+        List<GroupModel> groups = KeycloakModelUtils.getGroupsForIdpMapper(session, realm, mapperModel, context);
+        if (groups.isEmpty()) {
             return;
         }
 
-        String groupId = group.getId();
-        if (!context.hasMapperAssignedGroup(groupId)) {
-            if (applies(mapperModel, context)) {
-                context.addMapperAssignedGroup(groupId);
-                user.joinGroup(group);
-            } else {
-                user.leaveGroup(group);
+        groups.forEach(group -> {
+            final var groupId = group.getId();
+            if (!context.hasMapperAssignedGroup(groupId)) {
+                if (applies(mapperModel, context)) {
+                    context.addMapperAssignedGroup(groupId);
+                    user.joinGroup(group);
+                } else {
+                    user.leaveGroup(group);
+                }
             }
-        }
+        });
     }
 
     /**
