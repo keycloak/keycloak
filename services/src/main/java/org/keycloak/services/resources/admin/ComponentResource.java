@@ -133,14 +133,13 @@ public class ComponentResource {
         Stream<ComponentModel> components;
         if (providerId != null && customComponents != null) {
             components = customComponents;
-        } else if (customComponents != null
-                && type != null
-                && providerId == null
-                && UiExtensionComponentStorage.hasOnlyCustomStorageProviders(session, type)) {
-            components = customComponents;
         } else if (customComponents != null) {
+            Set<String> customStorageProviderIds = type != null
+                    ? UiExtensionComponentStorage.getCustomStorageProviderIds(session, type)
+                    : Set.of();
             Map<String, ComponentModel> mergedComponents = new LinkedHashMap<>();
             realmComponents
+                    .filter(component -> !customStorageProviderIds.contains(component.getProviderId()))
                     .filter(component -> !UiExtensionComponentStorage.usesCustomStorage(
                             component.getProviderType(), component.getProviderId(), session))
                     .forEach(component -> mergedComponents.putIfAbsent(component.getId(), component));
