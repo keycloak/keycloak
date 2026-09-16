@@ -60,6 +60,29 @@ public class AuthorizationDetailsProcessorManagerTest {
     }
 
     @Test
+    public void orderComparisonDoesNotOverflow() throws Exception {
+        AuthorizationDetailsProcessorManager manager = manager(
+                factory("lowest", Integer.MIN_VALUE, "shared"),
+                factory("highest", Integer.MAX_VALUE, "shared"));
+
+        assertEquals("highest", process(manager, "shared").get("shared"));
+    }
+
+    @Test
+    public void handleMissingAuthorizationDetailsOnlyInvokesSelectedProcessors() {
+        AuthorizationDetailsProcessorManager manager = manager(
+                factory("shadowed", 1, "shared"),
+                factory("low", 5, "shared", "low_only"),
+                factory("high", 10, "shared", "high_only"));
+
+        List<AuthorizationDetailsJSONRepresentation> responses = manager.handleMissingAuthorizationDetails(null, null);
+
+        // "shadowed" lost its only type and must not contribute; "shared" must only be emitted by the winner "high"
+        assertEquals(List.of("high:high_only", "high:shared", "low:low_only"), responses.stream()
+                .map(response -> response.getCustomData().get(PROCESSED_BY) + ":" + response.getType()).toList());
+    }
+
+    @Test
     public void unsupportedTypeIsRejected() {
         AuthorizationDetailsProcessorManager manager = manager(factory("multi", 0, "type_a"));
 

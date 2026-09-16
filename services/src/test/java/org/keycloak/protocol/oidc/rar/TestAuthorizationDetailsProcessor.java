@@ -58,7 +58,13 @@ class TestAuthorizationDetailsProcessor implements AuthorizationDetailsProcessor
 
     @Override
     public List<AuthorizationDetailsJSONRepresentation> handleMissingAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
-        return null;
+        // Emit one response per supported type, as if the processor had derived it from the request context
+        return supportedTypes.stream().sorted().map(type -> {
+            AuthorizationDetailsJSONRepresentation response = new AuthorizationDetailsJSONRepresentation();
+            response.setType(type);
+            response.setCustomData(PROCESSED_BY, name);
+            return response;
+        }).toList();
     }
 
     @Override
