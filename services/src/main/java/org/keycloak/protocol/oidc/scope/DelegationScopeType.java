@@ -77,6 +77,7 @@ public class DelegationScopeType extends UsernameScopeType {
             throw new InvalidScopeParameterException(String.format("Administrator '%s' is not allowed to delegate as user '%s' in realm '%s'",
                     targetUser.getUsername(), currentUser.getUsername(), realm.getName()));
         }
+        verifyPinnedIdentity(parameter, targetUser.getId());
     }
 
 }

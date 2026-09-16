@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
@@ -21,6 +23,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -373,19 +376,91 @@ public class ClientDelegationTest {
         logout(res.getRefreshToken());
     }
 
+    @Test
+    public void delegationDroppedWhenAgentClientRecreated() {
+        removeDelegationPermission();
+
+        String tempClientId = "temp-agent";
+        String tempClientSecret = "temp-agent-secret";
+
+        String tempClientUuid = createClient(tempClientId, tempClientSecret);
+        String originalServiceAccountId = getServiceAccountUserId(tempClientUuid);
+        ScopePermissionRepresentation oldPermission = addDelegationPermission(tempClientId, "Temp Agent Policy");
+
+        String scope = OIDCLoginProtocolFactory.CLIENT_DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + tempClientId;
+        AccessTokenResponse res = loginWithDelegation(scope, grants ->
+                MatcherAssert.assertThat(grants, Matchers.hasItem(Matchers.containsString("act on your behalf"))));
+
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), originalServiceAccountId, tempClientId);
+
+        // Refresh with the original client still in place - should succeed
+        res = oauth.scope(null).doRefreshTokenRequest(res.getRefreshToken());
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), originalServiceAccountId, tempClientId);
+
+        // Remove stale permission, delete the client and recreate with the same clientId (new UUID, new service account)
+        ClientResource adminPerms = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
+        adminPerms.authorization().permissions().scope().findById(oldPermission.getId()).remove();
+        realm.admin().clients().get(tempClientUuid).remove();
+        String newClientUuid = createClient(tempClientId, tempClientSecret);
+
+        String newServiceAccountId = getServiceAccountUserId(newClientUuid);
+        Assertions.assertNotEquals(originalServiceAccountId, newServiceAccountId, "Recreated client should have a different service account ID");
+
+        // Grant delegation permission to the new client so FGAP check still passes
+        addDelegationPermission(tempClientId, "New Temp Agent Policy");
+
+        // Refresh - FGAP passes but identity pinning detects the service account mismatch
+        res = oauth.scope(null).doRefreshTokenRequest(res.getRefreshToken());
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeNotContains(res.getScope(), scope);
+        assertMayActNotPresent(oauth.verifyToken(res.getAccessToken()));
+
+        // Revoke consent and re-authorize within the same SSO session;
+        // fresh auth clears the stale pin, so re-consent works with the new client identity
+        AccountHelper.revokeConsents(realm.admin(), USERNAME, oauth.getClientId());
+        res = loginWithDelegation(scope, grants ->
+                MatcherAssert.assertThat(grants, Matchers.hasItem(Matchers.containsString("act on your behalf"))), false);
+
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), newServiceAccountId, tempClientId);
+
+        // Refresh with the re-pinned identity should succeed
+        res = oauth.scope(null).doRefreshTokenRequest(res.getRefreshToken());
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), newServiceAccountId, tempClientId);
+
+        logout(res.getRefreshToken());
+    }
+
     private AccessTokenResponse loginWithDelegation(String scope) {
         return loginWithDelegation(USERNAME, scope, grants -> MatcherAssert.assertThat(grants,
                 Matchers.hasItem("Allow " + AGENT_CLIENT_ID + " to act on your behalf?")));
     }
 
     private AccessTokenResponse loginWithDelegation(String scope, Consumer<List<String>> grantsValidator) {
-        return loginWithDelegation(USERNAME, scope, grantsValidator);
+        return loginWithDelegation(USERNAME, scope, grantsValidator, true);
+    }
+
+    private AccessTokenResponse loginWithDelegation(String scope, Consumer<List<String>> grantsValidator, boolean fillLoginForm) {
+        return loginWithDelegation(USERNAME, scope, grantsValidator, fillLoginForm);
     }
 
     private AccessTokenResponse loginWithDelegation(String username, String scope, Consumer<List<String>> grantsValidator) {
+        return loginWithDelegation(username, scope, grantsValidator, true);
+    }
+
+    private AccessTokenResponse loginWithDelegation(String username, String scope, Consumer<List<String>> grantsValidator, boolean fillLoginForm) {
         oauth.client(TEST_CLIENT_ID, TEST_CLIENT_SECRET);
         oauth.scope(scope).openLoginForm();
-        oauth.fillLoginForm(username, PASSWORD);
+        if (fillLoginForm) {
+            oauth.fillLoginForm(username, PASSWORD);
+        }
         grantPage.assertCurrent();
         List<String> grants = grantPage.getDisplayedGrants();
         grantsValidator.accept(grants);
@@ -430,6 +505,27 @@ public class ClientDelegationTest {
 
     private String getServiceAccountUserId() {
         return agentApp.admin().getServiceAccountUser().getId();
+    }
+
+    private String getServiceAccountUserId(String clientUuid) {
+        return realm.admin().clients().get(clientUuid).getServiceAccountUser().getId();
+    }
+
+    private String createClient(String clientId, String clientSecret) {
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setClientId(clientId);
+        rep.setSecret(clientSecret);
+        rep.setServiceAccountsEnabled(true);
+        rep.setPublicClient(false);
+        rep.setEnabled(true);
+        rep.setAttributes(Map.of(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, Boolean.TRUE.toString()));
+        String uuid;
+        try (Response response = realm.admin().clients().create(rep)) {
+            uuid = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clients().findByClientId(clientId).stream()
+                .findFirst().ifPresent(c -> r.clients().get(c.getId()).remove()));
+        return uuid;
     }
 
     private void assertTokenExchangeSuccess(String subjectToken, String actorToken, String expectedActorId) {
@@ -498,8 +594,12 @@ public class ClientDelegationTest {
     }
 
     private ScopePermissionRepresentation addDelegationPermission() {
+        return addDelegationPermission(AGENT_CLIENT_ID, "Agent Client Policy");
+    }
+
+    private ScopePermissionRepresentation addDelegationPermission(String clientId, String policyName) {
         ClientResource adminPerms = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
-        ClientPolicyRepresentation policy = PermissionTestUtils.createClientPolicy(realm, adminPerms, "Agent Client Policy", AGENT_CLIENT_ID);
+        ClientPolicyRepresentation policy = PermissionTestUtils.createClientPolicy(realm, adminPerms, policyName, clientId);
         return PermissionTestUtils.createAllPermission(adminPerms, AdminPermissionsSchema.USERS_RESOURCE_TYPE, policy, Set.of(AdminPermissionsSchema.DELEGATE));
     }
 

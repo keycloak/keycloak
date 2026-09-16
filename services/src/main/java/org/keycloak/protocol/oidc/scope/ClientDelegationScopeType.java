@@ -49,6 +49,7 @@ public class ClientDelegationScopeType extends DelegationScopeType {
             throw new InvalidScopeParameterException(String.format("Client '%s' is not allowed to delegate as user '%s' in realm '%s'",
                     parameter, currentUser.getUsername(), realm.getName()));
         }
+        verifyPinnedIdentity(parameter, serviceAccountUser.getId());
     }
 
     @Override

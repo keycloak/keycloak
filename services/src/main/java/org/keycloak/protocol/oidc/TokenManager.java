@@ -527,6 +527,12 @@ public class TokenManager {
         clientSession.setRedirectUri(authSession.getRedirectUri());
         clientSession.setProtocol(authSession.getProtocol());
 
+        // Pins are re-established during token generation; refresh never reaches this path
+        ParameterizedScopeTypeProvider.clearPinnedIdentities(clientSession);
+
+        // parameterized scope validation (e.g. identity pinning) relies on the user session being available in the context
+        session.getContext().setUserSession(userSession);
+
         String scopeParam = authSession.getClientNote(OAuth2Constants.SCOPE);
         Set<ClientScopeModel> clientScopes;
 

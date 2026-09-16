@@ -99,7 +99,10 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
 
     public static DefaultClientSessionContext fromClientSessionAndScopeParameter(AuthenticatedClientSessionModel clientSession, String scopeParam, KeycloakSession session) {
-        UserModel user = Optional.ofNullable(clientSession.getUserSession()).map(UserSessionModel::getUser).orElse(null);
+        UserSessionModel userSession = clientSession.getUserSession();
+        // parameterized scope validation (e.g. identity pinning) relies on the user session being available in the context
+        session.getContext().setUserSession(userSession);
+        UserModel user = Optional.ofNullable(userSession).map(UserSessionModel::getUser).orElse(null);
         Stream<ClientScopeModel> requestedScopes;
         if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
             requestedScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, clientSession.getClient(), user, scopeParam);

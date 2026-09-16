@@ -3,10 +3,13 @@ package org.keycloak.protocol.oidc.scope;
 import jakarta.annotation.Nonnull;
 
 import org.keycloak.Config;
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 
@@ -19,6 +22,41 @@ import org.keycloak.provider.ProviderFactory;
 public interface ParameterizedScopeTypeProvider extends Provider, ProviderFactory<ParameterizedScopeTypeProvider> {
 
     int MAX_PARAMETER_LENGTH = 255;
+
+    String PINNED_IDENTITY_NOTE_PREFIX = "kc.scope.pinned.";
+
+    /**
+     * Clears pinned identity notes from the client session. Must be called when a fresh
+     * authorization replaces an existing client session so that identity pins from a prior
+     * consent are reset. Without this, a reused client session would reject a valid re-consent
+     * when the entity behind a parameterized scope (e.g. a username) was recreated with a new ID.
+     *
+     * <p>On refresh (no user interaction), the pins remain intact and any identity mismatch
+     * causes the scope to be silently dropped, preventing consent from transferring to a
+     * different entity.
+     *
+     * @param clientSession the client session to clear pinned identities from
+     */
+    static void clearPinnedIdentities(AuthenticatedClientSessionModel clientSession) {
+        clientSession.getNotes().keySet().stream()
+                .filter(k -> k.startsWith(PINNED_IDENTITY_NOTE_PREFIX))
+                .toList()
+                .forEach(clientSession::removeNote);
+    }
+
+    /**
+     * Resolves the client session that carries pinned identity notes (see {@link #clearPinnedIdentities}) from the
+     * user session already attached to the request context.
+     *
+     * @return the client session, or {@code null} if no user session (or matching client session) is in context yet
+     */
+    static AuthenticatedClientSessionModel resolveClientSessionFromContext(KeycloakSession session, ClientModel client) {
+        UserSessionModel userSession = session.getContext().getUserSession();
+        if (userSession == null || client == null) {
+            return null;
+        }
+        return userSession.getAuthenticatedClientSessionByClient(client.getId());
+    }
 
     /**
      * @return the unique type name, also used as the provider ID

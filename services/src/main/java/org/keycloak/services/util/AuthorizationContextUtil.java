@@ -20,12 +20,14 @@ import java.util.ArrayList;
 import java.util.stream.Stream;
 
 import org.keycloak.common.Profile;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.rar.AuthorizationRequestParserProvider;
 import org.keycloak.protocol.oidc.rar.parsers.ClientScopeAuthorizationRequestParserProviderFactory;
+import org.keycloak.protocol.oidc.scope.ParameterizedScopeTypeProvider;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.rar.AuthorizationRequestSource;
@@ -66,7 +68,8 @@ public class AuthorizationContextUtil {
             throw new RuntimeException("The Parameterized Scopes feature is not enabled and the AuthorizationRequestContext hasn't been generated");
         }
 
-        String cacheKey = getCacheKey(client, user, scope);
+        // client session id avoids reusing a pre-session resolution (e.g. consent screen preview) for identity pinning
+        String cacheKey = getCacheKey(client, user, resolveClientSessionId(session, client), scope);
         AuthorizationRequestContext cached = session.getAttribute(cacheKey, AuthorizationRequestContext.class);
         if (cached != null) {
             return copyContext(cached);
@@ -89,8 +92,14 @@ public class AuthorizationContextUtil {
         return new AuthorizationRequestContext(new ArrayList<>(context.getAuthorizationDetailEntries()));
     }
 
-    private static String getCacheKey(ClientModel client, UserModel user, String scope) {
-        return CACHE_KEY_PREFIX + client.getId() + ":" + (user != null ? user.getId() : "") + ":" + scope;
+    private static String getCacheKey(ClientModel client, UserModel user, String clientSessionId, String scope) {
+        return CACHE_KEY_PREFIX + client.getId() + ":" + (user != null ? user.getId() : "")
+                + ":" + (clientSessionId != null ? clientSessionId : "") + ":" + scope;
+    }
+
+    private static String resolveClientSessionId(KeycloakSession session, ClientModel client) {
+        AuthenticatedClientSessionModel clientSession = ParameterizedScopeTypeProvider.resolveClientSessionFromContext(session, client);
+        return clientSession != null ? clientSession.getId() : null;
     }
 
     /**
