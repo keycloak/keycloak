@@ -5,18 +5,32 @@ import java.io.ByteArrayInputStream;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.util.crypto.AuthzClientCryptoProvider;
 import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.crypto.CryptoProvider;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class AuthzClientTest {
 
+    private CryptoProvider originalProvider;
+
+    @BeforeEach
+    public void setAuthzClientCryptoProvider() {
+        originalProvider = getProviderOrNull();
+        CryptoIntegration.setProvider(new AuthzClientCryptoProvider());
+    }
+
+    @AfterEach
+    public void restoreCryptoProvider() {
+        CryptoIntegration.setProvider(originalProvider);
+    }
+
     @Test
     public void testCreateWithEnvVars() {
-        CryptoIntegration.setProvider(new AuthzClientCryptoProvider());
-
         RuntimeException runtimeException = Assertions.assertThrows(RuntimeException.class, () -> {
             AuthzClient.create(new ByteArrayInputStream(("{\n"
                     + "  \"realm\": \"${env.KEYCLOAK_REALM:test}\",\n"
@@ -35,5 +49,13 @@ public class AuthzClientTest {
         });
 
         MatcherAssert.assertThat(runtimeException.getMessage(), Matchers.containsString("Could not obtain configuration from server"));
+    }
+
+    private static CryptoProvider getProviderOrNull() {
+        try {
+            return CryptoIntegration.getProvider();
+        } catch (IllegalStateException e) {
+            return null;
+        }
     }
 }
