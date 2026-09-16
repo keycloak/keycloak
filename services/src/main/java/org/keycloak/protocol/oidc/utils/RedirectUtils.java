@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
@@ -147,7 +148,7 @@ public class RedirectUtils {
             String scheme = originalRedirect.getScheme();
             if (valid != null && scheme != null) {
                 // check the scheme is valid, it should be http(s) or explicitly allowed by the validation
-                if (!valid.startsWith(scheme + ":") && !"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+                if (!schemeEqualsPrefix(valid, scheme) && !"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
                     logger.debugf("Invalid URI because scheme is not allowed: %s", redirectUri);
                     valid = null;
                 }
@@ -255,7 +256,7 @@ public class RedirectUtils {
                     // strip off *
                     int length = validRedirectWildcard.length() - 1;
                     validRedirectWildcard = validRedirectWildcard.substring(0, length);
-                    if (r.startsWith(validRedirectWildcard)) {
+                    if (redirectUriStartsWith(r, validRedirectWildcard)) {
                         return validRedirectWildcard;
                     }
                     // strip off trailing '/'
@@ -263,15 +264,52 @@ public class RedirectUtils {
                         length--;
                     }
                     validRedirectWildcard = validRedirectWildcard.substring(0, length);
-                    if (validRedirectWildcard.equals(r)) {
+                    if (redirectUriEquals(validRedirectWildcard, r)) {
                         return validRedirectWildcard;
                     }
-                } else if (validRedirect.equals(redirect)) {
+                } else if (redirectUriEquals(validRedirect, redirect)) {
                     return validRedirect;
                 }
             }
         }
         return null;
+    }
+
+    private static boolean schemeEqualsPrefix(String uri, String scheme) {
+        String prefix = scheme + ":";
+        return uri.regionMatches(true, 0, prefix, 0, prefix.length());
+    }
+
+    private static boolean redirectUriEquals(String configured, String redirect) {
+        if (configured.equals(redirect)) {
+            return true;
+        }
+        URI configuredUri = toUri(configured);
+        URI redirectUri = toUri(redirect);
+        if (configuredUri == null || redirectUri == null) {
+            return false;
+        }
+        if (!UriUtils.schemeHostAndPortEqual(configuredUri, redirectUri)) {
+            return false;
+        }
+        return Objects.equals(configuredUri.getRawUserInfo(), redirectUri.getRawUserInfo())
+                && Objects.equals(configuredUri.getRawPath(), redirectUri.getRawPath())
+                && Objects.equals(configuredUri.getRawQuery(), redirectUri.getRawQuery())
+                && Objects.equals(configuredUri.getRawFragment(), redirectUri.getRawFragment());
+    }
+
+    private static boolean redirectUriStartsWith(String redirect, String prefix) {
+        if (redirect.startsWith(prefix)) {
+            return true;
+        }
+        URI redirectUri = toUri(redirect);
+        URI prefixUri = toUri(prefix);
+        if (redirectUri == null || prefixUri == null || !UriUtils.schemeHostAndPortEqual(redirectUri, prefixUri)) {
+            return false;
+        }
+        String redirectPath = redirectUri.getRawPath() != null ? redirectUri.getRawPath() : "";
+        String prefixPath = prefixUri.getRawPath() != null ? prefixUri.getRawPath() : "";
+        return redirectPath.startsWith(prefixPath);
     }
 
     private static String checkValidRedirectWildcard(String validRedirect) {
