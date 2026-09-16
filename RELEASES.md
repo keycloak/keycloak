@@ -2,7 +2,7 @@
 
 ## Versioning
 
-Keycloak uses SemVer versioning (`<major>.<minor>.<patch>`).
+Keycloak uses SemVer versioning (`<major>.<minor>.<patch>`) with an exception that important bug and security fixes might break backwards compatibility.
 
 The latest release and links to archived releases are available at https://www.keycloak.org/downloads. 
 
@@ -20,7 +20,7 @@ Refer to https://www.keycloak.org/nightly/ for downloads.
 
 ## Backwards Compatibility
 
-Keycloak aims to delivers new features and enhancements in a backwards compatible way, making it seamless and easy to upgrade. However, there are certain limitations:
+Keycloak aims to deliver new features and enhancements in a backwards compatible way, making it seamless and easy to upgrade. However, there are certain limitations:
 
 * Important bug fixes and security fixes might introduce non-opt-in breaking changes in any release.
 * The aim for minor releases is to allow a seamless upgrade by making breaking changes opt-in. This should allow gradual roll out of feature changes and breaking changes.
