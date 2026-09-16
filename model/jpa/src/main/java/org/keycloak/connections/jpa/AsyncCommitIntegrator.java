@@ -23,6 +23,8 @@ import java.util.Map;
 
 import jakarta.persistence.EntityManagerFactory;
 
+import org.keycloak.connections.jpa.support.EntityManagerProxy;
+
 import org.hibernate.Session;
 import org.hibernate.dialect.OracleDialect;
 import org.hibernate.dialect.PostgreSQLDialect;
@@ -64,7 +66,7 @@ public abstract class AsyncCommitIntegrator implements PreInsertEventListener, P
 
     private static final Logger logger = Logger.getLogger(AsyncCommitIntegrator.class);
 
-    private static final String SYNC_REQUIRED = "kc.sync_commit_required";
+    private static final String SYNC_REQUIRED = EntityManagerProxy.SYNC_COMMIT_REQUIRED;
     private static final String CALLBACK_REGISTERED = "kc.async_commit.registered";
 
     /**
@@ -105,6 +107,7 @@ public abstract class AsyncCommitIntegrator implements PreInsertEventListener, P
         registry.appendListeners(EventType.PRE_UPDATE, listener);
         registry.appendListeners(EventType.PRE_DELETE, listener);
 
+        EntityManagerProxy.enableAsyncCommit(emf);
         logger.debugf("Registered asynchronous commit listeners for %s", dialect.getClass().getSimpleName());
     }
 

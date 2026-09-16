@@ -18,9 +18,12 @@
 package org.keycloak.connections.jpa.support;
 
 import java.lang.reflect.Proxy;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 
 import org.junit.Test;
 
@@ -32,7 +35,21 @@ public class EntityManagerProxyTest {
     @Test
     public void testClosure() {
         HashSet<EntityManagerProxy> proxies = new HashSet<EntityManagerProxy>();
-        EntityManager em = (EntityManager)Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{EntityManager.class}, (proxy, method, args) -> null);
+        Map<String, Object> emfProperties = new HashMap<>();
+        EntityManagerFactory emf = (EntityManagerFactory) Proxy.newProxyInstance(this.getClass().getClassLoader(),
+                new Class[]{EntityManagerFactory.class}, (proxy, method, args) -> {
+                    if (method.getName().equals("getProperties")) {
+                        return emfProperties;
+                    }
+                    return null;
+                });
+        EntityManager em = (EntityManager) Proxy.newProxyInstance(this.getClass().getClassLoader(),
+                new Class[]{EntityManager.class}, (proxy, method, args) -> {
+                    if (method.getName().equals("getEntityManagerFactory")) {
+                        return emf;
+                    }
+                    return null;
+                });
         EntityManager proxy = EntityManagerProxy.create(null, em, proxies, false, 1);
         assertEquals(1, proxies.size());
         proxy.close();
