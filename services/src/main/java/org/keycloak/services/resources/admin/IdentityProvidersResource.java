@@ -23,7 +23,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import javax.xml.stream.XMLStreamException;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
@@ -61,6 +63,7 @@ import org.keycloak.organization.utils.Organizations;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
@@ -69,6 +72,7 @@ import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
 
+import org.apache.http.client.HttpResponseException;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -88,6 +92,8 @@ import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 public class IdentityProvidersResource {
 
     protected static final Logger logger = Logger.getLogger(IdentityProvidersResource.class);
+
+    private static final Pattern USER_INFO = Pattern.compile("(?<=://)[^/?#]*@");
 
     private final RealmModel realm;
     private final KeycloakSession session;
@@ -193,12 +199,50 @@ public class IdentityProvidersResource {
 
         String providerId = data.get("providerId").toString();
         String from = data.get("fromUrl").toString();
-        String file = session.getProvider(HttpClientProvider.class).getString(from);
+        String url = withoutCredentials(from);
+
+        String file;
+        try {
+            file = session.getProvider(HttpClientProvider.class).getString(from);
+        } catch (IOException | IllegalArgumentException e) {
+            // Only report the response status, transport errors can reveal internal addresses
+            // The exception names the URL it was given, so it is reported rather than attached
+            logger.debugf("Failed to fetch identity provider metadata from %s: %s", url, withoutCredentials(e.toString()));
+            String message = "Cannot fetch identity provider metadata from " + url;
+            if (e instanceof HttpResponseException responseException) {
+                message += ": HTTP " + responseException.getStatusCode();
+            }
+            throw ErrorResponse.error(message, BAD_REQUEST);
+        }
+
         IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
-        Map<String, String> config = providerFactory.parseConfig(session, file);
+
+        Map<String, String> config;
+        try {
+            config = providerFactory.parseConfig(session, file);
+        } catch (RuntimeException e) {
+            // The factories report an unusable document by the cause they wrap, except for a SAML
+            // document that parses into something other than an entity descriptor
+            if (!(e instanceof ClassCastException
+                    || e.getCause() instanceof IOException
+                    || e.getCause() instanceof ParsingException
+                    || e.getCause() instanceof XMLStreamException)) {
+                throw e;
+            }
+            logger.debugf(e, "Failed to parse identity provider metadata from %s", url);
+            throw ErrorResponse.error("Cannot parse identity provider metadata from " + url, BAD_REQUEST);
+        }
+
         // add the URL just if needed by the identity provider
         config.put(IdentityProviderModel.METADATA_DESCRIPTOR_URL, from);
         return config;
+    }
+
+    /**
+     * Drops the credentials a URL may carry, so that they reach neither the response nor the log.
+     */
+    private static String withoutCredentials(String url) {
+        return USER_INFO.matcher(url).replaceAll("");
     }
 
     /**

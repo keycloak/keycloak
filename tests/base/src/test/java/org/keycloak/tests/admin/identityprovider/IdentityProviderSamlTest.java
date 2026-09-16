@@ -37,6 +37,7 @@ import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.rotation.HardcodedKeyLocator;
@@ -49,14 +50,17 @@ import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
 import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
+import org.keycloak.testframework.annotations.InjectHttpServer;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.util.HttpServerUtil;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.KeyUtils;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
+import com.sun.net.httpserver.HttpServer;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -81,6 +85,9 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
 
     @InjectKeycloakUrls
     KeycloakUrls keycloakUrls;
+
+    @InjectHttpServer
+    HttpServer httpServer;
 
     // Certificate imported from
     private static final String SIGNING_CERT_1 = "MIICmzCCAYMCBgFUYnC0OjANBgkqhkiG9w0BAQsFADARMQ8wDQY"
@@ -196,6 +203,33 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
     @Test
     public void testSamlImportWithAnyEncryptionMethod() throws URISyntaxException, IOException, ParsingException {
         testSamlImport("saml-idp-metadata-encryption-methods.xml", true);
+    }
+
+    @Test
+    public void importConfigShouldReportAUrlThatIsNotMetadata() {
+        assertImportConfigFails("/not-metadata", "<html>not metadata</html>");
+        assertImportConfigFails("/saml-protocol-document", "<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\""
+                + " ID=\"_1\" Version=\"2.0\" IssueInstant=\"2026-01-01T00:00:00Z\"/>");
+    }
+
+    private void assertImportConfigFails(String path, String body) {
+        httpServer.createContext(path, exchange -> HttpServerUtil.sendResponse(exchange, 200, null, body));
+
+        try {
+            String url = "http://127.0.0.1:" + httpServer.getAddress().getPort() + path;
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("providerId", "saml");
+            data.put("fromUrl", url);
+
+            BadRequestException error = assertThrows(BadRequestException.class,
+                    () -> managedRealm.admin().identityProviders().importFrom(data));
+
+            Assertions.assertEquals("Cannot parse identity provider metadata from " + url,
+                    error.getResponse().readEntity(ErrorRepresentation.class).getErrorMessage());
+        } finally {
+            httpServer.removeContext(path);
+        }
     }
 
     @Test
