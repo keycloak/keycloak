@@ -103,6 +103,13 @@ class KubernetesUtilsTest {
     }
 
     @Test
+    void trustedApiJwksUrlAllowsMinikubeApiServerAdvertiseAddressFromTrustedIssuer() {
+        assertTrue(KubernetesUtils.isTrustedKubernetesApiJwksUrl(
+                "https://192.168.49.2:8443/openid/v1/jwks",
+                "https://kubernetes.default.svc.cluster.local"));
+    }
+
+    @Test
     void trustedApiJwksUrlRejectsExternalHostFromTrustedIssuer() {
         assertFalse(KubernetesUtils.isTrustedKubernetesApiJwksUrl(
                 "https://oidc.eks.example.com/openid/v1/jwks",

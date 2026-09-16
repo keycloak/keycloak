@@ -118,8 +118,8 @@ final class KubernetesUtils {
         }
 
         return isIpLiteral(jwksUri.getHost())
-                // Kubernetes API servers commonly advertise their secure port as 6443.
-                && (jwksUri.getPort() == 6443 || isTrustedKubernetesApiPort(jwksUri));
+                // Kubernetes API servers commonly advertise their secure port as 6443 or 8443.
+                && (jwksUri.getPort() == 6443 || jwksUri.getPort() == 8443 || isTrustedKubernetesApiPort(jwksUri));
     }
 
     private static boolean isIpLiteral(String host) {
