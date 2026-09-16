@@ -1,22 +1,21 @@
 import { lazy } from "react";
-import type { Path } from "react-router-dom";
-import { generateEncodedPath } from "../../utils/generateEncodedPath";
-
 import type { AppRouteObject } from "../../routes";
+import {
+  AddUserRoutePath,
+  type AddUserParams,
+  toAddUser,
+} from "./AddUser.routes";
 
-export type AddUserParams = { realm: string };
+export type { AddUserParams };
+export { toAddUser };
 
 const CreateUser = lazy(() => import("../CreateUser"));
 
 export const AddUserRoute: AppRouteObject = {
-  path: "/:realm/users/add-user",
+  path: AddUserRoutePath,
   element: <CreateUser />,
   handle: {
     access: ["query-users", "query-groups"],
     breadcrumb: (t) => t("createUser"),
   },
 };
-
-export const toAddUser = (params: AddUserParams): Partial<Path> => ({
-  pathname: generateEncodedPath(AddUserRoute.path, params),
-});

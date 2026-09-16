@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import { toClient } from "../utils/routes.ts";
-import { toSsfClientTab } from "../utils/routes.ts";
+import { toClient } from "../../src/clients/routes/Client.routes.ts";
+import { toSsfClientTab } from "../../src/clients/routes/ClientSsfTab.routes.ts";
 import adminClient from "../utils/AdminClient.ts";
 import { login, navigateTo } from "../utils/login.ts";
 

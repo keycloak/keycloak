@@ -1,23 +1,21 @@
 import { lazy } from "react";
-import type { Path } from "react-router-dom";
-import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
+import {
+  NewClientScopeRoutePath,
+  type NewClientScopeParams,
+  toNewClientScope,
+} from "./NewClientScope.routes";
 
-export type NewClientScopeParams = { realm: string };
+export type { NewClientScopeParams };
+export { toNewClientScope };
 
 const CreateClientScope = lazy(() => import("../CreateClientScope"));
 
 export const NewClientScopeRoute: AppRouteObject = {
-  path: "/:realm/client-scopes/new",
+  path: NewClientScopeRoutePath,
   element: <CreateClientScope />,
   handle: {
     access: "manage-clients",
     breadcrumb: (t) => t("createClientScope"),
   },
 };
-
-export const toNewClientScope = (
-  params: NewClientScopeParams,
-): Partial<Path> => ({
-  pathname: generateEncodedPath(NewClientScopeRoute.path, params),
-});
