@@ -20,6 +20,7 @@ package org.keycloak.quarkus.runtime;
 import java.io.File;
 import java.lang.annotation.Annotation;
 import java.net.URI;
+import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +61,8 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.integration.tls.SystemTruststoreReload;
+import org.keycloak.quarkus.runtime.integration.tls.SystemTruststoreReload.SystemTruststoreSourceAndKeystore;
 import org.keycloak.quarkus.runtime.services.MisdirectedFilter;
 import org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
@@ -75,6 +78,7 @@ import io.quarkus.arc.InstanceHandle;
 import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
+import io.quarkus.runtime.configuration.ConfigurationException;
 import io.quarkus.vertx.http.runtime.security.SecurityHandlerPriorities;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpHeaders;
@@ -148,6 +152,19 @@ public class KeycloakRecorder {
                 """.formatted(itemsHtml));
     }
 
+    public RuntimeValue<SystemTruststoreReload> createSystemTruststoreReloadBean(RuntimeValue<SystemTruststoreSourceAndKeystore> systemTruststoreSourceRuntimeValue) {
+        final SystemTruststoreReload systemTruststoreReload;
+        if (systemTruststoreSourceRuntimeValue.getValue() == null) {
+            throw new ConfigurationException("""
+                    Truststore reload period was configured, but there is no truststore source.
+                    Either disable truststore reloading, or provide at least one truststore source.
+                    """);
+        } else {
+            systemTruststoreReload = new SystemTruststoreReload(systemTruststoreSourceRuntimeValue.getValue());
+        }
+        return new RuntimeValue<>(systemTruststoreReload);
+    }
+
     private record ManagementInterfaceItem(String path, String description, BooleanSupplier isEnabled) {
         String getListItem() {
             return "<li><a href=\"%s\">%s</a> - %s</li>".formatted(path, path, description);
@@ -182,7 +199,7 @@ public class KeycloakRecorder {
         }
     }
 
-    public void configureTruststore(FipsMode fipsMode) {
+    public RuntimeValue<SystemTruststoreSourceAndKeystore> configureTruststore(FipsMode fipsMode) {
         List<String> truststores = new ArrayList<>();
         Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_PATHS.getKey())
                 .ifPresent(s -> Stream.of(s.split(",")).forEach(truststores::add));
@@ -200,12 +217,17 @@ public class KeycloakRecorder {
         if (truststoresDir != null && truststoresDir.exists() && Optional.ofNullable(truststoresDir.list()).map(a -> a.length).orElse(0) > 0) {
             truststores.add(truststoresDir.getAbsolutePath());
         } else if (truststores.size() == 0) {
-            return; // nothing to configure, we'll just use the system default
+            return new RuntimeValue<>(); // nothing to configure, we'll just use the system default
         }
 
         TruststoreFormat truststoreType = fipsMode == FipsMode.STRICT ? TruststoreFormat.BCFKS : null;
 
-        TruststoreBuilder.setSystemTruststore(truststores.toArray(String[]::new), true, dataDir.orElseThrow(), truststoreType);
+        String[] truststoresArray = truststores.toArray(String[]::new);
+        KeyStore keyStore = TruststoreBuilder.setAndGetSystemTruststore(truststoresArray, true, dataDir.orElseThrow(), truststoreType);
+
+        return new RuntimeValue<>(
+                new SystemTruststoreSourceAndKeystore(truststoresArray, true, dataDir.orElseThrow(), truststoreType, keyStore)
+        );
     }
 
     public void configureLiquibase(Map<String, List<String>> services) {
