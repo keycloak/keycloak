@@ -209,12 +209,24 @@ public class ClusteredKeycloakServer implements KeycloakServer {
     }
 
     public void stopNode(int index) {
-        containers[index].stopKeepContainer();
+        containers[index].stopNode();
     }
 
     public void startNode(int index) {
         if (!containers[index].isRunning()) {
-            containers[index].restartContainer();
+            int numServers = containers.length;
+            var reunionLatch = new CountdownLatchLoggingConsumer(1, String.format(CLUSTER_VIEW_REGEX, numServers));
+            configureLogConsumers(containers[index], index, reunionLatch);
+            containers[index].recreateContainer();
+            try {
+                long perLatchTimeout = (long) numServers * DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS;
+                reunionLatch.await(perLatchTimeout, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            } catch (TimeoutException e) {
+                throw new RuntimeException("Node %d failed to rejoin the cluster".formatted(index), e);
+            }
             ReadinessProbe.waitUntilNodeReady(this::getBaseUrl, index, startTimeout);
             if (loadBalancer != null) {
                 loadBalancer.refreshNode(index);
