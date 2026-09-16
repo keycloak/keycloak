@@ -124,6 +124,9 @@ public class ComponentResource {
         Stream<ComponentModel> components;
         if (providerId != null && customComponents != null) {
             components = customComponents;
+        } else if (customComponents != null && type != null && providerId == null
+                && !UiExtensionComponentStorage.getCustomStorageProviderIds(session, type).isEmpty()) {
+            components = customComponents;
         } else if (customComponents != null) {
             Set<String> customStorageProviderIds = type != null
                     ? UiExtensionComponentStorage.getCustomStorageProviderIds(session, type)

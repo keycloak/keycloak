@@ -26,8 +26,12 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.providers.ui.TestCustomStorageUiPageProviderFactory;
 import org.keycloak.tests.suites.DatabaseTest;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -37,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KeycloakIntegrationTest(config = UiExtensionComponentStorageTest.ServerConfig.class)
 @DatabaseTest
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class UiExtensionComponentStorageTest {
 
     @InjectRealm(lifecycle = LifeCycle.METHOD)
@@ -50,9 +55,16 @@ public class UiExtensionComponentStorageTest {
     @BeforeEach
     public void before() {
         components = managedRealm.admin().components();
+        cleanupUiPageComponents();
+    }
+
+    @AfterEach
+    public void after() {
+        cleanupUiPageComponents();
     }
 
     @Test
+    @Order(1)
     public void testCustomStorageCrud() {
         ComponentRepresentation created = createComponentRepresentation("custom-storage-item");
         created.getConfig().addFirst("value", "initial");
@@ -85,6 +97,7 @@ public class UiExtensionComponentStorageTest {
     }
 
     @Test
+    @Order(2)
     public void testRejectProviderChangeForCustomStorage() {
         ComponentRepresentation created = createComponentRepresentation("custom-storage-item");
         String id = createComponent(created);
