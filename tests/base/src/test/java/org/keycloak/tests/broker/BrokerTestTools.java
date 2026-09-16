@@ -4,6 +4,7 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,13 +23,17 @@ import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID
 
 public final class BrokerTestTools {
 
-    private static String serverRoot;
+    private static final ThreadLocal<String> SERVER_ROOT = new ThreadLocal<>();
 
     private BrokerTestTools() {
     }
 
     public static void setServerRoot(String baseUrl) {
-        serverRoot = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+        SERVER_ROOT.set(baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl);
+    }
+
+    public static void clearServerRoot() {
+        SERVER_ROOT.remove();
     }
 
     public static String getProviderRoot() {
@@ -42,6 +47,7 @@ public final class BrokerTestTools {
     }
 
     public static String getConsumerRoot() {
+        String serverRoot = SERVER_ROOT.get();
         if (serverRoot != null && !serverRoot.isBlank()) {
             return serverRoot;
         }
@@ -68,6 +74,7 @@ public final class BrokerTestTools {
         idp.setTrustEmail(true);
         idp.setStoreToken(false);
         idp.setAddReadTokenRoleOnCreate(false);
+        idp.setConfig(new HashMap<>());
         return idp;
     }
 

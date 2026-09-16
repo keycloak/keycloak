@@ -95,19 +95,25 @@ public abstract class AbstractInitializedBaseBrokerTest extends AbstractBaseBrok
         String consumerBrokerEndpoint = consumerBaseUrl + "/broker/" + bc.getIDPAlias() + "/endpoint";
         ClientsResource providerClients = adminClient.realm(bc.providerRealmName()).clients();
         List<ClientRepresentation> clients = providerClients.findByClientId(CLIENT_ID);
-        if (!clients.isEmpty()) {
-            ClientRepresentation client = clients.get(0);
-            client.setRedirectUris(List.of(consumerBrokerEndpoint + "/*"));
-            client.setAdminUrl(consumerBrokerEndpoint);
-            Map<String, String> attributes = client.getAttributes();
-            if (attributes == null) {
-                attributes = new HashMap<>();
-                client.setAttributes(attributes);
-            }
-            attributes.put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL,
-                    consumerBaseUrl + "/protocol/openid-connect/logout/backchannel-logout");
-            providerClients.get(client.getId()).update(client);
+        if (clients.isEmpty()) {
+            throw new IllegalStateException("Provider client '" + CLIENT_ID + "' not found in realm "
+                    + bc.providerRealmName());
         }
+        if (clients.size() > 1) {
+            throw new IllegalStateException("Multiple provider clients found for clientId '" + CLIENT_ID + "' in realm "
+                    + bc.providerRealmName());
+        }
+        ClientRepresentation client = clients.get(0);
+        client.setRedirectUris(List.of(consumerBrokerEndpoint + "/*"));
+        client.setAdminUrl(consumerBrokerEndpoint);
+        Map<String, String> attributes = client.getAttributes();
+        if (attributes == null) {
+            attributes = new HashMap<>();
+            client.setAttributes(attributes);
+        }
+        attributes.put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL,
+                consumerBaseUrl + "/protocol/openid-connect/logout/backchannel-logout");
+        providerClients.get(client.getId()).update(client);
     }
 
     private String realmBaseUrl(String realmName) {
