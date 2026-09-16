@@ -142,15 +142,20 @@ export const normalizeBooleanOverride = (value?: unknown) => {
 const MAX_INTEGER_ATTRIBUTE_VALUE = 2_147_483_647;
 
 /**
- * Normalizes an integer attribute that overrides a realm setting when set ("" inherits). The server only accepts
- * non-negative integers up to Java's `Integer.MAX_VALUE`, anything else (e.g. from imports) is treated as unset so
- * that the form does not resubmit a value the server would reject.
+ * Normalizes an integer attribute that overrides a realm setting when set ("" inherits). The server parses the
+ * value with Java's `Integer.parseInt` and only accepts non-negative results up to `Integer.MAX_VALUE`. Accepted
+ * spellings (e.g. "+1", "-0" or "007") are canonicalized to the value the server applies, so that opening and saving
+ * the client does not change the effective setting. Anything else (e.g. from imports) is treated as unset so that
+ * the form does not resubmit a value the server would reject.
  */
 export const normalizeNonNegativeIntegerOverride = (value?: unknown) => {
   const normalized = String(value ?? "").trim();
-  return /^\d+$/.test(normalized) &&
-    Number(normalized) <= MAX_INTEGER_ATTRIBUTE_VALUE
-    ? normalized
+  if (!/^[+-]?\d+$/.test(normalized)) {
+    return "";
+  }
+  const parsed = Number(normalized);
+  return parsed >= 0 && parsed <= MAX_INTEGER_ATTRIBUTE_VALUE
+    ? String(parsed)
     : "";
 };
 
