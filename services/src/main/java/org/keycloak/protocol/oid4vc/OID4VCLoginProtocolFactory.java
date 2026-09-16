@@ -286,6 +286,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
                     Response.Status.BAD_REQUEST);
         }
 
+        validateIncludedInTokenScope(clientScope);
         validateOID4VCIRefreshInterval(clientScope);
         validateCredentialConfigurationId(session, clientScope);
         validateBindingConfiguration(session, clientScope);
@@ -396,6 +397,17 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
     private static String getEffectiveCredentialConfigurationId(String configuredId, String scopeName) {
         return StringUtil.isBlank(configuredId) ? scopeName : configuredId;
+    }
+
+    private void validateIncludedInTokenScope(ClientScopeRepresentation clientScope) {
+        if (clientScope.getAttributes() == null) {
+            return;
+        }
+
+        String includeInTokenScope = clientScope.getAttributes().get(INCLUDE_IN_TOKEN_SCOPE);
+        if (includeInTokenScope != null && !Boolean.parseBoolean(includeInTokenScope)) {
+            throw ErrorResponse.error("OID4VCI client scope must always have 'include in token scope' enabled", Response.Status.BAD_REQUEST);
+        }
     }
 
     /**
