@@ -18,8 +18,10 @@
 package org.keycloak.models.utils;
 
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -28,6 +30,7 @@ import java.util.stream.Stream;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleMapperModel;
@@ -235,15 +238,37 @@ public class RoleUtils {
      * @return all user role mappings including all groups of user. Composite roles will be expanded
      */
     public static Set<RoleModel> getDeepUserRoleMappings(UserModel user) {
-        Set<RoleModel> roleMappings = user.getRoleMappingsStream().collect(Collectors.toSet());
-        user.getGroupsStream().forEach(group -> addGroupRoles(group, roleMappings));
-        return expandCompositeRoles(roleMappings);
-    }
+        Set<RoleModel> roleMappings;
+        try (Stream<RoleModel> directRoles = user.getRoleMappingsStream()) {
+            roleMappings = directRoles.filter(Objects::nonNull).collect(Collectors.toSet());
+        }
 
-    private static void addGroupRoles(GroupModel group, Set<RoleModel> roleMappings) {
-        roleMappings.addAll(group.getRoleMappingsStream().collect(Collectors.toSet()));
-        if (group.getParentId() == null) return;
-        addGroupRoles(group.getParent(), roleMappings);
+        Deque<GroupModel> pendingGroups = new ArrayDeque<>();
+        try (Stream<GroupModel> directGroups = user.getRoleMappingsGroupsStream()) {
+            directGroups.filter(Objects::nonNull).forEach(pendingGroups::addLast);
+        }
+
+        Set<String> visitedGroupIds = new HashSet<>();
+        Set<GroupModel> visitedGroupsWithoutIds = Collections.newSetFromMap(new IdentityHashMap<>());
+        while (!pendingGroups.isEmpty()) {
+            GroupModel group = pendingGroups.removeFirst();
+            String groupId = group.getId();
+            boolean firstVisit = groupId == null ? visitedGroupsWithoutIds.add(group) : visitedGroupIds.add(groupId);
+            if (!firstVisit) {
+                continue;
+            }
+
+            try (Stream<RoleModel> groupRoles = group.getRoleMappingsStream()) {
+                groupRoles.filter(Objects::nonNull).forEach(roleMappings::add);
+            }
+
+            GroupModel parent = group.getParent();
+            if (parent != null) {
+                pendingGroups.addLast(parent);
+            }
+        }
+
+        return expandCompositeRoles(roleMappings);
     }
 
     private static RealmModel realmOf(RoleModel role) {
@@ -251,11 +276,14 @@ public class RoleUtils {
         if (container instanceof RealmModel realmModel) {
             return realmModel;
         }
+        if (container instanceof OrganizationModel organizationModel) {
+            return organizationModel.getRealm();
+        }
         return ((ClientModel) container).getRealm();
     }
 
     public static boolean isRealmRole(RoleModel r) {
-        return r.getContainer() instanceof RealmModel;
+        return r.isType(RoleModel.Type.REALM);
     }
 
     public static boolean isRealmRole(RoleModel r, RealmModel realm) {
@@ -266,6 +294,10 @@ public class RoleUtils {
         return false;
     }
 
+    /**
+     * @deprecated use {@link RoleModel#isType(RoleModel.Type)} and compare the role container when needed
+     */
+    @Deprecated
     public static boolean isClientRole(RoleModel r, ClientModel c) {
         RoleContainerModel container = r.getContainer();
         if (container instanceof ClientModel) {

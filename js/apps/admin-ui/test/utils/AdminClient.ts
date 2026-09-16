@@ -421,6 +421,22 @@ class AdminClient {
     await this.#client.organizations.create(org);
   }
 
+  async createOrganizationRole(
+    organizationName: string,
+    role: RoleRepresentation,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    return this.#withRealm(realm, async () => {
+      const organizationId = await this.#findOrgId(organizationName);
+      const createdRole = await this.#client.organizations.createRole({
+        orgId: organizationId,
+        ...role,
+      });
+      return { organizationId, roleId: createdRole.id! };
+    });
+  }
+
   async deleteOrganization(
     name: string,
     realm: string = this.#client.realmName,

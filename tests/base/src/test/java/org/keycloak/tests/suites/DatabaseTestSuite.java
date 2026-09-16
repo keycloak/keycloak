@@ -7,6 +7,7 @@ import org.junit.platform.suite.api.Suite;
 @Suite
 @IncludeTags(DatabaseTest.TAG)
 @SelectPackages({
+        "org.keycloak.models.jpa",
         "org.keycloak.tests"
 })
 public class DatabaseTestSuite {

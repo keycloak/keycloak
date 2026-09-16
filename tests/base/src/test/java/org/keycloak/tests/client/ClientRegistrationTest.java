@@ -43,10 +43,17 @@ import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.cache.CacheRealmProvider;
+import org.keycloak.models.jpa.entities.CompositeRoleEntity;
+import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -61,6 +68,8 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.util.JsonSerialization;
@@ -99,6 +108,9 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @KeycloakIntegrationTest
 public class ClientRegistrationTest extends AbstractClientRegistrationTest {
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     private ClientRepresentation registerClient(boolean cleanup) throws ClientRegistrationException {
     	return registerClient(buildClient(), cleanup);
@@ -269,6 +281,19 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         assertThat(createdClient.getDefaultRoles(), Matchers.arrayContaining("test-default-role"));
 
         authManageClients();
+        runOnServer.run(session -> {
+            OrganizationModel organization = session.getProvider(OrganizationProvider.class)
+                    .create("client-registration-organization", "Client Registration Organization",
+                            "client-registration-organization");
+            RoleModel organizationRole = organization.addRole("leaked-organization-role");
+            RoleModel defaultRole = session.getContext().getRealm().getDefaultRole();
+            var entityManager = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            RoleEntity parent = entityManager.find(RoleEntity.class, defaultRole.getId());
+            RoleEntity child = entityManager.find(RoleEntity.class, organizationRole.getId());
+            entityManager.persist(new CompositeRoleEntity(parent, child));
+            session.getProvider(CacheRealmProvider.class).registerRoleInvalidation(defaultRole.getId(),
+                    defaultRole.getName(), session.getContext().getRealm().getId());
+        });
         ClientRepresentation obtainedClient = reg.get(CLIENT_ID);
         assertThat(obtainedClient.getDefaultRoles(), Matchers.arrayContaining("test-default-role"));
 

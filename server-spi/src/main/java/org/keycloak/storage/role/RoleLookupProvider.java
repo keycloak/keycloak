@@ -16,14 +16,17 @@
  */
 package org.keycloak.storage.role;
 
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 
 /**
- * Abstraction interface for lookup of both realm roles and client roles by id, name and description.
+ * Abstraction interface for lookup of realm, client and organization roles by id, name and description.
  */
 public interface RoleLookupProvider {
 
@@ -32,11 +35,14 @@ public interface RoleLookupProvider {
      * @param realm Realm.
      * @param name String name of the role.
      * @return Model of the role, or {@code null} if no role is found.
+     *
+     * @deprecated Use {@link #getRole(RoleContainerModel, String)} instead. This method is kept for backward compatibility and will be removed in future versions.
      */
     RoleModel getRealmRole(RealmModel realm, String name);
 
     /**
-     * Exact search for a role by its internal ID..
+     * Exact search for a role by its internal ID within the realm.
+     * This lookup is not limited to realm roles and may return realm, client or organization roles.
      * @param realm Realm.
      * @param id Internal ID of the role.
      * @return Model of the role.
@@ -49,8 +55,10 @@ public interface RoleLookupProvider {
      * @param search Searched substring of the role's name or description.
      * @param first First result to return. Ignored if negative or {@code null}.
      * @param max Maximum number of results to return. Ignored if negative or {@code null}.
-     * @return Stream of the realm roles their name or description contains given search string. 
+     * @return Stream of the realm roles their name or description contains given search string.
      * Never returns {@code null}.
+     *
+     * @deprecated Use {@link #searchForRolesStream(RoleContainerModel, String, Integer, Integer)} instead. This method is kept for backward compatibility and will be removed in future versions.
      */
     Stream<RoleModel> searchForRolesStream(RealmModel realm, String search, Integer first, Integer max);
 
@@ -59,6 +67,8 @@ public interface RoleLookupProvider {
      * @param client Client.
      * @param name String name of the role.
      * @return Model of the role, or {@code null} if no role is found.
+     *
+     * @deprecated Use {@link #getRole(RoleContainerModel, String)} instead. This method is kept for backward compatibility and will be removed in future versions.
      */
     RoleModel getClientRole(ClientModel client, String name);
 
@@ -68,8 +78,9 @@ public interface RoleLookupProvider {
      * @param search String to search by role's name or description.
      * @param first First result to return. Ignored if negative or {@code null}.
      * @param max Maximum number of results to return. Ignored if negative or {@code null}.
-     * @return Stream of the client roles their name or description contains given search string. 
+     * @return Stream of the client roles their name or description contains given search string.
      * Never returns {@code null}.
+     * @deprecated Use {@link #searchForRolesStream(RoleContainerModel, String, Integer, Integer)} instead. This method is kept for backward compatibility and will be removed in future versions.
      */
     Stream<RoleModel> searchForClientRolesStream(ClientModel client, String search, Integer first, Integer max);
 
@@ -97,4 +108,47 @@ public interface RoleLookupProvider {
      * Never returns {@code null}.
      */
     Stream<RoleModel> searchForClientRolesStream(RealmModel realm, String search, Stream<String> excludedIds, Integer first, Integer max);
+
+    /**
+     * Returns a role by name within the given {@code container}.
+     *
+     * @param container the container that owns the role.
+     * @param name Role name.
+     * @return Model of the role, or {@code null} if no role is found.
+     */
+    RoleModel getRole(RoleContainerModel container, String name);
+
+    /**
+     * Returns a realm, client or organization role by internal ID within the given {@code container}.
+     *
+     * @param container the container that owns the role.
+     * @param id Internal role ID.
+     * @return Model of the role, or {@code null} if no role is found in the container.
+     */
+    default RoleModel getRoleInContainerById(RoleContainerModel container, String id) {
+        RealmModel realm = container.getRealm();
+        RoleModel role = getRoleById(realm, id);
+        if (role == null) {
+            return null;
+        }
+
+        boolean typeMatches = switch (role.getType()) {
+            case REALM -> container instanceof RealmModel;
+            case CLIENT -> container instanceof ClientModel;
+            case ORGANIZATION -> container instanceof OrganizationModel;
+        };
+
+        return typeMatches && Objects.equals(role.getContainerId(), container.getId()) ? role : null;
+    }
+
+    /**
+     * Searches roles by name or description within the given {@code container}.
+     *
+     * @param container The container that owns the roles.
+     * @param search Case-insensitive substring to search for. Ignored if {@code null}.
+     * @param first Index of the first result. Ignored if negative or {@code null}.
+     * @param max Maximum number of results. Ignored if negative or {@code null}.
+     * @return Stream of matching roles. Never returns {@code null}.
+     */
+    Stream<RoleModel> searchForRolesStream(RoleContainerModel container, String search, Integer first, Integer max);
 }

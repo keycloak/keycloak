@@ -73,9 +73,12 @@ export default function GroupsSection({ orgId }: { orgId?: string } = {}) {
   const canViewPermissions =
     isFeatureEnabled(Feature.AdminFineGrainedAuthz) &&
     hasAccess("manage-authorization", "manage-users", "manage-clients");
-  const canManageGroup =
-    hasAccess("manage-users") || currentGroup()?.access?.manage || false;
-  const canViewRoles = hasSomeAccess("view-users", "manage-users");
+  const canManageGroup = isOrganization
+    ? Boolean(currentGroup()?.access?.manage)
+    : hasAccess("manage-users") || currentGroup()?.access?.manage || false;
+  const canViewRoles = isOrganization
+    ? Boolean(currentGroup()?.access?.view || currentGroup()?.access?.manage)
+    : hasSomeAccess("view-users", "manage-users");
   const canViewDetails =
     hasAccess("query-groups", "view-users") ||
     hasAccess("manage-users", "query-groups");

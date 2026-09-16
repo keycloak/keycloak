@@ -17,9 +17,13 @@
 
 package org.keycloak.representations.idm;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MemberRepresentation extends UserRepresentation {
 
     private MembershipType membershipType;
+    private List<String> organizationRoles;
 
     public MemberRepresentation() {
         super();
@@ -35,5 +39,20 @@ public class MemberRepresentation extends UserRepresentation {
 
     public void setMembershipType(MembershipType membershipType) {
         this.membershipType = membershipType;
+    }
+
+    public List<String> getOrganizationRoles() {
+        return organizationRoles;
+    }
+
+    public void setOrganizationRoles(List<String> organizationRoles) {
+        this.organizationRoles = organizationRoles;
+    }
+
+    public void addOrganizationRole(String roleName) {
+        if (organizationRoles == null) {
+            organizationRoles = new ArrayList<>();
+        }
+        organizationRoles.add(roleName);
     }
 }

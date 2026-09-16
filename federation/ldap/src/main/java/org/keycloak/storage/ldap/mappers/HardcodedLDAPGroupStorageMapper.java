@@ -57,11 +57,17 @@ public class HardcodedLDAPGroupStorageMapper extends AbstractLDAPStorageMapper {
 
             @Override
             public Stream<GroupModel> getGroupsStream() {
-                Stream<GroupModel> groups = super.getGroupsStream();
+                return getRoleMappingsGroupsStream()
+                        .filter(group -> GroupModel.Type.REALM.equals(group.getType()));
+            }
+
+            @Override
+            public Stream<GroupModel> getRoleMappingsGroupsStream() {
+                Stream<GroupModel> groups = super.getRoleMappingsGroupsStream();
 
                 GroupModel group = getGroup(realm);
                 if (group != null) {
-                    return Stream.concat(groups, Stream.of(group));
+                    return Stream.concat(groups, Stream.of(group)).distinct();
                 }
 
                 return groups;

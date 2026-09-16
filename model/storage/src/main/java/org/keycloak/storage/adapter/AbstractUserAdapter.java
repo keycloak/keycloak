@@ -120,15 +120,19 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
      * @deprecated Use {@link #getGroupsStream()} instead
      */
     public Set<GroupModel> getGroups() {
-        Set<GroupModel> set = new HashSet<>();
-        if (appendDefaultGroups()) set.addAll(realm.getDefaultGroupsStream().collect(Collectors.toSet()));
-        set.addAll(getGroupsInternal());
-        return set;
+        return getGroupsStream().collect(Collectors.toSet());
     }
 
     @Override
     public Stream<GroupModel> getGroupsStream() {
-        return getGroups().stream();
+        return getRoleMappingsGroupsStream().filter(group -> GroupModel.Type.REALM.equals(group.getType()));
+    }
+
+    @Override
+    public Stream<GroupModel> getRoleMappingsGroupsStream() {
+        Stream<GroupModel> groups = getGroupsInternal().stream();
+        if (appendDefaultGroups()) groups = Stream.concat(groups, realm.getDefaultGroupsStream());
+        return groups.distinct();
     }
 
     @Override
@@ -145,7 +149,7 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
 
     @Override
     public boolean isMemberOf(GroupModel group) {
-        return RoleUtils.isMember(getGroups().stream(), group);
+        return RoleUtils.isMember(getRoleMappingsGroupsStream(), group);
     }
 
     /**
@@ -177,7 +181,7 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
     @Override
     public boolean hasRole(RoleModel role) {
         return RoleUtils.hasRole(getRoleMappings().stream(), role)
-          || RoleUtils.hasRoleFromGroup(getGroups().stream(), role, true);
+          || RoleUtils.hasRoleFromGroup(getRoleMappingsGroupsStream(), role, true);
     }
 
     @Override
@@ -460,14 +464,19 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
 
         @Override
         public Stream<GroupModel> getGroupsStream() {
+            return getRoleMappingsGroupsStream().filter(group -> GroupModel.Type.REALM.equals(group.getType()));
+        }
+
+        @Override
+        public Stream<GroupModel> getRoleMappingsGroupsStream() {
             Stream<GroupModel> groups = getGroupsInternal().stream();
             if (appendDefaultGroups()) groups = Stream.concat(groups, realm.getDefaultGroupsStream());
-            return groups;
+            return groups.distinct();
         }
 
         @Override
         public boolean isMemberOf(GroupModel group) {
-            return RoleUtils.isMember(this.getGroupsStream(), group);
+            return RoleUtils.isMember(this.getRoleMappingsGroupsStream(), group);
         }
 
         // role-related methods.
@@ -508,7 +517,7 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
         @Override
         public boolean hasRole(RoleModel role) {
             return RoleUtils.hasRole(this.getRoleMappingsStream(), role)
-                    || RoleUtils.hasRoleFromGroup(this.getGroupsStream(), role, true);
+                    || RoleUtils.hasRoleFromGroup(this.getRoleMappingsGroupsStream(), role, true);
         }
     }
 }

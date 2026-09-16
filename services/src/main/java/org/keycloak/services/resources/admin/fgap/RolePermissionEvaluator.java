@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin.fgap;
 
+import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.models.ClientModel;
@@ -147,4 +148,12 @@ public interface RolePermissionEvaluator {
      * @return Stream of IDs of roles with {@code scope} permission.
      */
     Set<String> getRoleIdsByScope(String scope);
+
+    default Map<String, Boolean> getAccess(RoleModel role) {
+        return Map.of(
+                "view", canView(role),
+                "manage", canManage(role),
+                "mapRole", canMapRole(role),
+                "mapComposite", canMapComposite(role));
+    }
 }

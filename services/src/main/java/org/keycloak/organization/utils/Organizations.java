@@ -20,6 +20,7 @@ package org.keycloak.organization.utils;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -73,6 +74,16 @@ public class Organizations {
     private static final String WILDCARD_PREFIX = "*.";
     private static final int MIN_DOMAIN_PARTS = 2;
     private static final int MAX_DOMAIN_PARTS = 10;
+
+    public static String getDefaultRoleName(String alias, String suffix) {
+        String name = Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-" + alias.toLowerCase(Locale.ROOT);
+        int end = Math.min(name.length(), 255 - suffix.length());
+        if (end > 0 && end < name.length() && Character.isHighSurrogate(name.charAt(end - 1))
+                && Character.isLowSurrogate(name.charAt(end))) {
+            end--;
+        }
+        return name.substring(0, end) + suffix;
+    }
 
     public static boolean isOrganizationGroup(GroupModel group) {
         return Type.ORGANIZATION.equals(group.getType()) && group.getOrganization() != null;

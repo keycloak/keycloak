@@ -629,6 +629,11 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         realm.cleanup().add(r -> r.clients().get(clientUuid).remove());
         realm.admin().clients().get(clientUuid).roles().create(new RoleRepresentation("brief-rep-client-role", "Test client role", false));
         RoleRepresentation createdClientRole = realm.admin().clients().get(clientUuid).roles().get("brief-rep-client-role").toRepresentation();
+        RoleRepresentation organizationRole = new RoleRepresentation("brief-rep-organization-role",
+                "Test organization role", false);
+        try (Response response = orgResource.roles().create(organizationRole)) {
+            organizationRole = orgResource.roles().get(ApiUtil.getCreatedId(response)).toRepresentation();
+        }
 
         GroupRepresentation parentRep = new GroupRepresentation();
         parentRep.setName("parent");
@@ -641,6 +646,16 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
 
         orgResource.groups().group(parentId).roles().realmLevel().add(List.of(createdRealmRole));
         orgResource.groups().group(parentId).roles().clientLevel(clientUuid).add(List.of(createdClientRole));
+        orgResource.groups().group(parentId).roles().addOrganizationRoleMappings(List.of(organizationRole));
+
+        GroupRepresentation childRep = new GroupRepresentation();
+        childRep.setName("child");
+        String childId;
+        try (Response response = orgResource.groups().group(parentId).addSubGroup(childRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            childId = response.readEntity(GroupRepresentation.class).getId();
+        }
+        orgResource.groups().group(childId).roles().addOrganizationRoleMappings(List.of(organizationRole));
 
         // briefRepresentation = false returns the full representation
         GroupRepresentation full = orgResource.groups().getGroupByPath("/parent", false, false);
@@ -649,6 +664,19 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         assertThat(full.getAttributes().get("department").get(0), is("Engineering"));
         assertThat(full.getRealmRoles(), containsInAnyOrder("brief-rep-realm-role"));
         assertThat(full.getClientRoles().get("brief-rep-client"), containsInAnyOrder("brief-rep-client-role"));
+        assertThat(full.getOrganizationRoles().get(orgRep.getAlias()),
+                containsInAnyOrder("brief-rep-organization-role"));
+        assertThat(full.getAccess().get("view"), is(true));
+        assertThat(full.getAccess().get("manage"), is(true));
+
+        List<GroupRepresentation> hierarchy = orgResource.groups()
+                .getAll("child", null, true, null, null, false, true, false);
+        assertThat(hierarchy, hasSize(1));
+        assertThat(hierarchy.get(0).getOrganizationRoles().get(orgRep.getAlias()),
+                containsInAnyOrder("brief-rep-organization-role"));
+        assertThat(hierarchy.get(0).getSubGroups(), hasSize(1));
+        assertThat(hierarchy.get(0).getSubGroups().get(0).getOrganizationRoles().get(orgRep.getAlias()),
+                containsInAnyOrder("brief-rep-organization-role"));
 
         // briefRepresentation = true omits attributes and role mappings
         GroupRepresentation brief = orgResource.groups().getGroupByPath("/parent", true, false);
@@ -657,6 +685,8 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         assertThat(brief.getAttributes(), nullValue());
         assertThat(brief.getRealmRoles(), nullValue());
         assertThat(brief.getClientRoles(), nullValue());
+        assertThat(brief.getOrganizationRoles(), nullValue());
+        assertThat(brief.getAccess().get("view"), is(true));
 
         // briefRepresentation defaults to true when the parameter is not sent
         GroupRepresentation defaultRep = orgResource.groups().getGroupByPath("/parent", false);
@@ -665,6 +695,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         assertThat(defaultRep.getAttributes(), nullValue());
         assertThat(defaultRep.getRealmRoles(), nullValue());
         assertThat(defaultRep.getClientRoles(), nullValue());
+        assertThat(defaultRep.getOrganizationRoles(), nullValue());
     }
 
     @Test

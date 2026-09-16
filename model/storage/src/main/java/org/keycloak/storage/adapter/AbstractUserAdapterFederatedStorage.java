@@ -34,6 +34,7 @@ import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModelDefaultMethods;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
@@ -126,26 +127,33 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
      */
     @Override
     public Stream<GroupModel> getGroupsStream() {
+        return getRoleMappingsGroupsStream().filter(group -> GroupModel.Type.REALM.equals(group.getType()));
+    }
+
+    @Override
+    public Stream<GroupModel> getRoleMappingsGroupsStream() {
         Stream<GroupModel> groups = getFederatedStorage().getGroupsStream(realm, this.getId());
         if (appendDefaultGroups()) groups = Stream.concat(groups, realm.getDefaultGroupsStream());
-        return Stream.concat(groups, getGroupsInternal().stream());
+        return Stream.concat(groups, getGroupsInternal().stream()).distinct();
     }
 
     @Override
     public void joinGroup(GroupModel group) {
+        OrganizationsValidation.validateOrganizationGroupMembership(session, this, group, true);
         getFederatedStorage().joinGroup(realm, this.getId(), group);
 
     }
 
     @Override
     public void leaveGroup(GroupModel group) {
+        OrganizationsValidation.validateOrganizationGroupMembership(session, this, group, false);
         getFederatedStorage().leaveGroup(realm, this.getId(), group);
 
     }
 
     @Override
     public boolean isMemberOf(GroupModel group) {
-        return RoleUtils.isMember(getGroupsStream(), group);
+        return RoleUtils.isMember(getRoleMappingsGroupsStream(), group);
     }
 
     /**
@@ -171,11 +179,12 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     @Override
     public boolean hasRole(RoleModel role) {
         return RoleUtils.hasRole(getRoleMappingsStream(), role)
-          || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
+          || RoleUtils.hasRoleFromGroup(getRoleMappingsGroupsStream(), role, true);
     }
 
     @Override
     public void grantRole(RoleModel role) {
+        OrganizationsValidation.validateOrganizationRoleMapping(this, role);
         if (hasDirectRole(role)) return;
         getFederatedStorage().grantRole(realm, this.getId(), role);
     }

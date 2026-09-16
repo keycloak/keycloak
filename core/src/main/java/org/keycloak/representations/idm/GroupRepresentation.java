@@ -44,6 +44,7 @@ public class GroupRepresentation {
     protected Map<String, List<String>>  attributes;
     protected List<String> realmRoles;
     protected Map<String, List<String>> clientRoles;
+    protected Map<String, List<String>> organizationRoles;
 
     private Map<String, Boolean> access;
 
@@ -111,6 +112,13 @@ public class GroupRepresentation {
         this.clientRoles = clientRoles;
     }
 
+    public Map<String, List<String>> getOrganizationRoles() {
+        return organizationRoles;
+    }
+
+    public void setOrganizationRoles(Map<String, List<String>> organizationRoles) {
+        this.organizationRoles = organizationRoles;
+    }
 
     public Map<String, List<String>> getAttributes() {
         return attributes;

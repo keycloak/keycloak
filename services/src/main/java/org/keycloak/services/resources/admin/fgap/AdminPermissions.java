@@ -67,13 +67,7 @@ public class AdminPermissions {
                 if (event instanceof RoleContainerModel.RoleRemovedEvent) {
                     RoleContainerModel.RoleRemovedEvent cast = (RoleContainerModel.RoleRemovedEvent) event;
                     RoleModel role = cast.getRole();
-                    RealmModel realm;
-                    if (role.getContainer() instanceof ClientModel) {
-                        realm = ((ClientModel) role.getContainer()).getRealm();
-
-                    } else {
-                        realm = (RealmModel) role.getContainer();
-                    }
+                    RealmModel realm = role.getContainer().getRealm();
                     management(cast.getKeycloakSession(), realm).roles().setPermissionsEnabled(role, false);
                 } else if (event instanceof ClientModel.ClientRemovedEvent) {
                     ClientModel.ClientRemovedEvent cast = (ClientModel.ClientRemovedEvent) event;

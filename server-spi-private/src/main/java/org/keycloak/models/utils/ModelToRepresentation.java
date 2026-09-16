@@ -240,18 +240,35 @@ public class ModelToRepresentation {
         Set<RoleModel> roles = group.getRoleMappingsStream().collect(Collectors.toSet());
         List<String> realmRoleNames = new ArrayList<>();
         Map<String, List<String>> clientRoleNames = new HashMap<>();
+        Map<String, List<String>> orgRoleNames = new HashMap<>();
         for (RoleModel role : roles) {
             if (role.getContainer() instanceof RealmModel) {
                 realmRoleNames.add(role.getName());
-            } else {
+            } else if (role.getContainer() instanceof ClientModel) {
                 ClientModel client = (ClientModel) role.getContainer();
                 String clientId = client.getClientId();
                 List<String> currentClientRoles = clientRoleNames.computeIfAbsent(clientId, k -> new ArrayList<>());
                 currentClientRoles.add(role.getName());
+            } else if (role.getContainer() instanceof OrganizationModel) {
+                OrganizationModel org = (OrganizationModel) role.getContainer();
+                OrganizationModel groupOrganization = group.getOrganization();
+                if (!GroupModel.Type.ORGANIZATION.equals(group.getType()) || group.getParent() == null
+                        || groupOrganization == null || groupOrganization.getRealm() == null
+                        || !groupOrganization.getId().equals(org.getId())
+                        || !groupOrganization.getRealm().getId().equals(org.getRealm().getId())
+                        || org.isDefaultRole(role)) {
+                    throw new ModelException("Invalid organization role mapping on organization group");
+                }
+                String orgAlias = org.getAlias();
+                List<String> currentOrgRoles = orgRoleNames.computeIfAbsent(orgAlias, k -> new ArrayList<>());
+                currentOrgRoles.add(role.getName());
             }
         }
         rep.setRealmRoles(realmRoleNames);
         rep.setClientRoles(clientRoleNames);
+        if (!orgRoleNames.isEmpty()) {
+            rep.setOrganizationRoles(orgRoleNames);
+        }
         Map<String, List<String>> attributes = group.getAttributes();
         rep.setAttributes(attributes);
         return rep;

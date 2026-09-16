@@ -1,6 +1,8 @@
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import type { Groups } from "@keycloak/keycloak-admin-client/lib/resources/groups";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
@@ -11,7 +13,7 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { cellWidth } from "@patternfly/react-table";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import { emptyFormatter, upperCaseFormatter } from "../../util";
@@ -36,9 +38,17 @@ export type CompositeRole = RoleRepresentation & {
 
 export type Row = {
   client?: ClientRepresentation;
+  org?: { id?: string; orgAlias?: string };
   role: RoleRepresentation | CompositeRole;
   id?: string; // KeycloakDataTable expects an id for the row
 };
+
+export const isRoleMappingRowDisabled = (
+  value: Row,
+  canMapOrganizationRoles = false,
+) =>
+  Boolean((value.role as CompositeRole).isInherited) ||
+  Boolean(value.org && !canMapOrganizationRoles);
 
 export const mapRoles = (
   assignedRoles: Row[],
@@ -111,11 +121,16 @@ export const mapRoles = (
   return result;
 };
 
-export const ServiceRole = ({ role, client }: Row) => (
+export const ServiceRole = ({ role, client, org }: Row) => (
   <>
     {client?.clientId && (
       <Badge isRead className="keycloak-admin--role-mapping__client-name">
         {client.clientId}
+      </Badge>
+    )}
+    {org?.orgAlias && (
+      <Badge isRead className="keycloak-admin--role-mapping__client-name">
+        {org.orgAlias}
       </Badge>
     )}
     {role.name}
@@ -130,7 +145,8 @@ type RoleMappingProps = {
   type: ResourcesKey;
   isManager?: boolean;
   save: (rows: Row[]) => Promise<void>;
-  groupsResource?: any;
+  groupsResource?: Groups;
+  canMapOrganizationRoles?: boolean;
 };
 
 export const RoleMapping = ({
@@ -140,6 +156,7 @@ export const RoleMapping = ({
   isManager = true,
   save,
   groupsResource,
+  canMapOrganizationRoles = false,
 }: RoleMappingProps) => {
   const { adminClient } = useAdminClient();
 
@@ -153,6 +170,12 @@ export const RoleMapping = ({
   const [showAssign, setShowAssign] = useState(false);
   const [filterType, setFilterType] = useState<FilterType>("clients");
   const [selected, setSelected] = useState<Row[]>([]);
+  const organizationId = groupsResource?.getOrgId();
+
+  useEffect(() => {
+    setSelected([]);
+    setShowAssign(false);
+  }, [id, type, organizationId]);
 
   const assignRoles = async (rows: Row[]) => {
     await save(rows);
@@ -187,10 +210,18 @@ export const RoleMapping = ({
         })),
       )
       .flat();
+    const orgMapping = Object.entries(roles.organizationMappings || {})
+      .map(([orgAlias, orgRoles]) =>
+        (orgRoles as RoleRepresentation[]).map((role: RoleRepresentation) => ({
+          org: { orgAlias, id: orgAlias },
+          role,
+        })),
+      )
+      .flat();
 
     return [
       ...mapRoles(
-        [...clientMapping, ...realmRolesMapping],
+        [...clientMapping, ...realmRolesMapping, ...orgMapping],
         allEffectiveRoles,
         hide,
       ),
@@ -208,7 +239,64 @@ export const RoleMapping = ({
     },
     onConfirm: async () => {
       try {
-        await Promise.all(deleteMapping(adminClient, type, id, selected));
+        if (
+          selected.some((row) =>
+            isRoleMappingRowDisabled(row, canMapOrganizationRoles),
+          )
+        ) {
+          throw new Error(t("roleMappingUpdatedError"));
+        }
+        const cleanRole = (
+          role: RoleRepresentation | CompositeRole,
+        ): RoleMappingPayload => {
+          if (!role.id || !role.name) {
+            throw new Error("Role mappings require both a role id and name");
+          }
+          return { id: role.id, name: role.name };
+        };
+        const realmRoles = selected.filter(
+          (row) => row.client === undefined && !row.org,
+        );
+        const clientRoles = selected.filter((row) => row.client !== undefined);
+        const orgRoles = selected.filter((row) => row.org);
+
+        if (orgRoles.length > 0 && !groupsResource) {
+          throw new Error(
+            "Organization role mappings require an organization group",
+          );
+        }
+
+        await Promise.all([
+          ...(realmRoles.length > 0
+            ? groupsResource
+              ? [
+                  groupsResource.delRealmRoleMappings({
+                    id,
+                    roles: realmRoles.map((row) => cleanRole(row.role)),
+                  }),
+                ]
+              : deleteMapping(adminClient, type, id, realmRoles)
+            : []),
+          ...(clientRoles.length > 0
+            ? groupsResource
+              ? clientRoles.map((row) =>
+                  groupsResource.delClientRoleMappings({
+                    id,
+                    clientUniqueId: row.client!.id!,
+                    roles: [cleanRole(row.role)],
+                  }),
+                )
+              : deleteMapping(adminClient, type, id, clientRoles)
+            : []),
+          ...(orgRoles.length > 0
+            ? [
+                groupsResource!.delOrganizationRoleMappings({
+                  id,
+                  roles: orgRoles.map((row) => cleanRole(row.role)),
+                }),
+              ]
+            : []),
+        ]);
         addAlert(t("roleMappingUpdatedSuccess"), AlertVariant.success);
         setSelected([]);
         refresh();
@@ -229,6 +317,7 @@ export const RoleMapping = ({
           onAssign={assignRoles}
           onClose={() => setShowAssign(false)}
           groupsResource={groupsResource}
+          canMapOrganizationRoles={canMapOrganizationRoles}
         />
       )}
       <DeleteConfirm />
@@ -240,8 +329,8 @@ export const RoleMapping = ({
         onSelect={(rows) => setSelected(rows)}
         searchPlaceholderKey="searchByName"
         ariaLabelKey="roleList"
-        isRowDisabled={(value) =>
-          (value.role as CompositeRole).isInherited || false
+        isRowDisabled={(row) =>
+          isRoleMappingRowDisabled(row, canMapOrganizationRoles)
         }
         toolbarItem={
           <>
@@ -261,6 +350,7 @@ export const RoleMapping = ({
               <>
                 <ToolbarItem>
                   <AddRoleButton
+                    canMapOrganizationRoles={canMapOrganizationRoles}
                     onFilerTypeChange={(type) => {
                       setFilterType(type);
                       setShowAssign(true);
@@ -287,6 +377,11 @@ export const RoleMapping = ({
                 {
                   title: t("unAssignRole"),
                   onRowClick: async (role) => {
+                    if (
+                      isRoleMappingRowDisabled(role, canMapOrganizationRoles)
+                    ) {
+                      return false;
+                    }
                     setSelected([role]);
                     toggleDeleteDialog();
                     return false;
@@ -327,12 +422,15 @@ export const RoleMapping = ({
               },
             ]}
           >
-            <AddRoleButton
-              onFilerTypeChange={(type) => {
-                setFilterType(type);
-                setShowAssign(true);
-              }}
-            />
+            {isManager && (
+              <AddRoleButton
+                canMapOrganizationRoles={canMapOrganizationRoles}
+                onFilerTypeChange={(type) => {
+                  setFilterType(type);
+                  setShowAssign(true);
+                }}
+              />
+            )}
           </ListEmptyState>
         }
       />

@@ -170,7 +170,7 @@ public class UpdateOnlyChangeUserModelDelegate extends UserModelDelegate {
 
     @Override
     public void joinGroup(GroupModel group) {
-        if (!RoleUtils.isDirectMember(getGroupsStream(),group)) {
+        if (!RoleUtils.isDirectMember(getRoleMappingsGroupsStream(),group)) {
             delegate.joinGroup(group);
         }
 
@@ -178,7 +178,7 @@ public class UpdateOnlyChangeUserModelDelegate extends UserModelDelegate {
 
     @Override
     public void leaveGroup(GroupModel group) {
-        if (RoleUtils.isDirectMember(getGroupsStream(),group)) {
+        if (RoleUtils.isDirectMember(getRoleMappingsGroupsStream(),group)) {
             delegate.leaveGroup(group);
         }
     }

@@ -19,6 +19,7 @@ package org.keycloak.storage.adapter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -34,6 +35,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModelDefaultMethods;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
 
@@ -211,12 +213,18 @@ public abstract class AbstractInMemoryUserAdapter extends UserModelDefaultMethod
 
     @Override
     public Stream<GroupModel> getGroupsStream() {
-        return groupIds.stream().map(realm::getGroupById);
+        return getRoleMappingsGroupsStream().filter(group -> GroupModel.Type.REALM.equals(group.getType()));
+    }
+
+    @Override
+    public Stream<GroupModel> getRoleMappingsGroupsStream() {
+        return groupIds.stream().map(realm::getGroupById).filter(Objects::nonNull);
     }
 
     @Override
     public void joinGroup(GroupModel group) {
         checkReadonly();
+        OrganizationsValidation.validateOrganizationGroupMembership(session, this, group, true);
         groupIds.add(group.getId());
 
     }
@@ -224,6 +232,7 @@ public abstract class AbstractInMemoryUserAdapter extends UserModelDefaultMethod
     @Override
     public void leaveGroup(GroupModel group) {
         checkReadonly();
+        OrganizationsValidation.validateOrganizationGroupMembership(session, this, group, false);
         groupIds.remove(group.getId());
 
     }
@@ -232,7 +241,7 @@ public abstract class AbstractInMemoryUserAdapter extends UserModelDefaultMethod
     public boolean isMemberOf(GroupModel group) {
         if (groupIds == null) return false;
         if (groupIds.contains(group.getId())) return true;
-        return RoleUtils.isMember(getGroupsStream(), group);
+        return RoleUtils.isMember(getRoleMappingsGroupsStream(), group);
     }
 
     @Override
@@ -272,11 +281,12 @@ public abstract class AbstractInMemoryUserAdapter extends UserModelDefaultMethod
     @Override
     public boolean hasRole(RoleModel role) {
         return RoleUtils.hasRole(getRoleMappingsStream(), role)
-                || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
+                || RoleUtils.hasRoleFromGroup(getRoleMappingsGroupsStream(), role, true);
     }
 
     @Override
     public void grantRole(RoleModel role) {
+        OrganizationsValidation.validateOrganizationRoleMapping(this, role);
         roleIds.add(role.getId());
 
     }

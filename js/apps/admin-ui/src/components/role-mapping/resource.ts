@@ -90,6 +90,7 @@ type ClientMappingRepresentation = {
 export type RoleMappingRepresentation = {
   realmMappings?: RoleRepresentation[];
   clientMappings?: Record<string, ClientMappingRepresentation>;
+  organizationMappings?: Record<string, RoleRepresentation[]>;
 };
 
 export const getRoleMappings = async (
