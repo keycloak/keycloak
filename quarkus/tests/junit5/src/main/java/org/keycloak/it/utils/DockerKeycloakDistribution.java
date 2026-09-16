@@ -59,7 +59,6 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     private static final Logger LOGGER = Logger.getLogger(DockerKeycloakDistribution.class);
 
     public static final int STARTUP_TIMEOUT_SECONDS = 120;
-    public static final int RESTART_TIMEOUT_SECONDS = 300;
 
     private final Integer[] exposedPorts;
 
@@ -77,6 +76,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     private final LazyFuture<String> image;
 
     private final Map<MountableFile, String> copyToContainer = new HashMap<>();
+    private List<String> lastKcArguments;
 
     public DockerKeycloakDistribution(int[] exposedPorts) {
         this(exposedPorts, null);
@@ -155,6 +155,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         if (keycloakContainer != null) {
             throw new IllegalStateException("Stop has not been called");
         }
+        lastKcArguments = List.copyOf(arguments);
         try {
             this.exitCode = -1;
             this.stdout = "";
@@ -229,30 +230,30 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         stop(true);
     }
 
-    public void stopKeepContainer() {
-        stop(false);
+    public void stopNode() {
+        if (keycloakContainer != null) {
+            stop(true);
+        }
     }
 
     public boolean isRunning() {
         return keycloakContainer != null && keycloakContainer.isRunning();
     }
 
-    public void restartContainer() {
-        if (keycloakContainer == null) {
+    public void recreateContainer() {
+        if (lastKcArguments == null) {
             throw new IllegalStateException("Container has not been started");
         }
-        if (keycloakContainer.isRunning()) {
+        if (isRunning()) {
             return;
         }
         try {
-            String id = containerId != null ? containerId : keycloakContainer.getContainerId();
-            keycloakContainer.getDockerClient().restartContainerCmd(id).exec();
-            Wait.forListeningPorts(8080)
-                    .withStartupTimeout(Duration.ofSeconds(RESTART_TIMEOUT_SECONDS))
-                    .waitUntilReady(keycloakContainer);
-            containerId = id;
+            if (keycloakContainer != null) {
+                stop(true);
+            }
+            runKc(lastKcArguments);
         } catch (Exception cause) {
-            throw new RuntimeException("Failed to restart the server", cause);
+            throw new RuntimeException("Failed to recreate the server", cause);
         }
     }
 
