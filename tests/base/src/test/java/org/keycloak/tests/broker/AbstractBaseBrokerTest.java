@@ -91,6 +91,7 @@ public abstract class AbstractBaseBrokerTest {
         driver.driver().manage().deleteAllCookies();
         removeRealm(bc.consumerRealmName());
         removeRealm(bc.providerRealmName());
+        BrokerTestTools.clearServerRoot();
     }
 
     protected void importRealm(RealmRepresentation realmRepresentation) {
