@@ -34,9 +34,8 @@ users should consult the [upgrading guide](https://www.keycloak.org/docs/latest/
 ## Security Releases
 
 Security fixes are released as patch releases for the latest minor release. Security advisories are published
-in the release notes or [GitHub issues of type CVE](https://github.com/keycloak/keycloak/issues?q=is%3Aissue%20type%3Acve).
+in the release notes and [GitHub issues of type CVE](https://github.com/keycloak/keycloak/issues?q=is%3Aissue%20type%3Acve).
 
-<!-- TODO: We currently only publish CVEs issue types, IMHO GitHub Security Advisories should be preferred. -->
 
 ## Branch and Tag Strategy
 
@@ -63,7 +62,6 @@ New capabilities in Keycloak follow a graduated lifecycle:
 
 * **Experimental** - available for evaluation, not yet feature complete
 * **Preview** - feature complete but not ready for production use yet. Seamless upgrades are not guaranteed
-  <!-- Will change with https://github.com/keycloak/keycloak/issues/44551 -->
 * **Supported** - fully supported with backwards compatibility and migration guarantees
 
 For full details on expectations at each level see [docs/features.md](docs/features.md).
