@@ -82,6 +82,7 @@ public interface OAuth2Constants {
 
     // https://datatracker.ietf.org/doc/draft-ietf-oauth-identity-assertion-authz-grant/
     String IDENTITY_ASSERTION_JWT_HEADER_TYPE = "oauth-id-jag+jwt";
+    String IDENTITY_ASSERTION_JWT_TOKEN_TYPE = "urn:ietf:params:oauth:token-type:id-jag";
 
 
     // https://tools.ietf.org/html/draft-ietf-oauth-assertions-01#page-5
