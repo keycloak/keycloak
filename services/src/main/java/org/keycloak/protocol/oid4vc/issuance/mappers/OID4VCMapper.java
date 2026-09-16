@@ -137,6 +137,30 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
     }
 
     /**
+     * Runs all validations (credential-format and sensitive-mapping checks) for this mapper. Because
+     * scope updates/imports can bypass {@link #validateConfig}, the issuer endpoint invokes this centrally at
+     * issuance so a misconfigured mapper fails the request instead of emitting broken or overridden claims.
+     */
+    public void validate() throws ProtocolMapperConfigException {
+        validateMdocNamespace(format, mapperModel);
+        validateAgainstSensitiveMappings(format, mapperModel);
+    }
+
+    /**
+     * Returns {@code true} when this mapper passes all issuance-time guards. Used where a misconfigured mapper is
+     * silently omitted (e.g. from issuer metadata) rather than failing the request.
+     */
+    public boolean passesMappingGuards() {
+        try {
+            validate();
+            return true;
+        } catch (ProtocolMapperConfigException e) {
+            LOGGER.debugf(e, "OID4VC mapper '%s' failed validation", getMapperName());
+            return false;
+        }
+    }
+
+    /**
      * Rejects a mapper that maps user-controlled data and whose configured claim name targets a reserved,
      * issuer-controlled claim (e.g. exp, iat, sub, jti). Such a mapper could let a user-controlled value
      * override issuer-controlled claims (see keycloak/keycloak#52667). Mapper claims are emitted at the
@@ -166,32 +190,6 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
                     String.format("Claim name '%s' is reserved and must not be used by this OID4VC mapper.",
                             claimName),
                     MAPPER_RESERVED_CLAIM_ERROR);
-        }
-    }
-
-    /**
-     * Whether the given (normalized) top-level claim is reserved and must not be written by this mapper. Subclasses
-     * that are trusted to write a specific issuer-controlled claim (e.g. the subject-id mapper writing 'sub') override
-     * this to exempt that claim while keeping the rest of the reserved set protected.
-     */
-    protected boolean isReservedClaim(String topLevelClaim) {
-        return RESERVED_CLAIM_NAMES.contains(topLevelClaim);
-    }
-
-    /**
-     * Returns {@code true} when this mapper passes all issuance-time guards (credential-format validation and the
-     * sensitive-mapping check). Because scope updates/imports can bypass {@link #validateConfig}, this is invoked
-     * centrally at issuance so a misconfigured mapper is safely skipped instead of failing the request.
-     */
-    public boolean passesMappingGuards() {
-        try {
-            validateMdocNamespace(format, mapperModel);
-            validateAgainstSensitiveMappings(format, mapperModel);
-            return true;
-        } catch (ProtocolMapperConfigException e) {
-            LOGGER.warnf("OID4VC mapper '%s' failed validation and will be skipped: %s", getMapperName(), e.getMessage());
-            LOGGER.debugf(e, "OID4VC mapper '%s' validation failure details", getMapperName());
-            return false;
         }
     }
 
@@ -418,6 +416,15 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
      */
     public boolean mapsUserControlledData() {
         return true;
+    }
+
+    /**
+     * Whether the given (normalized) top-level claim is reserved and must not be written by this mapper. Subclasses
+     * that are trusted to write a specific issuer-controlled claim (e.g. the subject-id mapper writing 'sub') override
+     * this to exempt that claim while keeping the rest of the reserved set protected.
+     */
+    protected boolean isReservedClaim(String topLevelClaim) {
+        return RESERVED_CLAIM_NAMES.contains(topLevelClaim);
     }
 
     /**

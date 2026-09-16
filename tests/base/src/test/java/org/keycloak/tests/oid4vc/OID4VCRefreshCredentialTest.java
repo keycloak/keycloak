@@ -13,7 +13,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
+import org.keycloak.VCFormat;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserVerifiableCredentialResource;
 import org.keycloak.common.util.Time;
@@ -28,10 +31,12 @@ import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
 import org.keycloak.sdjwt.IssuerSignedJWT;
@@ -47,18 +52,18 @@ import org.keycloak.testframework.ui.page.OID4VCCredentialOfferPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OAuthErrorException.INVALID_GRANT;
 import static org.keycloak.OAuthErrorException.INVALID_REQUEST;
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
 import static org.keycloak.events.Details.CREDENTIAL_TYPE;
 import static org.keycloak.events.Details.REASON;
@@ -666,57 +671,62 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
     }
 
     /**
-     * Verifies that a user-controlled 'exp' attribute cannot extend the SD-JWT refresh expiration time.
-     * A legacy user-attribute mapper targeting the reserved 'exp' claim is attached via the scope update path
-     * (bypassing config-time validation, which only runs on the dedicated protocol-mappers endpoints), but the
-     * issuer-controlled refresh interval must still govern the credential expiration. Other sensitive claims
-     * must not be mapped either.
+     * Verifies that a mapper mapping user-controlled data to the reserved 'exp' claim causes the SD-JWT issuance
+     * to be rejected. A mapper that slipped in while the scope was a non-SD-JWT format (where the claim name is a
+     * legitimate data element under credentialSubject), after which the scope was switched to SD-JWT, is not
+     * revalidated by the admin API and must fail the request at issuance instead of silently extending the refresh
+     * expiration time.
      */
     @Test
     public void testUserControlledExpAttributeDoesNotExtendRefreshExpiration() throws Exception {
-        int refreshInterval = 604800; // 7 days
         long farFuture = Time.currentTimeSeconds() + 10L * 365 * 24 * 3600; // +10 years
-
         String scopeId = getCredentialScopeId(minimalJwtTypeCredentialScopeName);
 
-        // Configure the scope's refresh interval AND attach user-attribute mappers targeting the reserved
-        // 'exp' and the sensitive 'cnf' claims.
-        testRealm.updateClientScope(scopeId, scope -> {
-            CredentialScopeRepresentation scopeRep = new CredentialScopeRepresentation(scope.build());
-            scopeRep.setRefreshIntervalInSeconds(refreshInterval);
-            return ClientScopeBuilder.update(scopeRep).mappers(
-                    ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, CLAIM_NAME_EXP),
-                    ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_CNF, "cnfSource"));
+        // Switch the scope to JWT-VC so the reserved 'exp' mapper can be created: in this format the claim lives
+        // under credentialSubject, so config-time validation accepts it. The updateClientScope helper registers
+        // cleanup that restores the original scope (format and attributes) once the test completes.
+        testRealm.updateClientScope(scopeId, clientScope -> {
+            CredentialScopeRepresentation credScopeRep = new CredentialScopeRepresentation(clientScope.build());
+            credScopeRep.setFormat(VCFormat.JWT_VC);
+            return ClientScopeBuilder.update(credScopeRep);
         });
 
-        // Set a user-controlled attribute to a far-future timestamp to attempt to extend the refresh expiration,
-        // and a real source attribute for the sensitive 'cnf' mapper so it would be populated if not blocked.
-        user.updateWithCleanup(u -> u.attribute(CLAIM_NAME_EXP, String.valueOf(farFuture))
-                .attribute("cnfSource", "sensitive-value"));
+        ProtocolMapperRepresentation mapper = ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, CLAIM_NAME_EXP);
+        try (Response response = testRealm.admin().clientScopes().get(scopeId).getProtocolMappers().createMapper(mapper)) {
+            assertEquals(HttpStatus.SC_CREATED, response.getStatus(),
+                    "Creating the 'exp' mapper must be accepted while the scope is still JWT-VC");
+        }
 
-        // Issue the SD-JWT.
+        // updateClientScope's cleanup restores format/attributes but not mappers added via the protocol-mappers
+        // endpoint, so register the mapper deletion explicitly.
+        testRealm.cleanup().add(r -> r.clientScopes().get(scopeId).getProtocolMappers().getMappers().stream()
+                .filter(pm -> mapper.getName().equals(pm.getName()))
+                .map(ProtocolMapperRepresentation::getId)
+                .forEach(id -> r.clientScopes().get(scopeId).getProtocolMappers().delete(id)));
+
+        // Switch the scope back to SD-JWT without re-running validateConfig, leaving the mapper in place. This
+        // mirrors the format switch that the admin API does not revalidate.
+        CredentialScopeRepresentation scopeRep = new CredentialScopeRepresentation(
+                testRealm.admin().clientScopes().get(scopeId).toRepresentation());
+        scopeRep.setFormat(VCFormat.SD_JWT_VC);
+        testRealm.admin().clientScopes().get(scopeId).update(scopeRep);
+
+        // Set a user-controlled attribute to a far-future timestamp to attempt to extend the refresh expiration.
+        user.updateWithCleanup(u -> u.attribute(CLAIM_NAME_EXP, String.valueOf(farFuture)));
+
+        // The access token exchange succeeds, but issuance must be rejected: the reserved 'exp' mapping is a
+        // misconfiguration that cannot be safely issued, so it fails the request instead of silently extending
+        // the refresh expiration.
         AccessTokenResponse tokenResponse = authzCodeFlow();
         assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
 
-        CredentialResponse response = wallet.credentialRequest(ctx, tokenResponse.getAccessToken())
+        Oid4vcCredentialResponse credResponse = wallet.credentialRequest(ctx, tokenResponse.getAccessToken())
                 .credentialIdentifier(ctx.getAuthorizedCredentialIdentifier())
-                .send().getCredentialResponse();
-        assertSuccessfulCredentialResponse(response);
-
-        IssuerSignedJWT issuerSignedJWT = SdJwtVP.of(response.getCredentials().get(0).getCredential().toString())
-                .getIssuerSignedJWT();
-        long iat = issuerSignedJWT.getPayload().get(CLAIM_NAME_IAT).asLong();
-        long exp = issuerSignedJWT.getPayload().get(CLAIM_NAME_EXP).asLong();
-
-        long tolerance = 60;
-        assertTrue(Math.abs((exp - iat) - refreshInterval) <= tolerance,
-                String.format("SD-JWT lifetime should be ~%d seconds (refresh interval), but was %d seconds",
-                        refreshInterval, exp - iat));
-        assertTrue(exp < farFuture,
-                "A user-controlled 'exp' attribute must NOT extend the refresh expiration time");
-
-        assertNull(issuerSignedJWT.getPayload().get(CLAIM_NAME_CNF),
-                "Sensitive 'cnf' claim must not be mapped even though its source attribute is present");
+                .send();
+        assertEquals(HttpStatus.SC_BAD_REQUEST, credResponse.getStatusCode());
+        assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(), credResponse.getError());
+        assertTrue(credResponse.getErrorDescription().contains("Claim name 'exp' is reserved and must not be used by this OID4VC mapper"),
+                "Issuance rejection should report the reserved claim, but was: " + credResponse.getErrorDescription());
     }
 
     /**
