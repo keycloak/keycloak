@@ -65,6 +65,7 @@ export default interface RealmRepresentation {
   eventsExpiration?: number;
   eventsListeners?: string[];
   failureFactor?: number;
+  bruteForcePropertyFailureFactor?: number;
   maxSecondaryAuthFailures?: number;
   federatedUsers?: UserRepresentation[];
   groups?: GroupRepresentation[];

@@ -23,10 +23,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import jakarta.ws.rs.BadRequestException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+
 import org.keycloak.admin.client.resource.AttackDetectionResource;
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.models.UserModel;
@@ -42,10 +39,15 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
-import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -113,104 +115,85 @@ public class AttackDetectionUserPropertyTest {
     }
 
     @Test
-    public void propertiesPolicyLocksUsersSharingAProperty() {
+    public void propertiesPolicyIncrementsOnlyTheSubmittedIdentifier() {
         AttackDetectionResource detection = managedRealm.admin().attackDetection();
 
-        failLogin(salesUser, 3);
+        failLogin(salesUser, 2);
 
-        assertEquals(Set.of(UserModel.EMAIL, DEPARTMENT),
-                properties(detection.bruteForceUserStatus(salesUser.getId())).keySet());
-        assertPropertyLocked(detection, salesUser, "email", true);
-        assertPropertyLocked(detection, salesUser, "department", true);
+        assertPropertyFailures(detection, salesUser, UserModel.USERNAME, 2);
+        assertPropertyFailures(detection, salesUser, UserModel.EMAIL, 0);
+        assertPropertyFailures(detection, salesUser, DEPARTMENT, 0);
+        assertPropertyLocked(detection, salesUser, UserModel.USERNAME, true);
         assertTrue((Boolean) detection.bruteForceUserStatus(salesUser.getId()).get("disabled"));
-        assertPropertyLocked(detection, otherSalesUser, "email", false);
-        assertPropertyLocked(detection, otherSalesUser, "department", true);
-        assertTrue((Boolean) detection.bruteForceUserStatus(otherSalesUser.getId()).get("disabled"));
-        assertPropertyLocked(detection, engineeringUser, "email", false);
-        assertPropertyLocked(detection, engineeringUser, "department", false);
-        assertFalse((Boolean) detection.bruteForceUserStatus(engineeringUser.getId()).get("disabled"));
+        assertPropertyLocked(detection, otherSalesUser, DEPARTMENT, false);
+        assertFalse((Boolean) detection.bruteForceUserStatus(otherSalesUser.getId()).get("disabled"));
+    }
+
+    @Test
+    public void emailFailuresIncrementEmailAndCanLockUsersSharingThatEmail() {
+        withProtectedProperties(List.of(UserModel.EMAIL), () -> {
+            AttackDetectionResource detection = managedRealm.admin().attackDetection();
+            failLogin(salesUser, salesUser.admin().toRepresentation().getEmail(), 3);
+
+            assertEquals(Set.of(UserModel.EMAIL),
+                    properties(detection.bruteForceUserStatus(salesUser.getId())).keySet());
+            assertPropertyLocked(detection, salesUser, UserModel.EMAIL, true);
+            assertTrue((Boolean) detection.bruteForceUserStatus(salesUser.getId()).get("disabled"));
+            assertPropertyLocked(detection, otherSalesUser, UserModel.EMAIL, false);
+            assertFalse((Boolean) detection.bruteForceUserStatus(otherSalesUser.getId()).get("disabled"));
+        });
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {ID, UserModel.USERNAME, UserModel.EMAIL})
+    @ValueSource(strings = {UserModel.USERNAME, UserModel.EMAIL})
     public void locksOnlyByConfiguredUniqueBuiltInProperty(String property) {
         withProtectedProperties(List.of(property), () -> {
-            failLogin(salesUser, 3);
+            String identifier = UserModel.EMAIL.equals(property)
+                    ? salesUser.admin().toRepresentation().getEmail()
+                    : salesUser.getUsername();
+            failLogin(salesUser, identifier, 3);
             assertUniquePropertyLock(property, salesUser, otherSalesUser, engineeringUser);
         });
     }
 
     @Test
-    public void locksUsersSharingAConfiguredLastName() {
+    public void lastNameIsNotIncrementedWhenTheUserLogsInWithUsername() {
         withProtectedProperties(List.of(UserModel.LAST_NAME), () -> {
             AttackDetectionResource detection = managedRealm.admin().attackDetection();
-            failLogin(salesUser, 3);
+            attemptFailedLogins(salesUser, 3);
 
-            assertEquals(Set.of(UserModel.LAST_NAME),
-                    properties(detection.bruteForceUserStatus(salesUser.getId())).keySet());
-            assertPropertyLocked(detection, salesUser, UserModel.LAST_NAME, true);
-            assertTrue((Boolean) detection.bruteForceUserStatus(salesUser.getId()).get("disabled"));
-            assertPropertyLocked(detection, engineeringUser, UserModel.LAST_NAME, true);
-            assertTrue((Boolean) detection.bruteForceUserStatus(engineeringUser.getId()).get("disabled"));
-            assertPropertyLocked(detection, otherSalesUser, UserModel.LAST_NAME, false);
-            assertFalse((Boolean) detection.bruteForceUserStatus(otherSalesUser.getId()).get("disabled"));
+            assertPropertyFailures(detection, salesUser, UserModel.LAST_NAME, 0);
+            assertFalse((Boolean) detection.bruteForceUserStatus(salesUser.getId()).get("disabled"));
+            assertFalse((Boolean) detection.bruteForceUserStatus(engineeringUser.getId()).get("disabled"));
         });
     }
 
     @Test
-    public void locksUsersSharingAConfiguredFirstName() {
-        withProtectedProperties(List.of(UserModel.FIRST_NAME), () -> {
-            String original = otherSalesUser.admin().toRepresentation().getFirstName();
-            setFirstName(otherSalesUser, salesUser.admin().toRepresentation().getFirstName());
-            try {
-                AttackDetectionResource detection = managedRealm.admin().attackDetection();
-                failLogin(salesUser, 3);
-
-                assertEquals(Set.of(UserModel.FIRST_NAME),
-                        properties(detection.bruteForceUserStatus(salesUser.getId())).keySet());
-                assertPropertyLocked(detection, salesUser, UserModel.FIRST_NAME, true);
-                assertPropertyLocked(detection, otherSalesUser, UserModel.FIRST_NAME, true);
-                assertTrue((Boolean) detection.bruteForceUserStatus(otherSalesUser.getId()).get("disabled"));
-                assertPropertyLocked(detection, engineeringUser, UserModel.FIRST_NAME, false);
-            } finally {
-                setFirstName(otherSalesUser, original);
-            }
-        });
-    }
-
-    @Test
-    public void locksOnlyByConfiguredCustomProperty() {
+    public void customPropertyIsNotIncrementedWhenTheUserLogsInWithUsername() {
         withProtectedProperties(List.of(DEPARTMENT), () -> {
             AttackDetectionResource detection = managedRealm.admin().attackDetection();
-            failLogin(salesUser, 3);
+            attemptFailedLogins(salesUser, 3);
 
-            assertEquals(Set.of(DEPARTMENT),
-                    properties(detection.bruteForceUserStatus(salesUser.getId())).keySet());
-            assertPropertyLocked(detection, salesUser, DEPARTMENT, true);
-            assertTrue((Boolean) detection.bruteForceUserStatus(salesUser.getId()).get("disabled"));
-            assertPropertyLocked(detection, otherSalesUser, DEPARTMENT, true);
-            assertTrue((Boolean) detection.bruteForceUserStatus(otherSalesUser.getId()).get("disabled"));
-            assertPropertyLocked(detection, engineeringUser, DEPARTMENT, false);
-            assertFalse((Boolean) detection.bruteForceUserStatus(engineeringUser.getId()).get("disabled"));
+            assertPropertyFailures(detection, salesUser, DEPARTMENT, 0);
+            assertFalse((Boolean) detection.bruteForceUserStatus(salesUser.getId()).get("disabled"));
+            assertFalse((Boolean) detection.bruteForceUserStatus(otherSalesUser.getId()).get("disabled"));
         });
     }
 
     @Test
     public void unlocksOnlyTheRequestedProperty() {
         AttackDetectionResource detection = managedRealm.admin().attackDetection();
-        failLogin(salesUser, 3);
+        failLogin(salesUser, 1);
+        failLogin(salesUser, salesUser.admin().toRepresentation().getEmail(), 2);
 
-        detection.clearBruteForceForUserByProperty(salesUser.getId(), "email");
-
-        assertPropertyLocked(detection, salesUser, "email", false);
-        assertPropertyLocked(detection, salesUser, "department", true);
+        assertPropertyFailures(detection, salesUser, UserModel.USERNAME, 1);
+        assertPropertyLocked(detection, salesUser, UserModel.EMAIL, true);
         assertTrue((Boolean) detection.bruteForceUserStatus(salesUser.getId()).get("disabled"));
-        assertPropertyLocked(detection, otherSalesUser, "department", true);
 
-        detection.clearBruteForceForUserByProperty(salesUser.getId(), "department");
+        detection.clearBruteForceForUserByProperty(salesUser.getId(), UserModel.EMAIL);
 
-        assertPropertyLocked(detection, salesUser, "department", false);
-        assertPropertyLocked(detection, otherSalesUser, "department", false);
+        assertPropertyLocked(detection, salesUser, UserModel.EMAIL, false);
+        assertPropertyFailures(detection, salesUser, UserModel.USERNAME, 1);
         assertFalse((Boolean) detection.bruteForceUserStatus(salesUser.getId()).get("disabled"));
     }
 
@@ -218,12 +201,13 @@ public class AttackDetectionUserPropertyTest {
     public void clearForUserWithoutPropertyStillClearsEveryProperty() {
         AttackDetectionResource detection = managedRealm.admin().attackDetection();
         failLogin(salesUser, 3);
+        failLogin(salesUser, salesUser.admin().toRepresentation().getEmail(), 3);
 
         detection.clearBruteForceForUser(salesUser.getId());
 
-        assertPropertyLocked(detection, salesUser, "email", false);
-        assertPropertyLocked(detection, salesUser, "department", false);
-        assertPropertyLocked(detection, otherSalesUser, "department", false);
+        assertPropertyLocked(detection, salesUser, UserModel.USERNAME, false);
+        assertPropertyLocked(detection, salesUser, UserModel.EMAIL, false);
+        assertPropertyLocked(detection, salesUser, DEPARTMENT, false);
     }
 
     @Test
@@ -240,7 +224,8 @@ public class AttackDetectionUserPropertyTest {
                 .bruteForceUserStatus(salesUser.getId());
         Map<String, Map<String, Object>> properties = properties(status);
 
-        assertEquals(2, properties.size());
+        assertEquals(3, properties.size());
+        assertEquals(0, properties.get(UserModel.USERNAME).get("numFailures"));
         assertEquals(0, properties.get("email").get("numFailures"));
         assertEquals(0, properties.get("department").get("numFailures"));
         assertFalse((Boolean) properties.get("email").get("disabled"));
@@ -250,8 +235,9 @@ public class AttackDetectionUserPropertyTest {
     @Test
     public void persistsConfiguredPropertiesInTheRealmRepresentation() {
         RealmRepresentation realm = managedRealm.admin().toRepresentation();
-        assertEquals(List.of("email", "department"), realm.getBruteForceProtectedUserProperties());
+        assertEquals(List.of(UserModel.USERNAME, "email", "department"), realm.getBruteForceProtectedUserProperties());
         assertEquals(BruteForceLockPolicy.PROPERTIES, realm.getBruteForceLockPolicy());
+        assertEquals(2, realm.getBruteForcePropertyFailureFactor());
     }
 
     @Test
@@ -277,29 +263,22 @@ public class AttackDetectionUserPropertyTest {
     }
 
     @Test
-    public void anyPolicyLocksByUserIdOrSharedProperty() {
+    public void anyPolicyIncrementsGlobalAndTheSubmittedIdentifier() {
         withLockPolicy(BruteForceLockPolicy.ANY, () -> {
             AttackDetectionResource detection = managedRealm.admin().attackDetection();
-            failLogin(salesUser, 3);
+            failLogin(salesUser, 2);
 
-            assertEquals(Set.of(ID, UserModel.EMAIL, DEPARTMENT),
-                    properties(detection.bruteForceUserStatus(salesUser.getId())).keySet());
+            assertPropertyFailures(detection, salesUser, ID, 2);
+            assertPropertyFailures(detection, salesUser, UserModel.USERNAME, 2);
+            assertPropertyFailures(detection, salesUser, UserModel.EMAIL, 0);
+            assertPropertyFailures(detection, salesUser, DEPARTMENT, 0);
             assertPropertyLocked(detection, salesUser, ID, true);
-            assertPropertyLocked(detection, salesUser, UserModel.EMAIL, true);
-            assertPropertyLocked(detection, salesUser, DEPARTMENT, true);
+            assertPropertyLocked(detection, salesUser, UserModel.USERNAME, true);
             assertTrue((Boolean) detection.bruteForceUserStatus(salesUser.getId()).get("disabled"));
             assertPropertyLocked(detection, otherSalesUser, ID, false);
-            assertPropertyLocked(detection, otherSalesUser, DEPARTMENT, true);
-            assertTrue((Boolean) detection.bruteForceUserStatus(otherSalesUser.getId()).get("disabled"));
-            assertPropertyLocked(detection, engineeringUser, ID, false);
-            assertPropertyLocked(detection, engineeringUser, DEPARTMENT, false);
-            assertFalse((Boolean) detection.bruteForceUserStatus(engineeringUser.getId()).get("disabled"));
-
-            detection.clearBruteForceForUserByProperty(salesUser.getId(), DEPARTMENT);
-            assertTrue((Boolean) detection.bruteForceUserStatus(salesUser.getId()).get("disabled"));
             assertFalse((Boolean) detection.bruteForceUserStatus(otherSalesUser.getId()).get("disabled"));
 
-            detection.clearBruteForceForUserByProperty(salesUser.getId(), UserModel.EMAIL);
+            detection.clearBruteForceForUserByProperty(salesUser.getId(), UserModel.USERNAME);
             assertTrue((Boolean) detection.bruteForceUserStatus(salesUser.getId()).get("disabled"));
             detection.clearBruteForceForUserByProperty(salesUser.getId(), ID);
             assertFalse((Boolean) detection.bruteForceUserStatus(salesUser.getId()).get("disabled"));
@@ -307,17 +286,71 @@ public class AttackDetectionUserPropertyTest {
     }
 
     @Test
+    public void globalThresholdLocksTheAccountAcrossIdentifiers() {
+        withLockPolicy(BruteForceLockPolicy.ANY, () -> withFailureFactors(2, 10, () -> {
+            AttackDetectionResource detection = managedRealm.admin().attackDetection();
+            failLogin(salesUser, 1);
+            failLogin(salesUser, salesUser.admin().toRepresentation().getEmail(), 1);
+
+            assertPropertyFailures(detection, salesUser, ID, 2);
+            assertPropertyFailures(detection, salesUser, UserModel.USERNAME, 1);
+            assertPropertyFailures(detection, salesUser, UserModel.EMAIL, 1);
+            assertPropertyLocked(detection, salesUser, ID, true);
+            assertPropertyLocked(detection, salesUser, UserModel.USERNAME, false);
+            assertPropertyLocked(detection, salesUser, UserModel.EMAIL, false);
+            assertTrue((Boolean) detection.bruteForceUserStatus(salesUser.getId()).get("disabled"));
+        }));
+    }
+
+    @Test
+    public void identifierThresholdCanLockBeforeTheGlobalThreshold() {
+        withLockPolicy(BruteForceLockPolicy.ANY, () -> withFailureFactors(10, 2, () -> {
+            AttackDetectionResource detection = managedRealm.admin().attackDetection();
+            failLogin(salesUser, salesUser.admin().toRepresentation().getEmail(), 2);
+
+            assertPropertyFailures(detection, salesUser, ID, 2);
+            assertPropertyFailures(detection, salesUser, UserModel.EMAIL, 2);
+            assertPropertyLocked(detection, salesUser, ID, false);
+            assertPropertyLocked(detection, salesUser, UserModel.EMAIL, true);
+            assertTrue((Boolean) detection.bruteForceUserStatus(salesUser.getId()).get("disabled"));
+        }));
+    }
+
+    @Test
     public void successfulLoginClearsEveryConfiguredPropertyCounter() {
         AttackDetectionResource detection = managedRealm.admin().attackDetection();
         failLogin(salesUser, 1);
 
-        assertPropertyFailures(detection, salesUser, "email", 1);
-        assertPropertyFailures(detection, salesUser, "department", 1);
+        assertPropertyFailures(detection, salesUser, UserModel.USERNAME, 1);
+        assertPropertyFailures(detection, salesUser, UserModel.EMAIL, 0);
 
         oauthClient.doPasswordGrantRequest(salesUser.getUsername(), salesUser.getPassword());
 
-        assertPropertyFailures(detection, salesUser, "email", 0);
-        assertPropertyFailures(detection, salesUser, "department", 0);
+        assertPropertyFailures(detection, salesUser, UserModel.USERNAME, 0);
+        assertPropertyFailures(detection, salesUser, UserModel.EMAIL, 0);
+    }
+
+    @Test
+    public void propertyCountersFollowThePropertyValueWhenItChanges() {
+        withProtectedProperties(List.of(UserModel.EMAIL), () -> {
+            AttackDetectionResource detection = managedRealm.admin().attackDetection();
+            String originalEmail = salesUser.admin().toRepresentation().getEmail();
+            String newEmail = "new-sales-user@example.com";
+
+            failLogin(salesUser, originalEmail, 1);
+            assertPropertyFailures(detection, salesUser, UserModel.EMAIL, 1);
+
+            try {
+                setEmail(salesUser, newEmail);
+                assertPropertyFailures(detection, salesUser, UserModel.EMAIL, 0);
+                assertFalse((Boolean) detection.bruteForceUserStatus(salesUser.getId()).get("disabled"));
+
+                setEmail(salesUser, originalEmail);
+                assertPropertyFailures(detection, salesUser, UserModel.EMAIL, 1);
+            } finally {
+                setEmail(salesUser, originalEmail);
+            }
+        });
     }
 
     @Test
@@ -331,18 +364,14 @@ public class AttackDetectionUserPropertyTest {
         try {
             failLogin(salesUser, 3);
             assertFalse(salesUser.admin().toRepresentation().isEnabled());
-            assertPropertyLocked(detection, otherSalesUser, DEPARTMENT, true);
-            assertTrue((Boolean) detection.bruteForceUserStatus(otherSalesUser.getId()).get("disabled"));
+            assertPropertyLocked(detection, salesUser, UserModel.USERNAME, true);
 
             detection.clearBruteForceForUserByProperty(salesUser.getId(), UserModel.EMAIL);
             assertFalse(salesUser.admin().toRepresentation().isEnabled());
-            assertPropertyLocked(detection, salesUser, DEPARTMENT, true);
-            assertPropertyLocked(detection, otherSalesUser, DEPARTMENT, true);
+            assertPropertyLocked(detection, salesUser, UserModel.USERNAME, true);
 
-            detection.clearBruteForceForUserByProperty(salesUser.getId(), DEPARTMENT);
+            detection.clearBruteForceForUserByProperty(salesUser.getId(), UserModel.USERNAME);
             assertTrue(salesUser.admin().toRepresentation().isEnabled());
-            assertPropertyLocked(detection, otherSalesUser, DEPARTMENT, false);
-            assertFalse((Boolean) detection.bruteForceUserStatus(otherSalesUser.getId()).get("disabled"));
         } finally {
             realm.setPermanentLockout(false);
             managedRealm.admin().update(realm);
@@ -377,9 +406,26 @@ public class AttackDetectionUserPropertyTest {
         }
     }
 
-    private static void setFirstName(ManagedUser user, String firstName) {
+    private void withFailureFactors(int failureFactor, int propertyFailureFactor, Runnable test) {
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
+        Integer previousFailureFactor = realm.getFailureFactor();
+        Integer previousPropertyFactor = realm.getBruteForcePropertyFailureFactor();
+        realm.setFailureFactor(failureFactor);
+        realm.setBruteForcePropertyFailureFactor(propertyFailureFactor);
+        managedRealm.admin().update(realm);
+        try {
+            test.run();
+        } finally {
+            RealmRepresentation restore = managedRealm.admin().toRepresentation();
+            restore.setFailureFactor(previousFailureFactor);
+            restore.setBruteForcePropertyFailureFactor(previousPropertyFactor);
+            managedRealm.admin().update(restore);
+        }
+    }
+
+    private static void setEmail(ManagedUser user, String email) {
         UserRepresentation rep = user.admin().toRepresentation();
-        rep.setFirstName(firstName);
+        rep.setEmail(email);
         user.admin().update(rep);
     }
 
@@ -395,9 +441,19 @@ public class AttackDetectionUserPropertyTest {
     }
 
     private void failLogin(ManagedUser user, int attempts) {
-        AttackDetectionResource detection = managedRealm.admin().attackDetection();
+        failLogin(user, user.getUsername(), attempts);
+    }
+
+    private void attemptFailedLogins(ManagedUser user, int attempts) {
         for (int i = 0; i < attempts; i++) {
             oauthClient.doPasswordGrantRequest(user.getUsername(), "invalid");
+        }
+    }
+
+    private void failLogin(ManagedUser user, String identifier, int attempts) {
+        AttackDetectionResource detection = managedRealm.admin().attackDetection();
+        for (int i = 0; i < attempts; i++) {
+            oauthClient.doPasswordGrantRequest(identifier, "invalid");
             int expected = i + 1;
             await().atMost(5, TimeUnit.SECONDS)
                     .pollInterval(100, TimeUnit.MILLISECONDS)
@@ -433,8 +489,11 @@ public class AttackDetectionUserPropertyTest {
         public RealmBuilder configure(RealmBuilder realm) {
             return realm.bruteForceProtected(true)
                     .failureFactor(2)
+                    .bruteForcePropertyFailureFactor(2)
+                    .waitIncrementSeconds(60)
+                    .quickLoginCheckMilliSeconds(0)
                     .bruteForceLockPolicy(BruteForceLockPolicy.PROPERTIES)
-                    .bruteForceProtectedUserProperties(UserModel.EMAIL, DEPARTMENT);
+                    .bruteForceProtectedUserProperties(UserModel.USERNAME, UserModel.EMAIL, DEPARTMENT);
         }
     }
 

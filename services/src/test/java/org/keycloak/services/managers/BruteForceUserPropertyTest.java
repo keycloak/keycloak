@@ -20,11 +20,12 @@ import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation.BruteForceLockPolicy;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 public class BruteForceUserPropertyTest {
 
@@ -117,6 +118,58 @@ public class BruteForceUserPropertyTest {
     }
 
     @Test
+    public void attemptIncrementsOnlyTheMatchingIdentifier() {
+        RealmModel realm = realm(BruteForceLockPolicy.PROPERTIES, "username", "email", "department");
+        UserModel user = user("user-id", "UserName", "User@Example.com",
+                Map.of("department", List.of("sales")));
+
+        Assert.assertEquals(List.of(BruteForceUserProperty.propertyKey("username", "username")),
+                BruteForceUserProperty.getFailureKeysForAttempt(realm, user, "UserName"));
+        Assert.assertEquals(List.of(BruteForceUserProperty.propertyKey("email", "user@example.com")),
+                BruteForceUserProperty.getFailureKeysForAttempt(realm, user, "User@Example.com"));
+        Assert.assertEquals(List.of(BruteForceUserProperty.propertyKey("department", "sales")),
+                BruteForceUserProperty.getFailureKeysForAttempt(realm, user, "sales"));
+        Assert.assertEquals(List.of(), BruteForceUserProperty.getFailureKeysForAttempt(realm, user, "other"));
+    }
+
+    @Test
+    public void anyPolicyAttemptIncrementsGlobalAndMatchingIdentifier() {
+        RealmModel realm = realm(BruteForceLockPolicy.ANY, "email");
+        UserModel user = user("user-id", "UserName", "User@Example.com", Map.of());
+
+        Assert.assertEquals(List.of("user-id",
+                BruteForceUserProperty.propertyKey("email", "user@example.com")),
+                BruteForceUserProperty.getFailureKeysForAttempt(realm, user, "User@Example.com"));
+        Assert.assertEquals(List.of("user-id"),
+                BruteForceUserProperty.getFailureKeysForAttempt(realm, user, "UserName"));
+    }
+
+    @Test
+    public void userPolicyAttemptIgnoresTheSubmittedIdentifier() {
+        RealmModel realm = realm(BruteForceLockPolicy.USER, "email");
+        UserModel user = user("user-id", "UserName", "User@Example.com", Map.of());
+
+        Assert.assertEquals(List.of("user-id"),
+                BruteForceUserProperty.getFailureKeysForAttempt(realm, user, "User@Example.com"));
+    }
+
+    @Test
+    public void propertyFailureFactorFallsBackToFailureFactor() {
+        RealmModel realm = realm(BruteForceLockPolicy.ANY, "email");
+        Assert.assertEquals(30, BruteForceUserProperty.getFailureFactor(realm, "user-id"));
+        Assert.assertEquals(30, BruteForceUserProperty.getFailureFactor(realm,
+                BruteForceUserProperty.propertyKey("email", "user@example.com")));
+    }
+
+    @Test
+    public void propertyFailureFactorIsIndependentOfTheUserFactor() {
+        RealmModel realm = realm(BruteForceLockPolicy.ANY, 30, 2, "email");
+        Assert.assertEquals(30, BruteForceUserProperty.getFailureFactor(realm, "user-id"));
+        Assert.assertEquals(2, BruteForceUserProperty.getFailureFactor(realm,
+                BruteForceUserProperty.propertyKey("email", "user@example.com")));
+    }
+
+    @Test
     public void normalizesUsernameAndEmailCaseAndWhitespace() {
         RealmModel realm = realm("username", "email");
         UserModel user = user("user-id", "  UserName  ", "  User@Example.com  ", Map.of());
@@ -171,6 +224,11 @@ public class BruteForceUserPropertyTest {
     }
 
     private static RealmModel realm(BruteForceLockPolicy policy, String... properties) {
+        return realm(policy, 30, null, properties);
+    }
+
+    private static RealmModel realm(BruteForceLockPolicy policy, int failureFactor, Integer propertyFailureFactor,
+            String... properties) {
         return (RealmModel) Proxy.newProxyInstance(
                 BruteForceUserPropertyTest.class.getClassLoader(),
                 new Class<?>[] { RealmModel.class },
@@ -180,6 +238,15 @@ public class BruteForceUserPropertyTest {
                     }
                     if ("getBruteForceLockPolicy".equals(method.getName())) {
                         return policy;
+                    }
+                    if ("getFailureFactor".equals(method.getName())) {
+                        return failureFactor;
+                    }
+                    if ("getBruteForcePropertyFailureFactor".equals(method.getName())) {
+                        return propertyFailureFactor != null ? propertyFailureFactor : failureFactor;
+                    }
+                    if ("getAttribute".equals(method.getName())) {
+                        return propertyFailureFactor == null ? null : Integer.toString(propertyFailureFactor);
                     }
                     throw new UnsupportedOperationException(method.getName());
                 });

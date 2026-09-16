@@ -36,7 +36,21 @@ public interface BruteForceProtector extends Provider {
 
     void failedLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo, Set<String> authenticationCategory);
 
+    /**
+     * Records a failed login, incrementing only the counters that apply to {@code attemptedIdentifier}.
+     * Custom providers can ignore the identifier by delegating to {@link #failedLogin}.
+     */
+    default void failedLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo,
+            Set<String> authenticationCategory, String attemptedIdentifier) {
+        failedLogin(realm, user, clientConnection, uriInfo, authenticationCategory);
+    }
+
     void successfulLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo, Set<String> authenticationCategories);
+
+    default void successfulLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo,
+            Set<String> authenticationCategories, String attemptedIdentifier) {
+        successfulLogin(realm, user, clientConnection, uriInfo, authenticationCategories);
+    }
 
     boolean isTemporarilyDisabled(KeycloakSession session, RealmModel realm, UserModel user);
 

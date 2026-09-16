@@ -16,6 +16,12 @@ If you are upgrading from a previous release, https://www.keycloak.org/docs/late
 
 = Security and Standards
 
+== Lock brute-force attacks by user properties
+
+Brute-force detection can now maintain counters for selected built-in or custom user properties. Failed logins can increment only the submitted identifier, giving email, phone number, and custom attributes independent attempt budgets. The existing per-user behavior remains the default.
+
+== Impersonation audit improvements
+
 == Verifiable Credential Issuance promoted to preview with credential management and revocation
 // https://github.com/keycloak/keycloak/issues/52813
 

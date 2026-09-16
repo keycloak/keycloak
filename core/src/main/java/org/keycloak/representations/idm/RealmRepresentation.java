@@ -100,6 +100,7 @@ public class RealmRepresentation {
     protected Long quickLoginCheckMilliSeconds;
     protected Integer maxDeltaTimeSeconds;
     protected Integer failureFactor;
+    protected Integer bruteForcePropertyFailureFactor;
     protected Integer maxSecondaryAuthFailures;
     protected List<String> bruteForceProtectedUserProperties;
     protected BruteForceLockPolicy bruteForceLockPolicy;
@@ -857,6 +858,14 @@ public class RealmRepresentation {
 
     public void setFailureFactor(Integer failureFactor) {
         this.failureFactor = failureFactor;
+    }
+
+    public Integer getBruteForcePropertyFailureFactor() {
+        return bruteForcePropertyFailureFactor;
+    }
+
+    public void setBruteForcePropertyFailureFactor(Integer bruteForcePropertyFailureFactor) {
+        this.bruteForcePropertyFailureFactor = bruteForcePropertyFailureFactor;
     }
 
     public Integer getMaxSecondaryAuthFailures() {

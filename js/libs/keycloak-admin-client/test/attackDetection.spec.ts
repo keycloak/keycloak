@@ -40,6 +40,7 @@ describe("Attack Detection", () => {
       properties: {
         id: {
           numFailures: 0,
+          numSecondaryAuthFailures: 0,
           numTemporaryLockouts: 0,
           disabled: false,
           lastIPFailure: "n/a",
