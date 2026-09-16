@@ -20,6 +20,7 @@ package org.keycloak.tests.admin.userstorage;
 import java.util.List;
 
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.ComponentResource;
@@ -230,6 +231,33 @@ public class UserStorageRestTest extends AbstractUserStorageRestTest {
 
         // Cleanup including mappers
         removeComponent(ldapModelId);
+    }
+
+    @Test
+    public void testGetSubcomponentConfigValidation() {
+        ComponentRepresentation ldapRep = createBasicLDAPProviderRep();
+        String id = createComponent(ldapRep);
+
+        // 1. Verify non-SPI existing class returns 404
+        NotFoundException e1 = Assertions.assertThrows(NotFoundException.class, () -> {
+            managedRealm.admin().components().component(id).getSubcomponentConfig("java.lang.String");
+        });
+        Assertions.assertEquals(Response.Status.NOT_FOUND.getStatusCode(), e1.getResponse().getStatus());
+
+        // 2. Verify non-existent class returns 404
+        NotFoundException e2 = Assertions.assertThrows(NotFoundException.class, () -> {
+            managedRealm.admin().components().component(id).getSubcomponentConfig("com.example.NonExistentClass");
+        });
+        Assertions.assertEquals(Response.Status.NOT_FOUND.getStatusCode(), e2.getResponse().getStatus());
+
+        // 3. Verify valid registered provider subtype succeeds
+        List<ComponentTypeRepresentation> subTypes = managedRealm.admin().components()
+                .component(id)
+                .getSubcomponentConfig(LDAPStorageMapper.class.getName());
+        Assertions.assertNotNull(subTypes);
+
+        // Cleanup component resource
+        removeComponent(id);
     }
 
     private void assertFederationProvider(ComponentRepresentation rep, String id, String displayName, String providerId,
