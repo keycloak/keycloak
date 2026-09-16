@@ -108,6 +108,13 @@ public class UiExtensionComponentStorageTest {
         assertThrows(BadRequestException.class, () -> components.component(id).update(fetched));
     }
 
+    private void cleanupUiPageComponents() {
+        for (ComponentRepresentation component : components.query(
+                managedRealm.getId(), UiPageProvider.class.getName())) {
+            components.component(component.getId()).remove();
+        }
+    }
+
     private String createComponent(ComponentRepresentation rep) {
         try (Response response = components.add(rep)) {
             return ApiUtil.getCreatedId(response);
