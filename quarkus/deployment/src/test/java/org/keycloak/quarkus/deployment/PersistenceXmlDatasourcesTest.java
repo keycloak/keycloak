@@ -152,6 +152,17 @@ public class PersistenceXmlDatasourcesTest {
                     </properties>
                 </persistence-unit>
                 """, true);
+
+        // javax.persistence.transactionType=RESOURCE_LOCAL legacy property -> rejected
+        assertResourceLocal("""
+                <persistence-unit name="user-store-pu">
+                    <jta-data-source>JDBC/something</jta-data-source>
+                    <properties>
+                        <property name="jakarta.persistence.jtaDataSource" value="user-store" />
+                        <property name="javax.persistence.transactionType" value="RESOURCE_LOCAL" />
+                    </properties>
+                </persistence-unit>
+                """, true);
     }
 
     @Test

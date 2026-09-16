@@ -21,6 +21,8 @@ import java.util.function.Supplier;
 
 import jakarta.persistence.EntityManagerFactory;
 
+import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
@@ -53,6 +55,14 @@ public final class NamedJpaConnectionProviderFactory extends AbstractJpaConnecti
 
     private static boolean isExplicitlyDisabled(String dsName) {
         return "false".equalsIgnoreCase(Configuration.getConfigValue("quarkus.datasource.\"" + dsName + "\".active").getValue());
+    }
+
+    @Override
+    public JpaConnectionProvider create(KeycloakSession session) {
+        if (entityManagerFactory == null) {
+            throw new IllegalStateException("Cannot create connection provider for '" + unitName + "': datasource is inactive.");
+        }
+        return super.create(session);
     }
 
     @Override
