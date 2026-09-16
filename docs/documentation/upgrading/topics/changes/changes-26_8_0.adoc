@@ -205,6 +205,10 @@ On a multi-writer Galera setup, concurrent writes to the same row on different n
 
 See the link:https://www.keycloak.org/server/db#mariadb-galera-cluster-considerations[MariaDB Galera Cluster] section in the database configuration guide for recommended settings and limitations.
 
+=== PostgreSQL connections now identify as `Keycloak`
+
+PostgreSQL connections now set `ApplicationName` to `Keycloak`, making them identifiable in `pg_stat_activity`, server logs, and monitoring tools. You can override this via `db-url` or `db-url-properties`.
+
 === Asynchronous commit on MS SQL Server and Oracle databases
 
 The asynchronous commit optimization, previously available only on PostgreSQL, now also supports MS SQL Server and Oracle databases.

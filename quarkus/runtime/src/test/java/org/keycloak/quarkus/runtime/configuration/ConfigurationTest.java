@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.keycloak.Config;
+import org.keycloak.common.Version;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers;
@@ -415,6 +416,38 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
         config = createConfigFromCliArguments("--db=postgres", "--db-url=jdbc:postgresql://localhost:5432/keycloak?targetServerType=any");
         assertNull(config.getConfigValue(DatabasePropertyMappers.PG_TARGET_SERVER_TYPE).getValue());
+
+        // PostgreSQL: assumeMinServerVersion should be set to 14 by default
+        config = createConfigFromCliArguments("--db=postgres");
+        assertEquals("14", config.getConfigValue(DatabasePropertyMappers.PG_ASSUME_MIN_SERVER_VERSION).getValue());
+
+        // assumeMinServerVersion already present in db-url -> disabled
+        config = createConfigFromCliArguments("--db=postgres", "--db-url=jdbc:postgresql://localhost:5432/keycloak?assumeMinServerVersion=16");
+        assertNull(config.getConfigValue(DatabasePropertyMappers.PG_ASSUME_MIN_SERVER_VERSION).getValue());
+
+        // custom JDBC driver -> disabled
+        config = createConfigFromCliArguments("--db=postgres", "--db-driver=software.amazon.jdbc.Driver");
+        assertNull(config.getConfigValue(DatabasePropertyMappers.PG_ASSUME_MIN_SERVER_VERSION).getValue());
+
+        // other db vendor -> disabled
+        config = createConfigFromCliArguments("--db=mssql");
+        assertNull(config.getConfigValue(DatabasePropertyMappers.PG_ASSUME_MIN_SERVER_VERSION).getValue());
+
+        // PostgreSQL: ApplicationName should be set to Version.NAME by default
+        config = createConfigFromCliArguments("--db=postgres");
+        assertEquals(Version.NAME, config.getConfigValue(DatabasePropertyMappers.PG_APPLICATION_NAME).getValue());
+
+        // ApplicationName already present in db-url -> disabled
+        config = createConfigFromCliArguments("--db=postgres", "--db-url=jdbc:postgresql://localhost:5432/keycloak?ApplicationName=custom");
+        assertNull(config.getConfigValue(DatabasePropertyMappers.PG_APPLICATION_NAME).getValue());
+
+        // custom JDBC driver -> disabled
+        config = createConfigFromCliArguments("--db=postgres", "--db-driver=software.amazon.jdbc.Driver");
+        assertNull(config.getConfigValue(DatabasePropertyMappers.PG_APPLICATION_NAME).getValue());
+
+        // other db vendor -> disabled
+        config = createConfigFromCliArguments("--db=mssql");
+        assertNull(config.getConfigValue(DatabasePropertyMappers.PG_APPLICATION_NAME).getValue());
 
         // MSSQL: sendStringParametersAsUnicode should be set to false by default
         config = createConfigFromCliArguments("--db=mssql");
