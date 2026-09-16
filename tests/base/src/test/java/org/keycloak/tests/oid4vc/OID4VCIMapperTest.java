@@ -9,6 +9,7 @@ import java.util.UUID;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.VCFormat;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
@@ -26,6 +27,8 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_JTI;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUB;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -149,6 +152,11 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
         // "cnf" claim. Validation must guard the actual top-level path segment, not the literal claim name.
         ProtocolMapperRepresentation mapper2 = ProtocolMapperUtils.getUserAttributeMapper("cnf.jwk", "cnf.jwk");
         assertReservedClaimMapperIsRejected(mapper2, "cnf.jwk");
+
+        // The SD-JWT builder emits a top-level "id" claim as "sub" (see SdJwtCredentialBuilder), so targeting "id"
+        // is an indirect write to the reserved "sub" claim and must be guarded too.
+        ProtocolMapperRepresentation mapper3 = ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_SUBJECT_ID, CLAIM_NAME_SUBJECT_ID);
+        assertReservedClaimMapperIsRejected(mapper3, CLAIM_NAME_SUBJECT_ID);
     }
 
     @Test
@@ -172,6 +180,14 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
     }
 
     @Test
+    public void testSubjectIdMapperMayWriteSubClaim() {
+        // The subject-id mapper is the trusted writer of 'sub' (via its 'id' alias), so it must be accepted for both
+        // 'sub' and 'id' even though it maps user-controlled data.
+        assertReservedClaimMapperIsAccepted(ProtocolMapperUtils.getSubjectIdMapper(CLAIM_NAME_SUB, UserModel.USERNAME));
+        assertReservedClaimMapperIsAccepted(ProtocolMapperUtils.getSubjectIdMapper(CLAIM_NAME_SUBJECT_ID, UserModel.USERNAME));
+    }
+
+    @Test
     public void testJwtVcScopeMayMapToReservedClaimName() {
         // For JWT VC, mapper claims live under credentialSubject rather than the SD-JWT top level, so 'exp' is a
         // legitimate data element and must not be rejected. Only SD-JWT top-level claims are protected.
@@ -183,6 +199,16 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
             assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus(),
                     "A JWT-VC mapper targeting 'exp' must be accepted (claim lives under credentialSubject)");
         }
+    }
+
+    @Test
+    public void testReservedClaimMapperNotAdvertisedInMetadata() {
+        // A reserved-claim mapper that slips in through the scope-create/import path (which skips validateConfig)
+        // must not be advertised in issuer metadata, matching the issuance-time guard that silently drops it.
+        assertMapperIsIgnored(
+                "bypass-reserved-claim-scope-" + UUID.randomUUID(),
+                ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, CLAIM_NAME_EXP),
+                "A reserved-claim mapper that bypassed validateConfig must not be advertised in issuer metadata");
     }
 
     // ---- Helpers ----
@@ -214,29 +240,36 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
     }
 
     /**
-     * Creates a credential scope with an empty-config mapper, attaches it to the OID4VCI test client,
-     * then asserts that the mapper's claim does <em>not</em> appear in the issuer metadata.
+     * Creates a credential scope with an empty-config mapper of the given type, attaches it to the OID4VCI client,
+     * then asserts that the mapper produces no claims in the issuer metadata.
      */
     private void assertMapperIsIgnored(String mapperType, String mapperName) {
-        ProtocolMapperRepresentation emptyMapper = ProtocolMapperUtils.getProtocolMapper(
-                mapperName, mapperType, Collections.emptyMap());
-        String scopeName = mapperName + "-scope-" + UUID.randomUUID();
-        String scopeId = createCredentialScope(scopeName, List.of(emptyMapper));
+        assertMapperIsIgnored(
+                mapperName + "-scope-" + UUID.randomUUID(),
+                ProtocolMapperUtils.getProtocolMapper(mapperName, mapperType, Collections.emptyMap()),
+                "Mapper '" + mapperName + "' of type '" + mapperType + "' with empty config must not produce claims in metadata");
+    }
+
+    /**
+     * Creates a credential scope with the given mapper, attaches it to the OID4VCI client, then asserts that the
+     * mapper produces no claims in the issuer metadata.
+     */
+    private void assertMapperIsIgnored(String scopeName, ProtocolMapperRepresentation mapper, String failureMessage) {
+        String scopeId = createCredentialScope(scopeName, List.of(mapper));
 
         testRealm.admin().clients().get(client.getId()).addOptionalClientScope(scopeId);
 
         CredentialIssuer credentialIssuer = oauth.oid4vc().doIssuerMetadataRequest().getMetadata();
         assertNotNull(credentialIssuer, "Credential Issuer metadata must not be null");
 
-        boolean foundEmptyMapperClaim = credentialIssuer.getCredentialsSupported().values().stream()
+        boolean foundClaim = credentialIssuer.getCredentialsSupported().values().stream()
                 .filter(cfg -> scopeName.equals(cfg.getId()))
                 .map(SupportedCredentialConfiguration::getCredentialMetadata)
                 .filter(meta -> meta != null && meta.getClaims() != null)
                 .flatMap(meta -> meta.getClaims().stream())
                 .anyMatch(claim -> claim.getPath() != null && !claim.getPath().isEmpty());
 
-        assertFalse(foundEmptyMapperClaim,
-                "Mapper '" + mapperName + "' of type '" + mapperType + "' with empty config must not produce claims in metadata");
+        assertFalse(foundClaim, failureMessage);
     }
 
     private void assertReservedClaimMapperIsAccepted(ProtocolMapperRepresentation mapper) {

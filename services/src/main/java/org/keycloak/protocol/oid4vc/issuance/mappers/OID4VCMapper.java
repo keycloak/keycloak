@@ -46,6 +46,8 @@ import org.keycloak.utils.JsonUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.jboss.logging.Logger;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUB;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 import static org.keycloak.OID4VCConstants.CREDENTIAL_SUBJECT;
 import static org.keycloak.OID4VCConstants.RESERVED_CLAIM_NAMES;
 import static org.keycloak.VCFormat.MSO_MDOC;
@@ -153,12 +155,27 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
         List<String> claimPath = JsonUtils.splitClaimPath(claimName);
         String topLevelClaim = claimPath.isEmpty() ? null : claimPath.get(0);
 
-        if (mapsUserControlledData() && topLevelClaim != null && RESERVED_CLAIM_NAMES.contains(topLevelClaim)) {
+        // The SD-JWT builder emits the top-level 'id' claim as 'sub' (see SdJwtCredentialBuilder), so an
+        // 'id' mapping is an indirect write to the reserved 'sub' claim. Normalize it so it cannot bypass the guard.
+        if (CLAIM_NAME_SUBJECT_ID.equals(topLevelClaim)) {
+            topLevelClaim = CLAIM_NAME_SUB;
+        }
+
+        if (mapsUserControlledData() && topLevelClaim != null && isReservedClaim(topLevelClaim)) {
             throw new ProtocolMapperConfigException(
                     String.format("Claim name '%s' is reserved and must not be used by this OID4VC mapper.",
                             claimName),
                     MAPPER_RESERVED_CLAIM_ERROR);
         }
+    }
+
+    /**
+     * Whether the given (normalized) top-level claim is reserved and must not be written by this mapper. Subclasses
+     * that are trusted to write a specific issuer-controlled claim (e.g. the subject-id mapper writing 'sub') override
+     * this to exempt that claim while keeping the rest of the reserved set protected.
+     */
+    protected boolean isReservedClaim(String topLevelClaim) {
+        return RESERVED_CLAIM_NAMES.contains(topLevelClaim);
     }
 
     /**

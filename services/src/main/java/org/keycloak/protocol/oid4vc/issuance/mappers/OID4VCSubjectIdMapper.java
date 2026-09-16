@@ -36,6 +36,7 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUB;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 
 /**
@@ -145,6 +146,13 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
     @Override
     public ProtocolMapper create(KeycloakSession session) {
         return new OID4VCSubjectIdMapper();
+    }
+
+    // The subject-id mapper is the trusted writer of the 'sub' claim (via its 'id' alias). It must be allowed to
+    // target 'sub'/'id', but remains blocked from all other reserved claims (e.g. exp, iat, jti).
+    @Override
+    protected boolean isReservedClaim(String topLevelClaim) {
+        return super.isReservedClaim(topLevelClaim) && !CLAIM_NAME_SUB.equals(topLevelClaim);
     }
 
     @Override
