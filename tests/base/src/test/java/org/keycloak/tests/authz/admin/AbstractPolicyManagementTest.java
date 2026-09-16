@@ -25,7 +25,6 @@ import java.util.function.Supplier;
 
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -35,11 +34,10 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
-import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.tests.authz.AbstractAuthzTest;
 
 import org.junit.jupiter.api.BeforeEach;
 
@@ -51,10 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public abstract class AbstractPolicyManagementTest extends AbstractKeycloakTest {
-
-    @InjectAdminClient
-    protected Keycloak adminClient;
+public abstract class AbstractPolicyManagementTest extends AbstractAuthzTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
