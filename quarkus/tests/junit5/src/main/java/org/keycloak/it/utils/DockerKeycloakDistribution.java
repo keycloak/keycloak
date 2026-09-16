@@ -59,6 +59,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     private static final Logger LOGGER = Logger.getLogger(DockerKeycloakDistribution.class);
 
     public static final int STARTUP_TIMEOUT_SECONDS = 120;
+    public static final int RESTART_TIMEOUT_SECONDS = 300;
 
     private final Integer[] exposedPorts;
 
@@ -245,9 +246,9 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         }
         try {
             String id = containerId != null ? containerId : keycloakContainer.getContainerId();
-            keycloakContainer.getDockerClient().startContainerCmd(id).exec();
+            keycloakContainer.getDockerClient().restartContainerCmd(id).exec();
             Wait.forListeningPorts(8080)
-                    .withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT_SECONDS))
+                    .withStartupTimeout(Duration.ofSeconds(RESTART_TIMEOUT_SECONDS))
                     .waitUntilReady(keycloakContainer);
             containerId = id;
         } catch (Exception cause) {
@@ -263,9 +264,9 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
                 this.stderr = fetchErrorStream();
 
                 if (keycloakContainer.isRunning()) {
-                    String signal = removeContainer ? "TERM" : "KILL";
+                    // Graceful shutdown helps with cleaning up resources, for example JDBC_PING table entries.
                     try (KillContainerCmd killContainerCmd = keycloakContainer.getDockerClient().killContainerCmd(keycloakContainer.getContainerId())) {
-                        killContainerCmd.withSignal(signal).exec();
+                        killContainerCmd.withSignal("TERM").exec();
                     }
                     Awaitility.await().atMost(Duration.ofSeconds(2)).untilAsserted(() -> Assertions.assertFalse(keycloakContainer.isRunning()));
                 }

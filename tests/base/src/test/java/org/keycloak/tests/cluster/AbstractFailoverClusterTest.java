@@ -44,7 +44,7 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
     public static final Integer OFFLINE_SESSION_CACHE_OWNERS = Integer.parseInt(System.getProperty("offline.session.cache.owners", "1"));
     public static final Integer LOGIN_FAILURES_CACHE_OWNERS = Integer.parseInt(System.getProperty("login.failure.cache.owners", "1"));
 
-    public static final Integer REBALANCE_WAIT = Integer.parseInt(System.getProperty("rebalance.wait", "5000"));
+    public static final Integer REBALANCE_WAIT = AbstractClusterTest.REBALANCE_WAIT;
 
     @BeforeEach
     public void setupFailoverRealmUsers() {

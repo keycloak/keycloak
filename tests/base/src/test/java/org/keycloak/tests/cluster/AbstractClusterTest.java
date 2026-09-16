@@ -22,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 public abstract class AbstractClusterTest {
 
     protected static final Logger log = Logger.getLogger(AbstractClusterTest.class);
+    protected static final int REBALANCE_WAIT = Integer.parseInt(System.getProperty("rebalance.wait", "5000"));
 
     @InjectRealm
     ManagedRealm managedRealm;
@@ -104,6 +105,7 @@ public abstract class AbstractClusterTest {
         if (getClusterSize() > 0) {
             loadBalancer.node(0);
         }
+        pause(REBALANCE_WAIT);
     }
 
     protected ContainerInfo frontendNode() {
