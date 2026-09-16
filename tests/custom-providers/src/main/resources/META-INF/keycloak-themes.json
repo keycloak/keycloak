@@ -5,6 +5,12 @@
       "types": [
         "account"
       ]
+    },
+    {
+      "name": "organization",
+      "types": [
+        "login"
+      ]
     }
   ]
 }
