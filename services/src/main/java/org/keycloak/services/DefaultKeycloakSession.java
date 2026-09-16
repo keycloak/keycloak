@@ -30,6 +30,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.common.util.StackUtil;
 import org.keycloak.component.ComponentFactory;
@@ -86,6 +87,7 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     private VaultTranscriber vaultTranscriber;
     private ClientPolicyManager clientPolicyManager;
     private boolean closed = false;
+    private boolean readOnly = false;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
@@ -149,6 +151,33 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public Map<String, Object> getAttributes() {
         return Collections.unmodifiableMap(attributes);
+    }
+
+    @Override
+    public boolean isReadOnly() {
+        return readOnly;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T runAsReadOnly(Supplier<T> supplier) {
+        boolean previous = readOnly;
+        readOnly = true;
+        boolean restore = true;
+        try {
+            T result = supplier.get();
+            if (result instanceof Stream<?> stream) {
+                T closing = (T) stream.onClose(() -> readOnly = previous);
+                // the close handler is registered, so it takes over restoring the flag
+                restore = false;
+                return closing;
+            }
+            return result;
+        } finally {
+            if (restore) {
+                readOnly = previous;
+            }
+        }
     }
 
     @Override
