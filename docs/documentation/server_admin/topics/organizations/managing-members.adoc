@@ -38,7 +38,7 @@ There are two types of members:
 * *Unmanaged*
 
 Managed members are those managed by the organization, and they cannot exist outside of their organization. For instance, consider
-an account created through an identity provider associated with an organization. That account does not belong to a realm as it was federated from the organization.
+an account created through an identity provider whose link to the organization is configured with the Managed membership type. That account does not belong to a realm as it was federated from the organization.
 In this case, the single source of truth for the identity is the organization and its lifecycle is controlled
 by the organization.
 If you remove the organization or the member, the account is also removed from the realm.
@@ -47,6 +47,10 @@ On the other hand, unmanaged members are those that can exist without the organi
 realm user to an organization, the account belongs to the realm first and foremost and eventually linked to an organization. In this case,
 removing an organization or a member will not remove the account from the realm; the realm is
 the single-source of truth for the identity.
+
+The membership type can be configured proactively when linking an identity provider to an organization. Each identity provider
+link carries a membership type setting that determines whether users auto-added through that provider become managed or unmanaged
+members. For details, see <<_managing_identity_provider_,Managing identity providers>>.
 
 == Changing membership type
 
@@ -180,21 +184,22 @@ For detailed API documentation, refer to the {project_name} Admin REST API docum
 == Onboarding members using an Identity Provider
 
 An organization might have its own identity provider as the single source of truth for their identities. In this case,
-users federated from the identity provider are automatically added as a member of the organization.
+users federated from the identity provider can be automatically added as members of the organization, provided the identity provider link has auto membership enabled and the user's email domain passes the domain gate.
 
-When users join an organization through an identity provider associated with an organization, they are automatically marked
-as managed members. In this case, they will go through the broker login flows configured in the realm and join the organization
-automatically once they successfully authenticate.
+When users join an organization through an identity provider, the membership type assigned to them
+depends on the per-association configuration of the identity provider link. By default, new links use the unmanaged membership type,
+but this can be changed to managed when linking the identity provider to the organization. Users go through the broker login flows
+configured in the realm and join the organization once they successfully authenticate, subject to the per-association and domain gate checks described in <<authenticating-members_{context},Authenticating members>>.
 
 Onboarding new members through an identity provider can be done by either automatically redirecting the user to an organization's
 identity provider or by selecting the identity provider when at the login page.
 
 In both cases, once the user provides the email, {project_name} will try to match an organization based on the email domain. In case
-the email domain matches the organization, and an identity provider is associated with the same domain and the *Redirect when email domain matches*
-setting is enabled, the user is automatically redirected to the identity provider. Once the user authenticates at the identity provider
+the email domain matches the organization, and a domain is configured to route to an identity provider with *Auto redirect*
+enabled, the user is automatically redirected to the identity provider. Once the user authenticates at the identity provider
 and completes the first broker login flow, the user is automatically added as an organization member.
 
-On the other hand, if *Redirect when email domain matches* is not enabled, but the identity provider is configured not to
+On the other hand, if *Auto redirect* is not enabled on the domain, but the identity provider is configured not to
 *Hide on login page*, the user can select the identity provider and then be redirected to the identity provider to continue
 the onboarding process.
 
