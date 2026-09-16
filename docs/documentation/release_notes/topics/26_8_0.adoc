@@ -213,6 +213,26 @@ On databases without non-blocking support, {project_name} continues to log the S
 
 For installation instructions, see the link:{operatorguide_link}[{operatorguide_name}].
 
+= Organizations
+
+== Shared identity providers across organizations
+
+Identity providers can now be linked to multiple organizations, enabling scenarios such as a single corporate identity provider serving users across different business units or subsidiaries, each represented as a separate organization. Each identity provider link carries its own auto-membership and membership type configuration, allowing fine-grained control over how users are onboarded per organization.
+
+Domain routing has been moved from the identity provider to the domain entity. Each domain can independently specify which identity provider handles authentication and whether users are auto-redirected. The domain gate ensures cross-organization isolation -- a user is only auto-added to an organization that claims their email domain, even when multiple organizations share the same identity provider.
+
+New identity provider links created after upgrading default to the Unmanaged membership type. Existing links are migrated with the Managed type to preserve previous behavior.
+
+For setup instructions and common configuration patterns, see link:{adminguide_link}#common-organization-setup-recipes_server_administration_guide[Common setup recipes] in the {adminguide_name}. For migration details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Themes
+
+== Redesigned identity provider buttons on the login page
+
+The social identity provider section on the login page has been refreshed with updated icons, a new divider layout, and improved button labels.
+
+If you have a custom login theme, see the link:{upgradingguide_link}[{upgradingguide_name}] for details on what changed.
+
 // TODO: This is pending, and might be reverted
 == Enhanced HTTP performance
 // https://github.com/keycloak/keycloak/issues/50166

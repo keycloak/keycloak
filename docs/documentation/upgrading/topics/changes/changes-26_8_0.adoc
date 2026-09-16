@@ -364,6 +364,39 @@ Without `stateless`, cross-deployment cache invalidation does not work and servi
 This upgrade brings internal improvements across the Quarkus platform.
 While no user-facing configuration changes are required, custom extensions or providers that depend on Quarkus-internal APIs should be retested.
 
+=== Organization identity providers now support many-to-many linking
+
+The relationship between identity providers and organizations has changed from many-to-one to many-to-many. Previously, an organization could have multiple identity providers, but each identity provider could only be linked to a single organization. A single identity provider can now be linked to multiple organizations, with independent per-association configuration for auto-membership and membership type.
+
+During migration, the following changes are applied automatically:
+
+* Existing identity provider-to-organization links are migrated to the new `ORG_IDENTITY_PROVIDER` join table with `AUTO_MEMBERSHIP=true` and `MEMBERSHIP_TYPE=MANAGED`, preserving the previous default behavior. New links created after the upgrade default to `MEMBERSHIP_TYPE=UNMANAGED`.
+
+* The `ORGANIZATION_ID` column is removed from the `IDENTITY_PROVIDER` table.
+
+* The `ORG_DOMAIN` table is extended with new columns for domain routing: `REALM_ID`, `IDP_ID` (identity provider routing), and `AUTO_REDIRECT`. Each domain is now a first-class entity with its own routing configuration.
+
+* Three identity provider configuration entries are migrated to the new `ORG_DOMAIN` columns and then removed:
+** `kc.org.domain` -- migrated to `ORG_DOMAIN.IDP_ID` (identity provider routing). If the value was `ANY`, all domains of the organization receive the identity provider routing, except those listed in the exclusion list below.
+** `kc.org.broker.redirect.mode.email-matches` -- migrated to `ORG_DOMAIN.AUTO_REDIRECT`
+** `kc.org.excluded.domains` -- excluded domains are migrated with `IDP_ID=NULL` (no routing)
++
+The concept of domain exclusions no longer exists as a separate setting. Instead, each domain now has its own identity provider routing configuration. A domain that previously appeared in the exclusion list is migrated with no identity provider assigned (`IDP_ID=NULL`), which means users with that email domain see the standard login form instead of being redirected. To achieve the same effect going forward, edit the domain in the organization's *Domains* tab and leave the *Identity provider* field empty. Conversely, to start routing a previously excluded domain, select the desired identity provider from the dropdown.
+
+* Several display settings previously configured on the organization's identity provider link dialog have moved to the identity provider's own Settings page at the realm level, under the *Organization settings* section:
+** *Hide on login page when organization is not resolved*
+** *Show on login page for unlinked members*
+
+* Identity provider mappers that target organization groups now store the target organization ID explicitly in the mapper configuration (`orgId` field). Previously, the organization was inferred implicitly, which only worked when the identity provider was linked to a single organization. During migration, existing mappers that target organization groups are automatically backfilled with the appropriate organization ID. After upgrading, if your identity provider is now linked to multiple organizations, create separate mappers for each organization's groups.
+
+After upgrading, verify the domain routing and per-association configuration in the admin console:
+
+. Navigate to each organization's *Domains* tab to confirm identity provider routing and auto-redirect settings.
+. Navigate to each organization's *Identity providers* tab to confirm auto-membership and membership type.
+. If you use the Admin REST API to manage identity provider-organization links, update your integrations. The `organizationId` field on `IdentityProviderRepresentation` has been replaced by a list of organization links accessible through the organization identity provider endpoints.
+
+For details on the new configuration model, see link:{adminguide_link}#++_managing_identity_provider_++[Managing identity providers] and link:{adminguide_link}#managing-organization-domains_server_administration_guide[Managing organization domains] in the {adminguide_name}.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
