@@ -425,8 +425,12 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         config = createConfigFromCliArguments("--db=postgres", "--db-url=jdbc:postgresql://localhost:5432/keycloak?assumeMinServerVersion=16");
         assertNull(config.getConfigValue(DatabasePropertyMappers.PG_ASSUME_MIN_SERVER_VERSION).getValue());
 
-        // custom JDBC driver -> disabled
+        // AWS JDBC Wrapper -> enabled (wrapper passes through to underlying PG driver)
         config = createConfigFromCliArguments("--db=postgres", "--db-driver=software.amazon.jdbc.Driver");
+        assertEquals("14", config.getConfigValue(DatabasePropertyMappers.PG_ASSUME_MIN_SERVER_VERSION).getValue());
+
+        // unknown custom JDBC driver -> disabled
+        config = createConfigFromCliArguments("--db=postgres", "--db-driver=com.custom.CustomDriver");
         assertNull(config.getConfigValue(DatabasePropertyMappers.PG_ASSUME_MIN_SERVER_VERSION).getValue());
 
         // other db vendor -> disabled
@@ -441,13 +445,25 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         config = createConfigFromCliArguments("--db=postgres", "--db-url=jdbc:postgresql://localhost:5432/keycloak?ApplicationName=custom");
         assertNull(config.getConfigValue(DatabasePropertyMappers.PG_APPLICATION_NAME).getValue());
 
-        // custom JDBC driver -> disabled
+        // AWS JDBC Wrapper -> enabled (wrapper passes through to underlying PG driver)
         config = createConfigFromCliArguments("--db=postgres", "--db-driver=software.amazon.jdbc.Driver");
+        assertEquals(Version.NAME, config.getConfigValue(DatabasePropertyMappers.PG_APPLICATION_NAME).getValue());
+
+        // unknown custom JDBC driver -> disabled
+        config = createConfigFromCliArguments("--db=postgres", "--db-driver=com.custom.CustomDriver");
         assertNull(config.getConfigValue(DatabasePropertyMappers.PG_APPLICATION_NAME).getValue());
 
         // other db vendor -> disabled
         config = createConfigFromCliArguments("--db=mssql");
         assertNull(config.getConfigValue(DatabasePropertyMappers.PG_APPLICATION_NAME).getValue());
+
+        // PostgreSQL: logServerErrorDetail should be set for AWS JDBC Wrapper
+        config = createConfigFromCliArguments("--db=postgres", "--db-driver=software.amazon.jdbc.Driver");
+        assertEquals("false", config.getConfigValue(DatabasePropertyMappers.PG_LOG_SERVER_ERROR_DETAIL).getValue());
+
+        // logServerErrorDetail: unknown custom JDBC driver -> disabled
+        config = createConfigFromCliArguments("--db=postgres", "--db-driver=com.custom.CustomDriver");
+        assertNull(config.getConfigValue(DatabasePropertyMappers.PG_LOG_SERVER_ERROR_DETAIL).getValue());
 
         // MSSQL: sendStringParametersAsUnicode should be set to false by default
         config = createConfigFromCliArguments("--db=mssql");
@@ -1069,7 +1085,12 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         config = createConfigFromCliArguments("--db=postgres", "--db-url=jdbc:postgresql://localhost:5432/keycloak?connectTimeout=5");
         assertNull(config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
 
+        // AWS JDBC Wrapper -> connectTimeout still set (wrapper passes through to underlying PG driver)
         config = createConfigFromCliArguments("--db=postgres", "--db-driver=software.amazon.jdbc.Driver");
+        assertEquals("10", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
+
+        // unknown custom JDBC driver -> connectTimeout disabled
+        config = createConfigFromCliArguments("--db=postgres", "--db-driver=com.custom.CustomDriver");
         assertNull(config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
 
         config = createConfigFromCliArguments("--db=postgres", "--db-connect-timeout=30s");

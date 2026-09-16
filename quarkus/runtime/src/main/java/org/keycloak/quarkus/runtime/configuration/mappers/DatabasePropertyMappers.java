@@ -68,6 +68,8 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     public static final String JDBC_LOGIN_TIMEOUT = "quarkus.datasource.jdbc.login-timeout";
     public static final String JDBC_ACQUISITION_TIMEOUT = "quarkus.datasource.jdbc.acquisition-timeout";
 
+    static final String AWS_JDBC_WRAPPER_DRIVER = "software.amazon.jdbc.Driver";
+
     private static final Logger log = Logger.getLogger(DatabasePropertyMappers.class);
 
     /**
@@ -350,6 +352,11 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
             return false;
         }
 
+        String dbDriver = Configuration.getConfigValue(DatabaseOptions.DB_DRIVER).getValue();
+        if (isCustomNonWrappingDriver(db, dbDriver)) {
+            return false;
+        }
+
         String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValue();
 
         // logServerErrorDetail already set to same or different value in db-url, ignore
@@ -364,12 +371,11 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         }
 
         String dbDriver = Configuration.getConfigValue(DatabaseOptions.DB_DRIVER).getValue();
-        String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValue();
-
-        if (!Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
-                !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
+        if (isCustomNonWrappingDriver(db, dbDriver)) {
             return false;
         }
+
+        String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValue();
         return dbUrl == null || !dbUrl.contains("assumeMinServerVersion");
     }
 
@@ -381,12 +387,11 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         }
 
         String dbDriver = Configuration.getConfigValue(DatabaseOptions.DB_DRIVER).getValue();
-        String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValue();
-
-        if (!Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
-                !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
+        if (isCustomNonWrappingDriver(db, dbDriver)) {
             return false;
         }
+
+        String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValue();
         return dbUrl == null || !dbUrl.contains("ApplicationName");
     }
 
@@ -501,6 +506,21 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         };
     }
 
+    /**
+     * The AWS JDBC Wrapper passes connection properties through to the underlying driver,
+     * so JDBC properties like connectTimeout, ApplicationName, and logServerErrorDetail still apply.
+     * Only truly unknown custom drivers should skip these defaults.
+     * Note: {@link #isPostgresqlTargetServerTypeEnabled()} intentionally does not use this method,
+     * because the AWS wrapper has its own failover routing that conflicts with targetServerType.
+     */
+    private static boolean isCustomNonWrappingDriver(String db, String dbDriver) {
+        if (Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) ||
+                Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
+            return false;
+        }
+        return !AWS_JDBC_WRAPPER_DRIVER.equals(dbDriver);
+    }
+
     private static boolean checkSettingsAndVendor(Collection<Vendor> validForVendors, String timeoutProperty, String datasource, Vendor vendor, String db) {
         if (!validForVendors.contains(vendor)) {
             // this jdbc property is not for this vendor
@@ -508,9 +528,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         }
 
         String dbDriver = getDatasourceOptionValue(DatabaseOptions.DB_DRIVER, datasource).orElse(null);
-        if (!Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
-                !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
-            // Custom JDBC driver (e.g. AWS JDBC Wrapper) — do not inject defaults
+        if (isCustomNonWrappingDriver(db, dbDriver)) {
             return true;
         }
 

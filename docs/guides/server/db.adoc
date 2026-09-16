@@ -323,7 +323,7 @@ When using the original PostgreSQL driver, {project_name} sets the `ApplicationN
 
 {project_name} also sets `assumeMinServerVersion` to `14`, which is the minimum PostgreSQL version supported by {project_name}. This avoids an extra database round-trip when setting the application name.
 
-You can override either property by setting your own values in the DB URL or additional properties. These properties are not set when a custom JDBC driver is used (for example, the AWS JDBC Wrapper).
+You can override either property by setting your own values in the DB URL or additional properties. These properties are also applied when using the AWS JDBC Wrapper, which passes them through to the underlying PostgreSQL driver.
 
 === Permissions of the database user
 
