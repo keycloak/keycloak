@@ -80,14 +80,14 @@ final class KubernetesUtils {
             return false;
         }
 
-        if ("kubernetes".equals(host) || "kubernetes.default".equals(host) || "kubernetes.default.svc".equals(host) || "kubernetes.default.svc.cluster.local".equals(host)) {
+        if ("kubernetes".equalsIgnoreCase(host) || "kubernetes.default".equalsIgnoreCase(host) || "kubernetes.default.svc".equalsIgnoreCase(host) || "kubernetes.default.svc.cluster.local".equalsIgnoreCase(host)) {
             return isTrustedKubernetesApiPort(uri, httpsServicePort, servicePort);
         }
 
         String normalizedHost = host.startsWith("[") && host.endsWith("]")
                 ? host.substring(1, host.length() - 1)
                 : host;
-        if (!normalizedHost.equals(serviceHost)) {
+        if (!normalizedHost.equalsIgnoreCase(serviceHost)) {
             return false;
         }
 

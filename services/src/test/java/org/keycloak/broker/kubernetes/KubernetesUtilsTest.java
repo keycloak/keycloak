@@ -85,6 +85,12 @@ class KubernetesUtilsTest {
     }
 
     @Test
+    void trustedApiUrlAcceptsCaseInsensitiveHostnames() {
+        assertTrue(KubernetesUtils.isTrustedKubernetesApiUrl("https://KUBERNETES.DEFAULT.SVC", null, null, null));
+        assertTrue(KubernetesUtils.isTrustedKubernetesApiUrl("https://Api.Server:8443", "api.server", "8443", "443"));
+    }
+
+    @Test
     void trustedApiDiscoveryUrlRejectsQueryAndFragment() {
         assertFalse(KubernetesUtils.isTrustedKubernetesApiDiscoveryUrl("https://kubernetes.default.svc?query"));
         assertFalse(KubernetesUtils.isTrustedKubernetesApiDiscoveryUrl("https://kubernetes.default.svc#fragment"));
