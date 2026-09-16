@@ -108,7 +108,9 @@ public class GroupResource {
 
         GroupRepresentation rep = GroupUtils.toRepresentation(this.auth.groups(), group, true);
 
-        if (rep.getClientRoles() != null) {
+        // #50581 is scoped to FGAP v2. Without admin permissions, client visibility falls back to view-clients,
+        // which a view-users administrator does not hold, so the roles would disappear (#52753).
+        if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) && rep.getClientRoles() != null) {
             rep.getClientRoles().keySet().removeIf(clientId -> {
                 ClientModel client = realm.getClientByClientId(clientId);
                 return client == null || !auth.clients().canView(client);
