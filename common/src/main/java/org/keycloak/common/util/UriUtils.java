@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 import org.keycloak.common.enums.SslRequired;
@@ -46,6 +47,40 @@ public class UriUtils {
 
     public static boolean isOrigin(String url) {
         return originPattern.matcher(url).matches();
+    }
+
+    public static boolean originEquals(String originA, String originB) {
+        if (Objects.equals(originA, originB)) {
+            return true;
+        }
+        if (originA == null || originB == null) {
+            return false;
+        }
+        try {
+            return schemeHostAndPortEqual(new URI(originA), new URI(originB));
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
+
+    public static boolean schemeHostAndPortEqual(URI uriA, URI uriB) {
+        if (uriA == null || uriB == null) {
+            return uriA == uriB;
+        }
+        String schemeA = uriA.getScheme();
+        String schemeB = uriB.getScheme();
+        if (schemeA == null || schemeB == null || !schemeA.equalsIgnoreCase(schemeB)) {
+            return false;
+        }
+        String hostA = uriA.getHost();
+        String hostB = uriB.getHost();
+        if (hostA == null || hostB == null) {
+            return hostA == hostB;
+        }
+        if (!hostA.equalsIgnoreCase(hostB)) {
+            return false;
+        }
+        return uriA.getPort() == uriB.getPort();
     }
 
     public static String getHost(String uri) {
