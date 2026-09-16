@@ -1,7 +1,9 @@
 package org.keycloak.protocol.oidc.scope;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -9,10 +11,14 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.utils.StringUtil;
 
+import org.jboss.logging.Logger;
+
 /**
  * Parameterized scope type that validates the parameter is an existing username in the realm.
  */
 public class UsernameScopeType implements ParameterizedScopeTypeProvider {
+
+    private static final Logger logger = Logger.getLogger(UsernameScopeType.class);
 
     public static final String TYPE = "username";
 
@@ -55,9 +61,35 @@ public class UsernameScopeType implements ParameterizedScopeTypeProvider {
 
     @Override
     public void validateParameterWithUser(@Nonnull UserModel currentUser, @Nonnull ClientScopeModel scope, @Nonnull String parameter) throws InvalidScopeParameterException {
+        validateParameterWithUser(currentUser, scope, null, parameter);
+    }
+
+    @Override
+    public void validateParameterWithUser(@Nonnull UserModel currentUser,
+                                          @Nonnull ClientScopeModel scope,
+                                          @Nullable AuthenticatedClientSessionModel clientSession,
+                                          @Nonnull String parameter) throws InvalidScopeParameterException {
         UserModel targetUser = resolveUser(scope, parameter);
         if (targetUser.getId().equals(currentUser.getId())) {
             throw new InvalidScopeParameterException("User cannot target themselves");
+        }
+        if (clientSession != null) {
+            verifyPinnedIdentity(clientSession, parameter, targetUser.getId());
+        }
+    }
+
+    protected void verifyPinnedIdentity(AuthenticatedClientSessionModel clientSession,
+                                        String parameterValue,
+                                        String resolvedId) throws InvalidScopeParameterException {
+        String noteKey = PINNED_IDENTITY_NOTE_PREFIX + getTypeName() + "." + parameterValue;
+        String pinnedId = clientSession.getNote(noteKey);
+        if (pinnedId == null) {
+            clientSession.setNote(noteKey, resolvedId);
+            return;
+        }
+        if (!pinnedId.equals(resolvedId)) {
+            logger.debugf("Rejecting scope parameter '%s': resolved identity changed since consent (pinned=%s, resolved=%s)", parameterValue, pinnedId, resolvedId);
+            throw new InvalidScopeParameterException(String.format("Resolved identity for '%s' changed since consent was granted", parameterValue));
         }
     }
 

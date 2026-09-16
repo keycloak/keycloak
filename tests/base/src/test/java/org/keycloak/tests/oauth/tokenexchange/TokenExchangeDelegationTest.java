@@ -472,6 +472,60 @@ public class TokenExchangeDelegationTest {
     }
 
     @Test
+    public void delegationDroppedWhenTargetUserRecreated() {
+        String tempUsername = "temp-delegate";
+
+        String tempUserId = createUser(tempUsername);
+        ScopePermissionRepresentation oldPermission = addDelegationPermission(tempUserId, "Temp Delegate Policy");
+
+        // login with delegation to temp user and accept consent
+        final String scope = OIDCLoginProtocolFactory.USER_DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + tempUsername;
+        AccessTokenResponse res = loginWithDelegation(scope, grants ->
+                MatcherAssert.assertThat(grants, Matchers.hasItem(Matchers.containsString("Delegate token"))));
+
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), tempUserId);
+
+        // refresh with the original user still in place - should succeed
+        res = oauth.scope(null).doRefreshTokenRequest(res.getRefreshToken());
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), tempUserId);
+
+        // remove stale permission, delete the temp user and recreate with the same username (new UUID)
+        ClientResource adminPerms = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
+        adminPerms.authorization().permissions().scope().findById(oldPermission.getId()).remove();
+        realm.admin().users().get(tempUserId).remove();
+        String newUserId = recreateUserWithDelegation(tempUsername);
+
+        // refresh - FGAP passes but identity pinning detects the mismatch, scope dropped
+        res = oauth.scope(null).doRefreshTokenRequest(res.getRefreshToken());
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeNotContains(res.getScope(), scope);
+        assertMayActNotPresent(oauth.verifyToken(res.getAccessToken()));
+
+        // revoke consent and re-authorize within the same SSO session;
+        // fresh auth clears the stale pin, so re-consent works with the new identity
+        AccountHelper.revokeConsents(realm.admin(), USERNAME, oauth.getClientId());
+        res = loginWithDelegation(scope, grants ->
+                MatcherAssert.assertThat(grants, Matchers.hasItem(Matchers.containsString("Delegate token"))), false);
+
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), newUserId);
+
+        // refresh with the re-pinned identity should succeed
+        res = oauth.scope(null).doRefreshTokenRequest(res.getRefreshToken());
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), newUserId);
+
+        LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
+        Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
+    }
+
+    @Test
     public void cibaDelegationNoDelegatePermission() throws Exception {
 
         // request delegation with a user that has no delegate permission
@@ -707,9 +761,30 @@ public class TokenExchangeDelegationTest {
     }
 
     private ScopePermissionRepresentation addDelegationPermission() {
+        return addDelegationPermission(administrator.getId(), "Administrator Policy");
+    }
+
+    private ScopePermissionRepresentation addDelegationPermission(String userId, String policyName) {
         ClientResource adminPerms = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
-        UserPolicyRepresentation policy = PermissionTestUtils.createUserPolicy(realm, adminPerms, "Administrator Policy", administrator.getId());
+        UserPolicyRepresentation policy = PermissionTestUtils.createUserPolicy(realm, adminPerms, policyName, userId);
         return PermissionTestUtils.createAllPermission(adminPerms, AdminPermissionsSchema.USERS_RESOURCE_TYPE, policy, Set.of(AdminPermissionsSchema.DELEGATE));
+    }
+
+    private String recreateUserWithDelegation(String username) {
+        String newUserId = createUser(username);
+        addDelegationPermission(newUserId, "Recreated " + username + " Policy");
+        return newUserId;
+    }
+
+    private String createUser(String username) {
+        String userId;
+        try (Response response = realm.admin().users().create(
+                UserBuilder.create(username).email(username + "@localhost").build())) {
+            userId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.users().search(username).stream()
+                .findFirst().ifPresent(u -> r.users().get(u.getId()).remove()));
+        return userId;
     }
 
     private void assertExchangeError(AccessTokenResponse tokenExchangeRes, String error, String reason) {
@@ -772,8 +847,14 @@ public class TokenExchangeDelegationTest {
     }
 
     private AccessTokenResponse loginWithDelegation(String scope, Consumer<List<String>> grantsValidator) {
+        return loginWithDelegation(scope, grantsValidator, true);
+    }
+
+    private AccessTokenResponse loginWithDelegation(String scope, Consumer<List<String>> grantsValidator, boolean fillLoginForm) {
         oauth.scope(scope).openLoginForm();
-        oauth.fillLoginForm(USERNAME, PASSWORD);
+        if (fillLoginForm) {
+            oauth.fillLoginForm(USERNAME, PASSWORD);
+        }
         grantPage.assertCurrent();
         List<String> grants = grantPage.getDisplayedGrants();
         grantsValidator.accept(grants);
