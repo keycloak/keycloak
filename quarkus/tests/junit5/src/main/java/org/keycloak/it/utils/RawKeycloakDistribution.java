@@ -102,7 +102,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private boolean inited = false;
     private final Map<String, String> envVars = new HashMap<>();
     private final OutputConsumer outputConsumer;
-    private long startTimeout = TimeUnit.SECONDS.toMillis(Long.getLong("keycloak.distribution.start.timeout", 120L));
+    private long startTimeout = TimeUnit.SECONDS.toMillis(Long.getLong("keycloak.distribution.start.timeout", 300L));
     private boolean throwErrorIfFailedToStart = false;
     private boolean threadDump = true;
 
@@ -261,7 +261,9 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 destroyDescendantsOnWindows(keycloak, false);
 
                 keycloak.destroy();
-                keycloak.waitFor(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                if (!keycloak.waitFor(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    throw new RuntimeException("Server process did not stop within " + DEFAULT_SHUTDOWN_TIMEOUT_SECONDS + " seconds");
+                }
             } catch (Exception cause) {
                 destroyDescendantsOnWindows(keycloak, true);
                 keycloak.destroyForcibly();
