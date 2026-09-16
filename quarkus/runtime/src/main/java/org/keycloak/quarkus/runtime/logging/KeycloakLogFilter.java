@@ -64,13 +64,13 @@ public abstract class KeycloakLogFilter implements Filter {
     // prefix of a Quarkus Hibernate ORM property in application properties
     private static final String QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX = "quarkus.hibernate-orm.unsupported-properties.";
 
+    private static volatile Set<String> keycloakDefaultUnsupportedProperties = null;
+
     // Use this thread pool to asynchronously log from virtual threads, which could otherwise be pinned and lead to deadlocks.
     // A single thread ensures that all log entries appear in the correct order.
     private final ExecutorService executor;
     // Original handler for this these logs
     private Handler handler;
-
-    private final Set<String> keycloakDefaultUnsupportedProperties;
 
     public KeycloakLogFilter() {
         // The class ThreadCreator needs to be called and initialized here as when we do this in isLoggable() we'll have a recursive logging
@@ -79,7 +79,6 @@ public abstract class KeycloakLogFilter implements Filter {
         } else {
             executor = null;
         }
-        keycloakDefaultUnsupportedProperties = collectAllDefaultUnsupportedHibernateProperties();
     }
 
     private static Set<String> collectAllDefaultUnsupportedHibernateProperties() {
@@ -199,6 +198,11 @@ public abstract class KeycloakLogFilter implements Filter {
         }
         for (Object key : collection) {
             String name = String.valueOf(key);
+
+            if (keycloakDefaultUnsupportedProperties == null) {
+                keycloakDefaultUnsupportedProperties = collectAllDefaultUnsupportedHibernateProperties();
+            }
+
             if (!keycloakDefaultUnsupportedProperties.contains(name)
                     && !name.startsWith(QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX)) {
                 return false;
