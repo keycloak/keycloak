@@ -75,11 +75,11 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -685,10 +685,9 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         createPermission(adminPermissionsClient, visibleClient.getId(), clientsType, Set.of(VIEW), policy);
 
         // user role-mappings: getAll should contain visible-client but not hidden-client
-        // realm roles are user data guarded by the VIEW scope on the user, not realm configuration,
-        // so they stay visible even though myadmin lacks view-realm (see #52727)
+        // realm roles should be filtered since myadmin lacks view-realm
         MappingsRepresentation userMappings = realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).roles().getAll();
-        assertThat(userMappings.getRealmMappings().stream().map(RoleRepresentation::getName).toList(), hasItem("REALM_ROLE"));
+        assertThat(userMappings.getRealmMappings(), nullValue());
         Map<String, ?> userClientMappings = userMappings.getClientMappings();
         assertThat(userClientMappings, notNullValue());
         assertThat(userClientMappings, hasKey("visible-client"));
@@ -706,10 +705,9 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
                 realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).roles().clientLevel(hiddenId).listEffective());
 
         // group role-mappings: getAll should contain visible-client but not hidden-client
-        // realm roles are group data guarded by the VIEW scope on the group, not realm configuration,
-        // so they stay visible even though myadmin lacks view-realm (see #52727)
+        // realm roles should be filtered since myadmin lacks view-realm
         MappingsRepresentation groupMappings = realmAdminClient.realm(realm.getName()).groups().group(targetGroup.getId()).roles().getAll();
-        assertThat(groupMappings.getRealmMappings().stream().map(RoleRepresentation::getName).toList(), hasItem("REALM_ROLE"));
+        assertThat(groupMappings.getRealmMappings(), nullValue());
         Map<String, ?> groupClientMappings = groupMappings.getClientMappings();
         assertThat(groupClientMappings, notNullValue());
         assertThat(groupClientMappings, hasKey("visible-client"));

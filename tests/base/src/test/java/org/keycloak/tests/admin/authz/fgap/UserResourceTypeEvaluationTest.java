@@ -33,7 +33,6 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -62,7 +61,6 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.RESET_PASSW
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
@@ -599,31 +597,4 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
             assertThat(representation, notNullValue());
         }
     }
-
-    /**
-     * Realm role mappings on a user are user data, guarded by the VIEW scope on the user. They are not realm
-     * configuration, so viewing them must not additionally require {@code view-realm}.
-     *
-     * @see <a href="https://github.com/keycloak/keycloak/issues/52727">#52727</a>
-     */
-    @Test
-    public void testViewRealmRoleMappingsDoesNotRequireViewRealm() {
-        RoleRepresentation testRole = new RoleRepresentation();
-        testRole.setName("testRole");
-        realm.admin().roles().create(testRole);
-        realm.cleanup().add(r -> r.roles().get("testRole").remove());
-        realm.admin().users().get(userAlice.getId()).roles().realmLevel()
-                .add(List.of(realm.admin().roles().get("testRole").toRepresentation()));
-
-        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        UserPolicyRepresentation allowMyAdminPermission = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
-        createPermission(adminPermissionsClient, userAlice.getId(), usersType, Set.of(VIEW), allowMyAdminPermission);
-
-        MappingsRepresentation mappings = realmAdminClient.realm(realm.getName())
-                .users().get(userAlice.getId()).roles().getAll();
-
-        assertThat(mappings.getRealmMappings(), notNullValue());
-        assertThat(mappings.getRealmMappings().stream().map(RoleRepresentation::getName).toList(), hasItem("testRole"));
-    }
-
 }

@@ -52,6 +52,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.CredentialBuilder;
 import org.keycloak.testframework.realm.FederatedIdentityBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RoleBuilder;
@@ -388,6 +389,9 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.groups().group(group.getId()).roles().realmLevel().listAvailable(), Resource.USER, false);
         invoke(realm -> realm.groups().group(group.getId()).roles().realmLevel().add(List.of()), Resource.USER, true);
         invoke(realm -> realm.groups().group(group.getId()).roles().realmLevel().remove(List.of()), Resource.USER, true);
+        invoke(realm -> realm.groups().group(group.getId()).roles().clientLevel(realmAccessClient.getId()).listAll(), Resource.USER, false);
+        invoke(realm -> realm.groups().group(group.getId()).roles().clientLevel(realmAccessClient.getId()).listEffective(), Resource.USER, false);
+        invoke(realm -> realm.groups().group(group.getId()).roles().clientLevel(realmAccessClient.getId()).listAvailable(), Resource.USER, false);
         invoke(realm -> realm.groups().group(group.getId()).roles().clientLevel(realmAccessClient.getId()).add(List.of()), Resource.USER, true);
         invoke(realm -> realm.groups().group(group.getId()).roles().clientLevel(realmAccessClient.getId()).remove(List.of()), Resource.USER, true);
         invoke(realm -> {
@@ -463,6 +467,12 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.users().get(user.getId()).roles().realmLevel().remove(List.of()), Resource.USER, true);
 
         ClientRepresentation realmAccessClient = managedRealm1.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        invoke(realm -> realm.users().get(user.getId()).roles().clientLevel(realmAccessClient.getId()).listAll(),
+                Resource.USER, false);
+        invoke(realm -> realm.users().get(user.getId()).roles().clientLevel(realmAccessClient.getId()).listAvailable(),
+                Resource.USER, false);
+        invoke(realm -> realm.users().get(user.getId()).roles().clientLevel(realmAccessClient.getId()).listEffective(),
+                Resource.USER, false);
         invoke(realm -> realm.users().get(user.getId()).roles().clientLevel(realmAccessClient.getId()).add(List.of()),
                 Resource.USER, true);
         invoke(realm -> realm.users().get(user.getId()).roles().clientLevel(realmAccessClient.getId()).remove(List.of()),
@@ -522,6 +532,37 @@ public class PermissionsTest extends AbstractPermissionsTest {
         assertThat(mappings.getRealmMappings(), Matchers.notNullValue());
         assertThat(mappings.getRealmMappings().stream().map(RoleRepresentation::getName).toList(),
                 Matchers.hasItem(roleName));
+    }
+
+    /**
+     * Client role mappings on a group are group data, guarded by {@code view-users}. Without admin permissions they
+     * must not additionally require {@code view-clients}.
+     */
+    @Test
+    public void groupClientRolesVisibleWithViewUsers() {
+        String clientId = "group-client-roles";
+        String roleName = "group-client-role";
+
+        String clientUuid = ApiUtil.getCreatedId(managedRealm1.admin().clients()
+                .create(ClientBuilder.create().clientId(clientId).build()));
+        managedRealm1.cleanup().add(r -> r.clients().get(clientUuid).remove());
+
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName(roleName);
+        managedRealm1.admin().clients().get(clientUuid).roles().create(role);
+
+        String groupUuid = ApiUtil.getCreatedId(managedRealm1.admin().groups()
+                .add(GroupBuilder.create().name("client-role-group").build()));
+        managedRealm1.cleanup().add(r -> r.groups().group(groupUuid).remove());
+
+        managedRealm1.admin().groups().group(groupUuid).roles().clientLevel(clientUuid)
+                .add(List.of(managedRealm1.admin().clients().get(clientUuid).roles().get(roleName).toRepresentation()));
+
+        GroupRepresentation group = clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME)
+                .groups().group(groupUuid).toRepresentation();
+
+        assertThat(group.getClientRoles(), Matchers.notNullValue());
+        assertThat(group.getClientRoles().get(clientId), Matchers.hasItem(roleName));
     }
 
     @Test
