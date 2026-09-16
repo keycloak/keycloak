@@ -20,7 +20,7 @@ Refer to https://www.keycloak.org/nightly/ for downloads.
 
 ## Backwards Compatibility
 
-Keycloak delivers new features and enhancements in a backwards compatible way, making it seamless and easy to upgrade.
+Keycloak aims to delivers new features and enhancements in a backwards compatible way, making it seamless and easy to upgrade. However, there are certain limitations:
 
 * Important bug fixes and security fixes might introduce non-opt-in breaking changes in any release.
 * The aim for minor releases is to allow a seamless upgrade by making breaking changes opt-in. This should allow gradual roll out of feature changes and breaking changes.
@@ -33,7 +33,7 @@ users should consult the [upgrading guide](https://www.keycloak.org/docs/latest/
 
 ## Security Releases
 
-Security fixes are released as patch releases for the current minor release. Security advisories are published
+Security fixes are released as patch releases for the latest minor release. Security advisories are published
 in the release notes or [GitHub issues of type CVE](https://github.com/keycloak/keycloak/issues?q=is%3Aissue%20type%3Acve).
 
 <!-- TODO: We currently only publish CVEs issue types, IMHO GitHub Security Advisories should be preferred. -->
@@ -50,7 +50,7 @@ In the [GitHub repository](https://github.com/keycloak/keycloak), the following 
 
 ## Support and End of Life
 
-The current minor release receives patch releases for critical bugs and security vulnerabilities. 
+The latest minor release receives patch releases for critical bugs and security vulnerabilities. 
 When a new minor release is published, the previous minor release is no longer supported.
 
 Once a new major release is published, the last minor release of the previous major version receives 6 months of patch releases.
@@ -85,4 +85,12 @@ Each Keycloak release publishes the following artifacts:
 | Kubernetes resources | [keycloak/keycloak-k8s-resources](https://github.com/keycloak/keycloak-k8s-resources) |
 | Maven artifacts (client libraries, SPIs) | [Maven Central](https://central.sonatype.com/namespace/org.keycloak) |
 | Release notes | [Keycloak website](https://www.keycloak.org/docs/latest/release_notes/index.html) |
+| Upgrade guide | [Keycloak website](https://www.keycloak.org/docs/latest/upgrading/index.html) |
+
+## Release Announcement
+
+* [Blog](https://www.keycloak.org/blog)
+* [GitHub Releases](https://github.com/keycloak/keycloak/releases)
+* [User Mailing List](https://groups.google.com/forum/#!forum/keycloak-user)
+* [Developer Mailing List](https://groups.google.com/forum/#!forum/keycloak-dev)
 
