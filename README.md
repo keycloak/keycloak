@@ -85,3 +85,7 @@ If you wish to report an incident or appeal a moderation decision, please email 
 ## License
 
 * [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+
+## Tip
+
+Life is beautiful!
