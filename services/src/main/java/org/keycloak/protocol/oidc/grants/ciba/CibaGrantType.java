@@ -27,6 +27,7 @@ import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -53,6 +54,7 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -235,6 +237,12 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
 
         if (!user.isEnabled()) {
             event.error(Errors.USER_DISABLED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "User disabled", Response.Status.BAD_REQUEST);
+        }
+
+        String bruteForceError = AuthenticatorUtils.getDisabledByBruteForceEventError(session.getProvider(BruteForceProtector.class), session, realm, user);
+        if (bruteForceError != null) {
+            event.error(bruteForceError);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "User disabled", Response.Status.BAD_REQUEST);
         }
 
