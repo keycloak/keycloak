@@ -187,6 +187,15 @@ describe("normalizeNonNegativeIntegerOverride", () => {
     );
   });
 
+  it("canonicalizes spellings accepted by Java's Integer.parseInt", () => {
+    expect(normalizeNonNegativeIntegerOverride("+1")).toBe("1");
+    expect(normalizeNonNegativeIntegerOverride("-0")).toBe("0");
+    expect(normalizeNonNegativeIntegerOverride("007")).toBe("7");
+    expect(normalizeNonNegativeIntegerOverride("+2147483647")).toBe(
+      "2147483647",
+    );
+  });
+
   it("treats values above Java's Integer.MAX_VALUE as unset", () => {
     expect(normalizeNonNegativeIntegerOverride("2147483648")).toBe("");
     expect(normalizeNonNegativeIntegerOverride("99999999999999999999")).toBe(
