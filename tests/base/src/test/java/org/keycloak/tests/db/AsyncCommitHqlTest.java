@@ -80,6 +80,14 @@ public class AsyncCommitHqlTest {
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             var dialect = em.getEntityManagerFactory()
                     .unwrap(SessionFactoryImplementor.class).getJdbcServices().getDialect();
+            // Coarsely check if the DB at hand is expected to support async commit in our setup.
+            // This avoids replicating the full logic in Keycloak to avoid duplication and out-of-sync code
+            // based on the assumption that for the example the PostgreSQL database we provide for testing
+            // will always support async commits (and is not an Aurora DB with logical replication enabled).
+            // If the async detection logic will break for any of those databases in the Keycloak main code,
+            // this test will rightfully fail. 
+            // For this reason, it avoids the `EntityManagerProxy.isAsyncCommitEnabled(em)` that is used
+            // in the other tests in this class.
             boolean databaseSupportsAsyncCommit = dialect instanceof PostgreSQLDialect
                     || dialect instanceof SQLServerDialect
                     || dialect instanceof OracleDialect;
