@@ -202,23 +202,18 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
         final StoreProvider storeProvider = StoreProvider.getCurrentProvider();
         final String cacheMode = System.getProperty("auth.server.quarkus.cluster.config", "local");
-        var features = getDefaultFeatures();
 
-        if ("local".equals(cacheMode) && !features.contains("stateless")) {
+        if ("local".equals(cacheMode)) {
             commands.add("--cache=local");
+            // Save ~2s for each Quarkus startup, when we know ISPN cluster is empty. See https://github.com/keycloak/keycloak/issues/21033
+//            commands.add("-Djgroups.join_timeout=10");
         } else {
             commands.add("--cache=ispn");
-            if (!"local".equals(cacheMode)) {
-                commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
-            }
+            commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
 
             var stack = System.getProperty("auth.server.quarkus.cluster.stack");
             if (stack != null) {
                 commands.add("--cache-stack=" + stack);
-            }
-
-            if (features.contains("stateless")) {
-                commands.add("--cache-embedded-cluster-name=test-cluster");
             }
         }
 
@@ -233,6 +228,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
         spis.values().forEach(commands::addAll);
 
+        var features = getDefaultFeatures();
         if (features.contains("clusterless") || features.contains("multi-site")) {
             commands.add("--cache-remote-host=127.0.0.1");
             commands.add("--cache-remote-username=keycloak");
