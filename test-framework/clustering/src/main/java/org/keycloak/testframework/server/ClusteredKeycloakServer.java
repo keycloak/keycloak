@@ -27,11 +27,13 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
 import org.keycloak.common.Profile;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.it.utils.DockerKeycloakDistribution;
 import org.keycloak.testframework.clustering.LoadBalancer;
 import org.keycloak.testframework.infinispan.CacheType;
 import org.keycloak.testframework.logging.JBossContainerLogConsumer;
 
+import com.google.common.base.CaseFormat;
 import org.jboss.logging.Logger;
 import org.testcontainers.images.RemoteDockerImage;
 import org.testcontainers.utility.DockerImageName;
@@ -64,6 +66,7 @@ public class ClusteredKeycloakServer implements KeycloakServer {
     @Override
     public void start(KeycloakServerConfigBuilder configBuilder, boolean tlsEnabled) {
         int numServers = containers.length;
+        configureCacheOwners(configBuilder);
 
         String[] imagePeServer = null;
         Supplier<CountdownLatchLoggingConsumer> latchSupplier;
@@ -243,5 +246,25 @@ public class ClusteredKeycloakServer implements KeycloakServer {
         if (stateless) {
             configBuilder.option("cache-embedded-cluster-name", "cluster-" + id);
         }
+    }
+
+    private static void configureCacheOwners(KeycloakServerConfigBuilder configBuilder) {
+        int sessionOwners = Integer.getInteger("session.cache.owners", 1);
+        int offlineSessionOwners = Integer.getInteger("offline.session.cache.owners", sessionOwners);
+        int loginFailureOwners = Integer.getInteger("login.failure.cache.owners", sessionOwners);
+
+        setCacheOwners(configBuilder, InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, sessionOwners);
+        setCacheOwners(configBuilder, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME, sessionOwners);
+        setCacheOwners(configBuilder, InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME, sessionOwners);
+        setCacheOwners(configBuilder, InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, offlineSessionOwners);
+        setCacheOwners(configBuilder, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME, offlineSessionOwners);
+        setCacheOwners(configBuilder, InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, loginFailureOwners);
+    }
+
+    private static void setCacheOwners(KeycloakServerConfigBuilder configBuilder, String cacheName, int owners) {
+        String option = "spi-cache-embedded--default--"
+                + CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, cacheName)
+                + "-owners";
+        configBuilder.option(option, Integer.toString(owners));
     }
 }
