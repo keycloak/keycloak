@@ -18,12 +18,14 @@
 package org.keycloak.testsuite.organization.broker;
 
 import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.OrganizationIdentityProviderResource;
 import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
@@ -32,6 +34,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -42,6 +45,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.broker.KcOidcBrokerConfiguration;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 
 import org.hamcrest.MatcherAssert;
@@ -1555,5 +1560,44 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
                     d.setAutoRedirect(autoRedirect);
                 });
         organization.update(orgRep).close();
+    }
+
+    @Test
+    public void testBrokerLoginDisabledOrgNotInToken() {
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        IdentityProviderRepresentation idpRep = organization.identityProviders().getIdentityProviders().get(0);
+        idpRep.setHideOnLogin(false);
+        managedRealm.admin().identityProviders().get(idpRep.getAlias()).update(idpRep);
+
+        // first login via broker — org is enabled, user becomes a managed member
+        assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
+
+        // set password so the user can authenticate without the org broker
+        UserRepresentation account = getUserRepresentation(bc.getUserEmail());
+        AdminApiUtil.resetUserPassword(realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()), "password", false);
+
+        // disable the organization
+        OrganizationRepresentation orgRep = organization.toRepresentation();
+        orgRep.setEnabled(false);
+        try (Response ignored = organization.update(orgRep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), ignored.getStatus());
+        }
+
+        // logout and re-authenticate with password
+        realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
+        realmsResouce().realm(bc.providerRealmName()).logoutAll();
+
+        oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        loginPage.loginUsername(bc.getUserEmail());
+        loginPage.login("password");
+
+        var loginResponse = oauth.parseLoginResponse();
+        Assertions.assertTrue(loginResponse.isSuccess());
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(loginResponse.getCode());
+        AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+        assertNull(accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION),
+                "Token should NOT contain organization claim when org is disabled");
     }
 }

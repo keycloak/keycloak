@@ -164,7 +164,11 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         }
 
         if (!OIDCAttributeMapperHelper.isMultivalued(model)) {
-            return organizations.get(0).getAlias();
+            OrganizationModel org = organizations.get(0);
+            if (!org.isEnabled()) {
+                return null;
+            }
+            return org.getAlias();
         }
 
         Map<String, Map<String, Object>> value = new HashMap<>();
