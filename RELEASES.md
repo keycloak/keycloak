@@ -89,6 +89,8 @@ Each Keycloak release publishes the following artifacts:
 
 ## Release Announcement
 
+The release is announced via the following channels:
+
 * [Blog](https://www.keycloak.org/blog)
 * [GitHub Releases](https://github.com/keycloak/keycloak/releases)
 * [User Mailing List](https://groups.google.com/forum/#!forum/keycloak-user)
