@@ -64,6 +64,14 @@ public class UriUtilsTest {
     }
 
     @Test
+    public void testOriginEqualsIgnoresSchemeAndHostCase() {
+        assertTrue(UriUtils.originEquals("https://Example.COM:8443", "https://example.com:8443"));
+        assertTrue(UriUtils.originEquals("HTTPS://EXAMPLE.COM", "https://example.com"));
+        assertFalse(UriUtils.originEquals("https://Example.COM:8443", "https://example.com:8444"));
+        assertFalse(UriUtils.originEquals("https://Example.COM:8443", "https://other.com:8443"));
+    }
+
+    @Test
     public void testStripQueryParam(){
         assertEquals("http://localhost",UriUtils.stripQueryParam("http://localhost?login_hint=michael","login_hint"));
         assertEquals("http://localhost",UriUtils.stripQueryParam("http://localhost?login_hint=michael@me.com","login_hint"));
