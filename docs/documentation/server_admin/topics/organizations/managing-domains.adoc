@@ -9,17 +9,21 @@ One of the key roles of a domain is to help to identify the organizations where 
 email address, {project_name} will match a corresponding organization using the same domain and eventually change the
 authentication flow based on the organization requirements.
 
+Domains are first-class entities with their own configuration. In addition to identifying the organization, each domain
+can be configured with identity provider routing and auto-redirect settings that control how users matching that domain
+are authenticated.
+
 The domain also allows organizations to enforce that users are not allowed to use a domain in their emails
 other than those associated with an organization. This restriction is especially useful when users, and their identities,
 are federated from identity providers associated with an organization and you want to force a specific email domain for their email addresses.
 
 == Assigning domains
 
-Domains are assigned through the *Domains* setting when creating or editing an organization. An organization can have
+Domains are assigned through the *Domains* tab when managing an organization. An organization can have
 zero, one, or multiple domains.
 
 When no domain is assigned, members are not validated against domain restrictions and email-based redirection to
-identity providers is unavailable.
+identity providers is unavailable. A domain-less organization can still use auto-membership through a linked identity provider -- see <<authenticating-members_{context},Authenticating members>> for details.
 
 == Domain types
 
@@ -44,11 +48,57 @@ organization using the following rules:
 The same rules determine which domain is reported in token claims such as the `domain` claim from the
 organization membership mapper.
 
+== Configuring domain routing
+
+Each domain can optionally be configured to route users to a specific identity provider
+linked to the organization. This determines which identity provider handles authentication
+for users whose email matches the domain.
+
+Domain routing replaces the identity provider-level settings that were previously used to configure email domain matching.
+The routing configuration is now on the domain itself, giving administrators fine-grained control over how each domain is handled.
+
+.Procedure
+
+. Navigate to the organization.
+. Click the *Domains* tab.
+. Click the domain name in the list, or click the action button and select *Edit*.
+. In the edit dialog:
++
+Identity provider::
+Select the identity provider to route users to when their email matches this domain. The dropdown shows identity providers
+linked to this organization, plus a *None* option. Selecting *None* means no routing is configured -- users with this email domain
+will not be redirected to any identity provider and will see the standard login form instead.
+
+Auto redirect::
+When enabled, users whose email domain matches this domain are automatically redirected to the selected identity provider
+without being shown the login form. When disabled, the identity provider is available for selection on the login page but
+no automatic redirect occurs.
++
+This setting has no effect when no identity provider is selected.
++
+If a user has first-factor credentials configured (for example, a password), the user is not automatically redirected but asked to authenticate using their credentials.
+
+. Click *Save*.
+
+The *Domains* tab shows a table with three columns: the domain name, the linked identity provider (if any), and the auto-redirect setting.
+
+NOTE: The same identity provider can be configured as the routing target for multiple domains, including domains belonging to different organizations. This is how shared identity providers work -- each organization routes its own domains to the shared provider independently.
+
+== Domain routing and shared identity providers
+
+When an identity provider is shared across multiple organizations, each organization configures routing on its own domains independently.
+The identity provider's realm-level detail page provides a read-only *Domains* sub-tab (under the *Organizations* tab -  visible once the identity provider is linked to any organization) that shows all domains across organizations that route to that provider.
+
+The domain gate in the post-broker membership algorithm ensures that users are only auto-added to organizations whose domains match
+their email. For example, if Org-A owns `acme.com` and Org-B owns `globex.com`, and both route to the same identity provider,
+a user with `alice@acme.com` will only be added to Org-A -- even though the same identity provider handled the authentication.
+For the full membership algorithm, see <<authenticating-members_{context},Authenticating members>>.
+
 == Validation rules
 
 * A domain cannot be shared across organizations in the same realm.
 * Domains are stored and compared in lowercase.
-* A domain must have at least 2 parts (e.g. `example.com`). Single-part domains such as `com`, `org`, or `*.com` are rejected.
+* Wildcard domains must have at least 2 parts after the `*.` prefix (e.g. `*.example.com`). Wildcards over bare TLDs such as `*.com` or `*.org` are rejected.
 * A domain cannot have more than 10 parts.
 * The `*.` wildcard prefix may appear only once and only at the start of the value (e.g. `sub.*.example.com` is rejected).
 
@@ -66,3 +116,8 @@ before relying on overlapping configurations.
 Use exact domains to model exceptions::
 An organization can hold both `*.example.com` and `vip.example.com`. Addresses under `vip.example.com` resolve to the
 exact entry; all other subdomains fall back to the wildcard.
+
+Domains without routing::
+A domain with no identity provider configured still participates in organization resolution and email validation.
+It simply does not trigger auto-redirect or identity provider routing. This is useful for domains where users
+authenticate with local credentials (password, passwordless) rather than an external identity provider.

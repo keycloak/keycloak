@@ -66,7 +66,7 @@ To disable an organization, toggle *Enabled* to *Off*.
 .Disabling organization
 image:images/organizations-disable-org.png[alt="Disabling organization"]
 
-When an organization is disabled, you can still manage it through the management interfaces, but the organization members cannot authenticate to the realm, including authenticating through the identity providers associated with the organization as they are also automatically disabled.
+When an organization is disabled, you can still manage it through the management interfaces, but the organization members cannot authenticate to the realm, including authenticating through identity providers linked to the organization. The identity providers themselves are not disabled -- only the links to this organization become inactive. If an identity provider is shared with other organizations, those links remain fully functional.
 
 However, the unmanaged members of an organization are still able to authenticate to the realm as they are also realm users, but tokens will not hold metadata about their relationship with an organization that is disabled.
 
@@ -81,6 +81,6 @@ image:images/organizations-delete-org.png[alt="Deleting organization"]
 
 When removing an organization, all data associated with it will be deleted, including any managed member.
 
-Unmanaged users and identity providers remain in the realm, but they are no longer linked to the organization.
+Unmanaged users and identity providers remain in the realm. Identity providers are unlinked from the deleted organization but stay linked to any other organizations they are associated with.
 
 For more details about managed and unmanaged users, see <<_managed_unmanaged_members_,Managed and unmanaged members>>.
