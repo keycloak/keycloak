@@ -62,7 +62,7 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
         iterations = config.getInt(ITERATIONS_KEY, Argon2Parameters.DEFAULT_ITERATIONS);
         parallelism = config.getInt(PARALLELISM_KEY, Argon2Parameters.DEFAULT_PARALLELISM);
         cpuCoreSemaphore = new Semaphore(config.getInt(CPU_CORES_KEY, Runtime.getRuntime().availableProcessors()));
-        blockPoolManager = new SoftBlockPool(memory);
+        blockPoolManager = new SoftBlockPool(memory, parallelism);
     }
 
     @Override
@@ -167,13 +167,19 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
      * this pool is also effectively bounded with the number of CPU cores.
      */
     static class SoftBlockPool {
+        private static final int ARGON2_SYNC_POINTS = 4;
         // FillBlock allocates 4 scratch blocks (R, Z, addressBlock, inputBlock) in addition to the primary memory blocks.
         private static final int SCRATCH_BLOCKS = 4;
         private final ConcurrentLinkedDeque<SoftReference<FixedBlockPool>> pools = new ConcurrentLinkedDeque<>();
         private final int maxBlocks;
 
-        SoftBlockPool(int memoryInKB) {
-            this.maxBlocks = memoryInKB + SCRATCH_BLOCKS;
+        SoftBlockPool(int memoryInKB, int parallelism) {
+            // Mirror BouncyCastle's effective block count calculation:
+            // memoryBlocks = max(memory, 2 * SYNC_POINTS * lanes), then rounded to a multiple of 4 * lanes.
+            int memoryBlocks = Math.max(memoryInKB, 2 * ARGON2_SYNC_POINTS * parallelism);
+            int segmentLength = memoryBlocks / (ARGON2_SYNC_POINTS * parallelism);
+            int laneLength = segmentLength * ARGON2_SYNC_POINTS;
+            this.maxBlocks = parallelism * laneLength + SCRATCH_BLOCKS;
         }
 
         FixedBlockPool acquire() {
