@@ -93,9 +93,9 @@ public abstract class AbstractEvents<R> {
     }
 
     void testStarted() {
-        testStarted = getCurrentTime();
+        // Discard events from the previous test's cleanup to avoid them leaking into this test's poll() window
+        skipAll();
         timeOffset = getCurrentTimeOffset();
-        lastFetch = -1;
     }
 
     protected abstract List<R> getEvents(long from, long to);
