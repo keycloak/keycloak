@@ -48,6 +48,10 @@ public class KubernetesJwksEndpointLoader implements PublicKeyLoader {
             throw new IOException("OIDC discovery document from " + wellKnownEndpoint + " did not include a jwks_uri");
         }
 
+        if (token != null && KubernetesUtils.isTrustedKubernetesApiDiscoveryUrl(issuer)) {
+            jwksUri = KubernetesUtils.jwksUrl(issuer);
+        }
+
         SimpleHttpRequest jwksRequest = simpleHttp.doGet(jwksUri).header(HttpHeaders.ACCEPT, "application/jwk-set+json");
         if (token != null && KubernetesUtils.isTrustedKubernetesApiJwksUrl(jwksUri, issuer)) {
             jwksRequest.auth(token);

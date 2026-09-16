@@ -17,6 +17,7 @@ import static org.keycloak.broker.kubernetes.KubernetesConstants.SERVICE_ACCOUNT
 final class KubernetesUtils {
 
     private static final String OIDC_DISCOVERY_PATH = "/.well-known/openid-configuration";
+    private static final String JWKS_PATH = "/openid/v1/jwks";
 
     private KubernetesUtils() {
     }
@@ -28,6 +29,14 @@ final class KubernetesUtils {
         }
         String normalizedIssuer = issuer.substring(0, end);
         return normalizedIssuer.endsWith(OIDC_DISCOVERY_PATH) ? normalizedIssuer : normalizedIssuer + OIDC_DISCOVERY_PATH;
+    }
+
+    static String jwksUrl(String issuer) {
+        int end = issuer.length();
+        while (end > 0 && issuer.charAt(end - 1) == '/') {
+            end--;
+        }
+        return issuer.substring(0, end) + JWKS_PATH;
     }
 
     static String getServiceAccountToken() throws Exception {
@@ -80,7 +89,7 @@ final class KubernetesUtils {
             return false;
         }
 
-        if ("kubernetes".equalsIgnoreCase(host) || "kubernetes.default".equalsIgnoreCase(host) || "kubernetes.default.svc".equalsIgnoreCase(host) || "kubernetes.default.svc.cluster.local".equalsIgnoreCase(host)) {
+        if ("kubernetes.default".equalsIgnoreCase(host) || "kubernetes.default.svc".equalsIgnoreCase(host) || "kubernetes.default.svc.cluster.local".equalsIgnoreCase(host)) {
             return isTrustedKubernetesApiPort(uri, httpsServicePort, servicePort);
         }
 
@@ -113,48 +122,7 @@ final class KubernetesUtils {
             return true;
         }
 
-        if (!isTrustedKubernetesApiUrl(issuer)) {
-            return false;
-        }
-
-        return isIpLiteral(jwksUri.getHost())
-                // Kubernetes API servers commonly advertise their secure port as 6443 or 8443.
-                && (jwksUri.getPort() == 6443 || jwksUri.getPort() == 8443 || isTrustedKubernetesApiPort(jwksUri));
-    }
-
-    private static boolean isIpLiteral(String host) {
-        if (host == null) {
-            return false;
-        }
-
-        String normalizedHost = host;
-        if (normalizedHost.startsWith("[") && normalizedHost.endsWith("]")) {
-            normalizedHost = normalizedHost.substring(1, normalizedHost.length() - 1);
-        }
-
-        if (normalizedHost.contains(":")) {
-            return true;
-        }
-
-        String[] octets = normalizedHost.split("\\.", -1);
-        if (octets.length != 4) {
-            return false;
-        }
-
-        for (String octet : octets) {
-            if (octet.isEmpty() || !octet.chars().allMatch(Character::isDigit)) {
-                return false;
-            }
-            try {
-                if (Integer.parseInt(octet) > 255) {
-                    return false;
-                }
-            } catch (NumberFormatException e) {
-                return false;
-            }
-        }
-
-        return true;
+        return isTrustedKubernetesApiUrl(jwksUrl);
     }
 
     private static boolean isTrustedKubernetesApiPort(URI uri) {

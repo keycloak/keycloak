@@ -47,11 +47,21 @@ class KubernetesUtilsTest {
     }
 
     @Test
+    void jwksUrlAppendsJwksPathToIssuerBaseUrl() {
+        assertEquals("https://kubernetes.default.svc/openid/v1/jwks",
+                KubernetesUtils.jwksUrl("https://kubernetes.default.svc/"));
+    }
+
+    @Test
     void trustedApiUrlAllowsKubernetesServiceHosts() {
-        assertTrue(KubernetesUtils.isTrustedKubernetesApiUrl("https://kubernetes", null, null, null));
         assertTrue(KubernetesUtils.isTrustedKubernetesApiUrl("https://kubernetes.default", null, null, null));
         assertTrue(KubernetesUtils.isTrustedKubernetesApiUrl("https://kubernetes.default.svc", null, null, null));
         assertTrue(KubernetesUtils.isTrustedKubernetesApiUrl("https://kubernetes.default.svc.cluster.local", null, null, null));
+    }
+
+    @Test
+    void trustedApiUrlRejectsUnqualifiedKubernetesServiceHost() {
+        assertFalse(KubernetesUtils.isTrustedKubernetesApiUrl("https://kubernetes", null, null, null));
     }
 
     @Test
@@ -102,15 +112,15 @@ class KubernetesUtilsTest {
     }
 
     @Test
-    void trustedApiJwksUrlAllowsApiServerAdvertiseAddressFromTrustedIssuer() {
-        assertTrue(KubernetesUtils.isTrustedKubernetesApiJwksUrl(
+    void trustedApiJwksUrlRejectsUntrustedApiServerAdvertiseAddressFromTrustedIssuer() {
+        assertFalse(KubernetesUtils.isTrustedKubernetesApiJwksUrl(
                 "https://172.18.0.2:6443/openid/v1/jwks",
                 "https://kubernetes.default.svc.cluster.local"));
     }
 
     @Test
-    void trustedApiJwksUrlAllowsMinikubeApiServerAdvertiseAddressFromTrustedIssuer() {
-        assertTrue(KubernetesUtils.isTrustedKubernetesApiJwksUrl(
+    void trustedApiJwksUrlRejectsUntrustedMinikubeApiServerAdvertiseAddressFromTrustedIssuer() {
+        assertFalse(KubernetesUtils.isTrustedKubernetesApiJwksUrl(
                 "https://192.168.49.2:8443/openid/v1/jwks",
                 "https://kubernetes.default.svc.cluster.local"));
     }
@@ -168,8 +178,8 @@ class KubernetesUtilsTest {
     }
 
     @Test
-    void trustedApiJwksUrlAllowsIpv6ApiServerAdvertiseAddressFromTrustedIssuer() {
-        assertTrue(KubernetesUtils.isTrustedKubernetesApiJwksUrl(
+    void trustedApiJwksUrlRejectsUntrustedIpv6ApiServerAdvertiseAddressFromTrustedIssuer() {
+        assertFalse(KubernetesUtils.isTrustedKubernetesApiJwksUrl(
                 "https://[fd00::2]:6443/openid/v1/jwks",
                 "https://kubernetes.default.svc.cluster.local"));
     }
