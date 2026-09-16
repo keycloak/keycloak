@@ -172,7 +172,8 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
             validateAgainstSensitiveMappings(format, mapperModel);
             return true;
         } catch (ProtocolMapperConfigException e) {
-            LOGGER.warnf(e, "OID4VC mapper '%s' failed validation and will be skipped", getMapperName());
+            LOGGER.warnf("OID4VC mapper '%s' failed validation and will be skipped: %s", getMapperName(), e.getMessage());
+            LOGGER.debugf(e, "OID4VC mapper '%s' validation failure details", getMapperName());
             return false;
         }
     }

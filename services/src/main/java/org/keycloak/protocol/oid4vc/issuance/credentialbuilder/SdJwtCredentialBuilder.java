@@ -88,7 +88,7 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
         claims.put(CLAIM_NAME_ISSUER, credentialBuildConfig.getCredentialIssuer());
         claims.put(CLAIM_NAME_VCT, credentialBuildConfig.getCredentialType());
 
-        // iat is issuer-controlled: it must always reflect the issuer-configured credential lifetime
+        // iat is issuer-controlled: it must always reflect the issuer-computed issuance time
         // and must not be overridable by a mapped attribute value (see keycloak/keycloak#52667).
         if (issuanceDate != null) {
             claims.put(CLAIM_NAME_IAT, issuanceDate.getEpochSecond());

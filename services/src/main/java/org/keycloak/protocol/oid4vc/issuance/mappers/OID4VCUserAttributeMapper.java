@@ -142,6 +142,10 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
     @Override
     protected String resolveClaimName(ProtocolMapperModel mapperModel) {
         Map<String, String> config = mapperModel.getConfig();
+        if (config == null) {
+            return null;
+        }
+
         return Optional.ofNullable(config.get(CLAIM_NAME)).orElse(config.get(USER_ATTRIBUTE_KEY));
     }
 

@@ -143,18 +143,18 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
     @Test
     public void testUserAttributeMapperCannotMapToReservedClaim() {
         ProtocolMapperRepresentation mapper1 = ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, CLAIM_NAME_EXP);
-        assertReservedClaimMapperIsRejected(mapper1);
+        assertReservedClaimMapperIsRejected(mapper1, CLAIM_NAME_EXP);
 
         // The user-attribute mapper interprets dotted claim names as nested paths, so "cnf.jwk" emits a top-level
         // "cnf" claim. Validation must guard the actual top-level path segment, not the literal claim name.
         ProtocolMapperRepresentation mapper2 = ProtocolMapperUtils.getUserAttributeMapper("cnf.jwk", "cnf.jwk");
-        assertReservedClaimMapperIsRejected(mapper2);
+        assertReservedClaimMapperIsRejected(mapper2, "cnf.jwk");
     }
 
     @Test
     public void testSubjectIdMapperCannotMapToReservedClaim() {
         ProtocolMapperRepresentation mapper = ProtocolMapperUtils.getSubjectIdMapper(CLAIM_NAME_JTI, DidSubjectId.DID);
-        assertReservedClaimMapperIsRejected(mapper);
+        assertReservedClaimMapperIsRejected(mapper, CLAIM_NAME_JTI);
     }
 
     @Test
@@ -162,7 +162,7 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
         ProtocolMapperRepresentation mapper = ProtocolMapperUtils.getRoleMapper(client.getClientId());
         mapper.setConfig(new HashMap<>(mapper.getConfig()));
         mapper.getConfig().put(OID4VCMapper.CLAIM_NAME, CLAIM_NAME_EXP);
-        assertReservedClaimMapperIsRejected(mapper);
+        assertReservedClaimMapperIsRejected(mapper, CLAIM_NAME_EXP);
     }
 
     @Test
@@ -249,7 +249,7 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
         }
     }
 
-    private void assertReservedClaimMapperIsRejected(ProtocolMapperRepresentation mapper) {
+    private void assertReservedClaimMapperIsRejected(ProtocolMapperRepresentation mapper, String expectedClaimName) {
         String scopeId = createCredentialScope("reserved-claim-scope-" + UUID.randomUUID(), List.of());
 
         // Create the scope without the mapper, then add the mapper directly through the protocol-mappers
@@ -262,8 +262,9 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
             assertNotNull(error, "The rejection response must carry an error representation");
             assertNotNull(error.getError(), "The rejection must carry an error code");
             assertTrue(error.getErrorDescription() != null
-                            && error.getErrorDescription().contains("is reserved and must not be used by this OID4VC mapper"),
-                    "Rejection should report the reserved claim in the error description, but was: " + error.getErrorDescription());
+                            && error.getErrorDescription().contains(
+                                    String.format("Claim name %s is reserved and must not be used by this OID4VC mapper.", expectedClaimName)),
+                    "Rejection should report the reserved claim, but was: " + error.getErrorDescription());
         }
     }
 
