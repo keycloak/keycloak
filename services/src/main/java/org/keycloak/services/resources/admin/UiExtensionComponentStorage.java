@@ -123,6 +123,24 @@ final class UiExtensionComponentStorage {
         return getStorageFactory(session, providerType, providerId) != null;
     }
 
+    static boolean hasOnlyCustomStorageProviders(KeycloakSession session, String type) {
+        try {
+            Class<? extends Provider> providerClass =
+                    (Class<? extends Provider>) session.getProviderClass(type);
+            var factories = session.getKeycloakSessionFactory()
+                    .getProviderFactoriesStream(providerClass)
+                    .filter(factory -> !(factory instanceof ComponentFactory<?, ?> componentFactory
+                            && componentFactory.isInternal()))
+                    .toList();
+            if (factories.isEmpty()) {
+                return false;
+            }
+            return factories.stream().allMatch(factory -> factory instanceof ComponentStorageFactory);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
     private static ComponentStorageFactory findStorageFactoryByProviderId(
             KeycloakSession session, String providerId) {
         return Stream.concat(

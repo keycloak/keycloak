@@ -123,6 +123,11 @@ public class ComponentResource {
         Stream<ComponentModel> components;
         if (providerId != null && customComponents != null) {
             components = customComponents;
+        } else if (customComponents != null
+                && type != null
+                && providerId == null
+                && UiExtensionComponentStorage.hasOnlyCustomStorageProviders(session, type)) {
+            components = customComponents;
         } else if (customComponents != null) {
             Map<String, ComponentModel> mergedComponents = new LinkedHashMap<>();
             realmComponents
@@ -161,9 +166,11 @@ public class ComponentResource {
             ComponentModel model = RepresentationToModel.toModel(session, rep);
             if (model.getParentId() == null) model.setParentId(realm.getId());
 
-            ComponentModel customModel = UiExtensionComponentStorage.createComponent(session, realm, model);
-            if (customModel != null) {
-                model = customModel;
+            if (UiExtensionComponentStorage.usesCustomStorage(rep.getProviderType(), rep.getProviderId(), session)) {
+                model = UiExtensionComponentStorage.createComponent(session, realm, model);
+                if (model == null) {
+                    throw new BadRequestException("Failed to create component in custom storage");
+                }
             } else {
                 model = realm.addComponentModel(model);
             }
