@@ -1,6 +1,9 @@
 package org.keycloak.services.resources.admin;
 
+import java.util.LinkedHashMap;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.component.ComponentFactory;
@@ -64,7 +67,14 @@ final class UiExtensionComponentStorage {
                     .filter(factory -> !(factory instanceof ComponentFactory<?, ?> componentFactory
                             && componentFactory.isInternal()))
                     .flatMap(factory -> ((ComponentStorageFactory) factory)
-                            .listComponents(session, realm, parent != null ? parent : realm.getId(), factory.getId()));
+                            .listComponents(session, realm, parent != null ? parent : realm.getId(), factory.getId()))
+                    .collect(Collectors.toMap(
+                            ComponentModel::getId,
+                            component -> component,
+                            (left, right) -> left,
+                            LinkedHashMap::new))
+                    .values()
+                    .stream();
         } catch (IllegalArgumentException e) {
             return null;
         }
@@ -123,21 +133,19 @@ final class UiExtensionComponentStorage {
         return getStorageFactory(session, providerType, providerId) != null;
     }
 
-    static boolean hasOnlyCustomStorageProviders(KeycloakSession session, String type) {
+    static Set<String> getCustomStorageProviderIds(KeycloakSession session, String type) {
         try {
             Class<? extends Provider> providerClass =
                     (Class<? extends Provider>) session.getProviderClass(type);
-            var factories = session.getKeycloakSessionFactory()
+            return session.getKeycloakSessionFactory()
                     .getProviderFactoriesStream(providerClass)
+                    .filter(factory -> factory instanceof ComponentStorageFactory)
                     .filter(factory -> !(factory instanceof ComponentFactory<?, ?> componentFactory
                             && componentFactory.isInternal()))
-                    .toList();
-            if (factories.isEmpty()) {
-                return false;
-            }
-            return factories.stream().allMatch(factory -> factory instanceof ComponentStorageFactory);
+                    .map(ProviderFactory::getId)
+                    .collect(Collectors.toSet());
         } catch (IllegalArgumentException e) {
-            return false;
+            return Set.of();
         }
     }
 
