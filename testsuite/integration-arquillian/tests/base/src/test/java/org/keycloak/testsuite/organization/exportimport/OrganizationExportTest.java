@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import jakarta.ws.rs.core.Response;
@@ -393,7 +392,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
     private void assertPartialExportImport(boolean exportGroupsAndRoles, boolean exportClients) {
         RealmRepresentation export = managedRealm.admin().partialExport(exportGroupsAndRoles, exportClients);
         assertTrue(Optional.ofNullable(export.getOrganizations()).orElse(List.of()).isEmpty());
-        assertTrue(Optional.ofNullable(export.getIdentityProviders()).orElse(List.of()).stream().noneMatch(idp -> Objects.nonNull(idp.getOrganizationId())));
+        assertTrue(Optional.ofNullable(export.getIdentityProviders()).orElse(List.of()).stream().noneMatch(idp -> idp.getOrganizationLinks() != null && !idp.getOrganizationLinks().isEmpty()));
         PartialImportRepresentation rep = new PartialImportRepresentation();
         rep.setUsers(export.getUsers());
         rep.setClients(export.getClients());

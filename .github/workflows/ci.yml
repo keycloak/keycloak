@@ -846,7 +846,7 @@ jobs:
     name: Store IT
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 85
     strategy:
       matrix:
         db: [postgres, mysql, oracle, mssql, mariadb]

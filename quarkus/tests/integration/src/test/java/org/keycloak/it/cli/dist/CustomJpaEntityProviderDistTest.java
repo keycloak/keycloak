@@ -80,7 +80,7 @@ public class CustomJpaEntityProviderDistTest {
         cliResult.assertMessage("jakarta.persistence.jtaDataSource: client-store");
         cliResult.assertMessage("jakarta.persistence.jtaDataSource: new-user-store");
         cliResult.assertMessage("jakarta.persistence.jtaDataSource: pu-without-dialect-store");
-        cliResult.assertMessageWasShownExactlyNumberOfTimes("hibernate.dialect: org.hibernate.dialect.H2Dialect", 4);
+        cliResult.assertMessageWasShownExactlyNumberOfTimes("hibernate.dialect: org.keycloak.connections.jpa.dialect.KeycloakH2Dialect", 4);
 
         cliResult.assertStartedDevMode();
     }

@@ -69,6 +69,9 @@ jobs:
       - name: Setup Java
         uses: ./.github/actions/java-setup
 
+      - name: Restore Maven cache
+        uses: ./.github/actions/maven-cache
+
       - name: Restore Quarkus snapshot cache
         if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
         uses: ./.github/actions/quarkus-snapshot-cache
@@ -93,6 +96,9 @@ jobs:
 
       - name: Setup Java
         uses: ./.github/actions/java-setup
+
+      - name: Restore Maven cache
+        uses: ./.github/actions/maven-cache
 
       - name: Restore Quarkus snapshot cache
         if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
@@ -145,6 +151,9 @@ jobs:
 
       - name: Setup Java
         uses: ./.github/actions/java-setup
+
+      - name: Restore Maven cache
+        uses: ./.github/actions/maven-cache
 
       - name: Restore Quarkus snapshot cache
         if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
@@ -210,6 +219,9 @@ jobs:
 
       - name: Setup Java
         uses: ./.github/actions/java-setup
+
+      - name: Restore Maven cache
+        uses: ./.github/actions/maven-cache
 
       - name: Restore Quarkus snapshot cache
         if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
@@ -280,6 +292,9 @@ jobs:
       - name: Setup Java
         uses: ./.github/actions/java-setup
 
+      - name: Restore Maven cache
+        uses: ./.github/actions/maven-cache
+
       - name: Restore Quarkus snapshot cache
         if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
         uses: ./.github/actions/quarkus-snapshot-cache
@@ -294,7 +309,7 @@ jobs:
           start args: --memory=${{ env.MINIKUBE_MEMORY }} --addons=registry --insecure-registry=192.168.49.0/24
 
       - name: Install OPM / OC
-        uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1.13.1
+        uses: redhat-actions/openshift-tools-installer@37eb3cfb20ac2df6f0511ffa71cd917e4d49cabf # v3.1
         with:
           # openshift-tools-installer is out-of-date for later opm, which started using the binary name opm-rhelX.
           # we may have to do our own installation to move past this
@@ -391,6 +406,9 @@ jobs:
       - name: Setup Java
         uses: ./.github/actions/java-setup
 
+      - name: Restore Maven cache
+        uses: ./.github/actions/maven-cache
+
       - name: Restore Quarkus snapshot cache
         if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
         uses: ./.github/actions/quarkus-snapshot-cache
@@ -405,7 +423,7 @@ jobs:
           start args: --memory=${{ env.MINIKUBE_MEMORY }} --addons=registry --insecure-registry=192.168.49.0/24
 
       - name: Install OPM / OC
-        uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1.13.1
+        uses: redhat-actions/openshift-tools-installer@37eb3cfb20ac2df6f0511ffa71cd917e4d49cabf # v3.1
         with:
           # openshift-tools-installer is out-of-date for later opm, which started using the binary name opm-rhelX.
           # we may have to do our own installation to move past this

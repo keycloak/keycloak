@@ -33,7 +33,7 @@ public class EntityManagerProxyTest {
     public void testClosure() {
         HashSet<EntityManagerProxy> proxies = new HashSet<EntityManagerProxy>();
         EntityManager em = (EntityManager)Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{EntityManager.class}, (proxy, method, args) -> null);
-        EntityManager proxy = EntityManagerProxy.create(em, proxies, false, 1);
+        EntityManager proxy = EntityManagerProxy.create(null, em, proxies, false, 1);
         assertEquals(1, proxies.size());
         proxy.close();
         // once closed, the entity manager should not be tracked

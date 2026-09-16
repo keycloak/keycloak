@@ -24,7 +24,10 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.request.PatchRequest;
 import org.keycloak.scim.protocol.request.SearchRequest;
@@ -32,6 +35,7 @@ import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.Scim;
 import org.keycloak.scim.resource.common.Meta;
+import org.keycloak.scim.resource.spi.MembershipChange;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
 import org.keycloak.scim.resource.spi.SingletonResourceTypeProvider;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
@@ -131,7 +135,6 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     @Consumes({APPLICATION_SCIM_JSON, MediaType.APPLICATION_JSON})
     @Produces(APPLICATION_SCIM_JSON)
     public Response search(SearchRequest searchRequest) {
-        logger.debugf("SCIM SEARCH %s filter=%s", resourceTypeProvider.getName(), searchRequest.getFilter());
         try {
             normalizePagination(searchRequest);
 
@@ -210,6 +213,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
                             .resourcePath(session.getContext().getUri())
                             .representation(updated)
                             .success();
+                    emitMembershipChangeEvents(id);
                     return updated;
                 });
     }
@@ -237,8 +241,34 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
                     .resourcePath(session.getContext().getUri())
                     .representation(patched)
                     .success();
+            emitMembershipChangeEvents(id);
             return patched;
         });
+    }
+
+    /**
+     * Emits a dedicated {@code GROUP_MEMBERSHIP} admin event for each group membership change recorded by the
+     * resource type provider while processing the current PATCH/PUT request, consistently with the equivalent
+     * Admin REST API operation.
+     *
+     * @param id the identifier of the resource (group or user) targeted by the current request, already part of
+     *           the current request URI; the event's resource path is completed with whichever id of the pair
+     *           (group id, user id) is not already {@code id}
+     */
+    private void emitMembershipChangeEvents(String id) {
+        for (MembershipChange change : resourceTypeProvider.pollMembershipChanges()) {
+            String otherId = id.equals(change.user().getId()) ? change.group().getId() : change.user().getId();
+            // reset accumulated details from a previous iteration: detail() is a no-op for blank values,
+            // so a blank value on this change could otherwise inherit the previous change's detail
+            adminEvent.getEvent().setDetails(null);
+            adminEvent.operation(change.added() ? OperationType.CREATE : OperationType.DELETE)
+                    .resource(ResourceType.GROUP_MEMBERSHIP)
+                    .resourcePath(session.getContext().getUri(), otherId)
+                    .representation(ModelToRepresentation.toRepresentation(change.group(), true))
+                    .detail(UserModel.USERNAME, change.user().getUsername())
+                    .detail(UserModel.EMAIL, change.user().getEmail())
+                    .success();
+        }
     }
 
     @SuppressWarnings("unchecked")

@@ -1039,7 +1039,8 @@ public final class KeycloakModelUtils {
      * @return the validated organization if all checks pass, null otherwise
      */
     public static OrganizationModel getOrganizationForIdpMapper(KeycloakSession session, IdentityProviderModel idpModel) {
-        String idpOrgId = idpModel.getOrganizationId();
+        // API migration: use first linked org. Per-mapper orgId is #48948.
+        String idpOrgId = idpModel.getOrganizationIds().stream().findFirst().orElse(null);
         if (idpOrgId == null) {
             return null;
         }

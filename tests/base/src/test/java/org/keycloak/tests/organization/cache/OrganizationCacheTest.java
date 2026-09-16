@@ -321,9 +321,8 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
     public void testCacheIDPByOrg() {
         IdentityProviderRepresentation idpRep = realm.admin().identityProviders().get("orga-identity-provider").toRepresentation();
         idpRep.setInternalId(null);
-        idpRep.setOrganizationId(null);
+        idpRep.setOrganizationLinks(null);
         idpRep.setHideOnLogin(false);
-        idpRep.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
 
         for (int i = 0; i < 10; i++) {
             final String alias = "org-idp-" + i;

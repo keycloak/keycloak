@@ -8,9 +8,8 @@ tileVisible="false"
 preview="true"
 previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
 
-This topic describes a highly available multi-cluster setup and the behavior to expect.
-It outlines the requirements of the high availability architecture and describes the benefits and tradeoffs.
-See <@links.ha id="multi-cluster-v2-introduction" /> for the introduction.
+This topic describes upgrade procedures for multi-cluster v2 deployments.
+See <@links.ha id="multi-cluster-v2-introduction" /> for the introduction and <@links.ha id="multi-cluster-v2-concepts" /> for the architecture overview.
 
 == {project_name} upgrades
 
@@ -29,5 +28,7 @@ For major or minor version upgrades:
 == Database upgrades
 
 Follow your database vendor's zero-downtime upgrade procedure, and possibly combine it with a {project_name} upgrade.
+Ensure that synchronous replication remains configured after the upgrade, as disabling synchronous replication can lead to data loss during failover.
+Verify that the <@links.ha id="multi-cluster-v2-introduction" anchor="multi-cluster-v2-infrastructure-requirements" /> continue to be met after the upgrade.
 
 </@tmpl.guide>

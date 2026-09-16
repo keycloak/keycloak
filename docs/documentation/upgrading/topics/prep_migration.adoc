@@ -28,6 +28,7 @@ Disabling `persistent-user-sessions` is deprecated since {project_name} 26.8 and
 
 [WARNING]
 ====
-Information about failed logins for brute force detection and currently ongoing authentication flows is only stored in the internal caches that are cleared when {project_name} is shut down.
+Information about failed logins for brute force detection is now stored in the database by default since {project_name} 26.8 and survives cluster restarts.
+Currently ongoing authentication flows are only stored in the internal caches that are cleared when {project_name} is shut down.
 Users currently authenticating, changing their passwords, or resetting their passwords will need to restart the authentication flow once {project_name} is up and running again.
 ====

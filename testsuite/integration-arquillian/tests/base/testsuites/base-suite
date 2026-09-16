@@ -4,6 +4,7 @@ authz,3
 broker,2
 client,4
 composites,4
+cluster,IGNORED
 docker,4
 domainextension,4
 exportimport,4
