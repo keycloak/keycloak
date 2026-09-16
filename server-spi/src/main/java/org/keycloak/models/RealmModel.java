@@ -244,6 +244,28 @@ public interface RealmModel extends RoleContainerModel {
         }
         setAttribute("bruteForceLockPolicy", policy.name());
     }
+    /**
+     * Maximum failures for a protected user-property counter before that counter locks.
+     * When unset, {@link #getFailureFactor()} is used so existing realms keep a single threshold.
+     */
+    default int getBruteForcePropertyFailureFactor() {
+        String value = getAttribute("bruteForcePropertyFailureFactor");
+        if (value == null || value.isBlank()) {
+            return getFailureFactor();
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException ignored) {
+            return getFailureFactor();
+        }
+    }
+    default void setBruteForcePropertyFailureFactor(Integer failureFactor) {
+        if (failureFactor == null) {
+            removeAttribute("bruteForcePropertyFailureFactor");
+            return;
+        }
+        setAttribute("bruteForcePropertyFailureFactor", Integer.toString(failureFactor));
+    }
     //--- end brute force settings
 
 

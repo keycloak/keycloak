@@ -175,6 +175,17 @@ export const BruteForceDetection = ({
                 rules: { required: t("required"), min: 0 },
               }}
             />
+            {lockPolicy !== "USER" && (
+              <NumberControl
+                name="bruteForcePropertyFailureFactor"
+                label={t("bruteForcePropertyFailureFactor")}
+                labelIcon={t("bruteForcePropertyFailureFactorHelp")}
+                controller={{
+                  defaultValue: realm.bruteForcePropertyFailureFactor ?? realm.failureFactor ?? 0,
+                  rules: { required: t("required"), min: 0 },
+                }}
+              />
+            )}
             <NumberControl
               name="maxSecondaryAuthFailures"
               label={t("maxSecondaryAuthFailures")}
@@ -199,7 +210,10 @@ export const BruteForceDetection = ({
                 name="bruteForceProtectedUserProperties"
                 label={t("bruteForceProtectedUserProperties")}
                 labelIcon={t("bruteForceProtectedUserPropertiesHelp")}
-                controller={{ defaultValue: [] }}
+                controller={{
+                  defaultValue: [],
+                  rules: { required: t("required") },
+                }}
                 variant={SelectVariant.typeaheadMulti}
                 placeholderText={t(
                   "bruteForceProtectedUserPropertiesPlaceholder",

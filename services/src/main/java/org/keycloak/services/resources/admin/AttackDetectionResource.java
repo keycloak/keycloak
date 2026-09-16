@@ -82,7 +82,6 @@ public class AttackDetectionResource {
      * Get status of a username in brute force detection
      *
      * @param userId user id
-     * @param property optional protected user property to clear; clears every protected property when omitted
      * @return
      */
     @GET
@@ -165,15 +164,18 @@ public class AttackDetectionResource {
         UserLoginFailureModel latestFailure = null;
         int failedLoginNotBefore = 0;
         boolean permanentlyLocked = false;
-        for (UserLoginFailureModel model :
-                BruteForceUserProperty.getLoginFailures(session, realm, user, property).toList()) {
+        for (String failureKey : BruteForceUserProperty.getFailureKeys(realm, user, property)) {
+            UserLoginFailureModel model = session.loginFailures().getUserLoginFailure(realm, failureKey);
+            if (model == null) {
+                continue;
+            }
             data.put("numFailures", Math.max((int) data.get("numFailures"), model.getNumFailures()));
             data.put("numSecondaryAuthFailures",
                     Math.max((int) data.get("numSecondaryAuthFailures"), model.getNumSecondaryAuthFailures()));
             data.put("numTemporaryLockouts",
                     Math.max((int) data.get("numTemporaryLockouts"), model.getNumTemporaryLockouts()));
             failedLoginNotBefore = Math.max(failedLoginNotBefore, model.getFailedLoginNotBefore());
-            permanentlyLocked |= isPermanentlyLockedByFailures(model);
+            permanentlyLocked |= BruteForceUserProperty.isPermanentlyLocked(realm, model, failureKey);
             if (latestFailure == null || model.getLastFailure() > latestFailure.getLastFailure()) {
                 latestFailure = model;
             }
@@ -196,13 +198,6 @@ public class AttackDetectionResource {
         data.put("lastIPFailure", model.getLastIPFailure());
     }
 
-    private boolean isPermanentlyLockedByFailures(UserLoginFailureModel model) {
-        return realm.isPermanentLockout()
-                && (model.getNumTemporaryLockouts() > realm.getMaxTemporaryLockouts()
-                || (realm.getMaxTemporaryLockouts() == 0
-                && model.getNumFailures() >= realm.getFailureFactor()));
-    }
-
     private boolean isUserDisabled(UserLoginFailureModel model, UserModel user) {
         if(user == null) {
             return Time.currentTime() < model.getFailedLoginNotBefore();
@@ -222,6 +217,7 @@ public class AttackDetectionResource {
      * This can release temporary disabled user
      *
      * @param userId
+     * @param property optional protected user property to clear; clears every protected property when omitted
      */
     @Path("brute-force/users/{userId}")
     @DELETE
@@ -254,8 +250,10 @@ public class AttackDetectionResource {
 
         boolean lockedByRemainingCounters = BruteForceUserProperty.getFailureKeys(realm, user).stream()
                 .filter(failureKey -> !clearedKeys.contains(failureKey))
-                .map(failureKey -> session.loginFailures().getUserLoginFailure(realm, failureKey))
-                .anyMatch(model -> model != null && isPermanentlyLockedByFailures(model));
+                .anyMatch(failureKey -> {
+                    UserLoginFailureModel model = session.loginFailures().getUserLoginFailure(realm, failureKey);
+                    return model != null && BruteForceUserProperty.isPermanentlyLocked(realm, model, failureKey);
+                });
 
         boolean removed = false;
         for (String failureKey : clearedKeys) {

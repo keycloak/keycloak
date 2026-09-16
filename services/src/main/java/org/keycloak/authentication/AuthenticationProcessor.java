@@ -772,7 +772,8 @@ public class AuthenticationProcessor {
             if (user != null) {
                 getBruteForceProtector().failedLogin(realm, user, connection, session.getContext().getHttpRequest().getUri(),
                         Optional.ofNullable(AuthenticationManager.getAuthenticationCategory(session, executionId))
-                                .map(Collections::singleton).orElse(null));
+                                .map(Collections::singleton).orElse(null),
+                        authenticationSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME));
             }
         }
     }

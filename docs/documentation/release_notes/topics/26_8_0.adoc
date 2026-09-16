@@ -3,6 +3,10 @@
 
 = Security and Standards
 
+== Lock brute-force attacks by user properties
+
+Brute-force detection can now maintain counters for selected built-in or custom user properties. Failed logins increment the per-user counter and/or only the submitted identifier, each with its own threshold. Reaching either threshold locks the account. The existing per-user behavior remains the default.
+
 == Impersonation audit improvements
 
 As part of ongoing secure-by-default improvements to impersonation, token lifecycle events (`CODE_TO_TOKEN`, `REFRESH_TOKEN`, and others) are now enriched with `impersonator` and `impersonator_id` details, providing a complete audit trail across all token operations performed under impersonation.

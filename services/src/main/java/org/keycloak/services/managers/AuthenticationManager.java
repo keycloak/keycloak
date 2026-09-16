@@ -1770,7 +1770,8 @@ public class AuthenticationManager {
                         user,
                         session.getContext().getConnection(),
                         session.getContext().getHttpRequest().getUri(),
-                        Set.copyOf(AuthenticatorUtil.getAuthnCredentials(authSession))
+                        Set.copyOf(AuthenticatorUtil.getAuthnCredentials(authSession)),
+                        authSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME)
                 );
             }
         }

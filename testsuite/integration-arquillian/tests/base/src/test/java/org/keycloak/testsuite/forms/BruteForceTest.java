@@ -272,15 +272,16 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
             String userId = testUserId();
             String user3Id = adminClient.realm("test").users().search("user3", 0, 1).get(0).getId();
-            Map<String, Object> status = testRealm().attackDetection().bruteForceUserStatus(userId);
+            Map<String, Object> status = adminClient.realm("test").attackDetection().bruteForceUserStatus(userId);
             Map<String, Map<String, Object>> properties =
                     (Map<String, Map<String, Object>>) status.get("properties");
             Assertions.assertEquals(Set.of("id"), properties.keySet());
             Assertions.assertEquals(Boolean.TRUE, status.get("disabled"));
             Assertions.assertEquals(Boolean.FALSE,
-                    testRealm().attackDetection().bruteForceUserStatus(user3Id).get("disabled"));
+                    adminClient.realm("test").attackDetection().bruteForceUserStatus(user3Id).get("disabled"));
             AccessTokenResponse response = oauth.passwordGrantRequest("user3", getPassword("user3")).send();
             Assertions.assertNotNull(response.getAccessToken());
+            events.clear();
             expectTemporarilyDisabled();
         });
     }
@@ -293,23 +294,24 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
             String userId = testUserId();
             String user3Id = adminClient.realm("test").users().search("user3", 0, 1).get(0).getId();
-            expectTemporarilyDisabled("user3", user3Id);
-            assertUserNumberOfFailures(user3Id, failureFactor);
+            Assertions.assertEquals(Boolean.FALSE,
+                    adminClient.realm("test").attackDetection().bruteForceUserStatus(user3Id).get("disabled"));
 
-            Map<String, Object> status = testRealm().attackDetection().bruteForceUserStatus(userId);
+            Map<String, Object> status = adminClient.realm("test").attackDetection().bruteForceUserStatus(userId);
             Map<String, Map<String, Object>> properties =
                     (Map<String, Map<String, Object>>) status.get("properties");
             Assertions.assertEquals(Boolean.TRUE, properties.get("email").get("disabled"));
-            Assertions.assertEquals(Boolean.TRUE, properties.get("department").get("disabled"));
+            Assertions.assertEquals(Boolean.TRUE, properties.get("username").get("disabled"));
+            Assertions.assertEquals(Boolean.FALSE, properties.get("department").get("disabled"));
 
-            testRealm().attackDetection().clearBruteForceForUserByProperty(userId, "email");
-            status = testRealm().attackDetection().bruteForceUserStatus(userId);
+            adminClient.realm("test").attackDetection().clearBruteForceForUserByProperty(userId, "email");
+            status = adminClient.realm("test").attackDetection().bruteForceUserStatus(userId);
             properties = (Map<String, Map<String, Object>>) status.get("properties");
             Assertions.assertEquals(Boolean.FALSE, properties.get("email").get("disabled"));
-            Assertions.assertEquals(Boolean.TRUE, properties.get("department").get("disabled"));
+            Assertions.assertEquals(Boolean.TRUE, properties.get("username").get("disabled"));
             Assertions.assertEquals(Boolean.TRUE, status.get("disabled"));
 
-            testRealm().attackDetection().clearBruteForceForUserByProperty(userId, "department");
+            adminClient.realm("test").attackDetection().clearBruteForceForUserByProperty(userId, "username");
             loginSuccess();
 
             AccessTokenResponse response = oauth.passwordGrantRequest("user2", getPassword("user2")).send();
@@ -326,25 +328,27 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
             String userId = testUserId();
             String user3Id = adminClient.realm("test").users().search("user3", 0, 1).get(0).getId();
-            expectTemporarilyDisabled("user3", user3Id);
+            Assertions.assertEquals(Boolean.FALSE,
+                    adminClient.realm("test").attackDetection().bruteForceUserStatus(user3Id).get("disabled"));
 
-            Map<String, Object> status = testRealm().attackDetection().bruteForceUserStatus(userId);
+            Map<String, Object> status = adminClient.realm("test").attackDetection().bruteForceUserStatus(userId);
             Map<String, Map<String, Object>> properties =
                     (Map<String, Map<String, Object>>) status.get("properties");
-            Assertions.assertEquals(Set.of("id", "email", "department"), properties.keySet());
+            Assertions.assertEquals(Set.of("id", "username", "email", "department"), properties.keySet());
             Assertions.assertEquals(Boolean.TRUE, properties.get("id").get("disabled"));
-            Assertions.assertEquals(Boolean.TRUE, properties.get("department").get("disabled"));
+            Assertions.assertEquals(Boolean.TRUE, properties.get("username").get("disabled"));
+            Assertions.assertEquals(Boolean.TRUE, properties.get("email").get("disabled"));
+            Assertions.assertEquals(Boolean.FALSE, properties.get("department").get("disabled"));
             Assertions.assertEquals(Boolean.TRUE, status.get("disabled"));
 
-            testRealm().attackDetection().clearBruteForceForUserByProperty(userId, "department");
-            Assertions.assertEquals(Boolean.FALSE,
-                    testRealm().attackDetection().bruteForceUserStatus(user3Id).get("disabled"));
             AccessTokenResponse response = oauth.passwordGrantRequest("user3", getPassword("user3")).send();
             Assertions.assertNotNull(response.getAccessToken());
+            events.clear();
             expectTemporarilyDisabled();
 
-            testRealm().attackDetection().clearBruteForceForUserByProperty(userId, "email");
-            testRealm().attackDetection().clearBruteForceForUserByProperty(userId, "id");
+            adminClient.realm("test").attackDetection().clearBruteForceForUserByProperty(userId, "email");
+            adminClient.realm("test").attackDetection().clearBruteForceForUserByProperty(userId, "username");
+            adminClient.realm("test").attackDetection().clearBruteForceForUserByProperty(userId, "id");
             loginSuccess();
         });
     }
@@ -361,20 +365,20 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
     private void withSharedPropertyLockPolicy(RealmRepresentation.BruteForceLockPolicy policy,
             LockPolicyBody test) throws Exception {
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = adminClient.realm("test").toRepresentation();
         try {
-            realm.setBruteForceProtectedUserProperties(List.of("email", "department"));
+            realm.setBruteForceProtectedUserProperties(List.of("username", "email", "department"));
             realm.setBruteForceLockPolicy(policy);
-            testRealm().update(realm);
+            adminClient.realm("test").update(realm);
 
-            RealmRepresentation stored = testRealm().toRepresentation();
-            Assertions.assertEquals(List.of("email", "department"), stored.getBruteForceProtectedUserProperties());
+            RealmRepresentation stored = adminClient.realm("test").toRepresentation();
+            Assertions.assertEquals(List.of("username", "email", "department"), stored.getBruteForceProtectedUserProperties());
             Assertions.assertEquals(policy, stored.getBruteForceLockPolicy());
             test.run();
         } finally {
             realm.setBruteForceProtectedUserProperties(Collections.emptyList());
             realm.setBruteForceLockPolicy(RealmRepresentation.BruteForceLockPolicy.USER);
-            testRealm().update(realm);
+            adminClient.realm("test").update(realm);
             clearAllUserFailures();
         }
     }

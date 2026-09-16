@@ -37,7 +37,9 @@ import org.keycloak.models.UserModel;
  *
  * <p>The realm {@link org.keycloak.representations.idm.RealmRepresentation.BruteForceLockPolicy}
  * decides whether login is locked by the per-user id counter, by selected user properties,
- * or by either. Property counters are shared by every user with the same property value.
+ * or by either. Failed attempts increment the user-id counter and/or the submitted
+ * identifier's property counter. Reaching either independently configured threshold locks
+ * the account. Property counters are shared by every user with the same property value.
  * Counter keys store a digest of the value rather than the raw attribute.</p>
  */
 public final class BruteForceUserProperty {
@@ -54,6 +56,62 @@ public final class BruteForceUserProperty {
             keys.addAll(getFailureKeys(realm, user, property));
         }
         return List.copyOf(keys);
+    }
+
+    /**
+     * Counters to increment for this login attempt. {@code USER} always uses the user id.
+     * {@code PROPERTIES} increments only property counters whose current value matches
+     * {@code attemptedIdentifier}. {@code ANY} increments the user id and any matching
+     * property counters.
+     */
+    public static List<String> getFailureKeysForAttempt(RealmModel realm, UserModel user, String attemptedIdentifier) {
+        return switch (realm.getBruteForceLockPolicy()) {
+            case PROPERTIES -> getMatchingPropertyKeys(realm, user, attemptedIdentifier);
+            case ANY -> {
+                Set<String> keys = new LinkedHashSet<>();
+                keys.add(user.getId());
+                keys.addAll(getMatchingPropertyKeys(realm, user, attemptedIdentifier));
+                yield List.copyOf(keys);
+            }
+            default -> List.of(user.getId());
+        };
+    }
+
+    public static List<String> getMatchingPropertyKeys(RealmModel realm, UserModel user, String attemptedIdentifier) {
+        if (attemptedIdentifier == null || attemptedIdentifier.isBlank()) {
+            return List.of();
+        }
+        Set<String> keys = new LinkedHashSet<>();
+        for (String property : getProtectedProperties(realm)) {
+            if (ID.equals(property)) {
+                if (attemptedIdentifier.equals(user.getId())) {
+                    keys.add(user.getId());
+                }
+                continue;
+            }
+            String attempted = normalize(property, attemptedIdentifier);
+            values(user, property)
+                    .filter(value -> value != null && !value.isBlank())
+                    .map(value -> normalize(property, value))
+                    .filter(attempted::equals)
+                    .map(value -> propertyKey(property, value))
+                    .forEach(keys::add);
+        }
+        return List.copyOf(keys);
+    }
+
+    public static int getFailureFactor(RealmModel realm, String failureKey) {
+        if (failureKey != null && failureKey.startsWith(PROPERTY_KEY_PREFIX)) {
+            return realm.getBruteForcePropertyFailureFactor();
+        }
+        return realm.getFailureFactor();
+    }
+
+    public static boolean isPermanentlyLocked(RealmModel realm, UserLoginFailureModel model, String failureKey) {
+        return realm.isPermanentLockout()
+                && (model.getNumTemporaryLockouts() > realm.getMaxTemporaryLockouts()
+                || (realm.getMaxTemporaryLockouts() == 0
+                && model.getNumFailures() >= getFailureFactor(realm, failureKey)));
     }
 
     public static List<String> getProtectedProperties(RealmModel realm) {
