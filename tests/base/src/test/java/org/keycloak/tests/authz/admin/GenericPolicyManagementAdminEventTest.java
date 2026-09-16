@@ -17,9 +17,9 @@
 package org.keycloak.tests.authz.admin;
 
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
-import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ManagedRealm;
+
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -27,17 +27,13 @@ import org.keycloak.testframework.realm.ManagedRealm;
 @KeycloakIntegrationTest
 public class GenericPolicyManagementAdminEventTest extends GenericPolicyManagementTest {
 
-    @InjectRealm
-    ManagedRealm managedRealm;
-
-    @Override
-    protected void afterAbstractKeycloakTestRealmImport() {
-        super.afterAbstractKeycloakTestRealmImport();
+    @BeforeEach
+    public void enableAdminEvents() {
         RealmEventsConfigRepresentation rep = new RealmEventsConfigRepresentation();
 
         rep.setAdminEventsEnabled(true);
         rep.setEventsEnabled(true);
 
-        managedRealm.admin().updateRealmEventsConfig(rep);
+        adminClient.realm("authz-test").updateRealmEventsConfig(rep);
     }
 }

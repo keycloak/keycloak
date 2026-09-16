@@ -30,13 +30,11 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
-import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
-import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.AbstractClientTest;
+import org.keycloak.tests.authz.AbstractAuthzTest;
 
 import org.junit.jupiter.api.AfterEach;
 
@@ -46,14 +44,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 @KeycloakIntegrationTest
-public abstract class AbstractAuthorizationTest extends AbstractClientTest {
-
-    @InjectRealm
-    ManagedRealm managedRealm;
+public abstract class AbstractAuthorizationTest extends AbstractAuthzTest {
 
     protected static final String RESOURCE_SERVER_CLIENT_ID = "resource-server-test";
 
-    @Override
     protected String getRealmId() {
         return "authz-test";
     }
@@ -77,16 +71,14 @@ public abstract class AbstractAuthorizationTest extends AbstractClientTest {
         return getClientResource().toRepresentation();
     }
 
-    @Override
     protected ClientResource findClientResource(String name) {
-        ClientsResource clients = managedRealm.admin().clients();
+        ClientsResource clients = adminClient.realm(getRealmId()).clients();
         return clients.findByClientId(name).stream()
                 .map(representation -> clients.get(representation.getId()))
                 .findFirst()
                 .orElse(null);
     }
 
-    @Override
     protected ClientRepresentation findClientRepresentation(String name) {
         ClientResource client = findClientResource(name);
         return client != null ? client.toRepresentation() : null;
