@@ -652,9 +652,16 @@ class KeycloakProcessor {
             return true;
         }
         Properties properties = descriptor.getProperties();
-        return properties != null && Optional.ofNullable(properties.getProperty(AvailableSettings.JAKARTA_TRANSACTION_TYPE))
+        if (properties == null) {
+            return false;
+        }
+        boolean isJakartaResourceLocal = Optional.ofNullable(properties.getProperty(AvailableSettings.JAKARTA_TRANSACTION_TYPE))
                 .map(f -> f.equalsIgnoreCase(PersistenceUnitTransactionType.RESOURCE_LOCAL.name()))
                 .orElse(false);
+        boolean isJavaxResourceLocal = Optional.ofNullable(properties.getProperty(AvailableSettings.JPA_TRANSACTION_TYPE))
+                .map(f -> f.equalsIgnoreCase(PersistenceUnitTransactionType.RESOURCE_LOCAL.name()))
+                .orElse(false);
+        return isJakartaResourceLocal || isJavaxResourceLocal;
     }
 
     @BuildStep
