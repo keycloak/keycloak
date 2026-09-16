@@ -36,6 +36,7 @@ import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthen
 import org.keycloak.authentication.authenticators.browser.WebAuthnConditionalUIAuthenticator;
 import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.email.freemarker.beans.ProfileBean;
+import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
@@ -132,11 +133,24 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
         UserModel user = context.getUser();
 
+        if (username != null) {
+            username = username.trim();
+        }
+
         if (user == null && isBlank(username)) {
             initialChallenge(context, form -> {
                 form.addError(new FormMessage(UserModel.USERNAME, Messages.INVALID_USERNAME));
                 return form.createLoginUsername();
             });
+            return;
+        }
+
+        if (AuthenticatorUtils.isUsernameTooLong(username)) {
+            context.getEvent().error(Errors.USER_NOT_FOUND);
+            Response challengeResponse = context.form()
+                .addError(new FormMessage(UserModel.USERNAME, Messages.INVALID_USERNAME))
+                .createLoginUsername();
+            context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
 

@@ -173,6 +173,13 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         // remove leading and trailing whitespace
         username = username.trim();
 
+        if (AuthenticatorUtils.isUsernameTooLong(username)) {
+            context.getEvent().error(Errors.USER_NOT_FOUND);
+            Response challengeResponse = challenge(context, getDefaultChallengeMessage(context), FIELD_USERNAME);
+            context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
+            return null;
+        }
+
         context.getEvent().detail(Details.USERNAME, username);
         context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
 

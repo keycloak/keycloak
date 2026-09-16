@@ -40,6 +40,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectHttpClient;
@@ -1145,6 +1146,60 @@ public class LoginTest {
 
         errorPage.assertCurrent();
         assertThat(errorPage.getError(), containsString("Account is disabled"));
+    }
+
+    @Test
+    public void loginMaxLengthUsername() {
+        oauth.openLoginForm();
+        loginPage.fillLogin("a".repeat(Validation.MAX_USERNAME_LENGTH + 1), "invalid");
+        loginPage.submit();
+
+        loginPage.assertCurrent();
+
+        assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
+
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .userId(null)
+                .sessionId(null)
+                .error(Errors.USER_NOT_FOUND)
+                .withoutDetails(Details.USERNAME);
+    }
+
+    @Test
+    public void loginExactMaxLengthUsername() {
+        oauth.openLoginForm();
+        loginPage.fillLogin("a".repeat(Validation.MAX_USERNAME_LENGTH), "invalid");
+        loginPage.submit();
+
+        loginPage.assertCurrent();
+
+        assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
+
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .userId(null)
+                .sessionId(null)
+                .error(Errors.USER_NOT_FOUND)
+                .details(Details.USERNAME, "a".repeat(Validation.MAX_USERNAME_LENGTH));
+    }
+
+    @Test
+    public void loginWhitespaceOnlyUsername() {
+        oauth.openLoginForm();
+        loginPage.fillLogin("   ", "invalid");
+        loginPage.submit();
+
+        loginPage.assertCurrent();
+
+        assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
+
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .userId(null)
+                .sessionId(null)
+                .error(Errors.USER_NOT_FOUND)
+                .withoutDetails(Details.USERNAME);
     }
 
     static class DynamicScopeServerConfig implements KeycloakServerConfig {
