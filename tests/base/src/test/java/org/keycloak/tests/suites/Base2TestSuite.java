@@ -51,7 +51,8 @@ public class Base2TestSuite {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.AUTHORIZATION, Profile.Feature.SCRIPTS);
+            return config.features(Profile.Feature.AUTHORIZATION, Profile.Feature.SCRIPTS)
+                    .dependency("org.keycloak.tests", "keycloak-tests-custom-providers");
         }
     }
 }

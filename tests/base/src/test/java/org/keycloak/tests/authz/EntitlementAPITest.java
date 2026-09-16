@@ -89,7 +89,6 @@ import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
-import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -178,7 +177,6 @@ public class EntitlementAPITest extends AbstractAuthzTest {
                         .secret("secret")
                         .redirectUris("http://localhost:8180/auth/realms/master/app/auth/*", "https://localhost:8543/auth/realms/master/app/auth/*")
                         .publicClient())
-                .eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID)
                 .build());
 
         configureSectorIdentifierRedirectUris();
