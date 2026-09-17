@@ -127,7 +127,7 @@ public class ParTest extends AbstractClientPoliciesTest {
     // PAR object needs to be valid for the time of PAR lifespan together with the authenticationSession time as
     // (See https://github.com/keycloak/keycloak/issues/48072 for the details)
     @Test
-    public void requestUriLifetimeDoesNotLimitAuthenticationSessionLength() throws Exception {
+    public void requestUriLifetimeDoesNotLimitAuthenticationSessionLength() {
         String origRedirectUri = oauth.getRedirectUri();
 
         // Pushed Authorization Request
@@ -152,9 +152,8 @@ public class ParTest extends AbstractClientPoliciesTest {
         AuthorizationEndpointResponse loginResponse = oauth.parseLoginResponse();
         assertEquals(state, loginResponse.getState());
         String code = loginResponse.getCode();
-        String sessionId =loginResponse.getSessionState();
 
-        // For this test it's enough to check that Code2Token succesds
+        // For this test it's enough to check that Code2Token succeeds
         oauth.redirectUri(origRedirectUri); // get tokens, it needed. https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
