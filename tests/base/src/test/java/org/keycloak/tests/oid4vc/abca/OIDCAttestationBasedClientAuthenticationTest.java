@@ -16,20 +16,28 @@
  */
 package org.keycloak.tests.oid4vc.abca;
 
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ClientAttestationJwt;
 import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ClientAttestationPoPJwt;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderConfig;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderFactory;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.crypto.AsymmetricSignatureSignerContext;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.Proofs;
@@ -46,11 +54,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_HEADER;
+import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_JWT_TYPE;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_POP_HEADER;
 import static org.keycloak.protocol.oidc.OIDCLoginProtocol.ATTEST_JWT_CLIENT_AUTH;
+import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.createCaCertificate;
+import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.createEndEntityCertificate;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.createRsaKeyPair;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CLIENT_ATTESTER_ATTACHMENT_KEY;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -193,5 +205,87 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
                 .send().getCredentialResponse();
 
         assertFalse(credResponse.getCredentials().isEmpty(), "No credential");
+    }
+
+    @Test
+    public void testClientAttestationHappyFlowWithX5c() throws Exception {
+        runX5cAttestationTest("Test CA", "Test CA", true);
+    }
+
+    @Test
+    public void testClientAttestationX5cUntrustedChainIsRejected() throws Exception {
+        runX5cAttestationTest("Trusted CA", "Untrusted CA", false);
+    }
+
+    private void runX5cAttestationTest(String trustedCaName, String signingCaName, boolean expectSuccess) throws Exception {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+        kpg.initialize(2048);
+
+        KeyPair trustedCaKeyPair = kpg.generateKeyPair();
+        X509Certificate trustedCaCert = createCaCertificate(trustedCaKeyPair, trustedCaName);
+
+        KeyPair signingCaKeyPair = trustedCaName.equals(signingCaName)
+                ? trustedCaKeyPair
+                : kpg.generateKeyPair();
+        X509Certificate signingCaCert = trustedCaName.equals(signingCaName)
+                ? trustedCaCert
+                : createCaCertificate(signingCaKeyPair, signingCaName);
+
+        var attesterKw = createRsaKeyPair("openid-abca-attester-x5c-" + signingCaName.replace(" ", "-"));
+        KeyPair attesterKeyPair = new KeyPair((PublicKey) attesterKw.getPublicKey(), (PrivateKey) attesterKw.getPrivateKey());
+        X509Certificate attesterCert = createEndEntityCertificate(attesterKeyPair, signingCaKeyPair, signingCaCert, "ABCA Test Attester");
+        attesterKw.setCertificate(attesterCert);
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            configureTrustIdentityProvider(realm, OAUTH_CLIENT_ATTESTATION_DEFAULT_TRUST_IDP_ALIAS,
+                    DefaultTrustIdentityProviderFactory.PROVIDER_ID,
+                    Map.of(DefaultTrustIdentityProviderConfig.USE_X509, "true",
+                            DefaultTrustIdentityProviderConfig.TRUSTED_CERTIFICATES,
+                            PemUtils.encodeCertificate(trustedCaCert)));
+        });
+
+        var ctx = new OID4VCTestContext(abcaClient, sdJwtTypeCredentialScope);
+        var walletKey = wallet.getRSAKeyPair(ctx);
+        JWK walletJwk = JWKBuilder.create()
+                .kid(walletKey.getKid())
+                .algorithm(walletKey.getAlgorithm())
+                .rsa(walletKey.getPublicKey());
+        ClientAttestationJwt body = new ClientAttestationJwt()
+                .issuer("https://example.com/mock-attester")
+                .subject(abcaClient.getClientId())
+                .confirmation(walletJwk)
+                .issuedNowWithTTL(300);
+
+        String attestationJwt = new JWSBuilder()
+                .type(OAUTH_CLIENT_ATTESTATION_JWT_TYPE)
+                .x5c(List.of(attesterCert))
+                .jsonContent(body)
+                .sign(new AsymmetricSignatureSignerContext(attesterKw));
+
+        String attestationPoPJwt = wallet.buildClientAttestationPoPJWT(ctx, walletKey);
+        KeyWrapper ecKey = wallet.getECKeyPair(ctx);
+
+        AuthorizationEndpointResponse authResponse = wallet.authorizationRequest()
+                .scope(ctx.getScope())
+                .send(ctx.getHolder(), TEST_PASSWORD);
+        String authCode = authResponse.getCode();
+        assertNotNull(authCode, "No auth code");
+
+        String tokenEndpoint = oauth.getEndpoints().getToken();
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode)
+                .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
+                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
+                .dpopProof(wallet.generateSignedDPoPProof(tokenEndpoint, ecKey, null))
+                .send();
+
+        if (expectSuccess) {
+            assertNull(tokenResponse.getErrorDescription(), "Token request error: " + tokenResponse.getErrorDescription());
+            assertNotNull(tokenResponse.getAccessToken(), "No access token");
+        } else {
+            assertEquals(OAuthErrorException.INVALID_CLIENT_ATTESTATION, tokenResponse.getError(),
+                    "Expected the untrusted x5c chain to be rejected with invalid_client_attestation");
+            assertNull(tokenResponse.getAccessToken(), "Untrusted x5c chain must not yield an access token");
+        }
     }
 }

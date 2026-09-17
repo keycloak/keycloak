@@ -37,6 +37,7 @@ import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.broker.provider.TrustMaterialRequest;
 import org.keycloak.broker.provider.TrustMaterialResolver;
 import org.keycloak.common.Profile;
+import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -307,10 +308,8 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
     // Private ---------------------------------------------------------------------------------------------------------
 
-    private KeyWrapper findAttesterKey(ClientAuthenticationFlowContext context, String kid, String algorithm, String issuer) {
-
-        if (Strings.isEmpty(kid))
-            throw new IllegalArgumentException("Invalid attester kid: " + kid);
+    private KeyWrapper findAttesterKey(ClientAuthenticationFlowContext context, String kid, List<String> x5c,
+            String algorithm, String issuer) throws VerificationException {
 
         String configValue = Optional.ofNullable(context.getClient())
                 .map(client -> client.getAttribute(OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS))
@@ -323,7 +322,19 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
                 .algorithm(algorithm)
                 .issuer(issuer)
                 .build();
-        JWK jwk = new TrustMaterialResolver().resolveKey(context.getSession(), configValue, request)
+        TrustMaterialResolver resolver = new TrustMaterialResolver();
+
+        if (x5c != null && !x5c.isEmpty()) {
+            JWK jwk = resolver.validateX509Chain(context.getSession(), configValue, request, x5c, algorithm);
+            if (jwk == null)
+                throw new IllegalStateException("No X.509 trust anchors are configured to validate the x5c chain in: " + OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS);
+            return toPublicKeyWrapper(jwk);
+        }
+
+        if (Strings.isEmpty(kid))
+            throw new IllegalArgumentException("Invalid attester kid: " + kid);
+
+        JWK jwk = resolver.resolveKey(context.getSession(), configValue, request)
                 .orElseThrow(() -> new IllegalStateException("No matching key found for kid: " + kid));
 
         return toPublicKeyWrapper(jwk);
@@ -393,7 +404,7 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
         // The signature of the Client Attestation JWT verifies with the public key of a known and trusted Attester
         //
-        KeyWrapper attesterKey = findAttesterKey(context, jws.getHeader().getKeyId(), jws.getHeader().getRawAlgorithm(), attestationJwt.getIssuer());
+        KeyWrapper attesterKey = findAttesterKey(context, jws.getHeader().getKeyId(), jws.getHeader().getX5c(), jws.getHeader().getRawAlgorithm(), attestationJwt.getIssuer());
 
         // Client Attestation JWT verification without signature check
         //
