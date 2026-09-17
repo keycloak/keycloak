@@ -77,9 +77,9 @@ public class UmaDiscoveryDocumentTest extends AbstractAuthzTest {
             UmaConfiguration configuration = response.readEntity(UmaConfiguration.class);
 
             assertEquals(configuration.getAuthorizationEndpoint(), OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(authServerRoot)).build("test").toString());
-            assertEquals(configuration.getTokenEndpoint(), oauth.getEndpoints().getToken());
-            assertEquals(configuration.getJwksUri(), oauth.getEndpoints().getJwks());
-            assertEquals(configuration.getIntrospectionEndpoint(), oauth.getEndpoints().getIntrospection());
+            assertEquals(configuration.getTokenEndpoint(), OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(authServerRoot)).build("test").toString());
+            assertEquals(configuration.getJwksUri(), OIDCLoginProtocolService.jwksUrl(UriBuilder.fromUri(authServerRoot)).build("test").toString());
+            assertEquals(configuration.getIntrospectionEndpoint(), OIDCLoginProtocolService.tokenIntrospectionUrl(UriBuilder.fromUri(authServerRoot)).build("test").toString());
 
             String registrationUri = UriBuilder
                     .fromUri(authServerRoot)

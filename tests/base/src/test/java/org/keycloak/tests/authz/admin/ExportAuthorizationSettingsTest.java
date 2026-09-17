@@ -142,17 +142,18 @@ public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
         ClientResource clientResource = getClientResource();
         AuthorizationResource authorizationResource = clientResource.authorization();
 
-        managedRealm.admin().clients().create(ClientBuilder.create().clientId("test-client-1").build()).close();
-        managedRealm.admin().clients().create(ClientBuilder.create().clientId("test-client-2").build()).close();
+        var clients = adminClient.realm(getRealmId()).clients();
+        clients.create(ClientBuilder.create().clientId("test-client-1").build()).close();
+        clients.create(ClientBuilder.create().clientId("test-client-2").build()).close();
 
         ClientRepresentation client1 = getClientByClientId("test-client-1");
         ClientRepresentation client2 = getClientByClientId("test-client-2");
 
-        managedRealm.admin().clients().get(client1.getId()).roles().create(RoleBuilder.create().name("client-role").build());
-        managedRealm.admin().clients().get(client2.getId()).roles().create(RoleBuilder.create().name("client-role").build());
+        clients.get(client1.getId()).roles().create(RoleBuilder.create().name("client-role").build());
+        clients.get(client2.getId()).roles().create(RoleBuilder.create().name("client-role").build());
 
-        RoleRepresentation role1 = managedRealm.admin().clients().get(client1.getId()).roles().get("client-role").toRepresentation();
-        RoleRepresentation role2 = managedRealm.admin().clients().get(client2.getId()).roles().get("client-role").toRepresentation();
+        RoleRepresentation role1 = clients.get(client1.getId()).roles().get("client-role").toRepresentation();
+        RoleRepresentation role2 = clients.get(client2.getId()).roles().get("client-role").toRepresentation();
         
         PolicyRepresentation policy = new PolicyRepresentation();
         policy.setName("role-based-policy");
@@ -181,7 +182,7 @@ public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
     }
     
     private ClientRepresentation getClientByClientId(String clientId) {
-        List<ClientRepresentation> findByClientId = managedRealm.admin().clients().findByClientId(clientId);
+        List<ClientRepresentation> findByClientId = adminClient.realm(getRealmId()).clients().findByClientId(clientId);
         Assertions.assertTrue(findByClientId.size() == 1);
         return findByClientId.get(0);
     }
