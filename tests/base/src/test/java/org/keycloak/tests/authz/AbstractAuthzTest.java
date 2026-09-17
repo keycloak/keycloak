@@ -24,7 +24,6 @@ import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 
 import org.junit.jupiter.api.AfterEach;
@@ -33,7 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 /**
  * @author mhajas
  */
-public abstract class AbstractAuthzTest extends AbstractKeycloakTest {
+public abstract class AbstractAuthzTest extends AuthzTestRealmSupport {
 
     private final List<String> importedRealmNames = new ArrayList<>();
 
@@ -45,7 +44,7 @@ public abstract class AbstractAuthzTest extends AbstractKeycloakTest {
 
     @BeforeEach
     public void beforeAuthzTest() {
-        super.adminClient = adminClient;
+        this.adminClient = adminClient;
         getTestingClient();
         runOnServerMaster = testingClient.server();
         runOnServer = testingClient.server("test");
@@ -95,12 +94,6 @@ public abstract class AbstractAuthzTest extends AbstractKeycloakTest {
         }
     }
 
-    @Override
-    public Keycloak getAdminClient() {
-        return adminClient;
-    }
-
-    @Override
     public KeycloakTestingClient getTestingClient() {
         if (testingClient == null) {
             String authServerRoot = oauth.getBaseUrl();
@@ -194,9 +187,19 @@ public abstract class AbstractAuthzTest extends AbstractKeycloakTest {
     }
 
     protected Events createEvents(String realmName) {
-        RealmRepresentation realmRepresentation = new RealmRepresentation();
-        realmRepresentation.setRealm(realmName);
-        Events events = new Events(new ManagedRealm(oauth.getBaseUrl() + "/realms/" + realmName, realmRepresentation, adminClient.realm(realmName)));
+        String authServerRoot = oauth.getBaseUrl();
+        int realmSegmentIndex = authServerRoot.indexOf("/realms/");
+        if (realmSegmentIndex >= 0) {
+            authServerRoot = authServerRoot.substring(0, realmSegmentIndex);
+        }
+
+        RealmRepresentation realmRepresentation = adminClient.realm(realmName).toRepresentation();
+        if (!Boolean.TRUE.equals(realmRepresentation.isEventsEnabled())) {
+            realmRepresentation.setEventsEnabled(true);
+            adminClient.realm(realmName).update(realmRepresentation);
+        }
+
+        Events events = new Events(new ManagedRealm(authServerRoot + "/realms/" + realmName, realmRepresentation, adminClient.realm(realmName)));
         events.skipAll();
         return events;
     }

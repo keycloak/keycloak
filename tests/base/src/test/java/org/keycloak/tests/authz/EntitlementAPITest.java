@@ -96,8 +96,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.container.test.api.ContainerController;
-import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -136,9 +134,6 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     private static final String PUBLIC_TEST_CLIENT_CONFIG = "default-keycloak-public-client.json";
 
     private AuthzClient authzClient;
-
-    @ArquillianResource
-    protected ContainerController controller;
 
     private Events events;
 
@@ -1958,12 +1953,6 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
         AccessTokenResponse response = authzClient.authorization(accessToken).authorize();
         assertNotNull(response.getToken());
-
-        if (controller != null && suiteContext != null) {
-            controller.stop(suiteContext.getAuthServerInfo().getQualifier());
-            controller.start(suiteContext.getAuthServerInfo().getQualifier());
-            configureSectorIdentifierRedirectUris();
-        }
 
         TokenIntrospectionResponse introspectionResponse = authzClient.protection().introspectRequestingPartyToken(response.getToken());
 
