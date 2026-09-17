@@ -7,6 +7,7 @@ import org.keycloak.testframework.clustering.LoadBalancer;
 import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.tests.providers.components.TestComponentProvider;
 
 /**
  * Minimal per-node testing client wrapper for migrated cluster tests.
@@ -72,9 +73,11 @@ public class ClusterTestingClient {
             this.realmName = realmName;
         }
 
-        public Map<String, Map<String, Object>> getTestAmphibianComponentDetails() {
-            throw new UnsupportedOperationException(
-                    "Testing endpoint is not available in the migrated cluster tests for realm " + realmName);
+        public Map<String, TestComponentProvider.DetailsRepresentation> getTestComponentDetails() {
+            ClusterComponentTestTasks.ComponentDetailsMap details = onNode(() -> runOnServer.fetch(
+                    new ClusterComponentTestTasks.AllComponentDetails(realmName),
+                    ClusterComponentTestTasks.ComponentDetailsMap.class));
+            return details.getDetails();
         }
     }
 }
