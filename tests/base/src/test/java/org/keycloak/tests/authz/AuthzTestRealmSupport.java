@@ -20,11 +20,12 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 
 import org.jboss.logging.Logger;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Realm import helpers for migrated authz tests without inheriting the legacy Arquillian runner.
