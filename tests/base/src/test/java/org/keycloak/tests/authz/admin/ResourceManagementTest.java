@@ -40,12 +40,13 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -301,13 +302,14 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
         assertEquals(2, attributes.get("c").size());
     }
 
-    @Test(expected = NotFoundException.class)
+    @Test
     public void testDelete() {
         ResourceRepresentation resource = createResource();
 
         doRemoveResource(resource);
 
-        getClientResource().authorization().resources().resource(resource.getId()).toRepresentation();
+        assertThrows(NotFoundException.class,
+                () -> getClientResource().authorization().resources().resource(resource.getId()).toRepresentation());
     }
 
     @Test
