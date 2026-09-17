@@ -16,7 +16,6 @@
  */
 package org.keycloak.tests.authz;
 
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,7 +29,6 @@ import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -42,7 +40,6 @@ import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -77,7 +74,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE;
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE;
-import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -636,9 +632,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         assertNotNull(refreshTokenToken.getAuthorization());
 
         Client client = AdminClientUtil.createResteasyClient();
-        UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
-        URI uri = OIDCLoginProtocolService.tokenUrl(builder).build(REALM_NAME);
-        WebTarget target = client.target(uri);
+        WebTarget target = client.target(oauth.newConfig().realm(REALM_NAME).getEndpoints().getToken());
 
         Form parameters = new Form();
 

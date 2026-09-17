@@ -68,6 +68,10 @@ public abstract class AuthzTestRealmSupport {
         for (RealmRepresentation testRealm : testRealmReps) {
             importRealm(testRealm);
         }
+        afterImportTestRealms();
+    }
+
+    protected void afterImportTestRealms() {
     }
 
     private void addTestRealmsInternal() {

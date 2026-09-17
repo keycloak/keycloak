@@ -89,8 +89,7 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
     }
 
     @Override
-    public void importTestRealms() {
-        super.importTestRealms();
+    protected void afterImportTestRealms() {
         koloId = adminClient.realm(REALM_NAME).users().search("kolo", true).get(0).getId();
         martaId = adminClient.realm(REALM_NAME).users().search("marta", true).get(0).getId();
     }
