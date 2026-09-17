@@ -78,6 +78,7 @@ import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticationAssertionExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureClientUrisExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureClientUrisExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureLogoutExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureParContentsExecutorFactory;
@@ -1426,6 +1427,52 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
             assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getError());
             assertEquals("Invalid policyUri", e.getErrorDetail());
         }
+    }
+
+    @Test
+    public void testSecureClientUrisExecutorAllowHttpOnLocalhost() throws Exception {
+        String loopbackRedirectUri = "http://localhost:8080/callback";
+        String localhostPrefixedRedirectUri = "http://localhost.attacker.example.com/callback";
+        String clientId = generateSuffixedName(CLIENT_NAME);
+
+        // the client is registered before the policy, so that only the authorization request is enforced
+        createClientByAdmin(clientId, (ClientRepresentation clientRep) ->
+                clientRep.setRedirectUris(Arrays.asList(loopbackRedirectUri, localhostPrefixedRedirectUri)));
+
+        // register profiles
+        SecureClientUrisExecutor.Configuration executorConfig = new SecureClientUrisExecutor.Configuration();
+        executorConfig.setAllowHttpOnLocalhost(true);
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "secure-profile-http")
+                        .addExecutor(SecureClientUrisExecutorFactory.PROVIDER_ID, executorConfig)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "secure-policy-http", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        oauth.client(clientId);
+
+        // a real loopback address over HTTP is accepted
+        oauth.redirectUri(loopbackRedirectUri);
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+
+        // the localhost exception must not be granted to a host which starts with "localhost"
+        oauth.redirectUri(localhostPrefixedRedirectUri);
+        oauth.openLoginForm();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Invalid redirect_uri")
+                .clientId(clientId);
     }
 
     @Test
