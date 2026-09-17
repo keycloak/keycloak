@@ -37,14 +37,14 @@ public abstract class AbstractAuthzTest extends AuthzTestRealmSupport {
     private final List<String> importedRealmNames = new ArrayList<>();
 
     @InjectAdminClient
-    protected Keycloak adminClient;
+    protected Keycloak injectedAdminClient;
 
     @InjectOAuthClient
     protected OAuthClient oauth;
 
     @BeforeEach
     public void beforeAuthzTest() {
-        this.adminClient = adminClient;
+        adminClient = injectedAdminClient;
         getTestingClient();
         runOnServerMaster = testingClient.server();
         runOnServer = testingClient.server("test");
