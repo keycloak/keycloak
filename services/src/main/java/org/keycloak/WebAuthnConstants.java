@@ -53,6 +53,7 @@ public interface WebAuthnConstants {
     String TRANSPORTS = "transports";
     String ENABLE_WEBAUTHN_CONDITIONAL_UI = "enableWebAuthnConditionalUI";
     String MEDIATION = "mediation";
+    String HINTS = "hints";
 
     String IS_SET_RETRY = "isSetRetry";
     String SHOULD_DISPLAY_AUTHENTICATORS = "shouldDisplayAuthenticators";

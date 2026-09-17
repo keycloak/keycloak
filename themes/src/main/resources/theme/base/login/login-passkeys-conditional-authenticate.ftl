@@ -109,6 +109,7 @@
                 isUserIdentified : ${isUserIdentified},
                 challenge : ${challenge?c},
                 userVerification : ${userVerification?c},
+                hints : [<#list (hints![]) as hint>${hint?c}<#sep>, </#sep></#list>],
                 rpId : ${rpId?c},
                 createTimeout : ${createTimeout?c},
                 errmsg : ${msg("webauthn-unsupported-browser-text")?c}
@@ -121,6 +122,7 @@
                 isUserIdentified : ${isUserIdentified},
                 challenge : ${challenge?c},
                 userVerification : ${userVerification?c},
+                hints : [<#list (hints![]) as hint>${hint?c}<#sep>, </#sep></#list>],
                 rpId : ${rpId?c},
                 createTimeout : ${createTimeout?c},
                 errmsg : ${msg("passkey-unsupported-browser-text")?c}

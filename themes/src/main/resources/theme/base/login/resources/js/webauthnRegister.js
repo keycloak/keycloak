@@ -58,6 +58,11 @@ export async function registerByWebAuthn(input) {
         publicKey.authenticatorSelection = authenticatorSelection;
     }
 
+    // hints only steer the browser UI and are omitted when none are configured
+    if (Array.isArray(input.hints) && input.hints.length > 0) {
+        publicKey.hints = input.hints;
+    }
+
     if (input.createTimeout !== 0) {
         publicKey.timeout = input.createTimeout * 1000;
     }

@@ -1,0 +1,10 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+= Administration
+
+== WebAuthn hints
+
+The *WebAuthn Policy* and *WebAuthn Passwordless Policy* now provide an optional *Hints* option, an ordered list of `security-key`, `client-device` or `hybrid`. {project_name} sends the configured values in the `hints` field defined by the https://www.w3.org/TR/webauthn/#enum-hints[WebAuthn specification], so a browser that supports them can offer the expected authenticator first, for example by showing the security key prompt directly.
+
+The option is empty by default, and any behavior after the values are sent depends on the browser and the platform. For more details, see the link:{adminguide_link}#_webauthn-policy[{adminguide_name}].

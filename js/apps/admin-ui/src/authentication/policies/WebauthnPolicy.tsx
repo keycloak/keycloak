@@ -82,6 +82,8 @@ const MEDIATION_OPTIONS = [
   "silent",
 ] as const;
 
+const HINTS = ["security-key", "client-device", "hybrid"] as const;
+
 type WeauthnSelectProps = {
   name: string;
   label: string;
@@ -89,6 +91,7 @@ type WeauthnSelectProps = {
   options: readonly string[];
   labelPrefix?: string;
   isMultiSelect?: boolean;
+  defaultValue?: string | string[];
   validate?: Validate<any, FieldValues>;
 };
 
@@ -99,6 +102,7 @@ const WebauthnSelect = ({
   options,
   labelPrefix,
   isMultiSelect = false,
+  defaultValue,
   validate,
 }: WeauthnSelectProps) => {
   const { t } = useTranslation();
@@ -108,7 +112,10 @@ const WebauthnSelect = ({
       label={label}
       labelIcon={labelIcon}
       variant={isMultiSelect ? "typeaheadMulti" : "single"}
-      controller={{ defaultValue: options[0], rules: { validate: validate } }}
+      controller={{
+        defaultValue: defaultValue ?? options[0],
+        rules: { validate: validate },
+      }}
       options={options.map((option) => ({
         key: option,
         value: labelPrefix ? t(`${labelPrefix}.${option}`) : option,
@@ -259,6 +266,15 @@ export const WebauthnPolicy = ({
             labelIcon={t("webAuthnPolicyAuthenticatorAttachmentHelp")}
             options={AUTHENTICATOR_ATTACHMENT}
             labelPrefix="authenticatorAttachment"
+          />
+          <WebauthnSelect
+            name={`${namePrefix}Hints`}
+            label={t("webAuthnPolicyHints")}
+            labelIcon={t("webAuthnPolicyHintsHelp")}
+            options={HINTS}
+            labelPrefix="hints"
+            defaultValue={[]}
+            isMultiSelect
           />
           <WebauthnSelect
             name={`${namePrefix}ResidentKey`}
