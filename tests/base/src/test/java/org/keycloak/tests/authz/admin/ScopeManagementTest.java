@@ -37,7 +37,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -138,6 +137,7 @@ public class ScopeManagementTest extends AbstractAuthorizationTest {
         
         scopeResource.remove();
 
-        assertTrue(getClientResource().authorization().policies().policy(permissionRepresentation.getId()).scopes().isEmpty());
+        assertThrows(NotFoundException.class,
+                () -> getClientResource().authorization().policies().policy(permissionRepresentation.getId()).scopes());
     }
 }
