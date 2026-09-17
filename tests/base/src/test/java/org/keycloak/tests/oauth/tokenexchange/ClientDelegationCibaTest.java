@@ -10,6 +10,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
@@ -19,6 +20,9 @@ import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpoi
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
+import org.keycloak.services.clientpolicy.executor.RejectMayActClaimExecutor;
+import org.keycloak.services.clientpolicy.executor.RejectMayActClaimExecutorFactory;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -31,6 +35,8 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectCibaProvider;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientPolicyBuilder;
+import org.keycloak.testframework.realm.ClientProfileBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
@@ -153,6 +159,47 @@ public class ClientDelegationCibaTest {
         AccessTokenResponse res = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
         Assertions.assertFalse(res.isSuccess());
         Assertions.assertEquals(OAuthErrorException.ACCESS_DENIED, res.getError());
+    }
+
+    @Test
+    public void rejectMayActClientPolicySuccess() throws Exception {
+        // add default client policy
+        realm.updateWithCleanup(r -> r.clientProfile(ClientProfileBuilder.create().name("executor").executor(RejectMayActClaimExecutorFactory.PROVIDER_ID, null).build())
+                .clientPolicy(ClientPolicyBuilder.create().name("policy").condition(AnyClientConditionFactory.PROVIDER_ID, null).profile("executor").build()));
+
+        // normal request should be OK when using common client scopes
+        AccessTokenResponse res = cibaLogin(AGENT_DELEGATION_SCOPE, "client-policy-success", true);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), getServiceAccountUserId(), AGENT_CLIENT_ID);
+        logout(res.getRefreshToken());
+    }
+
+    @Test
+    public void rejectMayActClientPolicyRejectAny() throws Exception {
+        // add client policy that denies any may_act
+        realm.updateWithCleanup(r -> r
+                .clientProfile(ClientProfileBuilder.create().name("executor")
+                        .executor(RejectMayActClaimExecutorFactory.PROVIDER_ID, new RejectMayActClaimExecutor.Configuration(true, false, false))
+                        .build())
+                .clientPolicy(ClientPolicyBuilder.create().name("policy").condition(AnyClientConditionFactory.PROVIDER_ID, null).profile("executor").build()));
+
+        // normal request should be rejected as may_act is not allowed by the policy
+        AuthenticationRequestAcknowledgement response = sendBackchannelAuthRequest(AGENT_DELEGATION_SCOPE, "client-policy-reject-any");
+
+        CibaProvider.CibaAuthenticationChannelRequest channelReq = ciba.getAuthChannel("client-policy-reject-any");
+        Assertions.assertTrue(channelReq.getRequest().getConsentRequired());
+        assertScopeContains(channelReq.getRequest().getScope(), AGENT_DELEGATION_SCOPE);
+
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(),
+                oauth.ciba().doAuthenticationChannelCallback(channelReq.getBearerToken(), AuthenticationChannelResponse.Status.SUCCEED));
+
+        ClientNotificationEndpointRequest notification = ciba.getPushedCibaClientNotification("client-notification-token");
+        Assertions.assertEquals(notification.getAuthReqId(), response.getAuthReqId());
+
+        AccessTokenResponse res = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
+        Assertions.assertEquals(Errors.INVALID_REQUEST, res.getError());
+        Assertions.assertEquals("The may_act claim is rejected for this client", res.getErrorDescription());
+
+        AccountHelper.logout(realm.admin(), USERNAME);
     }
 
     private AuthenticationRequestAcknowledgement sendBackchannelAuthRequest(String scope, String bindingMessage) {

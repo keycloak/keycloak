@@ -49,6 +49,7 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.JWTAuthorizationGrantContext;
+import org.keycloak.services.clientpolicy.context.JwtAuthorizationGrantTokenResponse;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.IdentityBrokerService;
@@ -184,7 +185,8 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             event.session(userSession);
             ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, userSession,
                     authSession, authorizationGrantContext.getRestrictedScopes(), false);
-            TokenManager.AccessTokenResponseBuilder responseBuilder = createTokenResponseBuilder(user, userSession, clientSessionCtx, scopeParam, null);
+            TokenManager.AccessTokenResponseBuilder responseBuilder = createTokenResponseBuilder(user, userSession, clientSessionCtx, scopeParam,
+                    accessTokenResponseBuilder -> new JwtAuthorizationGrantTokenResponse(formParams, clientSessionCtx, accessTokenResponseBuilder));
             if (jwtAuthorizationGrantProvider.isLimitAccessTokenExpiration()) {
                 if (authorizationGrantContext.getJWT().getExp() < responseBuilder.getAccessToken().getExp()) {
                     responseBuilder.getAccessToken().exp(authorizationGrantContext.getJWT().getExp());

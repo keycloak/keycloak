@@ -42,6 +42,9 @@ import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
+import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
+import org.keycloak.services.clientpolicy.executor.RejectMayActClaimExecutor;
+import org.keycloak.services.clientpolicy.executor.RejectMayActClaimExecutorFactory;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -56,6 +59,8 @@ import org.keycloak.testframework.oauth.annotations.InjectCibaProvider;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.testframework.realm.ClientPolicyBuilder;
+import org.keycloak.testframework.realm.ClientProfileBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
@@ -706,6 +711,113 @@ public class TokenExchangeDelegationTest {
         Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
     }
 
+    @Test
+    public void rejectMayActClientPolicySuccess() {
+        addDelegationPermission();
+
+        realm.updateWithCleanup(r -> r.clientProfile(ClientProfileBuilder.create().name("executor").executor(RejectMayActClaimExecutorFactory.PROVIDER_ID, null).build())
+                .clientPolicy(ClientPolicyBuilder.create().name("policy").condition(AnyClientConditionFactory.PROVIDER_ID, null).profile("executor").build()));
+
+        // normal request should be OK when using common client scopes
+        final String scope = OIDCLoginProtocolFactory.USER_DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + administrator.getUsername();
+        AccessTokenResponse res = loginWithDelegation(scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), administrator.getId(), null, null);
+        LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
+        Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
+    }
+
+    @Test
+    public void rejectMayActClientPolicyRejectAny() {
+        addDelegationPermission();
+
+        realm.updateWithCleanup(r -> r
+                .clientProfile(ClientProfileBuilder.create().name("executor")
+                        .executor(RejectMayActClaimExecutorFactory.PROVIDER_ID, new RejectMayActClaimExecutor.Configuration(true, false, false))
+                        .build())
+                .clientPolicy(ClientPolicyBuilder.create().name("policy").condition(AnyClientConditionFactory.PROVIDER_ID, null).profile("executor").build()));
+
+        // normal request should be rejected as may_act is not allowed by the policy
+        final String scope = OIDCLoginProtocolFactory.USER_DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + administrator.getUsername();
+        AccessTokenResponse res = loginWithDelegationNoEvent(scope, grants -> MatcherAssert.assertThat(grants,
+                Matchers.hasItem("Delegate token to administrator administrator?")));
+        Assertions.assertEquals(Errors.INVALID_REQUEST, res.getError());
+        Assertions.assertEquals("The may_act claim is rejected for this client", res.getErrorDescription());
+        EventAssertion.assertError(events.poll())
+                .type(EventType.CODE_TO_TOKEN_ERROR)
+                .clientId("test-app")
+                .hasUserId()
+                .error(Errors.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "The may_act claim is rejected for this client");
+
+        AccountHelper.logout(realm.admin(), USERNAME);
+    }
+
+    @Test
+    public void rejectMayActClientPolicyPermission() {
+        createdHarcodedSubMapperForAdministrator();
+
+        // default config checks permission is not granted
+        realm.updateWithCleanup(r -> r.clientProfile(ClientProfileBuilder.create().name("executor").executor(RejectMayActClaimExecutorFactory.PROVIDER_ID, null).build())
+                .clientPolicy(ClientPolicyBuilder.create().name("policy").condition(AnyClientConditionFactory.PROVIDER_ID, null).profile("executor").build()));
+
+        AccessTokenResponse res = loginWithDelegationNoEvent(null, grants -> MatcherAssert.assertThat(grants,
+                Matchers.not(Matchers.hasItem(Matchers.containsString("Delegate token")))));
+        Assertions.assertEquals(Errors.INVALID_REQUEST, res.getError());
+        Assertions.assertEquals("Invalid may_act sub in the token", res.getErrorDescription());
+
+        AccountHelper.logout(realm.admin(), USERNAME);
+
+        // explicitly do not check permissions and consents
+        realm.updateWithCleanup(r -> r.resetClientProfiles().resetClientPolicies()
+                .clientProfile(ClientProfileBuilder.create().name("executor")
+                        .executor(RejectMayActClaimExecutorFactory.PROVIDER_ID, new RejectMayActClaimExecutor.Configuration(false, true, true))
+                        .build())
+                .clientPolicy(ClientPolicyBuilder.create().name("policy").condition(AnyClientConditionFactory.PROVIDER_ID, null).profile("executor").build()));
+
+        oauth.scope(null).openLoginForm();
+        oauth.fillLoginForm(USERNAME, PASSWORD);
+        res = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), administrator.getId(), null, null);
+
+        LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
+        Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
+    }
+
+    @Test
+    public void rejectMayActClientPolicyConsent() {
+        addDelegationPermission();
+        createdHarcodedSubMapperForAdministrator();
+
+        // default config checks consent is not granted
+        realm.updateWithCleanup(r -> r.clientProfile(ClientProfileBuilder.create().name("executor").executor(RejectMayActClaimExecutorFactory.PROVIDER_ID, null).build())
+                .clientPolicy(ClientPolicyBuilder.create().name("policy").condition(AnyClientConditionFactory.PROVIDER_ID, null).profile("executor").build()));
+
+        AccessTokenResponse res = loginWithDelegationNoEvent(null, grants -> MatcherAssert.assertThat(grants,
+                Matchers.not(Matchers.hasItem(Matchers.containsString("Delegate token")))));
+        Assertions.assertEquals(Errors.INVALID_REQUEST, res.getError());
+        Assertions.assertEquals("Invalid may_act sub in the token", res.getErrorDescription());
+
+        AccountHelper.logout(realm.admin(), USERNAME);
+
+        // explicitly do not check consents
+        realm.updateWithCleanup(r -> r.resetClientProfiles().resetClientPolicies()
+                .clientProfile(ClientProfileBuilder.create().name("executor")
+                        .executor(RejectMayActClaimExecutorFactory.PROVIDER_ID, new RejectMayActClaimExecutor.Configuration(false, false, true))
+                        .build())
+                .clientPolicy(ClientPolicyBuilder.create().name("policy").condition(AnyClientConditionFactory.PROVIDER_ID, null).profile("executor").build()));
+
+        oauth.scope(null).openLoginForm();
+        oauth.fillLoginForm(USERNAME, PASSWORD);
+        res = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), administrator.getId(), null, null);
+
+        LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
+        Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
+    }
+
     private ScopePermissionRepresentation addDelegationPermission() {
         ClientResource adminPerms = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
         UserPolicyRepresentation policy = PermissionTestUtils.createUserPolicy(realm, adminPerms, "Administrator Policy", administrator.getId());
@@ -772,6 +884,12 @@ public class TokenExchangeDelegationTest {
     }
 
     private AccessTokenResponse loginWithDelegation(String scope, Consumer<List<String>> grantsValidator) {
+        AccessTokenResponse res = loginWithDelegationNoEvent(scope, grantsValidator);
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CODE_TO_TOKEN);
+        return res;
+    }
+
+    private AccessTokenResponse loginWithDelegationNoEvent(String scope, Consumer<List<String>> grantsValidator) {
         oauth.scope(scope).openLoginForm();
         oauth.fillLoginForm(USERNAME, PASSWORD);
         grantPage.assertCurrent();
@@ -787,9 +905,7 @@ public class TokenExchangeDelegationTest {
                 .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
 
         String code = oauth.parseLoginResponse().getCode();
-        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
-        EventAssertion.assertSuccess(events.poll()).type(EventType.CODE_TO_TOKEN);
-        return res;
+        return oauth.doAccessTokenRequest(code);
     }
 
     private String getActorToken() {
@@ -809,6 +925,23 @@ public class TokenExchangeDelegationTest {
                 .map(ClientScopeRepresentation::getId)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("delegation client scope not found"));
+    }
+
+    private void createdHarcodedSubMapperForAdministrator() {
+        ProtocolMapperRepresentation subMapper = new ProtocolMapperRepresentation();
+        subMapper.setName("may-act-sub-mapper");
+        subMapper.setProtocol("openid-connect");
+        subMapper.setProtocolMapper("oidc-hardcoded-claim-mapper");
+        Map<String, String> config = new HashMap<>();
+        config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "may_act.sub");
+        config.put(HardcodedClaim.CLAIM_VALUE, administrator.getId());
+        config.put(OIDCAttributeMapperHelper.JSON_TYPE, "String");
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, Boolean.TRUE.toString());
+        subMapper.setConfig(config);
+        try (Response response = oauth.clientResource().getProtocolMappers().createMapper(subMapper)) {
+            subMapper.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(r -> AdminApiUtil.findClientByClientId(r, oauth.getClientId()).getProtocolMappers().delete(subMapper.getId()));
     }
 
     static class TokenExchangeDelegationServerConfig implements KeycloakServerConfig {

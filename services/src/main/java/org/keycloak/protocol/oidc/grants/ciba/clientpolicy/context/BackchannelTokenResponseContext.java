@@ -19,29 +19,28 @@ package org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.services.clientpolicy.context.AbstractClientSessionCtxTokenResponseContext;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class BackchannelTokenResponseContext implements CIBAContext {
+public class BackchannelTokenResponseContext extends AbstractClientSessionCtxTokenResponseContext implements CIBAContext {
 
     private final CIBAAuthenticationRequest parsedRequest;
     private final MultivaluedMap<String, String> requestParameters;
-    private final ClientSessionContext clientSessionCtx;
-    private final TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder;
 
     public BackchannelTokenResponseContext(CIBAAuthenticationRequest parsedRequest,
             MultivaluedMap<String, String> requestParameters,
             ClientSessionContext clientSessionCtx,
             TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder) {
+        super(clientSessionCtx, accessTokenResponseBuilder);
         this.parsedRequest = parsedRequest;
         this.requestParameters = requestParameters;
-        this.clientSessionCtx = clientSessionCtx;
-        this.accessTokenResponseBuilder = accessTokenResponseBuilder;
     }
 
     @Override
@@ -54,16 +53,19 @@ public class BackchannelTokenResponseContext implements CIBAContext {
         return parsedRequest;
     }
 
+    @Override
+    public ClientModel getClient() {
+        if (getParsedRequest() == null) return null;
+        return getParsedRequest().getClient();
+    }
+
+    @Override
+    public String getScopeParameter() {
+        if (getParsedRequest() == null) return null;
+        return getParsedRequest().getScope();
+    }
+
     public MultivaluedMap<String, String> getRequestParameters() {
         return requestParameters;
     }
-
-    public TokenManager.AccessTokenResponseBuilder getAccessTokenResponseBuilder() {
-        return accessTokenResponseBuilder;
-    }
-
-    public ClientSessionContext getClientSessionContext() {
-        return clientSessionCtx;
-    }
-
 }
