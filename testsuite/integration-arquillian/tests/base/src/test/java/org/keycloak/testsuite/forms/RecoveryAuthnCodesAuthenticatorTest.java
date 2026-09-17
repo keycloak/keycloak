@@ -68,8 +68,6 @@ import org.openqa.selenium.WebDriver;
 
 import static org.keycloak.authentication.requiredactions.RecoveryAuthnCodesAction.WARNING_THRESHOLD;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -425,11 +423,8 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
             Assert.assertTrue("recovery code download messages should be inserted via ?c, not inline in a JS string",
                     driver.getPageSource().contains("\"<p>\" + "));
             setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
+            assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         } finally {
-            // Remove saved backup codes to keep a clean slate after this test
-            setupRecoveryAuthnCodesPage.assertAccountLinkAvailability(true);
-            setupRecoveryAuthnCodesPage.clickAccountLink();
-            assertThat(driver.getTitle(), containsString("Account Management"));
             // Revert copy of browser flow to original to keep clean slate after this test
             BrowserFlowTest.revertFlows(testRealm(), BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES);
         }

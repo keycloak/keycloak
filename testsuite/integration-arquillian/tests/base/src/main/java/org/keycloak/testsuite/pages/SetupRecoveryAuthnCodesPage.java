@@ -31,7 +31,7 @@ public class SetupRecoveryAuthnCodesPage extends LogoutSessionsPage {
 
     public void clickSaveRecoveryAuthnCodesButton() {
         UIUtils.switchCheckbox(kcRecoveryCodesConfirmationCheck, true);
-        UIUtils.clickLink(saveRecoveryAuthnCodesButton);
+        UIUtils.click(saveRecoveryAuthnCodesButton);
     }
 
     public String getGeneratedRecoveryAuthnCodesHidden() {
