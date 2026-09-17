@@ -129,13 +129,17 @@ export default function FlowDetails() {
               type: "basic-flow",
             });
           id = result.id!;
-          ex.executionList?.forEach((e, i) =>
-            executeChange(e, {
-              parent: { ...ex, id: result.id },
-              newIndex: i,
-              oldIndex: i,
-            }),
-          );
+          if (ex.executionList?.length) {
+            await Promise.all(
+              ex.executionList.map((e, i) =>
+                executeChange(e, {
+                  parent: { ...ex, id: result.id },
+                  newIndex: i,
+                  oldIndex: i,
+                }),
+              ),
+            );
+          }
         } else {
           const result =
             await adminClient.authenticationManagement.addExecutionToFlow({

@@ -1,7 +1,7 @@
 import { type Page, expect } from "@playwright/test";
 import { selectItem, switchOff } from "../utils/form.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
-import { waitForLoadingComplete } from "../utils/loading.ts";
+import { waitForTableIdle } from "../utils/loading.ts";
 import { SERVER_URL } from "../utils/constants.ts";
 
 const discoveryUrl = `${SERVER_URL}/realms/master/.well-known/openid-configuration`;
@@ -230,7 +230,7 @@ export async function clickSaveMapper(page: Page) {
       await expect(page).toHaveURL(/.*mappers$/);
     }
   }
-  await waitForLoadingComplete(page);
+  await waitForTableIdle(page);
 }
 
 export async function clickCancelMapper(page: Page) {
