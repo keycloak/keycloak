@@ -69,6 +69,7 @@ public class UriUtilsTest {
         assertTrue(UriUtils.originEquals("HTTPS://EXAMPLE.COM", "https://example.com"));
         assertFalse(UriUtils.originEquals("https://Example.COM:8443", "https://example.com:8444"));
         assertFalse(UriUtils.originEquals("https://Example.COM:8443", "https://other.com:8443"));
+        assertFalse(UriUtils.originEquals("https://allowed_host", "https://evil_host"));
     }
 
     @Test

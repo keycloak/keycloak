@@ -292,6 +292,12 @@ public class RedirectUtils {
         if (!UriUtils.schemeHostAndPortEqual(configuredUri, redirectUri)) {
             return false;
         }
+        if (configuredUri.isOpaque() || redirectUri.isOpaque()) {
+            if (configuredUri.isOpaque() != redirectUri.isOpaque()) {
+                return false;
+            }
+            return Objects.equals(configuredUri.getRawSchemeSpecificPart(), redirectUri.getRawSchemeSpecificPart());
+        }
         return Objects.equals(configuredUri.getRawUserInfo(), redirectUri.getRawUserInfo())
                 && Objects.equals(configuredUri.getRawPath(), redirectUri.getRawPath())
                 && Objects.equals(configuredUri.getRawQuery(), redirectUri.getRawQuery())
@@ -303,13 +309,55 @@ public class RedirectUtils {
             return true;
         }
         URI redirectUri = toUri(redirect);
-        URI prefixUri = toUri(prefix);
-        if (redirectUri == null || prefixUri == null || !UriUtils.schemeHostAndPortEqual(redirectUri, prefixUri)) {
+        if (redirectUri == null) {
             return false;
+        }
+        URI prefixUri = toUri(prefix);
+        if (prefixUri == null) {
+            return redirectUriStartsWithUnparseablePrefix(redirect, redirectUri, prefix);
+        }
+        if (prefix.endsWith(":")) {
+            if (!UriUtils.schemeAndHostEqual(redirectUri, prefixUri)) {
+                return false;
+            }
+        } else if (!UriUtils.schemeHostAndPortEqual(redirectUri, prefixUri)) {
+            return false;
+        }
+        if (!Objects.equals(redirectUri.getRawUserInfo(), prefixUri.getRawUserInfo())) {
+            return false;
+        }
+        if (redirectUri.isOpaque() || prefixUri.isOpaque()) {
+            String redirectSsp = redirectUri.getRawSchemeSpecificPart() != null ? redirectUri.getRawSchemeSpecificPart() : "";
+            String prefixSsp = prefixUri.getRawSchemeSpecificPart() != null ? prefixUri.getRawSchemeSpecificPart() : "";
+            return redirectSsp.startsWith(prefixSsp);
         }
         String redirectPath = redirectUri.getRawPath() != null ? redirectUri.getRawPath() : "";
         String prefixPath = prefixUri.getRawPath() != null ? prefixUri.getRawPath() : "";
         return redirectPath.startsWith(prefixPath);
+    }
+
+    private static boolean redirectUriStartsWithUnparseablePrefix(String redirect, URI redirectUri, String prefix) {
+        int colonIdx = prefix.indexOf(':');
+        if (colonIdx < 0) {
+            return false;
+        }
+        String prefixScheme = prefix.substring(0, colonIdx);
+        String prefixSsp = prefix.substring(colonIdx + 1);
+        String redirectScheme = redirectUri.getScheme();
+        if (redirectScheme == null || !redirectScheme.equalsIgnoreCase(prefixScheme)) {
+            return false;
+        }
+        if (redirectUri.isOpaque()) {
+            String redirectSsp = redirectUri.getRawSchemeSpecificPart() != null ? redirectUri.getRawSchemeSpecificPart() : "";
+            return redirectSsp.startsWith(prefixSsp);
+        }
+        if (prefixSsp.isEmpty()) {
+            return true;
+        }
+        if (!redirect.regionMatches(true, 0, prefix, 0, colonIdx + 1)) {
+            return false;
+        }
+        return redirect.substring(colonIdx + 1).startsWith(prefixSsp);
     }
 
     private static String checkValidRedirectWildcard(String validRedirect) {

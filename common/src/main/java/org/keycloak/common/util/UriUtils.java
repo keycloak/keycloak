@@ -63,7 +63,7 @@ public class UriUtils {
         }
     }
 
-    public static boolean schemeHostAndPortEqual(URI uriA, URI uriB) {
+    public static boolean schemeAndHostEqual(URI uriA, URI uriB) {
         if (uriA == null || uriB == null) {
             return uriA == uriB;
         }
@@ -72,15 +72,37 @@ public class UriUtils {
         if (schemeA == null || schemeB == null || !schemeA.equalsIgnoreCase(schemeB)) {
             return false;
         }
-        String hostA = uriA.getHost();
-        String hostB = uriB.getHost();
-        if (hostA == null || hostB == null) {
-            return hostA == hostB;
+        return hostsEqual(uriA, uriB);
+    }
+
+    public static boolean schemeHostAndPortEqual(URI uriA, URI uriB) {
+        if (uriA == null || uriB == null) {
+            return uriA == uriB;
         }
-        if (!hostA.equalsIgnoreCase(hostB)) {
+        if (!schemeAndHostEqual(uriA, uriB)) {
             return false;
         }
         return uriA.getPort() == uriB.getPort();
+    }
+
+    private static boolean hostsEqual(URI uriA, URI uriB) {
+        String hostA = uriA.getHost();
+        String hostB = uriB.getHost();
+        if (hostA == null || hostB == null) {
+            if (hostA != hostB) {
+                return false;
+            }
+            String authorityA = uriA.getRawAuthority();
+            String authorityB = uriB.getRawAuthority();
+            if (authorityA == null && authorityB == null) {
+                return true;
+            }
+            if (authorityA == null || authorityB == null) {
+                return false;
+            }
+            return authorityA.equalsIgnoreCase(authorityB);
+        }
+        return hostA.equalsIgnoreCase(hostB);
     }
 
     public static String getHost(String uri) {

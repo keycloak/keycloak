@@ -66,6 +66,30 @@ public class RedirectUtilsTest {
     }
 
     @Test
+    public void testVerifyRedirectUriOpaqueSchemeSpecificPartCaseSensitive() {
+        Set<String> set = Stream.of("myapp:callback", "myapp:callback*").collect(Collectors.toSet());
+
+        Assert.assertEquals("myapp:callback", RedirectUtils.verifyRedirectUri(session, null, "myapp:callback", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "myapp:attacker", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "myapp:attackercallback", set, false));
+    }
+
+    @Test
+    public void testVerifyRedirectUriWildcardRequiresUserInfo() {
+        Set<String> set = Stream.of("https://alice@example.com/foo/*").collect(Collectors.toSet());
+
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://example.com/foo/bar", set, false));
+    }
+
+    @Test
+    public void testVerifyRedirectUriSchemeCaseInsensitiveWildcard() {
+        Set<String> set = Stream.of("custom2:*", "https://Example.COM:*").collect(Collectors.toSet());
+
+        Assert.assertEquals("CUSTOM2:/something", RedirectUtils.verifyRedirectUri(session, null, "CUSTOM2:/something", set, false));
+        Assert.assertEquals("https://example.com:4443/", RedirectUtils.verifyRedirectUri(session, null, "https://example.com:4443/", set, false));
+    }
+
+    @Test
     public void testverifyRedirectUriHttps() {
         Set<String> set = Stream.of(
                 "https://keycloak.org/test1",
