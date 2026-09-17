@@ -24,14 +24,13 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.JSPoliciesResource;
 import org.keycloak.admin.client.resource.JSPolicyResource;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.tests.authz.config.AuthzScriptsServerConfig;
 
 import org.junit.jupiter.api.Test;
 
@@ -41,8 +40,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(Feature.SCRIPTS)
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = AuthzScriptsServerConfig.class)
 public class JSPolicyManagementTest extends AbstractPolicyManagementTest {
 
     @InjectRealm

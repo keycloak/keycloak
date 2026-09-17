@@ -40,7 +40,6 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -73,7 +72,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.tests.authz.config.AuthzScriptsServerConfig;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 
 import org.junit.jupiter.api.Test;
@@ -89,8 +88,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(Feature.SCRIPTS)
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = AuthzScriptsServerConfig.class)
 public class UserManagedPermissionServiceTest extends AbstractResourceServerTest {
 
     @InjectRealm
