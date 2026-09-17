@@ -17,6 +17,7 @@
 
 package org.keycloak.quarkus.runtime.storage.database.jpa;
 
+import java.sql.Connection;
 import java.util.function.Supplier;
 
 import jakarta.persistence.EntityManagerFactory;
@@ -42,7 +43,7 @@ public final class NamedJpaConnectionProviderFactory extends AbstractJpaConnecti
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         // Skip an inactive datasource's persistence unit instead of failing to resolve its (deactivated) EntityManagerFactory.
-        String dsName = dataSourceName != null ? dataSourceName : unitName;
+        String dsName = getDsName();
         if (!DataSourceUtil.isDefault(dsName)) { // default DS is always active
             var dsInstance = Arc.requireContainer().select(AgroalDataSource.class, new DataSource.DataSourceLiteral(dsName));
             if (dsInstance.isResolvable() && !dsInstance.getHandle().getBean().isActive()) {
@@ -62,10 +63,14 @@ public final class NamedJpaConnectionProviderFactory extends AbstractJpaConnecti
 
     @Override
     public JpaConnectionProvider create(KeycloakSession session) {
-        if (entityManagerFactory == null) {
-            throw new IllegalStateException("Cannot create connection provider for '" + unitName + "': datasource is inactive.");
-        }
+        throwIfDatasourceInactive();
         return super.create(session);
+    }
+
+    @Override
+    public Connection getConnection() {
+        throwIfDatasourceInactive();
+        return super.getConnection();
     }
 
     @Override
@@ -93,5 +98,15 @@ public final class NamedJpaConnectionProviderFactory extends AbstractJpaConnecti
     @Override
     public String getId() {
         return unitName;
+    }
+
+    private void throwIfDatasourceInactive() {
+        if (entityManagerFactory == null) {
+            throw new IllegalStateException("Cannot create connection provider for '" + unitName + "': datasource '" + getDsName() + "' is inactive.");
+        }
+    }
+
+    private String getDsName() {
+        return dataSourceName != null ? dataSourceName : unitName;
     }
 }
