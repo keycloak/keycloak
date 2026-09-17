@@ -150,7 +150,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         // client credentials grant always removes the online session
         clientSessionCtx.getClientSession().setNote(AuthenticationProcessor.FIRST_OFFLINE_ACCESS, Boolean.TRUE.toString());
         return createTokenResponse(clientUser, userSession, clientSessionCtx, scope, true,
-                responseBuilder -> new ServiceAccountTokenResponseContext(formParams, clientSessionCtx.getClientSession(), responseBuilder));
+                responseBuilder -> new ServiceAccountTokenResponseContext(formParams, clientSessionCtx, responseBuilder));
     }
 
     @Override
