@@ -235,6 +235,7 @@ public class UIRealmResourceTest {
     @Test
     public void testRegistrationFormWithNotReadableOrWritableRequiredEmail() throws IOException {
         RealmRepresentation testRealm = managedRealm.admin().toRepresentation();
+        UPConfig upConfigOrig = managedRealm.admin().users().userProfile().getConfiguration();
         testRealm.setRegistrationEmailAsUsername(true);
         testRealm.setRegistrationAllowed(true);
         managedRealm.cleanup().add(r -> {
@@ -243,59 +244,68 @@ public class UIRealmResourceTest {
         });
         managedRealm.admin().update(testRealm);
 
-        // set email as not readable or writable for a user
-        UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
-        upConfig.addOrReplaceAttribute(new UPAttribute("email",
-                new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN))));
-        updateRealmExt(toUIRealmRepresentation(testRealm, upConfig));
+        try {
+            // set email as not readable or writable for a user
+            UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
+            upConfig.addOrReplaceAttribute(new UPAttribute("email",
+                    new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN))));
+            updateRealmExt(toUIRealmRepresentation(testRealm, upConfig));
 
-        // open the registration form
-        oauth.openLoginForm();
-        loginPage.clickRegister();
-        registerPage.assertCurrent();
+            // open the registration form
+            oauth.openLoginForm();
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
 
-        Assertions.assertTrue(registerPage.isEmailPresent(), "Email is missing on the registration page.");
-        Assertions.assertFalse(registerPage.isUsernamePresent(), "Username should not be present on the registration page.");
+            Assertions.assertTrue(registerPage.isEmailPresent(), "Email is missing on the registration page.");
+            Assertions.assertFalse(registerPage.isUsernamePresent(), "Username should not be present on the registration page.");
 
-        registerPage.registerWithEmailAsUsername("Tom", "Brady", "tbrady@email.com", "password", "password");
+            registerPage.registerWithEmailAsUsername("Tom", "Brady", "tbrady@email.com", "password", "password");
 
-        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
-        String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId()).details(Details.USERNAME, "tbrady@email.com").details(Details.EMAIL, "tbrady@email.com").getEvent().getUserId();
-        UserRepresentation user = managedRealm.admin().users().get(userId).toRepresentation();
-        assertEquals("Tom", user.getFirstName());
-        assertEquals("Brady", user.getLastName());
+            String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId()).details(Details.USERNAME, "tbrady@email.com").details(Details.EMAIL, "tbrady@email.com").getEvent().getUserId();
+            UserRepresentation user = managedRealm.admin().users().get(userId).toRepresentation();
+            assertEquals("Tom", user.getFirstName());
+            assertEquals("Brady", user.getLastName());
+        } finally {
+            updateRealmExt(toUIRealmRepresentation(testRealm, upConfigOrig));
+        }
     }
 
     @Test
     public void testRegistrationFormWithReadonlyUsernameAndEmail() throws IOException {
         RealmRepresentation testRealm = managedRealm.admin().toRepresentation();
+        UPConfig upConfigOrig = managedRealm.admin().users().userProfile().getConfiguration();
 
-        // set username and email as readonly for a user
-        UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
-        upConfig.addOrReplaceAttribute(new UPAttribute("username",
-                new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_USER, UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN))));
-        upConfig.addOrReplaceAttribute(new UPAttribute("email",
-                new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_USER, UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN))));
-        updateRealmExt(toUIRealmRepresentation(testRealm, upConfig));
+        try {
+            // set username and email as readonly for a user
+            UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
+            upConfig.addOrReplaceAttribute(new UPAttribute("username",
+                    new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_USER, UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN))));
+            upConfig.addOrReplaceAttribute(new UPAttribute("email",
+                    new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_USER, UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN))));
+            updateRealmExt(toUIRealmRepresentation(testRealm, upConfig));
 
-        // open the registration form
-        oauth.openLoginForm();
-        loginPage.clickRegister();
-        registerPage.assertCurrent();
+            // open the registration form
+            oauth.openLoginForm();
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
 
-        Assertions.assertFalse(registerPage.isEmailPresent(), "Email should not be present on the registration page.");
+            Assertions.assertFalse(registerPage.isEmailPresent(), "Email should not be present on the registration page.");
 
-        registerPage.register("Alice", "Wood",  null, "awood", "password", "password");
+            registerPage.register("Alice", "Wood",  null, "awood", "password", "password");
 
-        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
-        String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId()).details(Details.USERNAME, "awood").details(Details.EMAIL, null).getEvent().getUserId();
-        UserRepresentation user = managedRealm.admin().users().get(userId).toRepresentation();
-        assertEquals("awood", user.getUsername());
-        assertEquals("Alice", user.getFirstName());
-        assertEquals("Wood", user.getLastName());
-        managedRealm.admin().users().get(userId).logout();
+            String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId()).details(Details.USERNAME, "awood").details(Details.EMAIL, null).getEvent().getUserId();
+            UserRepresentation user = managedRealm.admin().users().get(userId).toRepresentation();
+            assertEquals("awood", user.getUsername());
+            assertEquals("Alice", user.getFirstName());
+            assertEquals("Wood", user.getLastName());
+            managedRealm.admin().users().get(userId).logout();
+        } finally {
+            updateRealmExt(toUIRealmRepresentation(testRealm, upConfigOrig));
+        }
     }
 
     @Test
