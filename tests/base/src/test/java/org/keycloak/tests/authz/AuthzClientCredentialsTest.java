@@ -414,6 +414,6 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     }
 
     private InputStream getConfigurationStream(String adapterConfig) {
-        return getClass().getResourceAsStream("/authorization-test/" + adapterConfig);
+        return authzConfigurationStream(getClass().getResourceAsStream("/authorization-test/" + adapterConfig));
     }
 }

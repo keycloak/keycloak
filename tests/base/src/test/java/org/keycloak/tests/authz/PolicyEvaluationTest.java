@@ -732,9 +732,10 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
     public void testEvaluation() {
         RealmResource realmApi = realmsResouce().realm("authz-test");
         RealmRepresentation realm = realmApi.toRepresentation();
+        boolean adminPermissionsOriginallyEnabled = Boolean.TRUE.equals(realm.getAdminPermissionsEnabled());
         realm.setAdminPermissionsEnabled(true);
         realmApi.update(realm);
-        getCleanup(realm.getRealm()).addCleanup(() -> realm.setAdminPermissionsEnabled(false));
+        try {
         ClientsResource clientsApi = realmApi.clients();
         ClientRepresentation client = clientsApi.findByClientId("resource-server-test").get(0);
         ClientResource clientApi = clientsApi.get(client.getId());
@@ -763,5 +764,12 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         PolicyEvaluationResponse result = authorizationApi.policies().evaluate(request);
         assertNotNull(result.getResults());
         assertFalse(result.getResults().isEmpty());
+        } finally {
+            if (!adminPermissionsOriginallyEnabled) {
+                RealmRepresentation updated = realmApi.toRepresentation();
+                updated.setAdminPermissionsEnabled(false);
+                realmApi.update(updated);
+            }
+        }
     }
 }
