@@ -94,11 +94,12 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
         Connection connection = null;
         try {
             connection = factory.getConnection();
-            connection.setNetworkTimeout(NETWORK_TIMEOUT_EXECUTOR, (int) (staleness_timeout / 3));
-            return connection;
-        } catch (SQLFeatureNotSupportedException e) {
-            log.warn("JDBC driver does not support setNetworkTimeout. " +
-                     "Health check queries may hang during database outages.");
+            try {
+                connection.setNetworkTimeout(NETWORK_TIMEOUT_EXECUTOR, (int) (staleness_timeout / 3));
+            } catch (SQLFeatureNotSupportedException e) {
+                log.warn("JDBC driver does not support setNetworkTimeout. " +
+                        "Health check queries may hang during database outages.");
+            }
             return connection;
         } catch (Exception e) {
             if (connection != null) {
