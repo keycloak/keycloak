@@ -63,7 +63,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
     protected static final Logger logger = Logger.getLogger(InfinispanClusterProviderFactory.class);
 
     private volatile Cache<String, Object> workCache;
-    protected volatile ClusterProvider clusterProvider;
+    private volatile ClusterProvider clusterProvider;
 
     protected final ExecutorService localExecutor = Executors.newCachedThreadPool(r -> {
         Thread thread = Executors.defaultThreadFactory().newThread(r);
@@ -78,7 +78,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
         return lazyInit(session);
     }
 
-    protected ClusterProvider lazyInit(KeycloakSession session) {
+    private ClusterProvider lazyInit(KeycloakSession session) {
         if (clusterProvider != null)
             return clusterProvider;
 
