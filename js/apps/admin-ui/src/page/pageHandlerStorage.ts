@@ -1,14 +1,6 @@
 import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
 import { matchPath } from "react-router-dom";
 
-const MULTIVALUED_DELIMITER = "##";
-
-const MULTIVALUED_TYPES = new Set([
-  "MultivaluedString",
-  "MultivaluedList",
-  "IdentityProviderMultiList",
-]);
-
 export type StorageType =
   | "COMPONENT"
   | "CLIENT"
@@ -71,12 +63,6 @@ export function isEntityStorageType(
   );
 }
 
-function isMultivaluedProperty(
-  property: ConfigPropertyRepresentation,
-): boolean {
-  return !!property.type && MULTIVALUED_TYPES.has(property.type);
-}
-
 function isClearedValue(value: unknown): boolean {
   if (value === undefined || value === null || value === "") {
     return true;
@@ -87,6 +73,27 @@ function isClearedValue(value: unknown): boolean {
   }
 
   return false;
+}
+
+export function pickDeclaredConfig(
+  config: Record<string, unknown> | undefined,
+  properties: ConfigPropertyRepresentation[],
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+
+  for (const property of properties) {
+    const key = property.name!;
+    const value = config?.[key];
+    if (value !== undefined && value !== null) {
+      result[key] = value;
+    }
+  }
+
+  return result;
+}
+
+export function isStringMapStorageType(storageType: StorageType): boolean {
+  return storageType === "CLIENT" || storageType === "IDENTITY_PROVIDER";
 }
 
 export function mergeEntityConfig(
@@ -106,56 +113,10 @@ export function mergeEntityConfig(
       continue;
     }
 
-    const normalized = normalizeConfig(
-      { [key]: value },
-      [property],
-      "save",
-      target,
-    );
-
-    if (key in normalized) {
-      result[key] = normalized[key];
-    }
-  }
-
-  return result;
-}
-
-export function normalizeConfig(
-  config: Record<string, unknown> | undefined,
-  properties: ConfigPropertyRepresentation[],
-  direction: "load" | "save",
-  target: ConfigMapTarget,
-): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-  const multivaluedNames = new Set(
-    properties.filter(isMultivaluedProperty).map((property) => property.name!),
-  );
-
-  for (const property of properties) {
-    const key = property.name!;
-    const value = config?.[key];
-    if (value === undefined || value === null) {
-      continue;
-    }
-
-    if (direction === "load") {
-      if (
-        target === "string-map" &&
-        multivaluedNames.has(key) &&
-        typeof value === "string" &&
-        value.includes(MULTIVALUED_DELIMITER)
-      ) {
-        result[key] = value.split(MULTIVALUED_DELIMITER);
-      } else {
-        result[key] = Array.isArray(value) ? value : [value];
-      }
-    } else if (target === "string-map") {
-      result[key] = Array.isArray(value)
-        ? value.join(MULTIVALUED_DELIMITER)
-        : String(value);
-    } else {
+    if (target === "list-map") {
       result[key] = Array.isArray(value) ? value : [value];
+    } else {
+      result[key] = Array.isArray(value) ? value.join("##") : String(value);
     }
   }
 
