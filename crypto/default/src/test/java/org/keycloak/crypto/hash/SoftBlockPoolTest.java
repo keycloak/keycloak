@@ -79,6 +79,21 @@ public class SoftBlockPoolTest {
         assertPoolSizeExact(256, 8);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void parallelismZeroRejected() {
+        Argon2PasswordHashProviderFactory.SoftBlockPool.computeMaxBlocks(7168, 0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void parallelismNegativeRejected() {
+        Argon2PasswordHashProviderFactory.SoftBlockPool.computeMaxBlocks(7168, -1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void parallelismExceedsMaxRejected() {
+        Argon2PasswordHashProviderFactory.SoftBlockPool.computeMaxBlocks(7168, (1 << 24));
+    }
+
     @Test
     public void computeMaxBlocksValues() {
         // default: 7168 blocks, 1 lane — no rounding needed

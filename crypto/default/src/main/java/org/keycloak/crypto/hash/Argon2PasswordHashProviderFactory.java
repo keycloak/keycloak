@@ -174,6 +174,9 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
         private final ConcurrentHashMap<Integer, ConcurrentLinkedDeque<SoftReference<FixedBlockPool>>> poolsBySize = new ConcurrentHashMap<>();
 
         static int computeMaxBlocks(int memoryInKB, int parallelism) {
+            if (parallelism < 1 || parallelism > ((1 << 24) - 1)) {
+                throw new IllegalArgumentException("parallelism must be between 1 and " + ((1 << 24) - 1));
+            }
             // Mirror BouncyCastle's effective block count calculation:
             // memoryBlocks = max(memory, 2 * SYNC_POINTS * lanes), then rounded to a multiple of 4 * lanes.
             int memoryBlocks = Math.max(memoryInKB, 2 * ARGON2_SYNC_POINTS * parallelism);

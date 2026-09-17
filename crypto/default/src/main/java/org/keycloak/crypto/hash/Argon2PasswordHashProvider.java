@@ -114,17 +114,14 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
         var tracing = TracingProviderUtil.getTracingProvider();
         return tracing.trace(Argon2PasswordHashProvider.class, "encode", span -> {
             try {
-                // Validate parameters before acquiring pool/semaphore so invalid values fail fast
-                var builder = new org.bouncycastle.crypto.params.Argon2Parameters.Builder(Argon2Parameters.getTypeValue(type))
-                        .withVersion(Argon2Parameters.getVersionValue(version))
-                        .withSalt(salt)
-                        .withParallelism(parallelism)
-                        .withMemoryAsKB(memory)
-                        .withIterations(iterations);
-
                 cpuCoreSemaphore.acquire();
                 try (var handle = blockPoolManager.acquire(memory, parallelism)) {
-                    org.bouncycastle.crypto.params.Argon2Parameters parameters = builder
+                    org.bouncycastle.crypto.params.Argon2Parameters parameters = new org.bouncycastle.crypto.params.Argon2Parameters.Builder(Argon2Parameters.getTypeValue(type))
+                            .withVersion(Argon2Parameters.getVersionValue(version))
+                            .withSalt(salt)
+                            .withParallelism(parallelism)
+                            .withMemoryAsKB(memory)
+                            .withIterations(iterations)
                             .withBlockPool(handle.pool()).build();
 
                     Argon2BytesGenerator generator = new Argon2BytesGenerator();
