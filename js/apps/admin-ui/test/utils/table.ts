@@ -124,6 +124,7 @@ export async function clickTableToolbarItem(
   itemName: string,
   kebab = false,
 ) {
+  await waitForTableIdle(page);
   const toolbar = await resolveTableToolbar(page);
   await expect(toolbar).toBeVisible({ timeout: TABLE_LOAD_TIMEOUT_MS });
 

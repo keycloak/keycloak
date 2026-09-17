@@ -129,6 +129,22 @@ function DataTable<T>({
   const [selectedRows, setSelectedRows] = useState<T[]>(selected || []);
   const [expandedRows, setExpandedRows] = useState<boolean[]>([]);
 
+  const rowIdentityKey = useMemo(
+    () =>
+      rows
+        .map((row, index) =>
+          "data" in row && row.data != null
+            ? String(get(row.data, "id", index))
+            : String(index),
+        )
+        .join("\0"),
+    [rows],
+  );
+
+  useEffect(() => {
+    setExpandedRows([]);
+  }, [rowIdentityKey]);
+
   const rowsSelectedOnPage = useMemo(
     () =>
       intersectionBy(
