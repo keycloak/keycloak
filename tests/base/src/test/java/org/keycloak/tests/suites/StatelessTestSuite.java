@@ -1,6 +1,7 @@
 package org.keycloak.tests.suites;
 
 import org.keycloak.common.Profile;
+import org.keycloak.testframework.infinispan.CacheType;
 import org.keycloak.testframework.injection.SuiteSupport;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
@@ -8,6 +9,7 @@ import org.keycloak.tests.admin.client.SessionTest;
 import org.keycloak.tests.admin.concurrency.ConcurrentLoginTest;
 import org.keycloak.tests.cli.admin.KcAdmSessionTest;
 import org.keycloak.tests.db.AsyncCommitHqlTest;
+import org.keycloak.tests.db.JdbcPingReconnectCacheClearTest;
 import org.keycloak.tests.forms.RecoveryAuthnCodesAuthenticatorTest;
 import org.keycloak.tests.loginfailures.LoginFailureExpirationTest;
 import org.keycloak.tests.model.SingleUseProviderTest;
@@ -37,7 +39,8 @@ import org.junit.platform.suite.api.Suite;
         KcAdmSessionTest.class,
         RecoveryAuthnCodesAuthenticatorTest.class,
         AsyncCommitHqlTest.class,
-        SingleUseProviderTest.class
+        SingleUseProviderTest.class,
+        JdbcPingReconnectCacheClearTest.class
 })
 public class StatelessTestSuite {
 
@@ -56,7 +59,9 @@ public class StatelessTestSuite {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.STATELESS);
+            return config.features(Profile.Feature.STATELESS)
+                    .cache(CacheType.ISPN)
+                    .cacheEmbeddedClusterName("C1");
         }
     }
 }

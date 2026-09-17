@@ -44,6 +44,15 @@ A commit latency of less than 5 ms is suggested, and below 10 ms is required.
 With synchronous replication, each commit includes a round-trip from the database primary to its replica to transfer the write-ahead log.
 High commit latency slows every write operation, including login and token requests, and can cause cascading timeouts and low throughput.
 
+// The staleness cutoff for cluster membership in JGROUPS_PING is 60 seconds,
+// and the membership update interval is 30–45 seconds. A 10-second threshold
+// leaves ample margin for both the update interval and the cutoff.
+* *Synchronized clocks across all nodes.*
++
+{project_name} uses timestamps to detect cluster membership and to distribute cache invalidation messages between clusters.
+Clocks must be synchronized using NTP or an equivalent mechanism.
+A clock skew of more than 10 seconds between clusters can cause cache invalidation messages to not be delivered, leading to stale cached data.
+
 * *An external load balancer to balance requests between the clusters and probe their availability.*
 +
 Without a load balancer that actively probes the {project_name} health endpoints, site failures are not detected automatically, and traffic continues to be routed to a failed site or split-brain partitions until manual intervention.
