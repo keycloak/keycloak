@@ -5,3 +5,25 @@ vulnerabilities:
     statement: Not affected, Bootstrap JavaScript component not distributed
   - id: CVE-2026-45292
     statement: Mitigation applied in https://github.com/keycloak/keycloak/issues/49570
+  - id: CVE-2026-34477
+    statement: Not affected, log4j-core is a test dependency not distributed in the final product. Fixed already in Keycloak 26.6+.
+  - id: CVE-2026-34478
+    statement: Not affected, log4j-core is a test dependency not distributed in the final product. Fixed already in Keycloak 26.6+.
+  - id: CVE-2025-68161
+    statement: Not affected, log4j-core is a test dependency not distributed in the final product. Fixed already in Keycloak 26.6+.
+  - id: CVE-2026-34480
+    statement: Not affected, log4j-core is a test dependency not distributed in the final product. Fixed already in Keycloak 26.6+.
+  - id: CVE-2026-49844
+    statement: Not affected, log4j-api is a test dependency not distributed in the final product. Fixed already in Keycloak 26.6+.
+  - id: CVE-2019-17571
+    statement: Not affected, log4j 1.x is a test dependency not distributed in the final product. Fixed already in Keycloak 26.6+.
+  - id: CVE-2021-4104
+    statement: Not affected, log4j 1.x is a test dependency not distributed in the final product. Fixed already in Keycloak 26.6+.
+  - id: CVE-2022-23302
+    statement: Not affected, log4j 1.x is a test dependency not distributed in the final product. Fixed already in Keycloak 26.6+.
+  - id: CVE-2022-23305
+    statement: Not affected, log4j 1.x is a test dependency not distributed in the final product. Fixed already in Keycloak 26.6+.
+  - id: CVE-2022-23307
+    statement: Not affected, log4j 1.x is a test dependency not distributed in the final product. Fixed already in Keycloak 26.6+.
+  - id: CVE-2023-26464
+    statement: Not affected, log4j 1.x is a test dependency not distributed in the final product. Fixed already in Keycloak 26.6+.
