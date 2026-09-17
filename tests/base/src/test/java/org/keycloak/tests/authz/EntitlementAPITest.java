@@ -80,7 +80,6 @@ import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
@@ -237,13 +236,14 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     @Test
     public void testInvalidRequestWithClaimsFromPublicClient() throws IOException {
-        OAuthClient authzTestOAuth = oauth.newConfig().realm("authz-test").client(PUBLIC_TEST_CLIENT);
+        oauth.realm("authz-test");
+        oauth.client(PUBLIC_TEST_CLIENT);
 
-        authzTestOAuth.doLogin("marta", "password");
+        oauth.doLogin("marta", "password");
 
         // Token request
-        String code = authzTestOAuth.parseLoginResponse().getCode();
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = authzTestOAuth.doAccessTokenRequest(code);
+        String code = oauth.parseLoginResponse().getCode();
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         AuthorizationRequest request = new AuthorizationRequest();
 
