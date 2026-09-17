@@ -2,7 +2,6 @@
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/options.adoc" as opts>
 <#import "/templates/links.adoc" as links>
-<#import "/templates/features.adoc" as features>
 
 <@tmpl.guide
 title="Configuring distributed caches"
@@ -136,8 +135,6 @@ It is possible to configure {project_name} to store regular user sessions in-mem
 This means all user sessions are lost when all {project_name} nodes are restarted, and memory consumption increases as the number of active sessions grows.
 
 === Stateless instances
-
-<@features.techpreview feature="stateless"/>
 
 When the feature `stateless` is enabled, {project_name} does not cache user entity data, and login failures, authentication sessions, and action tokens are persisted to the database. While realm and authorization data are still cached, session-related state is persisted and the database becomes the source of truth. The `work` cache is still used to invalidate realm and authorization data within the cluster.
 

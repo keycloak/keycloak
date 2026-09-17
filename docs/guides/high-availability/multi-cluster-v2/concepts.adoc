@@ -5,8 +5,7 @@
 title="Concepts for multi-cluster deployments (v2)"
 summary="Understand multi-cluster deployment with synchronous replication without an external {jdgserver_name} cluster."
 tileVisible="false"
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
+>
 
 This topic describes a highly available multi-cluster setup and the behavior to expect.
 It outlines the requirements of the high availability architecture and describes the benefits and tradeoffs.
