@@ -17,10 +17,13 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
@@ -197,11 +200,26 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Se
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid redirect_uri");
         }
         if (!redirectUri.startsWith("https://")) {
-            boolean isRedirectToLocalhost = redirectUri.startsWith("http://localhost") || redirectUri.startsWith("http://127.0.0.1");
-            if (!configuration.allowHttpOnLocalhost || !isRedirectToLocalhost) {
+            if (!configuration.allowHttpOnLocalhost || !isHttpLoopbackUri(redirectUri)) {
                 throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid redirect_uri");
             }
         }
+    }
+
+    private static boolean isHttpLoopbackUri(String redirectUri) {
+        URI uri;
+        try {
+            uri = new URI(redirectUri);
+        } catch (URISyntaxException e) {
+            logger.debugv("Invalid redirect_uri syntax: {0}", redirectUri);
+            return false;
+        }
+
+        if (!"http".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null) {
+            return false;
+        }
+
+        return RedirectUtils.LOOPBACK_INTERFACES.contains(uri.getHost().toLowerCase(Locale.ROOT));
     }
 
     private List<String> resolveUrlWithRedirects(List<String> originalUrls, List<String> redirectUris,
