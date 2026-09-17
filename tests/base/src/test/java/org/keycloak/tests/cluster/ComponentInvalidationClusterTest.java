@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
@@ -202,9 +203,11 @@ public class ComponentInvalidationClusterTest extends AbstractInvalidationCluste
             assertThat(componentOnNode.getConfig(), hasEntry("val3", val3));
         }
 
-        TestComponentProvider.DetailsRepresentation providerDetails = getTestingClientFor(survivorNode).server().fetch(
-                new ClusterComponentTestTasks.ComponentProviderDetails(testRealmName, testEntityOnFailNode.getName()),
-                TestComponentProvider.DetailsRepresentation.class);
+        TestComponentProvider.DetailsRepresentation providerDetails = getTestingClientFor(survivorNode)
+                .testing(testRealmName)
+                .getTestComponentDetails()
+                .get(testEntityOnFailNode.getName());
+        assertNotNull(providerDetails, "Component provider not instantiated on " + survivorNode);
         assertThat(providerDetails.getConfig(), hasEntry("number", testEntityOnFailNode.getConfig().get("number")));
         assertThat(providerDetails.getConfig(), hasEntry("required", testEntityOnFailNode.getConfig().get("required")));
         assertThat(providerDetails.getConfig(), hasEntry("val1", testEntityOnFailNode.getConfig().get("val1")));
