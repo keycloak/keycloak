@@ -3,8 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   getEntityId,
   interpolateEndpoint,
+  isStringMapStorageType,
   mergeEntityConfig,
-  normalizeConfig,
+  pickDeclaredConfig,
   resolveTabParams,
 } from "./pageHandlerStorage";
 
@@ -62,127 +63,38 @@ describe("getEntityId", () => {
   });
 });
 
-describe("normalizeConfig", () => {
-  it("loads only declared scalar properties for string-map targets", () => {
-    const result = normalizeConfig(
+describe("isStringMapStorageType", () => {
+  it("identifies string-map storage types", () => {
+    expect(isStringMapStorageType("CLIENT")).toBe(true);
+    expect(isStringMapStorageType("IDENTITY_PROVIDER")).toBe(true);
+    expect(isStringMapStorageType("USER")).toBe(false);
+    expect(isStringMapStorageType("COMPONENT")).toBe(false);
+  });
+});
+
+describe("pickDeclaredConfig", () => {
+  it("returns only declared properties", () => {
+    const result = pickDeclaredConfig(
       {
         host: "smtp.example.com",
         unrelated: "ignored",
       },
       [scalarProperty],
-      "load",
-      "string-map",
-    );
-
-    expect(result).toEqual({ host: ["smtp.example.com"] });
-  });
-
-  it("saves only declared scalar properties for string-map targets", () => {
-    const result = normalizeConfig(
-      {
-        host: ["smtp.example.com"],
-        unrelated: ["ignored"],
-      },
-      [scalarProperty],
-      "save",
-      "string-map",
     );
 
     expect(result).toEqual({ host: "smtp.example.com" });
   });
 
-  it("round-trips multivalued string-map values with delimiter", () => {
-    const properties = [multivaluedProperty];
-    const loaded = normalizeConfig(
-      { redirectUris: "https://a.example##https://b.example" },
-      properties,
-      "load",
-      "string-map",
+  it("omits undefined and null values", () => {
+    const result = pickDeclaredConfig(
+      {
+        host: undefined,
+        redirectUris: null,
+      },
+      [scalarProperty, multivaluedProperty],
     );
 
-    expect(loaded).toEqual({
-      redirectUris: ["https://a.example", "https://b.example"],
-    });
-
-    const saved = normalizeConfig(loaded, properties, "save", "string-map");
-
-    expect(saved).toEqual({
-      redirectUris: "https://a.example##https://b.example",
-    });
-  });
-
-  it("keeps multivalued string-map values intact when delimiter is absent", () => {
-    const result = normalizeConfig(
-      { redirectUris: "https://single.example" },
-      [multivaluedProperty],
-      "load",
-      "string-map",
-    );
-
-    expect(result).toEqual({ redirectUris: ["https://single.example"] });
-  });
-
-  it("round-trips scalar list-map values", () => {
-    const departmentProperty: ConfigPropertyRepresentation = {
-      name: "department",
-      type: "String",
-    };
-    const loaded = normalizeConfig(
-      { department: "engineering" },
-      [departmentProperty],
-      "load",
-      "list-map",
-    );
-
-    expect(loaded).toEqual({ department: ["engineering"] });
-
-    const saved = normalizeConfig(
-      loaded,
-      [departmentProperty],
-      "save",
-      "list-map",
-    );
-
-    expect(saved).toEqual({ department: ["engineering"] });
-  });
-
-  it("round-trips multivalued list-map values", () => {
-    const properties = [multivaluedProperty];
-    const loaded = normalizeConfig(
-      { redirectUris: ["https://a.example", "https://b.example"] },
-      properties,
-      "load",
-      "list-map",
-    );
-
-    expect(loaded).toEqual({
-      redirectUris: ["https://a.example", "https://b.example"],
-    });
-
-    const saved = normalizeConfig(loaded, properties, "save", "list-map");
-
-    expect(saved).toEqual({
-      redirectUris: ["https://a.example", "https://b.example"],
-    });
-  });
-
-  it("round-trips IdentityProviderMultiList values for string-map targets", () => {
-    const property: ConfigPropertyRepresentation = {
-      name: "linkedIdps",
-      type: "IdentityProviderMultiList",
-    };
-    const loaded = normalizeConfig(
-      { linkedIdps: "google##github" },
-      [property],
-      "load",
-      "string-map",
-    );
-
-    expect(loaded).toEqual({ linkedIdps: ["google", "github"] });
-
-    const saved = normalizeConfig(loaded, [property], "save", "string-map");
-
-    expect(saved).toEqual({ linkedIdps: "google##github" });
+    expect(result).toEqual({});
   });
 });
 
@@ -198,10 +110,10 @@ describe("mergeEntityConfig", () => {
     expect(result).toEqual({ keep: "value" });
   });
 
-  it("updates declared properties and leaves unrelated values intact", () => {
+  it("updates declared scalar properties for string-map targets", () => {
     const result = mergeEntityConfig(
       { host: "old.example.com", keep: "value" },
-      { host: ["new.example.com"] },
+      { host: "new.example.com" },
       [scalarProperty],
       "string-map",
     );
@@ -209,6 +121,47 @@ describe("mergeEntityConfig", () => {
     expect(result).toEqual({
       host: "new.example.com",
       keep: "value",
+    });
+  });
+
+  it("joins multivalued string-map values with the delimiter", () => {
+    const result = mergeEntityConfig(
+      {},
+      { redirectUris: "https://a.example##https://b.example" },
+      [multivaluedProperty],
+      "string-map",
+    );
+
+    expect(result).toEqual({
+      redirectUris: "https://a.example##https://b.example",
+    });
+  });
+
+  it("wraps scalar list-map values in arrays", () => {
+    const departmentProperty: ConfigPropertyRepresentation = {
+      name: "department",
+      type: "String",
+    };
+    const result = mergeEntityConfig(
+      {},
+      { department: "engineering" },
+      [departmentProperty],
+      "list-map",
+    );
+
+    expect(result).toEqual({ department: ["engineering"] });
+  });
+
+  it("keeps multivalued list-map values as arrays", () => {
+    const result = mergeEntityConfig(
+      {},
+      { redirectUris: ["https://a.example", "https://b.example"] },
+      [multivaluedProperty],
+      "list-map",
+    );
+
+    expect(result).toEqual({
+      redirectUris: ["https://a.example", "https://b.example"],
     });
   });
 

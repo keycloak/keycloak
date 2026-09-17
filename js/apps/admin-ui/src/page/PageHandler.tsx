@@ -24,8 +24,9 @@ import {
   getEntityId,
   interpolateEndpoint,
   isEntityStorageType,
+  isStringMapStorageType,
   mergeEntityConfig,
-  normalizeConfig,
+  pickDeclaredConfig,
   resolveTabParams,
   type StorageType,
 } from "./pageHandlerStorage";
@@ -173,11 +174,9 @@ export const PageHandler = ({
               await adminClient.clients.findOne({ id: resolvedEntityId })
             )?.attributes;
             return {
-              config: normalizeConfig(
+              config: pickDeclaredConfig(
                 attributes as Record<string, unknown>,
                 properties,
-                "load",
-                "string-map",
               ),
             };
           }
@@ -188,11 +187,9 @@ export const PageHandler = ({
               await adminClient.users.findOne({ id: resolvedEntityId })
             )?.attributes;
             return {
-              config: normalizeConfig(
+              config: pickDeclaredConfig(
                 attributes as Record<string, unknown>,
                 properties,
-                "load",
-                "list-map",
               ),
             };
           }
@@ -205,11 +202,9 @@ export const PageHandler = ({
               })
             )?.config;
             return {
-              config: normalizeConfig(
+              config: pickDeclaredConfig(
                 config as Record<string, unknown>,
                 properties,
-                "load",
-                "string-map",
               ),
             };
           }
@@ -447,7 +442,10 @@ export const PageHandler = ({
         className="keycloak__form"
       >
         <FormProvider {...form}>
-          <DynamicComponents properties={properties} />
+          <DynamicComponents
+            stringify={isStringMapStorageType(storageType)}
+            properties={properties}
+          />
         </FormProvider>
 
         <ActionGroup>
