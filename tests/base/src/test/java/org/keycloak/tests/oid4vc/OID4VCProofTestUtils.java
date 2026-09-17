@@ -1,13 +1,17 @@
 package org.keycloak.tests.oid4vc;
 
 import java.math.BigInteger;
+import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -31,6 +35,11 @@ import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
 import org.keycloak.representations.AccessToken;
 
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
@@ -187,6 +196,50 @@ public final class OID4VCProofTestUtils {
         } catch (NoSuchAlgorithmException | OperatorCreationException | CertificateException | NoSuchProviderException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static X509Certificate createCaCertificate(KeyPair caKeyPair, String commonName) {
+        X500Name caName = new X500Name("CN=" + commonName);
+        try {
+            X509v3CertificateBuilder builder = certificateBuilder(caName, caName, caKeyPair);
+            builder.addExtension(Extension.basicConstraints, true, new BasicConstraints(true));
+            builder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign));
+            return signCertificate(builder, caKeyPair);
+        } catch (CertIOException | OperatorCreationException | CertificateException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static X509Certificate createEndEntityCertificate(KeyPair subjectKeyPair, KeyPair caKeyPair,
+            X509Certificate caCertificate, String commonName) {
+        X500Name issuer = new X500Name(caCertificate.getSubjectX500Principal().getName());
+        X500Name subject = new X500Name("CN=" + commonName);
+        try {
+            X509v3CertificateBuilder builder = certificateBuilder(issuer, subject, subjectKeyPair);
+            builder.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
+            builder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature));
+            return signCertificate(builder, caKeyPair);
+        } catch (CertIOException | OperatorCreationException | CertificateException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static X509v3CertificateBuilder certificateBuilder(X500Name issuer, X500Name subject,
+            KeyPair subjectKeyPair) {
+        Instant now = Instant.now();
+        return new X509v3CertificateBuilder(
+                issuer,
+                new BigInteger(160, new SecureRandom()),
+                Date.from(now.minus(1, ChronoUnit.DAYS)),
+                Date.from(now.plus(365, ChronoUnit.DAYS)),
+                subject,
+                SubjectPublicKeyInfo.getInstance(subjectKeyPair.getPublic().getEncoded()));
+    }
+
+    private static X509Certificate signCertificate(X509v3CertificateBuilder builder, KeyPair signingKeyPair)
+            throws OperatorCreationException, CertificateException {
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSAEncryption").build(signingKeyPair.getPrivate());
+        return new JcaX509CertificateConverter().getCertificate(builder.build(signer));
     }
 
     public static JSONWebKeySet toJwks(KeyWrapper... keys) {
