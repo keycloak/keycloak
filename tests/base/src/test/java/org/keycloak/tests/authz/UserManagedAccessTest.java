@@ -53,7 +53,6 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
@@ -83,14 +82,10 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
     private ResourceRepresentation resource;
 
-    private Events events;
     private PolicyRepresentation onlyOwnerPolicy;
 
     @BeforeEach
     public void configureAuthorization() throws Exception {
-        events = createEvents(REALM_NAME);
-        koloId = adminClient.realm(REALM_NAME).users().search("kolo", true).get(0).getId();
-        martaId = adminClient.realm(REALM_NAME).users().search("marta", true).get(0).getId();
         ClientResource client = getClient(getRealm());
         AuthorizationResource authorization = client.authorization();
         onlyOwnerPolicy = createOnlyOwnerPolicy(authorization);
@@ -331,7 +326,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         assertPermissions(permissions, "Resource A", "ScopeA", "ScopeB");
         assertTrue(permissions.isEmpty());
 
-        getTestingClient().testing().clearEventQueue();
+        clearTestEvents();
 
         try {
             response = authorize("kolo", "password", resource.getId(), new String[] {});
@@ -342,11 +337,11 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
         String realmId = getRealm().toRepresentation().getId();
         String clientId = client.toRepresentation().getClientId();
-        EventAssertion.assertSuccess(events.poll()).clientId(clientId)
+        EventAssertion.assertSuccess(pollTestEvent()).clientId(clientId)
                 .userId(koloId);
-        EventAssertion.assertSuccess(events.poll()).clientId(clientId)
+        EventAssertion.assertSuccess(pollTestEvent()).clientId(clientId)
                 .userId(koloId);
-        EventAssertion.assertError(events.poll()).type(EventType.PERMISSION_TOKEN_ERROR).clientId(clientId).userId(koloId)
+        EventAssertion.assertError(pollTestEvent()).type(EventType.PERMISSION_TOKEN_ERROR).clientId(clientId).userId(koloId)
                 .sessionId(null)
                 .error("access_denied")
                 .details("reason", "request_submitted");
@@ -374,7 +369,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
             assertTrue(ticket.isGranted());
         }
 
-        getTestingClient().testing().clearEventQueue();
+        clearTestEvents();
 
         response = authorize("kolo", "password", resource.getId(), new String[] {"ScopeA", "ScopeB"});
         rpt = response.getToken();
@@ -393,11 +388,11 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         assertPermissions(permissions, resource.getName(), "ScopeA", "ScopeB");
         assertTrue(permissions.isEmpty());
 
-        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().clientId(clientId)
+        EventAssertion.assertSuccess(pollTestEvent()).type(EventType.LOGIN).hasSessionId().clientId(clientId)
                 .userId(koloId);
-        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().clientId(clientId)
+        EventAssertion.assertSuccess(pollTestEvent()).type(EventType.LOGIN).hasSessionId().clientId(clientId)
                 .userId(koloId);
-        EventAssertion.assertSuccess(events.poll()).type(EventType.PERMISSION_TOKEN).clientId(clientId).userId(koloId)
+        EventAssertion.assertSuccess(pollTestEvent()).type(EventType.PERMISSION_TOKEN).clientId(clientId).userId(koloId)
                 .sessionId(null);
     }
 
