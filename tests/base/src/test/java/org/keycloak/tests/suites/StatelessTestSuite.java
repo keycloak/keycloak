@@ -10,6 +10,7 @@ import org.keycloak.tests.cli.admin.KcAdmSessionTest;
 import org.keycloak.tests.db.AsyncCommitHqlTest;
 import org.keycloak.tests.forms.RecoveryAuthnCodesAuthenticatorTest;
 import org.keycloak.tests.loginfailures.LoginFailureExpirationTest;
+import org.keycloak.tests.model.SingleUseProviderTest;
 import org.keycloak.tests.model.UserSessionProviderOfflineTest;
 import org.keycloak.tests.model.UserSessionProviderTest;
 import org.keycloak.tests.oauth.RefreshTokenTimeoutsTest;
@@ -35,7 +36,8 @@ import org.junit.platform.suite.api.Suite;
         OrganizationMemberTest.class,
         KcAdmSessionTest.class,
         RecoveryAuthnCodesAuthenticatorTest.class,
-        AsyncCommitHqlTest.class
+        AsyncCommitHqlTest.class,
+        SingleUseProviderTest.class
 })
 public class StatelessTestSuite {
 

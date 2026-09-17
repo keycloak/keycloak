@@ -52,6 +52,26 @@ public class SingleUseProviderTest {
     ManagedRealm realm;
 
     @TestOnServer
+    public void testPutIfAbsentRejectsReplay(KeycloakSession session) {
+        String key = "replay-test-" + java.util.UUID.randomUUID();
+        try {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> {
+                Assertions.assertTrue(s.getProvider(SingleUseObjectProvider.class).putIfAbsent(key, 300),
+                        "First putIfAbsent should succeed");
+            });
+
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> {
+                Assertions.assertFalse(s.getProvider(SingleUseObjectProvider.class).putIfAbsent(key, 300),
+                        "Second putIfAbsent must reject the replay");
+            });
+        } finally {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> {
+                s.getProvider(SingleUseObjectProvider.class).remove(key);
+            });
+        }
+    }
+
+    @TestOnServer
     public void testConcurrentRemoveFromSingleUseCacheShouldFail(KeycloakSession session) throws Exception {
         Map<Integer, Tracker> tracker = new ConcurrentHashMap<>();
 
