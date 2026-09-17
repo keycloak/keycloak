@@ -14,6 +14,7 @@ import org.keycloak.tests.providers.components.TestComponentProvider;
  */
 public class ClusterTestingClient {
 
+    private final Object nodeLock = new Object();
     private final int nodeIndex;
     private final LoadBalancer loadBalancer;
     private final RunOnServerClient runOnServer;
@@ -37,12 +38,15 @@ public class ClusterTestingClient {
     }
 
     private <T> T onNode(Callable<T> action) {
-        synchronized (loadBalancer) {
+        synchronized (nodeLock) {
+            int previousNodeIndex = loadBalancer.getCurrentNodeIndex();
             try {
                 loadBalancer.node(nodeIndex);
                 return action.call();
             } catch (Exception e) {
                 throw new RuntimeException(e);
+            } finally {
+                loadBalancer.node(previousNodeIndex);
             }
         }
     }
@@ -77,7 +81,7 @@ public class ClusterTestingClient {
             ClusterComponentTestTasks.ComponentDetailsMap details = onNode(() -> runOnServer.fetch(
                     new ClusterComponentTestTasks.AllComponentDetails(realmName),
                     ClusterComponentTestTasks.ComponentDetailsMap.class));
-            return details.getDetails();
+            return details.details();
         }
     }
 }

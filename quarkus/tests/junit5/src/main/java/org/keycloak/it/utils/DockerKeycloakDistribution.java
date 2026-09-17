@@ -177,7 +177,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
             this.stdout = backupConsumer.stdOut.toUtf8String();
             this.stderr = backupConsumer.stdErr.toUtf8String();
             try {
-                cleanupContainer();
+                cleanupContainer(containerId);
             } catch (Exception stopException) {
                 cause.addSuppressed(stopException);
             }
@@ -232,7 +232,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
 
     public void stopNode() {
         if (keycloakContainer != null) {
-            stop(true);
+            stop(true, true);
         }
     }
 
@@ -249,7 +249,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         }
         try {
             if (keycloakContainer != null) {
-                stop(true);
+                stop(true, false);
             }
             runKc(lastKcArguments);
         } catch (Exception cause) {
@@ -258,16 +258,21 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     }
 
     private void stop(boolean removeContainer) {
+        stop(removeContainer, false);
+    }
+
+    private void stop(boolean removeContainer, boolean forceKill) {
+        String containerToCleanup = null;
         try {
             if (keycloakContainer != null) {
-                containerId = keycloakContainer.getContainerId();
+                containerToCleanup = keycloakContainer.getContainerId();
                 this.stdout = fetchOutputStream();
                 this.stderr = fetchErrorStream();
 
                 if (keycloakContainer.isRunning()) {
-                    // Graceful shutdown helps with cleaning up resources, for example JDBC_PING table entries.
-                    try (KillContainerCmd killContainerCmd = keycloakContainer.getDockerClient().killContainerCmd(keycloakContainer.getContainerId())) {
-                        killContainerCmd.withSignal("TERM").exec();
+                    String signal = forceKill ? "KILL" : "TERM";
+                    try (KillContainerCmd killContainerCmd = keycloakContainer.getDockerClient().killContainerCmd(containerToCleanup)) {
+                        killContainerCmd.withSignal(signal).exec();
                     }
                     Awaitility.await().atMost(Duration.ofSeconds(2)).untilAsserted(() -> Assertions.assertFalse(keycloakContainer.isRunning()));
                 }
@@ -282,30 +287,25 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
             throw new RuntimeException("Failed to stop the server", cause);
         } finally {
             if (removeContainer) {
-                cleanupContainer();
+                cleanupContainer(containerToCleanup);
                 keycloakContainer = null;
             }
         }
     }
 
-    private void cleanupContainer() {
-        if (containerId != null) {
+    private void cleanupContainer(String containerToCleanup) {
+        if (containerToCleanup != null) {
             try {
-                Runnable reaper = new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            if (containerId == null) {
-                                return;
-                            }
-                            DockerClient dockerClient = DockerClientFactory.lazyClient();
-                            dockerClient.killContainerCmd(containerId).exec();
-                            dockerClient.removeContainerCmd(containerId).withRemoveVolumes(true).withForce(true).exec();
-                        } catch (NotFoundException notFound) {
-                            LOGGER.debug("Container is already cleaned up, no additional cleanup required");
-                        } catch (Exception cause) {
-                            throw new RuntimeException("Failed to stop and remove container", cause);
-                        }
+                final String id = containerToCleanup;
+                Runnable reaper = () -> {
+                    try {
+                        DockerClient dockerClient = DockerClientFactory.lazyClient();
+                        dockerClient.killContainerCmd(id).exec();
+                        dockerClient.removeContainerCmd(id).withRemoveVolumes(true).withForce(true).exec();
+                    } catch (NotFoundException notFound) {
+                        LOGGER.debug("Container is already cleaned up, no additional cleanup required");
+                    } catch (Exception cause) {
+                        throw new RuntimeException("Failed to stop and remove container", cause);
                     }
                 };
                 parallelReaperExecutor.execute(reaper);
