@@ -269,14 +269,6 @@ export const RealmOverrides = ({
             key,
           });
           deletedKeys.add(key);
-
-          const messages = i18n.getResourceBundle(
-            selectMenuLocale,
-            encodeURIComponent(realmName),
-          ) as Record<string, string> | undefined;
-          if (messages) {
-            delete messages[key];
-          }
         }
         addAlert(t("deleteAllTranslationsSuccess"), AlertVariant.success);
       } catch (error) {
@@ -295,6 +287,7 @@ export const RealmOverrides = ({
               : previous,
           );
           setAreAllRowsSelected(false);
+          await i18n.reloadResources();
         }
         setDeletingIds(new Set());
       }
