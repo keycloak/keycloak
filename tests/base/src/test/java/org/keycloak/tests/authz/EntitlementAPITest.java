@@ -80,7 +80,7 @@ import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
@@ -134,8 +134,6 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     private AuthzClient authzClient;
 
-    private Events events;
-
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create().name("authz-test")
@@ -178,7 +176,6 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     @BeforeEach
     public void configureAuthorization() throws Exception {
-        events = createEvents("authz-test");
         configureAuthorization(RESOURCE_SERVER_TEST);
         configureAuthorization(PAIRWISE_RESOURCE_SERVER_TEST);
     }
@@ -240,14 +237,13 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     @Test
     public void testInvalidRequestWithClaimsFromPublicClient() throws IOException {
-        oauth.realm("authz-test");
-        oauth.client(PUBLIC_TEST_CLIENT);
+        OAuthClient authzTestOAuth = oauth.newConfig().realm("authz-test").client(PUBLIC_TEST_CLIENT);
 
-        oauth.doLogin("marta", "password");
+        authzTestOAuth.doLogin("marta", "password");
 
         // Token request
-        String code = oauth.parseLoginResponse().getCode();
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        String code = authzTestOAuth.parseLoginResponse().getCode();
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = authzTestOAuth.doAccessTokenRequest(code);
 
         AuthorizationRequest request = new AuthorizationRequest();
 
@@ -674,7 +670,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         request.addPermission("Sensortest", "sensors:view");
 
-        getTestingClient().testing().clearEventQueue();
+        clearTestEvents();
         AccessToken at = toAccessToken(accessToken);
 
         try {
@@ -686,7 +682,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         }
 
 
-        EventAssertion.assertError(events.poll()).type(EventType.PERMISSION_TOKEN_ERROR).clientId(RESOURCE_SERVER_TEST)
+        EventAssertion.assertError(pollTestEvent()).type(EventType.PERMISSION_TOKEN_ERROR).clientId(RESOURCE_SERVER_TEST)
                 .sessionId(null)
                 .error("invalid_request")
                 .details("reason", "Resource with id [Sensortest] does not exist.")
@@ -2929,7 +2925,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     }
 
     private boolean hasPermission(String userName, String password, String resourceId) throws Exception {
-        return hasPermission(userName, password, resourceId, null);
+        return hasPermission(userName, password, resourceId, new String[0]);
     }
 
     private void assertResponse(Metadata metadata, Supplier<AuthorizationResponse> responseSupplier) {

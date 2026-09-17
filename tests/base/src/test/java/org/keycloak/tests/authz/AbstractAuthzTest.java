@@ -20,10 +20,10 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -212,22 +212,12 @@ public abstract class AbstractAuthzTest extends AuthzTestRealmSupport {
         getTestingClient().testApp().oidcClientEndpoints().setSectorIdentifierRedirectUris(Arrays.asList(redirectUris));
     }
 
-    protected Events createEvents(String realmName) {
-        String authServerRoot = oauth.getBaseUrl();
-        int realmSegmentIndex = authServerRoot.indexOf("/realms/");
-        if (realmSegmentIndex >= 0) {
-            authServerRoot = authServerRoot.substring(0, realmSegmentIndex);
-        }
+    protected EventRepresentation pollTestEvent() {
+        return getTestingClient().testing().pollEvent();
+    }
 
-        RealmRepresentation realmRepresentation = adminClient.realm(realmName).toRepresentation();
-        if (!Boolean.TRUE.equals(realmRepresentation.isEventsEnabled())) {
-            realmRepresentation.setEventsEnabled(true);
-            adminClient.realm(realmName).update(realmRepresentation);
-        }
-
-        Events events = new Events(new ManagedRealm(authServerRoot + "/realms/" + realmName, realmRepresentation, adminClient.realm(realmName)));
-        events.skipAll();
-        return events;
+    protected void clearTestEvents() {
+        getTestingClient().testing().clearEventQueue();
     }
 
     private void closeTestingClient() {

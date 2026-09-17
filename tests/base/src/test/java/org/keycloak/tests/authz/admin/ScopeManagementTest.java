@@ -33,9 +33,10 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -107,16 +108,16 @@ public class ScopeManagementTest extends AbstractAuthorizationTest {
         assertEquals("changed", scope.getIconUri());
     }
 
-    @Test(expected = NotFoundException.class)
+    @Test
     public void testDelete() {
         ResourceScopeResource scopeResource = createDefaultScope();
 
         scopeResource.remove();
 
-        scopeResource.toRepresentation();
+        assertThrows(NotFoundException.class, scopeResource::toRepresentation);
     }
 
-    @Test(expected = NotFoundException.class)
+    @Test
     public void testDeleteAndPolicyUpdate() {
         ResourceScopeResource scopeResource = createDefaultScope();
 
