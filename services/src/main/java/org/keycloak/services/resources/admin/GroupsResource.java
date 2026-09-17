@@ -196,11 +196,11 @@ public class GroupsResource {
     @Operation( summary = "create or add a top level realm groupSet or create child.",
         description = "This will update the group and set the parent if it exists. Create it and set the parent if the group doesn’t exist.")
     public Response addTopLevelGroup(GroupRepresentation rep) {
-        auth.groups().requireManage();
-
         if (rep == null) {
             throw ErrorResponse.error("Group representation is missing", Response.Status.BAD_REQUEST);
         }
+
+        auth.groups().requireManage();
 
         GroupModel child;
         Response.ResponseBuilder builder = Response.status(204);
