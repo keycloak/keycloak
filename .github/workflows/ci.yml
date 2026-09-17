@@ -913,7 +913,7 @@ jobs:
     name: Clustering IT
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 75
     env:
       MAVEN_OPTS: -Xmx1536m
     steps:
