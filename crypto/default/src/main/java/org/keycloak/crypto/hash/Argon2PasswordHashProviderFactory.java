@@ -3,6 +3,7 @@ package org.keycloak.crypto.hash;
 import java.lang.ref.SoftReference;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Semaphore;
 
@@ -62,7 +63,7 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
         iterations = config.getInt(ITERATIONS_KEY, Argon2Parameters.DEFAULT_ITERATIONS);
         parallelism = config.getInt(PARALLELISM_KEY, Argon2Parameters.DEFAULT_PARALLELISM);
         cpuCoreSemaphore = new Semaphore(config.getInt(CPU_CORES_KEY, Runtime.getRuntime().availableProcessors()));
-        blockPoolManager = new SoftBlockPool(memory, parallelism);
+        blockPoolManager = new SoftBlockPool();
     }
 
     @Override
@@ -157,37 +158,40 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
      * because {@link Argon2BytesGenerator.Block#clear()} is private — only {@code FixedBlockPool},
      * as an inner class of {@code Argon2BytesGenerator}, can zero out block contents on
      * deallocate/allocate to prevent password-derived data from lingering in pooled memory.
+     * See <a href="https://github.com/bcgit/bc-java/issues/2452">bcgit/bc-java#2452</a> for the
+     * upstream discussion.
      *
-     * <p>All block pools will be of the configured memory size, although existing hashed passwords might use larger pools.
-     * In those cases, the necessary blocks will be created on-the-fly, and then immediately garbage collected.
-     * This is a limitation of the current implementation, and could be changed once we are able to create a custom
-     * replacement for FixedBlockPool.
+     * <p>Pools are keyed by their effective block count (derived from the memory and parallelism
+     * parameters), so credentials hashed with different settings each get a correctly-sized pool.
      *
      * <p>As the concurrency of the Argon2 password hashing is limited to the number of CPU cores,
-     * this pool is also effectively bounded with the number of CPU cores.
+     * the total number of pools in use is also effectively bounded by the number of CPU cores.
      */
     static class SoftBlockPool {
         private static final int ARGON2_SYNC_POINTS = 4;
         // FillBlock allocates 4 scratch blocks (R, Z, addressBlock, inputBlock) in addition to the primary memory blocks.
         private static final int SCRATCH_BLOCKS = 4;
-        private final ConcurrentLinkedDeque<SoftReference<FixedBlockPool>> pools = new ConcurrentLinkedDeque<>();
-        private final int maxBlocks;
+        private final ConcurrentHashMap<Integer, ConcurrentLinkedDeque<SoftReference<FixedBlockPool>>> poolsBySize = new ConcurrentHashMap<>();
 
-        SoftBlockPool(int memoryInKB, int parallelism) {
+        static int computeMaxBlocks(int memoryInKB, int parallelism) {
             // Mirror BouncyCastle's effective block count calculation:
             // memoryBlocks = max(memory, 2 * SYNC_POINTS * lanes), then rounded to a multiple of 4 * lanes.
             int memoryBlocks = Math.max(memoryInKB, 2 * ARGON2_SYNC_POINTS * parallelism);
             int segmentLength = memoryBlocks / (ARGON2_SYNC_POINTS * parallelism);
             int laneLength = segmentLength * ARGON2_SYNC_POINTS;
-            this.maxBlocks = parallelism * laneLength + SCRATCH_BLOCKS;
+            return parallelism * laneLength + SCRATCH_BLOCKS;
         }
 
-        FixedBlockPool acquire() {
+        PoolHandle acquire(int memoryInKB, int parallelism) {
+            int maxBlocks = computeMaxBlocks(memoryInKB, parallelism);
+            ConcurrentLinkedDeque<SoftReference<FixedBlockPool>> deque =
+                    poolsBySize.computeIfAbsent(maxBlocks, k -> new ConcurrentLinkedDeque<>());
+
             SoftReference<FixedBlockPool> ref;
-            while ((ref = pools.pollLast()) != null) {
+            while ((ref = deque.pollLast()) != null) {
                 FixedBlockPool pool = ref.get();
                 if (pool != null) {
-                    return pool;
+                    return new PoolHandle(pool, deque);
                 } else {
                     // Soft references may be cleared by the JVM under memory pressure.
                     // The retention policy is implementation- and configuration-specific
@@ -195,11 +199,26 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
                     logger.debug("Soft reference was evicted");
                 }
             }
-            return new FixedBlockPool(maxBlocks);
+            return new PoolHandle(new FixedBlockPool(maxBlocks), deque);
         }
 
-        void release(FixedBlockPool pool) {
-            pools.offerLast(new SoftReference<>(pool));
+        static class PoolHandle implements AutoCloseable {
+            private final FixedBlockPool pool;
+            private final ConcurrentLinkedDeque<SoftReference<FixedBlockPool>> deque;
+
+            PoolHandle(FixedBlockPool pool, ConcurrentLinkedDeque<SoftReference<FixedBlockPool>> deque) {
+                this.pool = pool;
+                this.deque = deque;
+            }
+
+            FixedBlockPool pool() {
+                return pool;
+            }
+
+            @Override
+            public void close() {
+                deque.offerLast(new SoftReference<>(pool));
+            }
         }
     }
 }
