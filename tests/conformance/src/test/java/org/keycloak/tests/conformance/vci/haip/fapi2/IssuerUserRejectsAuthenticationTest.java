@@ -24,17 +24,20 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.conformance.runner.BrowserInteraction;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.testframework.conformance.runner.ConformanceResult;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.tests.conformance.vci.AbstractVciConformanceTest;
-import org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig;
+import org.keycloak.tests.conformance.vci.haip.configs.HaipVciRealmConfig;
+import org.keycloak.tests.conformance.vci.haip.configs.HaipVciServerConfig;
 
-import static org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig.HAIP_PLAN;
+import static org.keycloak.tests.conformance.vci.VciConformanceRealmUtil.CLIENT;
+import static org.keycloak.tests.conformance.vci.VciConformanceRealmUtil.CLIENT2;
+import static org.keycloak.tests.conformance.vci.haip.configs.HaipVciRealmConfig.HAIP_PLAN;
 
-@KeycloakIntegrationTest(config = HaipVciConformanceRealmConfig.ServerConfig.class)
+@KeycloakIntegrationTest(config = HaipVciServerConfig.class)
 public class IssuerUserRejectsAuthenticationTest extends AbstractVciConformanceTest {
 
-    @InjectRealm(config = HaipVciConformanceRealmConfig.ConsentRequiredRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(config = ConsentRequiredRealmConfig.class)
     ManagedRealm realm;
 
     @Override
@@ -45,5 +48,15 @@ public class IssuerUserRejectsAuthenticationTest extends AbstractVciConformanceT
                 "fapi2-security-profile-final-user-rejects-authentication",
                 ConformanceResult.PASSED,
                 BrowserInteraction.DENY_CONSENT);
+    }
+
+    private static class ConsentRequiredRealmConfig extends HaipVciRealmConfig {
+
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return super.configure(realm).update(rep -> rep.getClients().stream()
+                    .filter(client -> CLIENT.equals(client.getClientId()) || CLIENT2.equals(client.getClientId()))
+                    .forEach(client -> client.setConsentRequired(true)));
+        }
     }
 }

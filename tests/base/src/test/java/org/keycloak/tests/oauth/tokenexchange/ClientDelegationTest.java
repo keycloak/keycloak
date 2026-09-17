@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
@@ -130,6 +131,64 @@ public class ClientDelegationTest {
         // perform the token exchange with delegation
         String actorToken = getActorToken();
         assertTokenExchangeSuccess(res.getAccessToken(), actorToken, serviceAccountUserId);
+
+        logout(res.getRefreshToken());
+    }
+
+
+    @Test
+    public void standardExchangeRejectsDelegationSubjectTokenWithoutActorToken() {
+        AccessTokenResponse res = loginWithDelegation(AGENT_DELEGATION_SCOPE);
+        assertScopeContains(res.getScope(), AGENT_DELEGATION_SCOPE);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), getServiceAccountUserId(), AGENT_CLIENT_ID);
+
+        AccessTokenResponse exchange = oauth.client(AGENT_CLIENT_ID, AGENT_CLIENT_SECRET)
+                .scope(null)                               
+                .tokenExchangeRequest(res.getAccessToken()) 
+                .actorToken(null)                           // no actor_token so delegation provider declines
+                .send();
+
+        Assertions.assertFalse(exchange.isSuccess(),
+                "standard exchange must reject a subject_token carrying may_act/act");
+        Assertions.assertEquals(OAuthErrorException.INVALID_REQUEST, exchange.getError());
+        EventAssertion.assertError(events.poll())
+                .type(EventType.TOKEN_EXCHANGE_ERROR)
+                .clientId(AGENT_CLIENT_ID)
+                .error(Errors.INVALID_REQUEST)
+                .details(Details.REASON, "subject_token with a 'may_act' or 'act' claim is not allowed for standard token exchange");
+
+        logout(res.getRefreshToken());
+    }
+
+    @Test
+    public void standardExchangeRejectsReExchangeOfAlreadyDelegatedToken() {
+        // Perform a legitimate delegation exchange to obtain a token that carries "act".
+        AccessTokenResponse res = loginWithDelegation(AGENT_DELEGATION_SCOPE);
+        String actorToken = getActorToken();
+        AccessTokenResponse delegated = oauth.client(AGENT_CLIENT_ID, AGENT_CLIENT_SECRET)
+                .tokenExchangeRequest(res.getAccessToken())
+                .actorToken(actorToken)
+                .actorTokenType(ACCESS_TOKEN_TYPE)
+                .send();
+        Assertions.assertTrue(delegated.isSuccess(), delegated.getError() + " - " + delegated.getErrorDescription());
+        events.poll();
+        assertActPresent(oauth.verifyToken(delegated.getAccessToken()), getServiceAccountUserId(), AGENT_CLIENT_ID);
+
+        // Re-exchange that delegated token through STANDARD exchange with no actor_token and it must be rejected.
+        AccessTokenResponse reExchange = oauth.client(AGENT_CLIENT_ID, AGENT_CLIENT_SECRET)
+                .scope(null)
+                .tokenExchangeRequest(delegated.getAccessToken())
+                .actorToken(null)
+                .send();
+
+        Assertions.assertFalse(reExchange.isSuccess(),
+                "standard exchange must reject re-exchange of an already-delegated token carrying 'act'");
+        Assertions.assertEquals(OAuthErrorException.INVALID_REQUEST, reExchange.getError());
+        EventAssertion.assertError(events.poll())
+                .type(EventType.TOKEN_EXCHANGE_ERROR)
+                .clientId(AGENT_CLIENT_ID)
+                .error(Errors.INVALID_REQUEST)
+                .details(Details.REASON, "subject_token with a 'may_act' or 'act' claim is not allowed for standard token exchange");
 
         logout(res.getRefreshToken());
     }

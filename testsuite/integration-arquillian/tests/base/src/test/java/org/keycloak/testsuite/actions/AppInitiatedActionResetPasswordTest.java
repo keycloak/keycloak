@@ -310,6 +310,40 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         assertKcActionStatus(SUCCESS);
     }
 
+    @Test
+    public void resetPasswordRequiresNoReAuthWithMaxAuthAgeConfigIntegerOverflow() throws Exception {
+        // retrieve the password required action
+        RequiredActionProviderRepresentation passwordRequiredAction = managedRealm.admin().flows().getRequiredActions()
+                .stream()
+                .filter(requiredAction -> requiredAction.getProviderId().equals(UserModel.RequiredAction.UPDATE_PASSWORD.name()))
+                .findFirst()
+                .orElseThrow(() -> new Exception("Required action not found"));
+
+        // max auth age close to Integer.MAX_VALUE must not overflow the authTime+maxAge sum and
+        // incorrectly force re-authentication
+        passwordRequiredAction.getConfig().put(Constants.MAX_AUTH_AGE_KEY, String.valueOf(Integer.MAX_VALUE));
+        managedRealm.admin().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.name(), passwordRequiredAction);
+
+        oauth.openLoginForm();
+        loginPage.login("test-user@localhost", "password");
+
+        EventAssertion.expectLoginSuccess(events.poll());
+
+        timeOffSet.set(350);
+
+        // Should not prompt for re-authentication
+        doAIA();
+
+        changePasswordPage.assertCurrent();
+        assertTrue(changePasswordPage.isCancelDisplayed());
+
+        changePasswordPage.changePassword("new-password", "new-password");
+
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
+        assertKcActionStatus(SUCCESS);
+    }
+
 
     /**
      * See GH-12943

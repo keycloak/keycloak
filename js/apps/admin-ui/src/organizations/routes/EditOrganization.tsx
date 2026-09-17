@@ -8,6 +8,7 @@ export type OrganizationTab =
   | "attributes"
   | "members"
   | "groups"
+  | "domains"
   | "identityProviders"
   | "events";
 

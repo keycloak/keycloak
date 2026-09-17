@@ -340,6 +340,20 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     convertToFormValues(clientScope ?? {}, setValue);
   }, [clientScope, setValue]);
 
+  // When switching to OID4VCI on a new-scope form, force "Include in token scope" to ON.
+  // The field defaults to "false" for other protocols and RHF retains that value across
+  // protocol changes (shouldUnregister is false), so we must set it explicitly.
+  useEffect(() => {
+    if (!clientScope) {
+      setValue(
+        convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+          "attributes.include.in.token.scope",
+        ),
+        isOid4vcProtocol ? "true" : "false",
+      );
+    }
+  }, [isOid4vcProtocol, clientScope, setValue]);
+
   useEffect(() => {
     if (isParameterizedScopeWithFeatureDisabled) {
       setValue(
@@ -581,6 +595,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
             "attributes.include.in.token.scope",
           )}
+          defaultValue={isOid4vcProtocol ? "true" : "false"}
           label={t("includeInTokenScope")}
           labelIcon={t("includeInTokenScopeHelp")}
           stringify
