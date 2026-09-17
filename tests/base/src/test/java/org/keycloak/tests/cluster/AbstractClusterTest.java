@@ -55,14 +55,11 @@ public abstract class AbstractClusterTest {
     // Assume that route like "node6" will have corresponding backend container route index 6
     protected void setCurrentFailNodeForRoute(String nodeName) {
         String route = nodeName.substring(nodeName.lastIndexOf('.') + 1);
-        String routeNumber;
-        int portSeparator = route.indexOf('-');
-        if (portSeparator == -1) {
-            routeNumber = route.substring(route.length() - 1);
-        } else {
-            routeNumber = route.substring(portSeparator - 1, portSeparator);
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("node(\\d+)").matcher(route);
+        if (!matcher.find()) {
+            throw new IllegalArgumentException("Unable to parse node number from route: " + route);
         }
-        currentFailNodeIndex = Integer.parseInt(routeNumber) - 1;
+        currentFailNodeIndex = Integer.parseInt(matcher.group(1)) - 1;
     }
 
     protected ContainerInfo getCurrentFailNode() {

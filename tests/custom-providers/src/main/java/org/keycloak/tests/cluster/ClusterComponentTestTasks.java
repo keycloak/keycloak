@@ -33,7 +33,8 @@ public final class ClusterComponentTestTasks {
                     .filter(componentModel -> componentName.equals(componentModel.getName()))
                     .findFirst()
                     .map(componentModel -> createProvider(session, componentModel).getDetails())
-                    .orElse(null);
+                    .orElseThrow(() -> new AssertionError(
+                            "Component '" + componentName + "' not found in realm '" + realmName + "'"));
         }
     }
 
@@ -57,22 +58,17 @@ public final class ClusterComponentTestTasks {
         }
     }
 
-    public static class ComponentDetailsMap {
-        private final Map<String, TestComponentProvider.DetailsRepresentation> details;
-
-        public ComponentDetailsMap(Map<String, TestComponentProvider.DetailsRepresentation> details) {
-            this.details = details;
-        }
-
-        public Map<String, TestComponentProvider.DetailsRepresentation> getDetails() {
-            return details;
-        }
+    public record ComponentDetailsMap(Map<String, TestComponentProvider.DetailsRepresentation> details) {
     }
 
     private static TestComponentProvider createProvider(KeycloakSession session, ComponentModel componentModel) {
         ProviderFactory<TestComponentProvider> factory = session.getKeycloakSessionFactory()
                 .getProviderFactory(TestComponentProvider.class, componentModel.getProviderId());
-        TestComponentProviderFactory componentFactory = (TestComponentProviderFactory) factory;
-        return componentFactory.create(session, componentModel);
+        if (factory == null) {
+            throw new AssertionError("No provider factory found for component '" + componentModel.getName()
+                    + "' with provider id '" + componentModel.getProviderId() + "'");
+        }
+        TestComponentProviderFactory<?> componentFactory = (TestComponentProviderFactory<?>) factory;
+        return (TestComponentProvider) componentFactory.create(session, componentModel);
     }
 }

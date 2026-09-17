@@ -218,11 +218,13 @@ public class ClusteredKeycloakServer implements KeycloakServer {
     public void startNode(int index) {
         if (!containers[index].isRunning()) {
             int numServers = containers.length;
-            var reunionLatch = new CountdownLatchLoggingConsumer(1, String.format(CLUSTER_VIEW_REGEX, numServers));
+            int expectedMembers = stateless ? 1 : numServers;
+            var reunionLatch = new CountdownLatchLoggingConsumer(1, String.format(CLUSTER_VIEW_REGEX, expectedMembers));
             configureLogConsumers(containers[index], index, reunionLatch);
             containers[index].recreateContainer();
             try {
-                long perLatchTimeout = (long) numServers * DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS;
+                long perLatchTimeout = stateless ? DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS
+                        : (long) numServers * DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS;
                 reunionLatch.await(perLatchTimeout, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

@@ -53,6 +53,10 @@ public class LoadBalancer {
         proxy.origin(origin.port, origin.host);
     }
 
+    public int getCurrentNodeIndex() {
+        return currentNodeIndex;
+    }
+
     public KeycloakUrls nodeUrls(int index) {
         return origin(index).urls;
     }
