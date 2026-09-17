@@ -16,7 +16,6 @@
  */
 package org.keycloak.tests.authz;
 
-import java.util.Collections;
 import java.util.List;
 
 import jakarta.ws.rs.core.Response;
@@ -43,7 +42,6 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -91,7 +89,7 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
                     .redirectUris("http://localhost/resource-server-test")
                     .defaultRoles("uma_protection")
                     .directAccessGrantsEnabled()
-                    .protocolMappers(ProtocolMapperUtil.createPairwiseMapper(TestApplicationResourceUrls.pairwiseSectorIdentifierUri(), null)))
+                    .protocolMappers(ProtocolMapperUtil.createPairwiseMapper(pairwiseSectorIdentifierUri(), null)))
                 .clients(ClientBuilder.create().clientId(TEST_CLIENT)
                     .secret("secret")
                     .authorizationServicesEnabled(true)
@@ -104,7 +102,7 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
                         .directAccessGrantsEnabled())
                 .build());
 
-        getTestingClient().testApp().oidcClientEndpoints().setSectorIdentifierRedirectUris(Collections.singletonList("http://localhost/resource-server-test"));
+        configureSectorIdentifierRedirectUris("http://localhost/resource-server-test");
     }
 
     @BeforeEach

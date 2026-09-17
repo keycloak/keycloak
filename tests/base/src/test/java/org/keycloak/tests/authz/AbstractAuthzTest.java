@@ -5,10 +5,13 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
+
+import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -25,6 +28,8 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.client.resources.TestApplicationResource;
+import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -184,6 +189,27 @@ public abstract class AbstractAuthzTest extends AuthzTestRealmSupport {
                 }
             }
         }
+    }
+
+    protected String authServerRoot() {
+        String root = oauth.getBaseUrl();
+        int realmSegmentIndex = root.indexOf("/realms/");
+        if (realmSegmentIndex >= 0) {
+            root = root.substring(0, realmSegmentIndex);
+        }
+        return root;
+    }
+
+    protected String pairwiseSectorIdentifierUri() {
+        return UriBuilder.fromUri(authServerRoot())
+                .path(TestApplicationResource.class)
+                .path(TestApplicationResource.class, "oidcClientEndpoints")
+                .path(TestOIDCEndpointsApplicationResource.class, "getSectorIdentifierRedirectUris")
+                .build().toString();
+    }
+
+    protected void configureSectorIdentifierRedirectUris(String... redirectUris) {
+        getTestingClient().testApp().oidcClientEndpoints().setSectorIdentifierRedirectUris(Arrays.asList(redirectUris));
     }
 
     protected Events createEvents(String realmName) {

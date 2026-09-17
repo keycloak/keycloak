@@ -89,6 +89,8 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
     @BeforeEach
     public void configureAuthorization() throws Exception {
         events = createEvents(REALM_NAME);
+        koloId = adminClient.realm(REALM_NAME).users().search("kolo", true).get(0).getId();
+        martaId = adminClient.realm(REALM_NAME).users().search("marta", true).get(0).getId();
         ClientResource client = getClient(getRealm());
         AuthorizationResource authorization = client.authorization();
         onlyOwnerPolicy = createOnlyOwnerPolicy(authorization);
