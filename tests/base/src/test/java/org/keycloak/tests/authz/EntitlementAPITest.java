@@ -88,7 +88,6 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -155,7 +154,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/resource-server-test")
                         .defaultRoles("uma_protection")
-                        .protocolMappers(ProtocolMapperUtil.createPairwiseMapper(TestApplicationResourceUrls.pairwiseSectorIdentifierUri(), null))
+                        .protocolMappers(ProtocolMapperUtil.createPairwiseMapper(pairwiseSectorIdentifierUri(), null))
                         .directAccessGrantsEnabled())
                 .clients(ClientBuilder.create().clientId(TEST_CLIENT)
                         .secret("secret")
@@ -166,7 +165,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/test-client")
-                        .protocolMappers(ProtocolMapperUtil.createPairwiseMapper(TestApplicationResourceUrls.pairwiseSectorIdentifierUri(), null))
+                        .protocolMappers(ProtocolMapperUtil.createPairwiseMapper(pairwiseSectorIdentifierUri(), null))
                         .directAccessGrantsEnabled())
                 .clients(ClientBuilder.create().clientId(PUBLIC_TEST_CLIENT)
                         .secret("secret")
@@ -174,11 +173,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
                         .publicClient())
                 .build());
 
-        configureSectorIdentifierRedirectUris();
-    }
-
-    private void configureSectorIdentifierRedirectUris() {
-        getTestingClient().testApp().oidcClientEndpoints().setSectorIdentifierRedirectUris(Arrays.asList("http://localhost/resource-server-test", "http://localhost/test-client"));
+        configureSectorIdentifierRedirectUris("http://localhost/resource-server-test", "http://localhost/test-client");
     }
 
     @BeforeEach
