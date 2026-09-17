@@ -45,6 +45,7 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
