@@ -190,7 +190,7 @@ public class ParEndpoint extends AbstractParEndpoint {
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
         //  PAR object needs to be valid for the time of PAR lifespan together with the authenticationSession time
         //  (See https://github.com/keycloak/keycloak/issues/48072 for the details)
-        int storeLifespan = expiresIn + SessionExpiration.getAuthSessionLifespan(realm);
+        long storeLifespan = (long) expiresIn + SessionExpiration.getAuthSessionLifespan(realm);
         singleUseStore.put(buildCacheKey(realm.getId(), key), storeLifespan, params);
 
         ParResponse parResponse = new ParResponse(requestUri, expiresIn);
