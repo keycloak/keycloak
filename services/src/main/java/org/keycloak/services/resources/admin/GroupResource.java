@@ -135,11 +135,11 @@ public class GroupResource {
         @APIResponse(responseCode = "409", description = "Conflict")
     })
     public Response updateGroup(GroupRepresentation rep) {
+        this.auth.groups().requireManage(group);
+
         if (rep == null) {
             throw ErrorResponse.error("Group representation is missing", Response.Status.BAD_REQUEST);
         }
-
-        this.auth.groups().requireManage(group);
 
         String groupName = rep.getName();
 
@@ -240,11 +240,11 @@ public class GroupResource {
         @APIResponse(responseCode = "409", description = "Conflict")
     })
     public Response addChild(GroupRepresentation rep) {
+        this.auth.groups().requireManage(group);
+
         if (rep == null) {
             throw ErrorResponse.error("Group representation is missing", Response.Status.BAD_REQUEST);
         }
-
-        this.auth.groups().requireManage(group);
 
         String groupName = rep.getName();
         if (isBlank(groupName)) {

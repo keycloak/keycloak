@@ -1090,6 +1090,7 @@ public class GroupTest extends AbstractGroupTest {
         groupRep.setName("test-group-update-null");
         Response response = managedRealm.admin().groups().add(groupRep);
         String groupId = ApiUtil.getCreatedId(response);
+        managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
         response.close();
 
         BadRequestException ex = assertThrows(BadRequestException.class, () -> {
@@ -1106,6 +1107,7 @@ public class GroupTest extends AbstractGroupTest {
         groupRep.setName("test-group-parent");
         Response response = managedRealm.admin().groups().add(groupRep);
         String groupId = ApiUtil.getCreatedId(response);
+        managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
         response.close();
 
         try (Response childResponse = managedRealm.admin().groups().group(groupId).subGroup(null)) {
