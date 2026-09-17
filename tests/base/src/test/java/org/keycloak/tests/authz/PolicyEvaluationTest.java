@@ -46,7 +46,6 @@ import org.keycloak.authorization.permission.evaluator.PermissionEvaluator;
 import org.keycloak.authorization.policy.evaluation.DefaultEvaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -79,7 +78,7 @@ import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.tests.authz.config.AuthzScriptsServerConfig;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -91,8 +90,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(Feature.SCRIPTS)
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = AuthzScriptsServerConfig.class)
 public class PolicyEvaluationTest extends AbstractAuthzTest {
 
     @InjectRealm
@@ -732,7 +730,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
     public void testEvaluation() {
         RealmResource realmApi = realmsResouce().realm("authz-test");
         RealmRepresentation realm = realmApi.toRepresentation();
-        boolean adminPermissionsOriginallyEnabled = Boolean.TRUE.equals(realm.getAdminPermissionsEnabled());
+        boolean adminPermissionsOriginallyEnabled = Boolean.TRUE.equals(realm.isAdminPermissionsEnabled());
         realm.setAdminPermissionsEnabled(true);
         realmApi.update(realm);
         try {

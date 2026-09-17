@@ -27,8 +27,8 @@ import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.authorization.config.UmaConfiguration;
 import org.keycloak.authorization.config.UmaWellKnownProviderFactory;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.util.oauth.Endpoints;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -76,10 +76,11 @@ public class UmaDiscoveryDocumentTest extends AbstractAuthzTest {
 
             UmaConfiguration configuration = response.readEntity(UmaConfiguration.class);
 
-            assertEquals(configuration.getAuthorizationEndpoint(), OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(authServerRoot)).build("test").toString());
-            assertEquals(configuration.getTokenEndpoint(), OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(authServerRoot)).build("test").toString());
-            assertEquals(configuration.getJwksUri(), OIDCLoginProtocolService.jwksUrl(UriBuilder.fromUri(authServerRoot)).build("test").toString());
-            assertEquals(configuration.getIntrospectionEndpoint(), OIDCLoginProtocolService.tokenIntrospectionUrl(UriBuilder.fromUri(authServerRoot)).build("test").toString());
+            Endpoints endpoints = oauth.newConfig().realm("test").getEndpoints();
+            assertEquals(configuration.getAuthorizationEndpoint(), endpoints.getAuthorization());
+            assertEquals(configuration.getTokenEndpoint(), endpoints.getToken());
+            assertEquals(configuration.getJwksUri(), endpoints.getJwks());
+            assertEquals(configuration.getIntrospectionEndpoint(), endpoints.getIntrospection());
 
             String registrationUri = UriBuilder
                     .fromUri(authServerRoot)

@@ -146,7 +146,17 @@ public class TimeOffSet {
 
     private Object invokeMethod(Object target, String methodName, Class<?>[] parameterTypes, Object... args) {
         try {
-            return target.getClass().getMethod(methodName, parameterTypes).invoke(target, args);
+            Class<?> type = target.getClass();
+            while (type != null) {
+                try {
+                    var method = type.getDeclaredMethod(methodName, parameterTypes);
+                    method.setAccessible(true);
+                    return method.invoke(target, args);
+                } catch (NoSuchMethodException e) {
+                    type = type.getSuperclass();
+                }
+            }
+            throw new NoSuchMethodException(methodName);
         } catch (Exception e) {
             throw new RuntimeException("Failed to invoke method " + methodName + " on " + target.getClass(), e);
         }

@@ -22,7 +22,6 @@ import java.util.Set;
 
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
@@ -35,7 +34,7 @@ import org.keycloak.representations.idm.authorization.ScopePermissionRepresentat
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.tests.authz.config.AuthzScriptsServerConfig;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -48,8 +47,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(Feature.SCRIPTS)
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = AuthzScriptsServerConfig.class)
 public class UmaPermissionTicketPushedClaimsTest extends AbstractResourceServerTest {
 
     @InjectRealm

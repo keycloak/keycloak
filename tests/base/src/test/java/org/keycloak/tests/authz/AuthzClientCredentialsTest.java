@@ -113,8 +113,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     }
 
     @BeforeEach
-    @Override
-    public void beforeAbstractKeycloakTest() throws Exception {
+    public void configureAuthzClientCredentials() throws Exception {
         List<RealmRepresentation> configuredRealms = new ArrayList<>();
         addTestRealms(configuredRealms);
         configuredRealms.forEach(realmRepresentation -> {
