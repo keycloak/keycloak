@@ -145,17 +145,17 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
 
     @Test
     public void testUserAttributeMapperCannotMapToReservedClaim() {
-        ProtocolMapperRepresentation mapper1 = ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, CLAIM_NAME_EXP);
+        ProtocolMapperRepresentation mapper1 = ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, "some-user-attribute");
         assertReservedClaimMapperIsRejected(mapper1, CLAIM_NAME_EXP);
 
         // The user-attribute mapper interprets dotted claim names as nested paths, so "cnf.jwk" emits a top-level
         // "cnf" claim. Validation must guard the actual top-level path segment, not the literal claim name.
-        ProtocolMapperRepresentation mapper2 = ProtocolMapperUtils.getUserAttributeMapper("cnf.jwk", "cnf.jwk");
+        ProtocolMapperRepresentation mapper2 = ProtocolMapperUtils.getUserAttributeMapper("cnf.jwk", "some-user-attribute");
         assertReservedClaimMapperIsRejected(mapper2, "cnf.jwk");
 
         // The SD-JWT builder emits a top-level "id" claim as "sub" (see SdJwtCredentialBuilder), so targeting "id"
         // is an indirect write to the reserved "sub" claim and must be guarded too.
-        ProtocolMapperRepresentation mapper3 = ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_SUBJECT_ID, CLAIM_NAME_SUBJECT_ID);
+        ProtocolMapperRepresentation mapper3 = ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_SUBJECT_ID, "some-user-attribute");
         assertReservedClaimMapperIsRejected(mapper3, CLAIM_NAME_SUBJECT_ID);
     }
 
@@ -180,6 +180,16 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
     }
 
     @Test
+    public void testStaticClaimMapperMayMapToReservedClaim() {
+        // Static claim values are admin-configured (issuer-controlled), so a static mapper may deliberately target
+        // any reserved claim.
+        ProtocolMapperRepresentation mapper = ProtocolMapperUtils.getStaticClaimMapper("some-value");
+        mapper.setConfig(new HashMap<>(mapper.getConfig()));
+        mapper.getConfig().put(OID4VCMapper.CLAIM_NAME, CLAIM_NAME_EXP);
+        assertReservedClaimMapperIsAccepted(mapper);
+    }
+
+    @Test
     public void testSubjectIdMapperMayWriteSubClaim() {
         // The subject-id mapper is the trusted writer of 'sub' (via its 'id' alias), so it must be accepted for both
         // 'sub' and 'id' even though it maps user-controlled data.
@@ -188,17 +198,11 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
     }
 
     @Test
-    public void testJwtVcScopeMayMapToReservedClaimName() {
-        // For JWT VC, mapper claims live under credentialSubject rather than the SD-JWT top level, so 'exp' is a
-        // legitimate data element and must not be rejected. Only SD-JWT top-level claims are protected.
-        ProtocolMapperRepresentation mapper = ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, CLAIM_NAME_EXP);
-        String scopeId = createCredentialScope("jwt-vc-reserved-claim-scope-" + UUID.randomUUID(), List.of(), VCFormat.JWT_VC);
-
-        try (Response response = testRealm.admin().clientScopes().get(scopeId)
-                .getProtocolMappers().createMapper(mapper)) {
-            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus(),
-                    "A JWT-VC mapper targeting 'exp' must be accepted (claim lives under credentialSubject)");
-        }
+    public void testJwtVcScopeCannotMapToReservedClaimName() {
+        // For JWT VC, mapper claims live under credentialSubject, but mapping a user-controlled value to a reserved
+        // claim name is still treated as a misconfiguration and must be rejected.
+        ProtocolMapperRepresentation mapper = ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, "some-user-attribute");
+        assertReservedClaimMapperIsRejected(mapper, CLAIM_NAME_EXP, VCFormat.JWT_VC);
     }
 
     @Test
@@ -207,7 +211,7 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
         // must not be advertised in issuer metadata, matching the issuance-time guard that silently drops it.
         assertMapperIsIgnored(
                 "bypass-reserved-claim-scope-" + UUID.randomUUID(),
-                ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, CLAIM_NAME_EXP),
+                ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, "some-user-attribute"),
                 "A reserved-claim mapper that bypassed validateConfig must not be advertised in issuer metadata");
     }
 
@@ -283,7 +287,11 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
     }
 
     private void assertReservedClaimMapperIsRejected(ProtocolMapperRepresentation mapper, String expectedClaimName) {
-        String scopeId = createCredentialScope("reserved-claim-scope-" + UUID.randomUUID(), List.of());
+        assertReservedClaimMapperIsRejected(mapper, expectedClaimName, VCFormat.SD_JWT_VC);
+    }
+
+    private void assertReservedClaimMapperIsRejected(ProtocolMapperRepresentation mapper, String expectedClaimName, String format) {
+        String scopeId = createCredentialScope("reserved-claim-scope-" + UUID.randomUUID(), List.of(), format);
 
         // Create the scope without the mapper, then add the mapper directly through the protocol-mappers
         // admin endpoint, which runs ProtocolMapper.validateConfig.

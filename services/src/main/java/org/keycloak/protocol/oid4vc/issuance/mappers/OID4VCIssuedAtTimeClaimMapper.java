@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
@@ -36,6 +37,8 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_NBF;
 import static org.keycloak.VCFormat.MSO_MDOC;
 
 /**
@@ -118,9 +121,10 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
     }
 
     @Override
-    public boolean mapsUserControlledData() {
-        // The value is the issuer's issuance time, not user-controlled; the claim name may legitimately target "iat".
-        return false;
+    protected Set<String> getAllowedReservedClaims() {
+        // The value is the issuer's issuance time, not user-controlled;
+        // the claim name may legitimately target the reserved "iat" and "nbf" claims.
+        return Set.of(CLAIM_NAME_IAT, CLAIM_NAME_NBF);
     }
 
     public void setClaim(VerifiableCredential verifiableCredential,

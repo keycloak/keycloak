@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
@@ -161,13 +162,15 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
     }
 
     /**
-     * Rejects a mapper that maps user-controlled data and whose configured claim name targets a reserved,
-     * issuer-controlled claim (e.g. exp, iat, sub, jti). Such a mapper could let a user-controlled value
-     * override issuer-controlled claims (see keycloak/keycloak#52667). Mapper claims are emitted at the
-     * credential top level only for SD-JWT, so only mappers for this format are guarded.
+     * Rejects a mapper whose configured claim name targets a reserved, issuer-controlled claim (e.g. exp, iat,
+     * sub, jti) unless the mapper is explicitly allowed to write that claim (see {@link #getAllowedReservedClaims()}).
+     * Such a mapping could let a mapper override issuer-controlled claims (see keycloak/keycloak#52667).
      */
     protected void validateAgainstSensitiveMappings(String credentialFormat, ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
-        if (!SD_JWT_VC.equals(credentialFormat)) {
+        if (MSO_MDOC.equals(credentialFormat)) {
+            // mDoc is exempt because its reserved claims live in semantically-equivalent locations
+            // that claim mappers cannot reach (docType, the MobileSecurityObject payload, issuerAuth
+            // and DeviceKeyInfo), so they are not affected by these mappings.
             return;
         }
 
@@ -185,7 +188,8 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
             topLevelClaim = CLAIM_NAME_SUB;
         }
 
-        if (mapsUserControlledData() && topLevelClaim != null && isReservedClaim(topLevelClaim)) {
+        if (topLevelClaim != null && RESERVED_CLAIM_NAMES.contains(topLevelClaim)
+                && !getAllowedReservedClaims().contains(topLevelClaim)) {
             throw new ProtocolMapperConfigException(
                     String.format("Claim name '%s' is reserved and must not be used by this OID4VC mapper.",
                             claimName),
@@ -410,21 +414,13 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
     }
 
     /**
-     * Whether this mapper maps user-controlled data to credential claims. Sensitive by default so that any
-     * mapper that is not explicitly known to be safe is protected. Mappers whose values are issuer-controlled
-     * (e.g. generated ids, static claims, issuance-time claims, container fields) override this to {@code false}.
+     * Returns the reserved, issuer-controlled claims this mapper is allowed to write. A mapper may only target a
+     * reserved claim listed here; every other reserved claim is rejected. Mappers are denied all reserved claims by
+     * default; subclasses that legitimately write a specific issuer-controlled claim (e.g. the generated-id mapper
+     * writing 'jti') override this to allow just that claim.
      */
-    public boolean mapsUserControlledData() {
-        return true;
-    }
-
-    /**
-     * Whether the given (normalized) top-level claim is reserved and must not be written by this mapper. Subclasses
-     * that are trusted to write a specific issuer-controlled claim (e.g. the subject-id mapper writing 'sub') override
-     * this to exempt that claim while keeping the rest of the reserved set protected.
-     */
-    protected boolean isReservedClaim(String topLevelClaim) {
-        return RESERVED_CLAIM_NAMES.contains(topLevelClaim);
+    protected Set<String> getAllowedReservedClaims() {
+        return Collections.emptySet();
     }
 
     /**

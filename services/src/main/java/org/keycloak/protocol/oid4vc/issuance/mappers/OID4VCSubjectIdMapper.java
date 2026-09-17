@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import org.keycloak.models.KeycloakSession;
@@ -151,8 +152,8 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
     // The subject-id mapper is the trusted writer of the 'sub' claim (via its 'id' alias). It must be allowed to
     // target 'sub'/'id', but remains blocked from all other reserved claims (e.g. exp, iat, jti).
     @Override
-    protected boolean isReservedClaim(String topLevelClaim) {
-        return super.isReservedClaim(topLevelClaim) && !CLAIM_NAME_SUB.equals(topLevelClaim);
+    protected Set<String> getAllowedReservedClaims() {
+        return Set.of(CLAIM_NAME_SUB);
     }
 
     @Override
