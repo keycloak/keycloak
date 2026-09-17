@@ -28,13 +28,13 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.authorization.config.UmaConfiguration;
 import org.keycloak.authorization.config.UmaWellKnownProviderFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.util.oauth.Endpoints;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.oauth.Endpoints;
 
 import org.junit.jupiter.api.Test;
 
