@@ -17,6 +17,7 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 
 import org.jboss.logging.Logger;
 
@@ -115,6 +116,7 @@ public abstract class AuthzTestRealmSupport {
         } catch (NotFoundException ignore) {
         }
         adminClient.realms().create(realm);
+        configureRealmForTestEvents(realm.getRealm());
 
         if (removeVerifyProfileAtImport()) {
             try {
@@ -128,6 +130,20 @@ public abstract class AuthzTestRealmSupport {
             } catch (NotFoundException ignore) {
             }
         }
+    }
+
+    private void configureRealmForTestEvents(String realmName) {
+        RealmRepresentation realmRepresentation = adminClient.realm(realmName).toRepresentation();
+        realmRepresentation.setEventsEnabled(true);
+        List<String> listeners = realmRepresentation.getEventsListeners();
+        if (listeners == null) {
+            listeners = new ArrayList<>();
+            realmRepresentation.setEventsListeners(listeners);
+        }
+        if (!listeners.contains(TestEventsListenerProviderFactory.PROVIDER_ID)) {
+            listeners.add(TestEventsListenerProviderFactory.PROVIDER_ID);
+        }
+        adminClient.realm(realmName).update(realmRepresentation);
     }
 
     public void removeRealm(String realmName) {
