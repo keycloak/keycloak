@@ -128,7 +128,7 @@
         <apacheds.codec.version>2.1.8</apacheds.codec.version>
         <kerby.version>2.1.2</kerby.version>
         <google.zxing.version>3.4.0</google.zxing.version>
-        <freemarker.version>2.3.32</freemarker.version>
+        <freemarker.version>2.3.35</freemarker.version>
         <sundrio.version>0.200.0</sundrio.version>
         <antlr4.version>4.13.2</antlr4.version>
         <dbus-java.version>5.2.0</dbus-java.version>
