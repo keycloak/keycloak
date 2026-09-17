@@ -100,7 +100,8 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
         assertNotNull(realmPathSessionCookie);
         Assertions.assertEquals(realmPathSessionCookie.getValue(), expectedSessionCookie.getValue());
 
-        driver.driver().navigate().to(oauth.getRedirectUri());
+        // Use the realm app callback so KEYCLOAK_SESSION cookies are on the same origin as Keycloak
+        driver.driver().navigate().to(realmAppAuthUri());
         Cookie sessionCookie = driver.driver().manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE);
         assertNotNull(sessionCookie);
         Assertions.assertEquals(sessionCookie.getValue(), expectedSessionCookie.getValue());
@@ -122,5 +123,9 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
         } catch (AssertionError e) {
             return false;
         }
+    }
+
+    private String realmAppAuthUri() {
+        return oauth.getBaseUrl() + "/realms/" + managedRealm.getName() + "/app/auth";
     }
 }
