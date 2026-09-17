@@ -28,6 +28,7 @@
                createTimeout : ${createTimeout?c},
                mediation : ${(mediation!'conditional')?c},
                authenticatorAttachment : ${authenticatorAttachment?c},
+               hints : [<#list (hints![]) as hint>${hint?c}<#sep>, </#sep></#list>],
            };
 
            document.addEventListener("DOMContentLoaded", (event) => initAuthenticate({errmsg : ${msg("passkey-unsupported-browser-text")?c}, ...args}));

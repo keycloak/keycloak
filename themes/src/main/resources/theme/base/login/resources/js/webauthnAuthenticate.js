@@ -54,6 +54,7 @@ export function getAllowCredentials() {
  * Exported so that passkeysConditionalAuth.js does not need its own copy.
  *
  * input: { challenge, userVerification, rpId, createTimeout, errmsg,
+ *           hints?: string[]  ← ordered, e.g. ["security-key", "client-device", "hybrid"]; omitted when empty,
  *           allowCredentials?: PublicKeyCredentialDescriptor[],
  *           additionalOptions?: object  ← e.g. { mediation: "conditional" | "optional" | "required" | "silent" } }
  */
@@ -79,6 +80,11 @@ export function doAuthenticate(input) {
 
     if (input.userVerification !== 'not specified') {
         publicKey.userVerification = input.userVerification;
+    }
+
+    // hints only steer the browser UI and are omitted when none are configured
+    if (Array.isArray(input.hints) && input.hints.length > 0) {
+        publicKey.hints = input.hints;
     }
 
     return navigator.credentials.get({
