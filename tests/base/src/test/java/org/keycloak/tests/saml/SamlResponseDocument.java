@@ -18,6 +18,7 @@ package org.keycloak.tests.saml;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
+import java.security.cert.X509Certificate;
 import java.util.Base64;
 
 import org.keycloak.saml.BaseSAML2BindingBuilder;
@@ -84,6 +85,30 @@ public class SamlResponseDocument {
     }
 
     /**
+     * Returns the {@code <saml:Conditions>} element of the first assertion, creating an empty one if the
+     * assertion has none.
+     */
+    public Element getFirstAssertionConditions() {
+        Element conditions = (Element) document.getElementsByTagNameNS(ASSERTION_NS, "Conditions").item(0);
+        if (conditions == null) {
+            Element assertion = (Element) document.getElementsByTagNameNS(ASSERTION_NS, "Assertion").item(0);
+            if (assertion == null) {
+                throw new IllegalStateException("SAML response does not contain an assertion");
+            }
+            conditions = createAssertionElement("Conditions");
+            assertion.appendChild(conditions);
+        }
+        return conditions;
+    }
+
+    /**
+     * Creates (but does not attach) an element in the SAML assertion namespace, e.g. {@code "ProxyRestriction"}.
+     */
+    public Element createAssertionElement(String localName) {
+        return document.createElementNS(ASSERTION_NS, "saml:" + localName);
+    }
+
+    /**
      * Turns the response into an unsolicited (IdP-initiated) one addressed to {@code destination}: the response
      * {@code Destination} and every {@code SubjectConfirmationData Recipient} are set to it, and all
      * {@code InResponseTo} attributes are removed.
@@ -111,6 +136,35 @@ public class SamlResponseDocument {
             throw new IllegalStateException("SAML assertion does not contain a subject");
         }
         return subject;
+    }
+
+    /**
+     * Appends a {@code <saml:ProxyRestriction Count="count">} condition to the first assertion. A {@code Count}
+     * of {@code 0} forbids a proxying party (e.g. an identity broker) from issuing a further assertion.
+     */
+    public SamlResponseDocument addProxyRestriction(int count) {
+        Element proxyRestriction = createAssertionElement("ProxyRestriction");
+        proxyRestriction.setAttribute("Count", Integer.toString(count));
+        getFirstAssertionConditions().appendChild(proxyRestriction);
+        return this;
+    }
+
+    /**
+     * Signs the response document in place with an enveloped XML signature covering the whole message
+     * (including the assertion), using the given key material. This must be called after any mutation (e.g.
+     * {@link #addProxyRestriction(int)}) so the signature covers the final content, reproducing a validly
+     * signed response as a real identity provider would issue.
+     */
+    public SamlResponseDocument sign(KeyPair keyPair, String keyName, X509Certificate certificate) {
+        try {
+            new BaseSAML2BindingBuilder()
+                    .signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
+                    .signWith(keyName, keyPair, certificate)
+                    .signDocument(document);
+            return this;
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to sign SAML response", e);
+        }
     }
 
     /**

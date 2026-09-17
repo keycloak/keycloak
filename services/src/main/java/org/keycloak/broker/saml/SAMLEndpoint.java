@@ -698,7 +698,8 @@ public class SAMLEndpoint {
 
                 ConditionsValidator.Builder cvb = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator)
                         .clockSkewInMillis(1000 * config.getAllowedClockSkew())
-                        .oneTimeUseHandler(assertionId -> registerOneTimeUse(assertion));
+                        .oneTimeUseHandler(assertionId -> registerOneTimeUse(assertion))
+                        .rejectProxyRestriction(config.isProxyRestrictionValidationEnabled());
                 try {
                     String issuerURL = getEntityId(session.getContext().getUri(), realm);
                     cvb.addAllowedAudience(URI.create(issuerURL));
