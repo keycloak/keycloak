@@ -153,7 +153,7 @@ public class ClientUpdaterSourceHostsCondition extends AbstractClientPolicyCondi
                 String hostname = InetAddress.getByName(hostAddress).getHostName();
                 logger.tracev("Trying verify request from address {0} of host {1} by domains", hostAddress, hostname);
                 for (String confDomain : trustedDomains) {
-                    if (hostname.endsWith(confDomain)) {
+                    if (hostname.equals(confDomain) || hostname.endsWith("." + confDomain)) {
                         logger.tracev("Successfully verified host {0} by trusted domain {1}", hostname, confDomain);
                         return hostname;
                     }
