@@ -104,7 +104,7 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
                         .directAccessGrantsEnabled())
                 .build());
 
-        testingClient.testApp().oidcClientEndpoints().setSectorIdentifierRedirectUris(Collections.singletonList("http://localhost/resource-server-test"));
+        getTestingClient().testApp().oidcClientEndpoints().setSectorIdentifierRedirectUris(Collections.singletonList("http://localhost/resource-server-test"));
     }
 
     @BeforeEach

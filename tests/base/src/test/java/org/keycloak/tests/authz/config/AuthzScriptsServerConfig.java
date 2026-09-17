@@ -8,6 +8,8 @@ public class AuthzScriptsServerConfig implements KeycloakServerConfig {
 
     @Override
     public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-        return config.features(Profile.Feature.SCRIPTS);
+        return config.features(Profile.Feature.SCRIPTS)
+                .dependency("org.keycloak.tests", "keycloak-tests-custom-providers")
+                .dependency("org.keycloak.testsuite", "integration-arquillian-testsuite-providers");
     }
 }
