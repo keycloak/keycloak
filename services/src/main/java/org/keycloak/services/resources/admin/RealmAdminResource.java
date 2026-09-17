@@ -1357,16 +1357,34 @@ public class RealmAdminResource {
 
     private static void fireCreatedEvent(PartialImportResult result, AdminEventBuilder adminEvent) {
         adminEvent.operation(OperationType.CREATE)
+                .resource(mapPartialImportResourceType(result.getResourceType()))
                 .resourcePath(result.getResourceType().getPath(), result.getId())
                 .representation(result.getRepresentation())
                 .success();
-    };
+    }
 
     private static void fireUpdateEvent(PartialImportResult result, AdminEventBuilder adminEvent) {
         adminEvent.operation(OperationType.UPDATE)
+                .resource(mapPartialImportResourceType(result.getResourceType()))
                 .resourcePath(result.getResourceType().getPath(), result.getId())
                 .representation(result.getRepresentation())
                 .success();
+    }
+
+    private static org.keycloak.events.admin.ResourceType mapPartialImportResourceType(org.keycloak.partialimport.ResourceType resourceType) {
+        if (resourceType == null) {
+            return org.keycloak.events.admin.ResourceType.REALM;
+        }
+        switch (resourceType) {
+            case USER: return org.keycloak.events.admin.ResourceType.USER;
+            case GROUP: return org.keycloak.events.admin.ResourceType.GROUP;
+            case CLIENT: return org.keycloak.events.admin.ResourceType.CLIENT;
+            case IDP: return org.keycloak.events.admin.ResourceType.IDENTITY_PROVIDER;
+            case IDP_MAPPER: return org.keycloak.events.admin.ResourceType.IDENTITY_PROVIDER_MAPPER;
+            case REALM_ROLE: return org.keycloak.events.admin.ResourceType.REALM_ROLE;
+            case CLIENT_ROLE: return org.keycloak.events.admin.ResourceType.CLIENT_ROLE;
+            default: return org.keycloak.events.admin.ResourceType.REALM;
+        }
     }
 
     /**

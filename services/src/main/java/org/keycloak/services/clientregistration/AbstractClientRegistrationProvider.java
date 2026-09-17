@@ -139,7 +139,6 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
                 client.setDefaultRoles(defaultRolesNames.toArray(String[]::new));
             }
 
-            event.client(client.getClientId()).success();
             return client;
         } catch (ModelDuplicateException e) {
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier in use", Response.Status.BAD_REQUEST);

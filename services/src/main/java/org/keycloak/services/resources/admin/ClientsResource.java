@@ -221,8 +221,6 @@ public class ClientsResource {
                 new ClientManager(new RealmManager(session)).enableServiceAccount(clientModel);
             }
 
-            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), clientModel.getId()).representation(rep).success();
-
             if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION) && TRUE.equals(rep.getAuthorizationServicesEnabled())) {
                 if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && clientModel.getType() != null) {
                     ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(realm, clientModel.getType());
@@ -253,6 +251,8 @@ public class ClientsResource {
 
             session.getContext().setClient(clientModel);
             session.clientPolicy().triggerOnEvent(new AdminClientRegisteredContext(clientModel, auth.adminAuth()));
+
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), clientModel.getId()).representation(rep).success();
 
             return clientModel;
         } catch (ModelDuplicateException e) {
