@@ -36,6 +36,7 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.TrustManager;
 
 import org.keycloak.Config;
+import org.keycloak.cluster.infinispan.ClusterHealthRestored;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
@@ -274,7 +275,7 @@ public final class JGroupsConfigurator {
         Address address = Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(),
                 s -> prepareJGroupsAddress(s, clusterName)),
                 50, 10);
-        holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(stackName, stack, connectionFactory, isUdp, address), null);
+        holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(session.getKeycloakSessionFactory(), stackName, stack, connectionFactory, isUdp, address), null);
 
         transportOf(holder).stack(stackName);
         JGroupsConfigurator.logger.info("JGroups JDBC_PING discovery enabled.");
@@ -442,12 +443,14 @@ public final class JGroupsConfigurator {
 
     private static class JpaFactoryAwareJGroupsChannelConfigurator extends EmbeddedJGroupsChannelConfigurator {
 
-        private final JpaConnectionProviderFactory factory;
+        private final KeycloakSessionFactory factory;
+        private final JpaConnectionProviderFactory jpaConnectionProviderFactory;
         private final Address address;
 
-        public JpaFactoryAwareJGroupsChannelConfigurator(String name, List<ProtocolConfiguration> stack, JpaConnectionProviderFactory factory, boolean isUdp, Address address) {
+        public JpaFactoryAwareJGroupsChannelConfigurator(KeycloakSessionFactory factory, String name, List<ProtocolConfiguration> stack, JpaConnectionProviderFactory jpaConnectionProviderFactory, boolean isUdp, Address address) {
             super(name, stack, null, isUdp ? "udp" : "tcp");
-            this.factory = Objects.requireNonNull(factory);
+            this.factory = factory;
+            this.jpaConnectionProviderFactory = Objects.requireNonNull(jpaConnectionProviderFactory);
             this.address = address;
         }
 
@@ -461,7 +464,10 @@ public final class JGroupsConfigurator {
         public void afterCreation(Protocol protocol) {
             super.afterCreation(protocol);
             if (protocol instanceof KEYCLOAK_JDBC_PING2 kcPing) {
-                kcPing.setJpaConnectionProviderFactory(factory);
+                kcPing.setJpaConnectionProviderFactory(jpaConnectionProviderFactory);
+                kcPing.setOnHealthRestored(() -> {
+                    factory.publish(new ClusterHealthRestored());
+                });
             }
         }
     }
