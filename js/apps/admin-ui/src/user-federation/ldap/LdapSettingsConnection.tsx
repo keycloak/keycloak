@@ -15,7 +15,7 @@ import {
   Switch,
 } from "@patternfly/react-core";
 import { get, isEqual } from "lodash-es";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Controller,
   FormProvider,
@@ -86,6 +86,41 @@ export const LdapSettingsConnection = ({
   };
 
   const [isBindTypeDropdownOpen, setIsBindTypeDropdownOpen] = useState(false);
+
+  const connectionUrl = useWatch({
+    control: form.control,
+    name: "config.connectionUrl.0",
+  });
+
+  const bindDn = useWatch({
+    control: form.control,
+    name: "config.bindDn.0",
+  });
+
+  // Track the initial connection URL and bind DN so we can detect changes in edit mode.
+  // When either changes, the bind credential field is cleared to prevent previously
+  // stored credentials from being silently sent to a different server.
+  const initialUrlRef = useRef<string | null>(null);
+  const initialBindDnRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!edit) return;
+
+    if (initialUrlRef.current === null) {
+      if (connectionUrl) {
+        initialUrlRef.current = connectionUrl;
+      }
+    } else if (connectionUrl !== initialUrlRef.current) {
+      form.setValue("config.bindCredential.0", "");
+    }
+
+    if (initialBindDnRef.current === null) {
+      if (bindDn) {
+        initialBindDnRef.current = bindDn;
+      }
+    } else if (bindDn !== initialBindDnRef.current) {
+      form.setValue("config.bindCredential.0", "");
+    }
+  }, [connectionUrl, bindDn, edit, form]);
 
   const ldapBindType = useWatch({
     control: form.control,
