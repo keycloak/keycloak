@@ -46,7 +46,6 @@ import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
@@ -116,7 +115,8 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
 
             assertThat("V2 event should be present with apiVersion=v2 detail", v2Event, notNullValue());
             assertThat("V2 event should have CREATE operation", v2Event.getOperationType(), is(OperationType.CREATE.toString()));
-            assertThat("V2 event should have resource path relative to API v2", v2Event.getResourcePath(), startsWith("clients/v2"));
+            String createdClientUuid = testRealm.admin().clients().findByClientId(TEST_CLIENT_ID).get(0).getId();
+            assertThat("V2 event should have resource path relative to API v2", v2Event.getResourcePath(), is("clients/v2/" + createdClientUuid));
         } finally {
             deleteTestClient();
         }
@@ -245,7 +245,8 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
                     .orElse(null);
 
             assertThat("V2 event should be present", v2Event, notNullValue());
-            assertThat("V2 event should have resource path relative to API v2", v2Event.getResourcePath(), is("clients/v2"));
+            String createdClientUuid = testRealm.admin().clients().findByClientId(TEST_CLIENT_ID).get(0).getId();
+            assertThat("V2 event should have resource path relative to API v2", v2Event.getResourcePath(), is("clients/v2/" + createdClientUuid));
             var representation = v2Event.getRepresentation();
             assertThat("V2 event should have representation", representation, notNullValue());
             assertThat("V2 event should have masked secret in representation", representation, containsString("\"secret\":\"**********\""));
@@ -294,7 +295,8 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
                     .orElse(null);
 
             assertThat("V2 event should be present", v2Event, notNullValue());
-            assertThat("V2 event should have resource path relative to API v2", v2Event.getResourcePath(), is("clients/v2"));
+            String samlClientUuid = testRealm.admin().clients().findByClientId(SAML_CLIENT_ID).get(0).getId();
+            assertThat("V2 event should have resource path relative to API v2", v2Event.getResourcePath(), is("clients/v2/" + samlClientUuid));
             var representation = v2Event.getRepresentation();
             assertThat("V2 event should have representation", representation, notNullValue());
             assertThat("V2 event should have masked signing certificate in representation", representation, containsString("\"signingCertificate\":\"**********\""));

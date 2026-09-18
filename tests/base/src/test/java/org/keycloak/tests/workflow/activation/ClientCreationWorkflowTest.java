@@ -23,9 +23,13 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
+import org.keycloak.common.Profile;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.workflow.client.DisableClientStepProviderFactory;
 import org.keycloak.models.workflow.conditions.ClientAttributeWorkflowConditionFactory;
 import org.keycloak.models.workflow.events.ClientCreatedWorkflowEventFactory;
@@ -37,7 +41,12 @@ import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowScheduleRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
+import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
@@ -51,11 +60,27 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 /**
- * Tests activation of workflows based on client creation events (Admin REST API, DCR, and Partial Import)
+ * Tests activation of workflows based on client creation events (Admin REST API v1, Admin API v2, DCR, and Partial Import)
  * and scheduled scans with client-scoped condition evaluation.
  */
-@KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
+@KeycloakIntegrationTest(config = ClientCreationWorkflowTest.ClientCreationWorkflowServerConfig.class)
 public class ClientCreationWorkflowTest extends AbstractWorkflowTest {
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
+
+    @InjectSimpleHttp
+    SimpleHttp simpleHttp;
+
+    @InjectAdminClient(mode = InjectAdminClient.Mode.BOOTSTRAP)
+    Keycloak bootstrapAdmin;
+
+    public static class ClientCreationWorkflowServerConfig extends WorkflowsBlockingServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return super.configure(config).features(Profile.Feature.CLIENT_ADMIN_API_V2);
+        }
+    }
 
     @Test
     public void testActivateWorkflowOnAdminClientCreationWithCondition() {
@@ -100,6 +125,69 @@ public class ClientCreationWorkflowTest extends AbstractWorkflowTest {
         }
 
         ClientResource nonMatchingResource = managedRealm.admin().clients().get(nonMatchingId);
+        ClientRepresentation nonMatchingRep = nonMatchingResource.toRepresentation();
+        assertThat(nonMatchingRep, notNullValue());
+        assertThat(nonMatchingRep.isEnabled(), is(true));
+    }
+
+    @Test
+    public void testActivateWorkflowOnAdminV2ClientCreationWithCondition() throws Exception {
+        // create workflow with a client attribute condition for Admin API v2
+        WorkflowRepresentation workflow = WorkflowRepresentation.withName("admin-v2-client-created-workflow")
+                .onEvent(ClientCreatedWorkflowEventFactory.ID)
+                .onCondition(ClientAttributeWorkflowConditionFactory.ID + "(client.secret.creation.time:)")
+                .withSteps(
+                        WorkflowStepRepresentation.create()
+                                .of(DisableClientStepProviderFactory.ID)
+                                .build()
+                ).build();
+        managedRealm.admin().workflows().create(workflow).close();
+
+        String v2ClientsUrl = keycloakUrls.getAdmin() + "/api/" + managedRealm.getName() + "/clients/v2";
+
+        // 1. Create client with client-secret auth -> should generate secret, set creation time, and be disabled by workflow
+        Map<String, Object> matchingClient = Map.of(
+                "protocol", "openid-connect",
+                "clientId", "test-admin-v2-matching-client",
+                "enabled", true,
+                "auth", Map.of("method", "client-secret")
+        );
+
+        try (SimpleHttpResponse response = simpleHttp.doPost(v2ClientsUrl)
+                .auth(bootstrapAdmin.tokenManager().getAccessTokenString())
+                .acceptJson()
+                .json(matchingClient)
+                .asResponse()) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        List<ClientRepresentation> matchingFound = managedRealm.admin().clients().findByClientId("test-admin-v2-matching-client");
+        assertThat(matchingFound.isEmpty(), is(false));
+        ClientResource matchingResource = managedRealm.admin().clients().get(matchingFound.get(0).getId());
+        ClientRepresentation matchingRep = matchingResource.toRepresentation();
+        assertThat(matchingRep, notNullValue());
+        assertThat(matchingRep.getAttributes(), notNullValue());
+        assertThat(matchingRep.getAttributes().containsKey("client.secret.creation.time"), is(true));
+        assertThat(matchingRep.isEnabled(), is(false));
+
+        // 2. Create client without client-secret auth -> does not match condition and remains enabled
+        Map<String, Object> nonMatchingClient = Map.of(
+                "protocol", "openid-connect",
+                "clientId", "test-admin-v2-non-matching-client",
+                "enabled", true
+        );
+
+        try (SimpleHttpResponse response = simpleHttp.doPost(v2ClientsUrl)
+                .auth(bootstrapAdmin.tokenManager().getAccessTokenString())
+                .acceptJson()
+                .json(nonMatchingClient)
+                .asResponse()) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        List<ClientRepresentation> nonMatchingFound = managedRealm.admin().clients().findByClientId("test-admin-v2-non-matching-client");
+        assertThat(nonMatchingFound.isEmpty(), is(false));
+        ClientResource nonMatchingResource = managedRealm.admin().clients().get(nonMatchingFound.get(0).getId());
         ClientRepresentation nonMatchingRep = nonMatchingResource.toRepresentation();
         assertThat(nonMatchingRep, notNullValue());
         assertThat(nonMatchingRep.isEnabled(), is(true));
