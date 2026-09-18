@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -53,7 +54,9 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.ClientNodeRegistrationContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisteredContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdatedContext;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
@@ -93,7 +96,24 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         RegistrationAuth registrationAuth = auth.requireCreate(context);
 
         try {
+            // save and null-out registeredNodes before RepresentationToModel
+            Map<String, Integer> pendingNodes = client.getRegisteredNodes();
+            client.setRegisteredNodes(null);
+
             ClientModel clientModel = ClientManager.createClient(session, realm, client);
+
+            // apply each saved node with policy enforcement
+            if (pendingNodes != null) {
+                for (Map.Entry<String, Integer> entry : pendingNodes.entrySet()) {
+                    session.clientPolicy().triggerOnEvent(
+                            new ClientNodeRegistrationContext(
+                                    clientModel,
+                                    entry.getKey(),
+                                    ClientPolicyEvent.REGISTER_NODE));
+                    clientModel.registerNode(entry.getKey(), entry.getValue());
+                }
+            }
+            client.setRegisteredNodes(pendingNodes);
 
             if (client.getDefaultRoles() != null) {
                 for (String name : client.getDefaultRoles()) {
@@ -202,11 +222,35 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
                 );
             }
         }
+        // save and null-out registeredNodes before RepresentationToModel
+        Map<String, Integer> pendingNodes = rep.getRegisteredNodes();
+        rep.setRegisteredNodes(null);
 
         ClientResource.updateClientServiceAccount(session, client, rep.isServiceAccountsEnabled());
         RepresentationToModel.updateClient(rep, client, session);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
         RepresentationToModel.updateClientScopes(rep, client);
+
+        // apply each saved node with policy enforcement
+        // Note: nodes absent from pendingNodes are not removed. Use DELETE /nodes/{node} to remove individual entries.
+        if (pendingNodes != null) {
+            for (Map.Entry<String, Integer> entry : pendingNodes.entrySet()) {
+                try {
+                    session.clientPolicy().triggerOnEvent(
+                            new ClientNodeRegistrationContext(
+                                    client,
+                                    entry.getKey(),
+                                    ClientPolicyEvent.REGISTER_NODE));
+                    client.registerNode(entry.getKey(), entry.getValue());
+                } catch (ClientPolicyException e) {
+                    throw new ErrorResponseException(
+                            e.getError(),
+                            e.getErrorDetail(),
+                            Response.Status.BAD_REQUEST);
+                }
+            }
+        }
+        rep.setRegisteredNodes(pendingNodes);
 
         if (rep.getDefaultRoles() != null) {
             updateDefaultRoles(client, rep.getDefaultRoles());

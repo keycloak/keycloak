@@ -42,6 +42,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.ClientNodeRegistrationContext;
 
 import org.jboss.logging.Logger;
 
@@ -113,6 +116,22 @@ public class ClientsManagementService {
 
         event.client(client).detail(Details.NODE_HOST, nodeHost);
         logger.debugf("Registering cluster host '%s' for client '%s'", nodeHost, client.getClientId());
+
+        try {
+            session.clientPolicy().triggerOnEvent(
+                    new ClientNodeRegistrationContext(client, nodeHost,
+                            ClientPolicyEvent.REGISTER_NODE));
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, cpe.getErrorDetail());
+            event.error(Errors.INVALID_INPUT);
+            OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation(
+                    cpe.getError(), cpe.getErrorDetail());
+            throw new BadRequestException(
+                    Response.status(Response.Status.BAD_REQUEST)
+                            .entity(errorRep)
+                            .type(MediaType.APPLICATION_JSON_TYPE)
+                            .build());
+        }
 
         try {
             client.registerNode(nodeHost, Time.currentTime());

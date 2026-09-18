@@ -309,6 +309,24 @@ This is intentional: without the `stateless` feature, neither deployment invalid
 * *Multiple independent deployments sharing the same database*: enable the `stateless` feature and assign each deployment a unique cluster name via `--cache-embedded-cluster-name`.
   Without `stateless`, cross-deployment cache invalidation does not work and serving traffic from multiple deployments simultaneously leads to incorrect behavior.
 
+=== New executor to secure client cluster node registration
+
+A new client policy executor, `secure-client-node-hostname`, is available to address server-side request forgery (SSRF) via the legacy adapter cluster node registration endpoint (`/clients-managements/register-node`).
+Without this executor, a confidential client could register an attacker-chosen hostname that {project_name} would later use as the destination for management callbacks such as logout propagation and push-revocation.
+
+*This protection is opt-in and is not active after upgrading unless explicitly configured.*
+
+If your deployment uses the legacy adapter node registration feature (Wildfly/JBoss adapter or any application that calls `register-node` directly), add the `secure-client-node-hostname` executor to a client policy and configure at least one allowed hostname pattern. Node registrations that do not match any pattern are rejected.
+
+Hostnames must be supplied as a DNS name or IP address without a port number. Port suffixes (for example, `app.example.com:8443`) are always rejected regardless of the configured patterns.
+
+If you plan to enable this executor, audit the `registeredNodes` map for any affected clients before activating the policy. Any entry that contains a port suffix will no longer be accepted at registration time. Before enabling the executor:
+
+. *Delete* each existing `registeredNodes` entry that would not satisfy the intended allowlist, using the admin API endpoint `DELETE /admin/realms/{realm}/clients/{id}/nodes/{node}` or via the admin console.
+. *Register* each replacement hostname through `POST /admin/realms/{realm}/clients/{id}/nodes` so that the new entry is validated against the active policy.
+
+Re-registering a replacement hostname without first deleting the old entry leaves the old key in the map, which {project_name} continues using for management callbacks regardless of the active policy.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
