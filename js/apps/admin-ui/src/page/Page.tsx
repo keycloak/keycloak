@@ -1,6 +1,11 @@
 import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
-import { ButtonVariant, DropdownItem } from "@patternfly/react-core";
+import {
+  ButtonVariant,
+  DropdownItem,
+  Tab,
+  TabTitleText,
+} from "@patternfly/react-core";
 import { get } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,11 +13,22 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useRealm } from "../context/realm-context/RealmContext";
+import {
+  RoutableTabs,
+  useRoutableTab,
+} from "../components/routable-tabs/RoutableTabs";
+import { ForbiddenSection } from "../ForbiddenSection";
+import { useAccess } from "../context/access/Access";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { PageHandler } from "./PageHandler";
 import { PAGE_PROVIDER } from "./constants";
-import { PageParams, toPage } from "./routes";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { PageParams, toDetailPage, toPage } from "./routes";
+import {
+  canManageUiExtension,
+  canViewUiExtension,
+  getRequiredViewRoles,
+} from "./uiExtensionAccess";
 
 export default function Page() {
   const { adminClient } = useAdminClient();
@@ -20,6 +36,7 @@ export default function Page() {
   const { t } = useTranslation();
   const { componentTypes } = useServerInfo();
   const { realm } = useRealm();
+  const access = useAccess();
   const pages = componentTypes?.[PAGE_PROVIDER];
   const navigate = useNavigate();
   const { id, providerId } = useParams<PageParams>();
@@ -27,14 +44,29 @@ export default function Page() {
   const [pageData, setPageData] = useState<ComponentRepresentation>();
 
   const page = pages?.find((p) => p.id === providerId);
-  if (!page) {
-    throw new Error(t("notFound"));
-  }
+  const canView = page ? canViewUiExtension(page, access) : false;
+  const detailTabPath = page?.metadata.detailTabPath as string | undefined;
+  const supportsDetailTabs = Boolean(page?.metadata.supportsDetailTabs);
+  const settingsTab = useRoutableTab(
+    id && providerId
+      ? toDetailPage({
+          realm,
+          providerId,
+          id,
+          detailTabPath,
+        })
+      : { pathname: "" },
+  );
 
   useFetch(
-    async () => adminClient.components.findOne({ id: id! }),
+    async () => {
+      if (!canView || !id) {
+        return undefined;
+      }
+      return adminClient.components.findOne({ id });
+    },
     setPageData,
-    [id],
+    [id, canView],
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -54,6 +86,17 @@ export default function Page() {
       }
     },
   });
+
+  if (!page) {
+    throw new Error(t("notFound"));
+  }
+
+  if (!canViewUiExtension(page, access)) {
+    return <ForbiddenSection permissionNeeded={getRequiredViewRoles(page)} />;
+  }
+
+  const canManage = canManageUiExtension(page, access);
+
   return (
     <>
       <DeleteConfirm />
@@ -65,7 +108,7 @@ export default function Page() {
           )?.[0] || t("createItem")
         }
         dropdownItems={
-          id
+          id && canManage
             ? [
                 <DropdownItem
                   data-testid="delete-item"
@@ -78,7 +121,25 @@ export default function Page() {
             : undefined
         }
       />
-      <PageHandler providerType={PAGE_PROVIDER} id={id} page={page} />
+      {supportsDetailTabs && id && providerId ? (
+        <RoutableTabs
+          defaultLocation={toDetailPage({
+            realm,
+            providerId,
+            id,
+            detailTabPath,
+          })}
+        >
+          <Tab
+            {...settingsTab}
+            title={<TabTitleText>{t("settings")}</TabTitleText>}
+          >
+            <PageHandler providerType={PAGE_PROVIDER} id={id} page={page} />
+          </Tab>
+        </RoutableTabs>
+      ) : (
+        <PageHandler providerType={PAGE_PROVIDER} id={id} page={page} />
+      )}
     </>
   );
 }
