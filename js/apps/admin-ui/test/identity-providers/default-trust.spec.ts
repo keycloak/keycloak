@@ -1,14 +1,26 @@
-import { expect, test } from "@playwright/test";
+import { test } from "@playwright/test";
 import adminClient from "../utils/AdminClient.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { goToIdentityProviders } from "../utils/sidebar.ts";
-import { clickTableRowItem } from "../utils/table.ts";
-import { SERVER_URL } from "../utils/constants.ts";
 import { clickSaveButton, createDefaultTrustProvider } from "./main.ts";
+import {
+  assertClientIdentityFieldsAreHidden,
+  assertDefaultTrustFormDefaults,
+  assertDefaultTrustProviderValues,
+  assertPublicKeySignatureVerifierFields,
+  assertPublicKeySignatureVerifierSaved,
+  assertX509TrustMaterialFields,
+  disableJwksUrl,
+  disableX509TrustMaterial,
+  enableX509TrustMaterial,
+  fillPublicKeySignatureVerifier,
+  fillX509TrustMaterial,
+  goToAddDefaultTrustProvider,
+  openDefaultTrustProvider,
+} from "./default-trust.ts";
 
 const alias = "default-trust";
-const addDefaultTrustProviderUrl = `${SERVER_URL}/admin/master/console/#/master/identity-providers/default-trust/add`;
 const jwksUrl = "https://localhost/realms/test/protocol/openid-connect/certs";
 const jwks = '{"keys":[]}';
 
@@ -31,68 +43,33 @@ test.describe.serial("Default Trust identity provider test", () => {
   });
 
   test("should only show trust material settings", async ({ page }) => {
-    await page.goto(addDefaultTrustProviderUrl);
+    await goToAddDefaultTrustProvider(page);
+    await assertDefaultTrustFormDefaults(page, alias);
+    await assertClientIdentityFieldsAreHidden(page);
 
-    await expect(page.getByTestId("alias")).toHaveValue(alias);
-    await expect(page.getByTestId("config.useX509")).not.toBeChecked();
-    await expect(page.getByTestId("config.useJwksUrl")).toBeChecked();
-    await expect(page.getByTestId("config.jwksUrl")).toBeVisible();
+    await disableJwksUrl(page);
+    await assertPublicKeySignatureVerifierFields(page);
 
-    await expect(page.getByTestId("displayName")).toBeHidden();
-    await expect(page.getByTestId("config.clientId")).toBeHidden();
-    await expect(page.getByTestId("config.clientSecret")).toBeHidden();
-    await expect(page.getByTestId("displayOrder")).toBeHidden();
-
-    await page.getByTestId("config.useJwksUrl").click({ force: true });
-
-    await expect(page.getByTestId("config.jwksUrl")).toBeHidden();
-    await expect(
-      page.getByTestId("config.publicKeySignatureVerifier"),
-    ).toBeVisible();
-    await expect(
-      page.getByTestId("config.publicKeySignatureVerifierKeyId"),
-    ).toBeVisible();
-    await expect(page.getByTestId("import-certificate-button")).toBeVisible();
-
-    await page.getByTestId("config.useX509").click({ force: true });
-    await expect(page.getByTestId("config.useJwksUrl")).toBeHidden();
-    await expect(page.getByTestId("config.trustedCertificates")).toBeVisible();
-    await expect(
-      page.getByTestId("config.requiredExtendedKeyUsages"),
-    ).toBeVisible();
+    await enableX509TrustMaterial(page);
+    await assertX509TrustMaterialFields(page);
   });
 
   test("should create and edit a Default Trust provider", async ({ page }) => {
     await createDefaultTrustProvider(page, alias, jwksUrl);
 
-    await goToIdentityProviders(page);
-    await clickTableRowItem(page, alias);
+    await openDefaultTrustProvider(page, alias);
+    await assertDefaultTrustProviderValues(page, jwksUrl);
 
-    await expect(page.getByTestId("config.useJwksUrl")).toBeChecked();
-    await expect(page.getByTestId("config.jwksUrl")).toHaveValue(jwksUrl);
-    await expect(page.getByTestId("displayName")).toBeHidden();
-    await expect(page.getByTestId("config.clientId")).toBeHidden();
-    await expect(page.getByTestId("config.clientSecret")).toBeHidden();
-    await expect(page.getByTestId("mappers-tab")).toBeHidden();
-
-    await page.getByTestId("config.useX509").click({ force: true });
-    await page
-      .getByTestId("config.trustedCertificates")
-      .fill("stale certificate");
-    await page.getByTestId("config.requiredExtendedKeyUsages").fill("1.2.3.4");
-    await page.getByTestId("config.useX509").click({ force: true });
+    await enableX509TrustMaterial(page);
+    await fillX509TrustMaterial(page, "stale certificate", "1.2.3.4");
+    await disableX509TrustMaterial(page);
     await clickSaveButton(page);
-
     await assertNotificationMessage(page, "Provider successfully updated");
 
-    await page.getByTestId("config.useJwksUrl").click({ force: true });
-    await page.getByTestId("config.publicKeySignatureVerifier").fill(jwks);
+    await disableJwksUrl(page);
+    await fillPublicKeySignatureVerifier(page, jwks);
     await clickSaveButton(page);
-
     await assertNotificationMessage(page, "Provider successfully updated");
-    await expect(page.getByTestId("config.useJwksUrl")).not.toBeChecked();
-    await expect(
-      page.getByTestId("config.publicKeySignatureVerifier"),
-    ).toHaveValue(jwks);
+    await assertPublicKeySignatureVerifierSaved(page, jwks);
   });
 });

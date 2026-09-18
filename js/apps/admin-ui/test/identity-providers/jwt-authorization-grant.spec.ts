@@ -1,17 +1,22 @@
-import { expect, test } from "@playwright/test";
+import { test } from "@playwright/test";
 import {
   createJwtAuthorizationGrantProvider,
   createJwtAuthorizationGrantProviderKey,
   clickSaveButton,
 } from "./main.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
-import { goToIdentityProviders } from "../utils/sidebar.ts";
-import { clickTableRowItem } from "../utils/table.ts";
 import { login } from "../utils/login.ts";
 import adminClient from "../utils/AdminClient.ts";
-import { assertModalTitle, confirmModal } from "../utils/modal.ts";
-import { selectItem } from "../utils/form.ts";
-import { chooseFileByLocator } from "../utils/file-chooser.ts";
+import { goToIdentityProviders } from "../utils/sidebar.ts";
+import {
+  assertJwtProviderWithJwksUrl,
+  assertJwtProviderWithPublicKey,
+  assertJwtPublicKeySignatureVerifier,
+  fillJwtProviderWithJwksUrl,
+  importJwtJwksFile,
+  importJwtPublicKeyPemFile,
+  openJwtAuthorizationGrantProvider,
+} from "./jwt-authorization-grant.ts";
 
 test.describe.serial("JWT Authorization Grant identity provider test", () => {
   test.beforeEach(async ({ page }) => {
@@ -38,32 +43,26 @@ test.describe.serial("JWT Authorization Grant identity provider test", () => {
       "Identity provider successfully created",
     );
 
-    await goToIdentityProviders(page);
-    await clickTableRowItem(page, "jwt-authorization");
-
-    await expect(page.getByTestId("config.issuer")).toHaveValue(
+    await openJwtAuthorizationGrantProvider(page, "jwt-authorization");
+    await assertJwtProviderWithJwksUrl(
+      page,
       "https://localhost/realms/test",
-    );
-    await expect(page.getByTestId("config.useJwksUrl")).toBeChecked();
-    await expect(page.getByTestId("config.jwksUrl")).toHaveValue(
       "https://localhost/realms/test/protocol/openid-connect/certs",
     );
 
-    await page
-      .getByTestId("config.issuer")
-      .fill("https://localhost/realms/test2");
-    await page
-      .getByTestId("config.jwksUrl")
-      .fill("https://localhost/realms/test2/protocol/openid-connect/certs");
+    await fillJwtProviderWithJwksUrl(
+      page,
+      "https://localhost/realms/test2",
+      "https://localhost/realms/test2/protocol/openid-connect/certs",
+    );
 
     await clickSaveButton(page);
 
     await assertNotificationMessage(page, "Provider successfully updated");
 
-    await expect(page.getByTestId("config.issuer")).toHaveValue(
+    await assertJwtProviderWithJwksUrl(
+      page,
       "https://localhost/realms/test2",
-    );
-    await expect(page.getByTestId("config.jwksUrl")).toHaveValue(
       "https://localhost/realms/test2/protocol/openid-connect/certs",
     );
   });
@@ -84,53 +83,22 @@ test.describe.serial("JWT Authorization Grant identity provider test", () => {
       "Identity provider successfully created",
     );
 
-    await goToIdentityProviders(page);
-    await clickTableRowItem(page, "jwt-authorization-grant");
-
-    await expect(page.getByTestId("config.issuer")).toHaveValue(
+    await openJwtAuthorizationGrantProvider(page);
+    await assertJwtProviderWithPublicKey(
+      page,
       "https://localhost/realms/test",
-    );
-    await expect(page.getByTestId("config.useJwksUrl")).not.toBeChecked();
-    await expect(page.getByTestId("config.jwksUrl")).toBeHidden();
-    await expect(
-      page.getByTestId("config.publicKeySignatureVerifierKeyId"),
-    ).toHaveValue("keyId");
-    await expect(
-      page.getByTestId("config.publicKeySignatureVerifier"),
-    ).toHaveValue(
+      "keyId",
       "MEMwBQYDK2VxAzoAWOVoLNsZlgw5dvat/Xi83Rh7zQMOerq3XrTT1xVbqDX2naZPlza0gwyNnMV6H6vnUGbaCK/+mgCA",
     );
 
-    await page.getByTestId("import-certificate-button").click();
-    await assertModalTitle(page, "Import key");
-    await selectItem(page, page.locator("#keystoreFormat"), "Public Key PEM");
-    await chooseFileByLocator(
-      page,
-      "../utils/files/key.pem",
-      page.locator("#importFile-browse-button"),
-    );
-    await confirmModal(page);
-
-    await expect(
-      page.getByTestId("config.publicKeySignatureVerifier"),
-    ).toHaveValue(/MIIBI/);
+    await importJwtPublicKeyPemFile(page);
+    await assertJwtPublicKeySignatureVerifier(page, /MIIBI/);
 
     await clickSaveButton(page);
     await assertNotificationMessage(page, "Provider successfully updated");
 
-    await page.getByTestId("import-certificate-button").click();
-    await assertModalTitle(page, "Import key");
-    await selectItem(page, page.locator("#keystoreFormat"), "JSON Web Key Set");
-    await chooseFileByLocator(
-      page,
-      "../utils/files/key.jwks",
-      page.locator("#importFile-browse-button"),
-    );
-    await confirmModal(page);
-
-    await expect(
-      page.getByTestId("config.publicKeySignatureVerifier"),
-    ).toHaveValue(/{\s*"keys"\s*:\s*/);
+    await importJwtJwksFile(page);
+    await assertJwtPublicKeySignatureVerifier(page, /{\s*"keys"\s*:\s*/);
 
     await clickSaveButton(page);
     await assertNotificationMessage(page, "Provider successfully updated");

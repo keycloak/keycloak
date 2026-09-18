@@ -1,13 +1,14 @@
-import { expect, test } from "@playwright/test";
+import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { login } from "../utils/login.ts";
 import { toUser } from "../../src/user/routes/User.tsx";
+import { assertRowExists, openRowDetails } from "../utils/table.ts";
 import {
-  assertRowExists,
-  getTableData,
-  openRowDetails,
-} from "../utils/table.ts";
+  assertPendingWorkflowSteps,
+  assertWorkflowYaml,
+  toggleWorkflowYaml,
+} from "./workflow-user-tab.ts";
 
 function statusWorkflowStr(status: string): string {
   return `
@@ -61,24 +62,15 @@ test.describe.serial("Workflow tab in Users section", () => {
     await openRowDetails(page, silverStatusName);
     await openRowDetails(page, goldStatusName);
 
-    await page.getByTestId(`yaml-ex-toggle-${silverStatusName}`).click();
-    await page.getByTestId(`yaml-ex-toggle-${goldStatusName}`).click();
+    await toggleWorkflowYaml(page, silverStatusName);
+    await toggleWorkflowYaml(page, goldStatusName);
 
-    await expect(
-      page.getByTestId(`workflowYAML-${silverStatusName}`),
-    ).toHaveText(statusWorkflowStr("Silver"));
-
-    await expect(page.getByTestId(`workflowYAML-${goldStatusName}`)).toHaveText(
-      statusWorkflowStr("Gold"),
+    await assertWorkflowYaml(
+      page,
+      silverStatusName,
+      statusWorkflowStr("Silver"),
     );
-
-    const tableData = await getTableData(page, `${silverStatusName}-Steps`);
-    expect(tableData).toHaveLength(2);
-    expect(tableData[0][0]).toBe("set-user-attribute");
-    expect(tableData[0][1]).toBe("");
-    expect(tableData[0][2]).toBe("Completed");
-    expect(tableData[1][0]).toBe("disable-user");
-    expect(new Date(tableData[1][1]).getTime()).not.toBeNaN(); // test if date string is valid
-    expect(tableData[1][2]).toBe("Pending");
+    await assertWorkflowYaml(page, goldStatusName, statusWorkflowStr("Gold"));
+    await assertPendingWorkflowSteps(page, silverStatusName);
   });
 });
