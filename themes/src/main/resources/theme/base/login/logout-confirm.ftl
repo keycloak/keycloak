@@ -4,9 +4,8 @@
         ${msg("logoutConfirmTitle")}
     <#elseif section = "form">
         <div id="kc-logout-confirm" class="content-area">
-            <p class="instruction">${msg("logoutConfirmHeader")}</p>
-
-            <form class="form-actions" action="${url.logoutConfirmAction}" onsubmit="confirmLogout.disabled = true; return true;" method="POST">
+            <form class="form-actions ${properties.kcFormClass!}" action="${url.logoutConfirmAction}" onsubmit="confirmLogout.disabled = true; return true;" method="POST">
+                <p class="instruction">${msg("logoutConfirmHeader")}</p>
                 <input type="hidden" name="session_code" value="${logoutConfirm.code}">
                 <div class="${properties.kcFormGroupClass!}">
                     <div id="kc-form-options">
@@ -14,7 +13,7 @@
                         </div>
                     </div>
 
-                    <div id="kc-form-buttons" class="${properties.kcFormGroupClass!}">
+                    <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                         <input tabindex="4"
                                class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
                                name="confirmLogout" id="kc-logout" type="submit" value="${msg("doLogout")}"/>
@@ -27,7 +26,7 @@
                 <#if logoutConfirm.skipLink>
                 <#else>
                     <#if (client.baseUrl)?has_content>
-                        <p><a href="${client.baseUrl}">${msg("backToApplication")}</a></p>
+                        <p class="${properties.kcMarginTopClass!}"><a href="${client.baseUrl}">${msg("backToApplication")}</a></p>
                     </#if>
                 </#if>
             </div>
