@@ -1837,17 +1837,19 @@ public class OID4VCIssuerEndpoint {
         Map<String, Object> subjectClaims = new HashMap<>();
         Map<String, Object> subjectClaimsWithMetadataPrefix = new HashMap<>();
 
-        if (VCFormat.MSO_MDOC.equals(credentialConfig.getFormat())) {
-            // A scope switched to mso_mdoc after its claim mappers were created is not revalidated by the admin API,
-            // so guard here against a claim mapper without a namespace that would otherwise emit a flat claim path.
-            for (OID4VCMapper mapper : protocolMappers) {
-                try {
-                    mapper.validateMdocNamespace(credentialConfig.getFormat());
-                } catch (ProtocolMapperConfigException e) {
-                    throw badRequestException(ErrorType.INVALID_CREDENTIAL_REQUEST, e.getMessage(), eventBuilder);
-                }
+        // A scope whose format was switched, or whose mappers were created via scope update/import, is not
+        // revalidated by the admin API. Guard here against misconfigured mappers (a missing mdoc namespace, or
+        // user-controlled data mapped to a reserved claim) so they fail the request instead of emitting broken
+        // or overridden claims.
+        for (OID4VCMapper mapper : protocolMappers) {
+            try {
+                mapper.validate();
+            } catch (ProtocolMapperConfigException e) {
+                throw badRequestException(ErrorType.INVALID_CREDENTIAL_REQUEST, e.getMessage(), eventBuilder);
             }
+        }
 
+        if (VCFormat.MSO_MDOC.equals(credentialConfig.getFormat())) {
             // mDoc data element identifiers may repeat across namespaces while sharing one raw claim key, so each
             // mapper writes into its own scratch map. A shared map would let a mapper without a value pick up the
             // claim of a previous mapper with the same name and copy it into the wrong namespace.
