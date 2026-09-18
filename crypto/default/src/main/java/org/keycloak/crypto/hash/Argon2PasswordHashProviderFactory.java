@@ -31,6 +31,7 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
      * when a CPU limit is imposed. The throttling would have a negative impact on other concurrent non-hashing activities of Keycloak.
      */
     private Semaphore cpuCoreSemaphore;
+    private BlockChunkManager blockChunkManager;
 
     private String version;
     private String type;
@@ -41,7 +42,7 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
 
     @Override
     public PasswordHashProvider create(KeycloakSession session) {
-        return new Argon2PasswordHashProvider(version, type, hashLength, memory, iterations, parallelism, cpuCoreSemaphore);
+        return new Argon2PasswordHashProvider(version, type, hashLength, memory, iterations, parallelism, cpuCoreSemaphore, blockChunkManager);
     }
 
     @Override
@@ -52,7 +53,9 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
         memory = config.getInt(MEMORY_KEY, Argon2Parameters.DEFAULT_MEMORY);
         iterations = config.getInt(ITERATIONS_KEY, Argon2Parameters.DEFAULT_ITERATIONS);
         parallelism = config.getInt(PARALLELISM_KEY, Argon2Parameters.DEFAULT_PARALLELISM);
-        cpuCoreSemaphore = new Semaphore(config.getInt(CPU_CORES_KEY, Runtime.getRuntime().availableProcessors()));
+        int cpuCores = config.getInt(CPU_CORES_KEY, Runtime.getRuntime().availableProcessors());
+        cpuCoreSemaphore = new Semaphore(cpuCores);
+        blockChunkManager = new BlockChunkManager();
     }
 
     @Override

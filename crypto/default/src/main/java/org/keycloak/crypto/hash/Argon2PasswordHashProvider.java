@@ -34,8 +34,9 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
     private final int iterations;
     private final int parallelism;
     private final Semaphore cpuCoreSemaphore;
+    private final BlockChunkManager blockPoolManager;
 
-    public Argon2PasswordHashProvider(String version, String type, int hashLength, int memory, int iterations, int parallelism, Semaphore cpuCoreSemaphore) {
+    public Argon2PasswordHashProvider(String version, String type, int hashLength, int memory, int iterations, int parallelism, Semaphore cpuCoreSemaphore, BlockChunkManager blockChunkManager) {
         this.version = version;
         this.type = type;
         this.hashLength = hashLength;
@@ -43,6 +44,7 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
         this.iterations = iterations;
         this.parallelism = parallelism;
         this.cpuCoreSemaphore = cpuCoreSemaphore;
+        this.blockPoolManager = blockChunkManager;
     }
 
     @Override
@@ -114,19 +116,23 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
             try {
                 cpuCoreSemaphore.acquire();
                 try {
-                    org.bouncycastle.crypto.params.Argon2Parameters parameters = new org.bouncycastle.crypto.params.Argon2Parameters.Builder(Argon2Parameters.getTypeValue(type))
-                            .withVersion(Argon2Parameters.getVersionValue(version))
-                            .withSalt(salt)
-                            .withParallelism(parallelism)
-                            .withMemoryAsKB(memory)
-                            .withIterations(iterations).build();
+                    try (BlockChunkManager.LeasedBlockPool pool = blockPoolManager.lease(memory, parallelism) ) {
+                        org.bouncycastle.crypto.params.Argon2Parameters.Builder builder = new org.bouncycastle.crypto.params.Argon2Parameters.Builder(Argon2Parameters.getTypeValue(type))
+                                .withVersion(Argon2Parameters.getVersionValue(version))
+                                .withSalt(salt)
+                                .withParallelism(parallelism)
+                                .withMemoryAsKB(memory)
+                                .withIterations(iterations)
+                                .withBlockPool(pool);
+                        org.bouncycastle.crypto.params.Argon2Parameters parameters = builder.build();
 
-                    Argon2BytesGenerator generator = new Argon2BytesGenerator();
-                    generator.init(parameters);
+                        Argon2BytesGenerator generator = new Argon2BytesGenerator();
+                        generator.init(parameters);
 
-                    byte[] result = new byte[hashLength];
-                    generator.generateBytes(rawPassword.toCharArray(), result);
-                    return Base64.getEncoder().encodeToString(result);
+                        byte[] result = new byte[hashLength];
+                        generator.generateBytes(rawPassword.toCharArray(), result);
+                        return Base64.getEncoder().encodeToString(result);
+                    }
                 } finally {
                     cpuCoreSemaphore.release();
                 }
