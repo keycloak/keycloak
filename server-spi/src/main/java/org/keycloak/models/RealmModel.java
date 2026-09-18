@@ -231,11 +231,7 @@ public interface RealmModel extends RoleContainerModel {
         if (value == null || value.isBlank()) {
             return RealmRepresentation.BruteForceLockPolicy.USER;
         }
-        try {
-            return RealmRepresentation.BruteForceLockPolicy.valueOf(value);
-        } catch (IllegalArgumentException ignored) {
-            return RealmRepresentation.BruteForceLockPolicy.USER;
-        }
+        return RealmRepresentation.BruteForceLockPolicy.valueOf(value);
     }
     default void setBruteForceLockPolicy(RealmRepresentation.BruteForceLockPolicy policy) {
         if (policy == null || policy == RealmRepresentation.BruteForceLockPolicy.USER) {
@@ -253,11 +249,7 @@ public interface RealmModel extends RoleContainerModel {
         if (value == null || value.isBlank()) {
             return getFailureFactor();
         }
-        try {
-            return Integer.parseInt(value.trim());
-        } catch (NumberFormatException ignored) {
-            return getFailureFactor();
-        }
+        return Integer.parseInt(value.trim());
     }
     default void setBruteForcePropertyFailureFactor(Integer failureFactor) {
         if (failureFactor == null) {

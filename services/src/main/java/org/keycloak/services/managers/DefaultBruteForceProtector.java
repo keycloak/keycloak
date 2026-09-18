@@ -177,8 +177,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
             return;
         }
 
-        if(userLoginFailure.getNumTemporaryLockouts() > realm.getMaxTemporaryLockouts() ||
-                (realm.getMaxTemporaryLockouts() == 0 && userLoginFailure.getNumFailures() >= realm.getFailureFactor())) {
+        if (BruteForceUserProperty.isPermanentlyLocked(realm, userLoginFailure, failureKey)) {
             permanentUserLockOut(session, realm, user, userLoginFailure);
         }
     }
@@ -192,8 +191,8 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         user.setEnabled(false);
         try {
             user.setSingleAttribute(DISABLED_REASON, DISABLED_BY_PERMANENT_LOCKOUT);
-        }catch (ReadOnlyException e){
-            logger.debug("Cannot set disabled reason on read only user");
+        } catch (ReadOnlyException e) {
+            logger.debug("Cannot set disabled reason on read only user", e);
         }
         // Send event
         sendEvent(session, realm, user.getId(), userLoginFailure, EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT);
@@ -272,17 +271,11 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
 
     @Override
     public void successfulLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo, Set<String> authenticationCategories) {
-        successfulLogin(realm, user, clientConnection, uriInfo, authenticationCategories, null);
-    }
-
-    @Override
-    public void successfulLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo,
-            Set<String> authenticationCategories, String attemptedIdentifier) {
         if (authenticationCategories == null || Collections.disjoint(ALLOWED_AUTHENTICATION_CATEGORIES, authenticationCategories)) {
             logger.debugf("'%s' authentication category not allowed for brute force", authenticationCategories);
             return;
         }
-        processLogin(realm, user, clientConnection, uriInfo, true, authenticationCategories, attemptedIdentifier);
+        processLogin(realm, user, clientConnection, uriInfo, true, authenticationCategories);
         logger.trace("sent success event");
     }
 

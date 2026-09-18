@@ -19,9 +19,11 @@ package org.keycloak.services.managers;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -65,15 +67,18 @@ public final class BruteForceUserProperty {
      * property counters.
      */
     public static List<String> getFailureKeysForAttempt(RealmModel realm, UserModel user, String attemptedIdentifier) {
+        String identifier = attemptedIdentifier == null || attemptedIdentifier.isBlank()
+                ? user.getUsername()
+                : attemptedIdentifier;
         return switch (realm.getBruteForceLockPolicy()) {
-            case PROPERTIES -> getMatchingPropertyKeys(realm, user, attemptedIdentifier);
+            case PROPERTIES -> getMatchingPropertyKeys(realm, user, identifier);
             case ANY -> {
                 Set<String> keys = new LinkedHashSet<>();
                 keys.add(user.getId());
-                keys.addAll(getMatchingPropertyKeys(realm, user, attemptedIdentifier));
+                keys.addAll(getMatchingPropertyKeys(realm, user, identifier));
                 yield List.copyOf(keys);
             }
-            default -> List.of(user.getId());
+            case USER -> List.of(user.getId());
         };
     }
 
@@ -84,9 +89,7 @@ public final class BruteForceUserProperty {
         Set<String> keys = new LinkedHashSet<>();
         for (String property : getProtectedProperties(realm)) {
             if (ID.equals(property)) {
-                if (attemptedIdentifier.equals(user.getId())) {
-                    keys.add(user.getId());
-                }
+                keys.add(user.getId());
                 continue;
             }
             String attempted = normalize(property, attemptedIdentifier);
@@ -127,7 +130,7 @@ public final class BruteForceUserProperty {
                 properties.add(ID);
                 properties.addAll(realm.getBruteForceProtectedUserProperties());
             }
-            default -> properties.add(ID);
+            case USER -> properties.add(ID);
         }
         return List.copyOf(properties);
     }
@@ -172,6 +175,33 @@ public final class BruteForceUserProperty {
                 .filter(Objects::nonNull);
     }
 
+    /**
+     * Users that currently share this user's value for {@code property}, including {@code user}.
+     * {@code id} is per-account and never shared.
+     */
+    public static Stream<UserModel> getUsersSharingProperty(KeycloakSession session, RealmModel realm,
+            UserModel user, String property) {
+        Map<String, UserModel> users = new LinkedHashMap<>();
+        users.put(user.getId(), user);
+        if (!ID.equals(property)) {
+            values(user, property)
+                    .filter(value -> value != null && !value.isBlank())
+                    .forEach(value -> findUsersByPropertyValue(session, realm, property, value)
+                            .forEach(found -> users.putIfAbsent(found.getId(), found)));
+        }
+        return users.values().stream();
+    }
+
+    public static boolean isLockedByRemainingCounters(KeycloakSession session, RealmModel realm, UserModel user,
+            List<String> clearedKeys) {
+        return getFailureKeys(realm, user).stream()
+                .filter(failureKey -> !clearedKeys.contains(failureKey))
+                .anyMatch(failureKey -> {
+                    UserLoginFailureModel model = session.loginFailures().getUserLoginFailure(realm, failureKey);
+                    return model != null && isPermanentlyLocked(realm, model, failureKey);
+                });
+    }
+
     static String propertyKey(String property, String value) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -180,6 +210,17 @@ public final class BruteForceUserProperty {
         } catch (NoSuchAlgorithmException cause) {
             throw new IllegalStateException("SHA-256 is not available", cause);
         }
+    }
+
+    private static Stream<UserModel> findUsersByPropertyValue(KeycloakSession session, RealmModel realm,
+            String property, String value) {
+        return switch (property) {
+            case UserModel.USERNAME -> Stream.ofNullable(session.users().getUserByUsername(realm, value));
+            case UserModel.EMAIL -> session.users()
+                    .searchForUserStream(realm, Map.of(UserModel.EMAIL, value))
+                    .filter(found -> found.getEmail() != null && found.getEmail().equalsIgnoreCase(value));
+            default -> session.users().searchForUserByUserAttributeStream(realm, property, value);
+        };
     }
 
     private static Stream<String> values(UserModel user, String property) {

@@ -197,6 +197,7 @@ public class BruteForceUsersResource {
         UserLoginFailureModel latestFailure = null;
         boolean disabled = session.getProvider(BruteForceProtector.class)
                 .isPermanentlyLockedOut(session, realm, user);
+        data.put("disabled", disabled);
         int currentTime = Time.currentTime();
         for (UserLoginFailureModel model : BruteForceUserProperty.getLoginFailures(session, realm, user).toList()) {
             data.put("numFailures", Math.max((int) data.get("numFailures"), model.getNumFailures()));

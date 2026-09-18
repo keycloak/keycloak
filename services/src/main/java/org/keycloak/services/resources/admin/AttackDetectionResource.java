@@ -17,8 +17,11 @@
 package org.keycloak.services.resources.admin;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.DELETE;
@@ -119,7 +122,7 @@ public class AttackDetectionResource {
             return data;
         }
 
-        Map<String, Map<String, Object>> properties = new HashMap<>();
+        Map<String, Map<String, Object>> properties = new LinkedHashMap<>();
         for (String property : BruteForceUserProperty.getProtectedProperties(realm)) {
             properties.put(property, bruteForcePropertyStatus(user, property));
         }
@@ -139,15 +142,16 @@ public class AttackDetectionResource {
             }
         }
 
-        if (latestFailure == null) return data;
         if (isUserDisabledOrLockedByBruteForce(session, realm, user)) {
             data.put("disabled", true);
             data.put("failedLoginNotBefore",
                     session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)
                             ? failedLoginNotBefore : Long.MAX_VALUE);
         }
-        data.put("lastFailure", latestFailure.getLastFailure());
-        data.put("lastIPFailure", latestFailure.getLastIPFailure());
+        if (latestFailure != null) {
+            data.put("lastFailure", latestFailure.getLastFailure());
+            data.put("lastIPFailure", latestFailure.getLastIPFailure());
+        }
         return data;
     }
 
@@ -239,6 +243,9 @@ public class AttackDetectionResource {
             return;
         }
 
+        List<String> propertiesToClear = property == null
+                ? BruteForceUserProperty.getProtectedProperties(realm)
+                : List.of(property);
         List<String> clearedKeys;
         try {
             clearedKeys = property == null
@@ -248,12 +255,12 @@ public class AttackDetectionResource {
             throw new BadRequestException(cause.getMessage(), cause);
         }
 
-        boolean lockedByRemainingCounters = BruteForceUserProperty.getFailureKeys(realm, user).stream()
-                .filter(failureKey -> !clearedKeys.contains(failureKey))
-                .anyMatch(failureKey -> {
-                    UserLoginFailureModel model = session.loginFailures().getUserLoginFailure(realm, failureKey);
-                    return model != null && BruteForceUserProperty.isPermanentlyLocked(realm, model, failureKey);
-                });
+        Set<UserModel> affected = new LinkedHashSet<>();
+        affected.add(user);
+        for (String protectedProperty : propertiesToClear) {
+            BruteForceUserProperty.getUsersSharingProperty(session, realm, user, protectedProperty)
+                    .forEach(affected::add);
+        }
 
         boolean removed = false;
         for (String failureKey : clearedKeys) {
@@ -263,12 +270,20 @@ public class AttackDetectionResource {
             }
         }
 
-        if (removed) {
-            if (!lockedByRemainingCounters && BruteForceProtector.DISABLED_BY_PERMANENT_LOCKOUT.equals(
-                    user.getFirstAttribute(UserModel.DISABLED_REASON))) {
-                user.setEnabled(true);
-                session.getProvider(BruteForceProtector.class).cleanUpPermanentLockout(session, realm, user);
+        boolean released = false;
+        for (UserModel candidate : affected) {
+            if (BruteForceUserProperty.isLockedByRemainingCounters(session, realm, candidate, clearedKeys)) {
+                continue;
             }
+            if (BruteForceProtector.DISABLED_BY_PERMANENT_LOCKOUT.equals(
+                    candidate.getFirstAttribute(UserModel.DISABLED_REASON))) {
+                candidate.setEnabled(true);
+                candidate.removeAttribute(UserModel.DISABLED_REASON);
+                released = true;
+            }
+        }
+
+        if (removed || released) {
             adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
         }
     }

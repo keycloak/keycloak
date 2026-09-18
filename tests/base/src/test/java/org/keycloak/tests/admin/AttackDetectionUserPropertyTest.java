@@ -130,10 +130,10 @@ public class AttackDetectionUserPropertyTest {
     }
 
     @Test
-    public void emailFailuresIncrementEmailAndCanLockUsersSharingThatEmail() {
+    public void emailFailuresIncrementOnlyTheSubmittedEmail() {
         withProtectedProperties(List.of(UserModel.EMAIL), () -> {
             AttackDetectionResource detection = managedRealm.admin().attackDetection();
-            failLogin(salesUser, salesUser.admin().toRepresentation().getEmail(), 3);
+            failLogin(salesUser, salesUser.admin().toRepresentation().getEmail(), 2);
 
             assertEquals(Set.of(UserModel.EMAIL),
                     properties(detection.bruteForceUserStatus(salesUser.getId())).keySet());
@@ -354,28 +354,91 @@ public class AttackDetectionUserPropertyTest {
     }
 
     @Test
+    public void permanentLockoutStatusSurvivesAPropertyValueChange() {
+        withProtectedProperties(List.of(UserModel.EMAIL), () -> withPermanentLockout(() -> {
+            AttackDetectionResource detection = managedRealm.admin().attackDetection();
+            String originalEmail = salesUser.admin().toRepresentation().getEmail();
+
+            failLogin(salesUser, originalEmail, 2);
+            assertFalse(salesUser.admin().toRepresentation().isEnabled());
+            assertTrue((Boolean) detection.bruteForceUserStatus(salesUser.getId()).get("disabled"));
+
+            try {
+                setEmail(salesUser, "changed-sales-user@example.com");
+                assertFalse(salesUser.admin().toRepresentation().isEnabled());
+                assertTrue((Boolean) detection.bruteForceUserStatus(salesUser.getId()).get("disabled"));
+            } finally {
+                setEmail(salesUser, originalEmail);
+            }
+        }));
+    }
+
+    @Test
     public void permanentLockoutIsReleasedOnlyAfterEveryLockedPropertyIsUnlocked() {
-        AttackDetectionResource detection = managedRealm.admin().attackDetection();
-        RealmRepresentation realm = managedRealm.admin().toRepresentation();
-        realm.setPermanentLockout(true);
-        realm.setMaxTemporaryLockouts(0);
-        managedRealm.admin().update(realm);
+        withLockPolicy(BruteForceLockPolicy.ANY, () -> withPermanentLockout(() -> {
+            AttackDetectionResource detection = managedRealm.admin().attackDetection();
+            failLogin(salesUser, 2);
 
-        try {
-            failLogin(salesUser, 3);
             assertFalse(salesUser.admin().toRepresentation().isEnabled());
-            assertPropertyLocked(detection, salesUser, UserModel.USERNAME, true);
-
-            detection.clearBruteForceForUserByProperty(salesUser.getId(), UserModel.EMAIL);
-            assertFalse(salesUser.admin().toRepresentation().isEnabled());
+            assertPropertyLocked(detection, salesUser, ID, true);
             assertPropertyLocked(detection, salesUser, UserModel.USERNAME, true);
 
             detection.clearBruteForceForUserByProperty(salesUser.getId(), UserModel.USERNAME);
+            assertFalse(salesUser.admin().toRepresentation().isEnabled());
+            assertPropertyLocked(detection, salesUser, ID, true);
+            assertPropertyFailures(detection, salesUser, ID, 2);
+            assertPropertyLocked(detection, salesUser, UserModel.USERNAME, false);
+
+            detection.clearBruteForceForUserByProperty(salesUser.getId(), ID);
             assertTrue(salesUser.admin().toRepresentation().isEnabled());
-        } finally {
-            realm.setPermanentLockout(false);
-            managedRealm.admin().update(realm);
-        }
+            assertFalse((Boolean) detection.bruteForceUserStatus(salesUser.getId()).get("disabled"));
+        }));
+    }
+
+    @Test
+    public void unlockingTheLockingPropertyKeepsOtherPropertyCounters() {
+        withFailureFactors(10, 2, () -> withPermanentLockout(() -> {
+            AttackDetectionResource detection = managedRealm.admin().attackDetection();
+            failLogin(salesUser, 1);
+            failLogin(salesUser, salesUser.admin().toRepresentation().getEmail(), 2);
+
+            assertFalse(salesUser.admin().toRepresentation().isEnabled());
+            assertPropertyFailures(detection, salesUser, UserModel.USERNAME, 1);
+            assertPropertyLocked(detection, salesUser, UserModel.EMAIL, true);
+
+            detection.clearBruteForceForUserByProperty(salesUser.getId(), UserModel.EMAIL);
+
+            assertTrue(salesUser.admin().toRepresentation().isEnabled());
+            assertPropertyFailures(detection, salesUser, UserModel.USERNAME, 1);
+            assertPropertyLocked(detection, salesUser, UserModel.EMAIL, false);
+        }));
+    }
+
+    @Test
+    public void unlockingASharedPropertyReleasesEveryUserLockedByThatCounter() {
+        withProtectedProperties(List.of(UserModel.EMAIL), () -> withPermanentLockout(() -> {
+            AttackDetectionResource detection = managedRealm.admin().attackDetection();
+            String salesEmail = salesUser.admin().toRepresentation().getEmail();
+            String otherSalesEmail = otherSalesUser.admin().toRepresentation().getEmail();
+
+            failLogin(salesUser, salesEmail, 2);
+            assertFalse(salesUser.admin().toRepresentation().isEnabled());
+
+            withDuplicateEmails(() -> {
+                try {
+                    setEmail(otherSalesUser, salesEmail);
+                    assertTrue((Boolean) detection.bruteForceUserStatus(otherSalesUser.getId()).get("disabled"));
+
+                    detection.clearBruteForceForUserByProperty(salesUser.getId(), UserModel.EMAIL);
+
+                    assertTrue(salesUser.admin().toRepresentation().isEnabled());
+                    assertFalse((Boolean) detection.bruteForceUserStatus(salesUser.getId()).get("disabled"));
+                    assertFalse((Boolean) detection.bruteForceUserStatus(otherSalesUser.getId()).get("disabled"));
+                } finally {
+                    setEmail(otherSalesUser, otherSalesEmail);
+                }
+            });
+        }));
     }
 
     private void withProtectedProperties(List<String> properties, Runnable test) {
@@ -419,6 +482,39 @@ public class AttackDetectionUserPropertyTest {
             RealmRepresentation restore = managedRealm.admin().toRepresentation();
             restore.setFailureFactor(previousFailureFactor);
             restore.setBruteForcePropertyFailureFactor(previousPropertyFactor);
+            managedRealm.admin().update(restore);
+        }
+    }
+
+    private void withPermanentLockout(Runnable test) {
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
+        boolean previous = Boolean.TRUE.equals(realm.isPermanentLockout());
+        Integer previousMaxTemporaryLockouts = realm.getMaxTemporaryLockouts();
+        realm.setPermanentLockout(true);
+        realm.setMaxTemporaryLockouts(0);
+        managedRealm.admin().update(realm);
+        try {
+            test.run();
+        } finally {
+            RealmRepresentation restore = managedRealm.admin().toRepresentation();
+            restore.setPermanentLockout(previous);
+            restore.setMaxTemporaryLockouts(previousMaxTemporaryLockouts);
+            managedRealm.admin().update(restore);
+        }
+    }
+
+    private void withDuplicateEmails(Runnable test) {
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
+        boolean previousDuplicates = Boolean.TRUE.equals(realm.isDuplicateEmailsAllowed());
+        boolean previousLoginWithEmail = Boolean.TRUE.equals(realm.isLoginWithEmailAllowed());
+        realm.setDuplicateEmailsAllowed(true);
+        managedRealm.admin().update(realm);
+        try {
+            test.run();
+        } finally {
+            RealmRepresentation restore = managedRealm.admin().toRepresentation();
+            restore.setDuplicateEmailsAllowed(previousDuplicates);
+            restore.setLoginWithEmailAllowed(previousLoginWithEmail);
             managedRealm.admin().update(restore);
         }
     }

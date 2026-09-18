@@ -47,11 +47,6 @@ public interface BruteForceProtector extends Provider {
 
     void successfulLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo, Set<String> authenticationCategories);
 
-    default void successfulLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo,
-            Set<String> authenticationCategories, String attemptedIdentifier) {
-        successfulLogin(realm, user, clientConnection, uriInfo, authenticationCategories);
-    }
-
     boolean isTemporarilyDisabled(KeycloakSession session, RealmModel realm, UserModel user);
 
     boolean isPermanentlyLockedOut(KeycloakSession session, RealmModel realm, UserModel user);
