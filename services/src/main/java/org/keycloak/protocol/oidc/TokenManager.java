@@ -429,7 +429,8 @@ public class TokenManager {
                     KeycloakModelUtils.runJobInTransaction(factory, s -> s.singleUseObjects().remove(lockId));
                 }
             });
-        }, Duration.of(10, ChronoUnit.SECONDS), 10);
+            // 12s allows 2 retries given the 5s remote-timeout on the actionTokens cache (CacheConfigurator).
+        }, Duration.of(12, ChronoUnit.SECONDS), 10);
     }
 
     private Function<String, String> transformScopes(KeycloakSession session, Set<String> requestedScopes) {

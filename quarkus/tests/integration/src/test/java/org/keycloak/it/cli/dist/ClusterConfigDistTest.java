@@ -142,6 +142,8 @@ public class ClusterConfigDistTest {
     void testExplicitCacheConfigFile(CLIResult result) {
         result.assertStartedDevMode();
         result.assertClusteredCache();
+        // CacheConfigurator.ensureTimeoutOrdering() validates lock-timeout < remote-timeout
+        result.assertNoMessage("must be less than remote-timeout");
     }
 
     @Test
