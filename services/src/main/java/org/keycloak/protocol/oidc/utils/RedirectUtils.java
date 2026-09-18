@@ -132,8 +132,15 @@ public class RedirectUtils {
 
             String valid = matchesRedirects(resolveValidRedirects, r, allowWildcards);
 
-            if (valid == null && "http".equals(originalRedirect.getScheme()) && LOOPBACK_INTERFACES.contains(originalRedirect.getHost())) {
-                String redirectWithDefaultPort = KeycloakUriBuilder.fromUri(originalRedirect).port(80).buildAsString();
+            String redirectHost = originalRedirect.getHost();
+            if (valid == null && "http".equalsIgnoreCase(originalRedirect.getScheme())
+                    && redirectHost != null
+                    && LOOPBACK_INTERFACES.contains(redirectHost.toLowerCase(Locale.ROOT))) {
+                // Normalize scheme so default port 80 is omitted by KeycloakUriBuilder.
+                String redirectWithDefaultPort = KeycloakUriBuilder.fromUri(originalRedirect)
+                        .scheme(originalRedirect.getScheme().toLowerCase(Locale.ROOT))
+                        .port(80)
+                        .buildAsString();
                 valid = matchesRedirects(resolveValidRedirects, redirectWithDefaultPort, allowWildcards);
             }
 
@@ -296,7 +303,8 @@ public class RedirectUtils {
             if (configuredUri.isOpaque() != redirectUri.isOpaque()) {
                 return false;
             }
-            return Objects.equals(configuredUri.getRawSchemeSpecificPart(), redirectUri.getRawSchemeSpecificPart());
+            return Objects.equals(configuredUri.getRawSchemeSpecificPart(), redirectUri.getRawSchemeSpecificPart())
+                    && Objects.equals(configuredUri.getRawFragment(), redirectUri.getRawFragment());
         }
         return Objects.equals(configuredUri.getRawUserInfo(), redirectUri.getRawUserInfo())
                 && Objects.equals(configuredUri.getRawPath(), redirectUri.getRawPath())
@@ -316,7 +324,10 @@ public class RedirectUtils {
         if (prefixUri == null) {
             return redirectUriStartsWithUnparseablePrefix(redirect, redirectUri, prefix);
         }
-        if (prefix.endsWith(":")) {
+        // Port wildcards strip to an authority ending in ':' (e.g. https://example.com:).
+        // Do not treat path prefixes that merely end with ':' the same way.
+        String prefixAuthority = prefixUri.getRawAuthority();
+        if (prefixAuthority != null && prefixAuthority.endsWith(":")) {
             if (!UriUtils.schemeAndHostEqual(redirectUri, prefixUri)) {
                 return false;
             }
@@ -423,6 +434,8 @@ public class RedirectUtils {
     }
 
     private static boolean isValidScheme(String url) {
-        return url != null && (url.startsWith("http://") || url.startsWith("https://"));
+        return url != null
+                && (url.regionMatches(true, 0, "http://", 0, 7)
+                || url.regionMatches(true, 0, "https://", 0, 8));
     }
 }
