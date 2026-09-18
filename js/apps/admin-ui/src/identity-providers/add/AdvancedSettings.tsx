@@ -50,7 +50,7 @@ const LoginFlow = ({
   return (
     <FormGroup
       label={t(label)}
-      labelIcon={<HelpItem helpText={t(`${label}Help`)} fieldLabelId={label} />}
+      labelHelp={<HelpItem helpText={t(`${label}Help`)} fieldLabelId={label} />}
       fieldId={label}
     >
       <Controller
@@ -239,8 +239,7 @@ export const AdvancedSettings = ({
             render={({ field }) => (
               <Switch
                 id="filteredByClaim"
-                label={t("on")}
-                labelOff={t("off")}
+                label={field.value === "true" ? t("on") : t("off")}
                 isChecked={field.value === "true"}
                 onChange={(_event, value) => {
                   field.onChange(value.toString());
@@ -254,7 +253,7 @@ export const AdvancedSettings = ({
         <>
           <FormGroup
             label={t("claimFilterName")}
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("claimFilterNameHelp")}
                 fieldLabelId="claimFilterName"
@@ -280,7 +279,7 @@ export const AdvancedSettings = ({
           </FormGroup>
           <FormGroup
             label={t("claimFilterValue")}
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("claimFilterValueHelp")}
                 fieldLabelId="claimFilterName"
@@ -327,8 +326,7 @@ export const AdvancedSettings = ({
             render={({ field }) => (
               <Switch
                 id="doNotStoreUsers"
-                label={t("on")}
-                labelOff={t("off")}
+                label={field.value === "true" ? t("on") : t("off")}
                 isChecked={field.value === "true"}
                 onChange={(_event, value) => {
                   field.onChange(value.toString());

@@ -15,8 +15,7 @@ import {
   FormGroup,
   Label,
   SelectOption,
-  Text,
-  TextContent,
+  Content,
   TextInput,
 } from "@patternfly/react-core";
 import debouncePromise from "p-debounce";
@@ -276,14 +275,14 @@ export const EmitEventsTab = ({
   };
 
   return (
-    <Card isFlat className="pf-v5-u-mt-md">
+    <Card className="pf-v6-u-mt-md">
       <CardHeader>
         <CardTitle>{t("ssfEmitTitle")}</CardTitle>
       </CardHeader>
       <CardBody>
-        <TextContent>
-          <Text>{t("ssfEmitTitleHelp")}</Text>
-        </TextContent>
+        <Content>
+          <Content component="p">{t("ssfEmitTitleHelp")}</Content>
+        </Content>
       </CardBody>
       <CardBody>
         <FormAccess
@@ -295,7 +294,7 @@ export const EmitEventsTab = ({
           <FormGroup
             label={t("ssfEmitEventType")}
             fieldId="ssfEmitEventType"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("ssfEmitEventTypeHelp")}
                 fieldLabelId="ssfEmitEventType"
@@ -341,7 +340,7 @@ export const EmitEventsTab = ({
                           <Label
                             color="blue"
                             isCompact
-                            className="pf-v5-u-ml-sm"
+                            className="pf-v6-u-ml-sm"
                           >
                             {t("ssfNativelyEmittedBadge")}
                           </Label>
@@ -388,7 +387,7 @@ export const EmitEventsTab = ({
           <FormGroup
             label={t("ssfSubjectValue")}
             fieldId="ssfEmitSubjectValue"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("ssfEmitSubjectValueHelp")}
                 fieldLabelId="ssfEmitSubjectValue"
@@ -425,7 +424,7 @@ export const EmitEventsTab = ({
           <FormGroup
             label={t("ssfEmitPayload")}
             fieldId="ssfEmitPayload"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("ssfEmitPayloadHelp")}
                 fieldLabelId="ssfEmitPayload"
@@ -460,12 +459,13 @@ export const EmitEventsTab = ({
               )}
             />
             {emitPayloadParseError && (
-              <Text
-                className="pf-v5-u-mt-sm pf-v5-u-color-status-danger--100"
+              <Content
+                component="p"
+                className="pf-v6-u-mt-sm pf-v6-u-color-status-danger--100"
                 data-testid="ssfEmitPayloadParseError"
               >
                 {emitPayloadParseError}
-              </Text>
+              </Content>
             )}
           </FormGroup>
           <ActionGroup>
@@ -483,30 +483,33 @@ export const EmitEventsTab = ({
             <Alert
               variant="danger"
               isInline
-              className="pf-v5-u-mt-md"
+              className="pf-v6-u-mt-md"
               data-testid="ssfEmitError"
               title={emitError}
             />
           )}
           {emitResult && (
-            <TextContent className="pf-v5-u-mt-md" data-testid="ssfEmitResult">
-              <Text className="pf-v5-u-color-status-success--100">
+            <Content className="pf-v6-u-mt-md" data-testid="ssfEmitResult">
+              <Content
+                component="p"
+                className="pf-v6-u-color-status-success--100"
+              >
                 {t("ssfEmitResult", {
                   status: emitResult.status,
                   jti: emitResult.jti,
                 })}
-              </Text>
+              </Content>
               {emitResult.jti && (
-                <Text>
+                <Content component="p">
                   <Link
                     to={eventSearchPath(emitResult.jti)}
                     data-testid="ssfEmitResultLookup"
                   >
                     {t("ssfEmitResultLookupLink")}
                   </Link>
-                </Text>
+                </Content>
               )}
-            </TextContent>
+            </Content>
           )}
         </FormAccess>
       </CardBody>

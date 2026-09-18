@@ -1,7 +1,14 @@
 import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
-import { Button, Modal, ModalVariant } from "@patternfly/react-core";
+import {
+  Button,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalVariant,
+} from "@patternfly/react-core";
 import { TableText } from "@patternfly/react-table";
 import { differenceBy } from "lodash-es";
 import { useState } from "react";
@@ -38,12 +45,33 @@ export const OrganizationModal = ({
   };
 
   return (
-    <Modal
-      variant={ModalVariant.small}
-      title={isJoin ? t("joinOrganization") : t("sendInvitation")}
-      isOpen
-      onClose={onClose}
-      actions={[
+    <Modal variant={ModalVariant.small} isOpen onClose={onClose}>
+      <ModalHeader
+        title={isJoin ? t("joinOrganization") : t("sendInvitation")}
+      />
+      <ModalBody>
+        <KeycloakDataTable
+          loader={loader}
+          isPaginated
+          ariaLabelKey="organizationsList"
+          searchPlaceholderKey="searchOrganization"
+          canSelectAll
+          onSelect={(rows) => setSelectedRows([...rows])}
+          columns={[
+            {
+              name: "name",
+              displayKey: "organizationName",
+            },
+            {
+              name: "description",
+              cellRenderer: (row) => (
+                <TableText wrapModifier="truncate">{row.description}</TableText>
+              ),
+            },
+          ]}
+        />
+      </ModalBody>
+      <ModalFooter>
         <Button
           data-testid="join"
           key="confirm"
@@ -54,7 +82,7 @@ export const OrganizationModal = ({
           }}
         >
           {isJoin ? t("join") : t("send")}
-        </Button>,
+        </Button>
         <Button
           data-testid="cancel"
           key="cancel"
@@ -62,29 +90,8 @@ export const OrganizationModal = ({
           onClick={onClose}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <KeycloakDataTable
-        loader={loader}
-        isPaginated
-        ariaLabelKey="organizationsList"
-        searchPlaceholderKey="searchOrganization"
-        canSelectAll
-        onSelect={(rows) => setSelectedRows([...rows])}
-        columns={[
-          {
-            name: "name",
-            displayKey: "organizationName",
-          },
-          {
-            name: "description",
-            cellRenderer: (row) => (
-              <TableText wrapModifier="truncate">{row.description}</TableText>
-            ),
-          },
-        ]}
-      />
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

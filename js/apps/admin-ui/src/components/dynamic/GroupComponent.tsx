@@ -1,12 +1,13 @@
 import GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import {
+  Label,
+  LabelGroup,
   ActionList,
   ActionListItem,
   Button,
-  Chip,
-  ChipGroup,
   FormGroup,
 } from "@patternfly/react-core";
+
 import { useContext, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -100,7 +101,7 @@ export const GroupComponent = ({
 
           <FormGroup
             label={t(label!)}
-            labelIcon={
+            labelHelp={
               <HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />
             }
             fieldId={name!}
@@ -108,10 +109,11 @@ export const GroupComponent = ({
           >
             <ActionList>
               <ActionListItem>
-                <ChipGroup>
+                <LabelGroup>
                   {field.value && (
-                    <Chip
-                      onClick={() => {
+                    <Label
+                      variant="outline"
+                      onClose={() => {
                         field.onChange(undefined);
                         setValue(groupTypeFieldName, undefined);
                       }}
@@ -125,9 +127,9 @@ export const GroupComponent = ({
                         </>
                       )}
                       {field.value}
-                    </Chip>
+                    </Label>
                   )}
-                </ChipGroup>
+                </LabelGroup>
               </ActionListItem>
               <ActionListItem>
                 <Button

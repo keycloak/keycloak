@@ -48,7 +48,7 @@ export const Certificate = ({
     <FormGroup
       label={t(type)}
       fieldId={id}
-      labelIcon={
+      labelHelp={
         helpTextKey ? (
           <HelpItem helpText={t(helpTextKey)} fieldLabelId={id} />
         ) : undefined

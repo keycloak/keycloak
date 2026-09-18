@@ -234,7 +234,7 @@ test.describe.serial("Realm roles test", () => {
     await pickRole(page, "view-profile", true);
     await confirmModalAssign(page);
 
-    await page.locator('input[name="check-all"]').check();
+    await page.getByRole("checkbox", { name: "Select all rows" }).click();
     await clickUnassign(page);
     await confirmModal(page);
     await assertNotificationMessage(page, "Role mapping updated");

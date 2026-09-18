@@ -6,6 +6,7 @@ import { LogoContext } from "./LogoContext";
 import { ThemeColors } from "./ThemeColors";
 import { BackgroundContext } from "./BackgroundContext";
 import type { Environment } from "../../environment-types";
+import { toAdminPreviewCssVars } from "./previewCssVars";
 
 export type ThemeRealmRepresentation = RealmRepresentation & {
   themeName?: string;
@@ -70,7 +71,7 @@ export const QuickTheme = ({ realm, theme }: QuickThemeProps) => {
     zip.file(
       `theme/${themeNameClean}/admin/theme.properties`,
       `
-parent=keycloak.v2
+parent=keycloak.v3
 import=common/${themeNameClean}
 
 ${logo ? "logo=" + logoName : ""}
@@ -142,10 +143,13 @@ styles=css/styles.css css/theme-styles.css
       }),
     );
 
-    const toCss = (obj?: object) =>
+    const toLoginCss = (obj?: object) =>
       Object.entries(obj || {})
         .map(([key, value]) => `--pf-v5-global--${key}: ${value};`)
         .join("\n");
+
+    const toAdminCss = (obj?: object) =>
+      toAdminPreviewCssVars((obj || {}) as Record<string, string>);
 
     const loginCss = (
       await fetch(
@@ -168,10 +172,14 @@ styles=css/styles.css css/theme-styles.css
         ${logo ? `--keycloak-logo-url: url('../${logoName}');` : ""}
         --keycloak-logo-height: ${realm.logoHeight};
         --keycloak-logo-width: ${realm.logoWidth};
-        ${toCss(styles.light)}
+        ${toLoginCss(styles.light)}
+        ${toAdminCss(styles.light)}
       }
       .pf-v5-theme-dark {
-        ${toCss(styles.dark)}
+        ${toLoginCss(styles.dark)}
+      }
+      .pf-v6-theme-dark {
+        ${toAdminCss(styles.dark)}
       }
       `,
     );

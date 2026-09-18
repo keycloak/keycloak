@@ -22,8 +22,7 @@ import {
   InputGroupItem,
   Label,
   SelectOption,
-  Text,
-  TextContent,
+  Content,
   TextInput,
 } from "@patternfly/react-core";
 import {
@@ -336,7 +335,7 @@ export const StreamTab = ({
   return (
     <>
       <DeleteStreamConfirm />
-      <Card isFlat className="pf-v5-u-mt-md">
+      <Card className="pf-v6-u-mt-md">
         {clientStream && (
           <>
             <CardHeader>
@@ -344,17 +343,22 @@ export const StreamTab = ({
             </CardHeader>
 
             <CardBody>
-              <TextContent>
-                <Text>{t("ssfStreamHelp")}</Text>
-              </TextContent>
+              <Content>
+                <Content component="p">{t("ssfStreamHelp")}</Content>
+              </Content>
             </CardBody>
           </>
         )}
         <CardBody>
           {clientStream && (
-            <ActionGroup className="pf-v5-u-pb-md">
-              <Button variant="link" onClick={refresh} data-testid="ssfRefresh">
-                <SyncAltIcon /> {t("refresh")}
+            <ActionGroup className="pf-v6-u-pb-md">
+              <Button
+                icon={<SyncAltIcon />}
+                variant="link"
+                onClick={refresh}
+                data-testid="ssfRefresh"
+              >
+                {t("refresh")}
               </Button>
             </ActionGroup>
           )}
@@ -401,7 +405,6 @@ export const StreamTab = ({
                     <CopyToClipboardButton
                       id="ssfStreamId"
                       text={clientStream.streamId ?? ""}
-                      label="ssfStreamId"
                       variant="control"
                     />
                   </InputGroupItem>
@@ -410,7 +413,7 @@ export const StreamTab = ({
               <FormGroup
                 label={t("ssfStreamManagedBy")}
                 fieldId="ssfStreamManagedBy"
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={t("ssfStreamManagedByHelp")}
                     fieldLabelId="ssfStreamManagedBy"
@@ -431,7 +434,7 @@ export const StreamTab = ({
               <FormGroup
                 label={t("ssfStreamDescription")}
                 fieldId="ssfStreamDescription"
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={t("ssfStreamDescriptionHelp")}
                     fieldLabelId="ssfStreamDescription"
@@ -455,7 +458,7 @@ export const StreamTab = ({
                 <FormGroup
                   label={t("ssfStreamCreatedAt")}
                   fieldId="ssfStreamCreatedAt"
-                  labelIcon={
+                  labelHelp={
                     <HelpItem
                       helpText={t("ssfStreamCreatedAtHelp")}
                       fieldLabelId="ssfStreamCreatedAt"
@@ -474,7 +477,7 @@ export const StreamTab = ({
                 <FormGroup
                   label={t("ssfStreamUpdatedAt")}
                   fieldId="ssfStreamUpdatedAt"
-                  labelIcon={
+                  labelHelp={
                     <HelpItem
                       helpText={t("ssfStreamUpdatedAtHelp")}
                       fieldLabelId="ssfStreamUpdatedAt"
@@ -492,7 +495,7 @@ export const StreamTab = ({
               <FormGroup
                 label={t("ssfStreamLastVerifiedAt")}
                 fieldId="ssfStreamLastVerifiedAt"
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={t("ssfStreamLastVerifiedAtHelp")}
                     fieldLabelId="ssfStreamLastVerifiedAt"
@@ -513,7 +516,7 @@ export const StreamTab = ({
               <FormGroup
                 label={t("ssfStreamAudience")}
                 fieldId="ssfStreamAudienceCurrent"
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={t("ssfStreamAudienceCurrentHelp")}
                     fieldLabelId="ssfStreamAudience"
@@ -534,7 +537,7 @@ export const StreamTab = ({
               <FormGroup
                 label={t("ssfDelivery")}
                 fieldId="ssfDelivery"
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={t("ssfDeliveryHelp")}
                     fieldLabelId="ssfDelivery"
@@ -560,7 +563,7 @@ export const StreamTab = ({
                       : t("ssfStreamPushEndpointUrl")
                   }
                   fieldId="ssfStreamEndpointUrl"
-                  labelIcon={
+                  labelHelp={
                     <HelpItem
                       helpText={
                         isPollDeliveryMethod(clientStream.delivery.method)
@@ -584,7 +587,6 @@ export const StreamTab = ({
                       <CopyToClipboardButton
                         id="ssfStreamEndpointUrl"
                         text={clientStream.delivery.endpoint_url}
-                        label="ssfStreamEndpointUrl"
                         variant="control"
                       />
                     </InputGroupItem>
@@ -601,7 +603,7 @@ export const StreamTab = ({
                   <FormGroup
                     label={t("ssfStreamPushAuthHeader")}
                     fieldId="ssfStreamPushAuthHeader"
-                    labelIcon={
+                    labelHelp={
                       <HelpItem
                         helpText={t("ssfStreamPushAuthHeaderHelp")}
                         fieldLabelId="ssfStreamPushAuthHeader"
@@ -625,7 +627,6 @@ export const StreamTab = ({
                           text={
                             clientStream.delivery.authorization_header ?? ""
                           }
-                          label="ssfStreamPushAuthHeader"
                           variant="control"
                         />
                       </InputGroupItem>
@@ -635,7 +636,7 @@ export const StreamTab = ({
               <FormGroup
                 label={t("ssfStreamStatus")}
                 fieldId="ssfStreamStatusIndicator"
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={t("ssfStreamStatusHelp")}
                     fieldLabelId="ssfStreamStatus"
@@ -717,7 +718,7 @@ export const StreamTab = ({
               <FormGroup
                 label={t("ssfStreamStatusReason")}
                 fieldId="ssfStreamStatusReason"
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={t("ssfStreamStatusReasonHelp")}
                     fieldLabelId="ssfStreamStatusReason"
@@ -734,7 +735,7 @@ export const StreamTab = ({
               <FormGroup
                 label={t("ssfEventsRequested")}
                 fieldId="ssfEventsRequested"
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={t("ssfEventsRequestedHelp")}
                     fieldLabelId="ssfEventsRequested"
@@ -747,7 +748,7 @@ export const StreamTab = ({
                   variant={SelectVariant.typeaheadMulti}
                   isDisabled={!canEditStream}
                   chipGroupProps={{
-                    numChips: 5,
+                    numLabels: 5,
                     expandedText: t("hide"),
                     collapsedText: t("showRemaining"),
                   }}
@@ -779,7 +780,7 @@ export const StreamTab = ({
               <FormGroup
                 label={t("ssfEventsDelivered")}
                 fieldId="ssfEventsDelivered"
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={t("ssfEventsDeliveredHelp")}
                     fieldLabelId="ssfEventsDelivered"
@@ -792,7 +793,7 @@ export const StreamTab = ({
                   variant={SelectVariant.typeaheadMulti}
                   isDisabled={!canEditStream}
                   chipGroupProps={{
-                    numChips: 5,
+                    numLabels: 5,
                     expandedText: t("hide"),
                     collapsedText: t("showRemaining"),
                   }}

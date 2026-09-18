@@ -5,17 +5,19 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
+  Content,
   Flex,
   FlexItem,
   Form,
   FormGroup,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
   Radio,
   Split,
   SplitItem,
-  Text,
-  TextContent,
   Title,
 } from "@patternfly/react-core";
 import { saveAs } from "file-saver";
@@ -122,23 +124,84 @@ export const SamlKeysDialog = ({
     <Modal
       variant={ModalVariant.medium}
       aria-label={t("enableClientSignatureRequiredModal")}
-      header={
-        <TextContent>
+      isOpen={true}
+      onClose={onClose}
+    >
+      <ModalHeader>
+        <Content>
           <Title headingLevel="h1">
             {t("enableClientSignatureRequired", {
               key: t(localeKey),
             })}
           </Title>
-          <Text>
+          <Content component="p">
             {t("enableClientSignatureRequiredExplain", {
               key: t(localeKey),
             })}
-          </Text>
-        </TextContent>
-      }
-      isOpen={true}
-      onClose={onClose}
-      actions={[
+          </Content>
+        </Content>
+      </ModalHeader>
+      <ModalBody>
+        <FormProvider {...form}>
+          <Form isHorizontal>
+            <FormGroup
+              label={t("selectMethod")}
+              fieldId="selectMethod"
+              hasNoPaddingTop
+            >
+              <Flex>
+                <FlexItem>
+                  <Radio
+                    isChecked={!type}
+                    name="selectMethodType"
+                    onChange={() => setType(false)}
+                    label={t("selectMethodType.generate")}
+                    id="selectMethodType-generate"
+                  />
+                </FlexItem>
+                <FlexItem>
+                  <Radio
+                    isChecked={type}
+                    name="selectMethodType"
+                    onChange={() => setType(true)}
+                    label={t("selectMethodType.import")}
+                    id="selectMethodType-import"
+                  />
+                </FlexItem>
+              </Flex>
+            </FormGroup>
+            {!type && (
+              <FormGroup
+                label={t("certificate")}
+                fieldId="certificate"
+                labelHelp={
+                  <HelpItem
+                    helpText={t(`saml${localeKey}CertificateHelp`)}
+                    fieldLabelId="certificate"
+                  />
+                }
+              >
+                <Split hasGutter>
+                  <SplitItem isFilled>
+                    <Certificate plain keyInfo={keys} />
+                  </SplitItem>
+                  <SplitItem>
+                    <Button
+                      variant="secondary"
+                      data-testid="generate"
+                      onClick={generate}
+                    >
+                      {t("generate")}
+                    </Button>
+                  </SplitItem>
+                </Split>
+              </FormGroup>
+            )}
+          </Form>
+          {type && <KeyForm useFile hasPem />}
+        </FormProvider>
+      </ModalBody>
+      <ModalFooter>
         <Button
           id="modal-confirm"
           key="confirm"
@@ -153,7 +216,7 @@ export const SamlKeysDialog = ({
           }}
         >
           {t("confirm")}
-        </Button>,
+        </Button>
         <Button
           id="modal-cancel"
           key="cancel"
@@ -162,67 +225,8 @@ export const SamlKeysDialog = ({
           onClick={onCancel}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <FormProvider {...form}>
-        <Form isHorizontal>
-          <FormGroup
-            label={t("selectMethod")}
-            fieldId="selectMethod"
-            hasNoPaddingTop
-          >
-            <Flex>
-              <FlexItem>
-                <Radio
-                  isChecked={!type}
-                  name="selectMethodType"
-                  onChange={() => setType(false)}
-                  label={t("selectMethodType.generate")}
-                  id="selectMethodType-generate"
-                />
-              </FlexItem>
-              <FlexItem>
-                <Radio
-                  isChecked={type}
-                  name="selectMethodType"
-                  onChange={() => setType(true)}
-                  label={t("selectMethodType.import")}
-                  id="selectMethodType-import"
-                />
-              </FlexItem>
-            </Flex>
-          </FormGroup>
-          {!type && (
-            <FormGroup
-              label={t("certificate")}
-              fieldId="certificate"
-              labelIcon={
-                <HelpItem
-                  helpText={t(`saml${localeKey}CertificateHelp`)}
-                  fieldLabelId="certificate"
-                />
-              }
-            >
-              <Split hasGutter>
-                <SplitItem isFilled>
-                  <Certificate plain keyInfo={keys} />
-                </SplitItem>
-                <SplitItem>
-                  <Button
-                    variant="secondary"
-                    data-testid="generate"
-                    onClick={generate}
-                  >
-                    {t("generate")}
-                  </Button>
-                </SplitItem>
-              </Split>
-            </FormGroup>
-          )}
-        </Form>
-        {type && <KeyForm useFile hasPem />}
-      </FormProvider>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

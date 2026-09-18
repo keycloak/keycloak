@@ -22,7 +22,7 @@ import {
   Tab,
   TabTitleText,
   Tabs,
-  Text,
+  Content,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { useMemo, useState } from "react";
@@ -525,7 +525,7 @@ export default function DetailSettings() {
       panel: (
         <>
           <DiscoverySettings readOnly={false} isOIDC={isOIDC} />
-          <Form isHorizontal className="pf-v5-u-py-lg">
+          <Form isHorizontal className="pf-v6-u-py-lg">
             <Divider />
             <OIDCAuthentication create={false} />
           </Form>
@@ -539,7 +539,7 @@ export default function DetailSettings() {
       panel: (
         <>
           <DiscoverySettings readOnly={false} isOIDC={isOIDC} />
-          <Form isHorizontal className="pf-v5-u-py-lg">
+          <Form isHorizontal className="pf-v6-u-py-lg">
             <Divider />
             <OIDCAuthentication create={false} />
           </Form>
@@ -553,12 +553,12 @@ export default function DetailSettings() {
       isHidden: !isJWTAuthorizationGrantSupported,
       panel: (
         <>
-          <Text className="pf-v5-u-pb-lg">
+          <Content component="p" className="pf-v6-u-pb-lg">
             {t("authorizationGrantSettingsHelp")}
-          </Text>
+          </Content>
           <Form
             isHorizontal
-            className="pf-v5-u-py-lg"
+            className="pf-v6-u-py-lg"
             onSubmit={handleSubmit(save)}
           >
             <DefaultSwitchControl
@@ -581,7 +581,7 @@ export default function DetailSettings() {
       panel: (
         <Form
           isHorizontal
-          className="pf-v5-u-py-lg"
+          className="pf-v6-u-py-lg"
           onSubmit={handleSubmit(save)}
         >
           <SpiffeSettings />
@@ -600,7 +600,7 @@ export default function DetailSettings() {
       panel: (
         <Form
           isHorizontal
-          className="pf-v5-u-py-lg"
+          className="pf-v6-u-py-lg"
           onSubmit={handleSubmit(save)}
         >
           <JWTAuthorizationGrantSettings />
@@ -619,7 +619,7 @@ export default function DetailSettings() {
       panel: (
         <Form
           isHorizontal
-          className="pf-v5-u-py-lg"
+          className="pf-v6-u-py-lg"
           onSubmit={handleSubmit(save)}
         >
           <KubernetesSettings />
@@ -638,7 +638,7 @@ export default function DetailSettings() {
       panel: (
         <Form
           isHorizontal
-          className="pf-v5-u-py-lg"
+          className="pf-v6-u-py-lg"
           onSubmit={handleSubmit(save)}
         >
           <DefaultTrustSettings />
@@ -748,7 +748,7 @@ export default function DetailSettings() {
         )}
       />
 
-      <PageSection variant="light" className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
         <RoutableTabs isBox defaultLocation={toTab("settings")}>
           <Tab
             id="settings"
@@ -757,7 +757,7 @@ export default function DetailSettings() {
           >
             <ScrollForm
               label={t("jumpToSection")}
-              className="pf-v5-u-px-lg"
+              className="pf-v6-u-px-lg"
               sections={sections}
             />
           </Tab>

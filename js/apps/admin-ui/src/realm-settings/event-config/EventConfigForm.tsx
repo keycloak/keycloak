@@ -51,7 +51,7 @@ export const EventConfigForm = ({
         hasNoPaddingTop
         label={t("saveEvents")}
         fieldId={eventKey}
-        labelIcon={
+        labelHelp={
           <HelpItem
             helpText={t(`save-${type}-eventsHelp`)}
             fieldLabelId="saveEvents"
@@ -66,8 +66,7 @@ export const EventConfigForm = ({
             <Switch
               data-testid={eventKey}
               id={`${eventKey}-switch`}
-              label={t("on")}
-              labelOff={t("off")}
+              label={field.value ? t("on") : t("off")}
               isChecked={field.value}
               onChange={(_event, value) => {
                 if (!value) {
@@ -118,7 +117,7 @@ export const EventConfigForm = ({
       <FormGroup
         label={type === "user" ? t("clearUserEvents") : t("clearAdminEvents")}
         fieldId={`clear-${type}-events`}
-        labelIcon={
+        labelHelp={
           <HelpItem
             helpText={t(`${type}-clearEventsHelp`)}
             fieldLabelId={`clear-${type}-events`}
