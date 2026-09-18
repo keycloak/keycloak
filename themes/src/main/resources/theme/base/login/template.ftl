@@ -183,9 +183,8 @@
                       <#if message.type = 'error'><span class="${properties.kcFeedbackErrorIcon!}"></span></#if>
                       <#if message.type = 'info'><span class="${properties.kcFeedbackInfoIcon!}"></span></#if>
                   </div>
-                      <#if nestedIdpUsername?? && nestedIdpHeader?? && nestedIdpSentinel??>
-                          <#-- Escape IdP values after sanitization to prevent XSS -->
-                          <span class="${properties.kcAlertTitleClass!}">${kcSanitize(msg(nestedIdpHeader, "__KC_SENTINEL0_" + nestedIdpSentinel + "__", "__KC_SENTINEL1_" + nestedIdpSentinel + "__"))?replace("__KC_SENTINEL0_" + nestedIdpSentinel + "__", ((nestedIdpAlias!)?esc)?markup_string)?replace("__KC_SENTINEL1_" + nestedIdpSentinel + "__", ((nestedIdpUsername!)?esc)?markup_string)?no_esc}</span>
+                      <#if nestedIdpUsername?? && nestedIdpHeader??>
+                          <span class="${properties.kcAlertTitleClass!}">${kcSanitize(msg(nestedIdpHeader, "{0}", "{1}"))?replace("{0}", ((nestedIdpAlias!)?esc)?markup_string)?replace("{1}", ((nestedIdpUsername!)?esc)?markup_string)?no_esc}</span>
                       <#else>
                           <span class="${properties.kcAlertTitleClass!}">${kcSanitize(message.summary)?no_esc}</span>
                       </#if>

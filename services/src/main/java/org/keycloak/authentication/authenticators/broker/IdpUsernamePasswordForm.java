@@ -29,7 +29,6 @@ import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordForm;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -114,16 +113,10 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
             BrokeredIdentityContext ctx0 = serializedCtx0.deserialize(context.getSession(), context.getAuthenticationSession());
             String alias = ctx0.getIdpConfig().getAlias() != null ? ctx0.getIdpConfig().getAlias() : "";
             String username = ctx0.getUsername() != null ? ctx0.getUsername() : "";
-            // Keep the legacy formatted error safe even when a custom theme applies
-            // kcSanitize(), which decodes HTML entities before sanitizing.
-            String safeAlias = HtmlUtils.escapeAttribute(alias);
-            String safeUsername = HtmlUtils.escapeAttribute(username);
-            String sentinel = java.util.UUID.randomUUID().toString();
-            form.setError(Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE, safeAlias, safeUsername);
+            form.setError(Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE, alias, username);
             form.setAttribute("nestedIdpHeader", Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE);
             form.setAttribute("nestedIdpAlias", alias);
             form.setAttribute("nestedIdpUsername", username);
-            form.setAttribute("nestedIdpSentinel", sentinel);
             context.getAuthenticationSession().setAuthNote(AbstractIdpAuthenticator.NESTED_FIRST_BROKER_CONTEXT, null);
         }
 

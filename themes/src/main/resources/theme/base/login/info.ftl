@@ -1,8 +1,8 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout displayMessage=false; section>
     <#if section = "header">
-        <#if messageHeaderKey?? && messageHeaderUsername?? && messageHeaderSentinel??>
-            ${kcSanitize(msg(messageHeaderKey, "__KC_SENTINEL0_" + messageHeaderSentinel + "__", "__KC_SENTINEL1_" + messageHeaderSentinel + "__"))?replace("__KC_SENTINEL1_" + messageHeaderSentinel + "__", ((messageHeaderAlias!)?esc)?markup_string)?replace("__KC_SENTINEL0_" + messageHeaderSentinel + "__", ((messageHeaderUsername!)?esc)?markup_string)?no_esc}
+        <#if messageHeaderKey?? && messageHeaderUsername??>
+            ${kcSanitize(msg(messageHeaderKey, "{0}", "{1}"))?replace("{0}", ((messageHeaderUsername!)?esc)?markup_string)?replace("{1}", ((messageHeaderAlias!)?esc)?markup_string)?no_esc}
         <#elseif messageHeader??>
             ${kcSanitize(msg(messageHeader))?no_esc}
         <#else>
@@ -10,7 +10,7 @@
         </#if>
     <#elseif section = "form">
     <div id="kc-info-message">
-        <p class="instruction"><#if messageBodyKey?? && messageBodySentinel??><#assign _param0 = messageBodyParam0!(messageBodyUsername!)><#assign _param1 = messageBodyParam1!(messageBodyAlias!)>${kcSanitize(msg(messageBodyKey, "__KC_SENTINEL0_" + messageBodySentinel + "__", "__KC_SENTINEL1_" + messageBodySentinel + "__"))?replace("__KC_SENTINEL1_" + messageBodySentinel + "__", ((_param1!)?esc)?markup_string)?replace("__KC_SENTINEL0_" + messageBodySentinel + "__", ((_param0!)?esc)?markup_string)?no_esc}<#else>${message.summary?esc}</#if><#if requiredActions??><#list requiredActions>: <b><#items as reqActionItem>${kcSanitize(msg("requiredAction.${reqActionItem}"))?no_esc}<#sep>, </#items></b></#list><#else></#if></p>
+        <p class="instruction"><#if messageBodyKey??><#assign _param0 = messageBodyParam0!(messageBodyUsername!)><#assign _param1 = messageBodyParam1!(messageBodyAlias!)>${kcSanitize(msg(messageBodyKey, "{0}", "{1}"))?replace("{0}", ((_param0!)?esc)?markup_string)?replace("{1}", ((_param1!)?esc)?markup_string)?no_esc}<#else>${message.summary?esc}</#if><#if requiredActions??><#list requiredActions>: <b><#items as reqActionItem>${kcSanitize(msg("requiredAction.${reqActionItem}"))?no_esc}<#sep>, </#items></b></#list><#else></#if></p>
         <#if skipLink??>
         <#else>
             <#if pageRedirectUri?has_content>
