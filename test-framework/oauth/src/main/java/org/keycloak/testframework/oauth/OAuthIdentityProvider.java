@@ -6,7 +6,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -22,7 +21,6 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.Strings;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -35,17 +33,13 @@ import static org.keycloak.common.crypto.CryptoConstants.EC_KEY_SECP256R1;
  */
 public class OAuthIdentityProvider {
 
-    private static final String IDP_PATH = "/idp";
-
     private final HttpServer httpServer;
 
     private final OAuthIdentityProviderKeys keys;
     private final OAuthIdentityProviderConfigBuilder.OAuthIdentityProviderConfiguration config;
     private final String issuer;
 
-    private final AtomicInteger keysRequestCount = new AtomicInteger();
-    private volatile String lastWellKnownAuthorizationHeader;
-    private volatile String lastJwksAuthorizationHeader;
+    private int keysRequestCount = 0;
 
     public OAuthIdentityProvider(HttpServer httpServer, OAuthIdentityProviderConfigBuilder.OAuthIdentityProviderConfiguration config) {
         this.config = config;
@@ -55,8 +49,8 @@ public class OAuthIdentityProvider {
         }
 
         this.httpServer = httpServer;
-        httpServer.createContext(IDP_PATH + "/.well-known/openid-configuration", new WellKnownHandler());
-        httpServer.createContext(IDP_PATH + "/jwks", new JwksHttpHandler());
+        httpServer.createContext("/idp/.well-known/openid-configuration", new WellKnownHandler());
+        httpServer.createContext("/idp/jwks", new JwksHttpHandler());
 
         keys = new OAuthIdentityProviderKeys(config);
     }
@@ -82,33 +76,23 @@ public class OAuthIdentityProvider {
     }
 
     public int getKeysRequestCount() {
-        return keysRequestCount.get();
-    }
-
-    public String getLastJwksAuthorizationHeader() {
-        return lastJwksAuthorizationHeader;
-    }
-
-    public String getLastWellKnownAuthorizationHeader() {
-        return lastWellKnownAuthorizationHeader;
+        return keysRequestCount;
     }
 
     public void close() {
-        httpServer.removeContext(IDP_PATH + "/.well-known/openid-configuration");
-        httpServer.removeContext(IDP_PATH + "/jwks");
+        httpServer.removeContext("/idp/.well-known/openid-configuration");
+        httpServer.removeContext("/idp/jwks");
     }
 
     public class WellKnownHandler implements HttpHandler {
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            lastWellKnownAuthorizationHeader = exchange.getRequestHeaders().getFirst("Authorization");
-
             OIDCConfigurationRepresentation oidcConfig = new OIDCConfigurationRepresentation();
-            if (!Strings.isEmpty(issuer)) {
+            if (issuer != null) {
                 oidcConfig.setIssuer(issuer);
             }
-            oidcConfig.setJwksUri("http://" + getRequestHost(exchange) + IDP_PATH + "/jwks");
+            oidcConfig.setJwksUri("http://127.0.0.1:8500/idp/jwks");
             String oidcConfigString = JsonSerialization.writeValueAsString(oidcConfig);
 
             exchange.getResponseHeaders().add("Content-Type", "application/json");
@@ -120,28 +104,11 @@ public class OAuthIdentityProvider {
 
     }
 
-    private String getRequestHost(HttpExchange exchange) {
-        String host = exchange.getRequestHeaders().getFirst("Host");
-        if (!Strings.isEmpty(host)) {
-            return host;
-        }
-
-        return formatHostForAuthority(exchange.getLocalAddress().getHostString()) + ":" + exchange.getLocalAddress().getPort();
-    }
-
-    private String formatHostForAuthority(String host) {
-        if (host != null && host.indexOf(':') >= 0 && !host.startsWith("[") && !host.endsWith("]")) {
-            return "[" + host + "]";
-        }
-        return host;
-    }
-
     public class JwksHttpHandler implements HttpHandler {
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             boolean kubernetes = OAuthIdentityProviderConfigBuilder.Mode.KUBERNETES.equals(config.mode());
-            lastJwksAuthorizationHeader = exchange.getRequestHeaders().getFirst("Authorization");
 
             if (kubernetes) {
                 exchange.getResponseHeaders().add("Content-Type", "application/jwk-set+json");
@@ -153,7 +120,7 @@ public class OAuthIdentityProvider {
             outputStream.write(keys.getJwksString().getBytes(StandardCharsets.UTF_8));
             outputStream.close();
 
-            keysRequestCount.incrementAndGet();
+            keysRequestCount++;
         }
 
     }

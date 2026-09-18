@@ -7,7 +7,6 @@ import org.keycloak.util.JsonSerialization;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.Configurable;
 
 public class SimpleHttp {
 
@@ -35,18 +34,6 @@ public class SimpleHttp {
 
     public SimpleHttp withRequestConfig(RequestConfig requestConfig) {
         this.requestConfig = requestConfig;
-        return this;
-    }
-
-    public SimpleHttp disableRedirectHandling() {
-        RequestConfig baseRequestConfig = requestConfig;
-        if (baseRequestConfig == null) {
-            baseRequestConfig = RequestConfig.DEFAULT;
-            if (client instanceof Configurable configurable && configurable.getConfig() != null) {
-                baseRequestConfig = configurable.getConfig();
-            }
-        }
-        requestConfig = RequestConfig.copy(baseRequestConfig).setRedirectsEnabled(false).build();
         return this;
     }
 

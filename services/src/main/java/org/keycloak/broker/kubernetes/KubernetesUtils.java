@@ -1,23 +1,20 @@
 package org.keycloak.broker.kubernetes;
 
 import java.io.File;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 
-import org.keycloak.util.Strings;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.representations.JsonWebToken;
 
 import org.apache.commons.io.FileUtils;
+import org.jboss.logging.Logger;
 
-import static org.keycloak.broker.kubernetes.KubernetesConstants.KUBERNETES_SERVICE_HOST_KEY;
-import static org.keycloak.broker.kubernetes.KubernetesConstants.KUBERNETES_SERVICE_PORT_HTTPS_KEY;
-import static org.keycloak.broker.kubernetes.KubernetesConstants.KUBERNETES_SERVICE_PORT_KEY;
 import static org.keycloak.broker.kubernetes.KubernetesConstants.SERVICE_ACCOUNT_TOKEN_PATH;
-import static org.keycloak.broker.kubernetes.KubernetesConstants.SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY;
 
 final class KubernetesUtils {
 
     private static final String OIDC_DISCOVERY_PATH = "/.well-known/openid-configuration";
-    private static final String JWKS_PATH = "/openid/v1/jwks";
+    private static final Logger logger = Logger.getLogger(KubernetesUtils.class);
 
     private KubernetesUtils() {
     }
@@ -31,121 +28,36 @@ final class KubernetesUtils {
         return normalizedIssuer.endsWith(OIDC_DISCOVERY_PATH) ? normalizedIssuer : normalizedIssuer + OIDC_DISCOVERY_PATH;
     }
 
-    static String jwksUrl(String issuer) {
-        int end = issuer.length();
-        while (end > 0 && issuer.charAt(end - 1) == '/') {
-            end--;
-        }
-        return issuer.substring(0, end) + JWKS_PATH;
-    }
+    static String getServiceAccountToken() {
+        try {
+            File file = new File(SERVICE_ACCOUNT_TOKEN_PATH);
+            if (!file.exists()) {
+                return null;
+            }
 
-    static String getServiceAccountToken() throws Exception {
-        File file = new File(System.getProperty(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY, SERVICE_ACCOUNT_TOKEN_PATH));
-        if (!file.exists()) {
+            return FileUtils.readFileToString(file, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            logger.warn("Failed to read service account token file", e);
             return null;
         }
-
-        String token = FileUtils.readFileToString(file, StandardCharsets.UTF_8).strip();
-        return token.isEmpty() ? null : token;
     }
 
-    static boolean isTrustedKubernetesApiUrl(String url) {
-        return isTrustedKubernetesApiUrl(url,
-                System.getenv(KUBERNETES_SERVICE_HOST_KEY),
-                System.getenv(KUBERNETES_SERVICE_PORT_HTTPS_KEY),
-                System.getenv(KUBERNETES_SERVICE_PORT_KEY));
-    }
-
-    static boolean isTrustedKubernetesApiDiscoveryUrl(String url) {
-        if (!isTrustedKubernetesApiUrl(url)) {
-            return false;
-        }
-
+    static String getToken(String issuer) {
         try {
-            URI discoveryUri = URI.create(discoveryUrl(url));
-            return discoveryUri.getPath() != null
-                    && discoveryUri.getPath().endsWith(OIDC_DISCOVERY_PATH)
-                    && discoveryUri.getQuery() == null
-                    && discoveryUri.getFragment() == null;
-        } catch (IllegalArgumentException e) {
-            return false;
+            String token = getServiceAccountToken();
+            if (token == null) {
+                return null;
+            }
+
+            JsonWebToken jwt = new JWSInput(token).readJsonContent(JsonWebToken.class);
+            if (issuer.equals(jwt.getIssuer())) {
+                logger.trace("Including service account token in request");
+                return token;
+            }
+            logger.debug("Not including service account token due to issuer mismatch");
+        } catch (Exception e) {
+            logger.warn("Failed to read service account token file", e);
         }
-    }
-
-    static boolean isTrustedKubernetesApiUrl(String url, String serviceHost, String httpsServicePort, String servicePort) {
-        URI uri;
-        try {
-            uri = URI.create(url);
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
-
-        if (!"https".equalsIgnoreCase(uri.getScheme())) {
-            return false;
-        }
-
-        String host = uri.getHost();
-        if (host == null) {
-            return false;
-        }
-
-        if ("kubernetes.default".equalsIgnoreCase(host) || "kubernetes.default.svc".equalsIgnoreCase(host) || "kubernetes.default.svc.cluster.local".equalsIgnoreCase(host)) {
-            return isTrustedKubernetesApiPort(uri, httpsServicePort, servicePort);
-        }
-
-        String normalizedHost = host.startsWith("[") && host.endsWith("]")
-                ? host.substring(1, host.length() - 1)
-                : host;
-        if (!normalizedHost.equalsIgnoreCase(serviceHost)) {
-            return false;
-        }
-
-        return isTrustedKubernetesApiPort(uri, httpsServicePort, servicePort);
-    }
-
-    static boolean isTrustedKubernetesApiJwksUrl(String jwksUrl, String issuer) {
-        URI jwksUri;
-        try {
-            jwksUri = URI.create(jwksUrl);
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
-
-        if (!"https".equalsIgnoreCase(jwksUri.getScheme())
-                || !"/openid/v1/jwks".equals(jwksUri.getPath())
-                || jwksUri.getQuery() != null
-                || jwksUri.getFragment() != null) {
-            return false;
-        }
-
-        if (isTrustedKubernetesApiUrl(jwksUrl)) {
-            return true;
-        }
-
-        return isTrustedKubernetesApiUrl(jwksUrl);
-    }
-
-    private static boolean isTrustedKubernetesApiPort(URI uri) {
-        return isTrustedKubernetesApiPort(uri,
-                System.getenv(KUBERNETES_SERVICE_PORT_HTTPS_KEY),
-                System.getenv(KUBERNETES_SERVICE_PORT_KEY));
-    }
-
-    private static boolean isTrustedKubernetesApiPort(URI uri, String httpsServicePort, String servicePort) {
-        String configuredPort = httpsServicePort;
-        if (Strings.isEmpty(configuredPort)) {
-            configuredPort = servicePort;
-        }
-
-        int port = uri.getPort();
-        if (port == -1) {
-            return Strings.isEmpty(configuredPort) || "443".equals(configuredPort);
-        }
-
-        if (Strings.isEmpty(configuredPort)) {
-            return port == 443;
-        }
-
-        return configuredPort.equals(Integer.toString(port));
+        return null;
     }
 }
