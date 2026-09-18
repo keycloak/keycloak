@@ -244,6 +244,17 @@ public class UserResource {
                 // update (see SSF RiscAccountDisabled / RiscAccountEnabled).
                 adminEvent.detail(Details.PREVIOUS_ENABLED, String.valueOf(wasEnabled))
                         .detail(Details.UPDATED_ENABLED, String.valueOf(rep.isEnabled()));
+            
+                // [ISSUE-48855] Emit dedicated AdminEvent for enable/disable operations
+                org.keycloak.events.admin.OperationType opType = rep.isEnabled() ? org.keycloak.events.admin.OperationType.ENABLE : org.keycloak.events.admin.OperationType.DISABLE;
+                adminEvent.clone(session).operation(opType).resourcePath(session.getContext().getUri()).success();
+
+                // [ISSUE-48855] Emit dedicated User Event
+                org.keycloak.events.EventType userOpType = rep.isEnabled() ? org.keycloak.events.EventType.USER_ENABLED : org.keycloak.events.EventType.USER_DISABLED;
+                new org.keycloak.events.EventBuilder(realm, session, session.getContext().getConnection())
+                        .user(user)
+                        .event(userOpType)
+                        .success();
             }
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
 
