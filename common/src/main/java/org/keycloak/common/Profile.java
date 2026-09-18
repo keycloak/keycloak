@@ -145,7 +145,7 @@ public class Profile {
 
         PERSISTENT_USER_SESSIONS("Persistent online user sessions across restarts and upgrades", Type.DEFAULT, FeatureUpdatePolicy.SHUTDOWN),
 
-        OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
+        OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.PREVIEW),
         OID4VC_VCI_PREAUTH_CODE("Support for credential offers with `pre-authorized_code` grant.", Type.EXPERIMENTAL, OID4VC_VCI),
         OID4VC_VCI_REST_CREDENTIAL_OFFER("Support for the REST endpoint to create credential offers.", Type.EXPERIMENTAL, OID4VC_VCI),
         OID4VC_MDOC("Support for OID4VC `mso_mdoc` credential type.", Type.EXPERIMENTAL), // Dependent on either VCI or VP, does nothing if neither is active
