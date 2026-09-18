@@ -3,14 +3,19 @@ package org.keycloak.protocol.oidc.mappers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -28,7 +33,18 @@ public class ParameterizedScopeMapper extends AbstractOIDCProtocolMapper
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     static {
+        addScopeConditionConfig(configProperties);
         OIDCAttributeMapperHelper.addAttributeConfig(configProperties, ParameterizedScopeMapper.class);
+    }
+
+    protected static void addScopeConditionConfig(List<ProviderConfigProperty> properties) {
+        ProviderConfigProperty property = new ProviderConfigProperty();
+        property.setName(OIDCAttributeMapperHelper.SCOPE_CONDITION);
+        property.setLabel("Scope Condition");
+        property.setHelpText("When this mapper is placed on a client, specify the parameterized scope whose parameter value should be resolved. Leave empty when the mapper is placed on a client scope.");
+        property.setType(ProviderConfigProperty.CLIENT_SCOPE_LIST_TYPE);
+        property.setOptions(List.of(ClientScopeModel.IS_PARAMETERIZED_SCOPE));
+        properties.add(property);
     }
 
     @Override
@@ -64,12 +80,39 @@ public class ParameterizedScopeMapper extends AbstractOIDCProtocolMapper
             return;
         }
 
+        if (isOverriddenByClientMapper(mappingModel, clientScope, clientSessionCtx)) {
+            return;
+        }
+
         List<String> parameterValues = resolveParameterValues(clientScope, clientSessionCtx);
         ProtocolMapperModel model = new ProtocolMapperModel(mappingModel);
         model.getConfig().put(ProtocolMapperUtils.MULTIVALUED, Boolean.toString(TokenManager.isRepeatableScope(keycloakSession, clientScope)));
         if (!parameterValues.isEmpty()) {
             setClaim(token, model, userSession, keycloakSession, clientScope, parameterValues);
         }
+    }
+
+    /**
+     * A scope-level mapper (no {@code scope.condition}) is overridden when the client has its own
+     * mapper targeting the same scope and claim name via {@code scope.condition}.
+     */
+    private boolean isOverriddenByClientMapper(ProtocolMapperModel mappingModel, ClientScopeModel clientScope,
+                                               ClientSessionContext clientSessionCtx) {
+        if (StringUtil.isNotBlank(mappingModel.getConfig().get(OIDCAttributeMapperHelper.SCOPE_CONDITION))) {
+            return false;
+        }
+
+        String claimName = mappingModel.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
+        if (StringUtil.isBlank(claimName)) {
+            return false;
+        }
+
+        String scopeName = clientScope.getName();
+        ClientModel client = clientSessionCtx.getClientSession().getClient();
+
+        return client.getProtocolMappersStream()
+                .anyMatch(m -> scopeName.equals(m.getConfig().get(OIDCAttributeMapperHelper.SCOPE_CONDITION))
+                        && claimName.equals(m.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME)));
     }
 
     /**
@@ -86,15 +129,40 @@ public class ParameterizedScopeMapper extends AbstractOIDCProtocolMapper
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, parameterValues);
     }
 
+    /**
+     * Resolves the parameterized client scope this mapper should bind to.
+     *
+     * <p>First tries to find a scope that directly contains this mapper (scope-level placement).
+     * If not found, falls back to matching by the {@code scope.condition} config property,
+     * which allows client-level mappers to bind to a parameterized scope by name.</p>
+     */
     protected Optional<ClientScopeModel> resolveClientScope(ProtocolMapperModel mappingModel, ClientSessionContext clientSessionCtx) {
         AuthorizationRequestContext ctx = clientSessionCtx.getAuthorizationRequestContext();
         if (ctx == null) {
             return Optional.empty();
         }
 
+        // Scope-level placement: the mapper belongs directly to the parameterized scope
+        Optional<ClientScopeModel> result = findParameterizedScope(ctx, detail -> detail.getClientScope().getProtocolMapperById(mappingModel.getId()) != null);
+        if (result.isPresent()) {
+            return result;
+        }
+
+        // Client-level placement: resolve scope by the configured scope.condition name
+        String scopeCondition = mappingModel.getConfig().get(OIDCAttributeMapperHelper.SCOPE_CONDITION);
+        if (StringUtil.isBlank(scopeCondition)) {
+            return Optional.empty();
+        }
+
+        return findParameterizedScope(ctx, detail -> scopeCondition.equals(detail.getClientScope().getName()));
+    }
+
+    /**
+     * Finds a granted parameterized scope matching the given condition.
+     */
+    private Optional<ClientScopeModel> findParameterizedScope(AuthorizationRequestContext ctx, Predicate<AuthorizationDetails> condition) {
         return ctx.getAuthorizationDetailEntries().stream()
-                .filter(d -> d.getClientScope() != null && d.isParameterizedScope()
-                        && d.getClientScope().getProtocolMapperById(mappingModel.getId()) != null)
+                .filter(detail -> detail.getClientScope() != null && detail.isParameterizedScope() && condition.test(detail))
                 .map(AuthorizationDetails::getClientScope)
                 .findAny();
     }
@@ -119,16 +187,35 @@ public class ParameterizedScopeMapper extends AbstractOIDCProtocolMapper
     }
 
     @Override
+    public void validateConfig(KeycloakSession session, RealmModel realm, ProtocolMapperContainerModel container, ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
+        String scopeCondition = mapperModel.getConfig() != null
+                ? mapperModel.getConfig().get(OIDCAttributeMapperHelper.SCOPE_CONDITION) : null;
+        if (StringUtil.isNotBlank(scopeCondition) && !(container instanceof ClientModel)) {
+            throw new ProtocolMapperConfigException("Scope condition is only supported on client-level mappers",
+                    "scopeConditionClientOnly");
+        }
+    }
+
+    @Override
     public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES);
     }
 
     public static ProtocolMapperModel create(String name, String tokenClaimName, String claimType,
                                               boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
+        return create(name, tokenClaimName, claimType, accessToken, idToken, introspectionEndpoint, null);
+    }
+
+    public static ProtocolMapperModel create(String name, String tokenClaimName, String claimType,
+                                              boolean accessToken, boolean idToken, boolean introspectionEndpoint,
+                                              String scopeCondition) {
         ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(
                 name, null, tokenClaimName, claimType,
                 accessToken, idToken, false, introspectionEndpoint,
                 PROVIDER_ID);
+        if (scopeCondition != null) {
+            mapper.getConfig().put(OIDCAttributeMapperHelper.SCOPE_CONDITION, scopeCondition);
+        }
         return mapper;
     }
 }
