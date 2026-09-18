@@ -38,11 +38,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestProvider(CustomJpaEntityProvider.class)
 public class CustomJpaEntityProviderDistTest {
 
-    private static final String MULTIPLE_DATASOURCES_MSG = "Multiple datasources are specified: <default>, client-store, new-user-store, pu-without-dialect-store";
+    private static final String MULTIPLE_DATASOURCES_MSG = "Multiple datasources are specified: explicit-custom-store, <default>, client-store, new-user-store, pu-without-dialect-store";
 
     @Test
     void dbKindSpecifiedInBuildTime(KeycloakRunner runner) {
-        var result = runner.run("build", "--db=dev-file", "--db-kind-new-user-store=dev-mem", "--db-kind-pu-without-dialect-store=dev-mem");
+        var result = runner.run("build", "--db=dev-file", "--db-kind-new-user-store=dev-mem", "--db-kind-pu-without-dialect-store=dev-mem", "--db-kind-explicit-custom-store=dev-mem");
         result.assertMessage(MULTIPLE_DATASOURCES_MSG);
         result.assertMessage("You have set DB kind for 'client-store' datasource via a Quarkus property. This approach is deprecated and you should use the Keycloak 'db-kind-client-store' property.");
         result.assertBuild();
@@ -58,7 +58,7 @@ public class CustomJpaEntityProviderDistTest {
     }
 
     @Test
-    @Launch({"start-dev", "--db=dev-file", "--db-kind-new-user-store=dev-mem", "--db-kind-client-store=dev-file", "--db-kind-pu-without-dialect-store=dev-mem", "--db-enabled-client-store=false"})
+    @Launch({"start-dev", "--db=dev-file", "--db-kind-new-user-store=dev-mem", "--db-kind-client-store=dev-file", "--db-kind-pu-without-dialect-store=dev-mem", "--db-kind-explicit-custom-store=dev-mem", "--db-enabled-client-store=false"})
     void disabledDatasourceSkippedWithoutWarning(CLIResult cliResult) {
         cliResult.assertNoMessage("Datasource 'client-store' is not active");
         cliResult.assertStartedDevMode();
@@ -69,15 +69,19 @@ public class CustomJpaEntityProviderDistTest {
     void notSpecifiedDbKind(CLIResult cliResult) {
         // it is printed at build time and the check done at runtime
         cliResult.assertNoMessage(MULTIPLE_DATASOURCES_MSG);
-        cliResult.assertError("Detected additional named datasources without a DB kind set, please specify: kc.db-kind-new-user-store");
+        cliResult.assertError("Detected additional named datasources without a DB kind set, please specify: kc.db-kind-explicit-custom-store,kc.db-kind-new-user-store,kc.db-kind-pu-without-dialect-store");
     }
 
     @Test
-    @Launch({"start-dev", "--db=dev-file", "--log-level=org.hibernate.orm.jpa:debug", "--db-kind-new-user-store=dev-mem", "--db-kind-client-store=dev-file", "--db-kind-pu-without-dialect-store=dev-mem"})
+    @Launch({"start-dev", "--db=dev-file", "--log-level=org.hibernate.orm.jpa:debug", "--db-kind-new-user-store=dev-mem", "--db-kind-client-store=dev-file", "--db-kind-pu-without-dialect-store=dev-mem", "--db-kind-explicit-custom-store=dev-mem"})
     void implicitOrmXmlMappingApplied(CLIResult cliResult) {
         String output = cliResult.getOutput();
         String defaultPuBlock = extractPersistenceUnitBlock(output, "<default>");
         String newUserStorePuBlock = extractPersistenceUnitBlock(output, "new-user-store");
+        String explicitCustomStorePuBlock = extractPersistenceUnitBlock(output, "explicit-custom-store");
+        assertNotNull(explicitCustomStorePuBlock, "'explicit-custom-store' PU info block should be present");
+        assertTrue(explicitCustomStorePuBlock.contains("com.acme.provider.legacy.jpa.entity.UnlistedEntity"), "UnlistedEntity (from custom.xml) must be in 'explicit-custom-store' PU");
+        assertFalse(defaultPuBlock.contains("com.acme.provider.legacy.jpa.entity.UnlistedEntity"), "UnlistedEntity (from custom.xml) must NOT leak into '<default>' PU");
 
         assertNotNull(defaultPuBlock, "'<default>' PU info block should be present in Hibernate debug output");
         assertNotNull(newUserStorePuBlock, "'new-user-store' PU info block should be present in Hibernate debug output");
@@ -94,7 +98,7 @@ public class CustomJpaEntityProviderDistTest {
     }
 
     @Test
-    @Launch({"start-dev", "--db=dev-file", "--log-level=org.hibernate.orm.jpa:debug,org.keycloak.quarkus.deployment.KeycloakProcessor:debug", "--db-kind-new-user-store=dev-mem", "--db-kind-client-store=dev-file", "--db-kind-pu-without-dialect-store=dev-mem"})
+    @Launch({"start-dev", "--db=dev-file", "--log-level=org.hibernate.orm.jpa:debug,org.keycloak.quarkus.deployment.KeycloakProcessor:debug", "--db-kind-new-user-store=dev-mem", "--db-kind-client-store=dev-file", "--db-kind-pu-without-dialect-store=dev-mem", "--db-kind-explicit-custom-store=dev-mem"})
     void testUserManagedEntityNotAddedToDefaultPU(CLIResult cliResult) {
         cliResult.assertMessage(MULTIPLE_DATASOURCES_MSG);
         cliResult.assertMessage("Datasource name 'client-store' is obtained from the 'Persistence unit name' configuration property in persistence.xml file. Use 'client-store' name for datasource options like 'db-kind-client-store'.");
@@ -106,12 +110,13 @@ public class CustomJpaEntityProviderDistTest {
 
         cliResult.assertMessageWasShownExactlyNumberOfTimes("name: new-user-store", 1);
         cliResult.assertMessageWasShownExactlyNumberOfTimes("name: client-store", 1);
+        cliResult.assertMessageWasShownExactlyNumberOfTimes("name: explicit-custom-store", 1);
         cliResult.assertMessageWasShownExactlyNumberOfTimes("name: pu-without-dialect-store", 1);
         cliResult.assertMessageWasShownExactlyNumberOfTimes("com.acme.provider.legacy.jpa.entity.Realm", 1);
         cliResult.assertMessageWasShownExactlyNumberOfTimes("com.acme.provider.legacy.jpa.entity.UnlistedEntity", 1);
 
         cliResult.assertMessageWasShownExactlyNumberOfTimes("hibernate.dialect: com.acme.provider.legacy.jpa.entity.KeycloakItH2Dialect", 1);
-        cliResult.assertMessageWasShownExactlyNumberOfTimes("hibernate.dialect: org.keycloak.connections.jpa.dialect.KeycloakH2Dialect", 3);
+        cliResult.assertMessageWasShownExactlyNumberOfTimes("hibernate.dialect: org.keycloak.connections.jpa.dialect.KeycloakH2Dialect", 4);
 
         cliResult.assertMessageWasShownExactlyNumberOfTimes("jakarta.persistence.sharedCache.mode: ENABLE_SELECTIVE", 1);
         cliResult.assertMessageWasShownExactlyNumberOfTimes("jakarta.persistence.validation.mode: NONE", 1);
@@ -120,6 +125,10 @@ public class CustomJpaEntityProviderDistTest {
         String output = cliResult.getOutput();
         String defaultPuBlock = extractPersistenceUnitBlock(output, "<default>");
         String newUserStorePuBlock = extractPersistenceUnitBlock(output, "new-user-store");
+        String explicitCustomStorePuBlock = extractPersistenceUnitBlock(output, "explicit-custom-store");
+        assertNotNull(explicitCustomStorePuBlock, "'explicit-custom-store' PU info block should be present");
+        assertTrue(explicitCustomStorePuBlock.contains("com.acme.provider.legacy.jpa.entity.UnlistedEntity"), "UnlistedEntity (from custom.xml) must be in 'explicit-custom-store' PU");
+        assertFalse(defaultPuBlock.contains("com.acme.provider.legacy.jpa.entity.UnlistedEntity"), "UnlistedEntity (from custom.xml) must NOT leak into '<default>' PU");
         assertNotNull(defaultPuBlock, "'<default>' PU info block should be present");
         assertNotNull(newUserStorePuBlock, "'new-user-store' PU info block should be present");
 

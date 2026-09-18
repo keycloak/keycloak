@@ -29,6 +29,6 @@ public class CustomJpaEntityProvider implements TestProvider {
 
     @Override
     public Map<String, String> getManifestResources() {
-        return Map.of("persistence.xml", "persistence.xml", "orm.xml", "orm.xml");
+        return Map.of("persistence.xml", "persistence.xml", "orm.xml", "orm.xml", "custom.xml", "custom.xml");
     }
 }

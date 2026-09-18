@@ -24,8 +24,10 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -142,6 +144,7 @@ import io.quarkus.deployment.builditem.GeneratedResourceBuildItem;
 import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.StaticInitConfigBuilderBuildItem;
+import io.quarkus.hibernate.orm.deployment.JpaModelPersistenceUnitContributionBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationRuntimeConfiguredBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationStaticConfiguredBuildItem;
 import io.quarkus.hibernate.orm.deployment.spi.AdditionalPersistenceUnitBuildItem;
@@ -163,6 +166,7 @@ import io.quarkus.vertx.http.deployment.VertxWebRouterBuildItem;
 import io.quarkus.vertx.http.runtime.security.SecurityHandlerPriorities;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.health.Readiness;
+import org.hibernate.boot.archive.internal.ArchiveHelper;
 import org.hibernate.boot.jaxb.mapping.spi.JaxbEmbeddable;
 import org.hibernate.boot.jaxb.mapping.spi.JaxbEntity;
 import org.hibernate.boot.jaxb.mapping.spi.JaxbEntityMappingsImpl;
@@ -662,6 +666,30 @@ class KeycloakProcessor {
                 .map(f -> f.equalsIgnoreCase(PersistenceUnitTransactionType.RESOURCE_LOCAL.name()))
                 .orElse(false);
         return isJakartaResourceLocal || isJavaxResourceLocal;
+    }
+
+    @BuildStep
+    void contributeStandaloneMappingFilesToDefaultPU(BuildProducer<JpaModelPersistenceUnitContributionBuildItem> producer) {
+        try {
+            PersistenceXmlParser parser = PersistenceXmlParser.create();
+            List<URL> persistenceUrls = parser.getClassLoaderService().locateResources("META-INF/persistence.xml");
+            Set<URL> persistenceRootUrls = new HashSet<>();
+            for (PersistenceUnitDescriptor descriptor : parser.parse(persistenceUrls).values()) {
+                persistenceRootUrls.add(descriptor.getPersistenceUnitRootUrl());
+            }
+
+            List<URL> ormXmlUrls = parser.getClassLoaderService().locateResources("META-INF/orm.xml");
+            for (URL ormUrl : ormXmlUrls) {
+                URL jarUrl = ArchiveHelper.getJarURLFromURLEntry(ormUrl, "META-INF/orm.xml");
+                if (jarUrl != null && !persistenceRootUrls.contains(jarUrl)) {
+                    logger.debugf("Found standalone orm.xml at %s. Contributing to default persistence unit.", ormUrl);
+                    producer.produce(new JpaModelPersistenceUnitContributionBuildItem(
+                            QUARKUS_DEFAULT_PERSISTENCE_UNIT, jarUrl, Collections.emptySet(), Set.of("META-INF/orm.xml")));
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to scan for standalone orm.xml files", e);
+        }
     }
 
     @BuildStep

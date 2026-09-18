@@ -313,6 +313,8 @@ This is intentional: without the `stateless` feature, neither deployment invalid
 
 {project_name}'s default JPA persistence unit is now configured through Quarkus Hibernate ORM properties instead of an internal `persistence.xml`. As a result, the default persistence unit, previously named `keycloak-default`, is now Quarkus' default (unnamed) persistence unit, reported as `<default>`.
 
+If your custom persistence unit relies solely on `META-INF/orm.xml` without listing `<class>` elements, declare the standard `<mapping-file>META-INF/orm.xml</mapping-file>` element in that `<persistence-unit>` in `persistence.xml` to ensure its entities are properly bound.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
