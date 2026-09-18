@@ -325,6 +325,34 @@ Proprietary {project_name} extension to invoke introspection endpoint with the H
 deprecated now. In case you have lightweight access token, which you want to exchange for the proper access token, it is instead recommended to use the
 link:{securing_apps_token_exchange_link}[Token Exchange].
 
+=== `Full scope allowed` switch on clients is deprecated
+
+The *Full Scope Allowed* switch on OIDC clients is deprecated and will be removed in a future release.
+
+When *Full Scope Allowed* is enabled (which is the default for new clients), every access token issued for that client contains _all_ roles the authenticated user holds across all clients and the realm. This is convenient during early development, but is a security risk in production: a single compromised token grants access to every resource the user can reach. The correct approach is to disable *Full Scope Allowed* and explicitly configure link:{adminguide_link}#_role_scope_mappings[role scope mappings] so that each client's tokens contain only the roles that client actually needs.
+
+==== Deprecation warning in the server log
+
+Starting with this release, {project_name} logs a `WARN`-level message at token-issuance time for every client that still has *Full Scope Allowed* enabled. The warning is suppressed for the built-in admin clients `security-admin-console` and `admin-cli` (see below).
+
+To silence the warning for all other clients temporarily, disable logging for the category `org.keycloak.protocol.oidc.endpoints.TokenEndpoint.full-scope-allowed`. However, the recommended action is to keep the warning enabled and instead migrate the clients that produce it, so that your deployment is prepared for the full removal of the switch in a future release.
+
+==== Built-in admin clients
+
+The built-in clients `security-admin-console` and `admin-cli` currently have *Full Scope Allowed* enabled and the deprecation warning is intentionally suppressed for them. The {project_name} team will fix these clients in an upcoming release as part of the planned migration path.
+
+It is not strictly needed to manually disable *Full Scope Allowed* for these clients in your own environment. Disabling it manually can break Admin Console login immediately, and may require additional manual migration steps in future {project_name} upgrades.
+If you prefer to disable it for the built-in clients, you may need some further actions (EG. Create client scope with the appropriate role scopes and add that client scope to the built-in admin clients).
+{project_name} will provide a migration path for both cases (environments where built-in admin clients still have *Full Scope Allowed* enabled and environments where it has already been disabled).
+
+==== How to migrate your own clients
+
+. For each client that triggers the deprecation warning in the log, open the client in the Admin Console, navigate to *Client scopes* → the dedicated client scope → *Scope*, and disable *Full Scope Allowed*.
+. Explicitly add the role scope mappings that the client requires under the same *Scope* tab or on the linked client scopes.
+. Use the *Client scopes* → *Evaluate* tool (See details link:{adminguide_link}#_client_scopes_evaluate[here]) to verify that the resulting token contains exactly the roles the client needs.
+
+To enforce that all newly created or updated clients in a realm have *Full Scope Allowed* disabled automatically, configure a client policy with the `full-scope-disabled` executor. See link:{adminguide_link}#_full_scope_disabled_policy[Enforcing Full Scope Allowed to be disabled] in the {adminguide_name} for step-by-step instructions, including how to exclude built-in clients from the policy.
+
 === Client switches in the 'OpenID Connect Compatibility Modes'
 
 There are few client switches in the client settings in the admin console in the section **OpenID Connect Compatibility Modes**. Those were created longer time ago
