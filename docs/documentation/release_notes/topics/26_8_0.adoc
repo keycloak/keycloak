@@ -14,15 +14,7 @@ Additionally, tokens issued from impersonation sessions now include the `act` (a
 
 The https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[OpenID for Verifiable Credential Issuance (OID4VCI)] feature has been promoted from experimental to preview.
 
-OID4VCI allows {project_name} to act as a credential issuer in decentralized identity ecosystems. This release brings substantial improvements from both the core team and the community:
-
-* Feature promoted from experimental to preview
-* Polishing of existing functionality and improving configuration
-* Lots of bugs fixed and improved specification compliance
-* Conformance with the https://openid.net/specs/openid4vc-high-assurance-interoperability-profile-1_0.html[OpenID4VC High Assurance Interoperability Profile (HAIP)] when the experimental `client-auth-abca` feature is also enabled
-* Management of verifiable credentials for individual users, including the ability for administrators to create credential entitlements and for users to request issuance from the Account Console
-* Support for credential refresh interval configuration
-* Documentation updated and improved
+OID4VCI allows {project_name} to act as a credential issuer in decentralized identity ecosystems. It can now be enabled with `--features=preview` or `--features=oid4vc-vci`.
 
 ifeval::[{project_community}==true]
 * Example applications (for illustration, not officially supported):
