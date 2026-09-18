@@ -9,6 +9,35 @@ As part of ongoing secure-by-default improvements to impersonation, token lifecy
 
 Additionally, tokens issued from impersonation sessions now include the `act` (actor) claim (https://datatracker.ietf.org/doc/html/rfc8693#section-4.1[RFC 8693 Section 4.1]) in both access tokens and ID tokens. This allows downstream resource servers to identify the impersonator for audit purposes. The claim is always present and cannot be disabled.
 
+== Verifiable Credentials (OID4VCI) promoted to preview
+// https://github.com/keycloak/keycloak/issues/52813
+
+The https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[OpenID for Verifiable Credential Issuance (OID4VCI)] feature has been promoted from experimental to preview.
+
+OID4VCI allows {project_name} to act as a credential issuer in decentralized identity ecosystems. This release brings substantial improvements from both the core team and the community:
+
+* Feature promoted from experimental to preview
+* Polishing of existing functionality and improving configuration
+* Lots of bugs fixed and improved specification compliance
+* Conformance with the https://openid.net/specs/openid4vc-high-assurance-interoperability-profile-1_0.html[OpenID4VC High Assurance Interoperability Profile (HAIP)]
+* Management of verifiable credentials for individual users, including the ability for administrators to create credential entitlements and for users to request issuance from the Account Console
+* Support for credential refresh interval configuration
+* Documentation updated and improved
+* https://github.com/keycloak/keycloak-oauth-sig/tree/main/oid4vci-deployment[Quickstart OID4VCI deployment] playground available for rapid prototyping with mdoc and SD-JWT credentials
+
+The pre-authorized code grant (`oid4vc-vci-preauth-code`), REST credential offer endpoint (`oid4vc-vci-rest-credential-offer`), mdoc format (`oid4vc-mdoc`), and OpenID4VP (`oid4vc-vp`) remain experimental features.
+
+ifeval::[{project_community}==true]
+Many community members were involved in the development. Many thanks to https://github.com/Awambeng[Awambeng], 
+https://github.com/Captain-P-Goldfish[Pascal Knüppel], https://github.com/dominikschlosser[Dominik Schlosser], 
+https://github.com/forkimenjeckayang[forkimenjeckayang], https://github.com/IngridPuppet[Ingrid Kamga], 
+https://github.com/namanONcode[Naman Jain], https://github.com/officialasishkumar[Asish Kumar], 
+https://github.com/Ogenbertrand[Ogen Bertrand], https://github.com/pulsastrix[Hugo Hakim Damer], 
+https://github.com/r0h1tb[Rohit Behera], https://github.com/rameshkumarkoyya[rameshkumarkoyya], 
+https://github.com/tdiesler[Thomas Diesler], https://github.com/Vitalisn4[Palpable] and 
+https://github.com/wistefan[Stefan Wiedemann] for the contributions!
+endif::[]
+
 = Administration
 
 == Client Secret Rotation (supported)
