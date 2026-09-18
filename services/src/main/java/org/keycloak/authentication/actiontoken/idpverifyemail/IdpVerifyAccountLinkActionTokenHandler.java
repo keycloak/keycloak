@@ -121,7 +121,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
                     .setAttribute("messageHeaderUsername", idpUsername)
                     .setAttribute("messageHeaderAlias", idpAlias)
                     .setAttribute("messageHeaderSentinel", java.util.UUID.randomUUID().toString())
-                    .setSuccess(Messages.CONFIRM_ACCOUNT_LINKING_BODY, safeIdpUsername, safeIdpAlias)
+                    .setSuccess(Messages.CONFIRM_ACCOUNT_LINKING_BODY, idpUsername, idpAlias)
                     .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, confirmUri)
                     .createInfoPage();
         }

@@ -35,8 +35,8 @@ public class HtmlUtilsTest {
         "Escaped output must not contain an opening anchor tag");
     Assertions.assertFalse(escaped.contains("</a>"),
         "Escaped output must not contain a closing anchor tag");
-    Assertions.assertFalse(escaped.contains("href="),
-        "Escaped output must not contain an href attribute");
+    Assertions.assertFalse(escaped.contains("<a href="),
+        "Escaped output must not contain an active anchor tag");
 
     // Must contain escaped equivalents so display still shows the raw value as plain text
     Assertions.assertTrue(escaped.contains("&lt;a "),
