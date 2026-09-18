@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oid4vc.issuance;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.PublicKey;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -1311,8 +1312,8 @@ public class OID4VCIssuerEndpoint {
     // TODO handle compression/decompression transparently at the JWE software layer.
     private byte[] decompress(byte[] content, String zipAlgorithm) throws JWEException {
         if (DEFLATE_COMPRESSION.equals(zipAlgorithm)) {
-            try {
-                return IOUtils.toByteArray(DeflateUtil.decode(content));
+            try (InputStream decoded = DeflateUtil.decode(content)) {
+                return IOUtils.toByteArray(decoded);
             } catch (IOException e) {
                 throw new JWEException("Failed to decompress: " + e.getMessage());
             }
