@@ -50,6 +50,8 @@ public abstract class AbstractAuthzTest extends AuthzTestRealmSupport {
     @BeforeEach
     public void beforeAuthzTest() {
         adminClient = injectedAdminClient;
+        // OAuthClient is CLASS-scoped; clear mutable state left by earlier test methods.
+        oauth.scope(null);
         getTestingClient();
         runOnServerMaster = testingClient.server();
         runOnServer = testingClient.server("test");

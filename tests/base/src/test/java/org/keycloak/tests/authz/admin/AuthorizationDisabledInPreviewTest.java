@@ -59,7 +59,8 @@ public class AuthorizationDisabledInPreviewTest {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.featuresDisabled(Profile.Feature.AUTHORIZATION);
+            // ADMIN_FINE_GRAINED_AUTHZ_V2 depends on AUTHORIZATION; both must be disabled or the server fails to start.
+            return config.featuresDisabled(Profile.Feature.AUTHORIZATION, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2);
         }
     }
 

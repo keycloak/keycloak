@@ -60,6 +60,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
@@ -88,7 +89,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = DefaultAuthzServerConfig.class)
 public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
     @InjectRealm

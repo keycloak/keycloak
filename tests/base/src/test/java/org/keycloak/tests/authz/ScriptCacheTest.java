@@ -32,13 +32,14 @@ import org.keycloak.scripting.ScriptExecutionException;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
 
 import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.locks.LockSupport.parkNanos;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = DefaultAuthzServerConfig.class)
 public class ScriptCacheTest {
 
     @InjectRealm

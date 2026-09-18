@@ -32,11 +32,12 @@ import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = DefaultAuthzServerConfig.class)
 public class GroupPathWithoutGroupClaimPolicyTest extends GroupPathPolicyTest {
 
     @InjectRealm

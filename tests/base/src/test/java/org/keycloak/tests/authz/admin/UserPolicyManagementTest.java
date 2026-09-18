@@ -39,6 +39,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 
 import org.junit.jupiter.api.Assertions;
@@ -52,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = DefaultAuthzServerConfig.class)
 public class UserPolicyManagementTest extends AbstractPolicyManagementTest {
 
     @InjectRealm

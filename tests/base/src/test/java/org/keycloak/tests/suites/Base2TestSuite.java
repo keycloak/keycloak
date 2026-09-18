@@ -4,6 +4,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.testframework.injection.SuiteSupport;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
 
 import org.junit.platform.suite.api.AfterSuite;
 import org.junit.platform.suite.api.BeforeSuite;
@@ -52,10 +53,9 @@ public class Base2TestSuite {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             // AUTHORIZATION is default; omit so AuthorizationDisabledInPreviewTest can disable it.
-            return config.features(Profile.Feature.SCRIPTS)
-                    .dependency("org.keycloak.tests", "keycloak-tests-custom-providers")
-                    .dependency("org.keycloak.tests", "keycloak-tests-custom-scripts")
-                    .dependency("org.keycloak.testsuite", "integration-arquillian-testsuite-providers");
+            return new DefaultAuthzServerConfig().configure(config)
+                    .features(Profile.Feature.SCRIPTS)
+                    .dependency("org.keycloak.tests", "keycloak-tests-custom-scripts");
         }
     }
 }
