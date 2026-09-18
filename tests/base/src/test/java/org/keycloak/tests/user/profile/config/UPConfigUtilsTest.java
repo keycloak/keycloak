@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.user.profile.config;
+package org.keycloak.tests.user.profile.config;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -22,8 +22,8 @@ import java.util.Set;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
