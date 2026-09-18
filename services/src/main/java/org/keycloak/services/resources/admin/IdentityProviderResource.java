@@ -540,7 +540,7 @@ public class IdentityProviderResource {
             return false;
         }
         RoleModel role = KeycloakModelUtils.getRoleFromString(session, realm, roleName);
-        return role != null && AdminRoles.isAdminRole(role);
+        return role != null && AdminRoles.isAdminRoleOrComposite(role);
     }
 
     private boolean mapperJoinsAdminGroup(IdentityProviderMapperModel mapperModel) {

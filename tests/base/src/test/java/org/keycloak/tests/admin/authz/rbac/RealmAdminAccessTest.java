@@ -518,6 +518,72 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
     }
 
     @Test
+    public void testIdpManagerCannotEscalateViaCompositeRoleMapper() {
+        String realmName = "test-realm";
+        RealmResource testRealm = createRealm(adminClient, realmName);
+        String attackerName = "idp-manager";
+        createUser(testRealm, attackerName);
+
+        grantRealmManagementRole(testRealm, attackerName, AdminRoles.MANAGE_IDENTITY_PROVIDERS);
+
+        // A composite realm role, set up by a full admin, that transitively grants an admin role.
+        testRealm.roles().create(RoleBuilder.create().name("custom-admin").build());
+        ClientRepresentation realmMgmt = testRealm.clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation realmAdmin = testRealm.clients().get(realmMgmt.getId())
+                .roles().get(AdminRoles.REALM_ADMIN).toRepresentation();
+        testRealm.roles().get("custom-admin").addComposites(List.of(realmAdmin));
+
+        IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
+        idp.setAlias("test-idp");
+        idp.setProviderId("oidc");
+        idp.setEnabled(true);
+        idp.setConfig(new java.util.HashMap<>());
+        idp.getConfig().put("clientId", "test-client");
+        idp.getConfig().put("clientSecret", "test-secret");
+        idp.getConfig().put("authorizationUrl", "https://test.example.com/auth");
+        idp.getConfig().put("tokenUrl", "https://test.example.com/token");
+
+        runAs(realmName, "admin-cli", attackerName, attackerClient -> {
+            try (Response response = attackerClient.realm(realmName).identityProviders().create(idp)) {
+                assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            }
+        });
+
+        // A mapper granting a composite role that hides an admin role must be treated like an admin role mapper.
+        IdentityProviderMapperRepresentation compositeMapper = new IdentityProviderMapperRepresentation();
+        compositeMapper.setName("grant-custom-admin");
+        compositeMapper.setIdentityProviderAlias("test-idp");
+        compositeMapper.setIdentityProviderMapper("oidc-hardcoded-role-idp-mapper");
+        compositeMapper.setConfig(new java.util.HashMap<>());
+        compositeMapper.getConfig().put("role", "custom-admin");
+        compositeMapper.getConfig().put("syncMode", "INHERIT");
+
+        // Non-realm-admin cannot create the mapper (switch is off by default)
+        runAs(realmName, "admin-cli", attackerName, attackerClient -> {
+            try (Response response = attackerClient.realm(realmName)
+                    .identityProviders().get("test-idp").addMapper(compositeMapper)) {
+                assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus(),
+                        "Creating mapper with composite role hiding an admin role should be forbidden when allowAdminRoleMapping is disabled");
+            }
+        });
+
+        // Realm admin enables the switch
+        IdentityProviderRepresentation idpRep = testRealm.identityProviders().get("test-idp").toRepresentation();
+        idpRep.getConfig().put(IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING, "true");
+        testRealm.identityProviders().get("test-idp").update(idpRep);
+
+        // Now the non-realm-admin can create the composite-role-granting mapper
+        runAs(realmName, "admin-cli", attackerName, attackerClient -> {
+            try (Response response = attackerClient.realm(realmName)
+                    .identityProviders().get("test-idp").addMapper(compositeMapper)) {
+                assertEquals(Status.CREATED.getStatusCode(), response.getStatus(),
+                        "Creating mapper with composite role hiding an admin role should succeed when allowAdminRoleMapping is enabled");
+            }
+        });
+    }
+
+    @Test
     public void testIdpManagerCannotEscalateViaIdentityProviderHardcodedGroupMapper() {
         String realmName = "test-realm";
         RealmResource testRealm = createRealm(adminClient, realmName);
