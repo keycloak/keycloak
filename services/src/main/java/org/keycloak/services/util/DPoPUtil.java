@@ -449,7 +449,8 @@ public class DPoPUtil {
             // Considering that these claim values are in seconds, the valid time slot uses <=, >=, instead of <, >.
 
             if (!(iat <= time + clockSkew && iat >= time - lifetime - clockSkew)) {
-                throw new DPoPVerificationException(t, "DPoP proof is not active");
+                throw new DPoPVerificationException(t, "DPoP proof is not active: iat=" + iat + ", server time=" + time
+                        + ", lifetime=" + lifetime + "s, clock skew=" + clockSkew + "s");
             }
             return true;
         }
