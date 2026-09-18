@@ -249,11 +249,9 @@ public class ComponentResource {
         if (subtype == null) {
             throw new BadRequestException("must specify a subtype");
         }
-        Class<? extends Provider> providerClass;
-        try {
-            providerClass = (Class<? extends Provider>)Class.forName(subtype);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
+        Class<? extends Provider> providerClass = session.getProviderClass(subtype);
+        if (providerClass == null) {
+            throw new NotFoundException("Provider subtype not registered or found");
         }
 
         return session.getKeycloakSessionFactory().getProviderFactoriesStream(providerClass)
