@@ -1678,7 +1678,7 @@ public class TokenManager {
             return oidcIdps
                     .filter(oidcIdp -> {
                         try {
-                            oidcIdp.validateToken(encodedLogoutToken);
+                            oidcIdp.validateToken(encodedLogoutToken, false, true);
                             return true;
                         } catch (IdentityBrokerException e) {
                             logger.debugf("LogoutToken verification with identity provider failed", e.getMessage());
