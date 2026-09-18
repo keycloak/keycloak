@@ -282,10 +282,10 @@ Built-in {project_name} clients such as `security-admin-console` and `admin-cli`
 
 * *Never update the affected built-in clients* — as long as `security-admin-console` and `admin-cli` are never touched after the policy is enabled, they retain their current *Full Scope Allowed* setting. This option is simple but fragile as long as you cannot ensure that clients are really never updated.
 
-* *Exclude specific clients using a marker role with Negative logic* — instead of the *Any Client* condition, use the *Client Role* condition with *Negative logic* enabled. Clients that carry a designated marker role will then be excluded from the policy. The steps below describe this approach:
+* *Exclude specific clients using a marker role with Negative logic* — keep the *Any Client* condition and add a *Client Role* condition with *Negative logic* enabled. Keeping *Any Client* ensures that the policy still applies during client registration, when the *Client Role* condition abstains because no existing client is available. The steps below describe this approach:
 +
 .. Choose a marker role name, for example `fsa-permitted-marker-role` ("fsa" standing for "full scope allowed").
 .. For each built-in client that must keep *Full Scope Allowed* enabled (typically `security-admin-console` and `admin-cli`), open the client in the Admin Console, go to the *Roles* tab, and create a client role named `fsa-permitted-marker-role`.
-.. In the client policy, remove the *Any Client* condition and add a *Client Role* condition instead. Set the role name to `fsa-permitted-marker-role` and enable *Negative logic*. Save the condition.
+.. In the client policy, keep the *Any Client* condition and add a *Client Role* condition. Set the role name to `fsa-permitted-marker-role` and enable *Negative logic*. Save the condition.
 +
-With this setup, any client that has the `fsa-permitted-marker-role` client role is excluded from the policy and retains its *Full Scope Allowed* setting unchanged. All other clients, including newly registered ones, are subject to the policy.
+With this setup, clients that have the `fsa-permitted-marker-role` client role are excluded from updates governed by the policy and retain their *Full Scope Allowed* setting unchanged. All other clients, including newly registered ones, are subject to the policy.
