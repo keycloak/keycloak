@@ -19,6 +19,7 @@
 package org.keycloak.utils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.security.cert.CRLReason;
 import java.security.cert.CertPathValidatorException;
@@ -30,6 +31,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.connections.httpclient.SafeInputStream;
 import org.keycloak.models.KeycloakSession;
 
 import org.apache.http.HttpHeaders;
@@ -136,8 +138,10 @@ public abstract class OCSPProvider {
                     throw new IOException(errorMessage);
                 }
 
-                byte[] data = EntityUtils.toByteArray(response.getEntity());
-                return data;
+                long maxConsumedResponseSize = session.getProvider(HttpClientProvider.class).getMaxConsumedResponseSize();
+                try (InputStream is = new SafeInputStream(response.getEntity().getContent(), maxConsumedResponseSize)) {
+                    return is.readAllBytes();
+                }
             } finally {
                 EntityUtils.consumeQuietly(response.getEntity());
             }
