@@ -5,7 +5,7 @@ export const KeycloakSpinner = () => {
   const { t } = useTranslation();
 
   return (
-    <Bullseye>
+    <Bullseye data-testid="page-loading-spinner">
       <Spinner aria-label={t("spinnerLoading")} />
     </Bullseye>
   );

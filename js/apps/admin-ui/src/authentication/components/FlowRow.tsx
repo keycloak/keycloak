@@ -75,6 +75,7 @@ export const FlowRow = ({
             draggableRow={{
               id: execution.id!,
             }}
+            data-testid={`drag-handle-${execution.id}`}
           />
           <Td treeRow={treeRow}>
             <FlowTitle

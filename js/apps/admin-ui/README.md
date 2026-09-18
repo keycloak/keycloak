@@ -61,6 +61,49 @@ The Playwright tests under `js/apps/admin-ui/test` accept these environment vari
 
 These test-only variables are different from server bootstrap variables such as `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD`.
 
+## Playwright loading conventions
+
+Async UI in the admin console exposes two distinct loading signals for E2E tests:
+
+- `data-testid="table-loading-overlay"` — visible while a `LoadingOverlay` table fetch is in progress (skeleton overlay). The container also sets `aria-busy="true"`.
+- `data-testid="page-loading-spinner"` — visible while a full-page `KeycloakSpinner` placeholder is shown before a section mounts (for example the Users list before `UserDataTable`).
+
+Prefer waiting for the **element you interact with** (row link, toolbar button, empty-state action) rather than polling spinners globally.
+
+### Helpers
+
+```ts
+import {
+  waitForLoadingComplete,
+  waitForLoadingCycle,
+  waitForPageLoadingComplete,
+  waitForTableIdle,
+} from "./utils/loading.ts";
+```
+
+| Helper | Use when |
+|--------|----------|
+| `waitForLoadingComplete` | After an action that triggers a `KeycloakDataTable` reload; waits for overlay absence |
+| `waitForLoadingCycle` | After search Enter or refresh; tolerates a short delay before the overlay appears |
+| `waitForPageLoadingComplete` | A page still shows `KeycloakSpinner` before its main content |
+| `waitForTableIdle` | Both overlay and page spinner must clear (e.g. navigating to Users) |
+
+```ts
+await page.keyboard.press("Enter");
+await waitForLoadingCycle(page);
+await page.locator("table tbody").getByRole("link", { name: itemName }).click();
+```
+
+`clickTableRowItem` and `assertRowExists` wait directly on row/link locators. `clickTableToolbarItem` waits for the toolbar to appear (it is not rendered until the first table fetch completes on empty tables).
+
+### Required test fallbacks (CI)
+
+Some PatternFly and browser interactions still need fallbacks despite UI stability work:
+
+- **Switches** — use `clickSwitch` / `switchOn` / `switchOff` from `form.ts` (label force-click), not raw `.click()` on the hidden input
+- **Authentication flow drag** — `dragExecutionAboveExecution` tries pointer, `dragTo`, and keyboard paths; waits for `flow-order-stable` before and after a move
+- **Table row names** — `clickTableRowItem` matches substring link text (disabled badges), exact names, and `provider-name-link` for draggable provider tables
+
 ## Building
 
 To build a library instead of an app you need to add the `LIB=true` environment variable.
