@@ -35,6 +35,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.broker.kubernetes.KubernetesIdentityProviderConfig;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
@@ -63,6 +64,7 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.util.Strings;
 import org.keycloak.utils.ProfileHelper;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -75,6 +77,8 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
+
+import static org.keycloak.broker.oidc.OIDCIdentityProviderConfig.JWKS_URL;
 
 /**
  * @resource Identity Providers
@@ -208,6 +212,18 @@ public class IdentityProviderResource {
         Organizations.stripOrganizationId(providerRep);
 
         IdentityProviderModel updated = RepresentationToModel.toModel(realm, providerRep, session);
+
+        if (updated instanceof KubernetesIdentityProviderConfig) {
+            Map<String, String> requestedConfig = providerRep.getConfig();
+            String requestedIssuer = requestedConfig != null ? requestedConfig.get(IdentityProviderModel.ISSUER) : null;
+            String requestedDiscoveryUrl = requestedConfig != null ? requestedConfig.get(KubernetesIdentityProviderConfig.ISSUER_DISCOVERY_URL) : null;
+            String existingIssuer = identityProviderModel.getConfig() != null ? identityProviderModel.getConfig().get(IdentityProviderModel.ISSUER) : null;
+            boolean directIssuerChanged = !Strings.isEmpty(requestedIssuer) && !Objects.equals(requestedIssuer, existingIssuer);
+            boolean defaultIssuerRequested = Strings.isEmpty(requestedIssuer) && Strings.isEmpty(requestedDiscoveryUrl);
+            if (directIssuerChanged || defaultIssuerRequested) {
+                updated.getConfig().remove(JWKS_URL);
+            }
+        }
 
         if (updated.getConfig() != null && ComponentRepresentation.SECRET_VALUE.equals(updated.getConfig().get("clientSecret"))) {
             updated.getConfig().put("clientSecret", identityProviderModel.getConfig() != null ? identityProviderModel.getConfig().get("clientSecret") : null);

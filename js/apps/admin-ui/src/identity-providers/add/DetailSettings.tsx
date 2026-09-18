@@ -382,7 +382,19 @@ export default function DetailSettings() {
       if (origAuthnContextDeclRefs) {
         p.config!.authnContextDeclRefs = origAuthnContextDeclRefs;
       }
-      reset(p);
+      if (providerId === "kubernetes") {
+        const updatedProvider = await adminClient.identityProviders.findOne({
+          alias: provider?.alias || alias,
+        });
+        if (updatedProvider) {
+          setProvider(updatedProvider);
+          reset(updatedProvider);
+        } else {
+          reset(p);
+        }
+      } else {
+        reset(p);
+      }
       addAlert(t("updateSuccessIdentityProvider"), AlertVariant.success);
     } catch (error) {
       addError("updateErrorIdentityProvider", error);
