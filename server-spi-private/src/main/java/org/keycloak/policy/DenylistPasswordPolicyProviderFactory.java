@@ -29,7 +29,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -67,6 +66,12 @@ import org.jboss.logging.Logger;
  * <p>Note that the preferred way for configuration is to copy the password file to the {@code $KC_HOME/data/password-blacklists/} folder</p>
  * <p>A password denylist with the filename {@code 10_million_passwords.txt}
  * that is located beneath {@code $KC_HOME/data/keycloak/blacklists/} can be referred to as {@code 10_million_passwords.txt} in the <em>Authentication: Password Policy</em> configuration.
+ *
+ * <h1>Case sensitivity</h1>
+ * <p>
+ * Passwords are compared case-insensitively: both denylist entries and user-supplied passwords are lowercased
+ * via {@link #normalizePassword(String)} using the JVM default locale before insertion into or lookup against
+ * the Bloom filter.
  *
  * <h1>False positives</h1>
  * <p>
@@ -252,8 +257,22 @@ public class DenylistPasswordPolicyProviderFactory implements PasswordPolicyProv
     }
 
     /**
+     * Normalizes a password for denylist comparison by lowercasing it using the JVM default locale.
+     * <p>
+     * All denylist code paths (pre-computed Bloom file building, runtime plaintext loading, and password validation)
+     * must use this method to ensure consistent case folding. Using different locales for insertion and lookup would
+     * cause the Bloom filter to miss passwords that should be denied.
+     * <p>
+     * @param password the password to normalize
+     * @return the lowercased password
+     */
+    public static String normalizePassword(String password) {
+        return password.toLowerCase();
+    }
+
+    /**
      * Builds a pre-computed Bloom filter (.bloom) file from a plaintext password denylist file.
-     * Each line is treated as one password (lowercased before insertion).
+     * Each line is treated as one password, normalized via {@link #normalizePassword(String)} before insertion.
      *
      * @param inputFile  path to the plaintext password list (one password per line, UTF-8)
      * @param outputFile path for the generated .bloom file
@@ -268,7 +287,7 @@ public class DenylistPasswordPolicyProviderFactory implements PasswordPolicyProv
         BloomFilter<String> filter = BloomFilter.create(
                 Funnels.stringFunnel(StandardCharsets.UTF_8), Math.max(count, 1), fpp);
         try (var lines = Files.lines(inputFile, StandardCharsets.UTF_8)) {
-            lines.map(s -> s.toLowerCase(Locale.ROOT)).forEach(filter::put);
+            lines.map(DenylistPasswordPolicyProviderFactory::normalizePassword).forEach(filter::put);
         }
         try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(outputFile))) {
             filter.writeTo(out);
@@ -291,9 +310,13 @@ public class DenylistPasswordPolicyProviderFactory implements PasswordPolicyProv
 
         /**
          * Checks whether a given {@code password} is contained in this {@link PasswordDenylist}.
+         * <p>
+         * Callers must normalize the password via
+         * {@link DenylistPasswordPolicyProviderFactory#normalizePassword(String)} before calling
+         * this method, because the denylist stores passwords in normalized (lowercased) form.
          *
-         * @param password
-         * @return
+         * @param password the already-normalized password to check
+         * @return {@code true} if the password is denied
          */
         boolean contains(String password);
     }
@@ -472,7 +495,7 @@ public class DenylistPasswordPolicyProviderFactory implements PasswordPolicyProv
 
         protected void insertPasswordsInto(BloomFilter<String> filter) throws IOException {
             try (BufferedReader br = newReader(path)) {
-                br.lines().map(String::toLowerCase).forEach(filter::put);
+                br.lines().map(DenylistPasswordPolicyProviderFactory::normalizePassword).forEach(filter::put);
             }
         }
 
