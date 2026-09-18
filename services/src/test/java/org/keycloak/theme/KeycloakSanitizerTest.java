@@ -127,6 +127,9 @@ public class KeycloakSanitizerTest {
 
         html.set(0, "<img src=\"https://example.org/__KC_SENTINEL1_123__\">");
         assertResult("<img>", html);
+
+        html.set(0, "<p style=\"font-family: __KC_SENTINEL0_123__\">text</p>");
+        assertResult("<p>text</p>", html);
     }
 
     @Test

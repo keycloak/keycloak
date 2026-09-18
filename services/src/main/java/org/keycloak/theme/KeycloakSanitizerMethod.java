@@ -36,6 +36,9 @@ public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
     private static final Pattern SENTINEL_URL_ATTRIBUTE_PATTERN = Pattern.compile(
             "\\s+(?:href|src|action|formaction|cite|background|poster)=\"[^\"]*__KC_SENTINEL[^\"]*\"",
             Pattern.CASE_INSENSITIVE);
+    private static final Pattern SENTINEL_STYLE_ATTRIBUTE_PATTERN = Pattern.compile(
+            "\\s+style=\"[^\"]*__KC_SENTINEL[^\"]*\"",
+            Pattern.CASE_INSENSITIVE);
     
     @Override
     public Object exec(List list) throws TemplateModelException {
@@ -55,6 +58,9 @@ public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
         // because the sentinel would otherwise pass this sanitizer and be replaced
         // later with an attacker-controlled scheme such as javascript:.
         sanitized = SENTINEL_URL_ATTRIBUTE_PATTERN.matcher(sanitized).replaceAll("");
+        // The same post-sanitization replacement must not populate CSS values,
+        // where a sentinel could otherwise be replaced with declarations or url().
+        sanitized = SENTINEL_STYLE_ATTRIBUTE_PATTERN.matcher(sanitized).replaceAll("");
         
         return fixURLs(sanitized);
     }
