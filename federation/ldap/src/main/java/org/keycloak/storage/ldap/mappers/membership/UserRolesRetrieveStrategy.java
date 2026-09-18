@@ -114,7 +114,9 @@ public interface UserRolesRetrieveStrategy {
 
                 ldapQuery.addWhereCondition(conditionBuilder.orCondition(conditions));
 
-                return LDAPUtils.loadAllLDAPObjects(ldapQuery, ldapConfig);
+                java.util.List<LDAPObject> results = LDAPUtils.loadAllLDAPObjects(ldapQuery, ldapConfig);
+                    java.util.Set<LDAPDn> expectedDns = memberOfValues.stream().map(LDAPDn::fromString).collect(java.util.stream.Collectors.toSet());
+                    return results.stream().filter(obj -> expectedDns.contains(obj.getDn())).collect(java.util.stream.Collectors.toList());
             }
         }
 
