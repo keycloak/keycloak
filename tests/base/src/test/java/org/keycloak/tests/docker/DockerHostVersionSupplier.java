@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.docker;
+package org.keycloak.tests.docker;
 
 import java.io.BufferedReader;
 import java.io.IOException;

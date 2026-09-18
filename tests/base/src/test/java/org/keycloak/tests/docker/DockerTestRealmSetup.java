@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.docker;
+package org.keycloak.tests.docker;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,7 +22,7 @@ public final class DockerTestRealmSetup {
         createdRealm.setRealm(realmId);
         createdRealm.setEnabled(true);
         createdRealm.setAuthenticatorConfig(new ArrayList<>());
-        createdRealm.setEventsListeners(List.of("jboss-logging", "event-queue"));
+        createdRealm.setEventsListeners(List.of("jboss-logging"));
 
         return createdRealm;
     }

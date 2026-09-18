@@ -139,6 +139,12 @@ endif::[]
 
 ==== Credential delegation
 
+[WARNING]
+====
+Credential delegation is deprecated and may be removed in a future release. Credential delegation has significant security implications as it allows credentials to be forwarded and reused. See the warning below for more details. Moreover, the use of protocol mappers and carry kerberos ticket within access token may also have security implications.
+Finally, we are not able to properly test it and official support for this feature may not deserve the additional overhead as it seems that feature has not much usage within {project_name} users.
+====
+
 Kerberos supports the credential delegation. Applications may need access to the Kerberos ticket so they can reuse it to interact with other services secured by Kerberos. Because the {project_name} server processed the SPNEGO protocol, you must propagate the GSS credential to your application within the OpenID Connect token claim or a SAML assertion attribute. {project_name} transmits this to your application from the {project_name} server. To insert this claim into the token or assertion, each application must enable the built-in protocol mapper `gss delegation credential`. This mapper is available in the *Mappers* tab of the application's client page.  See <<_protocol-mappers, Protocol Mappers>> chapter for more details.
 
 Applications must deserialize the claim it receives from {project_name} before using it to make GSS calls against other services. When you deserialize the credential from the access token to the GSSCredential object, create the GSSContext with this credential passed to the `GSSManager.createContext` method. For example:
