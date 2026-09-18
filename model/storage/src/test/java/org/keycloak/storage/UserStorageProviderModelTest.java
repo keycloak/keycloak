@@ -17,10 +17,10 @@
 
 package org.keycloak.storage;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
 import org.keycloak.storage.UserStorageProviderModel.SyncMode;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Unit tests for {@link UserStorageProviderModel}.
