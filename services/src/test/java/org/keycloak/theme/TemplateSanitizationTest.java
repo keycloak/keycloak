@@ -310,6 +310,11 @@ public class TemplateSanitizationTest {
             model.put("messageHeaderAlias", "corp{0}");
             model.put("messageHeaderSentinel", java.util.UUID.randomUUID().toString());
 
+            model.put("messageBodyKey", "confirmAccountLinkingBody");
+            model.put("messageBodyUsername", payload);
+            model.put("messageBodyAlias", "corp{0}");
+            model.put("messageBodySentinel", java.util.UUID.randomUUID().toString());
+
             Map<String, Object> message = new HashMap<>();
             message.put("summary", "Summary payload: " + payload);
             model.put("message", message);

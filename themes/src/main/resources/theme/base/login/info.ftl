@@ -10,7 +10,7 @@
         </#if>
     <#elseif section = "form">
     <div id="kc-info-message">
-        <p class="instruction">${message.summary?esc}<#if requiredActions??><#list requiredActions>: <b><#items as reqActionItem>${kcSanitize(msg("requiredAction.${reqActionItem}"))?no_esc}<#sep>, </#items></b></#list><#else></#if></p>
+        <p class="instruction"><#if messageBodyKey?? && messageBodyUsername?? && messageBodySentinel??>${kcSanitize(msg(messageBodyKey, "__KC_SENTINEL0_" + messageBodySentinel + "__", "__KC_SENTINEL1_" + messageBodySentinel + "__"))?replace("__KC_SENTINEL1_" + messageBodySentinel + "__", ((messageBodyAlias!)?esc)?markup_string)?replace("__KC_SENTINEL0_" + messageBodySentinel + "__", ((messageBodyUsername!)?esc)?markup_string)?no_esc}<#else>${message.summary?esc}</#if><#if requiredActions??><#list requiredActions>: <b><#items as reqActionItem>${kcSanitize(msg("requiredAction.${reqActionItem}"))?no_esc}<#sep>, </#items></b></#list><#else></#if></p>
         <#if skipLink??>
         <#else>
             <#if pageRedirectUri?has_content>

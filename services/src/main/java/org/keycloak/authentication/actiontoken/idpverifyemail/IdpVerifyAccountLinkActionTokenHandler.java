@@ -28,6 +28,7 @@ import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.TokenUtils;
 import org.keycloak.authentication.authenticators.broker.IdpEmailVerificationAuthenticator;
+import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -109,19 +110,22 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             String idpUsername = token.getIdentityProviderUsername() != null ? token.getIdentityProviderUsername() : "";
             String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
-            // Use a random sentinel in message strings instead of untrusted IdP values.
-            // kcSanitize HTML-decodes its input before sanitizing and permits anchors,
-            // so escaping is ineffective. Legacy custom themes see the harmless sentinel;
-            // new built-in templates use the structured attributes with ?esc.
+            String safeIdpUsername = HtmlUtils.escapeAttribute(idpUsername);
+            String safeIdpAlias = HtmlUtils.escapeAttribute(idpAlias);
             String sentinel = java.util.UUID.randomUUID().toString();
+
             LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
             return forms.setAuthenticationSession(authSession)
-                    .setAttribute("messageHeader", forms.getMessage(Messages.CONFIRM_ACCOUNT_LINKING, sentinel, sentinel))
+                    .setAttribute("messageHeader", forms.getMessage(Messages.CONFIRM_ACCOUNT_LINKING, safeIdpUsername, safeIdpAlias))
                     .setAttribute("messageHeaderKey", Messages.CONFIRM_ACCOUNT_LINKING)
                     .setAttribute("messageHeaderUsername", idpUsername)
                     .setAttribute("messageHeaderAlias", idpAlias)
                     .setAttribute("messageHeaderSentinel", sentinel)
-                    .setSuccess(Messages.CONFIRM_ACCOUNT_LINKING_BODY, sentinel, sentinel)
+                    .setSuccess(Messages.CONFIRM_ACCOUNT_LINKING_BODY, safeIdpUsername, safeIdpAlias)
+                    .setAttribute("messageBodyKey", Messages.CONFIRM_ACCOUNT_LINKING_BODY)
+                    .setAttribute("messageBodyUsername", idpUsername)
+                    .setAttribute("messageBodyAlias", idpAlias)
+                    .setAttribute("messageBodySentinel", sentinel)
                     .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, confirmUri)
                     .createInfoPage();
         }
