@@ -406,6 +406,46 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         return typedQuery.getSingleResult();
     }
 
+    @Override
+    public Stream<OrganizationModel> getByIdentityProvider(IdentityProviderModel identityProvider, String search, Boolean exact, Integer first, Integer max) {
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<OrganizationEntity> query = builder.createQuery(OrganizationEntity.class);
+        Root<OrganizationEntity> org = query.from(OrganizationEntity.class);
+
+        List<Predicate> predicates = buildIdentityProviderPredicates(builder, query, org, identityProvider, search, exact);
+
+        TypedQuery<OrganizationEntity> typedQuery = buildSearchQuery(builder, query, org, predicates);
+
+        return closing(paginateQuery(typedQuery, first, max).getResultStream()
+                .map(entity -> new OrganizationAdapter(session, getRealm(), entity, this)));
+    }
+
+    @Override
+    public long countByIdentityProvider(IdentityProviderModel identityProvider, String search, Boolean exact) {
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<Long> query = builder.createQuery(Long.class);
+        Root<OrganizationEntity> org = query.from(OrganizationEntity.class);
+
+        List<Predicate> predicates = buildIdentityProviderPredicates(builder, query, org, identityProvider, search, exact);
+
+        TypedQuery<Long> typedQuery = buildCountQuery(builder, query, org, predicates);
+
+        return typedQuery.getSingleResult();
+    }
+
+    private List<Predicate> buildIdentityProviderPredicates(CriteriaBuilder builder, CriteriaQuery<?> query, Root<OrganizationEntity> org,
+                                                            IdentityProviderModel identityProvider, String search, Boolean exact) {
+        Join<OrganizationEntity, OrganizationIdentityProviderEntity> link = org.join("identityProviders");
+
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(builder.equal(link.get("identityProviderId"), identityProvider.getInternalId()));
+        predicates.add(buildStringSearchPredicate(builder, query, org, search, exact));
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(
+                session, AdminPermissionsSchema.ORGANIZATIONS, getRealm(), builder, query, org));
+
+        return predicates;
+    }
+
     private TypedQuery<OrganizationEntity> buildSearchQuery(CriteriaBuilder builder,
                                                             CriteriaQuery<OrganizationEntity> query,
                                                             Root<OrganizationEntity> org,
