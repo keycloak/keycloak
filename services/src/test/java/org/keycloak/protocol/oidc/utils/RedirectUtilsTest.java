@@ -75,10 +75,36 @@ public class RedirectUtilsTest {
     }
 
     @Test
+    public void testVerifyRedirectUriOpaqueFragmentCaseSensitive() {
+        Set<String> set = Stream.of("myapp:callback#one").collect(Collectors.toSet());
+
+        Assert.assertEquals("myapp:callback#one", RedirectUtils.verifyRedirectUri(session, null, "myapp:callback#one", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "myapp:callback#two", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "myapp:callback#One", set, false));
+    }
+
+    @Test
     public void testVerifyRedirectUriWildcardRequiresUserInfo() {
         Set<String> set = Stream.of("https://alice@example.com/foo/*").collect(Collectors.toSet());
 
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://example.com/foo/bar", set, false));
+    }
+
+    @Test
+    public void testVerifyRedirectUriPathEndingWithColonKeepsPort() {
+        Set<String> set = Stream.of("https://example.com:8443/foo:*").collect(Collectors.toSet());
+
+        Assert.assertEquals("https://example.com:8443/foo:bar",
+                RedirectUtils.verifyRedirectUri(session, null, "https://example.com:8443/foo:bar", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://example.com:9443/foo:bar", set, false));
+    }
+
+    @Test
+    public void testVerifyRedirectUriLoopbackSchemeCaseInsensitive() {
+        Set<String> set = Stream.of("http://127.0.0.1/callback").collect(Collectors.toSet());
+
+        Assert.assertEquals("HTTP://127.0.0.1:12324/callback",
+                RedirectUtils.verifyRedirectUri(session, null, "HTTP://127.0.0.1:12324/callback", set, false));
     }
 
     @Test

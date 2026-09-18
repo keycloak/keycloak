@@ -70,6 +70,9 @@ public class UriUtilsTest {
         assertFalse(UriUtils.originEquals("https://Example.COM:8443", "https://example.com:8444"));
         assertFalse(UriUtils.originEquals("https://Example.COM:8443", "https://other.com:8443"));
         assertFalse(UriUtils.originEquals("https://allowed_host", "https://evil_host"));
+        // Registry-name hosts: hostname case-insensitive, user-info case-sensitive
+        assertTrue(UriUtils.originEquals("https://Alice@allowed_host", "https://Alice@ALLOWED_HOST"));
+        assertFalse(UriUtils.originEquals("https://Alice@allowed_host", "https://alice@allowed_host"));
     }
 
     @Test
