@@ -1,11 +1,13 @@
-package org.keycloak.testsuite.cluster;
+package org.keycloak.tests.cluster;
 
 import jakarta.ws.rs.NotFoundException;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.ContainerInfo;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
 
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -14,7 +16,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  *
  * @author tkyjovsk
  */
+@KeycloakIntegrationTest
 public class RealmInvalidationClusterTest extends AbstractInvalidationClusterTest<RealmRepresentation, RealmResource> {
+
+    @InjectRealm
+    ManagedRealm managedRealm;
 
     @Override
     protected RealmRepresentation createTestEntityRepresentation() {

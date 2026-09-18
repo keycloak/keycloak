@@ -53,6 +53,10 @@ public class LoadBalancer {
         proxy.origin(origin.port, origin.host);
     }
 
+    public int getCurrentNodeIndex() {
+        return currentNodeIndex;
+    }
+
     public KeycloakUrls nodeUrls(int index) {
         return origin(index).urls;
     }
@@ -61,8 +65,24 @@ public class LoadBalancer {
         return server.clusterSize();
     }
 
+    public boolean isNodeRunning(int index) {
+        return server.isNodeRunning(index);
+    }
+
+    public void stopNode(int index) {
+        server.stopNode(index);
+    }
+
+    public void startNode(int index) {
+        server.startNode(index);
+    }
+
     public void nextNode() {
         node((currentNodeIndex + 1) % nodeCount());
+    }
+
+    public void refreshNode(int index) {
+        urls.remove(index);
     }
 
     private Origin origin(int index) {

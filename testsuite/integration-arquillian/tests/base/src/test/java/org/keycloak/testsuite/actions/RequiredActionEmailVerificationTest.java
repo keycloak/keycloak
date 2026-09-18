@@ -29,6 +29,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -50,7 +51,6 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.cluster.AuthenticationSessionFailoverClusterTest;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -77,6 +77,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
@@ -87,6 +88,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -1066,7 +1068,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         oauth.openLoginForm();
 
-        String authSessionId = AuthenticationSessionFailoverClusterTest.getAuthSessionCookieValue(driver);
+        Cookie authSessionCookie = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName());
+        assertNotNull(authSessionCookie);
+        String authSessionId = authSessionCookie.getValue();
         String realmId = managedRealm.admin().toRepresentation().getId();
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
