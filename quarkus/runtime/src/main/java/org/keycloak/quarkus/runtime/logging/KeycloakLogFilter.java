@@ -81,7 +81,7 @@ public abstract class KeycloakLogFilter implements Filter {
         }
     }
 
-    private static Set<String> collectAllDefaultUnsupportedHibernateProperties() {
+    public static Set<String> collectAllDefaultUnsupportedHibernateProperties() {
         Stream<String> properties = new DatabasePropertyMappers().getPropertyMappers().stream().map(PropertyMapper::getTo);
         Config config = new SmallRyeConfigBuilder()
                 .addDefaultSources() // adds also application.properties
@@ -104,6 +104,10 @@ public abstract class KeycloakLogFilter implements Filter {
                     return p.substring(QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX.length());
                 })
                 .collect(Collectors.toUnmodifiableSet());
+    }
+
+    public static void setKeycloakDefaultUnsupportedProperties(Set<String> keycloakDefaultUnsupportedProperties) {
+        KeycloakLogFilter.keycloakDefaultUnsupportedProperties = Set.copyOf(keycloakDefaultUnsupportedProperties);
     }
 
     protected abstract Class<? extends Handler> getHandlerClass();

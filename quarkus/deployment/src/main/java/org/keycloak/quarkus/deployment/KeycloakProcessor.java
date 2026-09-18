@@ -143,6 +143,7 @@ import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.GeneratedResourceBuildItem;
 import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
+import io.quarkus.deployment.builditem.LogHandlerBuildItem;
 import io.quarkus.deployment.builditem.StaticInitConfigBuilderBuildItem;
 import io.quarkus.hibernate.orm.deployment.JpaModelPersistenceUnitContributionBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationRuntimeConfiguredBuildItem;
@@ -189,6 +190,7 @@ import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeature
 import static org.keycloak.quarkus.runtime.Providers.getProviderManager;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+import static org.keycloak.quarkus.runtime.logging.KeycloakLogFilter.collectAllDefaultUnsupportedHibernateProperties;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUTHENTICATORS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAPPERS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.POLICIES;
@@ -690,6 +692,13 @@ class KeycloakProcessor {
         } catch (Exception e) {
             logger.warn("Failed to scan for standalone orm.xml files", e);
         }
+    }
+
+    @Produce(LogHandlerBuildItem.class)
+    @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep
+    void prepareKeycloakLogFilter(KeycloakRecorder recorder) {
+        recorder.setHibernateUnsupportedProperties(collectAllDefaultUnsupportedHibernateProperties());
     }
 
     @BuildStep

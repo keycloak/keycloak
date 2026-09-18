@@ -60,6 +60,7 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.logging.KeycloakLogFilter;
 import org.keycloak.quarkus.runtime.services.MisdirectedFilter;
 import org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
@@ -146,6 +147,10 @@ public class KeycloakRecorder {
                 %s
                 </html>
                 """.formatted(itemsHtml));
+    }
+
+    public void setHibernateUnsupportedProperties(Set<String> keycloakDefaultUnsupportedProperties) {
+        KeycloakLogFilter.setKeycloakDefaultUnsupportedProperties(keycloakDefaultUnsupportedProperties);
     }
 
     private record ManagementInterfaceItem(String path, String description, BooleanSupplier isEnabled) {
