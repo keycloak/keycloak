@@ -410,16 +410,42 @@ public class SsfAdminResource {
         rep.setCreatedAt(streamConfig.getCreatedAt());
         rep.setUpdatedAt(streamConfig.getUpdatedAt());
         rep.setManagedBy(streamConfig.getManagedBy());
-        String lastVerifiedAtRaw = client.getAttribute(ClientStreamStore.SSF_LAST_VERIFIED_AT_KEY);
-        if (lastVerifiedAtRaw != null && !lastVerifiedAtRaw.isBlank()) {
-            try {
-                rep.setLastVerifiedAt(Integer.valueOf(lastVerifiedAtRaw));
-            } catch (NumberFormatException ignored) {
-                // Defensive: ignore a malformed attribute value rather than
-                // failing the whole admin GET for this stream.
-            }
-        }
+        // lastVerifiedAt is an Integer on the representation like its
+        // createdAt / updatedAt siblings (int-seconds, sourced from
+        // StreamConfig); narrowing here keeps that wire shape untouched.
+        rep.setLastVerifiedAt(toIntegerOrNull(
+                readEpochSecondsAttribute(client, ClientStreamStore.SSF_LAST_VERIFIED_AT_KEY)));
+        rep.setLastPollCompletedAt(readEpochSecondsAttribute(client, ClientStreamStore.SSF_STREAM_LAST_POLL_COMPLETED_AT_KEY));
         return rep;
+    }
+
+    /**
+     * Reads an epoch-seconds client attribute, returning {@code null} when
+     * absent, blank or malformed. Defensive: a bad timestamp attribute
+     * must not fail the whole admin GET for the stream.
+     */
+    /**
+     * Narrows to {@link Integer} only when the value fits; out-of-range
+     * values become {@code null} (omitted from the response) rather than
+     * wrapping, matching the previous {@code Integer.valueOf} behaviour.
+     */
+    protected static Integer toIntegerOrNull(Long value) {
+        if (value == null || value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
+            return null;
+        }
+        return value.intValue();
+    }
+
+    protected static Long readEpochSecondsAttribute(ClientModel client, String key) {
+        String raw = client.getAttribute(key);
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.valueOf(raw.trim());
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 
     /**
