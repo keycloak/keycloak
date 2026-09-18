@@ -137,6 +137,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                       "exclude.session.state.from.auth.response",
                       "use.refresh.tokens",
                       "client_credentials.use_refresh_token",
+                      "offline_token.use_refresh_token",
                       "token.response.type.bearer.lower-case",
                       "oauth2.jwt.authorization.grant.audience",
                     ])
