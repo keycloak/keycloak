@@ -762,7 +762,9 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                 throw invalidClientIdMetadata(ERR_METADATA_URIS_SAMEDOMAIN);
             }
 
-            List<String> l = Stream.of(clientOIDC.getClientId(), clientOIDC.getClientUri(), clientOIDC.getLogoUri(), clientOIDC.getTosUri(), clientOIDC.getPolicyUri(), clientOIDC.getJwksUri())
+            List<String> l = Stream.concat(
+                        Stream.of(clientOIDC.getClientId(), clientOIDC.getClientUri(), clientOIDC.getLogoUri(), clientOIDC.getTosUri(), clientOIDC.getPolicyUri(), clientOIDC.getJwksUri()),
+                        clientOIDC.getRedirectUris() == null ? Stream.<String>empty() : clientOIDC.getRedirectUris().stream())
                     .filter(Objects::nonNull).toList();
             try {
                 for (String s : l) {
