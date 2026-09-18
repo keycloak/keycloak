@@ -24,3 +24,20 @@ export async function toggleLogoutConfirmation(page: Page) {
     "#attributes\\.logout🍺confirmation🍺enabled";
   await switchToggle(page, logoutConfirmationSwitch);
 }
+
+const jwtAuthorizationGrantIdpSelect =
+  "#attributes\\.oauth2🍺jwt🍺authorization🍺grant🍺idp";
+
+export async function enableJwtAuthorizationGrant(page: Page) {
+  await page.getByTestId("jwt-authorization-grant-enabled").check();
+}
+
+export async function getJwtAuthorizationGrantIdpOptions(
+  page: Page,
+): Promise<string[]> {
+  await page.keyboard.press("Escape");
+  await page.locator(jwtAuthorizationGrantIdpSelect).click();
+  const options = page.getByRole("option");
+  await options.first().waitFor({ state: "visible" });
+  return await options.allTextContents();
+}
