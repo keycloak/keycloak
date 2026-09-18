@@ -131,7 +131,7 @@ public class KeycloakSanitizerTest {
 
     @Test
     public void testSanitizeTextPreservesDetailsWithoutMarkup() {
-        assertEquals("R&amp;D Team", KeycloakSanitizerPolicy.sanitizeText("R&D Team"));
+        assertEquals("R&D Team", KeycloakSanitizerPolicy.sanitizeText("R&D Team"));
         assertEquals("Click", KeycloakSanitizerPolicy.sanitizeText("<a href=\"https://evil.example\">Click</a>"));
     }
 

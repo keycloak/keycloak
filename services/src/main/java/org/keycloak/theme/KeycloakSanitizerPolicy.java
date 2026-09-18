@@ -17,10 +17,12 @@
 
 package org.keycloak.theme;
 
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import org.owasp.html.HtmlPolicyBuilder;
+import org.owasp.html.HtmlSanitizer;
 import org.owasp.html.PolicyFactory;
 
 /**
@@ -167,11 +169,36 @@ public class KeycloakSanitizerPolicy {
               "table", "td", "th", "tr", "colgroup", "fieldset", "legend")
           .toFactory();
 
-  /** Sanitizes an untrusted value for legacy message-summary rendering. */
-  public static final PolicyFactory TEXT_ONLY_POLICY = new HtmlPolicyBuilder().toFactory();
-
+  /** Removes markup from an untrusted value for legacy message-summary rendering. */
   public static String sanitizeText(String value) {
-    return TEXT_ONLY_POLICY.sanitize(value == null ? "" : value);
+    if (value == null || value.isEmpty()) {
+      return "";
+    }
+
+    StringBuilder text = new StringBuilder(value.length());
+    HtmlSanitizer.sanitize(value, new HtmlSanitizer.Policy() {
+      @Override
+      public void openDocument() {
+      }
+
+      @Override
+      public void closeDocument() {
+      }
+
+      @Override
+      public void openTag(String elementName, List<String> attrs) {
+      }
+
+      @Override
+      public void closeTag(String elementName) {
+      }
+
+      @Override
+      public void text(String chunk) {
+        text.append(chunk);
+      }
+    });
+    return text.toString();
   }
 
   private static Predicate<String> matchesEither(final Pattern a, final Pattern b) {
