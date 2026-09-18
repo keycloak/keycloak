@@ -150,10 +150,12 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             String idpUsername = token.getIdentityProviderUsername() != null ? token.getIdentityProviderUsername() : "";
             String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
+            String safeIdpUsername = HtmlUtils.escapeText(idpUsername);
+            String safeIdpAlias = HtmlUtils.escapeText(idpAlias);
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
                     .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_SUCCESS_HEADER)
-                    .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, idpAlias, idpUsername)
+                    .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, safeIdpAlias, safeIdpUsername)
                     .setAttribute(Constants.SKIP_LINK, true)
                     .createInfoPage();
         }
@@ -194,10 +196,12 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         event.user(user).error(Errors.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY);
         String idpUsername = token.getIdentityProviderUsername() != null ? token.getIdentityProviderUsername() : "";
         String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
+        String safeIdpUsername = HtmlUtils.escapeText(idpUsername);
+        String safeIdpAlias = HtmlUtils.escapeText(idpAlias);
         return session.getProvider(LoginFormsProvider.class)
                 .setAuthenticationSession(session.getContext().getAuthenticationSession())
                 .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY_HEADER)
-                .setInfo(Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY, idpAlias, idpUsername)
+                .setInfo(Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY, safeIdpAlias, safeIdpUsername)
                 .createInfoPage();
     }
 }
