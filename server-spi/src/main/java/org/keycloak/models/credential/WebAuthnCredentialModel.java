@@ -87,6 +87,7 @@ public class WebAuthnCredentialModel extends CredentialModel {
             webAuthnCredentialModel.setId(credentialModel.getId());
             webAuthnCredentialModel.setSecretData(credentialModel.getSecretData());
             webAuthnCredentialModel.setCredentialData(credentialModel.getCredentialData());
+            webAuthnCredentialModel.setPriority(credentialModel.getPriority());
             return webAuthnCredentialModel;
         } catch (IOException e) {
             throw new RuntimeException(e);
