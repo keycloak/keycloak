@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test";
+import { expect } from "@playwright/test";
 import {
   selectItem,
   assertSelectValue,
@@ -23,4 +24,12 @@ export async function toggleLogoutConfirmation(page: Page) {
   const logoutConfirmationSwitch =
     "#attributes\\.logout🍺confirmation🍺enabled";
   await switchToggle(page, logoutConfirmationSwitch);
+}
+
+export async function setResourceUrl(page: Page, value: string) {
+  await page.getByTestId("attributes.resource_url").fill(value);
+}
+
+export async function assertResourceUrl(page: Page, value: string) {
+  await expect(page.getByTestId("attributes.resource_url")).toHaveValue(value);
 }
