@@ -40,11 +40,11 @@ export default function DedicatedScopes() {
 
   useFetch(() => adminClient.clients.findOne({ id: clientId }), setClient, []);
 
-  const useTab = (tab: DedicatedScopeTab) =>
-    useRoutableTab(toDedicatedScope({ realm, clientId, tab }));
+  const tab = (tab: DedicatedScopeTab) =>
+    toDedicatedScope({ realm, clientId, tab });
 
-  const mappersTab = useTab("mappers");
-  const scopeTab = useTab("scope");
+  const mappersTab = useRoutableTab(tab("mappers"));
+  const scopeTab = useRoutableTab(tab("scope"));
 
   if (!client) {
     return <KeycloakSpinner />;

@@ -285,38 +285,40 @@ export const RealmSettingsTabs = () => {
     refresh();
   };
 
-  const useTab = (tab: RealmSettingsTab) =>
-    useRoutableTab(toRealmSettings({ realm: realmName, tab }));
+  const tab = (tab: RealmSettingsTab) =>
+    toRealmSettings({ realm: realmName, tab });
 
-  const generalTab = useTab("general");
-  const loginTab = useTab("login");
-  const emailTab = useTab("email");
-  const themesTab = useTab("themes");
-  const keysTab = useTab("keys");
-  const eventsTab = useTab("events");
-  const localizationTab = useTab("localization");
-  const securityDefensesTab = useTab("security-defenses");
-  const sessionsTab = useTab("sessions");
-  const tokensTab = useTab("tokens");
-  const clientPoliciesTab = useTab("client-policies");
-  const userProfileTab = useTab("user-profile");
-  const userRegistrationTab = useTab("user-registration");
+  const generalTab = useRoutableTab(tab("general"));
+  const loginTab = useRoutableTab(tab("login"));
+  const emailTab = useRoutableTab(tab("email"));
+  const themesTab = useRoutableTab(tab("themes"));
+  const keysTab = useRoutableTab(tab("keys"));
+  const eventsTab = useRoutableTab(tab("events"));
+  const localizationTab = useRoutableTab(tab("localization"));
+  const securityDefensesTab = useRoutableTab(tab("security-defenses"));
+  const sessionsTab = useRoutableTab(tab("sessions"));
+  const tokensTab = useRoutableTab(tab("tokens"));
+  const clientPoliciesTab = useRoutableTab(tab("client-policies"));
+  const userProfileTab = useRoutableTab(tab("user-profile"));
+  const userRegistrationTab = useRoutableTab(tab("user-registration"));
   const { hasAccess, hasSomeAccess } = useAccess();
   const canViewOrManageEvents =
     hasAccess("view-realm") && hasSomeAccess("view-events", "manage-events");
   const canViewUserRegistration =
     hasAccess("view-realm") && hasSomeAccess("view-clients", "manage-clients");
 
-  const useClientPoliciesTab = (tab: ClientPoliciesTab) =>
-    useRoutableTab(
-      toClientPolicies({
-        realm: realmName,
-        tab,
-      }),
-    );
+  const clientPoliciesSubTab = (tab: ClientPoliciesTab) =>
+    toClientPolicies({
+      realm: realmName,
+      tab,
+    });
 
-  const clientPoliciesProfilesTab = useClientPoliciesTab("profiles");
-  const clientPoliciesPoliciesTab = useClientPoliciesTab("policies");
+  const clientPoliciesProfilesTab = useRoutableTab(
+    clientPoliciesSubTab("profiles"),
+  );
+  const clientPoliciesPoliciesTab = useRoutableTab(
+    clientPoliciesSubTab("policies"),
+  );
 
   return (
     <FormProvider {...form}>

@@ -124,19 +124,17 @@ const Dashboard = () => {
     [serverInfo.features],
   );
 
-  const useTab = (tab: DashboardTab) =>
-    useRoutableTab(
-      toDashboard({
-        realm,
-        tab,
-      }),
-    );
+  const tab = (tab: DashboardTab) =>
+    toDashboard({
+      realm,
+      tab,
+    });
 
   const realmDisplayInfo = resolveDisplayName(t, realmInfo.displayName, realm);
 
-  const welcomeTab = useTab("welcome");
-  const infoTab = useTab("info");
-  const providersTab = useTab("providers");
+  const welcomeTab = useRoutableTab(tab("welcome"));
+  const infoTab = useRoutableTab(tab("info"));
+  const providersTab = useRoutableTab(tab("providers"));
 
   if (Object.keys(serverInfo).length === 0) {
     return <KeycloakSpinner />;
