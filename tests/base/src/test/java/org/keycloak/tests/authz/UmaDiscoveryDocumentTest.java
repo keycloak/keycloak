@@ -32,6 +32,7 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.oauth.Endpoints;
@@ -40,7 +41,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = DefaultAuthzServerConfig.class)
 public class UmaDiscoveryDocumentTest extends AbstractAuthzTest {
 
     @InjectOAuthClient

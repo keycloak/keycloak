@@ -87,6 +87,7 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -113,7 +114,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = DefaultAuthzServerConfig.class)
 public class EntitlementAPITest extends AbstractAuthzTest {
 
     @InjectRealm
@@ -2065,21 +2066,25 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         oauth.realm("authz-test");
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.client(PUBLIC_TEST_CLIENT);
-        oauth.doLogin("offlineuser", "password");
+        try {
+            oauth.doLogin("offlineuser", "password");
 
-        // Token request
-        String code = oauth.parseLoginResponse().getCode();
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+            // Token request
+            String code = oauth.parseLoginResponse().getCode();
+            org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
-        AuthorizationRequest request = new AuthorizationRequest();
-        request.addPermission("Sensors");
-        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
-        AuthorizationResponse authorizationResponse = authzClient.authorization(response.getAccessToken()).authorize(request);
-        AccessToken token = toAccessToken(authorizationResponse.getToken());
-        assertEquals(PUBLIC_TEST_CLIENT, token.getIssuedFor());
+            AuthorizationRequest request = new AuthorizationRequest();
+            request.addPermission("Sensors");
+            AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+            AuthorizationResponse authorizationResponse = authzClient.authorization(response.getAccessToken()).authorize(request);
+            AccessToken token = toAccessToken(authorizationResponse.getToken());
+            assertEquals(PUBLIC_TEST_CLIENT, token.getIssuedFor());
 
-        TokenIntrospectionResponse introspectionResponse = authzClient.protection().introspectRequestingPartyToken(authorizationResponse.getToken());
-        assertNotNull(introspectionResponse.getPermissions());
+            TokenIntrospectionResponse introspectionResponse = authzClient.protection().introspectRequestingPartyToken(authorizationResponse.getToken());
+            assertNotNull(introspectionResponse.getPermissions());
+        } finally {
+            oauth.scope(null);
+        }
     }
 
     @Test

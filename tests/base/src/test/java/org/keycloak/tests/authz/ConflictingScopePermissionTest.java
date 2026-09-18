@@ -51,6 +51,7 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -67,7 +68,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = DefaultAuthzServerConfig.class)
 public class ConflictingScopePermissionTest extends AbstractAuthzTest {
 
     @InjectRealm

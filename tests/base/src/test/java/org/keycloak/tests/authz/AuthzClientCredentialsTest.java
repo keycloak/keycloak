@@ -58,6 +58,7 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -75,7 +76,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = DefaultAuthzServerConfig.class)
 public class AuthzClientCredentialsTest extends AbstractAuthzTest {
 
     @InjectRealm

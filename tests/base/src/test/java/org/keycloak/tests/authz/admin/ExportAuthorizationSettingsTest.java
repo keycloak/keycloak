@@ -37,6 +37,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -49,7 +50,7 @@ import static org.hamcrest.Matchers.notNullValue;
  *
  * @author <a href="mailto:vramik@redhat.com">Vlasta Ramik</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = DefaultAuthzServerConfig.class)
 public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
 
     @InjectRealm
