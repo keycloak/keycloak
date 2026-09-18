@@ -50,7 +50,7 @@ public class ImportAuthorizationSettingsTest extends AbstractAuthorizationTest {
         role.setName("admin");
         clientResource.roles().create(role);
 
-        managedRealm.admin().users().create(UserBuilder.create().username("alice").build());
+        adminClient.realm(getRealmId()).users().create(UserBuilder.create().username("alice").build());
     }
 
     @Test

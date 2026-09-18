@@ -71,7 +71,8 @@ import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.authz.config.AuthzScriptsServerConfig;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 
@@ -93,6 +94,9 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
 
     @InjectRealm
     ManagedRealm managedRealm;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -674,7 +678,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
 
         users.delete(marta.getId()).close();
 
-        getTestingClient().server().run((RunOnServer) UserManagedPermissionServiceTest::testRemovePolicyWhenOwnerDeleted);
+        runOnServer.run(UserManagedPermissionServiceTest::testRemovePolicyWhenOwnerDeleted);
     }
 
     private static void testRemovePolicyWhenOwnerDeleted(KeycloakSession session) {
@@ -1141,7 +1145,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
 
         protection.policy(resource.getId()).create(newPermission);
 
-        getTestingClient().server().run((RunOnServer) UserManagedPermissionServiceTest::testRemovePoliciesOnResourceDelete);
+        runOnServer.run(UserManagedPermissionServiceTest::testRemovePoliciesOnResourceDelete);
     }
 
     private static void testRemovePoliciesOnResourceDelete(KeycloakSession session) {
