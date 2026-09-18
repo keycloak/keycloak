@@ -1,9 +1,9 @@
 [[_oid4vci]]
 == Configuring {project_name} as a Verifiable Credential Issuer
 
-[IMPORTANT]
+[WARNING]
 ====
-This feature is currently experimental. Do not use it in production. Backward compatibility is not guaranteed, and future updates may introduce breaking changes.
+This feature is in preview and is not fully supported. It is disabled by default and can be enabled with `--features=oid4vc-vci`. Alternatively, users who explicitly want to enable the full preview feature set can use `--features=preview`. Backward compatibility is not guaranteed, and future updates may introduce breaking changes.
 ====
 
 {project_name} supports the https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[OpenID for Verifiable Credential Issuance (OpenID4VCI)] protocol, enabling it to act as a credential issuer in decentralized identity ecosystems. With this protocol, you can issue digitally signed Verifiable Credentials (VCs) that relying parties (verifiers) can independently verify without contacting {project_name}.
@@ -649,7 +649,7 @@ You have successfully configured **{project_name} as a Verifiable Credential Iss
 This setup leverages {project_name}'s robust **identity management capabilities** to issue secure, **standards-compliant VCs**.
 
 For a **complete reference implementation**, see the sample project:
-https://github.com/adorsys/{project_name}-ssi-deployment/tree/main[{project_name} SSI Deployment^].
+https://github.com/keycloak/keycloak-oauth-sig/tree/main/oid4vci-deployment[OID4VCI deployment].
 
 include::credential-offer-aia.adoc[]
 
