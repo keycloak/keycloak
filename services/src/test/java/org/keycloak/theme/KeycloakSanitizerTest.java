@@ -133,6 +133,8 @@ public class KeycloakSanitizerTest {
     public void testSanitizeTextPreservesDetailsWithoutMarkup() {
         assertEquals("R&D Team", KeycloakSanitizerPolicy.sanitizeText("R&D Team"));
         assertEquals("Click", KeycloakSanitizerPolicy.sanitizeText("<a href=\"https://evil.example\">Click</a>"));
+        assertEquals("img src=x onerror=alert(1)",
+                KeycloakSanitizerPolicy.sanitizeText("&lt;img src=x onerror=alert(1)&gt;"));
     }
 
     private void assertResult(String expectedResult, List<String> html) throws Exception {

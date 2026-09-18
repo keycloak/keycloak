@@ -195,7 +195,10 @@ public class KeycloakSanitizerPolicy {
 
       @Override
       public void text(String chunk) {
-        text.append(chunk);
+        // HtmlSanitizer decodes character references before delivering text.
+        // Remove delimiters so an encoded tag cannot become markup again in a
+        // legacy theme that renders message.summary with ?no_esc.
+        text.append(chunk.replace("<", "").replace(">", ""));
       }
     });
     return text.toString();
