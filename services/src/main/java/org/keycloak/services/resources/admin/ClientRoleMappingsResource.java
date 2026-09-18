@@ -35,6 +35,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -96,6 +97,16 @@ public class ClientRoleMappingsResource {
     }
 
     /**
+     * #50581 is scoped to FGAP v2. Without admin permissions, client role visibility falls back to view-clients,
+     * which a view-users administrator does not hold, so the mappings would disappear (#52753).
+     */
+    private void requireViewClientRoles() {
+        if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+            auth.roles().requireView(client);
+        }
+    }
+
+    /**
      * Get client-level role mappings for the user, and the app
      *
      * @return
@@ -107,7 +118,7 @@ public class ClientRoleMappingsResource {
     @Operation( summary = "Get client-level role mappings for the user or group, and the app")
     public Stream<RoleRepresentation> getClientRoleMappings() {
         viewPermission.require();
-        auth.roles().requireView(client);
+        requireViewClientRoles();
 
         return user.getClientRoleMappingsStream(client).map(ModelToRepresentation::toBriefRepresentation);
     }
@@ -129,7 +140,7 @@ public class ClientRoleMappingsResource {
     @Operation( summary = "Get effective client-level role mappings This recurses any composite roles")
     public Stream<RoleRepresentation> getCompositeClientRoleMappings(@Parameter(description = "if false, return roles with their attributes") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
-        auth.roles().requireView(client);
+        requireViewClientRoles();
 
         Function<RoleModel, RoleRepresentation> toBriefRepresentation = briefRepresentation
                 ? ModelToRepresentation::toBriefRepresentation : ModelToRepresentation::toRepresentation;

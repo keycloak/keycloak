@@ -42,6 +42,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -146,7 +147,11 @@ public class RoleMapperResource {
 
         final AtomicReference<ClientMappingsRepresentation> mappings = new AtomicReference<>();
 
-        roleMapper.getRoleMappingsStream().filter(roleMapping -> auth.roles().canView(roleMapping)).forEach(roleMapping -> {
+        // #50581 is scoped to FGAP v2. Without admin permissions, role visibility falls back to view-realm and
+        // view-clients, which a view-users administrator does not hold, so the mappings would disappear (#52753).
+        boolean filterByRoleVisibility = AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm);
+
+        roleMapper.getRoleMappingsStream().filter(roleMapping -> !filterByRoleVisibility || auth.roles().canView(roleMapping)).forEach(roleMapping -> {
             RoleContainerModel container = roleMapping.getContainer();
             if (container instanceof RealmModel) {
                 realmRolesRepresentation.add(ModelToRepresentation.toBriefRepresentation(roleMapping));
