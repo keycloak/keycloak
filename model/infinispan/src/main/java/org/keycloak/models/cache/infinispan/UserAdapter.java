@@ -35,6 +35,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.MembershipMetadata;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SubjectCredentialManager;
@@ -501,6 +502,17 @@ public class UserAdapter implements CachedUserModel {
         }
         getDelegateForUpdate();
         updated.joinGroup(group);
+
+    }
+
+    @Override
+    public void joinGroup(GroupModel group, MembershipMetadata metadata) {
+        // Only REALM groups are cached; organization groups always delegate to persistence
+        if (group.getType() == Type.REALM && updated == null && cached.getGroups(keycloakSession, modelSupplier).contains(group.getId())) {
+            return;
+        }
+        getDelegateForUpdate();
+        updated.joinGroup(group, metadata);
 
     }
 

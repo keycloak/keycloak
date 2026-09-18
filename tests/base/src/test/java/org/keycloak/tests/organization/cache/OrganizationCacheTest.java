@@ -131,6 +131,28 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testAddManagedMemberWithCachedUser() {
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel member = session.users().addUser(realm, "member");
+            member.setEnabled(true);
+        });
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel orga = orgProvider.getByDomainName("orga.org");
+            RealmModel realm = session.getContext().getRealm();
+            // Fetch through the standard cached user provider, as any real caller (e.g. a
+            // custom AdminRealmResourceProvider, or the registration/broker flows that call
+            // addManagedMember) would - this returns the infinispan cache-wrapped UserAdapter.
+            UserModel member = session.users().getUserByUsername(realm, "member");
+            boolean added = orgProvider.addManagedMember(orga, member);
+            assertTrue(added);
+            assertTrue(orgProvider.isManagedMember(orga, member),
+                    "user added via addManagedMember must be reported as a MANAGED member");
+        });
+    }
+
+    @Test
     public void testGetByMember() {
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
