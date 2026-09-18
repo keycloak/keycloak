@@ -47,6 +47,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -57,7 +58,7 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = DefaultAuthzServerConfig.class)
 public class PolicyEvaluationCompositeRoleTest extends AbstractAuthzTest {
 
     @InjectRealm

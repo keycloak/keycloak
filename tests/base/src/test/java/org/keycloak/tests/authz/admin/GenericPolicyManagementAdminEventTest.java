@@ -18,13 +18,14 @@ package org.keycloak.tests.authz.admin;
 
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
 
 import org.junit.jupiter.api.BeforeEach;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = DefaultAuthzServerConfig.class)
 public class GenericPolicyManagementAdminEventTest extends GenericPolicyManagementTest {
 
     @BeforeEach

@@ -32,11 +32,12 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = DefaultAuthzServerConfig.class)
 public class UmaResourceTypeRepresentationTest extends AbstractResourceServerTest {
 
     @InjectRealm

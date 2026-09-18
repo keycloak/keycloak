@@ -45,13 +45,14 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = DefaultAuthzServerConfig.class)
 public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
 
     @InjectRealm

@@ -35,6 +35,7 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.tests.authz.AbstractAuthzTest;
+import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
 
 import org.junit.jupiter.api.AfterEach;
 
@@ -43,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = DefaultAuthzServerConfig.class)
 public abstract class AbstractAuthorizationTest extends AbstractAuthzTest {
 
     protected static final String RESOURCE_SERVER_CLIENT_ID = "resource-server-test";

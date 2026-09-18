@@ -45,6 +45,7 @@ import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -56,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = DefaultAuthzServerConfig.class)
 public class RolePolicyTest extends AbstractAuthzTest {
 
     @InjectRealm
