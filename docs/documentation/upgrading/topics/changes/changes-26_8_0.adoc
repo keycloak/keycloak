@@ -77,12 +77,6 @@ The `stateless` feature has been promoted from preview to supported. It is disab
 
 If you previously relied on `--features=preview` to enable the `stateless` feature, you must now enable it explicitly with `--features=stateless`, as `--features=preview` no longer activates supported features.
 
-=== OID4VCI feature promoted from experimental to preview
-
-The `oid4vc-vci` feature has been promoted from experimental to preview. If you previously enabled this feature with `--features=oid4vc-vci`, the feature continues to work as before. With the preview status, the feature can also be enabled with `--features=preview`.
-
-The pre-authorized code grant (`oid4vc-vci-preauth-code`), REST credential offer endpoint (`oid4vc-vci-rest-credential-offer`), mdoc format (`oid4vc-mdoc`), and OpenID4VP (`oid4vc-vp`) remain experimental and must still be enabled explicitly.
-
 === Clusterless feature will be removed
 
 The experimental `clusterless` feature will be removed in a future release. The `stateless` feature is the successor for running {project_name} without depending on an external Infinispan cluster. While `clusterless` offloads all session data to an external Infinispan cluster, `stateless` stores session data in the database and uses the embedded Infinispan only as a cache.

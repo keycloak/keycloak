@@ -23,18 +23,25 @@ OID4VCI allows {project_name} to act as a credential issuer in decentralized ide
 * Management of verifiable credentials for individual users, including the ability for administrators to create credential entitlements and for users to request issuance from the Account Console
 * Support for credential refresh interval configuration
 * Documentation updated and improved
-* https://github.com/keycloak/keycloak-oauth-sig/tree/main/oid4vci-deployment[Quickstart OID4VCI deployment] playground available for rapid prototyping with mdoc and SD-JWT credentials
 
-The pre-authorized code grant (`oid4vc-vci-preauth-code`), REST credential offer endpoint (`oid4vc-vci-rest-credential-offer`), mdoc format (`oid4vc-mdoc`), and OpenID4VP (`oid4vc-vp`) remain experimental features.
+ifeval::[{project_community}==true]
+* Example applications (for illustration, not officially supported):
+    * https://github.com/keycloak/keycloak-oauth-sig/tree/main/oid4vci-deployment[Quickstart OID4VCI deployment] playground available for rapid prototyping with mdoc and SD-JWT credentials
+    * https://github.com/keycloak/keycloak-playground/tree/main/fapi-playground#oid4vci-demo[OID4VCI Demo in Keycloak FAPI playground] - available to show the details of the OID4VCI protocol messages sent between wallet and issuer and illustrate the advanced concepts like proofs, attestation, credential refresh etc.
+endif::[]
+
+The attestation-based client authentication (`client-auth-abca`), pre-authorized code grant (`oid4vc-vci-preauth-code`), REST credential offer endpoint (`oid4vc-vci-rest-credential-offer`), mdoc format (`oid4vc-mdoc`), and OpenID4VP (`oid4vc-vp`) remain experimental features.
 
 ifeval::[{project_community}==true]
 Many community members were involved in the development. Many thanks to https://github.com/Awambeng[Awambeng], 
-https://github.com/Captain-P-Goldfish[Pascal Knüppel], https://github.com/dominikschlosser[Dominik Schlosser], 
-https://github.com/forkimenjeckayang[forkimenjeckayang], https://github.com/IngridPuppet[Ingrid Kamga], 
+https://github.com/CAOShurong[ShurongCAO], https://github.com/Captain-P-Goldfish[Pascal Knüppel], 
+https://github.com/dominikschlosser[Dominik Schlosser], https://github.com/forkimenjeckayang[forkimenjeckayang], 
+https://github.com/hagerm98[Hager Khamis], https://github.com/IngridPuppet[Ingrid Kamga], 
 https://github.com/namanONcode[Naman Jain], https://github.com/officialasishkumar[Asish Kumar], 
 https://github.com/Ogenbertrand[Ogen Bertrand], https://github.com/pulsastrix[Hugo Hakim Damer], 
 https://github.com/r0h1tb[Rohit Behera], https://github.com/rameshkumarkoyya[rameshkumarkoyya], 
-https://github.com/tdiesler[Thomas Diesler], https://github.com/Vitalisn4[Palpable] and 
+https://github.com/shashankxrm[Shashank RM], https://github.com/tdiesler[Thomas Diesler], 
+https://github.com/VinodAnandan[Vinod Anandan], https://github.com/Vitalisn4[Palpable] and 
 https://github.com/wistefan[Stefan Wiedemann] for the contributions!
 endif::[]
 
