@@ -114,14 +114,16 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
             BrokeredIdentityContext ctx0 = serializedCtx0.deserialize(context.getSession(), context.getAuthenticationSession());
             String alias = ctx0.getIdpConfig().getAlias() != null ? ctx0.getIdpConfig().getAlias() : "";
             String username = ctx0.getUsername() != null ? ctx0.getUsername() : "";
-            // Sanitize values used in message strings to prevent HTML injection in legacy custom
-            // themes that apply kcSanitize(message.summary), which permits safe-looking anchors.
-            form.setError(Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE,
-                    HtmlUtils.escapeAttribute(alias), HtmlUtils.escapeAttribute(username));
+            // Use a random sentinel in message strings instead of untrusted IdP values.
+            // kcSanitize HTML-decodes its input before sanitizing and permits anchors,
+            // so escaping is ineffective. Legacy custom themes see the harmless sentinel;
+            // new built-in templates use the structured attributes with ?esc.
+            String sentinel = java.util.UUID.randomUUID().toString();
+            form.setError(Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE, sentinel, sentinel);
             form.setAttribute("nestedIdpHeader", Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE);
             form.setAttribute("nestedIdpAlias", alias);
             form.setAttribute("nestedIdpUsername", username);
-            form.setAttribute("nestedIdpSentinel", java.util.UUID.randomUUID().toString());
+            form.setAttribute("nestedIdpSentinel", sentinel);
             context.getAuthenticationSession().setAuthNote(AbstractIdpAuthenticator.NESTED_FIRST_BROKER_CONTEXT, null);
         }
 
