@@ -35,7 +35,8 @@ final class KubernetesUtils {
                 return null;
             }
 
-            return FileUtils.readFileToString(file, StandardCharsets.UTF_8);
+            String token = FileUtils.readFileToString(file, StandardCharsets.UTF_8).strip();
+            return token.isEmpty() ? null : token;
         } catch (Exception e) {
             logger.warn("Failed to read service account token file", e);
             return null;

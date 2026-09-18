@@ -88,7 +88,8 @@ public class KubernetesIdentityProviderConfig extends IdentityProviderModel impl
                     .doGet(KubernetesUtils.discoveryUrl(issuerDiscoveryUrl))
                     .acceptJson();
 
-            if (DEFAULT_KUBERNETES_API_SERVER_URL.equals(issuerDiscoveryUrl)) {
+            if (KubernetesUtils.discoveryUrl(DEFAULT_KUBERNETES_API_SERVER_URL)
+                    .equals(KubernetesUtils.discoveryUrl(issuerDiscoveryUrl))) {
                 String token = KubernetesUtils.getServiceAccountToken();
                 if (!Strings.isEmpty(token)) {
                     request.auth(token);
