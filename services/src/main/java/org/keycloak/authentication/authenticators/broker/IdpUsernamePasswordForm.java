@@ -114,7 +114,9 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
             String alias = ctx0.getIdpConfig().getAlias() != null ? ctx0.getIdpConfig().getAlias() : "";
             String username = ctx0.getUsername() != null ? ctx0.getUsername() : "";
             String sentinel = java.util.UUID.randomUUID().toString();
-            form.setError(Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE, alias, username);
+            // Legacy themes receive message.summary. Keep untrusted IdP values
+            // out of that path; built-in themes consume the structured attributes.
+            form.setError(Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE, "", "");
             form.setAttribute("nestedIdpHeader", Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE);
             form.setAttribute("nestedIdpAlias", alias);
             form.setAttribute("nestedIdpUsername", username);

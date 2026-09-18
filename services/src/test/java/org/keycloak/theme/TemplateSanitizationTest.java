@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -74,12 +73,27 @@ public class TemplateSanitizationTest {
 
     private String getMarkerExpression(String themePath, String relativePath, String marker) throws Exception {
         File templateFile = getThemeFile(themePath, relativePath);
-        String ftlSource = new String(Files.readAllBytes(templateFile.toPath()), StandardCharsets.UTF_8);
-        return Arrays.stream(ftlSource.split("\\R"))
-                .map(String::trim)
-                .filter(line -> line.contains(marker) && line.contains("${"))
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("Sanitization marker '" + marker + "' not found in " + relativePath));
+        String[] lines = new String(Files.readAllBytes(templateFile.toPath()), StandardCharsets.UTF_8).split("\\R");
+
+        for (int i = 0; i < lines.length; i++) {
+            String trimmed = lines[i].trim();
+            if (trimmed.contains(marker) && trimmed.contains("${")) {
+                int start = i;
+                while (start > 0 && lines[start - 1].trim().startsWith("<#assign")) {
+                    start--;
+                }
+
+                StringBuilder block = new StringBuilder();
+                for (int j = start; j <= i; j++) {
+                    block.append(lines[j].trim());
+                    if (j < i) {
+                        block.append("\n");
+                    }
+                }
+                return block.toString();
+            }
+        }
+        throw new AssertionError("Sanitization marker '" + marker + "' not found in " + relativePath);
     }
 
     private Template loadFullTemplate(String themePath, String relativePath) throws Exception {

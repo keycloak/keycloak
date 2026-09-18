@@ -114,12 +114,15 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
             return forms.setAuthenticationSession(authSession)
-                    .setAttribute("messageHeader", forms.getMessage(Messages.CONFIRM_ACCOUNT_LINKING, idpUsername, idpAlias))
+                    // Legacy themes receive message.summary. Keep untrusted IdP
+                    // values out of that path; built-in themes consume the
+                    // structured attributes below.
+                    .setAttribute("messageHeader", forms.getMessage(Messages.CONFIRM_ACCOUNT_LINKING, "", ""))
                     .setAttribute("messageHeaderKey", Messages.CONFIRM_ACCOUNT_LINKING)
                     .setAttribute("messageHeaderUsername", idpUsername)
                     .setAttribute("messageHeaderAlias", idpAlias)
                     .setAttribute("messageHeaderSentinel", headerSentinel)
-                    .setSuccess(Messages.CONFIRM_ACCOUNT_LINKING_BODY, idpUsername, idpAlias)
+                    .setSuccess(Messages.CONFIRM_ACCOUNT_LINKING_BODY, "", "")
                     .setAttribute("messageBodyKey", Messages.CONFIRM_ACCOUNT_LINKING_BODY)
                     .setAttribute("messageBodyUsername", idpUsername)
                     .setAttribute("messageBodyAlias", idpAlias)
@@ -149,7 +152,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
                     .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_SUCCESS_HEADER)
-                    .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, idpAlias, idpUsername)
+                    .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, "", "")
                     .setAttribute("messageBodyKey", Messages.IDENTITY_PROVIDER_LINK_SUCCESS)
                     .setAttribute("messageBodyParam0", idpAlias)
                     .setAttribute("messageBodyParam1", idpUsername)
@@ -198,7 +201,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         return session.getProvider(LoginFormsProvider.class)
                 .setAuthenticationSession(session.getContext().getAuthenticationSession())
                 .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY_HEADER)
-                .setInfo(Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY, idpAlias, idpUsername)
+                .setInfo(Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY, "", "")
                 .setAttribute("messageBodyKey", Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY)
                 .setAttribute("messageBodyParam0", idpAlias)
                 .setAttribute("messageBodyParam1", idpUsername)
