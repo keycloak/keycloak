@@ -518,6 +518,94 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
     }
 
     @Test
+    public void testIdpManagerCannotEscalateViaIdentityProviderHardcodedGroupMapper() {
+        String realmName = "test-realm";
+        RealmResource testRealm = createRealm(adminClient, realmName);
+        String attackerName = "idp-manager";
+        createUser(testRealm, attackerName);
+
+        grantRealmManagementRole(testRealm, attackerName, AdminRoles.MANAGE_IDENTITY_PROVIDERS);
+
+        // A group carrying an admin role, set up by a full admin.
+        GroupRepresentation adminGroup = new GroupRepresentation();
+        adminGroup.setName("admin-group");
+        try (Response response = testRealm.groups().add(adminGroup)) {
+            adminGroup.setId(ApiUtil.getCreatedId(response));
+        }
+        grantRealmManagementRole(testRealm, adminGroup, AdminRoles.REALM_ADMIN);
+
+        // A group with no admin roles.
+        GroupRepresentation plainGroup = new GroupRepresentation();
+        plainGroup.setName("plain-group");
+        try (Response response = testRealm.groups().add(plainGroup)) {
+            plainGroup.setId(ApiUtil.getCreatedId(response));
+        }
+
+        IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
+        idp.setAlias("test-idp");
+        idp.setProviderId("oidc");
+        idp.setEnabled(true);
+        idp.setConfig(new java.util.HashMap<>());
+        idp.getConfig().put("clientId", "test-client");
+        idp.getConfig().put("clientSecret", "test-secret");
+        idp.getConfig().put("authorizationUrl", "https://test.example.com/auth");
+        idp.getConfig().put("tokenUrl", "https://test.example.com/token");
+
+        runAs(realmName, "admin-cli", attackerName, attackerClient -> {
+            try (Response response = attackerClient.realm(realmName).identityProviders().create(idp)) {
+                assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            }
+        });
+
+        IdentityProviderMapperRepresentation adminGroupMapper = new IdentityProviderMapperRepresentation();
+        adminGroupMapper.setName("join-admin-group");
+        adminGroupMapper.setIdentityProviderAlias("test-idp");
+        adminGroupMapper.setIdentityProviderMapper("oidc-hardcoded-group-idp-mapper");
+        adminGroupMapper.setConfig(new java.util.HashMap<>());
+        adminGroupMapper.getConfig().put("group", "/admin-group");
+        adminGroupMapper.getConfig().put("syncMode", "INHERIT");
+
+        // Non-realm-admin cannot create a mapper joining an admin-role-bearing group (switch off by default)
+        runAs(realmName, "admin-cli", attackerName, attackerClient -> {
+            try (Response response = attackerClient.realm(realmName)
+                    .identityProviders().get("test-idp").addMapper(adminGroupMapper)) {
+                assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus(),
+                        "Creating mapper joining an admin group should be forbidden when allowAdminRoleMapping is disabled");
+            }
+        });
+
+        // A mapper joining a group without admin roles should always work
+        IdentityProviderMapperRepresentation plainGroupMapper = new IdentityProviderMapperRepresentation();
+        plainGroupMapper.setName("join-plain-group");
+        plainGroupMapper.setIdentityProviderAlias("test-idp");
+        plainGroupMapper.setIdentityProviderMapper("oidc-hardcoded-group-idp-mapper");
+        plainGroupMapper.setConfig(new java.util.HashMap<>());
+        plainGroupMapper.getConfig().put("group", "/plain-group");
+        plainGroupMapper.getConfig().put("syncMode", "INHERIT");
+
+        runAs(realmName, "admin-cli", attackerName, attackerClient -> {
+            try (Response response = attackerClient.realm(realmName)
+                    .identityProviders().get("test-idp").addMapper(plainGroupMapper)) {
+                assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            }
+        });
+
+        // Realm admin enables the switch
+        IdentityProviderRepresentation idpRep = testRealm.identityProviders().get("test-idp").toRepresentation();
+        idpRep.getConfig().put(IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING, "true");
+        testRealm.identityProviders().get("test-idp").update(idpRep);
+
+        // Now the non-realm-admin can create the admin-group-joining mapper
+        runAs(realmName, "admin-cli", attackerName, attackerClient -> {
+            try (Response response = attackerClient.realm(realmName)
+                    .identityProviders().get("test-idp").addMapper(adminGroupMapper)) {
+                assertEquals(Status.CREATED.getStatusCode(), response.getStatus(),
+                        "Creating mapper joining an admin group should succeed when allowAdminRoleMapping is enabled");
+            }
+        });
+    }
+
+    @Test
     public void testNonRealmAdminCannotEnableAllowAdminRoleMapping() {
         String realmName = "test-realm";
         RealmResource testRealm = createRealm(adminClient, realmName);

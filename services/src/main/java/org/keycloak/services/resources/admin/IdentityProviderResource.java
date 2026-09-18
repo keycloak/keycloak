@@ -45,6 +45,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -524,21 +525,31 @@ public class IdentityProviderResource {
             return;
         }
 
+        if (mapperGrantsAdminRole(mapperModel) || mapperJoinsAdminGroup(mapperModel)) {
+            if (!identityProviderModel.isAllowAdminRoleMapping()) {
+                throw ErrorResponse.error("This identity provider is not configured to allow granting admin roles via mappers. "
+                        + "A realm administrator must enable the '" + IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING + "' setting on this identity provider.",
+                        Response.Status.FORBIDDEN);
+            }
+        }
+    }
+
+    private boolean mapperGrantsAdminRole(IdentityProviderMapperModel mapperModel) {
         String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
         if (roleName == null || roleName.trim().isEmpty()) {
-            return;
+            return false;
         }
-
         RoleModel role = KeycloakModelUtils.getRoleFromString(session, realm, roleName);
-        if (role == null || !AdminRoles.isAdminRole(role)) {
-            return;
-        }
+        return role != null && AdminRoles.isAdminRole(role);
+    }
 
-        if (!identityProviderModel.isAllowAdminRoleMapping()) {
-            throw ErrorResponse.error("This identity provider is not configured to allow granting admin roles via mappers. "
-                    + "A realm administrator must enable the '" + IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING + "' setting on this identity provider.",
-                    Response.Status.FORBIDDEN);
+    private boolean mapperJoinsAdminGroup(IdentityProviderMapperModel mapperModel) {
+        String groupPath = mapperModel.getConfig().get(ConfigConstants.GROUP);
+        if (groupPath == null || groupPath.trim().isEmpty()) {
+            return false;
         }
+        GroupModel group = KeycloakModelUtils.findGroupByPath(session, realm, groupPath);
+        return group != null && AdminRoles.groupHasAdminRoles(group);
     }
 
 }

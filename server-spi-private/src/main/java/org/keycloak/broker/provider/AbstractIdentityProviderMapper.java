@@ -22,6 +22,7 @@ import java.util.Set;
 import org.keycloak.broker.provider.mappersync.ConfigSyncEventListener;
 import org.keycloak.cache.AlternativeLookupProvider;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -116,6 +117,22 @@ public abstract class AbstractIdentityProviderMapper implements IdentityProvider
         if (!idp.isAllowAdminRoleMapping()) {
             LOG.warnf("Mapper '%s' on identity provider '%s' in realm '%s' attempted to grant admin role '%s' but '%s' is disabled.",
                     mapperModel.getName(), idp.getAlias(), realm.getName(), role.getName(), IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING);
+            return false;
+        }
+        return true;
+    }
+
+    protected static boolean isAdminGroupJoinAllowed(KeycloakSession session, RealmModel realm, GroupModel group, IdentityProviderMapperModel mapperModel) {
+        if (group == null || !AdminRoles.groupHasAdminRoles(group)) {
+            return true;
+        }
+        IdentityProviderModel idp = session.identityProviders().getByAlias(mapperModel.getIdentityProviderAlias());
+        if (idp == null) {
+            return true;
+        }
+        if (!idp.isAllowAdminRoleMapping()) {
+            LOG.warnf("Mapper '%s' on identity provider '%s' in realm '%s' attempted to add the user to group '%s' which grants admin roles but '%s' is disabled.",
+                    mapperModel.getName(), idp.getAlias(), realm.getName(), group.getName(), IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING);
             return false;
         }
         return true;
