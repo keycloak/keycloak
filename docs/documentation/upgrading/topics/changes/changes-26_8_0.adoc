@@ -309,6 +309,12 @@ This is intentional: without the `stateless` feature, neither deployment invalid
 * *Multiple independent deployments sharing the same database*: enable the `stateless` feature and assign each deployment a unique cluster name via `--cache-embedded-cluster-name`.
   Without `stateless`, cross-deployment cache invalidation does not work and serving traffic from multiple deployments simultaneously leads to incorrect behavior.
 
+=== Default JPA persistence unit renamed to `<default>`
+
+{project_name}'s default JPA persistence unit is now configured through Quarkus Hibernate ORM properties instead of an internal `persistence.xml`. As a result, the default persistence unit, previously named `keycloak-default`, is now Quarkus' default (unnamed) persistence unit, reported as `<default>`.
+
+If a custom provider archive defines multiple persistence units within a single `persistence.xml` and an entity-less unit should load `META-INF/orm.xml`, explicitly declare the standard `<mapping-file>META-INF/orm.xml</mapping-file>` element in that `<persistence-unit>` to ensure its entities are properly bound and to prevent cross-unit mapping collisions.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
