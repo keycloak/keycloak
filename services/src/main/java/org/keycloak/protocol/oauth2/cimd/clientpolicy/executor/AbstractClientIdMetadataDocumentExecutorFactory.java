@@ -5,6 +5,7 @@ import java.util.List;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.protocol.oauth2.cimd.provider.ClientIdMetadataDocumentProvider;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -60,6 +61,11 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        String providerName = providerConfig.getCimdProviderName();
+        if (factory.getProviderFactory(ClientIdMetadataDocumentProvider.class, providerName) == null) {
+            throw new IllegalStateException("Client ID Metadata Document provider '" + providerName
+                    + "' configured with '" + CONFIG_CIMD_PROVIDER_NAME + "' was not found");
+        }
     }
 
     @Override
