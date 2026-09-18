@@ -46,8 +46,8 @@ public class IssuerExpiredRequestUriTest extends AbstractVciConformanceTest {
                 walletInitiated(),
                 "fapi2-security-profile-final-par-attempt-to-use-expired-request_uri",
                 ConformanceResult.REVIEW,
-                // the expired request_uri is no longer resolvable, so Keycloak rejects it at the authorization endpoint
-                BrowserInteraction.errorPage("PAR not found, not issued or used multiple times."));
+                // Keycloak rejects the expired request_uri and displays a generic "Invalid Request" error page.
+                BrowserInteraction.errorPage("Invalid Request"));
     }
 
     public static class ShortParRequestUriLifespanRealmConfig extends HaipVciRealmConfig {
