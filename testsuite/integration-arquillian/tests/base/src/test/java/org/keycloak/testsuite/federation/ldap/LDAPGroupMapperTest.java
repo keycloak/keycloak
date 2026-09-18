@@ -1250,4 +1250,21 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             assertThat("User should be in default group 12", groups.contains(defaultGroup12), equalTo(true));
         });
     }
+
+    @Test
+    public void test15_memberOfExactDnMatch() throws Exception {
+        // Create groups with same RDN but different OU (Parent)
+        LDAPTestUtils.createLDAPGroup(ldapProvider, "role-admin", "cn=role-admin,ou=groupA," + config.getLDAPGroupsDn());
+        LDAPTestUtils.createLDAPGroup(ldapProvider, "role-admin", "cn=role-admin,ou=groupB," + config.getLDAPGroupsDn());
+
+        // Assign user only to groupA's role-admin
+        UserModel bser = session.users().getUserByUsername(realm, "bser");
+        LDAPTestUtils.assignUserToGroup(ldapProvider, bser, "cn=role-admin,ou=groupA," + config.getLDAPGroupsDn());
+
+        // Sync and verify
+        List<GroupModel> groups = bser.getGroupsStream().collect(Collectors.toList());
+        Assert.assertEquals(1, groups.size());
+        Assert.assertTrue(groups.get(0).getName().contains("groupA"));
+        Assert.assertFalse(groups.get(0).getName().contains("groupB"));
+    }
 }
