@@ -40,7 +40,7 @@ public abstract class AbstractClaimToGroupMapper extends AbstractClaimMapper {
             return;
         }
 
-        if (applies(mapperModel, context)) {
+        if (applies(mapperModel, context) && isAdminGroupJoinAllowed(session, realm, group, mapperModel)) {
             user.joinGroup(group);
         }
     }
@@ -56,7 +56,7 @@ public abstract class AbstractClaimToGroupMapper extends AbstractClaimMapper {
 
         String groupId = group.getId();
         if (!context.hasMapperAssignedGroup(groupId)) {
-            if (applies(mapperModel, context)) {
+            if (applies(mapperModel, context) && isAdminGroupJoinAllowed(session, realm, group, mapperModel)) {
                 context.addMapperAssignedGroup(groupId);
                 user.joinGroup(group);
             } else {
