@@ -398,6 +398,10 @@ Disabling the `persistent-user-sessions` feature (volatile sessions) is deprecat
 
 The previous default of storing login failure data only in the in-memory Infinispan cache (`login-failures:v1`) is deprecated and will be removed in a future release. Login failures are now stored in the database by default (`login-failures:v2`). If you have explicitly enabled `login-failures:v1`, plan to remove this option before upgrading to a future release.
 
+=== Kerberos credential delegation is deprecated
+
+Kerberos credential delegation (the `gss delegation credential` protocol mapper) is now deprecated for security reasons and will be removed in a future release.
+
 === Organization invitation link no longer exposed in API responses
 
 The `inviteLink` field in `OrganizationInvitationRepresentation` is deprecated and is no longer returned in Admin REST API responses from the organization invitation endpoints.
