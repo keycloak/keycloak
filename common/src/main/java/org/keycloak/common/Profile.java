@@ -75,7 +75,7 @@ public class Profile {
 
         ADMIN_V2("New Admin Console", Type.DEFAULT, 2, Feature.ADMIN_API),
 
-        LOGIN_V2("New Login Theme", Type.DEFAULT, 2, FeatureUpdatePolicy.ROLLING_NO_UPGRADE),
+        LOGIN_V3("Login Theme version 3", Type.DEFAULT, 3, FeatureUpdatePolicy.ROLLING_NO_UPGRADE),
 
         LOGIN_V1("Legacy Login Theme", Type.DEPRECATED, 1, FeatureUpdatePolicy.ROLLING_NO_UPGRADE),
 

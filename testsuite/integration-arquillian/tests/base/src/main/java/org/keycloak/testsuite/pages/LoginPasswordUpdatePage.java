@@ -37,7 +37,7 @@ public class LoginPasswordUpdatePage extends LogoutSessionsPage {
     @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
+    @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
     private WebElement loginErrorMessage;
 
     @FindBy(className = "kc-feedback-text")

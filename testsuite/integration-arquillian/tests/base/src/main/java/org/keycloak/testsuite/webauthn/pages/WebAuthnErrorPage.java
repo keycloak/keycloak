@@ -22,7 +22,7 @@ public class WebAuthnErrorPage extends LanguageComboboxAwarePage {
     @FindBy(id = "cancelWebAuthnAIA")
     private WebElement cancelRegistrationAIA;
 
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
+    @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
     private WebElement errorMessage;
 
     public void clickTryAgain() {
