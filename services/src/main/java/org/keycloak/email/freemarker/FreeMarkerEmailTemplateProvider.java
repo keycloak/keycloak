@@ -30,6 +30,7 @@ import java.util.Properties;
 import jakarta.enterprise.context.ContextNotActiveException;
 
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailSenderProvider;
@@ -151,6 +152,10 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         attributes.put("identityProviderContext", brokerContext);
         attributes.put("identityProviderAlias", idpAlias);
         attributes.put("identityProviderDisplayName", idpDisplayName);
+        // Provide a pre-escaped username so custom themes can safely render it without
+        // using kcSanitize(), which permits safe-looking anchors from attacker-controlled values.
+        String rawIdpUsername = brokerContext.getUsername() != null ? brokerContext.getUsername() : "";
+        attributes.put("identityProviderSafeUsername", HtmlUtils.escapeAttribute(rawIdpUsername));
         attributes.put("identityProviderUsernameSentinel", java.util.UUID.randomUUID().toString());
 
         List<Object> subjectAttrs = Collections.singletonList(idpDisplayName);
