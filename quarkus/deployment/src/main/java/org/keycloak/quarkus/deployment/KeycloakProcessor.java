@@ -522,7 +522,15 @@ class KeycloakProcessor {
         if (urls.isEmpty()) {
             return;
         }
-        for (PersistenceUnitDescriptor descriptor : parser.parse(urls).values()) {
+        Map<String, PersistenceUnitDescriptor> descriptors = parser.parse(urls);
+        Map<URL, Integer> puCountByRoot = new HashMap<>();
+        for (PersistenceUnitDescriptor descriptor : descriptors.values()) {
+            URL rootUrl = descriptor.getPersistenceUnitRootUrl();
+            if (rootUrl != null) {
+                puCountByRoot.merge(rootUrl, 1, Integer::sum);
+            }
+        }
+        for (PersistenceUnitDescriptor descriptor : descriptors.values()) {
             String puName = descriptor.getName();
             if (KEYCLOAK_DEFAULT_PERSISTENCE_UNIT.equals(puName) || QUARKUS_DEFAULT_PERSISTENCE_UNIT.equals(puName)) {
                 throw new RuntimeException("A user-defined persistence unit must not use the reserved name '" + puName + "'.");
@@ -546,7 +554,9 @@ class KeycloakProcessor {
             for (String mappingFile : descriptor.getMappingFileNames()) {
                 builder.mappingFile(mappingFile);
             }
-            enlistMappingFileEntities(builder, descriptor);
+            boolean isSolePersistenceUnitInRoot = descriptor.getPersistenceUnitRootUrl() != null
+                    && puCountByRoot.getOrDefault(descriptor.getPersistenceUnitRootUrl(), 0) == 1;
+            enlistMappingFileEntities(builder, descriptor, isSolePersistenceUnitInRoot);
             String resolvedDialect = resolveUserDefinedDialect(descriptor, datasourceName);
             if (resolvedDialect != null) {
                 builder.dialect(resolvedDialect);
@@ -576,11 +586,11 @@ class KeycloakProcessor {
         }
     }
 
-    private static void enlistMappingFileEntities(AdditionalPersistenceUnitBuildItem.Builder builder, PersistenceUnitDescriptor descriptor) {
+    private static void enlistMappingFileEntities(AdditionalPersistenceUnitBuildItem.Builder builder, PersistenceUnitDescriptor descriptor, boolean isSolePersistenceUnitInRoot) {
         Set<String> mappingFiles = new LinkedHashSet<>(descriptor.getMappingFileNames());
         boolean implicitOrmXml = mappingFiles.isEmpty();
         if (implicitOrmXml) {
-            if (!descriptor.getManagedClassNames().isEmpty()) {
+            if (!descriptor.getManagedClassNames().isEmpty() || isSolePersistenceUnitInRoot) {
                 mappingFiles.add("META-INF/orm.xml");
             } else {
                 builder.mappingFile("no-file");
