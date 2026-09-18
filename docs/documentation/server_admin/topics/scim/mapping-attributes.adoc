@@ -39,6 +39,45 @@ without any additional configuration:
 | `locale` (only when internationalization is enabled)
 |===
 
+== Supported core multivalued and complex attributes
+
+https://datatracker.ietf.org/doc/html/rfc7643#section-4.1.2[RFC 7643, Section 4.1.2] defines a set of multivalued
+attributes for the core User schema (`urn:ietf:params:scim:schemas:core:2.0:User`). {project_name} supports a
+subset of these attributes natively. The following table lists the core multivalued and complex attributes and
+their support status:
+
+[cols="1,1,2",options="header"]
+|===
+| SCIM Attribute | Supported | Notes
+
+| `emails`
+| Yes
+| Exposed as a multivalued attribute, but backed by the single {project_name} `email` attribute. Only the first
+value is stored and returned. See <<_scim_managing_users_,Managing users>> for details.
+
+| `groups`
+| Yes
+| Reflects the user's group memberships. This attribute is read-only on the `Users` resource and is managed
+through group membership operations. See <<_scim_managing_users_,Managing users>> and
+<<_scim_managing_groups_,Managing groups>> for details.
+
+| `name`
+| Yes
+| A single complex attribute. Its sub-attributes are mapped from user profile attributes. See
+<<Mapping additional name attributes>>.
+
+| `phoneNumbers`, `ims`, `photos`, `entitlements`, `roles`, `x509Certificates`
+| No
+| Not defined in the {project_name} core User schema. You cannot map a user profile attribute to these attributes
+under the core schema URN. To expose equivalent data, use a schema extension or a custom multivalued mapping
+instead. See <<Mapping multivalued attributes>> and <<_scim_managing_schema_extensions_,Managing schema extensions>>.
+
+| `addresses`
+| No
+| Not supported. This is a complex multivalued attribute whose mapping to user profile attributes requires
+further work and is not available in this release.
+|===
+
 == Adding custom attribute mappings
 
 To map additional user attributes to SCIM schema attributes, you need to create a user profile attribute and

@@ -17,6 +17,14 @@ Client Secret Rotation enables confidential clients to rotate their secrets thro
 
 In this release, Client Secret Rotation is promoted from preview to supported. For more details, see the link:{adminguide_link}#_secret_rotation[{adminguide_name}].
 
+== Automate user provisioning with the SCIM API (supported)
+
+In this release, the SCIM API is promoted from preview to supported.
+
+https://datatracker.ietf.org/doc/html/rfc7644[SCIM] (System for Cross-domain Identity Management) is a standard protocol for reading and writing identity resources such as users and groups across multiple systems.
+
+For more details, see the link:{adminguide_link}#_managing_scim[Managing users and groups through SCIM] documentation.
+
 = Configuring and Running
 
 == Multi-cluster v2 (supported)

@@ -53,5 +53,21 @@ A successful response returns the capabilities of the SCIM API, including suppor
 
 At the moment, the Service Provider Configuration is read-only and cannot be modified.
 
+== Supported and unsupported capabilities
+
+The Service Provider Configuration reflects the capabilities implemented by {project_name}. The following optional
+capabilities defined by RFC 7644 are *not* supported in this release:
+
+* *Bulk operations* (`bulk.supported` is `false`). There is no `/Bulk` endpoint; send one request per resource.
+* *Sorting* (`sort.supported` is `false`). The `sortBy` and `sortOrder` parameters are accepted but ignored, and resources
+  are returned in the default order of the underlying store.
+* *ETag / resource versioning* (`etag.supported` is `false`). Resources do not carry a `meta.version`, and conditional
+  requests such as `If-Match` are not honored.
+* *Password changes* (`changePassword.supported` is `false`). The `password` attribute cannot be set or updated through
+  SCIM. Manage credentials through the Admin Console or the Admin REST API instead.
+
+The `patch` and `filter` capabilities are supported. Filtered searches return at most `100` results per request
+(`filter.maxResults`); use pagination to retrieve additional results. See <<_scim_filtering_resources,Filtering resources>>.
+
 Future releases may allow customization of certain capabilities, such as supported authentication schemes or maximum filter results.
 For now, the configuration reflects the default capabilities of the SCIM API as implemented in {project_name}.
