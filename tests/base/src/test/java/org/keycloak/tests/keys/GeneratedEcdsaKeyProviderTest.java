@@ -125,11 +125,14 @@ public class GeneratedEcdsaKeyProviderTest {
         ComponentRepresentation createdRep = realm.admin().components().component(id).toRepresentation();
 
         // stands for the number of properties in the key provider config
-        assertEquals(withCertificate ? 3 : 2, createdRep.getConfig().size());
+        assertEquals(withCertificate ? 4 : 2, createdRep.getConfig().size());
         assertEquals(Long.toString(priority), createdRep.getConfig().getFirst(Attributes.PRIORITY_KEY));
         assertEquals(ecInNistRep, createdRep.getConfig().getFirst(ECDSA_ELLIPTIC_CURVE_KEY));
         if (withCertificate) {
             assertNotNull(createdRep.getConfig().getFirst(Attributes.EC_GENERATE_CERTIFICATE_KEY));
+            // The self-signed certificate must be persisted in the component config so that it stays
+            // stable across restarts and across cluster nodes sharing the same database
+            assertNotNull(createdRep.getConfig().getFirst(Attributes.CERTIFICATE_KEY));
         }
 
         KeysMetadataRepresentation keys = realm.admin().keys().getKeyMetadata();

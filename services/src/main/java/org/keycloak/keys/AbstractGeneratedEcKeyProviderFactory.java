@@ -18,10 +18,12 @@ package org.keycloak.keys;
 
 import java.security.KeyFactory;
 import java.security.KeyPair;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
+import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
@@ -89,18 +91,18 @@ public abstract class AbstractGeneratedEcKeyProviderFactory<T extends KeyProvide
         if (ecInNistRep == null) ecInNistRep = getDefaultEcEllipticCurve();
 
         if (!(model.contains(getEcPrivateKeyKey()) && model.contains(getEcPublicKeyKey()))) {
-            generateKeys(model, ecInNistRep);
+            generateKeys(realm, model, ecInNistRep);
             getLogger().debugv("Generated keys for {0}", realm.getName());
         } else {
             String currentEc = getCurveFromPublicKey(model.getConfig().getFirst(getEcPublicKeyKey()));
             if (!ecInNistRep.equals(currentEc)) {
-                generateKeys(model, ecInNistRep);
+                generateKeys(realm, model, ecInNistRep);
                 getLogger().debugv("Elliptic Curve changed, generating new keys for {0}", realm.getName());
             }
         }
     }
 
-    protected void generateKeys(ComponentModel model, String ecInNistRep) {
+    protected void generateKeys(RealmModel realm, ComponentModel model, String ecInNistRep) {
         KeyPair keyPair;
         try {
             keyPair = KeyUtils.generateEcKeyPair(convertECDomainParmNistRepToSecRep(ecInNistRep));
@@ -109,6 +111,25 @@ public abstract class AbstractGeneratedEcKeyProviderFactory<T extends KeyProvide
             model.put(getEcEllipticCurveKey(), ecInNistRep);
         } catch (Throwable t) {
             throw new ComponentValidationException("Failed to generate EC keys", t);
+        }
+
+        String generateCertificate = model.get(Attributes.EC_GENERATE_CERTIFICATE_KEY);
+        if (generateCertificate != null && Boolean.parseBoolean(generateCertificate)) {
+            generateCertificate(realm, model, keyPair);
+        }
+    }
+
+    private void generateCertificate(RealmModel realm, ComponentModel model, KeyPair keyPair) {
+        try {
+            X509Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, realm.getName());
+            model.put(Attributes.CERTIFICATE_KEY, Base64.getEncoder().encodeToString(certificate.getEncoded()));
+        } catch (Throwable t) {
+            getLogger().warnf("Failed to generate certificate for key provider '%s' in realm '%s'. Details: %s",
+                    model.getName(), realm.getName(), t.getMessage());
+            if (getLogger().isDebugEnabled()) {
+                getLogger().debug(t.getMessage(), t);
+            }
+            throw new ComponentValidationException("Failed to generate certificate", t);
         }
     }
 
