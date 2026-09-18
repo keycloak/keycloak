@@ -110,11 +110,8 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             String idpUsername = token.getIdentityProviderUsername() != null ? token.getIdentityProviderUsername() : "";
             String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
-            // The formatted message is retained for legacy themes. Use plain-text escaping
-            // because kcSanitize() decodes HTML entities before sanitizing. Built-in themes
-            // use the raw values below and escape them at the rendering boundary.
-            String safeIdpUsername = HtmlUtils.escapeText(idpUsername);
-            String safeIdpAlias = HtmlUtils.escapeText(idpAlias);
+            String safeIdpUsername = HtmlUtils.escapeAttribute(idpUsername);
+            String safeIdpAlias = HtmlUtils.escapeAttribute(idpAlias);
             String sentinel = java.util.UUID.randomUUID().toString();
 
             LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
@@ -150,12 +147,17 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             String idpUsername = token.getIdentityProviderUsername() != null ? token.getIdentityProviderUsername() : "";
             String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
-            String safeIdpUsername = HtmlUtils.escapeText(idpUsername);
-            String safeIdpAlias = HtmlUtils.escapeText(idpAlias);
+            String safeIdpUsername = HtmlUtils.escapeAttribute(idpUsername);
+            String safeIdpAlias = HtmlUtils.escapeAttribute(idpAlias);
+            String sentinel = java.util.UUID.randomUUID().toString();
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
                     .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_SUCCESS_HEADER)
                     .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, safeIdpAlias, safeIdpUsername)
+                    .setAttribute("messageBodyKey", Messages.IDENTITY_PROVIDER_LINK_SUCCESS)
+                    .setAttribute("messageBodyParam0", idpAlias)
+                    .setAttribute("messageBodyParam1", idpUsername)
+                    .setAttribute("messageBodySentinel", sentinel)
                     .setAttribute(Constants.SKIP_LINK, true)
                     .createInfoPage();
         }
@@ -196,12 +198,17 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         event.user(user).error(Errors.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY);
         String idpUsername = token.getIdentityProviderUsername() != null ? token.getIdentityProviderUsername() : "";
         String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
-        String safeIdpUsername = HtmlUtils.escapeText(idpUsername);
-        String safeIdpAlias = HtmlUtils.escapeText(idpAlias);
+        String safeIdpUsername = HtmlUtils.escapeAttribute(idpUsername);
+        String safeIdpAlias = HtmlUtils.escapeAttribute(idpAlias);
+        String sentinel = java.util.UUID.randomUUID().toString();
         return session.getProvider(LoginFormsProvider.class)
                 .setAuthenticationSession(session.getContext().getAuthenticationSession())
                 .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY_HEADER)
                 .setInfo(Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY, safeIdpAlias, safeIdpUsername)
+                .setAttribute("messageBodyKey", Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY)
+                .setAttribute("messageBodyParam0", idpAlias)
+                .setAttribute("messageBodyParam1", idpUsername)
+                .setAttribute("messageBodySentinel", sentinel)
                 .createInfoPage();
     }
 }

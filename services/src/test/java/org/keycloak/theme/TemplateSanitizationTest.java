@@ -298,6 +298,8 @@ public class TemplateSanitizationTest {
 
         String[] testPayloads = new String[] {
                 "NormalUser",
+                "R&D Team",
+                "User \"Test\" & Admin",
                 "<script>alert(1)</script>",
                 "<img src=x onerror=alert(1)>John",
                 "<a href=\"https://evil.example\">Click here</a>"
@@ -327,6 +329,11 @@ public class TemplateSanitizationTest {
             Assert.assertFalse("Full info.ftl must not render live <script> tag", result.contains("<script>"));
             Assert.assertFalse("Full info.ftl must not render live <a href=\"https://evil.example\"", result.contains("href=\"https://evil.example\""));
             Assert.assertFalse("Full info.ftl must not render live <img> tag", result.contains("<img"));
+            Assert.assertFalse("Full info.ftl must not mutate ampersands into fullwidth homoglyphs", result.contains("＆"));
+
+            if ("R&D Team".equals(payload)) {
+                Assert.assertTrue("R&D Team payload must preserve standard ampersand escaping", result.contains("R&amp;D Team") || result.contains("R&D Team"));
+            }
         }
     }
 

@@ -51,17 +51,4 @@ public class HtmlUtils {
         return escaped.toString();
     }
 
-    /**
-     * Escapes untrusted text without introducing HTML entities. This is useful when the
-     * value may later be passed through a sanitizer that decodes entities before sanitizing.
-     *
-     * @param value the untrusted text
-     * @return text that cannot be interpreted as HTML after entity decoding
-     */
-    public static String escapeText(String value) {
-        return value.replace("&", "＆")
-                .replace("<", "＜")
-                .replace(">", "＞");
-    }
-
 }
