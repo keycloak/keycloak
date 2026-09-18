@@ -24,6 +24,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
@@ -565,6 +566,21 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 "javax.net.ssl.trustStore",
                 "javax.net.ssl.trustStorePassword",
                 "javax.net.ssl.trustStoreType");
+
+        // Oracle named datasource in XA mode
+        var config = createConfigFromCliArguments("--db=postgres", "--db-kind-users=oracle", "--transaction-xa-enabled-users=true");
+        assertEquals("oracle.net.CONNECT_TIMEOUT=10000", config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties").getValue());
+        assertNull(config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.oracle.net.CONNECT_TIMEOUT").getValue());
+
+        // Oracle named datasource in XA mode — user sets ConnectionProperties directly
+        setSystemProperty("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties", "oracle.net.keepAlive=true", () -> {
+            SmallRyeConfig xaConfig = createConfigFromCliArguments("--db=postgres", "--db-kind-users=oracle", "--transaction-xa-enabled-users=true");
+            assertEquals("oracle.net.keepAlive=true", xaConfig.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties").getValue());
+        });
+        setSystemProperty("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties", "oracle.net.keepAlive=true", () -> {
+            SmallRyeConfig xaConfig = createConfigFromCliArguments("--db=postgres", "--db-kind-users=oracle", "--transaction-xa-enabled-users=true", "--db-connect-timeout-users=30s");
+            assertEquals("oracle.net.keepAlive=true", xaConfig.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties").getValue());
+        });
     }
 
     private static void doDatabaseTlsOptionTest(String dbKind, String dbUrl,
