@@ -110,8 +110,12 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             String idpUsername = token.getIdentityProviderUsername() != null ? token.getIdentityProviderUsername() : "";
             String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
-            String safeIdpUsername = HtmlUtils.escapeAttribute(idpUsername);
-            String safeIdpAlias = HtmlUtils.escapeAttribute(idpAlias);
+            // The formatted message is retained for legacy themes. Encode twice so that a
+            // legacy theme which passes it through kcSanitize() cannot decode an attacker-
+            // supplied tag back into active HTML. Built-in themes use the raw values below
+            // and escape them exactly once at the rendering boundary.
+            String safeIdpUsername = HtmlUtils.escapeAttribute(HtmlUtils.escapeAttribute(idpUsername));
+            String safeIdpAlias = HtmlUtils.escapeAttribute(HtmlUtils.escapeAttribute(idpAlias));
             String sentinel = java.util.UUID.randomUUID().toString();
 
             LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);

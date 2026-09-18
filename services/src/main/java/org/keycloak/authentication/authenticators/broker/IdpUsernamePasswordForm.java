@@ -114,8 +114,10 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
             BrokeredIdentityContext ctx0 = serializedCtx0.deserialize(context.getSession(), context.getAuthenticationSession());
             String alias = ctx0.getIdpConfig().getAlias() != null ? ctx0.getIdpConfig().getAlias() : "";
             String username = ctx0.getUsername() != null ? ctx0.getUsername() : "";
-            String safeAlias = HtmlUtils.escapeAttribute(alias);
-            String safeUsername = HtmlUtils.escapeAttribute(username);
+            // Keep the legacy formatted error safe even when a custom theme applies
+            // kcSanitize(), which decodes one layer of HTML entities.
+            String safeAlias = HtmlUtils.escapeAttribute(HtmlUtils.escapeAttribute(alias));
+            String safeUsername = HtmlUtils.escapeAttribute(HtmlUtils.escapeAttribute(username));
             String sentinel = java.util.UUID.randomUUID().toString();
             form.setError(Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE, safeAlias, safeUsername);
             form.setAttribute("nestedIdpHeader", Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE);
