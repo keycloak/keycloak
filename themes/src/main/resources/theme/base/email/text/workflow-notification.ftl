@@ -3,16 +3,16 @@ ${kcSanitize(msg(subjectKey, daysRemaining, reason))?no_esc}
 <#if messageKey == "customMessage">
 ${kcSanitize(customMessage)?no_esc}
 <#else>
-Dear ${user.firstName!user.username},
+${kcSanitize(msg("accountNotificationGreeting", user.firstName!user.username))?no_esc}
 
 ${kcSanitize(msg(messageKey, daysRemaining, reason))?no_esc}
 
 <#if daysRemaining gt 0>
-    Time remaining: ${daysRemaining} day<#if daysRemaining != 1>s</#if>
+    ${kcSanitize(msg("accountNotificationTimeRemaining", daysRemaining))?no_esc}
 </#if>
 
-If you have questions, please contact your ${realmName} administrator.
+${kcSanitize(msg("accountNotificationQuestions", realmName))?no_esc}
 
-Best regards,
-${realmName} Administration
+${kcSanitize(msg("accountNotificationSignature"))?no_esc}
+${kcSanitize(msg("accountNotificationSignatureFrom", realmName))?no_esc}
 </#if>
