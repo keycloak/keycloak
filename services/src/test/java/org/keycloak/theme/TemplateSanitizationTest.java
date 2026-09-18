@@ -60,6 +60,7 @@ public class TemplateSanitizationTest {
         props.setProperty("confirmAccountLinking", "Confirm linking account {0} of identity provider {1} with your account.");
         props.setProperty("confirmAccountLinkingBody", "If you link the account, you will also be able to login using account {0} of the identity provider {1}.");
         props.setProperty("nestedFirstBrokerFlowMessage", "Re-authenticating with {0} as {1}.");
+        props.setProperty("urlPlaceholderMessage", "<a href=\"{0}\">Link</a>");
         msg = new MessageFormatterMethod(Locale.US, props);
     }
 
@@ -197,6 +198,23 @@ public class TemplateSanitizationTest {
         Assert.assertTrue("Username containing full marker must survive replacement intact", result.contains("user_" + fullMarker));
         Assert.assertFalse("Malicious anchor href in username must not be rendered as live HTML", result.contains("href=\"https://evil.example\""));
         Assert.assertTrue("Escaped username text must be rendered safely", result.contains("&lt;a href="));
+    }
+
+    @Test
+    public void testIdpPlaceholderCannotPopulateUrlAttribute() throws Exception {
+        Template template = new Template("url-placeholder", "<#assign _m0 = \"__KC_SENTINEL0_url__\">${kcSanitize(msg(\"urlPlaceholderMessage\", _m0))?replace(_m0, ((username!)?esc)?markup_string)?no_esc}", cfg);
+
+        Map<String, Object> model = new HashMap<>();
+        model.put("kcSanitize", kcSanitize);
+        model.put("msg", msg);
+        model.put("username", "javascript:alert(1)");
+
+        StringWriter writer = new StringWriter();
+        template.process(model, writer);
+        String result = writer.toString();
+
+        Assert.assertFalse("An IdP placeholder must not create an executable URL", result.contains("javascript:"));
+        Assert.assertFalse("An IdP placeholder must not remain in a URL attribute", result.contains("href="));
     }
 
     @Test

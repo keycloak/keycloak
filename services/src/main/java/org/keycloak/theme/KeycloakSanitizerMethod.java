@@ -33,6 +33,9 @@ import org.owasp.html.Encoding;
 public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
     
     private static final Pattern HREF_PATTERN = Pattern.compile("\\s+href=\"([^\"]*)\"");
+    private static final Pattern SENTINEL_URL_ATTRIBUTE_PATTERN = Pattern.compile(
+            "\\s+(?:href|src|action|formaction|cite|background|poster)=\"[^\"]*__KC_SENTINEL[^\"]*\"",
+            Pattern.CASE_INSENSITIVE);
     
     @Override
     public Object exec(List list) throws TemplateModelException {
@@ -45,6 +48,13 @@ public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
         html = decodeHtmlFull(html);
 
         String sanitized = KeycloakSanitizerPolicy.POLICY_DEFINITION.sanitize(html);
+
+        // IdP values are substituted after this method returns so that text values
+        // can be HTML-escaped at the output boundary. A localized message must not
+        // be allowed to place one of those values in a URL-bearing attribute,
+        // because the sentinel would otherwise pass this sanitizer and be replaced
+        // later with an attacker-controlled scheme such as javascript:.
+        sanitized = SENTINEL_URL_ATTRIBUTE_PATTERN.matcher(sanitized).replaceAll("");
         
         return fixURLs(sanitized);
     }

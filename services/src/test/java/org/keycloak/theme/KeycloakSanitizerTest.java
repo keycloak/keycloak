@@ -118,6 +118,17 @@ public class KeycloakSanitizerTest {
         assertResult("<p><a href=\"https://localhost?key=123&msg=abc\" rel=\"nofollow\">link1</a><a href=\"https://localhost?key=abc&msg=123\" rel=\"nofollow\">link2</a></p>", html);
     }
 
+    @Test
+    public void testRemovesSentinelUrlAttributes() throws Exception {
+        List<String> html = new ArrayList<>();
+
+        html.add("<a href=\"__KC_SENTINEL0_123__\">link</a>");
+        assertResult("<a>link</a>", html);
+
+        html.set(0, "<img src=\"https://example.org/__KC_SENTINEL1_123__\">");
+        assertResult("<img>", html);
+    }
+
     private void assertResult(String expectedResult, List<String> html) throws Exception {
         String result = kcEscape.exec(html).toString();
         assertEquals(expectedResult, result);
