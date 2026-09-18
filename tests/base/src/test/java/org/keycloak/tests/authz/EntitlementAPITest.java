@@ -131,8 +131,6 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     private static final String PUBLIC_TEST_CLIENT = "test-public-client";
     private static final String PUBLIC_TEST_CLIENT_CONFIG = "default-keycloak-public-client.json";
 
-    private AuthzClient authzClient;
-
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create().name("authz-test")
@@ -166,7 +164,9 @@ public class EntitlementAPITest extends AbstractAuthzTest {
                         .directAccessGrantsEnabled())
                 .clients(ClientBuilder.create().clientId(PUBLIC_TEST_CLIENT)
                         .secret("secret")
-                        .redirectUris("http://localhost:8180/auth/realms/master/app/auth/*", "https://localhost:8543/auth/realms/master/app/auth/*")
+                        .redirectUris("http://localhost:8180/auth/realms/master/app/auth/*",
+                                "https://localhost:8543/auth/realms/master/app/auth/*",
+                                oauth.getRedirectUri())
                         .publicClient())
                 .build());
 
@@ -255,7 +255,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         request.setClaimToken(Base64Url.encode(JsonSerialization.writeValueAsBytes(obj)));
 
         AuthorizationDeniedException exception = assertThrows(AuthorizationDeniedException.class,
-                () -> getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(response.getAccessToken()).authorize(request),
+                () -> getAuthzClient(PUBLIC_TEST_CLIENT_CONFIG).authorization(response.getAccessToken()).authorize(request),
                 "Should fail, public clients not allowed");
         assertThat(exception.getCause(), Matchers.allOf(Matchers.instanceOf(HttpResponseException.class), Matchers.hasProperty("statusCode", Matchers.is(403))));
         assertThat(exception.getMessage(), containsString("Public clients are not allowed to send claims"));
@@ -2955,23 +2955,19 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     }
 
     private AuthzClient getAuthzClient(String configFile) {
-        if (authzClient == null) {
-            Configuration configuration;
-            try {
-                configuration = JsonSerialization.readValue(authzConfigurationStream(getClass().getResourceAsStream("/authorization-test/" + configFile)), Configuration.class);
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to read configuration", e);
-            }
-            PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
-            connectionManager.setValidateAfterInactivity(10);
-            connectionManager.setMaxTotal(10);
-            HttpClient client = HttpClients.custom()
-                    .setConnectionManager(connectionManager)
-                    .build();
-            authzClient = AuthzClient.create(new Configuration(configuration.getAuthServerUrl(), configuration.getRealm(), configuration.getResource(), configuration.getCredentials(), client));
+        Configuration configuration;
+        try {
+            configuration = JsonSerialization.readValue(authzConfigurationStream(getClass().getResourceAsStream("/authorization-test/" + configFile)), Configuration.class);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read configuration", e);
         }
-
-        return authzClient;
+        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+        connectionManager.setValidateAfterInactivity(10);
+        connectionManager.setMaxTotal(10);
+        HttpClient client = HttpClients.custom()
+                .setConnectionManager(connectionManager)
+                .build();
+        return AuthzClient.create(new Configuration(configuration.getAuthServerUrl(), configuration.getRealm(), configuration.getResource(), configuration.getCredentials(), client));
     }
 
     private void configureAuthorization(String clientId) throws Exception {
