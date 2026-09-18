@@ -49,7 +49,12 @@ import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
-import { convertAttributeNameToForm, toUpperCase } from "../../util";
+import {
+  beerify,
+  convertAttributeNameToForm,
+  convertFormValuesToObject,
+  toUpperCase,
+} from "../../util";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { useParams } from "../../utils/useParams";
 import { toIdentityProviderAddMapper } from "../routes/AddMapper";
@@ -282,6 +287,22 @@ export default function DetailSettings() {
     formState: { isDirty },
   } = form;
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
+
+  const toFormValues = (
+    p: IdentityProviderRepresentation,
+  ): IdentityProviderRepresentation =>
+    p.config
+      ? {
+          ...p,
+          config: Object.fromEntries(
+            Object.entries(p.config).map(([key, value]) => [
+              beerify(key),
+              value,
+            ]),
+          ),
+        }
+      : p;
+
   const [selectedMapper, setSelectedMapper] =
     useState<IdPWithMapperAttributes>();
   const serverInfo = useServerInfo();
@@ -317,7 +338,7 @@ export default function DetailSettings() {
         throw new Error(t("notFound"));
       }
 
-      reset(fetchedProvider);
+      reset(toFormValues(fetchedProvider));
       setProvider(fetchedProvider);
 
       if (fetchedProvider.config!.authnContextClassRefs) {
@@ -354,7 +375,9 @@ export default function DetailSettings() {
   const eventsTab = useTab("events");
 
   const save = async (savedProvider?: IdentityProviderRepresentation) => {
-    const p = savedProvider || getValues();
+    const p = convertFormValuesToObject<IdentityProviderRepresentation>(
+      savedProvider || getValues(),
+    );
     const origAuthnContextClassRefs = p.config?.authnContextClassRefs;
     if (p.config?.authnContextClassRefs)
       p.config.authnContextClassRefs = JSON.stringify(
@@ -382,7 +405,7 @@ export default function DetailSettings() {
       if (origAuthnContextDeclRefs) {
         p.config!.authnContextDeclRefs = origAuthnContextDeclRefs;
       }
-      reset(p);
+      reset(toFormValues(p));
       addAlert(t("updateSuccessIdentityProvider"), AlertVariant.success);
     } catch (error) {
       addError("updateErrorIdentityProvider", error);
