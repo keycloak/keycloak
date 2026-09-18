@@ -37,6 +37,7 @@ import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.theme.KeycloakSanitizerPolicy;
 
 import org.jboss.logging.Logger;
 
@@ -113,10 +114,12 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
             BrokeredIdentityContext ctx0 = serializedCtx0.deserialize(context.getSession(), context.getAuthenticationSession());
             String alias = ctx0.getIdpConfig().getAlias() != null ? ctx0.getIdpConfig().getAlias() : "";
             String username = ctx0.getUsername() != null ? ctx0.getUsername() : "";
+            String legacyAlias = KeycloakSanitizerPolicy.sanitizeText(alias);
+            String legacyUsername = KeycloakSanitizerPolicy.sanitizeText(username);
             String sentinel = java.util.UUID.randomUUID().toString();
-            // Legacy themes receive message.summary. Keep untrusted IdP values
-            // out of that path; built-in themes consume the structured attributes.
-            form.setError(Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE, "", "");
+            // Legacy themes receive message.summary. Keep it markup-free while
+            // preserving the displayed IdP details.
+            form.setError(Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE, legacyAlias, legacyUsername);
             form.setAttribute("nestedIdpHeader", Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE);
             form.setAttribute("nestedIdpAlias", alias);
             form.setAttribute("nestedIdpUsername", username);

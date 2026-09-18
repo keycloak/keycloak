@@ -167,6 +167,13 @@ public class KeycloakSanitizerPolicy {
               "table", "td", "th", "tr", "colgroup", "fieldset", "legend")
           .toFactory();
 
+  /** Sanitizes an untrusted value for legacy message-summary rendering. */
+  public static final PolicyFactory TEXT_ONLY_POLICY = new HtmlPolicyBuilder().toFactory();
+
+  public static String sanitizeText(String value) {
+    return TEXT_ONLY_POLICY.sanitize(value == null ? "" : value);
+  }
+
   private static Predicate<String> matchesEither(final Pattern a, final Pattern b) {
     return s -> a.matcher(s).matches() || b.matcher(s).matches();
   }

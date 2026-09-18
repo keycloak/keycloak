@@ -129,6 +129,12 @@ public class KeycloakSanitizerTest {
         assertResult("<img>", html);
     }
 
+    @Test
+    public void testSanitizeTextPreservesDetailsWithoutMarkup() {
+        assertEquals("R&amp;D Team", KeycloakSanitizerPolicy.sanitizeText("R&D Team"));
+        assertEquals("Click", KeycloakSanitizerPolicy.sanitizeText("<a href=\"https://evil.example\">Click</a>"));
+    }
+
     private void assertResult(String expectedResult, List<String> html) throws Exception {
         String result = kcEscape.exec(html).toString();
         assertEquals(expectedResult, result);
