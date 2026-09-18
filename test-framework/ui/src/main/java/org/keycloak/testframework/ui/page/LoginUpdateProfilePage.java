@@ -119,8 +119,28 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
         });
     }
 
+    private void fillField(WebElement field, String value) {
+        driver.waiting().until(d -> {
+            try {
+                field.clear();
+                field.sendKeys(value);
+                return value.equals(field.getAttribute("value"));
+            } catch (StaleElementReferenceException e) {
+                return false;
+            }
+        });
+    }
+
     public boolean isDepartmentEnabled() {
         return departmentInput.isEnabled();
+    }
+
+    public boolean isUsernameEnabled() {
+        try {
+            return usernameInput.isEnabled();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
     }
 
     public UpdateProfileErrors getInputErrors() {
@@ -256,26 +276,21 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
 
         public void submit() {
             if (username != null) {
-                page.usernameInput.clear();
-                page.usernameInput.sendKeys(username);
+                page.fillField(page.usernameInput, username);
             }
             if (firstName != null) {
-                page.firstNameInput.clear();
-                page.firstNameInput.sendKeys(firstName);
+                page.fillField(page.firstNameInput, firstName);
             }
             if (lastName != null) {
-                page.lastNameInput.clear();
-                page.lastNameInput.sendKeys(lastName);
+                page.fillField(page.lastNameInput, lastName);
             }
 
             if (department != null) {
-                page.departmentInput.clear();
-                page.departmentInput.sendKeys(department);
+                page.fillField(page.departmentInput, department);
             }
 
             if (email != null) {
-                page.emailInput.clear();
-                page.emailInput.sendKeys(email);
+                page.fillField(page.emailInput, email);
             }
 
             for (Map.Entry<String, String> entry : other.entrySet()) {
