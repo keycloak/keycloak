@@ -58,6 +58,7 @@ public class TemplateSanitizationTest {
         Properties props = new Properties();
         props.setProperty("identityProviderLinkBodyHtml", "<p>Someone wants to link your account <b>{1}</b> with identity provider <b>{0}</b> as user <b>{2}</b>.</p><p><a href=\"{3}\">Link account</a></p>");
         props.setProperty("confirmAccountLinking", "Confirm linking account {0} of identity provider {1} with your account.");
+        props.setProperty("confirmAccountLinkingBody", "If you link the account, you will also be able to login using account {0} of the identity provider {1}.");
         props.setProperty("nestedFirstBrokerFlowMessage", "Re-authenticating with {0} as {1}.");
         msg = new MessageFormatterMethod(Locale.US, props);
     }
