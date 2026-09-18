@@ -17,8 +17,9 @@
 
 package org.keycloak.storage;
 
-import org.junit.Test;
 import org.keycloak.storage.UserStorageProviderModel.SyncMode;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
