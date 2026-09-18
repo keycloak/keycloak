@@ -239,8 +239,10 @@
                     <#if message.type = 'error'><span class="${properties.kcFeedbackErrorIcon!}"></span></#if>
                     <#if message.type = 'info'><span class="${properties.kcFeedbackInfoIcon!}"></span></#if>
                 </div>
-                <#if nestedIdpUsername?? && nestedIdpHeader??>
-                    <span class="${properties.kcAlertTitleClass!} kc-feedback-text">${kcSanitize(msg(nestedIdpHeader, "{0}", "{1}"))?replace("{0}", ((nestedIdpAlias!)?esc)?markup_string)?replace("{1}", ((nestedIdpUsername!)?esc)?markup_string)?no_esc}</span>
+                <#if nestedIdpUsername?? && nestedIdpHeader?? && nestedIdpSentinel??>
+                    <#assign _m0 = "__KC_SENTINEL0_" + nestedIdpSentinel + "__">
+                    <#assign _m1 = "__KC_SENTINEL1_" + nestedIdpSentinel + "__">
+                    <span class="${properties.kcAlertTitleClass!} kc-feedback-text">${kcSanitize(msg(nestedIdpHeader, _m0, _m1))?replace(_m1, ((nestedIdpUsername!)?esc)?markup_string)?replace(_m0, ((nestedIdpAlias!)?esc)?markup_string)?no_esc}</span>
                 <#else>
                     <span class="${properties.kcAlertTitleClass!} kc-feedback-text">${message.summary}</span>
                 </#if>
