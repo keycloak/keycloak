@@ -107,7 +107,7 @@ public abstract class AbstractIdentityProviderMapper implements IdentityProvider
     }
 
     protected static boolean isAdminRoleGrantAllowed(KeycloakSession session, RealmModel realm, RoleModel role, IdentityProviderMapperModel mapperModel) {
-        if (role == null || !AdminRoles.isAdminRole(role)) {
+        if (role == null || !AdminRoles.isAdminRoleOrComposite(role)) {
             return true;
         }
         IdentityProviderModel idp = session.identityProviders().getByAlias(mapperModel.getIdentityProviderAlias());
