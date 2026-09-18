@@ -42,6 +42,7 @@ import org.keycloak.dom.saml.v2.assertion.AttributeStatementType.ASTChoiceType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.assertion.ConditionsType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.assertion.OneTimeUseType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
@@ -496,6 +497,93 @@ public class BrokerTest extends AbstractSamlTest {
             }
         } catch (Exception ex) {
             fail("unexpected error");
+        }
+    }
+
+    // ---- CVE-2026-18967: OneTimeUse assertion replay protection tests ----
+    private ResponseType createAuthnResponseWithOneTimeUse(ResponseType resp, boolean withNotOnOrAfter) {
+        AssertionType assertion = resp.getAssertions().get(0).getAssertion();
+        ConditionsType conditions = assertion.getConditions();
+        conditions.addCondition(new OneTimeUseType());
+        if (withNotOnOrAfter) {
+            XMLGregorianCalendar notOnOrAfter = XMLTimeUtil.getIssueInstant();
+            notOnOrAfter = XMLTimeUtil.add(notOnOrAfter, 120_000); // +120s from now
+            conditions.setNotOnOrAfter(notOnOrAfter);
+        } else {
+            conditions.setNotOnOrAfter(null);
+        }
+        return resp;
+    }
+
+    @Test
+    public void testOneTimeUseAssertionAcceptedOnFirstUse() throws Exception {
+        final RealmResource realm = adminClient.realm(REALM_NAME);
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm,
+                addIdentityProvider("https://saml.idp/"))) {
+            SAMLDocumentHolder samlResponse = new SamlClientBuilder().authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST,SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST)
+                    .build().login().idp(SAML_BROKER_ALIAS).build().processSamlResponse(REDIRECT).transformObject(this::createAuthnResponse)
+                    .transformObject(resp -> {
+                        return createAuthnResponseWithOneTimeUse((ResponseType) resp, true);
+                    }).targetAttributeSamlResponse().targetUri(getSamlBrokerUrl(REALM_NAME)).build().followOneRedirect().updateProfile().username("otusUser1").email("otus1@random.email.org").firstName("a").lastName("b").build().followOneRedirect().getSamlResponse(POST);
+            assertThat(samlResponse.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        } finally {
+            clearUsers(realm);
+        }
+    }
+
+    @Test
+    public void testOneTimeUseAssertionRejectedOnReplay() throws Exception {
+        final RealmResource realm = adminClient.realm(REALM_NAME);
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm,
+                addIdentityProvider("https://saml.idp/"))) {
+            AtomicReference<String> capturedSamlResponse = new AtomicReference<>();
+            new SamlClientBuilder().authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST)
+                    .build().login().idp(SAML_BROKER_ALIAS).build().processSamlResponse(REDIRECT).transformObject(this::createAuthnResponse)
+                    .transformObject(resp -> {
+                        return createAuthnResponseWithOneTimeUse((ResponseType) resp, true);
+                    }).transformDocument(doc -> {
+                        capturedSamlResponse.set(org.keycloak.saml.common.util.DocumentUtil.getDocumentAsString(doc));
+                        return doc;
+                    }).targetAttributeSamlResponse().targetUri(getSamlBrokerUrl(REALM_NAME)).build().followOneRedirect().updateProfile().username("otusUser2").email("otus2@random.email.org").firstName("a").lastName("b").build().followOneRedirect().getSamlResponse(POST);
+            assertThat(capturedSamlResponse.get(), Matchers.notNullValue());
+            assertThat(capturedSamlResponse.get(), Matchers.containsString("OneTimeUse"));
+            clearUsers(realm);
+            String replayedDoc = capturedSamlResponse.get();
+            new SamlClientBuilder().authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST)
+                    .build().login().idp(SAML_BROKER_ALIAS).build().processSamlResponse(REDIRECT).documentSupplier(() -> replayedDoc).targetAttributeSamlResponse().targetUri(getSamlBrokerUrl(REALM_NAME)).build().assertResponse(org.keycloak.testsuite.util.Matchers.statusCodeIsHC(Status.BAD_REQUEST)).execute();
+        } finally {
+            clearUsers(realm);
+        }
+    }
+
+    @Test
+    public void testOneTimeUseWithoutNotOnOrAfterRejected() throws Exception {
+        final RealmResource realm = adminClient.realm(REALM_NAME);
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm,
+                addIdentityProvider("https://saml.idp/"))) {
+            new SamlClientBuilder()
+                    .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build().login().idp(SAML_BROKER_ALIAS).build().processSamlResponse(REDIRECT).transformObject(this::createAuthnResponse)
+                    .transformObject(resp -> {
+                        return createAuthnResponseWithOneTimeUse((ResponseType) resp, false); 
+                    }).targetAttributeSamlResponse().targetUri(getSamlBrokerUrl(REALM_NAME)).build().assertResponse(org.keycloak.testsuite.util.Matchers.statusCodeIsHC(Status.BAD_REQUEST)).execute();
+        }
+    }
+
+    @Test
+    public void testNonOneTimeUseAssertionAllowedOnRepeat() throws Exception {
+        final RealmResource realm = adminClient.realm(REALM_NAME);
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm,
+                addIdentityProvider("https://saml.idp"))) {
+            SAMLDocumentHolder samlResponse1 = new SamlClientBuilder().authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
+                    .login().idp(SAML_BROKER_ALIAS).build().processSamlResponse(REDIRECT).transformObject(this::createAuthnResponse).targetAttributeSamlResponse().targetUri(getSamlBrokerUrl(REALM_NAME)).build().followOneRedirect().updateProfile()
+                    .username("normalUser1").email("normal1@random.email.org").firstName("a").lastName("b").build().followOneRedirect().getSamlResponse(POST);
+            assertThat(samlResponse1.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+            clearUsers(realm);
+            SAMLDocumentHolder samlResponse2 = new SamlClientBuilder().authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build().login().idp(SAML_BROKER_ALIAS).build()
+            .processSamlResponse(REDIRECT).transformObject(this::createAuthnResponse).targetAttributeSamlResponse().targetUri(getSamlBrokerUrl(REALM_NAME)).build().followOneRedirect().updateProfile().username("normalUser2").email("normal2@random.email.org").firstName("a").lastName("b").build().followOneRedirect().getSamlResponse(POST);
+            assertThat(samlResponse2.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        } finally {
+            clearUsers(realm);
         }
     }
 
