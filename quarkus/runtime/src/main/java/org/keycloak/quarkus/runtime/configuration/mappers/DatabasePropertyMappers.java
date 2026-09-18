@@ -19,6 +19,7 @@ import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionsUtil;
 import org.keycloak.config.TransactionOptions;
+import org.keycloak.config.WildcardOptionsUtil;
 import org.keycloak.config.database.Database;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
@@ -67,7 +68,9 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     public static final String MSSQL_SEND_STRING_PARAMETER_AS_UNICODE = "quarkus.datasource.jdbc.additional-jdbc-properties.sendStringParametersAsUnicode";
     public static final String CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
     public static final String ORACLEDB_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.oracle.net.CONNECT_TIMEOUT";
+    public static final String ORACLEDB_CONNECTION_PROPERTIES = "quarkus.datasource.jdbc.additional-jdbc-properties.ConnectionProperties";
     public static final String MSSQL_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.loginTimeout";
+    private static final String ORACLE_NET_CONNECT_TIMEOUT = "oracle.net.CONNECT_TIMEOUT";
     public static final String JDBC_LOGIN_TIMEOUT = "quarkus.datasource.jdbc.login-timeout";
     public static final String JDBC_ACQUISITION_TIMEOUT = "quarkus.datasource.jdbc.acquisition-timeout";
 
@@ -136,9 +139,17 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .build(),
                 fromOption(DatabaseOptions.DB_ORACLE_CONNECT_TIMEOUT)
                         .to(ORACLEDB_CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
-                                -> durationToMillis(value))
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getOracleConnectTimeout(false))
                         .isEnabled(DatabasePropertyMappers::isOracleConnectTimeoutEnabled)
+                        .build(),
+                // in XA mode the Oracle XA datasource has no setter for oracle.net.CONNECT_TIMEOUT, so the same option
+                // is passed through the ConnectionProperties property instead; only one of the two mappers is enabled
+                fromOption(DatabaseOptions.DB_ORACLE_CONNECT_TIMEOUT)
+                        .to(ORACLEDB_CONNECTION_PROPERTIES)
+                        .transformer((datasource, value, context) -> value == null || !isXaEnabled(datasource) ? null
+                                : toOracleConnectionProperties(value, datasource, context))
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getOracleConnectTimeout(true))
+                        .isEnabled(DatabasePropertyMappers::isOracleXaConnectTimeoutEnabled)
                         .build(),
                 fromOption(DatabaseOptions.DB_MSSQL_CONNECT_TIMEOUT)
                         .to(MSSQL_CONNECT_TIMEOUT)
@@ -356,7 +367,11 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     }
 
     public static boolean isOracleConnectTimeoutEnabled() {
-        return isConnectTimeoutEnabled(Database.Vendor.ORACLE, "oracle.net.CONNECT_TIMEOUT");
+        return isConnectTimeoutEnabled(Database.Vendor.ORACLE, ORACLE_NET_CONNECT_TIMEOUT) && !isXaEnabled(null);
+    }
+
+    public static boolean isOracleXaConnectTimeoutEnabled() {
+        return isConnectTimeoutEnabled(Database.Vendor.ORACLE, ORACLE_NET_CONNECT_TIMEOUT) && isXaEnabled(null);
     }
 
     public static boolean isMssqlLoginTimeoutEnabled() {
@@ -696,6 +711,80 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
             acquisitionTimeout = connectTimeout;
         }
         return acquisitionTimeout.toString();
+    }
+
+    private static PropertyMapper.ValueMapper getOracleConnectTimeout(boolean forXa) {
+        return (String datasource, String value, ConfigSourceInterceptorContext context) -> {
+            String db = getDatasourceOptionValue(DB, datasource).orElse(null);
+            Database.Vendor vendor = Database.getVendor(db).orElse(null);
+
+            if (checkSettingsAndVendor(EnumSet.of(Database.Vendor.ORACLE), ORACLE_NET_CONNECT_TIMEOUT, datasource, vendor, db)) {
+                return null;
+            }
+
+            if (forXa != isXaEnabled(datasource)) {
+                return null;
+            }
+
+            if (forXa) {
+                return toOracleConnectionProperties(durationToMillis(value), datasource, context);
+            }
+            return durationToMillis(value);
+        };
+    }
+
+    private static boolean isXaEnabled(String datasource) {
+        var key = StringUtil.isNotBlank(datasource) ? TransactionOptions.getNamedTxXADatasource(datasource) : TransactionOptions.TRANSACTION_XA_ENABLED.getKey();
+        return Configuration.isKcPropertyTrue(key);
+    }
+
+    /**
+     * Returns the value for the {@code ConnectionProperties} property of the Oracle XA datasource carrying the connect
+     * timeout (in milliseconds), or {@code null} when the user already set {@code ConnectionProperties} explicitly.
+     */
+    private static String toOracleConnectionProperties(String millis, String datasource, ConfigSourceInterceptorContext context) {
+        String connectionPropertiesKey = StringUtil.isNotBlank(datasource)
+                ? "quarkus.datasource.\"" + datasource + "\".jdbc.additional-jdbc-properties.ConnectionProperties"
+                : ORACLEDB_CONNECTION_PROPERTIES;
+        ConfigValue existing = context.proceed(connectionPropertiesKey);
+        if (existing != null && existing.getValue() != null) {
+            if (!existing.getValue().contains(ORACLE_NET_CONNECT_TIMEOUT)) {
+                log.warnf("Custom ConnectionProperties does not contain '%s'; the socket connect timeout will not be set.",
+                        ORACLE_NET_CONNECT_TIMEOUT);
+            }
+            return null;
+        }
+        return ORACLE_NET_CONNECT_TIMEOUT + "=" + millis;
+    }
+
+    private static boolean checkSettingsAndVendor(Collection<Database.Vendor> validForVendors, String timeoutProperty, String datasource, Database.Vendor vendor, String db) {
+        if (!validForVendors.contains(vendor)) {
+            // this jdbc property is not for this vendor
+            return true;
+        }
+
+        String dbDriver = getDatasourceOptionValue(DatabaseOptions.DB_DRIVER, datasource).orElse(null);
+        if (!Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
+                !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
+            // Custom JDBC driver (e.g. AWS JDBC Wrapper) — do not inject defaults
+            return true;
+        }
+
+        String dbUrl = findDatabaseUrl(datasource).orElse("");
+        String dbUrlProperties = getDatasourceOptionValue(DatabaseOptions.DB_URL_PROPERTIES, datasource).orElse("");
+
+        // Property already set explicitly by the user — do not override
+        if  (dbUrl.contains(timeoutProperty) || dbUrlProperties.contains(timeoutProperty)) {
+            return true;
+        }
+        return false;
+    }
+
+    private static Optional<String> getDatasourceOptionValue(Option<?> opt, String datasource) {
+        if (datasource == null) {
+            return Configuration.getOptionalKcValue(opt);
+        }
+        return opt.getWildcardKey().map(k -> WildcardOptionsUtil.getWildcardNamedKey(k, datasource)).flatMap(Configuration::getOptionalKcValue);
     }
 
 }
