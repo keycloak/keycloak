@@ -184,8 +184,10 @@ NOTE: When fine-grained admin permissions (FGAP) are enabled, only the `eq` oper
 `groups.value` and `members.value` filter paths. The server verifies that the caller has `view` permission
 on the specific group or user being matched. Other operators (`ne`, `pr`, `co`, `sw`, `gt`, etc.) cannot be
 safely authorized because they can match rows the caller is not permitted to see, so they silently return
-empty results for these paths. This restriction does not apply to any other filter attributes, and does not
-apply when FGAP is disabled.
+empty results for these paths. For the same reason, negating an equality condition on these paths (for example,
+`not (groups.value eq "{groupId}")`) also returns empty results, because it is equivalent to the unsupported
+`ne` operator. This restriction does not apply to any other filter attributes, and does not apply when FGAP is
+disabled, where the full set of operators is available on these paths.
 
 NOTE: When an LDAP user federation provider is configured with a group mapper in `LDAP_ONLY` mode, group
 membership filters (`groups.value` and `members.value`) may return empty results. This happens because
@@ -270,6 +272,27 @@ curl "http://localhost:8080/realms/myrealm/scim/v2/Users?startIndex=11&count=10"
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Accept: application/scim+json"
 ----
+
+== Filtering constraints and limitations
+
+Keep the following constraints in mind when building filter expressions. These are intended behaviors and should not be
+reported as defects.
+
+* *Result size is capped.* A filtered search returns at most 100 results per request. If `count` is omitted or greater
+than 100, it is treated as 100 (`filter.maxResults`). Use pagination (see <<Pagination>>) to retrieve additional results.
+* *Filter length is limited.* A filter expression may not exceed 2048 characters. Longer expressions are rejected with a
+`400 Bad Request` and `scimType: "invalidFilter"`.
+* *Nesting depth is limited.* The combined nesting of grouping parentheses and value path brackets may not exceed 10
+levels. Deeper expressions are rejected with a `400 Bad Request` and `scimType: "invalidFilter"`.
+* *Sorting is not applied.* The `sortBy` and `sortOrder` parameters are accepted but ignored. Results are returned in the
+default order of the underlying store, consistent with the {project_name} Admin REST API.
+* *`and` is not allowed inside a value path* for multivalued attributes, because a single element cannot satisfy two
+conditions at once. For example, `groups[value eq "{groupIdA}" and value eq "{groupIdB}"]` is rejected with a
+`400 Bad Request`. Use `or` instead.
+* *Operator and attribute-type compatibility is enforced.* String operators (`sw`, `ew`, `co`) cannot be used on
+date/time or boolean attributes, and incompatible combinations are rejected. See <<Comparison operators>>.
+* *Membership filters carry extra restrictions.* The `groups.value` and `members.value` paths behave differently under
+fine-grained admin permissions and with LDAP `LDAP_ONLY` group mappers. See <<Filtering by group membership>>.
 
 == Error responses
 
