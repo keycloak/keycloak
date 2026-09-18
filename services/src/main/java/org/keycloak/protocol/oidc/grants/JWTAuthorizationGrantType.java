@@ -175,7 +175,7 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             if (validAudiences == null) {
                 validAudiences = jwtAuthorizationGrantProvider.getAllowedAudienceForJWTGrant();
             }
-            authorizationGrantContext.validateTokenAudience(validAudiences, false);
+            authorizationGrantContext.validateTokenAudience(validAudiences, true);
 
             RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
             AuthenticationSessionModel authSession = createSessionModel(rootAuthSession, user, client, scopeParam);
