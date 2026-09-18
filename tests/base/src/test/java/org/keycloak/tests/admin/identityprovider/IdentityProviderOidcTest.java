@@ -17,8 +17,11 @@
 
 package org.keycloak.tests.admin.identityprovider;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
 
@@ -38,6 +41,7 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectHttpServer;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
@@ -52,10 +56,12 @@ import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.util.HttpServerUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.testsuite.util.broker.OIDCIdentityProviderConfigRep;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
+import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -67,6 +73,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -87,6 +94,9 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
 
     @InjectEvents
     Events events;
+
+    @InjectHttpServer
+    HttpServer httpServer;
 
     @Test
     public void testCreateWithReservedCharacterForAlias() {
@@ -582,6 +592,70 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
 
         oauth.logoutRequest().idTokenHint(tokenResponse.getIdToken()).send();
         oauth.logoutRequest().send();
+    }
+
+    @Test
+    public void importConfigShouldReportAnUnreachableMetadataUrl() {
+        String url = "http://localhost:1/.well-known/openid-configuration";
+
+        assertImportConfigFails("oidc", url, "Cannot fetch identity provider metadata from " + url);
+    }
+
+    @Test
+    public void importConfigShouldReportAMalformedMetadataUrl() {
+        String url = "http://localhost:1/ .well-known";
+
+        assertImportConfigFails("oidc", url, "Cannot fetch identity provider metadata from " + url);
+    }
+
+    @Test
+    public void importConfigShouldNotReportTheCredentialsOfAMetadataUrl() {
+        String url = "http://localhost:1/.well-known/openid-configuration";
+
+        assertImportConfigFails("oidc", "http://user:secret@localhost:1/.well-known/openid-configuration",
+                "Cannot fetch identity provider metadata from " + url);
+        assertImportConfigFails("oidc", "http://user:p@ss@localhost:1/.well-known/openid-configuration",
+                "Cannot fetch identity provider metadata from " + url);
+    }
+
+    @Test
+    public void importConfigShouldReportTheStatusOfAFailedMetadataRequest() {
+        String path = "/missing-discovery-document";
+        String url = serve(path, 404, "not found");
+
+        try {
+            assertImportConfigFails("oidc", url, "Cannot fetch identity provider metadata from " + url + ": HTTP 404");
+        } finally {
+            httpServer.removeContext(path);
+        }
+    }
+
+    @Test
+    public void importConfigShouldReportAUrlThatIsNotMetadata() {
+        String path = "/not-a-discovery-document";
+        String url = serve(path, 200, "<html>not metadata</html>");
+
+        try {
+            assertImportConfigFails("oidc", url, "Cannot parse identity provider metadata from " + url);
+        } finally {
+            httpServer.removeContext(path);
+        }
+    }
+
+    private String serve(String path, int status, String body) {
+        httpServer.createContext(path, exchange -> HttpServerUtil.sendResponse(exchange, status, null, body));
+        return "http://127.0.0.1:" + httpServer.getAddress().getPort() + path;
+    }
+
+    private void assertImportConfigFails(String providerId, String fromUrl, String expectedMessage) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("providerId", providerId);
+        data.put("fromUrl", fromUrl);
+
+        BadRequestException error = assertThrows(BadRequestException.class,
+                () -> managedRealm.admin().identityProviders().importFrom(data));
+
+        assertEquals(expectedMessage, error.getResponse().readEntity(ErrorRepresentation.class).getErrorMessage());
     }
 
     public static class ExternalRealmConfig implements RealmConfig {
