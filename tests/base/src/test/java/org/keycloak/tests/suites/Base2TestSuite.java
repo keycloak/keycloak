@@ -53,6 +53,7 @@ public class Base2TestSuite {
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config.features(Profile.Feature.AUTHORIZATION, Profile.Feature.SCRIPTS)
                     .dependency("org.keycloak.tests", "keycloak-tests-custom-providers")
+                    .dependency("org.keycloak.tests", "keycloak-tests-custom-scripts")
                     .dependency("org.keycloak.testsuite", "integration-arquillian-testsuite-providers");
         }
     }
