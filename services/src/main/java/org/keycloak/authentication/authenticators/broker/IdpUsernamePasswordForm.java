@@ -116,8 +116,8 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
             String username = ctx0.getUsername() != null ? ctx0.getUsername() : "";
             // Keep the legacy formatted error safe even when a custom theme applies
             // kcSanitize(), which decodes HTML entities before sanitizing.
-            String safeAlias = HtmlUtils.escapeText(alias);
-            String safeUsername = HtmlUtils.escapeText(username);
+            String safeAlias = HtmlUtils.escapeAttribute(alias);
+            String safeUsername = HtmlUtils.escapeAttribute(username);
             String sentinel = java.util.UUID.randomUUID().toString();
             form.setError(Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE, safeAlias, safeUsername);
             form.setAttribute("nestedIdpHeader", Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE);

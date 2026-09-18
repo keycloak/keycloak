@@ -110,8 +110,8 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             String idpUsername = token.getIdentityProviderUsername() != null ? token.getIdentityProviderUsername() : "";
             String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
-            String safeIdpUsername = HtmlUtils.escapeText(idpUsername);
-            String safeIdpAlias = HtmlUtils.escapeText(idpAlias);
+            String safeIdpUsername = HtmlUtils.escapeAttribute(idpUsername);
+            String safeIdpAlias = HtmlUtils.escapeAttribute(idpAlias);
             String sentinel = java.util.UUID.randomUUID().toString();
 
             LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
@@ -147,8 +147,8 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             String idpUsername = token.getIdentityProviderUsername() != null ? token.getIdentityProviderUsername() : "";
             String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
-            String safeIdpUsername = HtmlUtils.escapeText(idpUsername);
-            String safeIdpAlias = HtmlUtils.escapeText(idpAlias);
+            String safeIdpUsername = HtmlUtils.escapeAttribute(idpUsername);
+            String safeIdpAlias = HtmlUtils.escapeAttribute(idpAlias);
             String sentinel = java.util.UUID.randomUUID().toString();
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
@@ -198,8 +198,8 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         event.user(user).error(Errors.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY);
         String idpUsername = token.getIdentityProviderUsername() != null ? token.getIdentityProviderUsername() : "";
         String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
-        String safeIdpUsername = HtmlUtils.escapeText(idpUsername);
-        String safeIdpAlias = HtmlUtils.escapeText(idpAlias);
+        String safeIdpUsername = HtmlUtils.escapeAttribute(idpUsername);
+        String safeIdpAlias = HtmlUtils.escapeAttribute(idpAlias);
         String sentinel = java.util.UUID.randomUUID().toString();
         return session.getProvider(LoginFormsProvider.class)
                 .setAuthenticationSession(session.getContext().getAuthenticationSession())

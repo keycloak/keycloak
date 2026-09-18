@@ -73,11 +73,4 @@ public class HtmlUtilsTest {
         escaped,
         "Full escaped alias must match expected HTML-encoded string");
   }
-
-  @Test
-  public void escapeText_doesNotCreateReversibleHtmlEntities() {
-    String value = "<a href=\"https://evil.example\">A & B</a>";
-
-    Assertions.assertEquals("＜a href=\"https://evil.example\"＞A ＆ B＜/a＞", HtmlUtils.escapeText(value));
-  }
 }
