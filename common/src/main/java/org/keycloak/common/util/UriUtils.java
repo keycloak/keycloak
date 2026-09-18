@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 import org.keycloak.common.enums.SslRequired;
@@ -46,6 +47,89 @@ public class UriUtils {
 
     public static boolean isOrigin(String url) {
         return originPattern.matcher(url).matches();
+    }
+
+    public static boolean originEquals(String originA, String originB) {
+        if (Objects.equals(originA, originB)) {
+            return true;
+        }
+        if (originA == null || originB == null) {
+            return false;
+        }
+        try {
+            return schemeHostAndPortEqual(new URI(originA), new URI(originB));
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
+
+    public static boolean schemeAndHostEqual(URI uriA, URI uriB) {
+        if (uriA == null || uriB == null) {
+            return uriA == uriB;
+        }
+        String schemeA = uriA.getScheme();
+        String schemeB = uriB.getScheme();
+        if (schemeA == null || schemeB == null || !schemeA.equalsIgnoreCase(schemeB)) {
+            return false;
+        }
+        return hostsEqual(uriA, uriB);
+    }
+
+    public static boolean schemeHostAndPortEqual(URI uriA, URI uriB) {
+        if (uriA == null || uriB == null) {
+            return uriA == uriB;
+        }
+        if (!schemeAndHostEqual(uriA, uriB)) {
+            return false;
+        }
+        return uriA.getPort() == uriB.getPort();
+    }
+
+    private static boolean hostsEqual(URI uriA, URI uriB) {
+        String hostA = uriA.getHost();
+        String hostB = uriB.getHost();
+        if (hostA != null && hostB != null) {
+            return hostA.equalsIgnoreCase(hostB);
+        }
+        if (hostA != null || hostB != null) {
+            return false;
+        }
+        // Both hosts null: either opaque/no-authority, or a registry-name authority
+        // (e.g. underscores) where Java leaves getHost() null.
+        String authorityA = uriA.getRawAuthority();
+        String authorityB = uriB.getRawAuthority();
+        if (authorityA == null && authorityB == null) {
+            return true;
+        }
+        if (authorityA == null || authorityB == null) {
+            return false;
+        }
+        return registryAuthoritiesEqual(authorityA, authorityB);
+    }
+
+    /**
+     * Compare registry-name authorities: user-info case-sensitive, host (and port if present)
+     * case-insensitive. Java does not split user-info when {@link URI#getHost()} is null.
+     */
+    private static boolean registryAuthoritiesEqual(String authorityA, String authorityB) {
+        String userInfoA = null;
+        String userInfoB = null;
+        String hostPortA = authorityA;
+        String hostPortB = authorityB;
+        int atA = authorityA.lastIndexOf('@');
+        int atB = authorityB.lastIndexOf('@');
+        if (atA >= 0) {
+            userInfoA = authorityA.substring(0, atA);
+            hostPortA = authorityA.substring(atA + 1);
+        }
+        if (atB >= 0) {
+            userInfoB = authorityB.substring(0, atB);
+            hostPortB = authorityB.substring(atB + 1);
+        }
+        if (!Objects.equals(userInfoA, userInfoB)) {
+            return false;
+        }
+        return hostPortA.equalsIgnoreCase(hostPortB);
     }
 
     public static String getHost(String uri) {

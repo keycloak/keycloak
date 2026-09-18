@@ -57,6 +57,65 @@ public class RedirectUtilsTest {
     }
 
     @Test
+    public void testVerifyRedirectUriHostnameCaseInsensitiveWildcard() {
+        Set<String> set = Stream.of("https://Example.COM/foo/*").collect(Collectors.toSet());
+
+        Assert.assertEquals("https://example.com/foo/bar",
+                RedirectUtils.verifyRedirectUri(session, null, "https://example.com/foo/bar", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://example.com/Foo/bar", set, false));
+    }
+
+    @Test
+    public void testVerifyRedirectUriOpaqueSchemeSpecificPartCaseSensitive() {
+        Set<String> set = Stream.of("myapp:callback", "myapp:callback*").collect(Collectors.toSet());
+
+        Assert.assertEquals("myapp:callback", RedirectUtils.verifyRedirectUri(session, null, "myapp:callback", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "myapp:attacker", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "myapp:attackercallback", set, false));
+    }
+
+    @Test
+    public void testVerifyRedirectUriOpaqueFragmentCaseSensitive() {
+        Set<String> set = Stream.of("myapp:callback#one").collect(Collectors.toSet());
+
+        Assert.assertEquals("myapp:callback#one", RedirectUtils.verifyRedirectUri(session, null, "myapp:callback#one", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "myapp:callback#two", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "myapp:callback#One", set, false));
+    }
+
+    @Test
+    public void testVerifyRedirectUriWildcardRequiresUserInfo() {
+        Set<String> set = Stream.of("https://alice@example.com/foo/*").collect(Collectors.toSet());
+
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://example.com/foo/bar", set, false));
+    }
+
+    @Test
+    public void testVerifyRedirectUriPathEndingWithColonKeepsPort() {
+        Set<String> set = Stream.of("https://example.com:8443/foo:*").collect(Collectors.toSet());
+
+        Assert.assertEquals("https://example.com:8443/foo:bar",
+                RedirectUtils.verifyRedirectUri(session, null, "https://example.com:8443/foo:bar", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://example.com:9443/foo:bar", set, false));
+    }
+
+    @Test
+    public void testVerifyRedirectUriLoopbackSchemeCaseInsensitive() {
+        Set<String> set = Stream.of("http://127.0.0.1/callback").collect(Collectors.toSet());
+
+        Assert.assertEquals("HTTP://127.0.0.1:12324/callback",
+                RedirectUtils.verifyRedirectUri(session, null, "HTTP://127.0.0.1:12324/callback", set, false));
+    }
+
+    @Test
+    public void testVerifyRedirectUriSchemeCaseInsensitiveWildcard() {
+        Set<String> set = Stream.of("custom2:*", "https://Example.COM:*").collect(Collectors.toSet());
+
+        Assert.assertEquals("CUSTOM2:/something", RedirectUtils.verifyRedirectUri(session, null, "CUSTOM2:/something", set, false));
+        Assert.assertEquals("https://example.com:4443/", RedirectUtils.verifyRedirectUri(session, null, "https://example.com:4443/", set, false));
+    }
+
+    @Test
     public void testverifyRedirectUriHttps() {
         Set<String> set = Stream.of(
                 "https://keycloak.org/test1",
@@ -189,7 +248,7 @@ public class RedirectUtilsTest {
     @Test
     // https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics#name-protecting-redirect-based-f
     // OAuth recommends/advises exact matching string comparison for URIs
-    public void testverifyCaseIsSensitive() {
+    public void testVerifyRedirectUriCaseSensitivityRules() {
         Set<String> set = Stream.of(
                 "https://keycloak.org/*",
                 "http://KeyCloak.org/*",
@@ -197,13 +256,13 @@ public class RedirectUtilsTest {
         ).collect(Collectors.toSet());
 
         Assert.assertEquals("https://keycloak.org/index.html", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/index.html", set, false));
+        Assert.assertEquals("https://KeyCloak.org/index.html", RedirectUtils.verifyRedirectUri(session, null, "https://KeyCloak.org/index.html", set, false));
+        Assert.assertEquals("HTTPS://keycloak.org/index.html", RedirectUtils.verifyRedirectUri(session, null, "HTTPS://keycloak.org/index.html", set, false));
         Assert.assertEquals("http://KeyCloak.org/index.html", RedirectUtils.verifyRedirectUri(session, null, "http://KeyCloak.org/index.html", set, false));
+        Assert.assertEquals("http://keycloak.org/index.html", RedirectUtils.verifyRedirectUri(session, null, "http://keycloak.org/index.html", set, false));
         Assert.assertEquals("no.host.Name.App:/Test", RedirectUtils.verifyRedirectUri(session, null, "no.host.Name.App:/Test", set, false));
+        Assert.assertEquals("no.host.Name.app:/Test", RedirectUtils.verifyRedirectUri(session, null, "no.host.Name.app:/Test", set, false));
 
-        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://KeyCloak.org/index.html", set, false));
-        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "http://keycloak.org/index.html", set, false));
-        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "HTTPS://keycloak.org/index.html", set, false));
-        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "no.host.Name.app:/Test", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "no.host.Name.App:/test", set, false));
     }
 
