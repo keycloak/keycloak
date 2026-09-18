@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -33,6 +34,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
@@ -1000,6 +1002,58 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             RealmResource manageOrgsResource = manageOrgsClient.realm(realm.getName());
             assertThat(manageOrgsResource.organizations().get(orgId).identityProviders().getIdentityProviders(),
                     Matchers.empty());
+        }
+    }
+
+    @Test
+    public void testInvitationRolesRequireRoleMappingPermission() {
+        String orgId;
+
+        try (Response response = realm.admin().organizations().create(createRepresentation("testInviteRolesOrg", "testInviteRolesOrg.org"))) {
+            assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+            orgId = ApiUtil.getCreatedId(response);
+        }
+
+        String createdOrgId = orgId;
+        realm.cleanup().add(r -> r.organizations().get(createdOrgId).delete().close());
+
+        RoleRepresentation mappableRole = new RoleRepresentation();
+        mappableRole.setName("invite-mappable-role");
+        realm.admin().roles().create(mappableRole);
+        realm.cleanup().add(r -> r.roles().deleteRole("invite-mappable-role"));
+        String mappableRoleId = realm.admin().roles().get("invite-mappable-role").toRepresentation().getId();
+
+        String realmManagementId = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+        String realmAdminRoleId = realm.admin().clients().get(realmManagementId).roles().get(AdminRoles.REALM_ADMIN).toRepresentation().getId();
+
+        try (
+                Keycloak manageOrgsClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("manage-orgs-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            OrganizationResource organization = manageOrgsClient.realm(realm.getName()).organizations().get(orgId);
+
+            // manage-orgs-admin does not hold realm-admin, so it cannot grant it through an invitation
+            try (Response response = organization.members().inviteUser("escalate@testInviteRolesOrg.org", "Escalate", "User", null, List.of(realmAdminRoleId))) {
+                assertThat(response.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
+            }
+
+            assertThat(realm.admin().organizations().get(orgId).invitations().list(), Matchers.empty());
+
+            try (Response response = organization.members().inviteUser("mappable@testInviteRolesOrg.org", "Mappable", "User", null, List.of(mappableRoleId))) {
+                assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
+            }
+        }
+
+        // manage-orgs-only-admin can invite, but holds nothing over users, so it cannot map roles to them
+        try (
+                Keycloak manageOrgsOnlyClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("manage-orgs-only-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            OrganizationResource organization = manageOrgsOnlyClient.realm(realm.getName()).organizations().get(orgId);
+
+            try (Response response = organization.members().inviteUser("no-user-rights@testInviteRolesOrg.org", "No", "Rights", null, List.of(mappableRoleId))) {
+                assertThat(response.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
+            }
         }
     }
 

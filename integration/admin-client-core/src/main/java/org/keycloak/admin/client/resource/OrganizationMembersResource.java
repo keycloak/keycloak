@@ -201,10 +201,42 @@ public interface OrganizationMembersResource {
                         @FormParam("lastName") String lastName,
                         @QueryParam("client_id") String clientId);
 
+    /**
+     * Invites a user by e-mail, granting the given roles when the invitation is accepted.
+     *
+     * @param email the e-mail address of the user to invite.
+     * @param firstName the first name of the user to invite.
+     * @param lastName the last name of the user to invite.
+     * @param clientId the id of the client the user is redirected to after accepting the invitation.
+     * @param roleIds the ids of the realm or client roles granted to the user when the invitation is accepted.
+     * @since Keycloak server 26.8
+     */
+    @POST
+    @Path("invite-user")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    Response inviteUser(@FormParam("email") String email,
+                        @FormParam("firstName") String firstName,
+                        @FormParam("lastName") String lastName,
+                        @QueryParam("client_id") String clientId,
+                        @FormParam("roles") List<String> roleIds);
+
     @POST
     @Path("invite-existing-user")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     Response inviteExistingUser(@FormParam("id") String id);
+
+    /**
+     * Invites an existing user, granting the given roles when the invitation is accepted.
+     *
+     * @param id the id of the user to invite.
+     * @param roleIds the ids of the realm or client roles granted to the user when the invitation is accepted.
+     * @since Keycloak server 26.8
+     */
+    @POST
+    @Path("invite-existing-user")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    Response inviteExistingUser(@FormParam("id") String id,
+                                @FormParam("roles") List<String> roleIds);
 
     /**
      * @since Keycloak server 26

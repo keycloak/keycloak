@@ -104,6 +104,19 @@ On the other hand, if no user is associated with the given email address, the st
 will involve creating a new account through the realm's self-registration flow. In this case, the user is forced
 to provide the same email address used to send the invitation.
 
+[[_organization_invitation_roles]]
+=== Granting roles with an invitation
+
+When sending an invitation through the Admin REST API, you can include the ids of realm roles or client roles using the
+`roles` form parameter of the `invite-user` and `invite-existing-user` endpoints. The roles are granted to the user in the
+same transaction that adds the user as a member of the organization, whether the invitation is accepted through the
+invitation link, the registration flow, or an identity provider.
+
+The administrator sending the invitation must be allowed to map each of the roles to the user, using the same permissions
+required to grant the roles directly. When the invitation is for a user who does not have an account yet, the administrator
+must be allowed to map roles to any user in the realm. Roles deleted before the invitation is accepted are removed from the
+invitation, and resending an invitation keeps its roles.
+
 == Managing invitations
 
 {project_name} provides comprehensive invitation management capabilities that allow administrators to track, manage, and control

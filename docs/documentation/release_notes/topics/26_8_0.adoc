@@ -17,6 +17,10 @@ Client Secret Rotation enables confidential clients to rotate their secrets thro
 
 In this release, Client Secret Rotation is promoted from preview to supported. For more details, see the link:{adminguide_link}#_secret_rotation[{adminguide_name}].
 
+== Roles granted with organization invitations
+
+When inviting a user to an organization through the Admin REST API, you can now select realm roles and client roles for the invitation. The roles are granted together with the membership when the invitee joins, whether they accept the invitation through the invitation link, the registration flow, or an identity provider. For details, see the link:{adminguide_link}#_organization_invitation_roles[{adminguide_name}].
+
 = Configuring and Running
 
 == Multi-cluster v2 (supported)
