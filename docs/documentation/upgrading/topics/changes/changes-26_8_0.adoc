@@ -213,6 +213,14 @@ Custom login themes that override `social-providers.ftl` or apply CSS targeting 
 
 Test your custom login theme to ensure the identity provider buttons display correctly.
 
+=== Vert.x-based outbound HTTP client available as experimental
+
+A Vert.x-based HTTP client is available as an experimental feature for all outgoing HTTP connections ({project_name} to external services). It replaces the Apache HTTP Client with Vert.x/Netty. To enable it, set `--features=http-client:v2`.
+
+When enabled, all outgoing HTTP traffic (identity provider federation, token exchange, backchannel logout, OCSP/CRL validation, SAML artifact resolution, and more) uses the Vert.x HTTP client instead of Apache. Existing configuration options (`socket-timeout-millis`, `max-pooled-per-route`, `proxy-mappings`, `NO_PROXY`, etc.) work the same way. For details, see the link:{server_guide_base_link}/outgoinghttp[Configuring outgoing HTTP requests] guide.
+
+When the Vert.x client is enabled, `getHttpClient()` returns a compatibility bridge that translates Apache API calls to Vert.x internally, so existing extensions continue to work without changes.
+
 === Token introspection `act` claim now uses user ID for `sub`
 // https://github.com/keycloak/keycloak/issues/51489
 
