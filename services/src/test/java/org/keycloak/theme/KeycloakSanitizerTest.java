@@ -156,6 +156,8 @@ public class KeycloakSanitizerTest {
         assertEquals("Click", KeycloakSanitizerPolicy.sanitizeText("<a href=\"https://evil.example\">Click</a>"));
         assertEquals("img src=x onerror=alert(1)",
                 KeycloakSanitizerPolicy.sanitizeText("&lt;img src=x onerror=alert(1)&gt;"));
+        assertEquals("Click",
+                KeycloakSanitizerPolicy.sanitizeText("&amp;lt;a href=\"https://evil.example\"&amp;gt;Click&amp;lt;/a&amp;gt;"));
     }
 
     private void assertResult(String expectedResult, List<String> html) throws Exception {

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import org.owasp.html.Encoding;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.HtmlSanitizer;
 import org.owasp.html.PolicyFactory;
@@ -176,7 +177,12 @@ public class KeycloakSanitizerPolicy {
     }
 
     StringBuilder text = new StringBuilder(value.length());
-    HtmlSanitizer.sanitize(value, new HtmlSanitizer.Policy() {
+    String decoded = decodeHtmlFully(value);
+    if (decoded == null) {
+      return "";
+    }
+
+    HtmlSanitizer.sanitize(decoded, new HtmlSanitizer.Policy() {
       @Override
       public void openDocument() {
       }
@@ -202,6 +208,18 @@ public class KeycloakSanitizerPolicy {
       }
     });
     return text.toString();
+  }
+
+  private static String decodeHtmlFully(String value) {
+    String decoded = value;
+    for (int i = 0; i < 5; i++) {
+      String next = Encoding.decodeHtml(decoded);
+      if (next.equals(decoded)) {
+        return decoded;
+      }
+      decoded = next;
+    }
+    return Encoding.decodeHtml(decoded).equals(decoded) ? decoded : "";
   }
 
   private static Predicate<String> matchesEither(final Pattern a, final Pattern b) {
