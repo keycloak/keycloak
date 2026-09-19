@@ -46,6 +46,22 @@ an affected message in your theme.
 
 . For changed values, check the value in the base theme to determine if you need to make changes to your custom theme.
 
+=== Migrating identity-provider linking messages
+
+Custom login themes that override `info.ftl` or `template.ftl` must use the
+structured identity-provider attributes from the current base templates when
+rendering account-linking messages. The legacy `message.summary` and
+`messageHeader` values no longer contain untrusted identity-provider usernames
+or aliases, because a custom message can place a placeholder in an HTML
+attribute where its context cannot be validated safely.
+
+Use `messageHeaderUsername` and `messageHeaderAlias` for the confirmation
+header, `messageBodyParam0` and `messageBodyParam1` for the confirmation and
+result bodies, and `nestedIdpAlias` and `nestedIdpUsername` for nested broker
+messages. Copy the corresponding marker-based rendering expressions from the
+base theme templates instead of interpolating identity-provider values into
+`message.summary` with `?no_esc`.
+
 === Migrating styles
 
 You might need to update your custom styles to reflect changes made to the styles from the built-in themes. Consider using a diff tool to compare the changes to stylesheets between the old server installation and the new server installation.
