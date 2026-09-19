@@ -1493,7 +1493,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 }
 
                 if (logger.isTraceEnabled()) {
-                    logger.tracef("Resolved object: %s" + DocumentUtil.asString(samlDoc.getSamlDocument()));
+                    logger.tracef("Resolved object: %s", DocumentUtil.asString(samlDoc.getSamlDocument()));
                 }
 
                 ArtifactResponseType art = (ArtifactResponseType) samlDoc.getSamlObject();
