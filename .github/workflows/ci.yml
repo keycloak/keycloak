@@ -424,6 +424,30 @@ jobs:
         with:
           job-name: Volatile Sessions IT
 
+  http-client-v2-tests:
+    name: HTTP Client v2 IT
+    needs: [build, conditional]
+    if: needs.conditional.outputs.ci-quarkus == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run HTTP Client v2 tests
+        run: |
+          ./mvnw package -f tests/pom.xml -Dtest=HttpClientV2TestSuite
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: HTTP Client v2 IT
+
   external-infinispan-tests:
     name: External Infinispan IT
     needs: [build, conditional]
@@ -1388,6 +1412,7 @@ jobs:
       - jdk-integration-tests
       - store-integration-tests
       - volatile-sessions-tests
+      - http-client-v2-tests
       - store-model-tests
       - clustering-integration-tests
       - fips-unit-tests
