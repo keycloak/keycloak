@@ -11,8 +11,9 @@ overrides:
   diff@^7: ^8.0.3
   '@microsoft/api-extractor': ^7.58.7
   jquery@^3: ^3.7.1
-  lodash: ^4.17.23
+  lodash: ^4.17.21
   mdast-util-to-hast: ^13.2.1
+  react-router@>=6.7.0 <6.30.4: '>=6.30.4 <7'
 
 importers:
 
