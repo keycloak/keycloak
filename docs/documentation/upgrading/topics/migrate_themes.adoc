@@ -63,6 +63,12 @@ corresponding marker-based rendering expressions from the
 base theme templates instead of interpolating identity-provider values into
 `message.summary` with `?no_esc`.
 
+Custom email themes that override `email/html/identity-provider-link.ftl` must
+also copy the marker-based rendering expression from the current base email
+theme. Pass `identityProviderContext.username` through the marker-aware
+`kcSanitize` call and escape it at that rendering boundary; do not insert it
+with a post-sanitization `?replace(...)?no_esc` expression.
+
 === Migrating styles
 
 You might need to update your custom styles to reflect changes made to the styles from the built-in themes. Consider using a diff tool to compare the changes to stylesheets between the old server installation and the new server installation.
