@@ -56,7 +56,7 @@ public class SamlConsentTest extends AbstractSamlTest {
           .getSamlResponse(Binding.POST);
 
         final String samlDocumentString = IOUtil.documentToString(documentHolder.getSamlDocument());
-        assertThat(samlDocumentString, containsString("<dsig:Signature")); // KEYCLOAK-4262
+        assertThat(samlDocumentString, containsString("<ds:Signature")); // KEYCLOAK-4262
         assertThat(samlDocumentString, not(containsString("<samlp:LogoutResponse"))); // KEYCLOAK-4261
         assertThat(samlDocumentString, containsString("<samlp:Response")); // KEYCLOAK-4261
         assertThat(samlDocumentString, containsString("<samlp:Status")); // KEYCLOAK-4181
