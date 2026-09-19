@@ -67,10 +67,7 @@ spi-<spi-id>--provider=<provider-id>
 
 NOTE: `spi-<spi-id>-provider=<provider-id>` may still be used, but the server will not properly detect when reaugmentation is needed.
 
-To configure a provider as the single provider you should run the `build` command as follows:
-
-.Marking the `mycustomprovider` provider as the single provider for the `email-template` SPI
-<@kc.build parameters="--spi-email-template--provider=mycustomprovider"/>
+For example, marking the `mycustomprovider` provider as the single provider for the `email-template` SPI requires setting the `spi-email-template--provider` option to `mycustomprovider`.
 
 === Configuring a default provider for an SPI
 
@@ -91,10 +88,7 @@ The following logic is used to determine the default provider:
 2. The provider with the highest order (providers with order <= 0 are ignored)
 3. The provider with the id set to `default`
 
-To configure a provider as the default provider you should run the `build` command as follows:
-
-.Marking the `mycustomhash` provider as the default provider for the `password-hashing` SPI
-<@kc.build parameters="--spi-password-hashing--provider-default=mycustomprovider"/>
+For example, marking the `mycustomhash` provider as the default provider for the `password-hashing` SPI requires setting the `spi-password-hashing--provider-default` option to `mycustomhash`.
 
 === Enabling and disabling a provider
 
@@ -107,31 +101,20 @@ spi-<spi-id>--<provider-id>--enabled=<boolean>
 
 NOTE: `spi-<spi-id>-<provider-id>-enabled=<boolean>` may still be used, but the server will not properly detect when reaugmentation is needed.
 
-To enable or disable a provider you should run the `build` command as follows:
+For example, marking the `mycustomprovider` provider as enabled for the `email-template` SPI requires setting the `spi-email-template--mycustomprovider--enabled` option to `true`.
 
-.Enabling a provider
-<@kc.build parameters="--spi-email-template--mycustomprovider--enabled=true"/>
-
-To disable a provider, use the same command and set the `enabled` property to `false`.
+To disable a provider, use the option with a `false` value.
 
 == Installing and uninstalling a provider
 
-Custom providers should be packaged in a Java Archive (JAR) file and copied to the `providers` directory of the distribution. After that if you are using --optimized,
-you must run the `build` command in order to update the server's provider registry with the implementations from the JAR file.
+Custom providers should be packaged in a Java Archive (JAR) file and copied to the `providers` directory of the distribution.
 
-This step is needed in order to optimize the server runtime so that all providers are known ahead-of-time rather than discovered only when starting the server or at runtime.
-
-WARNING: Do not install untrusted provider JARs! There is a single class loader for the entire application, and JARs in the `providers` directory are given precedent over built-in libraries.
+WARNING: Do not install untrusted JARs! There is a single class loader for the entire application, and JARs in the `providers` directory are given precedent over built-in libraries.
 There is also no built-in sandboxing of what state or methods are available to provider logic. Providers can do whatever the server process can which includes direct access to the DB, reading all server configuration (incl. credentials), etc.
 
-To uninstall a provider, you should remove the JAR file from the `providers` directory and run the `build` command again.
+To uninstall a provider, you should remove the JAR file from the `providers` directory.
 
-== Using third-party dependencies
-
-When implementing a provider you might need to use some third-party dependency that is not available from the server distribution.
-
-In this case, you should copy any additional dependency to the `providers` directory and run the `build` command.
-Once you do that, the server is going to make these additional dependencies available at runtime for any provider that depends on them.
+A provider might need to use some third-party dependency that is not available from the server distribution. These dependencies are no different than the provider JARs. Just add or remove them from the `providers` directory as needed.
 
 == References
 

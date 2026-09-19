@@ -33,6 +33,7 @@ import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImportSpec;
 import org.keycloak.operator.crds.v2beta1.realmimport.Placeholder;
 
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
@@ -157,6 +158,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
 
         var commandArgs = List.of("--verbose", "import", "--file=" + importMntPath + keycloakRealmImport.getRealmName() + "-realm.json", "--override=false");
 
+        keycloakContainer.getEnv().add(new EnvVar("KC_OPTIMIZED", "false", null));
         keycloakContainer.setCommand(command);
         keycloakContainer.setArgs(commandArgs);
         var volumeMount = new VolumeMountBuilder()
