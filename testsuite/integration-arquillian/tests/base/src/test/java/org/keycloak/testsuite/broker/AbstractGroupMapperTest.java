@@ -3,7 +3,6 @@ package org.keycloak.testsuite.broker;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.Response;
 
@@ -111,6 +110,10 @@ public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMa
         assertThatUserHasBeenAssignedToGroup(user, MAPPER_TEST_GROUP_PATH);
     }
 
+    protected void assertThatUserHasBeenAssignedToGroups(UserRepresentation user, List<String> groupPaths) {
+        assertThat(getUserGroupPaths(user), equalTo(groupPaths));
+    }
+
     protected void assertThatUserHasBeenAssignedToGroup(UserRepresentation user, String groupPath) {
         assertThat(getUserGroupPaths(user), contains(groupPath));
     }
@@ -134,6 +137,6 @@ public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMa
 
     private List<String> getUserGroupPaths(UserRepresentation user) {
         return realm.users().get(user.getId()).groups().stream().map(GroupRepresentation::getPath)
-                .collect(Collectors.toList());
+                .toList();
     }
 }
