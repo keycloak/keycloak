@@ -30,6 +30,9 @@ Maximum time in milliseconds to obtain a connection for a request. Default: 5000
 *socket-timeout-millis*::
 Maximum time of inactivity between two data packets until a socket connection times out, in milliseconds. Default: 5000ms
 
+*request-timeout-millis*::
+Maximum total time for an outgoing HTTP request to complete, in milliseconds. This is a wall-clock cap that limits how long a single request can take regardless of whether data is flowing. Set to 0 to disable. Default: 30000ms
+
 *connection-pool-size*::
 Size of the connection pool for outgoing connections. Default: 128.
 
