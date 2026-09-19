@@ -204,6 +204,11 @@ public class UserStorageProviderResource {
         }
 
         session.users().removeImportedUsers(realm, id);
+
+        // https://github.com/keycloak/keycloak/issues/9769
+        Map<String, Object> eventRep = new HashMap<>();
+        eventRep.put("action", "remove-imported-users");
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(eventRep).success();
     }
     /**
      * Unlink imported users from a storage provider
