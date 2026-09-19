@@ -123,10 +123,10 @@ public class KeycloakSanitizerTest {
         List<String> html = new ArrayList<>();
 
         html.add("<a href=\"__KC_SENTINEL0_123__\">link</a>");
-        assertResult("<a>link</a>", html);
+        assertResult("<a rel=\"nofollow\">link</a>", html);
 
         html.set(0, "<img src=\"https://example.org/__KC_SENTINEL1_123__\">");
-        assertResult("<img>", html);
+        assertResult("<img />", html);
 
         html.set(0, "<p style=\"font-family: __KC_SENTINEL0_123__\">text</p>");
         assertResult("<p>text</p>", html);
