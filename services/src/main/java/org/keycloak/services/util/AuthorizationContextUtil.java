@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.util;
 
+import java.util.ArrayList;
 import java.util.stream.Stream;
 
 import org.keycloak.common.Profile;
@@ -38,6 +39,8 @@ import org.keycloak.rar.AuthorizationRequestSource;
  */
 public class AuthorizationContextUtil {
 
+    private static final String CACHE_KEY_PREFIX = "authz-req-ctx:";
+
     /**
      * Base function to obtain a bare AuthorizationRequestContext with just OAuth2 Scopes
      * @param session
@@ -51,6 +54,7 @@ public class AuthorizationContextUtil {
 
     /**
      * Base function to obtain a bare AuthorizationRequestContext with just OAuth2 Scopes
+     *
      * @param session
      * @param client
      * @param user
@@ -61,6 +65,13 @@ public class AuthorizationContextUtil {
         if (!Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
             throw new RuntimeException("The Parameterized Scopes feature is not enabled and the AuthorizationRequestContext hasn't been generated");
         }
+
+        String cacheKey = getCacheKey(client, user, scope);
+        AuthorizationRequestContext cached = session.getAttribute(cacheKey, AuthorizationRequestContext.class);
+        if (cached != null) {
+            return copyContext(cached);
+        }
+
         AuthorizationRequestParserProvider clientScopeParser = session.getProvider(AuthorizationRequestParserProvider.class,
                 ClientScopeAuthorizationRequestParserProviderFactory.CLIENT_SCOPE_PARSER_ID);
 
@@ -69,11 +80,22 @@ public class AuthorizationContextUtil {
                     ClientScopeAuthorizationRequestParserProviderFactory.CLIENT_SCOPE_PARSER_ID));
         }
 
-        return clientScopeParser.parseScopes(user, client, scope);
+        AuthorizationRequestContext result = clientScopeParser.parseScopes(user, client, scope);
+        session.setAttribute(cacheKey, result);
+        return copyContext(result);
+    }
+
+    private static AuthorizationRequestContext copyContext(AuthorizationRequestContext context) {
+        return new AuthorizationRequestContext(new ArrayList<>(context.getAuthorizationDetailEntries()));
+    }
+
+    private static String getCacheKey(ClientModel client, UserModel user, String scope) {
+        return CACHE_KEY_PREFIX + client.getId() + ":" + (user != null ? user.getId() : "") + ":" + scope;
     }
 
     /**
      * An extension of {@link AuthorizationContextUtil#getAuthorizationRequestContextFromScopes} that appends the client reference
+     *
      * @param session
      * @param client
      * @param scope

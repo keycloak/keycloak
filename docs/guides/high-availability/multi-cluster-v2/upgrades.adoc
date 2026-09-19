@@ -5,8 +5,7 @@
 title="Managing upgrades (v2)"
 summary="How to manage multi-cluster upgrades"
 tileVisible="false"
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
+>
 
 This topic describes upgrade procedures for multi-cluster v2 deployments.
 See <@links.ha id="multi-cluster-v2-introduction" /> for the introduction and <@links.ha id="multi-cluster-v2-concepts" /> for the architecture overview.

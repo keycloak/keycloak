@@ -21,6 +21,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -67,10 +70,17 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
             + "mechanism that makes multi-cluster setups safe.")
     protected boolean allow_multiple_clusters = false;
 
+    private static final Executor NETWORK_TIMEOUT_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "jdbc-ping-network-timeout");
+        t.setDaemon(true);
+        return t;
+    });
+
     private JpaConnectionProviderFactory factory;
     private volatile HealthStatus previousHealthStatus = HealthStatus.HEALTHY;
     private volatile int cyclesSinceLastLog = 0;
     private volatile Future<?> healthCheckTask;
+    private volatile Runnable onHealthRestored;
 
     @Property(description="Staleness timeout in milliseconds. The coordinator will update the entries once 50%-75% of the time has passed.", type= AttributeType.TIME)
     protected long staleness_timeout = 60000L;
@@ -82,9 +92,20 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
 
     @Override
     protected Connection getConnection() throws SQLException {
+        Connection connection = null;
         try {
-            return factory.getConnection();
+            connection = factory.getConnection();
+            try {
+                connection.setNetworkTimeout(NETWORK_TIMEOUT_EXECUTOR, (int) (staleness_timeout / 3));
+            } catch (SQLFeatureNotSupportedException e) {
+                log.warn("JDBC driver does not support setNetworkTimeout. " +
+                        "Health check queries may hang during database outages.");
+            }
+            return connection;
         } catch (Exception e) {
+            if (connection != null) {
+                try { connection.close(); } catch (SQLException ignored) {}
+            }
             var cause = e.getCause();
             if (cause instanceof SQLException sql) {
                 // it should hit this branch 100% of the time
@@ -273,6 +294,14 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
         if (status == HealthStatus.HEALTHY) {
             if (statusChanged) {
                 logger.info("Cluster health restored for cluster '%s'.", cluster_name);
+                Runnable callback = onHealthRestored;
+                if (callback != null) {
+                    try {
+                        callback.run();
+                    } catch (Throwable t) {
+                        logger.error("onHealthRestored callback failed", t);
+                    }
+                }
             }
             return;
         }
@@ -306,6 +335,14 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
 
     public void setJpaConnectionProviderFactory(JpaConnectionProviderFactory factory) {
         this.factory = Objects.requireNonNull(factory);
+    }
+
+    public Runnable getOnHealthRestored() {
+        return onHealthRestored;
+    }
+
+    public void setOnHealthRestored(Runnable onHealthRestored) {
+        this.onHealthRestored = onHealthRestored;
     }
 
     // Pick the largest partition first, then order by address to allow for a stable result

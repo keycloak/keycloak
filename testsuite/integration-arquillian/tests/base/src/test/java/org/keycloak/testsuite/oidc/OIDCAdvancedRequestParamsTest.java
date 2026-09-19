@@ -260,6 +260,38 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         Assertions.assertEquals(authTime, authTimeUpdated);
     }
 
+    @Test
+    public void testMaxAgeIntegerOverflow() {
+        // Open login form and login successfully
+        oauth.doLogin("test-user@localhost", "password");
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent);
+
+        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
+
+        // Check that authTime is available and set to current time
+        long authTime = idToken.getAuth_time();
+        long currentTime = Time.currentTime();
+        Assertions.assertTrue(authTime <= currentTime && authTime + 3 >= currentTime);
+
+        // Set time offset
+        timeOffSet.set(10);
+
+        // max_age close to Integer.MAX_VALUE must not overflow the authTime+maxAge sum and
+        // incorrectly force re-authentication
+        oauth.loginForm().maxAge(Integer.MAX_VALUE).open();
+
+        // Assert that I will be automatically logged through cookie (no fresh login form shown)
+        loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent);
+
+        idToken = sendTokenRequestAndGetIDToken(loginEvent);
+
+        // Assert that authTime is still the same (no re-auth happened)
+        long authTimeUpdated = idToken.getAuth_time();
+        Assertions.assertEquals(authTime, authTimeUpdated);
+    }
+
 
     // Prompt
 

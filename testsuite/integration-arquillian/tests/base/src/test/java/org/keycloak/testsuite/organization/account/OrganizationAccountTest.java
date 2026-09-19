@@ -29,6 +29,7 @@ import org.keycloak.representations.account.LinkedAccountRepresentation;
 import org.keycloak.representations.account.OrganizationRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -71,6 +72,12 @@ public class OrganizationAccountTest extends AbstractOrganizationTest {
     public void testFailUnlinkIdentityProvider() throws IOException {
         // federate user
         OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+
+        OrganizationIdentityProviderLinkRepresentation idpLink = new OrganizationIdentityProviderLinkRepresentation();
+        idpLink.setAutoMembership(true);
+        idpLink.setMembershipType("MANAGED");
+        organization.identityProviders().get(bc.getIDPAlias()).update(idpLink).close();
+
         assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
         // reset password to obtain a token and access the account api
         UserRepresentation user = managedRealm.admin().users().searchByEmail(bc.getUserEmail(), true).get(0);

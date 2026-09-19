@@ -28,6 +28,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.scim.filter.ScimFilterParser;
@@ -36,10 +37,11 @@ import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
 import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.request.PatchRequest.PatchOperation;
-import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
+import org.keycloak.scim.resource.spi.MembershipChange;
 import org.keycloak.scim.resource.spi.ScimPatchException;
+import org.keycloak.scim.resource.spi.SearchOptions;
 import org.keycloak.scim.resource.user.User;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.userprofile.UserProfile;
@@ -54,8 +56,22 @@ import static org.keycloak.utils.StringUtil.isBlank;
 
 public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<UserModel, User> implements ScimAttributeJpaExpressionResolver {
 
+    private final UserCoreModelSchema schema;
+
     public UserResourceTypeProvider(KeycloakSession session) {
-        super(session, new UserCoreModelSchema(session), List.of(new UserEnterpriseModelSchema(session), new UserExtensionModelSchema(session)));
+        this(session, new UserCoreModelSchema(session));
+    }
+
+    private UserResourceTypeProvider(KeycloakSession session, UserCoreModelSchema schema) {
+        super(session, schema, List.of(new UserEnterpriseModelSchema(session), new UserExtensionModelSchema(session)));
+        this.schema = schema;
+    }
+
+    @Override
+    public List<MembershipChange> pollMembershipChanges() {
+        List<MembershipChange> changes = List.copyOf(schema.getMembershipChanges());
+        schema.clearMembershipChanges();
+        return changes;
     }
 
     @Override
@@ -189,7 +205,7 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     }
 
     @Override
-    protected Stream<UserModel> getModels(SearchRequest searchRequest) {
+    protected Stream<UserModel> getModels(SearchOptions searchRequest) {
         RealmModel realm = session.getContext().getRealm();
 
         ScimFilterParser.FilterContext filterContext = searchRequest.getFilterContext();
@@ -213,7 +229,7 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     }
 
     @Override
-    public Long count(SearchRequest searchRequest, int resourceSize) {
+    public Long count(SearchOptions searchRequest, int resourceSize) {
         if (resourceSize < searchRequest.getCount() && (resourceSize > 0 || searchRequest.getStartIndex() == 1)) {
             return (long) (searchRequest.getStartIndex() - 1 + resourceSize);
         }
@@ -273,21 +289,18 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         Permissions permissions = session.getContext().getPermissions();
 
         // Organization groups are always excluded from groups.value/groups filter paths, consistent with
-        // the serialization boundary in AbstractUserModelSchema. When FGAP is enabled, only the eq operator
-        // is supported; other operators (ne, pr, gt, co, etc.) silently return empty results because they
-        // cannot be safely authorized through value comparison. When FGAP is disabled, non-eq operators are
-        // allowed but eq filters still reject organization groups.
+        // the serialization boundary in AbstractUserModelSchema. Only the eq operator can be safely
+        // authorized through a per-group check; other operators (ne, pr, gt, co, etc.) cannot be tied to a
+        // single group, so they are instead gated on whether the caller can view groups at all, regardless
+        // of whether FGAP is enabled.
         BiPredicate<String, String> authCheck = (path, value) -> {
             if ("groups.value".equalsIgnoreCase(path) || "groups".equalsIgnoreCase(path)) {
                 if (value == null) {
-                    return !realm.isAdminPermissionsEnabled();
+                    return permissions.hasPermission(AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
                 }
                 GroupModel group = session.groups().getGroupById(realm, value);
                 if (group == null || AbstractUserModelSchema.isOrganizationGroup(group)) {
                     return false;
-                }
-                if (!realm.isAdminPermissionsEnabled()) {
-                    return true;
                 }
                 return permissions.hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
             }
@@ -314,7 +327,18 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, Root<?> root, Subquery<?> subquery) {
         if ("groups".equals(attribute.getName())) {
             Root<UserGroupMembershipEntity> membership = subquery.from(UserGroupMembershipEntity.class);
-            subquery.where(cb.equal(membership.get("user").get("id"), root.get("id")));
+            
+            // Organization group memberships are never exposed through the groups/groups.value paths
+            // (see AbstractUserModelSchema#getAttributeValue), so they must be excluded here;
+            // otherwise ne/pr/gt/etc. filters could match/leak on membership rows that are never
+            // returned in the resource representation.
+            Root<GroupEntity> group = subquery.from(GroupEntity.class);
+            
+            subquery.where(
+                    cb.equal(membership.get("user").get("id"), root.get("id")),
+                    cb.equal(membership.get("groupId"), group.get("id")),
+                    cb.equal(group.get("type"), GroupModel.Type.REALM.intValue())
+            );
             return membership.get("groupId");
         }
         return null;
@@ -322,6 +346,9 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
 
     @Override
     protected boolean isManageable(UserModel model) {
+        if (model == null) {
+            return false;
+        }
         return !session.getContext().getPermissions().isAdminUser(model);
     }
 }
