@@ -9,6 +9,27 @@ includedOptions="truststore-*">
 
 {project_name} often needs to make requests to the applications and services that it secures. {project_name} manages these outgoing connections using an HTTP client. This {section} shows how to configure the client, connection pool, proxy environment settings, timeouts, and more.
 
+== Vert.x HTTP client (Preview)
+
+A Vert.x-based HTTP client is available as a preview feature. It replaces the Apache HTTP Client with Vert.x/Netty for all outgoing connections, enabling future PQC (Post-Quantum Cryptography) support via OpenSSL.
+
+To enable it:
+
+<@kc.start parameters="--features=http-client:v2"/>
+
+When enabled, all outgoing HTTP traffic, including identity provider federation, token exchange, backchannel logout, OCSP/CRL validation and SAML artifact resolution, uses the Vert.x HTTP client. All existing configuration options documented below (`socket-timeout-millis`, `max-pooled-per-route`, `proxy-mappings`, `NO_PROXY`, etc.) work the same way with both clients.
+
+=== Extension migration
+
+The `getHttpClient()` method on `HttpClientProvider`, which returns an Apache `CloseableHttpClient`, is deprecated and will be removed in a future release. When the Vert.x client is enabled, `getHttpClient()` returns a compatibility bridge that translates Apache API calls to Vert.x internally.
+
+Extension providers should migrate to one of:
+
+* `SimpleHttp.create(session)` for general HTTP calls (GET, POST, PUT, DELETE with headers, parameters, and JSON/form bodies).
+* The provider-neutral helper methods on `HttpClientProvider`: `getString(uri)`, `getInputStream(uri, headers)`, `postText(uri, text)`, `postBinary(uri, body, headers)`.
+
+These APIs work identically with both the Apache and Vert.x clients.
+
 == Configuring trusted certificates for TLS connections
 
 See <@links.server id="keycloak-truststore"/> for how
