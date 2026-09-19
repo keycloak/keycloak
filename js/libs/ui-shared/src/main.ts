@@ -84,6 +84,7 @@ export type {
   Action,
   Field,
   DetailField,
+  CountLoaderFunction,
   LoaderFunction,
   SignaledLoader,
 } from "./controls/table/KeycloakDataTable";
