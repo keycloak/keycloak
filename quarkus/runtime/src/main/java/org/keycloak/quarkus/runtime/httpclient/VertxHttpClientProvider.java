@@ -1,24 +1,27 @@
 package org.keycloak.quarkus.runtime.httpclient;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiConsumer;
 
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.connections.httpclient.ProxyMappings;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.net.ProxyOptions;
@@ -97,12 +100,71 @@ public class VertxHttpClientProvider implements HttpClientProvider {
 
     @Override
     public String getString(String uri) throws IOException {
+        return doGet(uri, null, (resp, future) -> {
+            String contentType = resp.getHeader("Content-Type");
+            Buffer accumulated = Buffer.buffer();
+            AtomicLong bytesReceived = new AtomicLong();
+            AtomicBoolean aborted = new AtomicBoolean();
+
+            resp.handler(chunk -> {
+                long total = bytesReceived.addAndGet(chunk.length());
+                if (total > maxConsumedResponseSize) {
+                    if (aborted.compareAndSet(false, true)) {
+                        resp.request().reset();
+                        future.completeExceptionally(new NonRetryableIOException(
+                                "Response size " + total + " exceeds limit of " + maxConsumedResponseSize));
+                    }
+                } else {
+                    accumulated.appendBuffer(chunk);
+                }
+            });
+
+            resp.endHandler(v -> {
+                if (!aborted.get()) {
+                    try {
+                        if (accumulated.length() == 0) {
+                            future.completeExceptionally(
+                                    new NonRetryableIOException("No content returned from HTTP call"));
+                        } else {
+                            String charset = extractCharset(contentType);
+                            future.complete(charset != null
+                                    ? accumulated.toString(charset) : accumulated.toString());
+                        }
+                    } catch (Exception e) {
+                        future.completeExceptionally(e);
+                    }
+                }
+            });
+
+            resp.exceptionHandler(ex -> {
+                if (!aborted.get()) {
+                    future.completeExceptionally(ex);
+                }
+            });
+        });
+    }
+
+    @Override
+    public InputStream getInputStream(String uri) throws IOException {
+        return getInputStream(uri, null);
+    }
+
+    @Override
+    public InputStream getInputStream(String uri, Map<String, String> headers) throws IOException {
+        return doGet(uri, headers, (resp, future) -> {
+            resp.pause();
+            future.complete(new ChunkedInputStream(resp));
+        });
+    }
+
+    private <T> T doGet(String uri, Map<String, String> headers,
+                         BiConsumer<HttpClientResponse, CompletableFuture<T>> responseHandler) throws IOException {
         return executeWithRetry(() -> {
-            CompletableFuture<String> future = new CompletableFuture<>();
+            CompletableFuture<T> future = new CompletableFuture<>();
             RequestOptions reqOptions = new RequestOptions()
                     .setMethod(HttpMethod.GET)
                     .setAbsoluteURI(uri)
-                    .setTimeout(getEffectiveTimeoutMs());
+                    .setIdleTimeout((int) getEffectiveTimeoutMs());
             ProxyOptions proxy = resolveProxy(uri);
             if (proxy != null) {
                 reqOptions.setProxyOptions(proxy);
@@ -115,6 +177,10 @@ public class VertxHttpClientProvider implements HttpClientProvider {
                 }
 
                 var clientReq = reqAr.result();
+                if (headers != null) {
+                    headers.forEach(clientReq::putHeader);
+                }
+
                 clientReq.response().onComplete(respAr -> {
                     if (respAr.failed()) {
                         future.completeExceptionally(respAr.cause());
@@ -130,94 +196,12 @@ public class VertxHttpClientProvider implements HttpClientProvider {
                         return;
                     }
 
-                    String contentType = resp.getHeader("Content-Type");
-                    Buffer accumulated = Buffer.buffer();
-                    AtomicLong bytesReceived = new AtomicLong();
-                    AtomicBoolean aborted = new AtomicBoolean();
-
-                    resp.handler(chunk -> {
-                        long total = bytesReceived.addAndGet(chunk.length());
-                        if (total > maxConsumedResponseSize) {
-                            if (aborted.compareAndSet(false, true)) {
-                                resp.request().reset();
-                                future.completeExceptionally(new NonRetryableIOException(
-                                        "Response size " + total + " exceeds limit of " + maxConsumedResponseSize));
-                            }
-                        } else {
-                            accumulated.appendBuffer(chunk);
-                        }
-                    });
-
-                    resp.endHandler(v -> {
-                        if (!aborted.get()) {
-                            if (accumulated.length() == 0) {
-                                future.completeExceptionally(
-                                        new NonRetryableIOException("No content returned from HTTP call"));
-                            } else {
-                                String charset = extractCharset(contentType);
-                                future.complete(charset != null
-                                        ? accumulated.toString(charset) : accumulated.toString());
-                            }
-                        }
-                    });
-
-                    resp.exceptionHandler(ex -> {
-                        if (!aborted.get()) {
-                            future.completeExceptionally(ex);
-                        }
-                    });
+                    responseHandler.accept(resp, future);
                 });
 
                 clientReq.end();
             });
 
-            return awaitResult(future);
-        });
-    }
-
-    @Override
-    public InputStream getInputStream(String uri) throws IOException {
-        return new ByteArrayInputStream(doGet(uri, null).body().getBytes());
-    }
-
-    @Override
-    public InputStream getInputStream(String uri, Map<String, String> headers) throws IOException {
-        return new ByteArrayInputStream(doGet(uri, headers).body().getBytes());
-    }
-
-    private HttpResponse<Buffer> doGet(String uri, Map<String, String> headers) throws IOException {
-        return executeWithRetry(() -> {
-            CompletableFuture<HttpResponse<Buffer>> future = new CompletableFuture<>();
-            var req = webClient.getAbs(uri);
-            long timeout = getEffectiveTimeoutMs();
-            if (timeout > 0) {
-                req.timeout(timeout);
-            }
-            ProxyOptions proxy = resolveProxy(uri);
-            if (proxy != null) {
-                req.proxy(proxy);
-            }
-            if (headers != null) {
-                headers.forEach(req::putHeader);
-            }
-            req.send().onComplete(ar -> {
-                if (ar.succeeded()) {
-                    HttpResponse<Buffer> response = ar.result();
-                    if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                        Buffer body = response.body();
-                        if (body == null || body.length() == 0) {
-                            future.completeExceptionally(new NonRetryableIOException("No content returned from HTTP call"));
-                        } else {
-                            future.complete(response);
-                        }
-                    } else {
-                        future.completeExceptionally(new NonRetryableIOException(
-                                "Unexpected HTTP status: " + response.statusCode() + " " + response.statusMessage()));
-                    }
-                } else {
-                    future.completeExceptionally(ar.cause());
-                }
-            });
             return awaitResult(future);
         });
     }
@@ -320,10 +304,7 @@ public class VertxHttpClientProvider implements HttpClientProvider {
     }
 
     <T> T awaitResult(CompletableFuture<T> future) throws IOException {
-        long timeoutMs = socketTimeoutMs > 0
-                ? Math.max(socketTimeoutMs, DEFAULT_TIMEOUT_SECONDS * 1000)
-                : 0;
-        return awaitResult(future, timeoutMs);
+        return awaitResult(future, getEffectiveTimeoutMs());
     }
 
     long getEffectiveTimeoutMs() {
@@ -397,5 +378,82 @@ public class VertxHttpClientProvider implements HttpClientProvider {
     @FunctionalInterface
     interface RetryableOperation<T> {
         T execute() throws IOException;
+    }
+
+    // TODO replace with ReadStream.blockingStream() when migrating to Vert.x 5
+    static class ChunkedInputStream extends InputStream {
+        private static final Buffer END = Buffer.buffer(0);
+        private final HttpClientResponse response;
+        private final BlockingQueue<Buffer> chunks = new LinkedBlockingQueue<>();
+        private volatile Throwable error;
+        private byte[] current;
+        private int pos;
+        private volatile boolean ended;
+
+        ChunkedInputStream(HttpClientResponse response) {
+            this.response = response;
+            response.handler(chunks::add);
+            response.endHandler(v -> chunks.add(END));
+            response.exceptionHandler(ex -> {
+                error = ex;
+                chunks.add(END);
+            });
+        }
+
+        @Override
+        public int read() throws IOException {
+            if (ended) return -1;
+            if (current == null || pos >= current.length) {
+                if (!advance()) return -1;
+            }
+            return current[pos++] & 0xFF;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            if (len == 0) return 0;
+            if (ended) return -1;
+            if (current == null || pos >= current.length) {
+                if (!advance()) return -1;
+            }
+            int n = Math.min(len, current.length - pos);
+            System.arraycopy(current, pos, b, off, n);
+            pos += n;
+            return n;
+        }
+
+        private boolean advance() throws IOException {
+            try {
+                while (true) {
+                    response.fetch(1);
+                    Buffer buf = chunks.take();
+                    if (buf == END) {
+                        ended = true;
+                        if (error != null) {
+                            throw new IOException("Error reading response", error);
+                        }
+                        return false;
+                    }
+                    current = buf.getBytes();
+                    pos = 0;
+                    if (current.length > 0) {
+                        return true;
+                    }
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while reading response", e);
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (!ended) {
+                ended = true;
+                response.request().reset();
+            }
+            chunks.clear();
+            chunks.add(END);
+        }
     }
 }
