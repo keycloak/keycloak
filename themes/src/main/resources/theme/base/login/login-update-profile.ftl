@@ -1,5 +1,6 @@
 <#import "template.ftl" as layout>
 <#import "user-profile-commons.ftl" as userProfileCommons>
+<#import "register-commons.ftl" as registerCommons>
 <@layout.registrationLayout displayMessage=messagesPerField.exists('global') displayRequiredFields=true; section>
     <#if section = "header">
         ${msg("loginProfileTitle")}
@@ -7,10 +8,11 @@
         <form id="kc-update-profile-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
 
             <@userProfileCommons.userProfileFormFields/>
-
+             <@registerCommons.termsAcceptance/>
             <div class="${properties.kcFormGroupClass!}">
-                <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
-                    <div class="${properties.kcFormOptionsWrapperClass!}">
+                
+                    <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
+                      <div class="${properties.kcFormOptionsWrapperClass!}">
                     </div>
                 </div>
 
