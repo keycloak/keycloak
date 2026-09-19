@@ -36,6 +36,8 @@ import org.owasp.html.Encoding;
 public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
     
     private static final Pattern HREF_PATTERN = Pattern.compile("\\s+href=\"([^\"]*)\"");
+    private static final Pattern START_TAG_PATTERN = Pattern.compile(
+            "<[A-Za-z](?:[^>\"']|\"[^\"]*\"|'[^']*')*>", Pattern.CASE_INSENSITIVE);
     private static final Pattern ATTRIBUTE_PATTERN = Pattern.compile(
             "\\s+[A-Za-z_:][A-Za-z0-9:_.-]*\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]*))",
             Pattern.CASE_INSENSITIVE);
@@ -85,18 +87,34 @@ public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
     }
 
     private String removeAttributeContaining(String html, String marker) {
-        Matcher matcher = ATTRIBUTE_PATTERN.matcher(html);
+        Matcher matcher = START_TAG_PATTERN.matcher(html);
         StringBuilder result = new StringBuilder(html.length());
+        int last = 0;
+        while (matcher.find()) {
+            String tag = matcher.group();
+            String tagWithoutAttribute = removeMatchingAttribute(tag, marker);
+            if (!tag.equals(tagWithoutAttribute)) {
+                result.append(html, last, matcher.start());
+                result.append(tagWithoutAttribute);
+                last = matcher.end();
+            }
+        }
+        return last == 0 ? html : result.append(html, last, html.length()).toString();
+    }
+
+    private String removeMatchingAttribute(String tag, String marker) {
+        Matcher matcher = ATTRIBUTE_PATTERN.matcher(tag);
+        StringBuilder result = new StringBuilder(tag.length());
         int last = 0;
         while (matcher.find()) {
             String attributeValue = matcher.group(1) != null ? matcher.group(1)
                     : matcher.group(2) != null ? matcher.group(2) : matcher.group(3);
             if (attributeValue.contains(marker)) {
-                result.append(html, last, matcher.start());
+                result.append(tag, last, matcher.start());
                 last = matcher.end();
             }
         }
-        return last == 0 ? html : result.append(html, last, html.length()).toString();
+        return last == 0 ? tag : result.append(tag, last, tag.length()).toString();
     }
 
 

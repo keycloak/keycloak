@@ -144,6 +144,10 @@ public class KeycloakSanitizerTest {
     public void testSanitizeWithoutReplacementsDoesNotFilterSentinelText() throws Exception {
         assertResult("<p>__KC_SENTINEL0_123__</p>",
                 new ArrayList<>(List.of("<p>__KC_SENTINEL0_123__</p>")));
+
+        assertResult("<p>label=\"safe\"</p>",
+                new ArrayList<>(List.of("<p>label=\"__KC_SENTINEL0_123__\"</p>",
+                        "__KC_SENTINEL0_123__", "safe")));
     }
 
     @Test
