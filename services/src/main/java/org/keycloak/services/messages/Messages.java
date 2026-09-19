@@ -77,6 +77,20 @@ public class Messages {
 
     public static final String MISSING_TOTP = "missingTotpMessage";
 
+    public static final String PHONE_OTP_MISSING_PHONE = "phoneOtpMissingPhone";
+
+    public static final String PHONE_OTP_INVALID_PHONE = "phoneOtpInvalidPhone";
+
+    public static final String PHONE_OTP_DUPLICATE_PHONE = "phoneOtpDuplicatePhone";
+
+    public static final String PHONE_OTP_EXPIRED = "phoneOtpExpired";
+
+    public static final String PHONE_OTP_TOO_MANY_ATTEMPTS = "phoneOtpMaxAttempts";
+
+    public static final String PHONE_OTP_RESEND_COOLDOWN = "phoneOtpResendCooldown";
+
+    public static final String PHONE_OTP_CODE_RESENT = "phoneOtpCodeResent";
+
     public static final String RESET_OTP_MISSING_ID_ERROR = "error-reset-otp-missing-id";
 
     public static final String MISSING_TOTP_DEVICE_NAME = "missingTotpDeviceNameMessage";
