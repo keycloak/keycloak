@@ -124,6 +124,9 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                    directly after the login. Once the connection is later acquired for a transaction, the UpdateSocketTimeoutOnConnectionAcquireInterceptor
                    will then later overwrite the socket timeout.
                    See https://github.com/keycloak/keycloak/issues/47174 for the discussion.
+                   PostgreSQL is intentionally excluded here: its socket timeout is set by
+                   UpdateSocketTimeoutOnConnectionAcquireInterceptor on every connection acquisition,
+                   including connections through the AWS JDBC Wrapper.
                  */
                 fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
                         .to(SOCKET_TIMEOUT)
