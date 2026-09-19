@@ -114,10 +114,16 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
             String bodySentinel = java.util.UUID.randomUUID().toString();
 
             LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
+            String headerUsernameMarker = "__KC_LEGACY_HEADER_USERNAME_" + headerSentinel + "__";
+            String headerAliasMarker = "__KC_LEGACY_HEADER_ALIAS_" + headerSentinel + "__";
+            String bodyUsernameMarker = "__KC_LEGACY_BODY_USERNAME_" + bodySentinel + "__";
+            String bodyAliasMarker = "__KC_LEGACY_BODY_ALIAS_" + bodySentinel + "__";
             String legacyHeader = KeycloakSanitizerPolicy.sanitizeMessage(
-                    forms.getMessage(Messages.CONFIRM_ACCOUNT_LINKING, idpUsername, idpAlias));
+                    forms.getMessage(Messages.CONFIRM_ACCOUNT_LINKING, headerUsernameMarker, headerAliasMarker),
+                    Map.of(headerUsernameMarker, idpUsername, headerAliasMarker, idpAlias));
             String legacyBody = KeycloakSanitizerPolicy.sanitizeMessage(
-                    forms.getMessage(Messages.CONFIRM_ACCOUNT_LINKING_BODY, idpUsername, idpAlias));
+                    forms.getMessage(Messages.CONFIRM_ACCOUNT_LINKING_BODY, bodyUsernameMarker, bodyAliasMarker),
+                    Map.of(bodyUsernameMarker, idpUsername, bodyAliasMarker, idpAlias));
             return forms.setAuthenticationSession(authSession)
                     // Legacy themes receive the fully formatted message after
                     // context-aware sanitization; built-in themes consume the
@@ -155,8 +161,11 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
             String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
             String bodySentinel = java.util.UUID.randomUUID().toString();
             LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
+            String aliasMarker = "__KC_LEGACY_ALIAS_" + bodySentinel + "__";
+            String usernameMarker = "__KC_LEGACY_USERNAME_" + bodySentinel + "__";
             String legacyBody = KeycloakSanitizerPolicy.sanitizeMessage(
-                    forms.getMessage(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, idpAlias, idpUsername));
+                    forms.getMessage(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, aliasMarker, usernameMarker),
+                    Map.of(aliasMarker, idpAlias, usernameMarker, idpUsername));
             return forms
                     .setAuthenticationSession(authSession)
                     .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_SUCCESS_HEADER)
@@ -207,8 +216,11 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
         String bodySentinel = java.util.UUID.randomUUID().toString();
         LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
+        String aliasMarker = "__KC_LEGACY_ALIAS_" + bodySentinel + "__";
+        String usernameMarker = "__KC_LEGACY_USERNAME_" + bodySentinel + "__";
         String legacyBody = KeycloakSanitizerPolicy.sanitizeMessage(
-                forms.getMessage(Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY, idpAlias, idpUsername));
+                forms.getMessage(Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY, aliasMarker, usernameMarker),
+                Map.of(aliasMarker, idpAlias, usernameMarker, idpUsername));
         return forms
                 .setAuthenticationSession(session.getContext().getAuthenticationSession())
                 .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY_HEADER)

@@ -18,6 +18,7 @@
 package org.keycloak.authentication.authenticators.broker;
 
 import java.util.Optional;
+import java.util.Map;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -117,8 +118,11 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
             String sentinel = java.util.UUID.randomUUID().toString();
             // Legacy themes receive the fully formatted message after
             // context-aware sanitization.
+            String aliasMarker = "__KC_LEGACY_ALIAS_" + sentinel + "__";
+            String usernameMarker = "__KC_LEGACY_USERNAME_" + sentinel + "__";
             form.setError(KeycloakSanitizerPolicy.sanitizeMessage(
-                    form.getMessage(Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE, alias, username)));
+                    form.getMessage(Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE, aliasMarker, usernameMarker),
+                    Map.of(aliasMarker, alias, usernameMarker, username)));
             form.setAttribute("nestedIdpHeader", Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE);
             form.setAttribute("nestedIdpAlias", alias);
             form.setAttribute("nestedIdpUsername", username);

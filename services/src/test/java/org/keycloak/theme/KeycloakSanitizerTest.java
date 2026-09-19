@@ -19,6 +19,7 @@ package org.keycloak.theme;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
 
@@ -163,6 +164,19 @@ public class KeycloakSanitizerTest {
                 KeycloakSanitizerPolicy.sanitizeMessage("<p><a href=\"javascript:alert(1)\">Click</a></p>"));
         assertEquals("<a rel=\"nofollow\">Click</a>",
                 KeycloakSanitizerPolicy.sanitizeMessage("&amp;lt;a href=\"javascript:alert(1)\"&amp;gt;Click&amp;lt;/a&amp;gt;"));
+    }
+
+    @Test
+    public void testLegacyReplacementIsTextOnly() {
+        String marker = "__KC_LEGACY_USERNAME_123__";
+        String maliciousUsername = "<a href=\"https://evil.example\">Click</a>";
+
+        assertEquals("<p>Account &lt;a href=&quot;https://evil.example&quot;&gt;Click&lt;/a&gt;</p>",
+                KeycloakSanitizerPolicy.sanitizeMessage(
+                        "<p>Account " + marker + "</p>", Map.of(marker, maliciousUsername)));
+        assertEquals("<a rel=\"nofollow\">Link</a>",
+                KeycloakSanitizerPolicy.sanitizeMessage(
+                        "<a href=\"" + marker + "\">Link</a>", Map.of(marker, maliciousUsername)));
     }
 
     private void assertResult(String expectedResult, List<String> html) throws Exception {
