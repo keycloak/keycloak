@@ -10,6 +10,8 @@ export type Environment = BaseEnvironment & {
    * @see {@link https://www.keycloak.org/server/hostname#_administration_console}
    */
   adminBaseUrl: string;
+  /** The URL to the authentication server. */
+  authServerUrl: string;
   /** The URL to the base of the Admin Console. */
   consoleBaseUrl: string;
   /** The name of the master realm. */
