@@ -242,7 +242,7 @@
                 <#if nestedIdpUsername?? && nestedIdpHeader?? && nestedIdpSentinel??>
                     <#assign _m0 = "__KC_SENTINEL0_" + nestedIdpSentinel + "__">
                     <#assign _m1 = "__KC_SENTINEL1_" + nestedIdpSentinel + "__">
-                    <span class="${properties.kcAlertTitleClass!} kc-feedback-text">${kcSanitize(msg(nestedIdpHeader, _m0, _m1))?replace(_m1, ((nestedIdpUsername!)?esc)?markup_string)?replace(_m0, ((nestedIdpAlias!)?esc)?markup_string)?no_esc}</span>
+                    <span class="${properties.kcAlertTitleClass!} kc-feedback-text">${kcSanitize(msg(nestedIdpHeader, _m0, _m1), _m0, nestedIdpAlias!, _m1, nestedIdpUsername!)?no_esc}</span>
                 <#else>
                     <span class="${properties.kcAlertTitleClass!} kc-feedback-text">${message.summary}</span>
                 </#if>

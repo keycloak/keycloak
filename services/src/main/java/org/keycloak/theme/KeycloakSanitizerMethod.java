@@ -17,12 +17,15 @@
 
 package org.keycloak.theme;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import freemarker.template.TemplateMethodModelEx;
 import freemarker.template.TemplateModelException;
+import org.keycloak.common.util.HtmlUtils;
 import org.owasp.html.Encoding;
 
 /**
@@ -33,11 +36,8 @@ import org.owasp.html.Encoding;
 public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
     
     private static final Pattern HREF_PATTERN = Pattern.compile("\\s+href=\"([^\"]*)\"");
-    private static final Pattern SENTINEL_URL_ATTRIBUTE_PATTERN = Pattern.compile(
-            "\\s+(?:href|src|action|formaction|cite|background|poster)=\"[^\"]*__KC_SENTINEL[^\"]*\"",
-            Pattern.CASE_INSENSITIVE);
-    private static final Pattern SENTINEL_STYLE_ATTRIBUTE_PATTERN = Pattern.compile(
-            "\\s+style=\"[^\"]*__KC_SENTINEL[^\"]*\"",
+    private static final Pattern ATTRIBUTE_PATTERN = Pattern.compile(
+            "\\s+[A-Za-z_:][A-Za-z0-9:_.-]*\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]*))",
             Pattern.CASE_INSENSITIVE);
     
     @Override
@@ -47,22 +47,42 @@ public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
         }
         
         String html = list.get(0).toString();
+        Map<String, String> replacements = new LinkedHashMap<>();
+        if ((list.size() - 1) % 2 != 0) {
+            throw new TemplateModelException("Sanitizer replacements must be marker/value pairs.");
+        }
+        for (int i = 1; i < list.size(); i += 2) {
+            String marker = list.get(i).toString();
+            String value = list.get(i + 1) == null ? "" : list.get(i + 1).toString();
+            replacements.put(marker, HtmlUtils.escapeAttribute(value));
+        }
 
         html = decodeHtmlFull(html);
 
-        String sanitized = KeycloakSanitizerPolicy.POLICY_DEFINITION.sanitize(html);
+        for (String marker : replacements.keySet()) {
+            html = removeAttributeContaining(html, marker);
+        }
 
-        // IdP values are substituted after this method returns so that text values
-        // can be HTML-escaped at the output boundary. A localized message must not
-        // be allowed to place one of those values in a URL-bearing attribute,
-        // because the sentinel would otherwise pass this sanitizer and be replaced
-        // later with an attacker-controlled scheme such as javascript:.
-        sanitized = SENTINEL_URL_ATTRIBUTE_PATTERN.matcher(sanitized).replaceAll("");
-        // The same post-sanitization replacement must not populate CSS values,
-        // where a sentinel could otherwise be replaced with declarations or url().
-        sanitized = SENTINEL_STYLE_ATTRIBUTE_PATTERN.matcher(sanitized).replaceAll("");
-        
+        String sanitized = KeycloakSanitizerPolicy.POLICY_DEFINITION.sanitize(html);
+        for (Map.Entry<String, String> replacement : replacements.entrySet()) {
+            sanitized = sanitized.replace(replacement.getKey(), replacement.getValue());
+        }
         return fixURLs(sanitized);
+    }
+
+    private String removeAttributeContaining(String html, String marker) {
+        Matcher matcher = ATTRIBUTE_PATTERN.matcher(html);
+        StringBuilder result = new StringBuilder(html.length());
+        int last = 0;
+        while (matcher.find()) {
+            String attributeValue = matcher.group(1) != null ? matcher.group(1)
+                    : matcher.group(2) != null ? matcher.group(2) : matcher.group(3);
+            if (attributeValue.contains(marker)) {
+                result.append(html, last, matcher.start());
+                last = matcher.end();
+            }
+        }
+        return last == 0 ? html : result.append(html, last, html.length()).toString();
     }
 
 

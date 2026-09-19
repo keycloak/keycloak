@@ -123,13 +123,27 @@ public class KeycloakSanitizerTest {
         List<String> html = new ArrayList<>();
 
         html.add("<a href=\"__KC_SENTINEL0_123__\">link</a>");
-        assertResult("<a rel=\"nofollow\">link</a>", html);
+        html.add("__KC_SENTINEL0_123__");
+        html.add("javascript:alert(1)");
+        assertResult("<a>link</a>", html);
 
-        html.set(0, "<img src=\"https://example.org/__KC_SENTINEL1_123__\">");
+        html.clear();
+        html.add("<img src=\"https://example.org/__KC_SENTINEL1_123__\">");
+        html.add("__KC_SENTINEL1_123__");
+        html.add("javascript:alert(1)");
         assertResult("<img />", html);
 
-        html.set(0, "<p style=\"font-family: __KC_SENTINEL0_123__\">text</p>");
+        html.clear();
+        html.add("<p style=\"font-family: __KC_SENTINEL0_123__\">text</p>");
+        html.add("__KC_SENTINEL0_123__");
+        html.add("url(https://evil.example)");
         assertResult("<p>text</p>", html);
+    }
+
+    @Test
+    public void testSanitizeWithoutReplacementsDoesNotFilterSentinelText() throws Exception {
+        assertResult("<p>__KC_SENTINEL0_123__</p>",
+                new ArrayList<>(List.of("<p>__KC_SENTINEL0_123__</p>")));
     }
 
     @Test

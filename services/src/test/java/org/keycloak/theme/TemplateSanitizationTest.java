@@ -216,7 +216,7 @@ public class TemplateSanitizationTest {
 
     @Test
     public void testIdpPlaceholderCannotPopulateUrlAttribute() throws Exception {
-        Template template = new Template("url-placeholder", "<#assign _m0 = \"__KC_SENTINEL0_url__\">${kcSanitize(msg(\"urlPlaceholderMessage\", _m0))?replace(_m0, ((username!)?esc)?markup_string)?no_esc}", cfg);
+        Template template = new Template("url-placeholder", "<#assign _m0 = \"__KC_SENTINEL0_url__\">${kcSanitize(msg(\"urlPlaceholderMessage\", _m0), _m0, username!)?no_esc}", cfg);
 
         Map<String, Object> model = new HashMap<>();
         model.put("kcSanitize", kcSanitize);
