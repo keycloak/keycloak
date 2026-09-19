@@ -1,14 +1,14 @@
 package org.keycloak.tests.client;
 
-import org.junit.jupiter.api.BeforeEach;
-
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @KeycloakIntegrationTest
