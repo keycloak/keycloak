@@ -207,6 +207,51 @@ test.describe("Authentication flow details", () => {
     await assertNotificationMessage(page, "Flow successfully updated");
   });
 
+  test("keeps a flow with an unavailable provider manageable", async ({
+    page,
+  }) => {
+    const orphanFlowName = "orphan provider flow";
+    const orphanProvider = "orphan-authenticator-missing";
+    await using testBed = await createTestBed({
+      authenticationFlows: [
+        {
+          alias: orphanFlowName,
+          providerId: "basic-flow",
+          topLevel: true,
+          builtIn: false,
+          authenticationExecutions: [
+            {
+              authenticator: orphanProvider,
+              requirement: "REQUIRED",
+              priority: 0,
+              autheticatorFlow: false,
+              userSetupAllowed: false,
+            },
+          ],
+        },
+      ],
+    });
+
+    await login(page, { to: toAuthentication({ realm: testBed.realm }) });
+    await clickTableRowItem(page, orphanFlowName);
+
+    const row = page
+      .getByRole("treegrid", { name: "Flows" })
+      .getByRole("row")
+      .filter({ hasText: orphanProvider });
+
+    await expect(
+      page.getByTestId(`${orphanProvider}-provider-unavailable`),
+    ).toBeVisible();
+    await expect(row.getByRole("button", { name: "Settings" })).toHaveCount(0);
+
+    await row
+      .locator(".keycloak__authentication__requirement-dropdown")
+      .click();
+    await page.getByRole("option", { name: "Disabled" }).click();
+    await assertNotificationMessage(page, "Flow successfully updated");
+  });
+
   test("edits flow details", async ({ page }) => {
     await using testBed = await createTestBed();
 
