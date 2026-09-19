@@ -1025,7 +1025,7 @@ public class LoginActionsService {
             }
         }
 
-        if (organization != null) {
+        if (organization != null && organization.isEnabled()) {
             session.getContext().setOrganization(organization);
         }
     }
