@@ -19,6 +19,7 @@ package org.keycloak.theme;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
 
@@ -116,6 +117,66 @@ public class KeycloakSanitizerTest {
 
         html.set(0, "<p><a href='https://localhost?key=123&msg=abc'>link1</a><a href=\"https://localhost?key=abc&msg=123\">link2</a></p>");
         assertResult("<p><a href=\"https://localhost?key=123&msg=abc\" rel=\"nofollow\">link1</a><a href=\"https://localhost?key=abc&msg=123\" rel=\"nofollow\">link2</a></p>", html);
+    }
+
+    @Test
+    public void testRemovesSentinelUrlAttributes() throws Exception {
+        List<String> html = new ArrayList<>();
+
+        html.add("<a href=\"__KC_SENTINEL0_123__\">link</a>");
+        html.add("__KC_SENTINEL0_123__");
+        html.add("javascript:alert(1)");
+        assertResult("<a rel=\"nofollow\">link</a>", html);
+
+        html.clear();
+        html.add("<img src=\"https://example.org/__KC_SENTINEL1_123__\">");
+        html.add("__KC_SENTINEL1_123__");
+        html.add("javascript:alert(1)");
+        assertResult("<img />", html);
+
+        html.clear();
+        html.add("<p style=\"font-family: __KC_SENTINEL0_123__\">text</p>");
+        html.add("__KC_SENTINEL0_123__");
+        html.add("url(https://evil.example)");
+        assertResult("<p>text</p>", html);
+
+        html.clear();
+        html.add("<a/href=\"__KC_SENTINEL0_123__\">link</a>");
+        html.add("__KC_SENTINEL0_123__");
+        html.add("javascript:alert(1)");
+        assertResult("<a rel=\"nofollow\">link</a>", html);
+    }
+
+    @Test
+    public void testSanitizeWithoutReplacementsDoesNotFilterSentinelText() throws Exception {
+        assertResult("<p>__KC_SENTINEL0_123__</p>",
+                new ArrayList<>(List.of("<p>__KC_SENTINEL0_123__</p>")));
+
+        assertResult("<p>label=\"safe\"</p>",
+                new ArrayList<>(List.of("<p>label=\"__KC_SENTINEL0_123__\"</p>",
+                        "__KC_SENTINEL0_123__", "safe")));
+    }
+
+    @Test
+    public void testSanitizeFormattedMessage() {
+        assertEquals("R&amp;D Team", KeycloakSanitizerPolicy.sanitizeMessage("R&D Team"));
+        assertEquals("<p><a rel=\"nofollow\">Click</a></p>",
+                KeycloakSanitizerPolicy.sanitizeMessage("<p><a href=\"javascript:alert(1)\">Click</a></p>"));
+        assertEquals("<a rel=\"nofollow\">Click</a>",
+                KeycloakSanitizerPolicy.sanitizeMessage("&amp;lt;a href=\"javascript:alert(1)\"&amp;gt;Click&amp;lt;/a&amp;gt;"));
+    }
+
+    @Test
+    public void testLegacyReplacementIsTextOnly() {
+        String marker = "__KC_LEGACY_USERNAME_123__";
+        String maliciousUsername = "<a href=\"https://evil.example\">Click</a>";
+
+        assertEquals("<p>Account &lt;a href=&quot;https://evil.example&quot;&gt;Click&lt;/a&gt;</p>",
+                KeycloakSanitizerPolicy.sanitizeMessage(
+                        "<p>Account " + marker + "</p>", Map.of(marker, maliciousUsername)));
+        assertEquals("<a rel=\"nofollow\">Link</a>",
+                KeycloakSanitizerPolicy.sanitizeMessage(
+                        "<a href=\"" + marker + "\">Link</a>", Map.of(marker, maliciousUsername)));
     }
 
     private void assertResult(String expectedResult, List<String> html) throws Exception {

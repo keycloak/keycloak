@@ -17,13 +17,14 @@
 
 package org.keycloak.theme;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import freemarker.template.TemplateMethodModelEx;
 import freemarker.template.TemplateModelException;
-import org.owasp.html.Encoding;
 
 /**
  * Allows sanitizing of html that uses Freemarker ?no_esc.  This way, html
@@ -41,34 +42,17 @@ public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
         }
         
         String html = list.get(0).toString();
-
-        html = decodeHtmlFull(html);
-
-        String sanitized = KeycloakSanitizerPolicy.POLICY_DEFINITION.sanitize(html);
-        
-        return fixURLs(sanitized);
-    }
-
-
-    // Fully decode HTML. Assume it can be encoded multiple times
-    private String decodeHtmlFull(String html) {
-        if (html == null) return null;
-
-        int MAX_DECODING_COUNT = 5; // Max count of attempts for decoding HTML (in case it was encoded multiple times)
-        String decodedHtml;
-
-        for (int i = 0; i < MAX_DECODING_COUNT; i++) {
-            decodedHtml = Encoding.decodeHtml(html);
-            if (decodedHtml.equals(html)) {
-                // HTML is decoded. We can return it
-                return html;
-            } else {
-                // Next attempt
-                html = decodedHtml;
-            }
+        Map<String, String> replacements = new LinkedHashMap<>();
+        if ((list.size() - 1) % 2 != 0) {
+            throw new TemplateModelException("Sanitizer replacements must be marker/value pairs.");
+        }
+        for (int i = 1; i < list.size(); i += 2) {
+            String marker = list.get(i).toString();
+            String value = list.get(i + 1) == null ? "" : list.get(i + 1).toString();
+            replacements.put(marker, value);
         }
 
-        return "";
+        return fixURLs(KeycloakSanitizerPolicy.sanitizeMessage(html, replacements));
     }
 
     private String fixURLs(String msg) {

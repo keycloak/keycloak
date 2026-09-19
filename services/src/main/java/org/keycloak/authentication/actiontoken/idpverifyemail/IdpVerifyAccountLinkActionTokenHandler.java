@@ -107,10 +107,26 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
                     authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));
             String confirmUri = builder.build(realm.getName()).toString();
 
+            String idpUsername = token.getIdentityProviderUsername() != null ? token.getIdentityProviderUsername() : "";
+            String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
+            String headerSentinel = java.util.UUID.randomUUID().toString();
+            String bodySentinel = java.util.UUID.randomUUID().toString();
+
             LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
             return forms.setAuthenticationSession(authSession)
-                    .setAttribute("messageHeader", forms.getMessage(Messages.CONFIRM_ACCOUNT_LINKING, token.getIdentityProviderUsername(), token.getIdentityProviderAlias()))
-                    .setSuccess(Messages.CONFIRM_ACCOUNT_LINKING_BODY, token.getIdentityProviderUsername(), token.getIdentityProviderAlias())
+                    // Legacy custom themes cannot safely receive untrusted values
+                    // in message.summary because their placeholder context is
+                    // unknown. Built-in themes use the structured attributes below.
+                    .setAttribute("messageHeader", forms.getMessage(Messages.CONFIRM_ACCOUNT_LINKING, "", ""))
+                    .setAttribute("messageHeaderKey", Messages.CONFIRM_ACCOUNT_LINKING)
+                    .setAttribute("messageHeaderUsername", idpUsername)
+                    .setAttribute("messageHeaderAlias", idpAlias)
+                    .setAttribute("messageHeaderSentinel", headerSentinel)
+                    .setSuccess(Messages.CONFIRM_ACCOUNT_LINKING_BODY, "", "")
+                    .setAttribute("messageBodyKey", Messages.CONFIRM_ACCOUNT_LINKING_BODY)
+                    .setAttribute("messageBodyUsername", idpUsername)
+                    .setAttribute("messageBodyAlias", idpAlias)
+                    .setAttribute("messageBodySentinel", bodySentinel)
                     .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, confirmUri)
                     .createInfoPage();
         }
@@ -130,10 +146,18 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             setUserVerifiedSingleObject(token, realm, session, user);
 
-            return session.getProvider(LoginFormsProvider.class)
+            String idpUsername = token.getIdentityProviderUsername() != null ? token.getIdentityProviderUsername() : "";
+            String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
+            String bodySentinel = java.util.UUID.randomUUID().toString();
+            LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
+            return forms
                     .setAuthenticationSession(authSession)
                     .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_SUCCESS_HEADER)
-                    .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, token.getIdentityProviderAlias(), token.getIdentityProviderUsername())
+                    .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, "", "")
+                    .setAttribute("messageBodyKey", Messages.IDENTITY_PROVIDER_LINK_SUCCESS)
+                    .setAttribute("messageBodyParam0", idpAlias)
+                    .setAttribute("messageBodyParam1", idpUsername)
+                    .setAttribute("messageBodySentinel", bodySentinel)
                     .setAttribute(Constants.SKIP_LINK, true)
                     .createInfoPage();
         }
@@ -172,10 +196,18 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
     private Response sendLinkConfirmedAlready(KeycloakSession session, EventBuilder event, UserModel user, IdpVerifyAccountLinkActionToken token) {
         event.user(user).error(Errors.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY);
-        return session.getProvider(LoginFormsProvider.class)
+        String idpUsername = token.getIdentityProviderUsername() != null ? token.getIdentityProviderUsername() : "";
+        String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
+        String bodySentinel = java.util.UUID.randomUUID().toString();
+        LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
+        return forms
                 .setAuthenticationSession(session.getContext().getAuthenticationSession())
                 .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY_HEADER)
-                .setInfo(Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY, token.getIdentityProviderAlias(), token.getIdentityProviderUsername())
+                .setInfo(Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY, "", "")
+                .setAttribute("messageBodyKey", Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY)
+                .setAttribute("messageBodyParam0", idpAlias)
+                .setAttribute("messageBodyParam1", idpUsername)
+                .setAttribute("messageBodySentinel", bodySentinel)
                 .createInfoPage();
     }
 }

@@ -13,4 +13,5 @@ public class HtmlUtilsTest {
     Assertions.assertEquals("&apos;test&apos;", HtmlUtils.escapeAttribute("\'test\'"));
     Assertions.assertEquals("&quot;test&quot;", HtmlUtils.escapeAttribute("\"test\""));
   }
+
 }

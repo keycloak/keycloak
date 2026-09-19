@@ -17,9 +17,12 @@
 
 package org.keycloak.theme;
 
+import java.util.Map;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.owasp.html.Encoding;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
@@ -43,6 +46,11 @@ public class KeycloakSanitizerPolicy {
       "[0-9]+%?");
   private static final Pattern PARAGRAPH = Pattern.compile(
       "(?:[\\p{L}\\p{N},'\\.\\s\\-_\\(\\)]|&[0-9]{2};)*");
+  private static final Pattern START_TAG_PATTERN = Pattern.compile(
+      "<[A-Za-z](?:[^>\"']|\"[^\"]*\"|'[^']*')*>", Pattern.CASE_INSENSITIVE);
+  private static final Pattern ATTRIBUTE_PATTERN = Pattern.compile(
+      "\\s+[A-Za-z_:][A-Za-z0-9:_.-]*\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]*))",
+      Pattern.CASE_INSENSITIVE);
   private static final Pattern HTML_ID = Pattern.compile(
       "[a-zA-Z0-9\\:\\-_\\.]+");
   // force non-empty with a '+' at the end instead of '*'
@@ -166,6 +174,76 @@ public class KeycloakSanitizerPolicy {
               "ul", "ol", "li", "dd", "dt", "dl", "tbody", "thead", "tfoot",
               "table", "td", "th", "tr", "colgroup", "fieldset", "legend")
           .toFactory();
+
+  /** Sanitizes a fully formatted message for legacy message-summary rendering. */
+  public static String sanitizeMessage(String value) {
+    return sanitizeMessage(value, Map.of());
+  }
+
+  public static String sanitizeMessage(String value, Map<String, String> replacements) {
+    if (value == null || value.isEmpty()) {
+      return "";
+    }
+    String decoded = decodeHtmlFully(value);
+    if (decoded.isEmpty()) {
+      return "";
+    }
+    String sanitized = POLICY_DEFINITION.sanitize(decoded);
+    for (String marker : replacements.keySet()) {
+      sanitized = removeAttributeContaining(sanitized, marker);
+    }
+    if (replacements.isEmpty()) {
+      return sanitized;
+    }
+
+    StringBuilder markerPattern = new StringBuilder();
+    for (String marker : replacements.keySet()) {
+      if (markerPattern.length() > 0) {
+        markerPattern.append('|');
+      }
+      markerPattern.append(Pattern.quote(marker));
+    }
+    Matcher matcher = Pattern.compile(markerPattern.toString()).matcher(sanitized);
+    StringBuffer result = new StringBuffer(sanitized.length());
+    while (matcher.find()) {
+      matcher.appendReplacement(result, Matcher.quoteReplacement(
+          org.keycloak.common.util.HtmlUtils.escapeAttribute(replacements.get(matcher.group()))));
+    }
+    matcher.appendTail(result);
+    return result.toString();
+  }
+
+  private static String removeAttributeContaining(String html, String marker) {
+    Matcher tags = START_TAG_PATTERN.matcher(html);
+    StringBuffer result = new StringBuffer(html.length());
+    while (tags.find()) {
+      Matcher attributes = ATTRIBUTE_PATTERN.matcher(tags.group());
+      StringBuffer tag = new StringBuffer(tags.group().length());
+      while (attributes.find()) {
+        String attributeValue = attributes.group(1) != null ? attributes.group(1)
+            : attributes.group(2) != null ? attributes.group(2) : attributes.group(3);
+        if (attributeValue.contains(marker)) {
+          attributes.appendReplacement(tag, "");
+        }
+      }
+      attributes.appendTail(tag);
+      tags.appendReplacement(result, Matcher.quoteReplacement(tag.toString()));
+    }
+    tags.appendTail(result);
+    return result.toString();
+  }
+
+  private static String decodeHtmlFully(String value) {
+    String decoded = value;
+    for (int i = 0; i < 5; i++) {
+      String next = Encoding.decodeHtml(decoded);
+      if (next.equals(decoded)) {
+        return decoded;
+      }
+      decoded = next;
+    }
+    return Encoding.decodeHtml(decoded).equals(decoded) ? decoded : "";
+  }
 
   private static Predicate<String> matchesEither(final Pattern a, final Pattern b) {
     return s -> a.matcher(s).matches() || b.matcher(s).matches();

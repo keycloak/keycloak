@@ -1,14 +1,18 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout displayMessage=false; section>
     <#if section = "header">
-        <#if messageHeader??>
-            ${kcSanitize(msg("${messageHeader}"))?no_esc}
+        <#if messageHeaderKey?? && messageHeaderUsername?? && messageHeaderSentinel??>
+            <#assign _m0 = "__KC_SENTINEL0_" + messageHeaderSentinel + "__">
+            <#assign _m1 = "__KC_SENTINEL1_" + messageHeaderSentinel + "__">
+            ${kcSanitize(msg(messageHeaderKey, _m0, _m1), _m0, messageHeaderUsername!, _m1, messageHeaderAlias!)?no_esc}
+        <#elseif messageHeader??>
+            ${kcSanitize(msg(messageHeader))?no_esc}
         <#else>
-            ${message.summary}
+            ${message.summary?esc}
         </#if>
     <#elseif section = "form">
     <div id="kc-info-message">
-        <p class="instruction">${message.summary}<#if requiredActions??><#list requiredActions>: <b><#items as reqActionItem>${kcSanitize(msg("requiredAction.${reqActionItem}"))?no_esc}<#sep>, </#items></b></#list><#else></#if></p>
+        <p class="instruction"><#if messageBodyKey?? && messageBodySentinel??><#assign _m0 = "__KC_SENTINEL0_" + messageBodySentinel + "__"><#assign _m1 = "__KC_SENTINEL1_" + messageBodySentinel + "__"><#assign _param0 = messageBodyParam0!(messageBodyUsername!)><#assign _param1 = messageBodyParam1!(messageBodyAlias!)>${kcSanitize(msg(messageBodyKey, _m0, _m1), _m0, _param0!, _m1, _param1!)?no_esc}<#else>${message.summary?esc}</#if><#if requiredActions??><#list requiredActions>: <b><#items as reqActionItem>${kcSanitize(msg("requiredAction.${reqActionItem}"))?no_esc}<#sep>, </#items></b></#list><#else></#if></p>
         <#if skipLink??>
         <#else>
             <#if pageRedirectUri?has_content>
