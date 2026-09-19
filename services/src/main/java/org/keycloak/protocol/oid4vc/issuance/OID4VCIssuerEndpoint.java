@@ -39,6 +39,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -136,9 +137,6 @@ import org.keycloak.utils.QRCodeUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.zxing.WriterException;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpOptions;
-import org.apache.http.client.methods.HttpPost;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
@@ -644,7 +642,7 @@ public class OID4VCIssuerEndpoint {
      */
     private void configureCors(boolean authenticated) {
         cors = Cors.builder()
-                .allowedMethods(HttpGet.METHOD_NAME, HttpOptions.METHOD_NAME)
+                .allowedMethods(HttpMethod.GET, HttpMethod.OPTIONS)
                 .allowAllOrigins()
                 .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS, HttpHeaders.CONTENT_TYPE);
         if (authenticated) {
@@ -802,7 +800,7 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
 
-        cors = Cors.builder().auth().allowedMethods(HttpPost.METHOD_NAME).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+        cors = Cors.builder().auth().allowedMethods(HttpMethod.POST).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
         // Authenticate before any processing of the payload
         AuthenticationManager.AuthResult authResult = getAuthResult(eventBuilder);
