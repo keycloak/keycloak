@@ -110,21 +110,24 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             String idpUsername = token.getIdentityProviderUsername() != null ? token.getIdentityProviderUsername() : "";
             String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
-            String legacyUsername = KeycloakSanitizerPolicy.sanitizeText(idpUsername);
-            String legacyAlias = KeycloakSanitizerPolicy.sanitizeText(idpAlias);
             String headerSentinel = java.util.UUID.randomUUID().toString();
             String bodySentinel = java.util.UUID.randomUUID().toString();
 
             LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
+            String legacyHeader = KeycloakSanitizerPolicy.sanitizeMessage(
+                    forms.getMessage(Messages.CONFIRM_ACCOUNT_LINKING, idpUsername, idpAlias));
+            String legacyBody = KeycloakSanitizerPolicy.sanitizeMessage(
+                    forms.getMessage(Messages.CONFIRM_ACCOUNT_LINKING_BODY, idpUsername, idpAlias));
             return forms.setAuthenticationSession(authSession)
-                    // Legacy themes receive a markup-free representation;
-                    // built-in themes consume the raw structured attributes below.
-                    .setAttribute("messageHeader", forms.getMessage(Messages.CONFIRM_ACCOUNT_LINKING, legacyUsername, legacyAlias))
+                    // Legacy themes receive the fully formatted message after
+                    // context-aware sanitization; built-in themes consume the
+                    // raw structured attributes below.
+                    .setAttribute("messageHeader", legacyHeader)
                     .setAttribute("messageHeaderKey", Messages.CONFIRM_ACCOUNT_LINKING)
                     .setAttribute("messageHeaderUsername", idpUsername)
                     .setAttribute("messageHeaderAlias", idpAlias)
                     .setAttribute("messageHeaderSentinel", headerSentinel)
-                    .setSuccess(Messages.CONFIRM_ACCOUNT_LINKING_BODY, legacyUsername, legacyAlias)
+                    .setSuccess(legacyBody)
                     .setAttribute("messageBodyKey", Messages.CONFIRM_ACCOUNT_LINKING_BODY)
                     .setAttribute("messageBodyUsername", idpUsername)
                     .setAttribute("messageBodyAlias", idpAlias)
@@ -150,13 +153,14 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             String idpUsername = token.getIdentityProviderUsername() != null ? token.getIdentityProviderUsername() : "";
             String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
-            String legacyUsername = KeycloakSanitizerPolicy.sanitizeText(idpUsername);
-            String legacyAlias = KeycloakSanitizerPolicy.sanitizeText(idpAlias);
             String bodySentinel = java.util.UUID.randomUUID().toString();
-            return session.getProvider(LoginFormsProvider.class)
+            LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
+            String legacyBody = KeycloakSanitizerPolicy.sanitizeMessage(
+                    forms.getMessage(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, idpAlias, idpUsername));
+            return forms
                     .setAuthenticationSession(authSession)
                     .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_SUCCESS_HEADER)
-                    .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, legacyAlias, legacyUsername)
+                    .setSuccess(legacyBody)
                     .setAttribute("messageBodyKey", Messages.IDENTITY_PROVIDER_LINK_SUCCESS)
                     .setAttribute("messageBodyParam0", idpAlias)
                     .setAttribute("messageBodyParam1", idpUsername)
@@ -201,13 +205,14 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         event.user(user).error(Errors.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY);
         String idpUsername = token.getIdentityProviderUsername() != null ? token.getIdentityProviderUsername() : "";
         String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
-        String legacyUsername = KeycloakSanitizerPolicy.sanitizeText(idpUsername);
-        String legacyAlias = KeycloakSanitizerPolicy.sanitizeText(idpAlias);
         String bodySentinel = java.util.UUID.randomUUID().toString();
-        return session.getProvider(LoginFormsProvider.class)
+        LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
+        String legacyBody = KeycloakSanitizerPolicy.sanitizeMessage(
+                forms.getMessage(Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY, idpAlias, idpUsername));
+        return forms
                 .setAuthenticationSession(session.getContext().getAuthenticationSession())
                 .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY_HEADER)
-                .setInfo(Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY, legacyAlias, legacyUsername)
+                .setInfo(legacyBody)
                 .setAttribute("messageBodyKey", Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY)
                 .setAttribute("messageBodyParam0", idpAlias)
                 .setAttribute("messageBodyParam1", idpUsername)

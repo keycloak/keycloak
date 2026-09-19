@@ -157,13 +157,12 @@ public class KeycloakSanitizerTest {
     }
 
     @Test
-    public void testSanitizeTextPreservesDetailsWithoutMarkup() {
-        assertEquals("R&D Team", KeycloakSanitizerPolicy.sanitizeText("R&D Team"));
-        assertEquals("Click", KeycloakSanitizerPolicy.sanitizeText("<a href=\"https://evil.example\">Click</a>"));
-        assertEquals("",
-                KeycloakSanitizerPolicy.sanitizeText("&lt;img src=x onerror=alert(1)&gt;"));
-        assertEquals("Click",
-                KeycloakSanitizerPolicy.sanitizeText("&amp;lt;a href=\"https://evil.example\"&amp;gt;Click&amp;lt;/a&amp;gt;"));
+    public void testSanitizeFormattedMessage() {
+        assertEquals("R&amp;D Team", KeycloakSanitizerPolicy.sanitizeMessage("R&D Team"));
+        assertEquals("<p><a rel=\"nofollow\">Click</a></p>",
+                KeycloakSanitizerPolicy.sanitizeMessage("<p><a href=\"javascript:alert(1)\">Click</a></p>"));
+        assertEquals("<a rel=\"nofollow\">Click</a>",
+                KeycloakSanitizerPolicy.sanitizeMessage("&amp;lt;a href=\"javascript:alert(1)\"&amp;gt;Click&amp;lt;/a&amp;gt;"));
     }
 
     private void assertResult(String expectedResult, List<String> html) throws Exception {

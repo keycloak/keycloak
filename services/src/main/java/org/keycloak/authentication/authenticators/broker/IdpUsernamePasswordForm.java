@@ -114,12 +114,11 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
             BrokeredIdentityContext ctx0 = serializedCtx0.deserialize(context.getSession(), context.getAuthenticationSession());
             String alias = ctx0.getIdpConfig().getAlias() != null ? ctx0.getIdpConfig().getAlias() : "";
             String username = ctx0.getUsername() != null ? ctx0.getUsername() : "";
-            String legacyAlias = KeycloakSanitizerPolicy.sanitizeText(alias);
-            String legacyUsername = KeycloakSanitizerPolicy.sanitizeText(username);
             String sentinel = java.util.UUID.randomUUID().toString();
-            // Legacy themes receive message.summary. Keep it markup-free while
-            // preserving the displayed IdP details.
-            form.setError(Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE, legacyAlias, legacyUsername);
+            // Legacy themes receive the fully formatted message after
+            // context-aware sanitization.
+            form.setError(KeycloakSanitizerPolicy.sanitizeMessage(
+                    form.getMessage(Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE, alias, username)));
             form.setAttribute("nestedIdpHeader", Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE);
             form.setAttribute("nestedIdpAlias", alias);
             form.setAttribute("nestedIdpUsername", username);

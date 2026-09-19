@@ -17,13 +17,11 @@
 
 package org.keycloak.theme;
 
-import java.util.List;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import org.owasp.html.Encoding;
 import org.owasp.html.HtmlPolicyBuilder;
-import org.owasp.html.HtmlSanitizer;
 import org.owasp.html.PolicyFactory;
 
 /**
@@ -170,44 +168,13 @@ public class KeycloakSanitizerPolicy {
               "table", "td", "th", "tr", "colgroup", "fieldset", "legend")
           .toFactory();
 
-  /** Removes markup from an untrusted value for legacy message-summary rendering. */
-  public static String sanitizeText(String value) {
+  /** Sanitizes a fully formatted message for legacy message-summary rendering. */
+  public static String sanitizeMessage(String value) {
     if (value == null || value.isEmpty()) {
       return "";
     }
-
-    StringBuilder text = new StringBuilder(value.length());
     String decoded = decodeHtmlFully(value);
-    if (decoded == null) {
-      return "";
-    }
-
-    HtmlSanitizer.sanitize(decoded, new HtmlSanitizer.Policy() {
-      @Override
-      public void openDocument() {
-      }
-
-      @Override
-      public void closeDocument() {
-      }
-
-      @Override
-      public void openTag(String elementName, List<String> attrs) {
-      }
-
-      @Override
-      public void closeTag(String elementName) {
-      }
-
-      @Override
-      public void text(String chunk) {
-        // HtmlSanitizer decodes character references before delivering text.
-        // Remove delimiters so an encoded tag cannot become markup again in a
-        // legacy theme that renders message.summary with ?no_esc.
-        text.append(chunk.replace("<", "").replace(">", ""));
-      }
-    });
-    return text.toString();
+    return decoded.isEmpty() && !value.isEmpty() ? "" : POLICY_DEFINITION.sanitize(decoded);
   }
 
   private static String decodeHtmlFully(String value) {
