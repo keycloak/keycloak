@@ -114,8 +114,6 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
             String alias = ctx0.getIdpConfig().getAlias() != null ? ctx0.getIdpConfig().getAlias() : "";
             String username = ctx0.getUsername() != null ? ctx0.getUsername() : "";
             String sentinel = java.util.UUID.randomUUID().toString();
-            // Legacy themes receive the fully formatted message after
-            // context-aware sanitization.
             // Legacy custom themes cannot safely receive untrusted values in
             // message.summary because their placeholder context is unknown.
             // Built-in themes use the structured attributes below.

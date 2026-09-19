@@ -56,36 +56,10 @@ public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
         for (int i = 1; i < list.size(); i += 2) {
             String marker = list.get(i).toString();
             String value = list.get(i + 1) == null ? "" : list.get(i + 1).toString();
-            replacements.put(marker, HtmlUtils.escapeAttribute(value));
+            replacements.put(marker, value);
         }
 
-        html = decodeHtmlFull(html);
-
-        String sanitized = KeycloakSanitizerPolicy.POLICY_DEFINITION.sanitize(html);
-        // The sanitizer parser normalizes malformed tags and attributes first.
-        // Filter only the normalized start tags, so parser recovery cannot leave
-        // a marker in an attribute while ordinary localized text is untouched.
-        for (String marker : replacements.keySet()) {
-            sanitized = removeAttributeContaining(sanitized, marker);
-        }
-        if (!replacements.isEmpty()) {
-            StringBuilder markerPattern = new StringBuilder();
-            for (String marker : replacements.keySet()) {
-                if (markerPattern.length() > 0) {
-                    markerPattern.append('|');
-                }
-                markerPattern.append(Pattern.quote(marker));
-            }
-
-            Matcher matcher = Pattern.compile(markerPattern.toString()).matcher(sanitized);
-            StringBuffer result = new StringBuffer(sanitized.length());
-            while (matcher.find()) {
-                matcher.appendReplacement(result, Matcher.quoteReplacement(replacements.get(matcher.group())));
-            }
-            matcher.appendTail(result);
-            sanitized = result.toString();
-        }
-        return fixURLs(sanitized);
+        return fixURLs(KeycloakSanitizerPolicy.sanitizeMessage(html, replacements));
     }
 
     private String removeAttributeContaining(String html, String marker) {
