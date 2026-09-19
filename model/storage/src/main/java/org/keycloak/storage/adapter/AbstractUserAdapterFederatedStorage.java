@@ -259,21 +259,11 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
 
     }
 
-    /**
-     * This method should not be overridden
-     *
-     * @return
-     */
     @Override
     public String getServiceAccountClientLink() {
         return null;
     }
 
-    /**
-     * This method should not be overridden
-     *
-     * @return
-     */
     @Override
     public void setServiceAccountClientLink(String clientInternalId) {
 
