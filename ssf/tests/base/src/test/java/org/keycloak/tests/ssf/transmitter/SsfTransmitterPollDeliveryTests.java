@@ -487,6 +487,39 @@ public class SsfTransmitterPollDeliveryTests {
                 .asResponse()) {
             Assertions.assertEquals(401, response.getStatus(),
                     "unauthenticated poll must be rejected at the auth layer");
+            // RFC 6750 §3.1: no credentials presented -> bare challenge without an error code
+            String challenge = response.getFirstHeader("WWW-Authenticate");
+            Assertions.assertNotNull(challenge, "401 must carry a WWW-Authenticate challenge");
+            Assertions.assertTrue(challenge.startsWith("Bearer realm=\""), "challenge must use the Bearer scheme: " + challenge);
+            Assertions.assertFalse(challenge.contains("error="), "bare request must not carry an error code: " + challenge);
+            // ...and the body carries no error information either
+            Assertions.assertTrue(response.asJson().isEmpty(), "bare request body must be an empty JSON object");
+            Assertions.assertEquals("no-store", response.getFirstHeader("Cache-Control"),
+                    "auth error responses must not be cacheable");
+        }
+    }
+
+    @Test
+    public void poll_unsupportedAuthScheme_returnsBareChallenge() throws Exception {
+
+        // RFC 6750 §3.1: an attempt with an unsupported authentication
+        // method (here HTTP Basic) is treated like a request without
+        // credentials — 401 with a bare challenge, no error code.
+        String token = obtainReceiverToken(RECEIVER_POLL, RECEIVER_POLL_SECRET);
+        StreamConfig stream = createPollStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        try (SimpleHttpResponse response = http.doPost(pollEndpoint(RECEIVER_POLL, stream.getStreamId()))
+                .json(pollBodyAsMap(null, true, List.of()))
+                .authBasic(RECEIVER_POLL, RECEIVER_POLL_SECRET)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(401, response.getStatus(),
+                    "non-Bearer Authorization header must be rejected with 401");
+            String challenge = response.getFirstHeader("WWW-Authenticate");
+            Assertions.assertNotNull(challenge, "401 must carry a WWW-Authenticate challenge");
+            Assertions.assertTrue(challenge.startsWith("Bearer realm=\""), "challenge must use the Bearer scheme: " + challenge);
+            Assertions.assertFalse(challenge.contains("error="), "unsupported scheme must not yield an error code: " + challenge);
+            Assertions.assertTrue(response.asJson().isEmpty(), "body must be an empty JSON object");
         }
     }
 

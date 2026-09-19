@@ -10,6 +10,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.transmitter.subject.SubjectManagementResult;
 import org.keycloak.ssf.transmitter.subject.SubjectManagementService;
 import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
@@ -67,12 +68,13 @@ public class SsfSubjectManagementResource {
             @APIResponse(responseCode = "200", description = "OK"),
             @APIResponse(responseCode = "400", description = "Bad Request"),
             @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "403", description = "Forbidden — token lacks the required scope, role, or receiver configuration"),
             @APIResponse(responseCode = "404", description = "Stream or subject not found (verbose mode only)")
     })
     public Response addSubject(AddSubjectRequest request) {
 
         if (!SsfAuthUtil.canManage()) {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
+            return SsfAuthUtil.insufficientScopeResponse(session, Ssf.SCOPE_SSF_MANAGE);
         }
 
         if (request == null || request.getStreamId() == null || request.getSubject() == null) {
@@ -144,12 +146,13 @@ public class SsfSubjectManagementResource {
             @APIResponse(responseCode = "204", description = "No Content"),
             @APIResponse(responseCode = "400", description = "Bad Request"),
             @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "403", description = "Forbidden — token lacks the required scope, role, or receiver configuration"),
             @APIResponse(responseCode = "404", description = "Stream not found (verbose mode only)")
     })
     public Response removeSubject(RemoveSubjectRequest request) {
 
         if (!SsfAuthUtil.canManage()) {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
+            return SsfAuthUtil.insufficientScopeResponse(session, Ssf.SCOPE_SSF_MANAGE);
         }
 
         if (request == null || request.getStreamId() == null || request.getSubject() == null) {
