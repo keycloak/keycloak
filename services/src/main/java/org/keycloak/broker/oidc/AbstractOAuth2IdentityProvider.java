@@ -31,6 +31,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import javax.net.ssl.KeyManager;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.QueryParam;
@@ -44,6 +45,8 @@ import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.broker.oidc.mtls.IdpClientCertificateResolver;
+import org.keycloak.broker.oidc.mtls.IdpMtlsSslContextProvider;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -55,6 +58,7 @@ import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
@@ -112,7 +116,10 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.logging.Logger;
+
+import static org.keycloak.http.simple.SimpleHttp.OnCompletion.CLOSE_CLIENT;
 
 /**
  * @author Pedro Igor
@@ -382,7 +389,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     protected SimpleHttpRequest getRefreshTokenRequest(KeycloakSession session, String refreshToken, String clientId, String clientSecret) {
-        SimpleHttpRequest refreshTokenRequest = SimpleHttp.create(session).doPost(getConfig().getTokenUrl())
+        SimpleHttpRequest refreshTokenRequest = createBackchannelHttp().doPost(getConfig().getTokenUrlForClientAuth())
                 .param(OAUTH2_GRANT_TYPE_REFRESH_TOKEN, refreshToken)
                 .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN);
         return authenticateTokenRequest(refreshTokenRequest);
@@ -673,6 +680,11 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     public SimpleHttpRequest authenticateTokenRequest(final SimpleHttpRequest tokenRequest) {
 
+        if (getConfig().isTlsClientAuth()) {
+            // RFC 8705: client authentication happens at the TLS layer; only client_id is sent.
+            return tokenRequest.param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId());
+        }
+
         if (getConfig().isJWTAuthentication()) {
             String sha1x509Thumbprint = null;
             SignatureSignerContext signer = getSignatureContext();
@@ -712,6 +724,46 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             }
         }
     }
+
+    /**
+     * Returns a SimpleHttp bound to a per-IdP mTLS client when the IdP uses tls_client_auth,
+     * otherwise the default shared-client SimpleHttp. Non-mTLS behavior is unchanged.
+     *
+     * <p>For tls_client_auth, a fresh {@link CloseableHttpClient} is built for the single backchannel call and marked
+     * as owned so it is closed automatically once the resulting {@code SimpleHttpResponse} has fully consumed the
+     * response body (see {@link SimpleHttp#create(org.apache.http.client.HttpClient, SimpleHttp.OnCompletion)}). This avoids
+     * leaking a pooled client per request, since broker IdP provider instances are created fresh per request and their
+     * {@code close()} is never invoked.
+     */
+    protected SimpleHttp createBackchannelHttp() {
+        if (!getConfig().isTlsClientAuth()) {
+            return SimpleHttp.create(session);
+        }
+        // SimpleHttp.create(client, onCompletion) defaults to HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE.
+        // Apply the provider's configured limit so mTLS backchannel calls honor an operator's (possibly lower)
+        // max-consumed-response-size memory-safety setting, matching the non-mTLS SimpleHttp.create(session) path.
+        HttpClientProvider httpClientProvider = session.getProvider(HttpClientProvider.class);
+        return SimpleHttp.create(buildMtlsHttpClient(httpClientProvider), CLOSE_CLIENT)
+                .withMaxConsumedResponseSize(httpClientProvider.getMaxConsumedResponseSize());
+    }
+
+    private CloseableHttpClient buildMtlsHttpClient(HttpClientProvider httpClientProvider) {
+        try {
+            RealmModel realm = session.getContext().getRealm();
+            String providerId = getConfig().getClientCertKeyProviderId();
+            KeyWrapper key = new IdpClientCertificateResolver(session).resolve(realm, providerId);
+            KeyManager[] keyManagers = IdpMtlsSslContextProvider.buildKeyManagers(key);
+            // Build the client through the HttpClientProvider so that the per-IdP mTLS client inherits the
+            // server-wide outbound HTTP settings (proxy, timeouts, connection pool, cookie/redirect/retry
+            // policy, truststore, hostname verification and tracing) and only adds the client TLS key
+            // material. Passing key managers (rather than a full SSLContext) keeps the certificate present
+            // even when the outbound client is configured with disable-trust-manager.
+            return httpClientProvider.createHttpClient(keyManagers);
+        } catch (Exception e) {
+            throw new IdentityBrokerException("Failed to build mTLS HTTP client for tls_client_auth", e);
+        }
+    }
+
 
     protected JsonWebToken generateToken() {
         JsonWebToken jwt = new JsonWebToken();
@@ -862,7 +914,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         public SimpleHttpRequest generateTokenRequest(String authorizationCode) {
             KeycloakContext context = session.getContext();
             OAuth2IdentityProviderConfig providerConfig = provider.getConfig();
-            SimpleHttpRequest tokenRequest = SimpleHttp.create(session).doPost(providerConfig.getTokenUrl())
+            SimpleHttpRequest tokenRequest = provider.createBackchannelHttp().doPost(providerConfig.getTokenUrlForClientAuth())
                     .param(OAUTH2_PARAMETER_CODE, authorizationCode)
                     .param(OAUTH2_PARAMETER_REDIRECT_URI, Urls.identityProviderAuthnResponse(context.getUri().getBaseUri(),
                             providerConfig.getAlias(), context.getRealm().getName()).toString())
@@ -955,7 +1007,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     protected SimpleHttpRequest buildUserInfoRequest(String subjectToken, String userInfoUrl) {
-        return SimpleHttp.create(session).doGet(userInfoUrl)
+        return createBackchannelHttp().doGet(userInfoUrl)
                   .header("Authorization", "Bearer " + subjectToken);
     }
 
@@ -1050,7 +1102,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
      * @throws ErrorResponseException in case that introspection response was not correct for any reason (other status than 200) or the token was not active
      */
     protected TokenMetadataRepresentation sendTokenIntrospectionRequest(String idpAccessToken, EventBuilder event) {
-        String introspectionEndointUrl = getConfig().getTokenIntrospectionUrl();
+        String introspectionEndointUrl = getConfig().getTokenIntrospectionUrlForClientAuth();
         if (introspectionEndointUrl == null) {
             throwErrorResponse(event, Errors.INVALID_CONFIG, OAuthErrorException.INVALID_REQUEST, "Introspection endpoint not configured for IDP");
         }
@@ -1058,7 +1110,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         try {
 
             // Supporting only access-tokens for now
-            SimpleHttpRequest introspectionRequest = SimpleHttp.create(session).doPost(introspectionEndointUrl)
+            SimpleHttpRequest introspectionRequest = createBackchannelHttp().doPost(introspectionEndointUrl)
                     .param(TokenIntrospectionEndpoint.PARAM_TOKEN, idpAccessToken)
                     .param(TokenIntrospectionEndpoint.PARAM_TOKEN_TYPE_HINT, AccessTokenIntrospectionProviderFactory.ACCESS_TOKEN_TYPE);
             introspectionRequest = authenticateTokenRequest(introspectionRequest);
