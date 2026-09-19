@@ -13,6 +13,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.keycloak.common.Profile;
+import org.keycloak.common.Version;
 import org.keycloak.common.util.DurationConverter;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.CachingOptions.Stack;
@@ -55,6 +56,8 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     private static final Option<String> SYNTHETIC_RUNTIME_DB_OPTION = DB.toBuilder().synthetic().buildTime(false).build();
     public static final String PG_TARGET_SERVER_TYPE = "quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType";
     public static final String PG_LOG_SERVER_ERROR_DETAIL = "quarkus.datasource.jdbc.additional-jdbc-properties.logServerErrorDetail";
+    public static final String PG_ASSUME_MIN_SERVER_VERSION = "quarkus.datasource.jdbc.additional-jdbc-properties.assumeMinServerVersion";
+    public static final String PG_APPLICATION_NAME = "quarkus.datasource.jdbc.additional-jdbc-properties.ApplicationName";
     public static final String MSSQL_SEND_STRING_PARAMETER_AS_UNICODE = "quarkus.datasource.jdbc.additional-jdbc-properties.sendStringParametersAsUnicode";
     public static final String CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
     public static final String SOCKET_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.socketTimeout";
@@ -64,6 +67,8 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     private static final String ORACLE_NET_CONNECT_TIMEOUT = "oracle.net.CONNECT_TIMEOUT";
     public static final String JDBC_LOGIN_TIMEOUT = "quarkus.datasource.jdbc.login-timeout";
     public static final String JDBC_ACQUISITION_TIMEOUT = "quarkus.datasource.jdbc.acquisition-timeout";
+
+    static final String AWS_JDBC_WRAPPER_DRIVER = "software.amazon.jdbc.Driver";
 
     private static final Logger log = Logger.getLogger(DatabasePropertyMappers.class);
 
@@ -282,6 +287,14 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .to(PG_LOG_SERVER_ERROR_DETAIL)
                         .isEnabled(DatabasePropertyMappers::isPostgresqlLogServerErrorDetailEnabled)
                         .build(),
+                fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "14")
+                        .to(PG_ASSUME_MIN_SERVER_VERSION)
+                        .isEnabled(DatabasePropertyMappers::isPostgresqlAssumeMinServerVersionEnabled)
+                        .build(),
+                fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> Version.NAME)
+                        .to(PG_APPLICATION_NAME)
+                        .isEnabled(DatabasePropertyMappers::isPostgresqlApplicationNameEnabled)
+                        .build(),
                 fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "false")
                         .to(MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
                         .isEnabled(DatabasePropertyMappers::isMssqlSendStringParametersAsUnicode)
@@ -339,10 +352,47 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
             return false;
         }
 
+        String dbDriver = Configuration.getConfigValue(DatabaseOptions.DB_DRIVER).getValue();
+        if (isCustomNonWrappingDriver(db, dbDriver)) {
+            return false;
+        }
+
         String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValue();
 
         // logServerErrorDetail already set to same or different value in db-url, ignore
         return dbUrl == null || !dbUrl.contains("logServerErrorDetail");
+    }
+
+    public static boolean isPostgresqlAssumeMinServerVersionEnabled() {
+        String db = Configuration.getConfigValue(DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElse(null);
+        if (vendor != Database.Vendor.POSTGRES) {
+            return false;
+        }
+
+        String dbDriver = Configuration.getConfigValue(DatabaseOptions.DB_DRIVER).getValue();
+        if (isCustomNonWrappingDriver(db, dbDriver)) {
+            return false;
+        }
+
+        String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValue();
+        return dbUrl == null || !dbUrl.contains("assumeMinServerVersion");
+    }
+
+    public static boolean isPostgresqlApplicationNameEnabled() {
+        String db = Configuration.getConfigValue(DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElse(null);
+        if (vendor != Database.Vendor.POSTGRES) {
+            return false;
+        }
+
+        String dbDriver = Configuration.getConfigValue(DatabaseOptions.DB_DRIVER).getValue();
+        if (isCustomNonWrappingDriver(db, dbDriver)) {
+            return false;
+        }
+
+        String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValue();
+        return dbUrl == null || !dbUrl.contains("ApplicationName");
     }
 
     public static boolean isMssqlSendStringParametersAsUnicode() {
@@ -456,6 +506,21 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         };
     }
 
+    /**
+     * The AWS JDBC Wrapper passes connection properties through to the underlying driver,
+     * so JDBC properties like connectTimeout, ApplicationName, and logServerErrorDetail still apply.
+     * Only truly unknown custom drivers should skip these defaults.
+     * Note: {@link #isPostgresqlTargetServerTypeEnabled()} intentionally does not use this method,
+     * because the AWS wrapper has its own failover routing that conflicts with targetServerType.
+     */
+    private static boolean isCustomNonWrappingDriver(String db, String dbDriver) {
+        if (Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) ||
+                Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
+            return false;
+        }
+        return !AWS_JDBC_WRAPPER_DRIVER.equals(dbDriver);
+    }
+
     private static boolean checkSettingsAndVendor(Collection<Vendor> validForVendors, String timeoutProperty, String datasource, Vendor vendor, String db) {
         if (!validForVendors.contains(vendor)) {
             // this jdbc property is not for this vendor
@@ -463,9 +528,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         }
 
         String dbDriver = getDatasourceOptionValue(DatabaseOptions.DB_DRIVER, datasource).orElse(null);
-        if (!Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
-                !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
-            // Custom JDBC driver (e.g. AWS JDBC Wrapper) — do not inject defaults
+        if (isCustomNonWrappingDriver(db, dbDriver)) {
             return true;
         }
 

@@ -317,6 +317,14 @@ You can override this behavior by setting your own value for `targetServerType` 
 The `targetServerType` is only applied automatically to the primary datasource, as requirements might be different for additional datasources.
 ====
 
+=== Application name and assumed server version
+
+When using the original PostgreSQL driver, {project_name} sets the `ApplicationName` JDBC property to `{project_name}` so that {project_name} connections are identifiable in PostgreSQL's `pg_stat_activity` view, server logs, and monitoring tools.
+
+{project_name} also sets `assumeMinServerVersion` to `14`, which is the minimum PostgreSQL version supported by {project_name}. This avoids an extra database round-trip when setting the application name.
+
+You can override either property by setting your own values in the DB URL or additional properties. These properties are also applied when using the AWS JDBC Wrapper, which passes them through to the underlying PostgreSQL driver.
+
 === Permissions of the database user
 
 Ensure that the database user has `SELECT` permissions to the following tables to ensure an efficient upgrade: `pg_class`, `pg_namespace`.
