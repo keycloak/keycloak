@@ -64,8 +64,22 @@ public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
         }
 
         String sanitized = KeycloakSanitizerPolicy.POLICY_DEFINITION.sanitize(html);
-        for (Map.Entry<String, String> replacement : replacements.entrySet()) {
-            sanitized = sanitized.replace(replacement.getKey(), replacement.getValue());
+        if (!replacements.isEmpty()) {
+            StringBuilder markerPattern = new StringBuilder();
+            for (String marker : replacements.keySet()) {
+                if (markerPattern.length() > 0) {
+                    markerPattern.append('|');
+                }
+                markerPattern.append(Pattern.quote(marker));
+            }
+
+            Matcher matcher = Pattern.compile(markerPattern.toString()).matcher(sanitized);
+            StringBuffer result = new StringBuffer(sanitized.length());
+            while (matcher.find()) {
+                matcher.appendReplacement(result, Matcher.quoteReplacement(replacements.get(matcher.group())));
+            }
+            matcher.appendTail(result);
+            sanitized = result.toString();
         }
         return fixURLs(sanitized);
     }
