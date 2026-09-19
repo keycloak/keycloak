@@ -37,7 +37,7 @@ public class OpenshiftV4IdentityProvider extends AbstractOAuth2IdentityProvider<
     public OpenshiftV4IdentityProvider(KeycloakSession session, OpenshiftV4IdentityProviderConfig config) {
         super(session, config);
         final String baseUrl = Optional.ofNullable(config.getBaseUrl()).orElse(BASE_URL);
-        Map<String, Object> oauthDescriptor = getAuthJson(session, config.getBaseUrl());
+        Map<String, Object> oauthDescriptor = getAuthJson(session, baseUrl);
         logger.debugv("Openshift v4 OAuth descriptor: {0}", oauthDescriptor);
         config.setAuthorizationUrl((String) oauthDescriptor.get("authorization_endpoint"));
         config.setTokenUrl((String) oauthDescriptor.get("token_endpoint"));
