@@ -125,7 +125,7 @@ public class KeycloakSanitizerTest {
         html.add("<a href=\"__KC_SENTINEL0_123__\">link</a>");
         html.add("__KC_SENTINEL0_123__");
         html.add("javascript:alert(1)");
-        assertResult("<a>link</a>", html);
+        assertResult("<a rel=\"nofollow\">link</a>", html);
 
         html.clear();
         html.add("<img src=\"https://example.org/__KC_SENTINEL1_123__\">");
@@ -138,6 +138,12 @@ public class KeycloakSanitizerTest {
         html.add("__KC_SENTINEL0_123__");
         html.add("url(https://evil.example)");
         assertResult("<p>text</p>", html);
+
+        html.clear();
+        html.add("<a/href=\"__KC_SENTINEL0_123__\">link</a>");
+        html.add("__KC_SENTINEL0_123__");
+        html.add("javascript:alert(1)");
+        assertResult("<a rel=\"nofollow\">link</a>", html);
     }
 
     @Test
@@ -154,7 +160,7 @@ public class KeycloakSanitizerTest {
     public void testSanitizeTextPreservesDetailsWithoutMarkup() {
         assertEquals("R&D Team", KeycloakSanitizerPolicy.sanitizeText("R&D Team"));
         assertEquals("Click", KeycloakSanitizerPolicy.sanitizeText("<a href=\"https://evil.example\">Click</a>"));
-        assertEquals("img src=x onerror=alert(1)",
+        assertEquals("",
                 KeycloakSanitizerPolicy.sanitizeText("&lt;img src=x onerror=alert(1)&gt;"));
         assertEquals("Click",
                 KeycloakSanitizerPolicy.sanitizeText("&amp;lt;a href=\"https://evil.example\"&amp;gt;Click&amp;lt;/a&amp;gt;"));

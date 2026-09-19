@@ -61,11 +61,13 @@ public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
 
         html = decodeHtmlFull(html);
 
-        for (String marker : replacements.keySet()) {
-            html = removeAttributeContaining(html, marker);
-        }
-
         String sanitized = KeycloakSanitizerPolicy.POLICY_DEFINITION.sanitize(html);
+        // The sanitizer parser normalizes malformed tags and attributes first.
+        // Filter only the normalized start tags, so parser recovery cannot leave
+        // a marker in an attribute while ordinary localized text is untouched.
+        for (String marker : replacements.keySet()) {
+            sanitized = removeAttributeContaining(sanitized, marker);
+        }
         if (!replacements.isEmpty()) {
             StringBuilder markerPattern = new StringBuilder();
             for (String marker : replacements.keySet()) {
