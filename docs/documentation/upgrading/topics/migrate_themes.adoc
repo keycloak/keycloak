@@ -56,9 +56,10 @@ or aliases, because a custom message can place a placeholder in an HTML
 attribute where its context cannot be validated safely.
 
 Use `messageHeaderUsername` and `messageHeaderAlias` for the confirmation
-header, `messageBodyParam0` and `messageBodyParam1` for the confirmation and
-result bodies, and `nestedIdpAlias` and `nestedIdpUsername` for nested broker
-messages. Copy the corresponding marker-based rendering expressions from the
+header, `messageBodyUsername` and `messageBodyAlias` for the confirmation body,
+`messageBodyParam0` and `messageBodyParam1` for result bodies, and
+`nestedIdpAlias` and `nestedIdpUsername` for nested broker messages. Copy the
+corresponding marker-based rendering expressions from the
 base theme templates instead of interpolating identity-provider values into
 `message.summary` with `?no_esc`.
 
