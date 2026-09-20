@@ -62,7 +62,7 @@ public class MessageAttributePropertiesTest {
     }
 
     @Test
-    public void reflectsAttributesAddedAfterConstruction() {
+    public void resolvesAttributesAsOfRenderTimeNotConstructionTime() {
         Properties messages = new Properties();
         Map<String, Object> attributes = new HashMap<>();
 
@@ -70,8 +70,11 @@ public class MessageAttributePropertiesTest {
 
         assertNull(properties.getProperty("url"));
 
-        // Attributes are looked up live: values added to the map after construction (as happens while
-        // createResponse() keeps populating it) must become visible once template rendering resolves them.
+        // Deliberate: FreeMarkerLoginFormsProvider.processTemplate() resolves native ${...} template
+        // expressions against the same, by-then fully-populated attributes map. Attributes added after
+        // this instance is constructed (as happens while createCommonAttributes() keeps populating it)
+        // must become visible too, so a ${...} placeholder embedded inside a translated message string
+        // resolves consistently with the same placeholder written directly in a template file.
         attributes.put("url", "https://example.org");
 
         assertEquals("https://example.org", properties.getProperty("url"));
@@ -86,5 +89,47 @@ public class MessageAttributePropertiesTest {
         assertThrows(UnsupportedOperationException.class, () -> properties.remove("key"));
         assertThrows(UnsupportedOperationException.class, () -> properties.putAll(new HashMap<>()));
         assertThrows(UnsupportedOperationException.class, properties::clear);
+        assertThrows(UnsupportedOperationException.class, () -> properties.putIfAbsent("key", "value"));
+        assertThrows(UnsupportedOperationException.class, () -> properties.remove("key", "value"));
+        assertThrows(UnsupportedOperationException.class, () -> properties.replace("key", "old", "new"));
+        assertThrows(UnsupportedOperationException.class, () -> properties.replace("key", "value"));
+        assertThrows(UnsupportedOperationException.class, () -> properties.computeIfAbsent("key", k -> "value"));
+        assertThrows(UnsupportedOperationException.class, () -> properties.computeIfPresent("key", (k, v) -> "value"));
+        assertThrows(UnsupportedOperationException.class, () -> properties.compute("key", (k, v) -> "value"));
+        assertThrows(UnsupportedOperationException.class, () -> properties.merge("key", "value", (a, b) -> b));
+        assertThrows(UnsupportedOperationException.class, () -> properties.replaceAll((k, v) -> v));
+    }
+
+    @Test
+    public void getOrDefaultResolvesMessageBeforeAttribute() {
+        Properties messages = new Properties();
+        messages.setProperty("greeting", "hello");
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("greeting", "should not be used");
+
+        MessageAttributeProperties properties = new MessageAttributeProperties(messages, attributes);
+
+        // MessageFormatterMethod.exec() looks up messages via getOrDefault(), not getProperty() - it must
+        // go through the same message-then-attribute lookup, not Hashtable's own (always empty) entries.
+        assertEquals("hello", properties.getOrDefault("greeting", "greeting"));
+    }
+
+    @Test
+    public void getOrDefaultFallsBackToAttribute() {
+        Properties messages = new Properties();
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("realm", "example-realm");
+
+        MessageAttributeProperties properties = new MessageAttributeProperties(messages, attributes);
+
+        assertEquals("example-realm", properties.getOrDefault("realm", "realm"));
+    }
+
+    @Test
+    public void getOrDefaultFallsBackToDefaultValueWhenKeyIsUnknown() {
+        MessageAttributeProperties properties = new MessageAttributeProperties(new Properties(), new HashMap<>());
+
+        assertEquals("unknown", properties.getOrDefault("unknown", "unknown"));
     }
 }
