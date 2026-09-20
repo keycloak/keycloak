@@ -99,6 +99,7 @@ import org.keycloak.theme.ThemeResources;
 import org.keycloak.theme.ThemeResourcesParser;
 import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
 import org.keycloak.theme.beans.LocaleBean;
+import org.keycloak.theme.beans.MessageAttributeProperties;
 import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.beans.MessagesPerFieldBean;
@@ -430,8 +431,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         Properties messagesBundle;
         try {
             messagesBundle = theme.getEnhancedMessages(realm, locale);
-            Map<Object, Object> msgParams = new HashMap<>(attributes);
-            msgParams.putAll(messagesBundle);
+            Properties msgParams = new MessageAttributeProperties(messagesBundle, attributes);
             attributes.put("msg", new MessageFormatterMethod(locale, msgParams));
             attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
