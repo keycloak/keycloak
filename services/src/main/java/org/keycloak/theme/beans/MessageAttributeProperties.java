@@ -30,24 +30,35 @@ import java.util.function.Function;
  * <p>
  * This is a zero-copy alternative to merging the message bundle and the template attributes into a new
  * map: message lookups are delegated to {@code messages} via {@link Properties}' native {@code defaults}
- * chaining, and attribute lookups hold a live reference to the (still-mutable-elsewhere) {@code attributes}
+ * chaining, and attribute lookups hold a reference to the (still-mutable-elsewhere) {@code attributes}
  * map.
  * <p>
- * Holding a live reference (rather than a snapshot taken when this instance is constructed) is a deliberate
- * choice, not just a side effect of avoiding a copy: {@code FreeMarkerLoginFormsProvider} only calls
- * {@code freeMarker.processTemplate(attributes, ...)} (which resolves native FreeMarker {@code ${...}}
- * expressions directly against {@code attributes}) after all attributes have been populated. A snapshot
- * taken earlier, when this instance used to be constructed in {@code handleThemeResources()}, would let a
- * {@code ${...}} placeholder embedded inside a translated message string see a different, incomplete view
- * of the same attributes than the exact same placeholder written directly in a template file. The live
- * reference removes that inconsistency: both paths now resolve attributes as of render time.
+ * That reference is rebindable (see {@link #rebind(Map)}), not just held live from construction: {@code
+ * FreeMarkerLoginFormsProvider} constructs this instance in {@code handleThemeResources()}, but the map it
+ * actually hands to FreeMarker for rendering (in {@code processTemplate()}) can be a different instance by
+ * then, if an {@code attributeMapper} is registered and returns a replacement map rather than mutating the
+ * original in place. Without rebinding, a {@code ${...}} placeholder embedded inside a translated message
+ * string would keep resolving against the original, pre-mapper map, while the exact same placeholder
+ * written directly in a template file resolves against the post-mapper map - the two would silently
+ * disagree. {@code FreeMarkerLoginFormsProvider} calls {@link #rebind(Map)} with the post-mapper map right
+ * before rendering, so both paths resolve attributes as of the same, final render-time view.
  */
 public class MessageAttributeProperties extends Properties {
 
-    private final Map<String, Object> attributes;
+    private Map<String, Object> attributes;
 
     public MessageAttributeProperties(Properties messages, Map<String, Object> attributes) {
         super(messages);
+        this.attributes = attributes;
+    }
+
+    /**
+     * Rebinds attribute lookups to a different {@code attributes} map, replacing the one passed to the
+     * constructor. Called by {@code FreeMarkerLoginFormsProvider.processTemplate()} once the final,
+     * post-{@code attributeMapper} map is known, so lookups made while rendering (e.g. from {@link
+     * MessageFormatterMethod}) see the same map FreeMarker itself renders against.
+     */
+    public void rebind(Map<String, Object> attributes) {
         this.attributes = attributes;
     }
 

@@ -81,6 +81,30 @@ public class MessageAttributePropertiesTest {
     }
 
     @Test
+    public void rebindSwitchesAttributeLookupsToTheGivenMap() {
+        Properties messages = new Properties();
+        Map<String, Object> original = new HashMap<>();
+        original.put("url", "https://original.example.org");
+
+        MessageAttributeProperties properties = new MessageAttributeProperties(messages, original);
+        assertEquals("https://original.example.org", properties.getProperty("url"));
+
+        // Simulates FreeMarkerLoginFormsProvider.processTemplate() rebinding to the map returned by a
+        // registered attributeMapper, which may be a different instance rather than a mutation of the
+        // original: lookups must follow the rebound map, not stay pinned to the one passed to the
+        // constructor.
+        Map<String, Object> replacement = new HashMap<>();
+        replacement.put("url", "https://mapped.example.org");
+        properties.rebind(replacement);
+
+        assertEquals("https://mapped.example.org", properties.getProperty("url"));
+
+        // The original map is no longer consulted at all, even if it is still mutated afterwards.
+        original.put("url", "https://should-not-be-seen.example.org");
+        assertEquals("https://mapped.example.org", properties.getProperty("url"));
+    }
+
+    @Test
     public void isReadOnly() {
         MessageAttributeProperties properties = new MessageAttributeProperties(new Properties(), new HashMap<>());
 
