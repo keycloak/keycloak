@@ -41,7 +41,7 @@ public class OIDCProviderConfigTest {
     public void getMaxLengthForTheParameterIsMemoized() {
         CountingScope config = new CountingScope(new HashMap<>());
         OIDCProviderConfig providerConfig = new OIDCProviderConfig(config);
-        providerConfig.setMaxLengthCache(new FakeLocalCache<>());
+        providerConfig.setMaxLengthCaches(new FakeLocalCache<>(), new FakeLocalCache<>());
 
         int first = providerConfig.getMaxLengthForTheParameter("state", false);
         int second = providerConfig.getMaxLengthForTheParameter("state", false);
@@ -57,7 +57,7 @@ public class OIDCProviderConfigTest {
     public void getMaxLengthForTheParameterDoesNotConflateTokenAndNonTokenLookups() {
         CountingScope config = new CountingScope(new HashMap<>());
         OIDCProviderConfig providerConfig = new OIDCProviderConfig(config);
-        providerConfig.setMaxLengthCache(new FakeLocalCache<>());
+        providerConfig.setMaxLengthCaches(new FakeLocalCache<>(), new FakeLocalCache<>());
 
         int nonToken = providerConfig.getMaxLengthForTheParameter("subject_token", false);
         int token = providerConfig.getMaxLengthForTheParameter("subject_token", true);
@@ -77,7 +77,7 @@ public class OIDCProviderConfigTest {
 
     @Test
     public void getMaxLengthForTheParameterWorksWithoutACacheWiredIn() {
-        // No setMaxLengthCache() call: simulates constructing OIDCProviderConfig outside of the factory lifecycle.
+        // No setMaxLengthCaches() call: simulates constructing OIDCProviderConfig outside of the factory lifecycle.
         CountingScope config = new CountingScope(new HashMap<>());
         OIDCProviderConfig providerConfig = new OIDCProviderConfig(config);
 

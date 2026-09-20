@@ -15,7 +15,12 @@ public class OIDCProviderConfig {
     // Wired in by OIDCLoginProtocolFactory#postInit(), once a KeycloakSession is available to look up the
     // LocalCacheProvider. May remain null (e.g. in unit tests constructing this class directly), in which case
     // getMaxLengthForTheParameter() falls back to resolving the value directly, uncached, on every call.
-    private LocalCache<String, Integer> maxLengthCache;
+    //
+    // Kept as two separate caches (rather than one cache keyed by a "paramName + isTokenParam" composite key) so
+    // that a lookup can use paramName directly as the cache key, without allocating a new String on every call,
+    // including cache hits.
+    private LocalCache<String, Integer> reqParamMaxLengthCache;
+    private LocalCache<String, Integer> tokenParamMaxLengthCache;
 
     /**
      * Maximum default length of the standard OIDC parameter sent to the OIDC authentication or token request.
@@ -189,12 +194,13 @@ public class OIDCProviderConfig {
     }
 
     /**
-     * Wires in the {@link LocalCache} used to memoize {@link #getMaxLengthForTheParameter(String, boolean)}. Called once,
-     * from {@code OIDCLoginProtocolFactory#postInit()}, after a {@code KeycloakSession} becomes available to look up the
-     * {@code LocalCacheProvider}.
+     * Wires in the two {@link LocalCache}s used to memoize {@link #getMaxLengthForTheParameter(String, boolean)},
+     * one per {@code isTokenParam} value. Called once, from {@code OIDCLoginProtocolFactory#postInit()}, after a
+     * {@code KeycloakSession} becomes available to look up the {@code LocalCacheProvider}.
      */
-    public void setMaxLengthCache(LocalCache<String, Integer> maxLengthCache) {
-        this.maxLengthCache = maxLengthCache;
+    public void setMaxLengthCaches(LocalCache<String, Integer> reqParamMaxLengthCache, LocalCache<String, Integer> tokenParamMaxLengthCache) {
+        this.reqParamMaxLengthCache = reqParamMaxLengthCache;
+        this.tokenParamMaxLengthCache = tokenParamMaxLengthCache;
     }
 
     /**
@@ -204,18 +210,18 @@ public class OIDCProviderConfig {
      * @return maximum length for the specified OIDC parameter
      */
     public int getMaxLengthForTheParameter(String paramName, boolean isTokenParam) {
-        if (maxLengthCache == null) {
+        LocalCache<String, Integer> cache = isTokenParam ? tokenParamMaxLengthCache : reqParamMaxLengthCache;
+        if (cache == null) {
             // No cache wired in (e.g. this instance was constructed directly, bypassing the factory lifecycle).
             return computeMaxLengthForTheParameter(paramName, isTokenParam);
         }
 
         // The resolved value can only change following a server restart, so it is safe to cache for the
         // lifetime of this (singleton) instance, avoiding the underlying configuration resolution on every call.
-        String cacheKey = paramName + (isTokenParam ? "#token" : "#req");
-        Integer paramMaxSize = maxLengthCache.get(cacheKey);
+        Integer paramMaxSize = cache.get(paramName);
         if (paramMaxSize == null) {
             paramMaxSize = computeMaxLengthForTheParameter(paramName, isTokenParam);
-            maxLengthCache.put(cacheKey, paramMaxSize);
+            cache.put(paramName, paramMaxSize);
         }
 
         return paramMaxSize;

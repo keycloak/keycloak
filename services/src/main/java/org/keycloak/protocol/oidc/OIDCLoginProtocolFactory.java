@@ -190,15 +190,22 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final int DEFAULT_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE = 1000;
 
     private OIDCProviderConfig providerConfig;
-    private LocalCacheConfiguration<String, Integer> maxLengthCacheConfig;
-    private LocalCache<String, Integer> maxLengthCache;
+    private LocalCacheConfiguration<String, Integer> reqParamMaxLengthCacheConfig;
+    private LocalCacheConfiguration<String, Integer> tokenParamMaxLengthCacheConfig;
+    private LocalCache<String, Integer> reqParamMaxLengthCache;
+    private LocalCache<String, Integer> tokenParamMaxLengthCache;
 
     @Override
     public void init(Config.Scope config) {
         this.providerConfig = new OIDCProviderConfig(config);
-        this.maxLengthCacheConfig = LocalCacheConfiguration.<String, Integer>builder()
+        int maxLengthCacheSize = resolveMaxLengthCacheSize(config);
+        this.reqParamMaxLengthCacheConfig = LocalCacheConfiguration.<String, Integer>builder()
                 .name("oidc-req-param-max-length")
-                .maxSize(config.getInt(CONFIG_OIDC_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE, DEFAULT_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE))
+                .maxSize(maxLengthCacheSize)
+                .build();
+        this.tokenParamMaxLengthCacheConfig = LocalCacheConfiguration.<String, Integer>builder()
+                .name("oidc-token-param-max-length")
+                .maxSize(maxLengthCacheSize)
                 .build();
         if (this.providerConfig.isAllowMultipleAudiencesForJwtClientAuthentication()) {
             logger.warnf("It is allowed to have multiple audiences for the JWT client authentication. This option is not recommended and will be removed in one of the future releases."
@@ -241,22 +248,49 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         initBuiltIns();
     }
 
+    /**
+     * Resolves {@link #CONFIG_OIDC_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE}, rejecting non-positive values.
+     * <p>
+     * {@link LocalCacheConfiguration} treats any {@code maxSize <= 0} as "unbounded" (see
+     * {@code DefaultLocalCacheProviderFactory}). This particular cache exists specifically to cap memory growth
+     * from arbitrary, attacker-controlled parameter names, so silently turning it unbounded on a misconfigured
+     * (zero or negative) value would defeat that protection; fall back to the default instead.
+     * <p>
+     * Package-private so it can be unit tested directly without going through the full factory lifecycle.
+     */
+    int resolveMaxLengthCacheSize(Config.Scope config) {
+        int configured = config.getInt(CONFIG_OIDC_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE, DEFAULT_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE);
+        if (configured <= 0) {
+            logger.warnf("Ignoring non-positive value '%d' for '%s', which would make the cache unbounded. Using the default of %d instead.",
+                    configured, CONFIG_OIDC_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE, DEFAULT_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE);
+            return DEFAULT_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE;
+        }
+        return configured;
+    }
+
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         super.postInit(factory);
         try (KeycloakSession session = factory.create()) {
-            this.maxLengthCache = session.getProvider(LocalCacheProvider.class).create(maxLengthCacheConfig);
-            this.maxLengthCacheConfig = null;
+            LocalCacheProvider cacheProvider = session.getProvider(LocalCacheProvider.class);
+            this.reqParamMaxLengthCache = cacheProvider.create(reqParamMaxLengthCacheConfig);
+            this.tokenParamMaxLengthCache = cacheProvider.create(tokenParamMaxLengthCacheConfig);
+            this.reqParamMaxLengthCacheConfig = null;
+            this.tokenParamMaxLengthCacheConfig = null;
         }
-        this.providerConfig.setMaxLengthCache(this.maxLengthCache);
+        this.providerConfig.setMaxLengthCaches(this.reqParamMaxLengthCache, this.tokenParamMaxLengthCache);
     }
 
     @Override
     public void close() {
         super.close();
-        if (maxLengthCache != null) {
-            maxLengthCache.close();
-            maxLengthCache = null;
+        if (reqParamMaxLengthCache != null) {
+            reqParamMaxLengthCache.close();
+            reqParamMaxLengthCache = null;
+        }
+        if (tokenParamMaxLengthCache != null) {
+            tokenParamMaxLengthCache.close();
+            tokenParamMaxLengthCache = null;
         }
     }
 
