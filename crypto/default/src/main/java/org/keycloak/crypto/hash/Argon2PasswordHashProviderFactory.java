@@ -4,6 +4,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 
+import org.jboss.logging.Logger;
+
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.credential.hash.PasswordHashProvider;
@@ -24,6 +26,11 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
     public static final String ITERATIONS_KEY = "iterations";
     public static final String PARALLELISM_KEY = "parallelism";
     public static final String CPU_CORES_KEY = "cpuCores";
+    /** @deprecated Disabling pooling is deprecated and will be removed in a future release. */
+    @Deprecated
+    public static final String POOLING_KEY = "pooling";
+
+    private static final Logger logger = Logger.getLogger(Argon2PasswordHashProviderFactory.class);
 
     /**
      * The Argon2 password hashing is CPU bound, so it doesn't make sense to hash more values concurrently than there are cores on the machine.
@@ -55,7 +62,12 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
         parallelism = config.getInt(PARALLELISM_KEY, Argon2Parameters.DEFAULT_PARALLELISM);
         int cpuCores = config.getInt(CPU_CORES_KEY, Runtime.getRuntime().availableProcessors());
         cpuCoreSemaphore = new Semaphore(cpuCores);
-        blockChunkManager = new BlockChunkManager();
+        if (config.getBoolean(POOLING_KEY, true)) {
+            blockChunkManager = new BlockChunkManager();
+        } else {
+            logger.warn("Argon2 memory pooling is disabled. This is deprecated and will be removed in a future release.");
+            blockChunkManager = null;
+        }
     }
 
     @Override
@@ -123,6 +135,13 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
                 .name(CPU_CORES_KEY)
                 .type("int")
                 .helpText("Maximum parallel CPU cores to use for hashing")
+                .add();
+
+        builder.property()
+                .name(POOLING_KEY)
+                .type("boolean")
+                .helpText("Pool and reuse Argon2 memory blocks to reduce GC pressure (deprecated: disabling will be removed in a future release)")
+                .defaultValue(true)
                 .add();
 
         return builder.build();
