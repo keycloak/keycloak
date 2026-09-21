@@ -38,8 +38,6 @@ To determine if a rolling update is possible:
 1. Run the update compatibility command to generate the required metadata with the old configuration.
 2. Check the metadata with the new configuration to determine the update strategy.
 
-NOTE: If you do not use `--optimized` keep in mind that an `update` command may implicitly create or update an optimized build for you - if you are running the command from the same machine as a server instance, this may impact the next start of your server.
-
 [WARNING]
 ====
 Consumers of these commands should not rely on the internal behavior or the structure of the metadata file.

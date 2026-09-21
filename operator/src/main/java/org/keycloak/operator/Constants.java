@@ -51,6 +51,8 @@ public final class Constants {
 
     public static final String AUTHORIZATION_HEADER = "Authorization";
 
+    public static final String KC_OPTIMIZED = "KC_OPTIMIZED";
+
     public static final Map<String, String> DEFAULT_LABELS = Collections
             .unmodifiableMap(Stream.of(DEFAULT_LABELS_AS_STRING.split(",")).map(s -> s.split("="))
                     .collect(Collectors.toMap(e -> e[0], e -> e[1], (u1, u2) -> u1, TreeMap::new)));

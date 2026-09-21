@@ -61,6 +61,22 @@ When upgrading {project_name} with large database tables, index creation was pre
 
 For installation instructions, see the link:{operatorguide_link}[{operatorguide_name}].
 
+== Simplified optimized startup configuration
+
+The `--optimized` flag on the `start` command is deprecated. In its place, set `optimized=true` in `conf/keycloak.conf` or `KC_OPTIMIZED=true` as an environment variable. The effect is identical — {project_name} do not automatically perform builds at startup — but the setting is now persistent and does not need to be passed on every command invocation.
+
+For container images the recommended pattern is:
+
+[source,dockerfile]
+----
+# set build time options via environment variables or the config file
+# then set the optimized option so that start commands using this image don't rebuild
+ENV KC_OPTIMIZED=true
+RUN /opt/keycloak/bin/kc.sh build
+----
+
+For details and migration steps, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
 = Themes
 
 == Redesigned identity provider buttons on the login page

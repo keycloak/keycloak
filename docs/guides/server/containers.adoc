@@ -62,6 +62,9 @@ RUN /opt/keycloak/bin/kc.sh build
 FROM quay.io/keycloak/keycloak:{containerlabel}
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 
+# set optimized=true to disable auto-builds for commands using this image
+ENV KC_OPTIMIZED=true
+
 # change these values to point to a running postgres instance
 ENV KC_DB=postgres
 ENV KC_DB_URL=<DBURL>
@@ -191,7 +194,7 @@ To start the image, run:
 podman|docker run --name mykeycloak -p 8443:8443 -p 9000:9000 \
         -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=change_me \
         mykeycloak \
-        start --optimized --hostname=localhost
+        start --hostname=localhost
 ----
 
 {project_name} starts in production mode, using only secured HTTPS communication, and is available on `https://localhost:8443`.
@@ -205,7 +208,7 @@ Opening up `https://localhost:9000/metrics` leads to a page containing operation
 * If a `RUN dnf install` command seems to be taking an excessive amount of time, then likely your Docker systemd service has the file limit setting `LimitNOFILE` configured incorrectly.
 Either update the service configuration to use a better value, such as 1024000, or use `--ulimit` in the https://docs.docker.com/reference/cli/docker/buildx/build/#ulimit[docker build command], e.g. `--ulimit nofile=1024000`.
 
-* If you are including provider JARs and your container fails a `start --optimized` with a notification that a provider JAR has changed, this is due to Docker truncating
+* If you are including provider JARs and your container fails a `start` with a notification that a provider JAR has changed, this is due to Docker truncating
 or otherwise modifying file modification timestamps from what the `build` command recorded to what is seen at runtime.
   In this case you will need to force the image to use a known timestamp of your choosing with a `touch` command prior to running a `build`:
 
@@ -232,7 +235,7 @@ If you want to expose the container using a different port, you need to set the 
 podman|docker run --name mykeycloak -p 3000:8443 \
         -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=change_me \
         mykeycloak \
-        start --optimized --hostname=https://localhost:3000
+        start --hostname=https://localhost:3000
 ----
 
 By setting the `hostname` option to a full url you can now access the server at `https://localhost:3000`.

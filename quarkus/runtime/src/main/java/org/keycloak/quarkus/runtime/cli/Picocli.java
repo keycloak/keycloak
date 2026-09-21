@@ -46,6 +46,7 @@ import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
+import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.quarkus.runtime.cli.command.Tools;
 import org.keycloak.quarkus.runtime.cli.command.WindowsService;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
@@ -86,6 +87,7 @@ import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIS
 
 public class Picocli {
 
+    public static final String KC_OPTIMIZED = NS_KEYCLOAK_PREFIX + "optimized";
     static final String PROVIDER_TIMESTAMP_ERROR = "A provider JAR was updated since the last build, please rebuild for this to be fully utilized.";
     static final String PROVIDER_TIMESTAMP_WARNING = "A provider jar has a different timestamp than when the optimized container image was created. If you are changing provider jars after the build, you must run another build to properly account for those modifications.";
     public static final String KC_PROVIDER_FILE_PREFIX = "kc.provider.file.";
@@ -103,6 +105,7 @@ public class Picocli {
     private Ansi colorMode = hasColorSupport() ? Ansi.ON : Ansi.OFF;
     private IncludeOptions options;
     private Set<String> duplicatedOptionsNames = new HashSet<String>();
+    private boolean optimizedSetting;
 
     public static boolean hasColorSupport() {
         return TerminalUtils.hasColorSupport();
@@ -230,8 +233,16 @@ public class Picocli {
      */
     public void validateConfig() {
         AbstractCommand abstractCommand = this.getParsedCommand().orElseThrow();
-        if (abstractCommand.isOptimized() && !wasBuildEverRun()) {
-            throw new PropertyException(Messages.optimizedUsedForFirstStartup());
+        if (abstractCommand.isOptimized()) {
+            warn("%s is deprecated, please see the documentation for the usage of the 'optimized' option instead.".formatted(AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG));
+        }
+        if (!wasBuildEverRun()) {
+            if (abstractCommand.isOptimized()) {
+                throw new PropertyException(Messages.optimizedUsedForFirstStartup("The '%s' flag".formatted(AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG)));
+            }
+            if (optimizedSetting) {
+                throw new PropertyException(Messages.optimizedUsedForFirstStartup("The 'optimized' option"));
+            }
         }
         warnOnDuplicatedOptionsInCli();
 
@@ -342,7 +353,7 @@ public class Picocli {
         }
     }
 
-    private void validateBuildtime() {
+    public void validateBuildtime() {
         final List<String> ignoredBuildTime = new ArrayList<>();
         // check for provider changes, or overrides of existing persisted options
         // we have to ignore things like the profile properties because the commands set them at runtime
@@ -867,7 +878,7 @@ public class Picocli {
                         new StringBuilder("@|bold,red ")
                                 .append("The previous optimized build will be overridden with the following build options:")
                                 .append(options)
-                                .append("\nTo avoid that, run the 'build' command again and then start the optimized server instance using the '--optimized' flag.")
+                                .append("\nTo avoid that, run the 'build' command again and then start the optimized server instance with the `optimized` option set to `true`.")
                                 .append("|@").toString()
                 )
         );
@@ -907,7 +918,7 @@ public class Picocli {
     }
 
     private static boolean isIgnoredPersistedOption(String key) {
-        return key.equals(Configuration.KC_OPTIMIZED) || key.equals(org.keycloak.common.util.Environment.PROFILE)
+        return key.equals(Configuration.KC_OPTIMIZED_BUILD) || key.equals(org.keycloak.common.util.Environment.PROFILE)
                 || key.equals(LaunchMode.current().getProfileKey());
     }
 
@@ -928,7 +939,8 @@ public class Picocli {
         this.parsedCommand = Optional.ofNullable(command);
         options = getIncludeOptions(command);
 
-        Environment.setRebuildCheck(!Environment.isRebuilt() && command instanceof AbstractAutoBuildCommand
+        boolean isAutoBuild = command instanceof AbstractAutoBuildCommand;
+        Environment.setRebuildCheck(!Environment.isRebuilt() && isAutoBuild
                 && !command.isOptimized());
 
         String profile = Optional.ofNullable(org.keycloak.common.util.Environment.getProfile())
@@ -938,6 +950,16 @@ public class Picocli {
         if (parsedCommand.filter(AbstractCommand::isHelpAll).isEmpty()) {
             parsedCommand.ifPresent(PropertyMappers::sanitizeDisabledMappers);
         }
+        // after this point it's safe to use the Configuration
+        // we're not yet using a propertymapper to avoid any confusion with the optimized flag
+        String optimizedValue = Configuration.getConfigValue(KC_OPTIMIZED).getValue();
+        if (optimizedValue != null && isAutoBuild && !(command instanceof StartDev)) {
+            if (optimizedValue.equals(Boolean.TRUE.toString())) {
+                this.optimizedSetting = true;
+            } else if (!optimizedValue.equals(Boolean.FALSE.toString())) {
+                throw new PropertyException("The `optimized` option may only be `true` or `false`");
+            }
+        }
     }
 
     // Show warning about duplicated options in CLI
@@ -945,6 +967,10 @@ public class Picocli {
         if (!duplicatedOptionsNames.isEmpty()) {
             warn("Duplicated options present in CLI: %s".formatted(String.join(", ", duplicatedOptionsNames)));
         }
+    }
+
+    public boolean isOptimizedSet() {
+        return optimizedSetting;
     }
 
 }

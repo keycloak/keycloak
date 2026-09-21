@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import picocli.CommandLine;
@@ -66,13 +67,21 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
 
     boolean requiresReAugmentation() {
         Map<String, String> rawPersistedProperties = Configuration.getRawPersistedProperties();
+        if (picocli.isOptimizedSet()) {
+            if (!rawPersistedProperties.containsKey(Configuration.KC_OPTIMIZED_BUILD)) {
+                throw new PropertyException("The `optimized` option is `true`, but the current build is not from the `build` command. You should rerun the `build` command with the desired configuration.");
+            }
+            picocli.validateBuildtime();
+            picocli.info("The `optimized` option is `true`, no build was performed.");
+            return false;
+        }
         if (rawPersistedProperties.isEmpty()) {
             return true; // no build yet
         }
-        // everything but the optimized value must match
+        // everything but the optimized-build value must match
         AtomicBoolean changed = new AtomicBoolean();
         picocli.checkChangesInBuildOptions((key, oldValue, newValue) -> {
-            if (key.equals(Configuration.KC_OPTIMIZED)) {
+            if (key.equals(Configuration.KC_OPTIMIZED_BUILD)) {
                 return;
             }
             if (key.startsWith(Picocli.KC_PROVIDER_FILE_PREFIX) && oldValue != null && newValue != null
@@ -95,7 +104,7 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
         directBuild();
 
         if(!isDevMode()) {
-            spec.commandLine().getOut().printf("Next time you run the server, just add %s to the command to ensure this build is used.\n", OPTIMIZED_BUILD_OPTION_LONG);
+            spec.commandLine().getOut().printf("See the documentation on how to create an optimized build.\n");
         }
     }
 

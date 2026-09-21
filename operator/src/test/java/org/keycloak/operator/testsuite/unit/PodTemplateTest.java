@@ -872,7 +872,7 @@ public class PodTemplateTest {
     }
 
     @Test
-    public void testUpdateJobSchedulingDefault() {
+    public void testUpdateJobDefaults() {
         Consumer<KeycloakSpecBuilder> addJobScheduling = builder -> {};
 
         Job job = getUpdateJob(addJobScheduling, addJobScheduling, builder -> {});
@@ -880,6 +880,9 @@ public class PodTemplateTest {
         // nothing should be set
         assertNull(job.getSpec().getTemplate().getSpec().getTopologySpreadConstraints());
         assertNull(job.getSpec().getTemplate().getSpec().getAffinity());
+
+        assertEquals("false", job.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream()
+                .filter(env -> env.getName().equals("KC_OPTIMIZED")).findFirst().orElseThrow().getValue());
     }
 
     @Test
@@ -921,6 +924,16 @@ public class PodTemplateTest {
                 + "value: \"in\"\n", Serialization.asYaml(job.getSpec().getTemplate().getSpec().getTolerations().get(0)));
     }
 
+    @Test
+    public void testRealmImportJobDefaults() {
+        Job job = getImportJob(
+                builder -> {},
+                builder -> {},
+                builder -> {});
+        assertEquals("false", job.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream()
+                .filter(env -> env.getName().equals("KC_OPTIMIZED")).findFirst().orElseThrow().getValue());
+    }
+    
     @Test
     public void testUpdateJobSecretHandling() {
         Job job = getUpdateJob(builder -> {}, builder -> {}, builder -> {});
