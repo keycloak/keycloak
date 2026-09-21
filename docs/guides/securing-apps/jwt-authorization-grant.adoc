@@ -33,7 +33,7 @@ The exact processing that {project_name} performs over the assertion is the foll
 . The claim `iss` (issuer) should identify the the Identity Provider (**issuer** configuration option).
 . The Identity Provider should be configured to allow JWT authorization grants and the client should be configured to allow exchanging grants with this IdP.
 . The claim `sub` (subject) should identify the user in {project_name}. As commented, the `sub` claim needs to be the ID of the user in the external provider. The user in {project_name} should be linked to the Identity Provider. The linking information will finally locate the user in {project_name}.
-. The claim `aud` (audience) should identify the {project_name} server (issuer or token endpoint URL). The single `aud` is allowed to be present in the JWT. For security reasons and recent OIDC recommendations, {project_name} does not accept JWT with multiple values of the `aud` claim.
+. The claim `aud` (audience) should identify the {project_name} server (issuer or token endpoint URL) and must contain only a single value. For security reasons and in line with recent OIDC recommendations, {project_name} rejects JWTs with multiple values in the `aud` claim.
 . The claim `exp` (expiration) should be present and validated.
 . Other claims like `nbf` (not before), `iat` (issued at) and `jti` (JWT ID) can be present and should be validated in that case.
 . The JWT should be signed and its signature should be verified with the keys associated to the identity provider in {project_name}.
