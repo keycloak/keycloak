@@ -179,41 +179,52 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
     [],
   );
 
-  useFetch(
-    async () => {
-      const scope = selected.join(" ");
-      const effectiveRoles = await adminClient.clients.evaluatePermission({
-        id: clientId,
-        roleContainer: realm,
-        scope,
-        type: "granted",
-      });
+useFetch(
+  async () => {
+    const scope = selected.join(" ");
 
-      const mapperList = (await adminClient.clients.evaluateListProtocolMapper({
-        id: clientId,
-        scope,
-      })) as ({
-        type: ProtocolMapperTypeRepresentation;
-      } & ProtocolMapperRepresentation)[];
+    const [realmRoles, clientRoles] = await Promise.all([
+      adminClient.clients.evaluatePermission({
+        id: clientId,
+        roleContainer: realm,
+        scope,
+        type: "granted",
+      }),
+      adminClient.clients.evaluatePermission({
+        id: clientId,
+        roleContainer: clientId,
+        scope,
+        type: "granted",
+      }),
+    ]);
 
-      return {
-        mapperList,
-        effectiveRoles,
-      };
-    },
-    ({ mapperList, effectiveRoles }) => {
-      setEffectiveRoles(effectiveRoles);
-      mapperList.map((mapper) => {
-        mapper.type = mapperTypes.find(
-          (type) => type.id === mapper.protocolMapper,
-        )!;
-      });
+    const effectiveRoles = [...realmRoles, ...clientRoles];
 
-      setProtocolMappers(mapperList);
-      refresh();
-    },
-    [selected],
-  );
+    const mapperList = (await adminClient.clients.evaluateListProtocolMapper({
+      id: clientId,
+      scope,
+    })) as ({
+      type: ProtocolMapperTypeRepresentation;
+    } & ProtocolMapperRepresentation)[];
+
+    return {
+      mapperList,
+      effectiveRoles,
+    };
+  },
+  ({ mapperList, effectiveRoles }) => {
+    setEffectiveRoles(effectiveRoles);
+    mapperList.map((mapper) => {
+      mapper.type = mapperTypes.find(
+        (type) => type.id === mapper.protocolMapper,
+      )!;
+    });
+
+    setProtocolMappers(mapperList);
+    refresh();
+  },
+  [selected],
+);
 
   useFetch(
     async () => {
