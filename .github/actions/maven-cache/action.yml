@@ -48,6 +48,11 @@ runs:
         restore-keys: |
           mvn-and-wrapper-${{ runner.os }}-mvn-
 
+    - id: restore-quarkus-snapshot
+      name: Restore Quarkus snapshot cache
+      if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
+      uses: ./.github/actions/quarkus-snapshot-cache
+
     - id: node-cache
       name: Node cache
       uses: ./.github/actions/node-cache
