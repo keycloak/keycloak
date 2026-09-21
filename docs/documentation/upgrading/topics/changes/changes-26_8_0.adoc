@@ -314,6 +314,12 @@ This is intentional: without the `stateless` feature, neither deployment invalid
 
 The following sections provide details on deprecated features.
 
+=== Multi-cluster v1 (`multi-site` feature) is deprecated
+
+The `multi-site` feature, used for multi-cluster v1 deployments with an external {jdgserver_name} cluster, is deprecated and will be removed in a future major release. The `stateless` feature (multi-cluster v2) is the recommended replacement. It stores session data in the database, eliminating the need for an external {jdgserver_name} cluster, its cross-site replication, and the associated fencing automation.
+
+If you are using `--features=multi-site`, migrate to `--features=stateless` before upgrading to a future release. For detailed migration instructions, see https://www.keycloak.org/high-availability/multi-cluster-v2-migrate-from-v1-to-v2[Migrating from multi-cluster v1 to v2] in the {highavailabilityguide_name}.
+
 === Client certificate REST API endpoints for key pair management
 
 Several REST API endpoints under `/admin/realms/\{realm}/clients/\{id}/certificates/\{attr}` that deal with server-side key pair generation or private key storage are now deprecated:

@@ -53,7 +53,9 @@ Disadvantages::
 * {kubernetes} cluster is a single point of failure:
 ** Control-plane failures could impact all {project_name} pods
 
-=== Multi-cluster deployments (v1)
+=== Multi-cluster deployments (v1) — deprecated
+
+WARNING: Multi-cluster v1 (the `multi-site` feature) is deprecated and will be removed in a future major release. Use <@links.ha id="multi-cluster-v2-introduction" /> instead. See <@links.ha id="multi-cluster-v2-migrate-from-v1-to-v2" /> for migration instructions.
 
 Connect two {project_name} clusters deployed for example in different {kubernetes} clusters in two availability zones
 or data centers with the required network latency and database configuration using <@links.ha id="multi-cluster-introduction" />.
