@@ -114,6 +114,7 @@
                                         <include>org/keycloak/util/**</include>
                                         <include>org/keycloak/crypto/**</include>
                                         <include>org/keycloak/json/**</include>
+                                        <include>META-INF/services/org.keycloak.json.*</include>
                                         <include>org/keycloak/jose/**</include>
                                         <include>org/keycloak/representations/adapters/config/**</include>
                                         <include>org/keycloak/representations/adapters/action/**</include>

@@ -7,9 +7,12 @@ import org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimit
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -18,6 +21,11 @@ public class UserSessionLimitsUtil {
     protected static final String ERROR_TO_DISPLAY = "This account has too many sessions";
 
     private UserSessionLimitsUtil() {}
+
+    static void deleteAllCookies(ManagedWebDriver driver, ManagedRealm realm) {
+        driver.driver().navigate().to(realm.getBaseUrl());
+        driver.cookies().deleteAll();
+    }
 
     protected static void configureSessionLimits(RealmModel realm, AuthenticationFlowModel flow, String behavior, String realmLimit, String clientLimit) {
         AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
@@ -48,6 +56,25 @@ public class UserSessionLimitsUtil {
                     .readOnlyStreamUserSessions(realm, realm.getClientByClientId(clientId), -1, -1)
                     .filter(userSessionModel -> userSessionModel.getUser().getId().equals(user.getId()))
                     .count());
+        };
+    }
+
+    static RunOnServer configurePostBrokerFlow(String realmName, String idpAlias,
+            String behavior, String realmLimit, String clientLimit) {
+        return session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realm);
+            AuthenticationFlowModel postBrokerFlow = new AuthenticationFlowModel();
+            postBrokerFlow.setAlias("post-broker");
+            postBrokerFlow.setDescription("post-broker flow with session limits");
+            postBrokerFlow.setProviderId("basic-flow");
+            postBrokerFlow.setTopLevel(true);
+            postBrokerFlow.setBuiltIn(false);
+            postBrokerFlow = realm.addAuthenticationFlow(postBrokerFlow);
+            configureSessionLimits(realm, postBrokerFlow, behavior, realmLimit, clientLimit);
+            IdentityProviderModel idp = session.identityProviders().getByAlias(idpAlias);
+            idp.setPostBrokerLoginFlowId(postBrokerFlow.getId());
+            session.identityProviders().update(idp);
         };
     }
 

@@ -8,6 +8,7 @@ import org.keycloak.scim.resource.config.ServiceProviderConfig.AuthenticationSch
 import org.keycloak.scim.resource.config.ServiceProviderConfig.BulkSupport;
 import org.keycloak.scim.resource.config.ServiceProviderConfig.FilterSupport;
 import org.keycloak.scim.resource.config.ServiceProviderConfig.Supported;
+import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,7 @@ public class ServiceProviderConfigTest extends AbstractScimTest {
         FilterSupport filter = config.getFilter();
         assertNotNull(filter);
         assertTrue(filter.getSupported());
+        assertEquals(ScimResourceTypeProvider.DEFAULT_MAX_RESULTS, filter.getMaxResults());
         Set<String> schemas = config.getSchemas();
         assertNotNull(schemas);
         assertEquals(1, schemas.size());

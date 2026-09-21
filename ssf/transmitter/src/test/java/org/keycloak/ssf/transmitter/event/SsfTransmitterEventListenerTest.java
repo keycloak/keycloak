@@ -141,6 +141,17 @@ class SsfTransmitterEventListenerTest {
         throw new IllegalArgumentException("Test fixture only covers CAEP session-revoked / credential-change. Add a branch when extending.");
     }
 
+    @Test
+    void userSessionDeletedWithoutDetails_isNotExpiration() {
+        Event event = new Event();
+        event.setType(org.keycloak.events.EventType.USER_SESSION_DELETED);
+        // details intentionally left null — EventBuilder creates the map
+        // lazily, so events without any detail() call carry null here
+
+        assertFalse(listener.isUserSessionExpiration(event),
+                "a USER_SESSION_DELETED event without details must not NPE and not count as expiration");
+    }
+
     // ----- auto-notify-on-login read-only handling -----
 
     private static final String RECEIVER_CLIENT_ID = "receiver";
@@ -222,6 +233,7 @@ class SsfTransmitterEventListenerTest {
         when(context.getRealm()).thenReturn(realm);
         when(realm.getClientByClientId(RECEIVER_CLIENT_ID)).thenReturn(client);
         when(client.getAttribute(ClientStreamStore.SSF_ENABLED_KEY)).thenReturn("true");
+        when(client.isEnabled()).thenReturn(true);
         when(client.getAttribute(ClientStreamStore.SSF_AUTO_NOTIFY_ON_LOGIN_KEY)).thenReturn("true");
         // SSF_DEFAULT_SUBJECTS_KEY left unstubbed (null) → not broadcast (ALL).
         when(session.users()).thenReturn(users);

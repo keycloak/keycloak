@@ -19,6 +19,7 @@ import {
   searchItem,
 } from "../utils/table.ts";
 import {
+  assertAccessTokenContent,
   assertHasAccessTokenGenerated,
   assertHasIdTokenGenerated,
   assertHasUserInfoGenerated,
@@ -152,8 +153,19 @@ test.describe.serial("Client details - Client scopes subtab", () => {
     await assertRowExists(page, itemName);
   });
 
-  test("Should show items on next page are more than 11", async ({ page }) => {
+  test("Should show items on next page when there are more than 11 entries", async ({
+    page,
+  }) => {
+    const firstPageRows = await getTableData(page, tableName);
     await clickNextPageButton(page);
+    await expect
+      .poll(
+        async () => {
+          return await getTableData(page, tableName);
+        },
+        { message: "expected table data to change after clicking next page" },
+      )
+      .not.toEqual(firstPageRows);
     const rows = await getTableData(page, tableName);
     expect(rows.length).toBeGreaterThan(1);
   });
@@ -188,6 +200,7 @@ test.describe.serial("Client details - Client scopes subtab", () => {
 test.describe.serial("Client scopes evaluate subtab", () => {
   const clientName = "testClient";
   const userName = "admin-a";
+  const secondUserName = "admin-b";
   const realmName = `clients-realm-${uuid()}`;
 
   test.beforeAll(async () => {
@@ -201,6 +214,11 @@ test.describe.serial("Client scopes evaluate subtab", () => {
     await adminClient.createUser({
       realm: realmName,
       username: userName,
+      enabled: true,
+    });
+    await adminClient.createUser({
+      realm: realmName,
+      username: secondUserName,
       enabled: true,
     });
   });
@@ -239,5 +257,19 @@ test.describe.serial("Client scopes evaluate subtab", () => {
     await assertHasUserInfoGenerated(page, userName);
     await assertHasAccessTokenGenerated(page, userName);
     await assertHasIdTokenGenerated(page, userName);
+  });
+
+  test("refresh generated token when user changes", async ({ page }) => {
+    await searchItem(page, "Search for client", clientName);
+    await clickTableRowItem(page, clientName);
+    await goToClientScopesTab(page);
+    await goToClientScopeEvaluateTab(page);
+
+    await goToGenerateAccessTokenTab(page);
+    await selectUser(page, userName);
+    await assertAccessTokenContent(page, userName);
+
+    await selectUser(page, secondUserName);
+    await assertAccessTokenContent(page, secondUserName);
   });
 });

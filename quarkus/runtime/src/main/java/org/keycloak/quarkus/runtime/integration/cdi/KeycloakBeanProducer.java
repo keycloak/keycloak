@@ -25,14 +25,13 @@ import jakarta.inject.Inject;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.transaction.TransactionalSessionHandler;
-import org.keycloak.utils.KeycloakSessionUtil;
 
 import io.quarkus.arc.Unremovable;
 
 @ApplicationScoped
 @Unremovable
 public class KeycloakBeanProducer implements TransactionalSessionHandler {
-
+    
     @Inject
     QuarkusKeycloakSessionFactory factory;
 
@@ -45,7 +44,7 @@ public class KeycloakBeanProducer implements TransactionalSessionHandler {
     }
 
     void dispose(@Disposes KeycloakSession session) {
-        KeycloakSessionUtil.setKeycloakSession(null);
+        // ensures the session is closed if the CloseSessionFilter did not run
         close(session);
     }
 }

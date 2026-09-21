@@ -173,6 +173,13 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         // remove leading and trailing whitespace
         username = username.trim();
 
+        if (AuthenticatorUtils.isUsernameTooLong(username)) {
+            context.getEvent().error(Errors.USER_NOT_FOUND);
+            Response challengeResponse = challenge(context, getDefaultChallengeMessage(context), FIELD_USERNAME);
+            context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
+            return null;
+        }
+
         context.getEvent().detail(Details.USERNAME, username);
         context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
 
@@ -199,7 +206,11 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         if (!enabledUser(context, user)) {
             return false;
         }
-        AuthenticatorUtils.processRememberMe(context, inputData);
+        // When the user is already set, the password form has no rememberMe checkbox,
+        // so the form data must not overwrite the authNote saved by the preceding authenticator.
+        if (!isUserAlreadySetBeforeUsernamePasswordAuth(context)) {
+            AuthenticatorUtils.processRememberMe(context, inputData);
+        }
         context.setUser(user);
         return true;
     }

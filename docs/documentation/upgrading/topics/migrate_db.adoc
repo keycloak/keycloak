@@ -31,7 +31,9 @@ kc.[sh|bat] start --transaction-setup-timeout=60m
 
 To perform an automatic migration, start the server connected to the desired database.  If the database schema has changed for the new server version, the migration starts automatically unless the database has too many records.
 
-For example, creating an index on tables with millions of records can be time-consuming and cause a major service disruption.  Therefore, a threshold of `300000` records exists for automatic migration.  If the number of records exceeds this threshold, the index is not created. Instead, you find a warning in the server logs with the SQL commands that you can apply manually.
+For example, creating an index on tables with millions of records can be time-consuming and cause a major service disruption.  Therefore, a threshold of `300000` records exists for automatic migration.  If the number of records exceeds this threshold, the index is not created during schema migration.
+
+On databases that support non-blocking index creation — PostgreSQL, Oracle Enterprise Edition, MySQL/MariaDB, and Microsoft SQL Server Enterprise, Developer, or Azure SQL editions — {project_name} automatically creates the skipped indexes in the background after startup using online index operations that allow concurrent reads and writes. On databases without non-blocking support, a warning is logged with the SQL commands to apply manually. To disable automatic creation and log the SQL instead, set `--spi-connections-jpa--quarkus--auto-create-missing-indexes=false`.
 
 To change the threshold, set the `index-creation-threshold` property, value for the `connections-liquibase` provider:
 

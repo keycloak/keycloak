@@ -67,7 +67,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-client-tests</artifactId>
+            <artifactId>keycloak-admin-client-internal</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -228,10 +228,26 @@
             <scope>compile</scope>
         </dependency>
 
-        <!-- Apache DS -->
+        <!-- Apache DS for embedded LDAP, Apache Kerby for KDC (AM27 removed apacheds-protocol-kerberos) -->
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-util-embedded-ldap</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kerby</groupId>
+            <artifactId>kerb-simplekdc</artifactId>
+            <version>${kerby.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kerby</groupId>
+            <artifactId>ldap-backend</artifactId>
+            <version>${kerby.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>

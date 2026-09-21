@@ -43,6 +43,7 @@ import org.hibernate.annotations.Nationalized;
  */
 @NamedQueries({
         @NamedQuery(name="getGroupIdsByParent", query="select u.id from GroupEntity u where u.realm = :realm and u.type = 0 and u.parentId = :parent order by u.name ASC"),
+        @NamedQuery(name="getChildGroupIdsByParentIds", query="select g.id from GroupEntity g where g.realm = :realm and g.type = 0 and g.parentId in :parentIds"),
         @NamedQuery(name="deleteGroupsByRealm", query="delete from GroupEntity g where g.realm = :realm")
 })
 @Entity

@@ -330,7 +330,12 @@ public interface InterfaceIdentityProviderStoreTokenV2Test extends InterfaceIden
         return getRunOnServer().fetch(session -> {
             RealmModel r = session.realms().getRealmByName(realmName);
             UserSessionModel userSession = session.sessions().getUserSession(r, sessionId);
-            return userSession.getNote(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN);
+            // Try alias-namespaced key first, then fall back to legacy un-namespaced key
+            String token = userSession.getNote(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN + ":" + IDP_ALIAS);
+            if (token == null) {
+                token = userSession.getNote(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN);
+            }
+            return token;
         }, String.class);
     }
 

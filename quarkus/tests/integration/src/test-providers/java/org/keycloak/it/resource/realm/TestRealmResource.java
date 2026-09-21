@@ -19,6 +19,7 @@ package org.keycloak.it.resource.realm;
 
 import java.io.IOException;
 import java.util.Map;
+import jakarta.enterprise.inject.spi.CDI;
 
 import com.arjuna.ats.arjuna.coordinator.TxControl;
 import org.infinispan.Cache;
@@ -31,6 +32,7 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.updater.liquibase.lock.LiquibaseDBLockProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.dblock.DBLockProvider;
+import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory;
 import org.keycloak.services.resource.RealmResourceProvider;
 
@@ -41,6 +43,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import io.quarkus.tls.CertificateUpdatedEvent;
+import io.quarkus.tls.TlsConfiguration;
+import io.quarkus.tls.TlsConfigurationRegistry;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -117,6 +122,27 @@ public class TestRealmResource implements RealmResourceProvider {
                 )
         );
         return Response.ok(rsp, MediaType.APPLICATION_JSON_TYPE).build();
+    }
+
+    @Path("tls-reload")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response triggerTlsReload() {
+        try {
+            var registry = CDI.current().select(TlsConfigurationRegistry.class).get();
+            TlsConfiguration config = registry.get(HttpPropertyMappers.TLS_BUCKET).orElseThrow();
+            boolean reloaded = config.reload();
+            if (reloaded) {
+                CDI.current().getBeanManager().getEvent()
+                        .select(CertificateUpdatedEvent.class)
+                        .fire(new CertificateUpdatedEvent(HttpPropertyMappers.TLS_BUCKET, config));
+            }
+            record ReloadDto(boolean reloaded) {}
+            return Response.ok(new ReloadDto(reloaded), MediaType.APPLICATION_JSON).build();
+        } catch (Exception e) {
+            logger.error("TLS reload failed", e);
+            return Response.serverError().entity("{\"error\":\"" + e.getMessage() + "\"}").build();
+        }
     }
 
     @Override

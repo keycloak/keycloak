@@ -46,7 +46,6 @@ import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_PUBLIC_KEY;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 import static org.keycloak.testsuite.util.UIUtils.getRawPageSource;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
@@ -162,8 +161,8 @@ public class SAMLLoginResponseHandlingTest extends AbstractSAMLServletAdapterTes
         setRolesToCheck("manager,user");
 
         employee2ServletPage.navigateTo();
-        assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
-        testRealmSAMLPostLoginPage.form().login("level2GroupUser", "password");
+        loginPage.assertCurrent();
+        loginPage.login("level2GroupUser", "password");
 
         driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
         waitUntilElement(By.xpath("//body")).text().contains("topAttribute: true");
@@ -175,13 +174,13 @@ public class SAMLLoginResponseHandlingTest extends AbstractSAMLServletAdapterTes
         waitUntilElement(By.xpath("//body")).text().contains("group: level2");
 
         employee2ServletPage.logout();
-        checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
+        checkLoggedOut(employee2ServletPage);
 
         setRolesToCheck("manager,employee,user");
 
         employee2ServletPage.navigateTo();
-        assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
-        testRealmSAMLPostLoginPage.form().login(bburkeUser);
+        loginPage.assertCurrent();
+        loginPage.login(bburkeUser.getUsername(), "password");
 
         driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
         waitUntilElement(By.xpath("//body")).text().contains(X500SAMLProfileConstants.EMAIL.get() + ": bburke@redhat.com");
@@ -194,7 +193,7 @@ public class SAMLLoginResponseHandlingTest extends AbstractSAMLServletAdapterTes
         Assertions.assertEquals("", getRawPageSource());
 
         employee2ServletPage.logout();
-        checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
+        checkLoggedOut(employee2ServletPage);
 
         config = new LinkedHashMap<>();
         config.put("attribute.value", "hard");
@@ -239,20 +238,20 @@ public class SAMLLoginResponseHandlingTest extends AbstractSAMLServletAdapterTes
         getCleanup().addCleanup(createProtocolMapper(protocolMappersResource, "renamed-role", "saml", "saml-role-name-mapper", config));
 
         employee2ServletPage.navigateTo();
-        assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
-        testRealmSAMLPostLoginPage.form().login(bburkeUser);
+        loginPage.assertCurrent();
+        loginPage.login(bburkeUser.getUsername(), "password");
 
         driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
         waitUntilElement(By.xpath("//body")).text().contains("hardcoded-attribute: hard");
         employee2ServletPage.checkRolesEndPoint(false);
         employee2ServletPage.logout();
-        checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
+        checkLoggedOut(employee2ServletPage);
     }
 
     private void setRolesToCheck(String roles) throws Exception {
         employee2ServletPage.navigateTo();
-        assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
-        testRealmSAMLPostLoginPage.form().login(bburkeUser);
+        loginPage.assertCurrent();
+        loginPage.login(bburkeUser.getUsername(), "password");
         driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("setCheckRoles").queryParam("roles", roles).build().toURL());
         WaitUtils.waitUntilElement(By.tagName("body")).text().contains("These roles will be checked:");
         employee2ServletPage.logout();

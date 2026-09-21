@@ -68,13 +68,14 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             // Open login page in tab1 and click "login with IDP"
             oauth.client("broker-app");
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
             loginPage.clickSocial(bc.getIDPAlias());
 
             // Open login page in tab 2
             tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
-            Assertions.assertTrue(loginPage.isCurrent("consumer"));
+            loginPage.assertCurrent();
             getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
 
             timeOffSet.set(7200000);
@@ -89,7 +90,7 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
             Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
                     "We must be on consumer realm right now");
             updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             events.clear();
 
             // Login in provider realm will redirect back to consumer with "authentication_expired" error. That one cannot redirect due the "clientData" missing in IdentityBrokerState for SAML brokers.
@@ -117,8 +118,8 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
                     .details(Details.REDIRECTED_TO_CLIENT, "false");
 
             // Being on "You are already logged-in" now. No way to redirect to client due "clientData" are null in RelayState of SAML IDP
-            loginPage.assertCurrent("consumer");
-            Assertions.assertEquals("You are already logged in.", loginPage.getInstruction());
+            infoPage.assertCurrent();
+            Assertions.assertEquals("You are already logged in.", infoPage.getInfo());
         }
     }
 
@@ -134,13 +135,14 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
         ) {
             // Open login page in tab1 and click "login with IDP"
             oauth.client("broker-app");
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
             loginPage.clickSocial(bc.getIDPAlias());
 
             // Open login page in tab 2
             tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
-            Assertions.assertTrue(loginPage.isCurrent("consumer"));
+            loginPage.assertCurrent();
             getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
 
             timeOffSet.set(3600);
@@ -153,7 +155,7 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
             Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
                     "We must be on consumer realm right now");
             updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             events.clear();
 
             // Login in provider realm will redirect back to consumer with "authentication_expired" error. That one will redirect back to IDP (provider) as authenticationSession still exists on "consumer"
@@ -198,7 +200,7 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
                     .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias());
 
             // Authentication session on "consumer" realm is still valid, so no error here.
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
             Assertions.assertNotNull(authzResponse.getCode());
             Assertions.assertNull(authzResponse.getError());

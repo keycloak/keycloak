@@ -36,6 +36,7 @@ import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentatio
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -150,7 +151,7 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
 
         // Update success
         cfgRep.setAlias("foo2");
-        cfgRep.getConfig().put("configKey2", "configValue2");
+        cfgRep.getConfig().put("site.key", "mySiteKey");
         authMgmtResource.updateAuthenticatorConfig(cfgRep.getId(), cfgRep);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.authExecutionConfigPath(cfgId), cfgRep, ResourceType.AUTHENTICATOR_CONFIG);
 
@@ -158,7 +159,7 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         cfgRep = authMgmtResource.getAuthenticatorConfig(cfgRep.getId());
         assertConfig(cfgRep, cfgId, "foo2",
                 IdpCreateUserIfUniqueAuthenticatorFactory.REQUIRE_PASSWORD_UPDATE_AFTER_REGISTRATION, "true",
-                "configKey2", "configValue2");
+                "site.key", "mySiteKey");
     }
 
 
@@ -207,7 +208,7 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         // create a config for step1
         AuthenticatorConfigRepresentation config1 = new AuthenticatorConfigRepresentation();
         config1.setAlias("test-config-1");
-        config1.setConfig(Map.of("key", "value"));
+        config1.setConfig(Map.of("site.key", "value"));
         String config1Id = createConfig(executionId, config1);
 
         // create the same config name for step2, should fail
@@ -218,13 +219,13 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         // create a config for step2
         AuthenticatorConfigRepresentation config2 = new AuthenticatorConfigRepresentation();
         config2.setAlias("test-config-2");
-        config2.setConfig(Map.of("key", "value"));
+        config2.setConfig(Map.of("site.key", "value"));
         String config2Id = createConfig(executionId, config2);
 
         // create a new config for step1, config1 should be removed
         AuthenticatorConfigRepresentation config3 = new AuthenticatorConfigRepresentation();
         config3.setAlias("test-config-1-modified");
-        config3.setConfig(Map.of("key", "value"));
+        config3.setConfig(Map.of("site.key", "value"));
         String tmpConfig3Id = createConfig(executionId, config3);
         NotFoundException nfe = Assertions.assertThrows(NotFoundException.class, () -> authMgmtResource.getAuthenticatorConfig(config1Id));
         Assertions.assertEquals(404, nfe.getResponse().getStatus());
@@ -271,12 +272,65 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         Assertions.assertNull(execInfo.getAuthenticationConfig());
     }
 
+    @Test
+    @DatabaseTest
+    public void testSecretConfigMasking() {
+        AuthenticatorConfigRepresentation cfg = newConfig("recaptchaTest", "secret.key", "myRealSecret");
+        cfg.getConfig().put("site.key", "mySiteKey");
+        String cfgId = createConfig(executionId, cfg);
+
+        // GET should mask the secret, leave non-secret intact
+        AuthenticatorConfigRepresentation fetched = authMgmtResource.getAuthenticatorConfig(cfgId);
+        Assertions.assertEquals(ComponentRepresentation.SECRET_VALUE, fetched.getConfig().get("secret.key"));
+        Assertions.assertEquals("mySiteKey", fetched.getConfig().get("site.key"));
+
+        // Round-trip: update non-secret value, keep masked secret unchanged
+        fetched.getConfig().put("site.key", "updatedSiteKey");
+        authMgmtResource.updateAuthenticatorConfig(cfgId, fetched);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.authExecutionConfigPath(cfgId), fetched, ResourceType.AUTHENTICATOR_CONFIG);
+
+        // Verify original secret preserved server-side
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealm(realmId);
+            AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(cfgId);
+            Assertions.assertEquals("myRealSecret", config.getConfig().get("secret.key"));
+            Assertions.assertEquals("updatedSiteKey", config.getConfig().get("site.key"));
+        });
+
+        // GET again: secret still masked, non-secret updated
+        AuthenticatorConfigRepresentation updated = authMgmtResource.getAuthenticatorConfig(cfgId);
+        Assertions.assertEquals(ComponentRepresentation.SECRET_VALUE, updated.getConfig().get("secret.key"));
+        Assertions.assertEquals("updatedSiteKey", updated.getConfig().get("site.key"));
+    }
+
+    @Test
+    @DatabaseTest
+    public void testUnknownConfigKeysMasked() {
+        AuthenticatorConfigRepresentation cfg = newConfig("legacyTest", "secret", "legacySecretValue");
+        cfg.getConfig().put("site.key", "mySiteKey");
+        String cfgId = createConfig(executionId, cfg);
+
+        // GET should mask the unknown key, leave known non-secret intact
+        AuthenticatorConfigRepresentation fetched = authMgmtResource.getAuthenticatorConfig(cfgId);
+        Assertions.assertEquals(ComponentRepresentation.SECRET_VALUE, fetched.getConfig().get("secret"));
+        Assertions.assertEquals("mySiteKey", fetched.getConfig().get("site.key"));
+
+        // Verify original value preserved server-side
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealm(realmId);
+            AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(cfgId);
+            Assertions.assertEquals("legacySecretValue", config.getConfig().get("secret"));
+        });
+    }
+
     private String createConfig(String executionId, AuthenticatorConfigRepresentation cfg) {
         try (Response resp = authMgmtResource.newExecutionConfig(executionId, cfg)) {
             Assertions.assertEquals(201, resp.getStatus());
             String cfgId = ApiUtil.getCreatedId(resp);
             Assertions.assertNotNull(cfgId);
-            AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authAddExecutionConfigPath(executionId), cfg, ResourceType.AUTHENTICATOR_CONFIG);
+            AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authAddExecutionConfigPath(executionId), ResourceType.AUTHENTICATOR_CONFIG);
             return cfgId;
         }
     }

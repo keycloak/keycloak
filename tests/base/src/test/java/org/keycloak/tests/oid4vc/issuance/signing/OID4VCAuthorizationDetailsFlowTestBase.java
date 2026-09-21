@@ -1,7 +1,6 @@
 package org.keycloak.tests.oid4vc.issuance.signing;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -187,7 +186,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         //
         String wasCredentialIdentifier = ctx.getCredentialScope().getCredentialIdentifier();
         if (!wasCredentialIdentifier.equals(credIdentifier)) {
-            setCredentialScopeAttributes(ctx.getCredentialScope(), Map.of(VC_IDENTIFIER, credIdentifier));
+            setCredentialScopeAttribute(ctx.getCredentialScope(), VC_IDENTIFIER, credIdentifier);
         }
 
         try {
@@ -244,7 +243,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
             // Restore the vc.credential_identifier attribute value
             if (!wasCredentialIdentifier.equals(credIdentifier)) {
-                setCredentialScopeAttributes(ctx.getCredentialScope(), Map.of(VC_IDENTIFIER, wasCredentialIdentifier));
+                setCredentialScopeAttribute(ctx.getCredentialScope(), VC_IDENTIFIER, wasCredentialIdentifier);
             }
         }
     }

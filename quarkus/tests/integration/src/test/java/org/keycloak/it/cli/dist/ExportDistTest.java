@@ -58,6 +58,9 @@ public class ExportDistTest {
         cliResult = runner.run("export", "--dir=some-dir", "--users=skip");
         cliResult.assertMessage("Realm 'master' - data exported");
 
+        runner.setEnvVar("KC_DIR", "configured-dir");
+        cliResult = runner.run("export", "--file=some-file");
+        cliResult.assertError("Only one of the --dir or --file options can be specified.");
     }
 
     @Test

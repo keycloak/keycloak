@@ -64,7 +64,7 @@ public class PatchClientValidationTest extends AbstractClientValidationTest {
 
             var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("uuid: UUID is server-managed and must not be user-specified"));
+            assertThat(body.violations(), hasItem("uuid: uuid is server-managed and must not be user-specified"));
         }
 
         // Patch the client with the same UUID (should succeed)
@@ -92,7 +92,7 @@ public class PatchClientValidationTest extends AbstractClientValidationTest {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
 
             String responseBody = EntityUtils.toString(response.getEntity());
-            assertThat(responseBody, containsString("Cannot replace client resource with non-object"));
+            assertThat(responseBody, containsString("Invalid patch"));
         }
     }
 

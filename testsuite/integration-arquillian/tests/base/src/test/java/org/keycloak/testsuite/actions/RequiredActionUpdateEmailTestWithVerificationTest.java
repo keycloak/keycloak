@@ -47,6 +47,7 @@ import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
+import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
@@ -72,7 +73,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractRequiredActionUpdateEmailTest {
 
@@ -87,6 +87,9 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 
 	@Page
 	private ErrorPage errorPage;
+
+    @Page
+    private VerifyEmailPage verifyEmailPage;
 
 	protected void prepareUser(UserRepresentation user){
 		user.setEmailVerified(true);
@@ -427,7 +430,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 		driver.navigate().to(confirmationLink);
 
 		errorPage.assertCurrent();
-		assertEquals("Email already exists.", errorPage.getError());
+		assertEquals("This email is already associated with an existing account.", errorPage.getError());
 		assertTrue(ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
 	}
 
@@ -459,9 +462,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 
             updateProfilePage.update("Updated", "Name");
 
-            if (errorPage.isCurrent()) {
-                fail("There should not be an exception thrown. Error: " + errorPage.getError());
-            }
+            verifyEmailPage.assertCurrent();
         } finally {
             // Always restore original configuration
             managedRealm.admin().flows().updateRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name(), originalConfig);
@@ -636,7 +637,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
         driver.navigate().to(confirmationLink);
         infoPage.assertCurrent();
         infoPage.clickBackToApplicationLink();
-        appPage.assertCurrent();
+        Assertions.assertEquals(oauth.getRedirectUri(), driver.getCurrentUrl());
     }
 
     @Test

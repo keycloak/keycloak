@@ -7,6 +7,8 @@ import org.keycloak.ssf.event.SsfEvent;
  */
 public abstract class SsfStreamEvent extends SsfEvent {
 
+    public static final String EVENT_TYPE_BASE_URI = "https://schemas.openid.net/secevent/ssf/event-type/";
+
     public SsfStreamEvent(String eventType) {
         super(eventType);
     }

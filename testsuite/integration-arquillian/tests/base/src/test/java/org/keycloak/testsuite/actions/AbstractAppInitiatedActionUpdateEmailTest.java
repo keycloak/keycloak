@@ -97,7 +97,7 @@ public abstract class AbstractAppInitiatedActionUpdateEmailTest extends Abstract
 		emailUpdatePage.changeEmail("john-doh@localhost");
 		emailUpdatePage.assertCurrent();
 
-		Assertions.assertEquals("Email already exists.", emailUpdatePage.getEmailError());
+		Assertions.assertEquals("This email is already associated with an existing account.", emailUpdatePage.getEmailError());
 
 		UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
 		Assertions.assertEquals("test-user@localhost", user.getEmail());

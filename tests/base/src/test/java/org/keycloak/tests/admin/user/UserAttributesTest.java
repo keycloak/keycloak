@@ -68,7 +68,6 @@ public class UserAttributesTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void attributes() {
         UserRepresentation user1 = new UserRepresentation();
         user1.setUsername("user1");

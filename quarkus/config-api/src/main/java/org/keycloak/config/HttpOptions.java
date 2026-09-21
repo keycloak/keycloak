@@ -3,6 +3,7 @@ package org.keycloak.config;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.keycloak.common.crypto.FipsMode;
 
@@ -53,6 +54,12 @@ public class HttpOptions {
             .buildTime(true)
             .build();
 
+    public static final Option<Boolean> HTTPS_SNI_ENABLED = new OptionBuilder<>("https-sni-enabled", Boolean.class)
+            .category(OptionCategory.HTTP)
+            .synthetic()
+            .defaultValue(Optional.empty())
+            .build();
+
     public static final Option<String> HTTPS_CIPHER_SUITES = new OptionBuilder<>("https-cipher-suites", String.class)
             .category(OptionCategory.HTTP)
             .description("The cipher suites to use. If none is given, a reasonable default is selected.")
@@ -80,6 +87,11 @@ public class HttpOptions {
     public static final Option<File> HTTPS_CERTIFICATE_KEY_FILE = new OptionBuilder<>("https-certificate-key-file", File.class)
             .category(OptionCategory.HTTP)
             .description("The file path to a private key in PEM format.")
+            .build();
+
+    public static final Option<String> HTTPS_CERTIFICATE_KEY_FILE_PASSWORD = new OptionBuilder<>("https-certificate-key-file-password", String.class)
+            .category(OptionCategory.HTTP)
+            .description("The password to decrypt an encrypted private key in PEM format (encrypted PKCS#8).")
             .build();
 
     public static final Option<File> HTTPS_KEY_STORE_FILE = new OptionBuilder<>("https-key-store-file", File.class)

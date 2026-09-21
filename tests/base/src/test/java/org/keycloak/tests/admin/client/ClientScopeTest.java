@@ -63,6 +63,7 @@ import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.common.BasicUserConfig;
+import org.keycloak.tests.oauth.ParameterizedScopeBuilder;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
@@ -721,13 +722,9 @@ public class ClientScopeTest extends AbstractClientScopeTest {
 
     @Test
     public void testCreateParameterizedScopeWithFeatureDisabledAndIsParameterizedScopeTrue() {
-        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
-        scopeRep.setName("dynamic-scope-def");
-        scopeRep.setProtocol("openid-connect");
-        scopeRep.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic-scope-def:*");
-        }});
+        ClientScopeRepresentation scopeRep = ParameterizedScopeBuilder.create("dynamic-scope-def")
+                .parameterizedScopeType("string")
+                .build();
         String scopeDefId = createClientScope(scopeRep);
 
         // Assert updated attributes
@@ -735,7 +732,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
         scopeRep = clientScopes().get(scopeDefId).toRepresentation();
         Assertions.assertEquals("dynamic-scope-def", scopeRep.getName());
         Assertions.assertEquals("true", scopeRep.getAttributes().get(ClientScopeModel.IS_PARAMETERIZED_SCOPE));
-        Assertions.assertEquals("dynamic-scope-def:*", scopeRep.getAttributes().get(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP));
+        Assertions.assertEquals("string", scopeRep.getAttributes().get(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE));
 
         // update should work
         scopeRes.update(scopeRep);
@@ -763,15 +760,16 @@ public class ClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
-    public void testCreateParameterizedScopeWithFeatureDisabledAndNonEmptyParameterizedScopeRegexp() {
+    public void testCreateNonParameterizedScopeIgnoresStaleAttributes() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("non-dynamic-scope-def3");
         scopeRep.setProtocol("openid-connect");
         scopeRep.setAttributes(new HashMap<>() {{
             put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "false");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "not-empty");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "[invalid");
         }});
-        handleExpectedCreateFailure(scopeRep, 400, "Invalid format for the Parameterized Scope regexp not-empty");
+        String scopeId = createClientScope(scopeRep);
+        removeClientScope(scopeId);
     }
 
     @Test

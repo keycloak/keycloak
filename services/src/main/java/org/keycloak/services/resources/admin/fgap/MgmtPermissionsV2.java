@@ -50,6 +50,10 @@ class MgmtPermissionsV2 extends MgmtPermissions {
         super(session, adminsRealm, admin);
     }
 
+    public MgmtPermissionsV2(KeycloakSession session, RealmModel realm, RealmModel adminsRealm, UserModel admin) {
+        super(session, realm, adminsRealm, admin);
+    }
+
     @Override
     public ClientModel getRealmPermissionsClient() {
         return realm.getAdminPermissionsClient();

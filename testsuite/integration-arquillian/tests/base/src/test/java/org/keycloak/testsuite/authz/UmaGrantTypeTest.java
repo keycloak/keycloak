@@ -424,6 +424,87 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
     }
 
     @Test
+    public void testMutatedUriDoesNotBypassResourceMatching() throws Exception {
+        ClientResource client = getClient(getRealm());
+        AuthorizationResource authorization = client.authorization();
+
+        // catch-all "/*" resource with a grant policy — this is the permissive fallback
+        ResourceRepresentation catchAll = addResource("Catch-All Resource", null, Collections.singleton("/*"), false, "ScopeA");
+        ResourcePermissionRepresentation catchAllPermission = new ResourcePermissionRepresentation();
+        catchAllPermission.setName("Catch-All Permission");
+        catchAllPermission.addResource(catchAll.getName());
+        catchAllPermission.addPolicy(grantPolicy.getName());
+        authorization.permissions().resource().create(catchAllPermission).close();
+
+        // restricted "/api/admin" resource with a deny policy — only specific users should reach this
+        ResourceRepresentation adminResource = addResource("Admin Resource", null, Collections.singleton("/api/admin"), false, "ScopeA");
+        ResourcePermissionRepresentation adminPermission = new ResourcePermissionRepresentation();
+        adminPermission.setName("Admin Permission");
+        adminPermission.addResource(adminResource.getName());
+        adminPermission.addPolicy(denyPolicy.getName());
+        authorization.permissions().resource().create(adminPermission).close();
+
+        // restricted template resource with a deny policy — URIs with curly braces must still match correctly
+        ResourceRepresentation templateResource = addResource("Template Resource", null,
+                Collections.singleton("/api/{version}/admin"), false, "ScopeA");
+        ResourcePermissionRepresentation templatePermission = new ResourcePermissionRepresentation();
+        templatePermission.setName("Template Permission");
+        templatePermission.addResource(templateResource.getName());
+        templatePermission.addPolicy(denyPolicy.getName());
+        authorization.permissions().resource().create(templatePermission).close();
+
+        AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
+        String token = accessTokenResponse.getToken();
+
+        // exact URI must be denied — the Admin Resource's deny policy applies
+        try {
+            authorizeDecision(token, true, new PermissionRequest("/api/admin", "ScopeA"));
+            fail("Should be denied for /api/admin");
+        } catch (AuthorizationDeniedException expected) {
+        }
+
+        // all mutated forms must also be denied — they must resolve to Admin Resource, not fall through to /*
+        String[] mutatedUris = {
+                "/api/admin;x=1",       // matrix params — Servlet/JAX-RS silently strip these when routing
+                "/api/admin/",          // trailing slash — server routes this the same as /api/admin
+                "//api///admin",        // double slashes — collapse to /api/admin
+                "/api/foo/../admin",    // dot segments — resolves to /api/admin
+                "/api/%61dmin",         // percent-encoded unreserved char — %61 = 'a', equivalent per RFC 3986 §2.3
+                "/api/admin;x=1/",     // combined: matrix params + trailing slash
+        };
+        for (String mutatedUri : mutatedUris) {
+            try {
+                authorizeDecision(token, true, new PermissionRequest(mutatedUri, "ScopeA"));
+                fail("Should be denied for mutated URI: " + mutatedUri);
+            } catch (AuthorizationDeniedException expected) {
+            }
+        }
+
+        // URIs with curly braces (template parameters) must still match the template resource, not fall through to /*
+        try {
+            authorizeDecision(token, true, new PermissionRequest("/api/{version}/admin", "ScopeA"));
+            fail("Should be denied for URI with curly braces");
+        } catch (AuthorizationDeniedException expected) {
+        }
+
+        // malformed or pathless URIs — normalizeUri returns null, matches() returns null, server returns 400 invalid_resource
+        String[] invalidUris = {
+                "/api/foo/../admin%",   // bare % is invalid percent-encoding
+                "foo:bar",             // valid URI but has no path component
+        };
+        for (String invalidUri : invalidUris) {
+            try {
+                authorizeDecision(token, true, new PermissionRequest(invalidUri, "ScopeA"));
+                fail("Should be denied for invalid URI: " + invalidUri);
+            } catch (RuntimeException expected) {
+                assertTrue(expected.getCause() instanceof HttpResponseException
+                        && ((HttpResponseException) expected.getCause()).getStatusCode() == 400,
+                        "Expected 400 error for: " + invalidUri + " but got: " + expected.getMessage());
+            }
+        }
+    }
+
+    @Test
     public void testCORSHeadersInFailedRptRequest() throws Exception {
         AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
 

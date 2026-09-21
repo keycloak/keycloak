@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.pages;
 
-import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
@@ -53,8 +52,8 @@ public class InfoPage extends LanguageComboboxAwarePage {
     }
 
     @Override
-    public boolean isCurrent() {
-        return DroneUtils.getCurrentDriver().getPageSource().contains("kc-info-message");
+    public String getExpectedPageId() {
+        return "login-info";
     }
 
     public void clickBackToApplicationLink() {

@@ -19,21 +19,28 @@ package org.keycloak.models.sessions.infinispan.remote;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
 import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
+import org.keycloak.models.sessions.infinispan.query.AuthenticationSessionQueries;
+import org.keycloak.models.sessions.infinispan.query.QueryHelper;
 import org.keycloak.models.sessions.infinispan.remote.transaction.AuthenticationSessionChangeLogTransaction;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 public class RemoteInfinispanAuthenticationSessionProvider implements AuthenticationSessionProvider {
+
+    private static final int BATCH_SIZE = 100;
 
     private final KeycloakSession session;
     private final AuthenticationSessionChangeLogTransaction transaction;
@@ -68,15 +75,29 @@ public class RemoteInfinispanAuthenticationSessionProvider implements Authentica
     @Override
     public RootAuthenticationSessionModel getRootAuthenticationSession(RealmModel realm, String authenticationSessionId) {
         var updater = transaction.get(authenticationSessionId);
-        if(updater != null) {
-            updater.initialize(session, realm, authSessionsLimit);
+        if (updater == null || !Objects.equals(realm.getId(), updater.getValue().getRealmId())) {
+            return null;
         }
+        updater.initialize(session, realm, authSessionsLimit);
         return updater;
     }
 
     @Override
     public void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession) {
+        if (!Objects.equals(realm.getId(), authenticationSession.getRealm().getId())) {
+            throw new ModelException("Authentication session with id '" + authenticationSession.getId() + "' does not belong to realm '" + realm.getId() + "'");
+        }
         transaction.remove(authenticationSession.getId());
+    }
+
+    @Override
+    public void removeRootAuthenticationSessionsByAuthenticatedUser(RealmModel realm, UserModel user, String rootAuthenticationSessionIdToKeep) {
+        var query = AuthenticationSessionQueries.searchByRealm(transaction.getCache(), realm.getId());
+        QueryHelper.streamAll(query, BATCH_SIZE, Function.identity())
+                .filter(entity -> entity.hasAuthenticationSessionForUser(user.getId()))
+                .map(RootAuthenticationSessionEntity::getId)
+                .filter(id -> !Objects.equals(id, rootAuthenticationSessionIdToKeep))
+                .forEach(transaction::remove);
     }
 
     @Override

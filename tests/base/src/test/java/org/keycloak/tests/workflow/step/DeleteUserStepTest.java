@@ -56,6 +56,7 @@ import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 import org.keycloak.tests.workflow.step.DeleteUserStepTest.DeleteUserWorkflowServerConf;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -120,7 +121,7 @@ public class DeleteUserStepTest extends AbstractWorkflowTest {
         oauth.openLoginForm();
         loginPage.fillLogin(USER_NAME, USER_PASSWORD);
         loginPage.submit();
-        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         runScheduledSteps(Duration.ZERO);
 
@@ -202,7 +203,7 @@ public class DeleteUserStepTest extends AbstractWorkflowTest {
         oauth.openLoginForm();
         loginPage.fillLogin(USER_NAME, USER_PASSWORD);
         loginPage.submit();
-        assertTrue(driver.driver().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // check that we have two scheduled steps for the user
         runOnServer.run((RunOnServer) session -> {

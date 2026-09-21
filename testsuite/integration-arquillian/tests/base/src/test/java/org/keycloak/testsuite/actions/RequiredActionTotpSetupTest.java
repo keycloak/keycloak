@@ -49,8 +49,6 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -145,9 +143,6 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
     public AssertEvents events = new AssertEvents(this);
 
     @Page
-    protected AppPage appPage;
-
-    @Page
     protected LoginPage loginPage;
 
     @Page
@@ -202,14 +197,14 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
                 .details(Details.USERNAME, "setuptotp").getEvent()
                 .getDetails().get(Details.CODE_ID);
 
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL)
                 .userId(userId)
                 .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
                 .details(Details.USERNAME, "setuptotp");
 
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll()).sessionId(authSessionId1).userId(userId).details(Details.USERNAME, "setuptotp");
     }
@@ -423,7 +418,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
                 .getDetails().get(Details.CODE_ID);
 
         assertEquals(authSessionId1, authSessionId2);
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).sessionId(authSessionId1).getEvent();
 
@@ -441,7 +436,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             loginTotpPage.assertCurrent();
             assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
         } else {
-            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             EventAssertion.expectLoginSuccess(events.poll());
         }
     }
@@ -493,7 +488,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             totpPage.configure(totp.generateTOTP(totpCode));
 
             // After totp config, user should be on the app page
-            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP)
                     .userId(userId)
@@ -520,8 +515,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             // Totp is already configured, thus one-time password is needed, login page should be loaded
             String uri = driver.getCurrentUrl();
             String src = driver.getPageSource();
-            assertTrue(loginPage.isCurrent());
-            Assertions.assertFalse(totpPage.isCurrent());
+            loginTotpPage.assertCurrent();
 
             // Login with one-time password
             loginTotpPage.login(totp.generateTOTP(totpCode));
@@ -554,7 +548,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
                     .getDetails().get(Details.CODE_ID);
 
             assertEquals(sessionId1, sessionId2);
-            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             EventAssertion.expectLoginSuccess(events.poll()).sessionId(sessionId1).userId(userId).details(Details.USERNAME, "setupTotp2");
         } finally {
@@ -594,7 +588,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
                 .getDetails().get(Details.CODE_ID);
 
         assertEquals(sessionId1, sessionId2);
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).sessionId(sessionId1).getEvent();
 
@@ -612,7 +606,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         assertEquals(8, token.length());
         loginTotpPage.login(token);
 
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll());
 
@@ -654,7 +648,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
                 .getDetails().get(Details.CODE_ID);
 
         assertEquals(sessionId1, sessionId2);
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).sessionId(sessionId1).getEvent();
 
@@ -669,7 +663,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         loginTotpPage.login(otpgen.generateHOTP(totpSecret, 1));
 
 
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
@@ -694,7 +688,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         loginTotpPage.assertCurrent();
         loginTotpPage.login(otpgen.generateHOTP(totpSecret, 2));
 
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll());
 
@@ -743,7 +737,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         }
         Assertions.assertEquals(logoutOtherSessions, totpPage.isLogoutSessionsChecked());
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         if (logoutOtherSessions) {
             EventAssertion.expectLogoutSuccess(events.poll())

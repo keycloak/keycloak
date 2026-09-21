@@ -1,18 +1,25 @@
 package org.keycloak.tests.scim.tck;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.scim.client.ResourceFilter;
 import org.keycloak.scim.client.ScimClientException;
 import org.keycloak.scim.protocol.request.PatchRequest;
@@ -23,11 +30,13 @@ import org.keycloak.scim.resource.group.Member;
 import org.keycloak.scim.resource.user.User;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -112,11 +121,9 @@ public class GroupTest extends AbstractScimTest {
 
         expected = client.groups().get(expected.getId());
         expected.setDisplayName("Updated " + expected.getDisplayName());
-        expected.setExternalId(KeycloakModelUtils.generateId());
         adminEvents.clear();
         client.groups().patch(expected.getId(), PatchRequest.create()
                 .replace("displayName", expected.getDisplayName())
-                .replace("externalId", expected.getExternalId())
                 .build());
 
         AdminEventAssertion.assertSuccess(adminEvents.poll())
@@ -126,7 +133,216 @@ public class GroupTest extends AbstractScimTest {
 
         Group actual = client.groups().get(expected.getId());
         assertEquals(expected.getDisplayName(), actual.getDisplayName());
-        assertEquals(expected.getExternalId(), actual.getExternalId());
+    }
+
+    @Test
+    public void testPatchImmutableAttribute() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group.setExternalId(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        String originalExternalId = group.getExternalId();
+        adminEvents.clear();
+
+        // PATCH replace on immutable externalId should fail
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .replace("externalId", "new-value")
+                    .build());
+            fail("should fail because externalId is immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+            assertTrue(error.getDetail().contains("externalId"));
+        }
+
+        // PATCH add on immutable externalId should fail
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .add("externalId", "new-value")
+                    .build());
+            fail("should fail because externalId is immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+        }
+
+        // PATCH remove on immutable externalId should fail
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .remove("externalId")
+                    .build());
+            fail("should fail because externalId is immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+        }
+
+        // verify externalId was not changed
+        Group actual = client.groups().get(group.getId());
+        assertEquals(originalExternalId, actual.getExternalId());
+    }
+
+    @Test
+    public void testPatchInitializeImmutableAttribute() {
+        // create a group without externalId
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        assertNull(group.getExternalId());
+        adminEvents.clear();
+
+        // PATCH add on unset immutable externalId should succeed (RFC 7644 §3.5.2)
+        String externalId = KeycloakModelUtils.generateId();
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .add("externalId", externalId)
+                .build());
+        Group actual = client.groups().get(group.getId());
+        assertEquals(externalId, actual.getExternalId());
+
+        // subsequent PATCH on the now-set externalId should fail
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .add("externalId", "another-value")
+                    .build());
+            fail("should fail because externalId is already set and immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+        }
+
+        // verify externalId was not changed
+        actual = client.groups().get(group.getId());
+        assertEquals(externalId, actual.getExternalId());
+    }
+
+    @Test
+    public void testPatchReplaceInitializeImmutableAttribute() {
+        // create a group without externalId
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        assertNull(group.getExternalId());
+        adminEvents.clear();
+
+        // PATCH replace on unset immutable externalId should succeed (RFC 7644 §3.5.2)
+        String externalId = KeycloakModelUtils.generateId();
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .replace("externalId", externalId)
+                .build());
+        Group actual = client.groups().get(group.getId());
+        assertEquals(externalId, actual.getExternalId());
+    }
+
+    @Test
+    public void testPatchImmutableMetaCreated() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        adminEvents.clear();
+
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .replace("meta.created", "2020-01-01T00:00:00Z")
+                    .build());
+            fail("should fail because meta.created is immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+        }
+    }
+
+    @Test
+    public void testUpdateImmutableAttribute() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group.setExternalId(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        String originalExternalId = group.getExternalId();
+        adminEvents.clear();
+
+        // PUT with a changed externalId should fail because it is immutable
+        group.setExternalId("changed-" + originalExternalId);
+        try {
+            client.groups().update(group);
+            fail("should fail because externalId is immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+            assertTrue(error.getDetail().contains("externalId"));
+        }
+
+        // verify externalId was not changed
+        Group actual = client.groups().get(group.getId());
+        assertEquals(originalExternalId, actual.getExternalId());
+    }
+
+    @Test
+    public void testUpdateUnchangedImmutableAttribute() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group.setExternalId(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        adminEvents.clear();
+
+        // PUT round-trip that resubmits the same externalId and meta.created should succeed (RFC 7644 §3.5.1)
+        group = client.groups().get(group.getId());
+        group.setDisplayName("Updated " + group.getDisplayName());
+        client.groups().update(group);
+
+        Group actual = client.groups().get(group.getId());
+        assertEquals(group.getDisplayName(), actual.getDisplayName());
+        assertEquals(group.getExternalId(), actual.getExternalId());
+    }
+
+    @Test
+    public void testUpdateInitializeImmutableAttribute() {
+        // create a group without externalId
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        assertNull(group.getExternalId());
+        adminEvents.clear();
+
+        // PUT initializing a previously-unset externalId should succeed (RFC 7644 §3.5.1)
+        String externalId = KeycloakModelUtils.generateId();
+        group.setExternalId(externalId);
+        client.groups().update(group);
+
+        Group actual = client.groups().get(group.getId());
+        assertEquals(externalId, actual.getExternalId());
+    }
+
+    @Test
+    public void testUpdateImmutableMetaCreated() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        adminEvents.clear();
+
+        group = client.groups().get(group.getId());
+        group.getMeta().setCreated(Instant.EPOCH.toString());
+        try {
+            client.groups().update(group);
+            fail("should fail because meta.created is immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+        }
     }
 
     @Test
@@ -281,6 +497,60 @@ public class GroupTest extends AbstractScimTest {
     }
 
     @Test
+    public void testGroupMembershipAdminEvents() {
+        User userA = createScimUser();
+        User userB = createScimUser();
+
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        adminEvents.clear();
+
+        // adding two new members produces the generic PATCH event followed by one GROUP_MEMBERSHIP CREATE event per member
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .add("members", userA.getId())
+                .add("members", userB.getId())
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.GROUP);
+        assertMembershipEvents(OperationType.CREATE, group, userA, userB);
+        assertNull(adminEvents.poll());
+
+        // re-adding an already existing member is a no-op: no GROUP_MEMBERSHIP event should be emitted
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .add("members", userA.getId())
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.GROUP);
+        assertNull(adminEvents.poll());
+
+        // removing a member produces the generic PATCH event followed by a GROUP_MEMBERSHIP DELETE event
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .remove("members[value eq \"" + userA.getId() + "\"]")
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.GROUP);
+        assertMembershipEvent(adminEvents.poll(), OperationType.DELETE, group, userA);
+        assertNull(adminEvents.poll());
+
+        // removing a user that is not a member is a no-op: no GROUP_MEMBERSHIP event should be emitted
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .remove("members[value eq \"" + userA.getId() + "\"]")
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.GROUP);
+        assertNull(adminEvents.poll());
+    }
+
+    @Test
     public void testGroupMembers() {
         // create users via SCIM
         User userA = createScimUser();
@@ -376,6 +646,164 @@ public class GroupTest extends AbstractScimTest {
     }
 
     @Test
+    public void testGroupMembersFilterByDisplayRejected() {
+        // create users via SCIM
+        User userA = createScimUser();
+
+        // create a group
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        // add member
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .add("members", userA.getId())
+                .build());
+
+        // PATCH remove member with display sub-attribute (not supported - only value is supported)
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .remove("members[display eq \"" + userA.getUserName() + "\"]")
+                    .build());
+            fail("Should have thrown an exception - only 'value' sub-attribute is supported for members filtering");
+        } catch (ScimClientException e) {
+            ErrorResponse error = e.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt(),
+                    "Filtering members by non-value sub-attributes should return 400, got " + error.getStatusInt());
+            assertTrue(error.getDetail().contains("Only value sub-attribute is supported for filtering complex multivalued attributes, got: display"),
+                    "Error should mention only 'value' sub-attribute is supported, got: " + error.getDetail());
+        }
+    }
+
+    @Test
+    public void testGroupMembersFilterByAndOperatorRejected() {
+        // create users via SCIM
+        User userA = createScimUser();
+
+        // create a group
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        // add member
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .add("members", userA.getId())
+                .build());
+
+        // PATCH remove using AND filter - should fail (AND is not supported for multivalued attributes)
+        // AND is not supported because filtering is restricted to 'value' sub-attribute only,
+        // making AND filters like "value eq id1 and value eq id2" semantically invalid
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .remove("members[value eq \"" + userA.getId() + "\" and value eq \"other-id\"]")
+                    .build());
+            fail("Should have thrown an exception - AND operator is not supported for multivalued attributes");
+        } catch (ScimClientException e) {
+            ErrorResponse error = e.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt(),
+                    "AND operator on multivalued attributes should return 400, got " + error.getStatusInt());
+            assertTrue(error.getDetail().contains("and operator is not supported for multivalued or non-complex attributes"),
+                    "Error should mention AND operator not supported, got: " + error.getDetail());
+        }
+    }
+
+    @Test
+    public void testSimpleAttributeFilterWithAndOperatorRejected() {
+        // create a group
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        // PATCH using AND filter on simple single-valued attribute (displayName)
+        // Should fail with 400, not 500 (NPE from visitComparisonExpression returning null)
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .remove("displayName[value eq \"" + group.getDisplayName() + "\" and value eq \"other\"]")
+                    .build());
+            fail("Should have thrown an exception for AND on simple attribute");
+        } catch (ScimClientException e) {
+            ErrorResponse error = e.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt(),
+                    "AND operator on simple single-valued attributes should return 400, not 500 (NPE), got " + error.getStatusInt());
+        }
+    }
+
+    @Test
+    public void testSimpleAttributeFilterWithOrOperatorRejected() {
+        // create a group
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        // PATCH using OR filter on simple single-valued attribute (displayName)
+        // Should fail with 400, not 500 (NPE from flattenIntoArray on a null node)
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .remove("displayName[value eq \"" + group.getDisplayName() + "\" or value eq \"other\"]")
+                    .build());
+            fail("Should have thrown an exception for OR on simple attribute");
+        } catch (ScimClientException e) {
+            ErrorResponse error = e.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt(),
+                    "OR operator on simple single-valued attributes should return 400, not 500 (NPE), got " + error.getStatusInt());
+        }
+    }
+
+    @Test
+    public void testGroupFilterMembersConjunctionAndNegation() {
+        // Regression test for https://github.com/keycloak/keycloak/issues/51805: JOIN-based predicate
+        // generation for the "members" relation could not correctly express conjunction across
+        // independent values, nor negation (NOT was applied per joined row instead of per resource).
+        User userA = createScimUser();
+        User userB = createScimUser();
+
+        Group groupA = new Group();
+        groupA.setDisplayName(KeycloakModelUtils.generateId());
+        groupA = client.groups().create(groupA);
+
+        Group groupB = new Group();
+        groupB.setDisplayName(KeycloakModelUtils.generateId());
+        groupB = client.groups().create(groupB);
+        adminEvents.clear();
+
+        client.groups().patch(groupA.getId(), PatchRequest.create()
+                .add("members", userA.getId())
+                .build());
+        client.groups().patch(groupB.getId(), PatchRequest.create()
+                .add("members", userA.getId())
+                .add("members", userB.getId())
+                .build());
+
+        Group emptyGroup = new Group();
+        emptyGroup.setDisplayName(KeycloakModelUtils.generateId());
+        emptyGroup = client.groups().create(emptyGroup);
+        String emptyGroupId = emptyGroup.getId();
+
+        // conjunction: groupB has BOTH userA and userB as members
+        String filter = ResourceFilter.filter()
+                .eq("members.value", userA.getId())
+                .and()
+                .eq("members.value", userB.getId())
+                .build();
+        ListResponse<Group> response = client.groups().getAll(filter);
+        String groupBId = groupB.getId();
+        assertTrue(response.getResources().stream().anyMatch(g -> g.getId().equals(groupBId)));
+        String groupAId = groupA.getId();
+        assertFalse(response.getResources().stream().anyMatch(g -> g.getId().equals(groupAId)));
+
+        // negation: groupB DOES have userA as a member, so negating that eq must not match it, while a group
+        // with no members at all must still match the negated filter
+        filter = ResourceFilter.filter().not().lparen().eq("members.value", userA.getId()).rparen().build();
+        response = client.groups().getAll(filter);
+        assertFalse(response.getResources().stream().anyMatch(g -> g.getId().equals(groupBId)));
+        assertTrue(response.getResources().stream().anyMatch(g -> g.getId().equals(emptyGroupId)));
+    }
+
+    @Test
     public void testGroupMembersOnCreate() {
         // create users via SCIM
         User userA = createScimUser();
@@ -430,6 +858,40 @@ public class GroupTest extends AbstractScimTest {
     }
 
     @Test
+    public void testQueryGroupsExcludesOrganizationGroup() {
+        realm.updateWithCleanup(realm -> realm.organizationsEnabled(true));
+
+        Group expected = new Group();
+        expected.setDisplayName(KeycloakModelUtils.generateId());
+        expected = client.groups().create(expected);
+        String expectedId = expected.getId();
+
+        OrganizationRepresentation orgRep = new OrganizationRepresentation();
+        String orgName = KeycloakModelUtils.generateId();
+        orgRep.setName(orgName);
+        orgRep.setAlias(orgName);
+        orgRep.addDomain(new OrganizationDomainRepresentation(orgName + ".org"));
+        try (Response response = realm.admin().organizations().create(orgRep)) {
+            orgRep.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.organizations().get(orgRep.getId()).delete().close());
+
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName(KeycloakModelUtils.generateId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+        try (Response response = orgResource.groups().addTopLevelGroup(group)) {
+            group.setId(ApiUtil.getCreatedId(response));
+        }
+        String organizationGroupId = group.getId();
+
+        ListResponse<Group> groups = client.groups().getAll("displayName pr");
+        assertTrue(groups.getResources().stream().anyMatch(g -> expectedId.equals(g.getId())));
+        assertTrue(groups.getResources().stream().noneMatch(g -> organizationGroupId.equals(g.getId())));
+
+        assertNull(client.groups().get(group.getId()));
+    }
+
+    @Test
     public void testOrganizationGroupMembersNotManagedViaScim() {
         realm.updateWithCleanup(realm -> realm.organizationsEnabled(true));
 
@@ -461,8 +923,138 @@ public class GroupTest extends AbstractScimTest {
         } catch (ScimClientException e) {
             ErrorResponse error = e.getError();
             assertNotNull(error);
-            assertEquals("Cannot access organization related group via non Organization API.", error.getDetail());
+            assertEquals("Resource not found with id " + group.getId(), error.getDetail());
         }
+    }
+
+    @Test
+    public void testOrganizationSubGroupNotManagedViaScim() {
+        realm.updateWithCleanup(realm -> realm.organizationsEnabled(true));
+
+        OrganizationRepresentation orgRep = new OrganizationRepresentation();
+        String orgName = KeycloakModelUtils.generateId();
+        orgRep.setName(orgName);
+        orgRep.setAlias(orgName);
+        orgRep.addDomain(new OrganizationDomainRepresentation(orgName + ".org"));
+        try (Response response = realm.admin().organizations().create(orgRep)) {
+            orgRep.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.organizations().get(orgRep.getId()).delete().close());
+
+        GroupRepresentation orgGroup = new GroupRepresentation();
+        orgGroup.setName(KeycloakModelUtils.generateId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+        try (Response response = orgResource.groups().addTopLevelGroup(orgGroup)) {
+            orgGroup.setId(ApiUtil.getCreatedId(response));
+        }
+
+        GroupRepresentation child = new GroupRepresentation();
+        child.setName(KeycloakModelUtils.generateId());
+        try (Response response = realm.admin().organizations().get(orgRep.getId()).groups().group(orgGroup.getId()).addSubGroup(child)) {
+            child.setId(ApiUtil.getCreatedId(response));
+        }
+
+        // child of org group should be excluded from listing
+        ListResponse<Group> groups = client.groups().getAll("displayName pr");
+        assertTrue(groups.getResources().stream().noneMatch(g -> child.getId().equals(g.getId())));
+
+        // direct GET by ID should not return the child
+        assertNull(client.groups().get(child.getId()));
+
+        // direct UPDATE should fail
+        Group update = new Group();
+        update.setId(child.getId());
+        update.setDisplayName("hijacked");
+        try {
+            client.groups().update(child.getId(), update);
+            fail("Should not be able to update a subgroup of an organization group via SCIM");
+        } catch (ScimClientException e) {
+            assertEquals(404, e.getError().getStatusInt());
+        }
+
+        // direct PATCH should fail
+        try {
+            client.groups().patch(child.getId(), PatchRequest.create()
+                    .replace("displayName", "hijacked")
+                    .build());
+            fail("Should not be able to patch a subgroup of an organization group via SCIM");
+        } catch (ScimClientException e) {
+            assertEquals(404, e.getError().getStatusInt());
+        }
+
+        // direct DELETE should fail
+        try {
+            client.groups().delete(child.getId());
+            fail("Should not be able to delete a subgroup of an organization group via SCIM");
+        } catch (ScimClientException e) {
+            assertEquals(404, e.getError().getStatusInt());
+        }
+
+        // membership operations on the child should also fail
+        try {
+            User user = createScimUser();
+            client.groups().patch(child.getId(), PatchRequest.create()
+                    .add("members", user.getId())
+                    .build());
+            fail("Should not be able to add members to a subgroup of an organization group via SCIM");
+        } catch (ScimClientException e) {
+            assertEquals(404, e.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testUserGroupsAttributeExcludesOrganizationGroups() {
+        realm.updateWithCleanup(realm -> realm.organizationsEnabled(true));
+
+        // create an organization with a group and a child under it
+        OrganizationRepresentation orgRep = new OrganizationRepresentation();
+        String orgName = KeycloakModelUtils.generateId();
+        orgRep.setName(orgName);
+        orgRep.setAlias(orgName);
+        orgRep.addDomain(new OrganizationDomainRepresentation(orgName + ".org"));
+        try (Response response = realm.admin().organizations().create(orgRep)) {
+            orgRep.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.organizations().get(orgRep.getId()).delete().close());
+
+        GroupRepresentation orgGroup = new GroupRepresentation();
+        orgGroup.setName(KeycloakModelUtils.generateId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+        try (Response response = orgResource.groups().addTopLevelGroup(orgGroup)) {
+            orgGroup.setId(ApiUtil.getCreatedId(response));
+        }
+
+        GroupRepresentation orgChildGroup = new GroupRepresentation();
+        orgChildGroup.setName(KeycloakModelUtils.generateId());
+        try (Response response = realm.admin().organizations().get(orgRep.getId()).groups().group(orgGroup.getId()).addSubGroup(orgChildGroup)) {
+            orgChildGroup.setId(ApiUtil.getCreatedId(response));
+        }
+
+        // create a regular REALM group
+        Group realmGroup = new Group();
+        realmGroup.setDisplayName(KeycloakModelUtils.generateId());
+        realmGroup = client.groups().create(realmGroup);
+        adminEvents.clear();
+
+        // create a user, add to realm group, then add as org member and assign to org groups
+        User user = createScimUser();
+        realm.admin().users().get(user.getId()).joinGroup(realmGroup.getId());
+        orgResource.members().addMember(user.getId()).close();
+        orgResource.groups().group(orgGroup.getId()).addMember(user.getId());
+        orgResource.groups().group(orgChildGroup.getId()).addMember(user.getId());
+
+        // fetch the user via SCIM requesting the groups attribute
+        User fetched = client.users().get(user.getId(), List.of("groups"));
+        assertNotNull(fetched.getGroups());
+
+        List<String> returnedGroupIds = fetched.getGroups().stream()
+                .map(g -> g.getValue())
+                .toList();
+
+        // only the regular REALM group should be present
+        assertTrue(returnedGroupIds.contains(realmGroup.getId()));
+        assertFalse(returnedGroupIds.contains(orgGroup.getId()));
+        assertFalse(returnedGroupIds.contains(orgChildGroup.getId()));
     }
 
     private static void assertMember(List<Member> members, String userId, String userName) {
@@ -473,10 +1065,188 @@ public class GroupTest extends AbstractScimTest {
         ), "Expected member with userId=" + userId + " and userName=" + userName);
     }
 
+    private static void assertMembershipEvent(AdminEventRepresentation event, OperationType operationType, Group group, User user) {
+        // the representation is built via ModelToRepresentation.toRepresentation(GroupModel, boolean), i.e. the Admin
+        // API's GroupRepresentation (field "name"), not the SCIM Group representation (field "displayName")
+        AdminEventAssertion.assertSuccess(event)
+                .operationType(operationType)
+                .resourceType(ResourceType.GROUP_MEMBERSHIP)
+                .resourcePath("scim/v2/Groups/" + group.getId() + "/" + user.getId())
+                .representation(Map.of("id", group.getId(), "name", group.getDisplayName()));
+        Map<String, String> expectedDetails = user.getEmail() != null
+                ? Map.of(UserModel.USERNAME, user.getUserName(), UserModel.EMAIL, user.getEmail())
+                : Map.of(UserModel.USERNAME, user.getUserName());
+        assertThat(event.getDetails(), is(equalTo(expectedDetails)));
+    }
+
+    /**
+     * Asserts a GROUP_MEMBERSHIP event was emitted for each of the given {@code users}, matching each event to its
+     * corresponding user by resource path rather than by polling order: multivalued PATCH values are materialized
+     * as a {@code Set} internally, so events for a single request are not guaranteed to be emitted in request order.
+     */
+    private void assertMembershipEvents(OperationType operationType, Group group, User... users) {
+        List<AdminEventRepresentation> events = new ArrayList<>();
+        for (int i = 0; i < users.length; i++) {
+            events.add(adminEvents.poll());
+        }
+        for (User user : users) {
+            String resourcePathSuffix = "/" + user.getId();
+            AdminEventRepresentation event = events.stream()
+                    .filter(e -> e.getResourcePath().endsWith(resourcePathSuffix))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("No membership event found for user " + user.getId()));
+            events.remove(event);
+            assertMembershipEvent(event, operationType, group, user);
+        }
+    }
+
+    @Test
+    public void testGroupMembershipAdminEventNotEmittedForInheritedSubgroupMembership() {
+        // parent group managed via SCIM, subgroup created via the admin client (subgroups are not exposed via SCIM)
+        Group parent = new Group();
+        parent.setDisplayName(KeycloakModelUtils.generateId());
+        parent = client.groups().create(parent);
+
+        GroupRepresentation subGroupRep = new GroupRepresentation();
+        subGroupRep.setName(KeycloakModelUtils.generateId());
+        String subGroupId;
+        try (Response response = realm.admin().groups().group(parent.getId()).subGroup(subGroupRep)) {
+            subGroupId = ApiUtil.getCreatedId(response);
+        }
+
+        User user = createScimUser();
+        realm.admin().users().get(user.getId()).joinGroup(subGroupId);
+        adminEvents.clear();
+
+        // user.isMemberOf(parent) would return true here (inherited via the subgroup), but the user is not a
+        // direct member of the parent group, so leaveGroup(parent) is a no-op and no membership event should fire
+        client.groups().patch(parent.getId(), PatchRequest.create()
+                .remove("members[value eq \"" + user.getId() + "\"]")
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.GROUP);
+        assertNull(adminEvents.poll());
+    }
+
+    @Test
+    public void testGroupMembershipAdminEventDoesNotLeakDetailsAcrossMembers() {
+        User userWithEmail = createScimUser();
+        User userWithoutEmail = createScimUserWithoutEmail();
+
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        adminEvents.clear();
+
+        // userWithEmail is added first so its EMAIL detail must not leak into userWithoutEmail's event
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .add("members", userWithEmail.getId())
+                .add("members", userWithoutEmail.getId())
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.GROUP);
+        assertMembershipEvents(OperationType.CREATE, group, userWithEmail, userWithoutEmail);
+        assertNull(adminEvents.poll());
+    }
+
+    @Test
+    public void testCannotCreateGroupWithServiceAccountMember() {
+        ClientRepresentation confidentialClient = ClientBuilder.create()
+                .clientId("sa-create-group-test-client")
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        String clientDbId;
+        try (Response response = realm.admin().clients().create(confidentialClient)) {
+            clientDbId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clients().get(clientDbId).remove());
+
+        UserRepresentation serviceAccount = realm.admin().clients().get(clientDbId).getServiceAccountUser();
+
+        // Try to create a group with service account in members
+        Group newGroup = new Group();
+        newGroup.setDisplayName("test-sa-group-" + KeycloakModelUtils.generateId());
+        newGroup.addMember(serviceAccount.getId());
+
+        try {
+            client.groups().create(newGroup);
+            fail("Should not be able to create group with service account member");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testCanRemoveRegularMemberWhenServiceAccountIsAlsoMember() {
+        ClientRepresentation confidentialClient = ClientBuilder.create()
+                .clientId("sa-remove-regular-test-client")
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        String clientDbId;
+        try (Response response = realm.admin().clients().create(confidentialClient)) {
+            clientDbId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clients().get(clientDbId).remove());
+
+        User regularUser = createScimUser();
+        Group group = new Group();
+        group.setDisplayName("test-group-" + KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        UserRepresentation serviceAccount = realm.admin().clients().get(clientDbId).getServiceAccountUser();
+
+        // Add both service account and regular user to group via Admin API
+        realm.admin().users().get(serviceAccount.getId()).joinGroup(group.getId());
+        realm.admin().users().get(regularUser.getId()).joinGroup(group.getId());
+
+        // Verify regular user is removed from group
+        Group updated = client.groups().get(group.getId(), List.of("members"), null);
+        assertNotNull(updated.getMembers(), "Members list should not be null");
+        assertEquals(1, updated.getMembers().size());
+        assertTrue(updated.getMembers().stream().anyMatch(m -> regularUser.getId().equals(m.getValue())), "Regular user should be in group");
+
+
+        // Should be able to remove the regular user even though service account is in the group
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .remove("members[value eq \"" + regularUser.getId() + "\"]")
+                    .build());
+        } catch (ScimClientException sce) {
+            fail("Should be able to remove regular member even when service account is in the group: " + sce.getError().getDetail());
+        }
+
+        // Verify regular user is removed from group
+        updated = client.groups().get(group.getId(), List.of("members"), null);
+        assertNull(updated.getMembers(), "Members list should be null");
+
+        // Verify service account is still in the group (using Admin API, since SCIM filters them out)
+        List<String> groupIds = Optional.ofNullable(realm.admin().users().get(serviceAccount.getId()).groups()).orElse(List.of()).stream().map(GroupRepresentation::getId).toList();
+        assertTrue(groupIds.contains(group.getId()), "Service account should still be in group");
+    }
+
     private User createScimUser() {
         User user = new User();
         user.setUserName(KeycloakModelUtils.generateId());
         user.setEmail(user.getUserName() + "@keycloak.org");
+        user.setFirstName("firstName");
+        user.setLastName("lastName");
+        user.setActive(true);
+        User created = client.users().create(user);
+        adminEvents.clear();
+        return created;
+    }
+
+    private User createScimUserWithoutEmail() {
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
         user.setFirstName("firstName");
         user.setLastName("lastName");
         user.setActive(true);

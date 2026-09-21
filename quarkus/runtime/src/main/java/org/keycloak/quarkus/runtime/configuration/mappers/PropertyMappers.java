@@ -25,6 +25,7 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
+import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.NestedPropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
@@ -317,7 +318,7 @@ public final class PropertyMappers {
                 PersistedConfigSource.getInstance().runWithDisabled(Environment::getCurrentOrCreateFeatureProfile);
             } else {
                 Environment.getCurrentOrCreateFeatureProfile();
-                if (!command.shouldStart()) {
+                if (!command.shouldStart() && !Build.NAME.equals(command.getName())) {
                     // this will use the deferred logger, which means it may not be seen in some circumstances
                     Profile.getInstance().logUnsupportedFeatures();
                 }

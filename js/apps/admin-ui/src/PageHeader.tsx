@@ -12,6 +12,7 @@ import { HelpHeader } from "./components/help-enabler/HelpHeader";
 import { useAccess } from "./context/access/Access";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { toDashboard } from "./dashboard/routes/Dashboard";
+import type { Environment } from "./environment-types";
 import { usePreviewLogo } from "./realm-settings/themes/LogoContext";
 import { joinPath } from "./utils/joinPath";
 import { useIsFeatureDisabled, Feature } from "./utils/useIsFeatureEnabled";
@@ -97,7 +98,7 @@ const userDropdownItems = (isMasterRealm: boolean, isManager: boolean) => [
 ];
 
 export const Header = () => {
-  const { environment, keycloak } = useEnvironment();
+  const { environment, keycloak } = useEnvironment<Environment>();
   const { t } = useTranslation();
   const { realm } = useRealm();
   const { hasAccess } = useAccess();
@@ -105,7 +106,7 @@ export const Header = () => {
   const contextLogo = usePreviewLogo();
   const customLogo = contextLogo?.logo;
 
-  const isMasterRealm = realm === "master";
+  const isMasterRealm = realm === environment.masterRealm;
   const isManager = hasAccess("manage-realm");
 
   const logo = environment.logo || "/logo.svg";

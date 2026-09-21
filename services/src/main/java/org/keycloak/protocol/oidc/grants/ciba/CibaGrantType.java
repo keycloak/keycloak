@@ -19,6 +19,8 @@
 package org.keycloak.protocol.oidc.grants.ciba;
 
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -27,6 +29,7 @@ import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -53,6 +56,7 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -69,6 +73,11 @@ import org.jboss.logging.Logger;
 public class CibaGrantType extends OAuth2GrantTypeBase {
 
     private static final Logger logger = Logger.getLogger(CibaGrantType.class);
+
+    @Override
+    public boolean isConfidentialOnlyGrantType() {
+        return true;
+    }
 
     public static final String IS_CONSENT_REQUIRED = "is_consent_required";
     public static final String LOGIN_HINT = "login_hint";
@@ -187,7 +196,8 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
         // (but in code-to-token request, it could just theoretically happen that they are not available)
         String scopeParam = request.getScope();
 
-        if (!TokenManager.verifyConsentStillAvailable(session, user, client, scopeParam)) {
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+        if (!TokenManager.verifyConsentStillAvailable(session, user, client, clientSession, scopeParam)) {
             String errorMessage = "Client no longer has requested consent from user";
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
@@ -195,7 +205,7 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
         }
 
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext
-                .fromClientSessionAndScopeParameter(userSession.getAuthenticatedClientSessionByClient(client.getId()), scopeParam, session);
+                .fromClientSessionAndScopeParameter(clientSession, scopeParam, session);
 
         int authTime = Time.currentTime();
         userSession.setNote(AuthenticationManager.AUTH_TIME, String.valueOf(authTime));
@@ -236,6 +246,12 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "User disabled", Response.Status.BAD_REQUEST);
         }
 
+        String bruteForceError = AuthenticatorUtils.getDisabledByBruteForceEventError(session.getProvider(BruteForceProtector.class), session, realm, user);
+        if (bruteForceError != null) {
+            event.error(bruteForceError);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "User disabled", Response.Status.BAD_REQUEST);
+        }
+
         logger.debugf("CIBA Grant :: user model found. user.getId() = %s, user.getEmail() = %s, user.getUsername() = %s.", user.getId(), user.getEmail(), user.getUsername());
 
         authSession.setAuthenticatedUser(user);
@@ -249,15 +265,6 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
 
         AuthenticationManager.setClientScopesInSession(session, authSession);
 
-        ClientSessionContext context = AuthenticationProcessor
-                .attachSession(authSession, null, session, realm, session.getContext().getConnection(), event);
-        UserSessionModel userSession = context.getClientSession().getUserSession();
-
-        if (userSession == null) {
-            event.error(Errors.USER_SESSION_NOT_FOUND);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User session is not found", Response.Status.BAD_REQUEST);
-        }
-
         // authorization (consent)
         UserConsentModel grantedConsent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());
         if (grantedConsent == null) {
@@ -269,13 +276,22 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
         }
 
         boolean updateConsentRequired = false;
+        List<String> alwaysConsent = new LinkedList<>();
 
         for (AuthorizationDetails authDetails : AuthenticationManager.getClientScopeModelStream(session, client).toList()) {
             ClientScopeModel clientScope = authDetails.getClientScope();
             String parameter = authDetails.getParameterizedScopeParam();
-            if (clientScope != null && !grantedConsent.isClientScopeGranted(clientScope, parameter) && clientScope.isDisplayOnConsentScreen()) {
-                grantedConsent.addGrantedClientScope(clientScope, parameter);
-                updateConsentRequired = true;
+            if (clientScope != null) {
+                if (clientScope.isDisplayOnConsentScreen() && !clientScope.isAlwaysConsent()
+                        && !grantedConsent.isClientScopeGranted(clientScope, parameter)) {
+                    grantedConsent.addGrantedClientScope(clientScope, parameter);
+                    updateConsentRequired = true;
+                } else if (clientScope.isAlwaysConsent()) {
+                    String scope = parameter != null
+                            ? clientScope.getName() + ClientScopeModel.VALUE_SEPARATOR + parameter
+                            : clientScope.getName();
+                    alwaysConsent.add(scope);
+                }
             }
         }
 
@@ -286,9 +302,22 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
             }
         }
 
+        if (!alwaysConsent.isEmpty()) {
+            authSession.setClientNote(OIDCLoginProtocol.CONSENT_NOTE, String.join(" ", alwaysConsent));
+        }
+
+        ClientSessionContext context = AuthenticationProcessor
+                .attachSession(authSession, null, session, realm, session.getContext().getConnection(), event);
+        UserSessionModel userSession = context.getClientSession().getUserSession();
+
+        if (userSession == null) {
+            event.error(Errors.USER_SESSION_NOT_FOUND);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User session is not found", Response.Status.BAD_REQUEST);
+        }
+
         event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
         event.detail(Details.CODE_ID, userSession.getId());
-        event.session(userSession.getId());
+        event.session(userSession);
         event.user(user);
         logger.debugf("Successfully verified Authe Req Id '%s'. User session: '%s', client: '%s'", request, userSession.getId(), client.getId());
 

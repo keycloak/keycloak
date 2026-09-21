@@ -6,4 +6,6 @@ export default interface IssuedUserVerifiableCredentialRepresentation {
   expiresAt?: number;
   clientId?: string;
   revision?: string;
+  clientName?: string;
+  clientBaseUrl?: string;
 }

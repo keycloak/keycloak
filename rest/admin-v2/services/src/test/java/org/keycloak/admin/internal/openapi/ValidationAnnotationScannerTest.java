@@ -41,7 +41,7 @@ import org.keycloak.representations.admin.v2.validation.ClientSecretNotBlank;
 import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.representations.admin.v2.validation.PatchClient;
 import org.keycloak.representations.admin.v2.validation.PutClient;
-import org.keycloak.representations.admin.v2.validation.UuidUnmodified;
+import org.keycloak.representations.admin.v2.validation.ServerManagedFieldUnmodified;
 import org.keycloak.validation.jakarta.ValidationContext;
 
 import org.eclipse.microprofile.openapi.OASFactory;
@@ -89,6 +89,8 @@ public class ValidationAnnotationScannerTest {
                 TestWithClassLevelConstraint.class,
                 TestWithClassLevelConstraintAndGroups.class,
                 TestWithClassLevelConstraintAndMessage.class,
+                TestWithServerManagedFieldUnmodified.class,
+                TestWithRepeatableServerManagedFieldUnmodified.class,
                 ValidationContext.class,
                 KeycloakSession.class,
                 RealmModel.class,
@@ -109,7 +111,7 @@ public class ValidationAnnotationScannerTest {
                 Range.class,
                 URL.class,
                 ClientSecretNotBlank.class,
-                UuidUnmodified.class
+                ServerManagedFieldUnmodified.class
         );
         scanner = new ValidationAnnotationScanner(index);
     }
@@ -439,6 +441,33 @@ public class ValidationAnnotationScannerTest {
         assertTrue(descriptions.isEmpty());
     }
 
+    @Test
+    public void buildClassLevelDescriptions_serverManagedFieldUnmodifiedUsesAffectedFieldNames() {
+        ClassInfo classInfo = index.getClassByName(TestWithServerManagedFieldUnmodified.class);
+
+        Map<String, String> descriptions = scanner.buildClassLevelDescriptions(classInfo);
+
+        assertNotNull(descriptions);
+        assertEquals(2, descriptions.size());
+        assertTrue(descriptions.containsKey("uuid"));
+        assertTrue(descriptions.containsKey("protocol"));
+        assertEquals("uuid is server-managed and must not be user-specified", descriptions.get("uuid"));
+        assertEquals("protocol is server-managed and must not be user-specified", descriptions.get("protocol"));
+    }
+
+    @Test
+    public void buildClassLevelDescriptions_flattensRepeatableServerManagedFieldUnmodified() {
+        ClassInfo classInfo = index.getClassByName(TestWithRepeatableServerManagedFieldUnmodified.class);
+
+        Map<String, String> descriptions = scanner.buildClassLevelDescriptions(classInfo);
+
+        assertNotNull(descriptions);
+        assertEquals(3, descriptions.size());
+        assertEquals("uuid is server-managed and must not be user-specified", descriptions.get("uuid"));
+        assertEquals("createdTimestamp is server-managed and must not be user-specified", descriptions.get("createdTimestamp"));
+        assertEquals("protocol cannot be changed for an existing client", descriptions.get("protocol"));
+    }
+
     private Index createIndex(Class<?>... classes) throws IOException {
         Indexer indexer = new Indexer();
         for (Class<?> clazz : classes) {
@@ -537,5 +566,25 @@ public class ValidationAnnotationScannerTest {
     @SuppressWarnings("unused")
     public static class TestWithClassLevelConstraintAndMessage {
         private String secret;
+    }
+
+    @ServerManagedFieldUnmodified(affectedFieldNames = {"uuid", "protocol"})
+    @SuppressWarnings("unused")
+    public static class TestWithServerManagedFieldUnmodified {
+        private String uuid;
+        private String protocol;
+    }
+
+    @ServerManagedFieldUnmodified(
+            affectedFieldNames = {"uuid", "createdTimestamp"},
+            message = "{0} is server-managed and must not be user-specified")
+    @ServerManagedFieldUnmodified(
+            affectedFieldNames = {"protocol"},
+            message = "protocol cannot be changed for an existing client")
+    @SuppressWarnings("unused")
+    public static class TestWithRepeatableServerManagedFieldUnmodified {
+        private String uuid;
+        private String protocol;
+        private Long createdTimestamp;
     }
 }

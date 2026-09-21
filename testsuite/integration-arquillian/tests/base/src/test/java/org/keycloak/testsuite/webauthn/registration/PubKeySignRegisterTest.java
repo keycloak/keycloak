@@ -77,7 +77,7 @@ public class PubKeySignRegisterTest extends AbstractWebAuthnVirtualTest {
     @Test
     public void publicKeySignaturesNonExisting() {
         assertPublicKeyAlgorithms(false, COSEAlgorithmIdentifier.ES256, Collections.singletonList("RSSSS2048"),
-                "alg not listed in options.pubKeyCredParams is used");
+                "Failed to register your Passkey.");
     }
 
     private void assertPublicKeyAlgorithms(boolean shouldSuccess, COSEAlgorithmIdentifier selectedAlgorithm, List<String> algorithms) {
@@ -99,13 +99,14 @@ public class PubKeySignRegisterTest extends AbstractWebAuthnVirtualTest {
 
             registerDefaultUser(shouldSuccess);
 
-            assertThat(webAuthnErrorPage.isCurrent(), is(!shouldSuccess));
+            if (!oauth.parseLoginResponse().isSuccess()) {
+                webAuthnErrorPage.assertCurrent();
+            }
+
             if (!shouldSuccess) {
                 final String expectedMessage = StringUtil.isNotBlank(expectedError)
                         ? expectedError
-                        : getExpectedMessageByDriver(
-                                "NotSupportedError: Operation is not supported",
-                                "The operation either timed out or was not allowed");
+                        : "The Passkey operation was not allowed or timed out.";
                 assertThat(webAuthnErrorPage.getError(), containsString(expectedMessage));
                 return;
             }

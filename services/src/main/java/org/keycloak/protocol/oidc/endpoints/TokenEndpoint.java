@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.xml.namespace.QName;
 
@@ -35,10 +36,10 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
@@ -52,6 +53,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCProviderConfig;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
+import org.keycloak.protocol.oidc.refresh.RefreshTokenException;
 import org.keycloak.protocol.oidc.token.TokenInterceptorException;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
@@ -63,13 +65,19 @@ import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.util.DPoPUtil;
+import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import static org.keycloak.OAuth2Constants.UMA_GRANT_TYPE;
+import static org.keycloak.events.Details.REASON;
+import static org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID;
+import static org.keycloak.models.Constants.ADMIN_CONSOLE_CLIENT_ID;
 import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
 
 /**
@@ -78,6 +86,10 @@ import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH
 public class TokenEndpoint {
 
     private static final Logger LOGGER = Logger.getLogger(TokenEndpoint.class);
+
+    // Dedicated logger to make it easier to disable the logging category
+    private static final Logger LOGGER_FULL_SCOPE_ALLOWED = Logger.getLogger(TokenEndpoint.class, "full-scope-allowed");
+
     private MultivaluedMap<String, String> formParams;
     private ClientModel client;
     private Map<String, String> clientAuthAttributes;
@@ -118,13 +130,10 @@ public class TokenEndpoint {
     public Response processGrantRequest() {
         cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
-        MultivaluedMap<String, String> formParameters = request.getDecodedFormParameters();
+        formParams = Optional.ofNullable(request.getDecodedFormParameters())
+                .map(this::sanitizeFormParameters)
+                .orElse(new MultivaluedHashMap<>());
 
-        if (formParameters == null) {
-            formParameters = new MultivaluedHashMap<>();
-        }
-
-        formParams = formParameters;
         grantType = formParams.getFirst(OIDCLoginProtocol.GRANT_TYPE_PARAM);
 
         // https://tools.ietf.org/html/rfc6749#section-5.1
@@ -137,9 +146,18 @@ public class TokenEndpoint {
         checkRealm();
         checkGrantType();
 
-        if (!grantType.equals(OAuth2Constants.UMA_GRANT_TYPE)
-                // pre-authorized grants are not necessarily used by known clients.
-                && !grantType.equals(PRE_AUTH_GRANT_TYPE)) {
+        try {
+            grant.preProcess(session, formParams);
+        } catch (ClientPolicyException cpe) {
+            event.detail(REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+        }
+
+        // pre-authorized grants are not necessarily used by known clients.
+        if (!grantType.equals(UMA_GRANT_TYPE) && !grantType.equals(PRE_AUTH_GRANT_TYPE)) {
             checkClient();
             checkParameterDuplicated();
         }
@@ -161,7 +179,13 @@ public class TokenEndpoint {
         try {
             return grant.process(context);
         } catch (TokenInterceptorException e) {
+            event.detail(REASON, e.getDescription());
+            event.error(Errors.INVALID_REQUEST);
             throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
+        } catch (RefreshTokenException e) {
+            event.detail(REASON, e.getErrorDescription());
+            event.error(Errors.INVALID_TOKEN);
+            throw new CorsErrorResponseException(cors, e.getError(), e.getErrorDescription(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -202,7 +226,12 @@ public class TokenEndpoint {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
         }
 
-
+        // We don't display the warning for Keycloak built-in admin clients. Disabling of full-scope-allowed for those clients in KC 27 will be handled by Keycloak team
+        if (client.isFullScopeAllowed() && !ADMIN_CONSOLE_CLIENT_ID.equals(client.getClientId()) && !ADMIN_CLI_CLIENT_ID.equals(client.getClientId())) {
+            LOGGER_FULL_SCOPE_ALLOWED.warnf("Client '%s' in the realm '%s' has 'Full scope allowed' switch enabled. This client switch is deprecated and will be removed in the future. " +
+                            "Please update your client settings to disable the switch and configure needed roles, which this client application needs, to the client role scope", client.getClientId(), realm.getName()
+                    );
+        }
     }
 
     private void checkGrantType() {
@@ -219,11 +248,6 @@ public class TokenEndpoint {
         event.detail(Details.GRANT_TYPE, grantType);
     }
 
-    private CorsErrorResponseException newUnsupportedGrantTypeException() {
-        return new CorsErrorResponseException(cors, OAuthErrorException.UNSUPPORTED_GRANT_TYPE,
-                "Unsupported " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Status.BAD_REQUEST);
-    }
-
     private void checkParameterDuplicated() {
         for (var entry : formParams.entrySet()) {
             if (entry.getValue().size() != 1 && !grant.getSupportedMultivaluedRequestParameters().contains(entry.getKey())) {
@@ -232,6 +256,22 @@ public class TokenEndpoint {
             }
         }
     }
+
+    private CorsErrorResponseException newUnsupportedGrantTypeException() {
+        return new CorsErrorResponseException(cors, OAuthErrorException.UNSUPPORTED_GRANT_TYPE,
+                "Unsupported " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Status.BAD_REQUEST);
+    }
+
+    private MultivaluedMap<String, String> sanitizeFormParameters(MultivaluedMap<String, String> formParams) {
+        MultivaluedMap<String, String> sanitized = new MultivaluedHashMap<>();
+        for (Map.Entry<String, List<String>> entry : formParams.entrySet()) {
+            for (String value : entry.getValue()) {
+                sanitized.add(entry.getKey(), StringUtil.removeControlCharacters(value));
+            }
+        }
+        return sanitized;
+    }
+
 
     protected void checkParameters() {
         OIDCLoginProtocol loginProtocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);

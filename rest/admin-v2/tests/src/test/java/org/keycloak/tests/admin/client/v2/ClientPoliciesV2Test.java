@@ -31,6 +31,7 @@ import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.common.Profile;
+import org.keycloak.json.RawJsonValue;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
@@ -55,7 +56,6 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.providers.client.policies.TrackEventsClientPolicyExecutor;
 import org.keycloak.util.JsonSerialization;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -481,16 +481,14 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         executorRep.setExecutorProviderId(TrackEventsClientPolicyExecutor.PROVIDER_ID);
 
         TrackEventsClientPolicyExecutor.Configuration config = new TrackEventsClientPolicyExecutor.Configuration();
-        JsonNode configNode = JsonSerialization.mapper.readValue(
-                JsonSerialization.mapper.writeValueAsBytes(config), JsonNode.class);
+        RawJsonValue configNode = RawJsonValue.of(JsonSerialization.mapper.convertValue(config, Object.class));
         executorRep.setConfiguration(configNode);
 
         ClientPolicyConditionRepresentation conditionRep = new ClientPolicyConditionRepresentation();
         conditionRep.setConditionProviderId(AnyClientConditionFactory.PROVIDER_ID);
 
         ClientPolicyConditionConfigurationRepresentation conditionConfig = new ClientPolicyConditionConfigurationRepresentation();
-        JsonNode conditionConfigNode = JsonSerialization.mapper.readValue(
-                JsonSerialization.mapper.writeValueAsBytes(conditionConfig), JsonNode.class);
+        RawJsonValue conditionConfigNode = RawJsonValue.of(JsonSerialization.mapper.convertValue(conditionConfig, Object.class));
         conditionRep.setConfiguration(conditionConfigNode);
 
         setupPolicy("Test Profile/Policy that handles the TrackEventsClientPolicyExecutor and verifies types", PROFILE_NAME, POLICY_NAME, executorRep, conditionRep);
@@ -517,8 +515,7 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         configuration.accept(config);
 
         // Use JsonSerialization mapper to properly serialize with @JsonProperty annotations
-        JsonNode configNode = JsonSerialization.mapper.readValue(
-                JsonSerialization.mapper.writeValueAsBytes(config), JsonNode.class);
+        RawJsonValue configNode = RawJsonValue.of(JsonSerialization.mapper.convertValue(config, Object.class));
         executorRep.setConfiguration(configNode);
 
         // Add condition for authenticated user context
@@ -530,8 +527,7 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
                 ClientUpdaterContextConditionFactory.UPDATE_CLIENT_SOURCE,
                 List.of(ClientUpdaterContextConditionFactory.BY_AUTHENTICATED_USER)
         );
-        JsonNode conditionConfigNode = JsonSerialization.mapper.readValue(
-                JsonSerialization.mapper.writeValueAsBytes(conditionConfig), JsonNode.class);
+        RawJsonValue conditionConfigNode = RawJsonValue.of(JsonSerialization.mapper.convertValue(conditionConfig, Object.class));
         conditionRep.setConfiguration(conditionConfigNode);
 
         setupPolicy(description, PROFILE_NAME, POLICY_NAME, executorRep, conditionRep);

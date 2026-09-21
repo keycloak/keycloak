@@ -26,7 +26,11 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import jakarta.persistence.EntityManager;
+
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -35,6 +39,7 @@ import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.jpa.session.PersistentUserSessionEntity;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
@@ -58,6 +63,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.models.jpa.session.JpaSessionUtil.offlineToString;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -65,6 +72,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -888,6 +896,30 @@ public class UserSessionProviderTest {
     }
 
     @TestOnServer
+    public void testReadOnlyStreamsWithDeletedUser(KeycloakSession session) {
+        KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), UserSessionProviderTest::createSessions);
+
+        // Remove user1 directly via UserProvider (bypassing UserManager) to simulate a federated user
+        // deleted from the external store. This leaves orphaned sessions in the database.
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> {
+            RealmModel realm = kcSession.realms().getRealmByName("test");
+            kcSession.getContext().setRealm(realm);
+            UserModel user1 = kcSession.users().getUserByUsername(realm, "user1");
+            kcSession.users().removeUser(realm, user1);
+        });
+
+        // Orphaned sessions must be filtered out
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> {
+            RealmModel realm = kcSession.realms().getRealmByName("test");
+            kcSession.getContext().setRealm(realm);
+
+            List<UserSessionModel> readOnlySessionList = kcSession.sessions().readOnlyStreamUserSessions(realm).toList();
+            assertEquals(1, readOnlySessionList.size());
+            assertNotNull(readOnlySessionList.get(0).getUser().getUsername());
+        });
+    }
+
+    @TestOnServer
     public void testReadOnlyStreams(KeycloakSession session) {
         var sessions = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), UserSessionProviderTest::createSessions);
 
@@ -995,6 +1027,110 @@ public class UserSessionProviderTest {
         Arrays.sort(actualClients);
 
         assertArrayEquals(clients, actualClients);
+    }
+
+    /**
+     * Tests the two-pass expiration behavior for sessions where {@code lastSessionRefreshCoarse < threshold}
+     * but {@code lastSessionRefresh >= threshold} (near-miss). The session must survive the first pass
+     * with its coarse value advanced to the exact value, and subsequent batches must terminate.
+     */
+    @TestOnServer
+    public void testNearMissSessionSurvivesCoarseExpiration(KeycloakSession session) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+            // Assume doesn't work here, yet.
+            // https://github.com/keycloak/keycloak/issues/51968
+            return;
+        }
+        InfinispanTimeUtil.enableTestingTimeService(session);
+        try {
+            RealmModel realm = session.realms().getRealmByName("test");
+            session.getContext().setRealm(realm);
+            int idleTimeout = realm.getSsoSessionIdleTimeout();
+            int granularity = Math.max(idleTimeout / 2, 1);
+
+            // Step 1: Create a session at the current time
+            String sessionId = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), session1 -> {
+                session1.getContext().setRealm(realm);
+                UserSessionModel us = session1.sessions().createUserSession(null, realm,
+                        session1.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1",
+                        "form", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+                return us.getId();
+            });
+
+            // Step 2: Advance time to just before the next coarse boundary and refresh.
+            // This makes lastSessionRefresh advance but lastSessionRefreshCoarse stays at the same epoch.
+            int refreshAdvance = granularity - granularity / 5;
+            Time.setOffset(refreshAdvance);
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session1 -> {
+                session1.getContext().setRealm(realm);
+                UserSessionModel us = session1.sessions().getUserSession(realm, sessionId);
+                us.setLastSessionRefresh(Time.currentTime());
+            });
+
+            // Verify the near-miss condition: coarse < lastSessionRefresh
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session1 -> {
+                EntityManager em = session1.getProvider(JpaConnectionProvider.class).getEntityManager();
+                PersistentUserSessionEntity entity = em.find(PersistentUserSessionEntity.class,
+                        new PersistentUserSessionEntity.Key(sessionId, offlineToString(false)));
+                assertNotNull(entity);
+                assertTrue(entity.getLastSessionRefreshCoarse() < entity.getLastSessionRefresh(),
+                        "Precondition: coarse (" + entity.getLastSessionRefreshCoarse() + ") should be less than exact (" + entity.getLastSessionRefresh() + ")");
+            });
+
+            // Step 3: Advance time so threshold falls between coarse and exact.
+            // threshold = currentTime - idleTimeout - WINDOW
+            // We need: coarse < threshold <= lastSessionRefresh
+            int expirationOffset = idleTimeout + SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + granularity / 2;
+            Time.setOffset(expirationOffset);
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session1 -> {
+                session1.getContext().setRealm(realm);
+                session1.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
+            });
+
+            // Step 4: Verify the session survived and its coarse value was advanced
+            int expectedCoarse = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), session1 -> {
+                EntityManager em = session1.getProvider(JpaConnectionProvider.class).getEntityManager();
+                PersistentUserSessionEntity entity = em.find(PersistentUserSessionEntity.class,
+                        new PersistentUserSessionEntity.Key(sessionId, offlineToString(false)));
+                assertNotNull(entity, "Near-miss session should survive the first expiration pass");
+                assertEquals(entity.getLastSessionRefresh(), entity.getLastSessionRefreshCoarse(),
+                        "Coarse value should be advanced to exact lastSessionRefresh");
+                return entity.getLastSessionRefreshCoarse();
+            });
+
+            // Step 5: Run expiration again at the same time — coarse is now above threshold
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session1 -> {
+                session1.getContext().setRealm(realm);
+                session1.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
+            });
+
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session1 -> {
+                EntityManager em = session1.getProvider(JpaConnectionProvider.class).getEntityManager();
+                PersistentUserSessionEntity entity = em.find(PersistentUserSessionEntity.class,
+                        new PersistentUserSessionEntity.Key(sessionId, offlineToString(false)));
+                assertNotNull(entity, "Session should still exist after second expiration pass");
+                assertEquals(expectedCoarse, entity.getLastSessionRefreshCoarse(),
+                        "Coarse value should remain unchanged");
+            });
+
+            // Step 6: Advance time far enough that lastSessionRefresh is truly expired
+            Time.setOffset(refreshAdvance + idleTimeout + SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 10);
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session1 -> {
+                session1.getContext().setRealm(realm);
+                session1.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
+            });
+
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session1 -> {
+                EntityManager em = session1.getProvider(JpaConnectionProvider.class).getEntityManager();
+                PersistentUserSessionEntity entity = em.find(PersistentUserSessionEntity.class,
+                        new PersistentUserSessionEntity.Key(sessionId, offlineToString(false)));
+                assertNull(entity, "Session should be deleted after truly expiring");
+            });
+        } finally {
+            Time.setOffset(0);
+            session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
+            InfinispanTimeUtil.disableTestingTimeService(session);
+        }
     }
 
     private static class UserSessionProviderRealm implements RealmConfig {

@@ -109,8 +109,11 @@ The configurable items and their description are as follows:
 |Authenticator Attachment
 |The acceptable attachment pattern of a WebAuthn authenticator for the WebAuthn Client. This pattern is an optional configuration item applying to the registration of the WebAuthn authenticator. For more details, see https://www.w3.org/TR/webauthn/#enumdef-authenticatorattachment[WebAuthn Specification].
 
+|Discoverable Credential
+|The extent to which the WebAuthn authenticator should generate the Public Key Credential as a https://www.w3.org/TR/webauthn-3/[Client-side discoverable Credential]. The accepted values are `required`, `preferred` and `discouraged`. This option applies to the registration of the WebAuthn authenticator and replaces, and takes precedence over, the deprecated `Require Discoverable Credential` option. If left blank ("not specified"), the deprecated `Require Discoverable Credential` option is used instead. For more details, see https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-residentkey[WebAuthn Specification].
+
 |Require Discoverable Credential
-|The option requiring that the WebAuthn authenticator generates the Public Key Credential as https://www.w3.org/TR/webauthn-3/[Client-side discoverable Credential]. This option applies to the registration of the WebAuthn authenticator. If left blank, its behavior is the same as selecting "No". For more details, see https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-requireresidentkey[WebAuthn Specification].
+|*Deprecated*, use `Discoverable Credential` instead. This option is planned to be removed in the future and is only used when `Discoverable Credential` is left as "not specified". The option requiring that the WebAuthn authenticator generates the Public Key Credential as https://www.w3.org/TR/webauthn-3/[Client-side discoverable Credential]. This option applies to the registration of the WebAuthn authenticator. If left blank, its behavior is the same as selecting "No". For more details, see https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-requireresidentkey[WebAuthn Specification].
 
 |User Verification Requirement
 |The option requiring that the WebAuthn authenticator confirms the verification of a user. This is an optional configuration item applying to the registration of a WebAuthn authenticator and the authentication of a user by a WebAuthn authenticator. If no option exists, its behavior is the same as selecting "preferred". For more details, see https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-userverification[WebAuthn Specification for registering a WebAuthn authenticator] and https://www.w3.org/TR/webauthn/#dom-publickeycredentialrequestoptions-userverification[WebAuthn Specification for authenticating the user by a WebAuthn authenticator].
@@ -222,7 +225,7 @@ Set up WebAuthn Loginless support as follows:
 
 . (If not already done) Check the required action for *WebAuthn Register Passwordless* is enabled. Use the steps described in <<_webauthn-register, Enable WebAuthn Authenticator Registration>>, but using *WebAuthn Register Passwordless* instead of *WebAuthn Register*.
 
-. Configure the `WebAuthn Passwordless Policy` if needed. Perform the configuration in the Admin Console, `Authentication` section,  in the `Policies` ->  `WebAuthn Passwordless Policy` tab. By default, {project_name} sets *User Verification Requirement* to *required* and *Require Discoverable Credential* to *Yes* for the passwordless scenario to work properly. Storage capacity is usually very limited on Passkeys meaning that you won't be able to store many discoverable credentials on your Passkey.
+. Configure the `WebAuthn Passwordless Policy` if needed. Perform the configuration in the Admin Console, `Authentication` section,  in the `Policies` ->  `WebAuthn Passwordless Policy` tab. By default, {project_name} sets *User Verification Requirement* to *required* and *Discoverable Credential* to *required* for the passwordless scenario to work properly. Storage capacity is usually very limited on Passkeys meaning that you won't be able to store many discoverable credentials on your Passkey.
 
 . Configure the authentication flow. Create a new authentication flow, add the "WebAuthn Passwordless" execution and set the Requirement setting of the execution to *Required*
 

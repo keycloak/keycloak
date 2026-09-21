@@ -1,6 +1,8 @@
 <#import "template.ftl" as layout>
 <#import "field.ftl" as field>
+<#import "buttons.ftl" as buttons>
 <#import "password-commons.ftl" as passwordCommons>
+<#import "qr-code.ftl" as qr>
 <@layout.registrationLayout displayRequiredFields=false displayMessage=!messagesPerField.existsError('totp','userLabel'); section>
 <!-- template: login-config-totp.ftl -->
 
@@ -42,8 +44,9 @@
             <#else>
                 <li>
                     <p>${msg("loginTotpStep2")}</p>
-                    <img id="kc-totp-secret-qr-code" src="data:image/png;base64, ${totp.totpSecretQrCode}" alt="Figure: Barcode"><br/>
-                    <p><a href="${totp.manualUrl}" id="mode-manual">${msg("loginTotpUnableToScan")}</a></p>
+                    <@qr.qrCode id="kc-totp-secret-qr-code" content=totp.totpSecretQrCode alt=msg("loginTotpStep2")>
+                        <a href="${totp.manualUrl}" id="mode-manual">${msg("loginTotpUnableToScan")}</a>
+                    </@qr.qrCode>
                 </li>
             </#if>
             <li>
@@ -100,25 +103,16 @@
                 <@passwordCommons.logoutOtherSessions/>
             </div>
 
-            <div class="pf-v5-c-form__group pf-m-action">
-                <div class="pf-v5-c-form__actions">
-                    <#if isAppInitiatedAction??>
-                        <input type="submit"
-                            class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}"
-                            id="saveTOTPBtn" value="${msg("doSubmit")}"
-                        />
-                        <button type="submit"
-                                class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!} ${properties.kcButtonLargeClass!}"
-                                id="cancelTOTPBtn" name="cancel-aia" value="true">${msg("doCancel")}
-                        </button>
-                    <#else>
-                        <input type="submit"
-                            class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                            id="saveTOTPBtn" value="${msg("doSubmit")}"
-                        />
-                    </#if>
-                </div>
-            </div>
+            <#if isAppInitiatedAction??>
+                <@buttons.actionGroup horizontal=true>
+                    <@buttons.button id="saveTOTPBtn" label="doSubmit" />
+                    <@buttons.button id="cancelTOTPBtn" name="cancel-aia" label="doCancel" type="secondary" value="true" />
+                </@buttons.actionGroup>
+            <#else>
+                <@buttons.actionGroup>
+                    <@buttons.button id="saveTOTPBtn" label="doSubmit" />
+                </@buttons.actionGroup>
+            </#if>
         </form>
     </#if>
 </@layout.registrationLayout>

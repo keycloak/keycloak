@@ -8,7 +8,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
-import org.keycloak.representations.idm.oid4vc.CredentialOfferActionConfig;
+import org.keycloak.representations.idm.oid4vc.VerifiableCredentialOfferActionConfig;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -68,7 +68,7 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
 
     public static String getKcActionParameter(String clientId, String credentialConfigId, boolean preAuthorized) {
         try {
-            CredentialOfferActionConfig cfg = new CredentialOfferActionConfig();
+            VerifiableCredentialOfferActionConfig cfg = new VerifiableCredentialOfferActionConfig();
             cfg.setCredentialConfigurationId(credentialConfigId);
             cfg.setPreAuthorized(preAuthorized);
             cfg.setClientId(clientId);
@@ -111,6 +111,9 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
                 .details(Details.VERIFIABLE_CREDENTIAL_TARGET_USER_ID, user.getId())
                 .details(Details.VERIFIABLE_CREDENTIAL_TARGET_CLIENT_ID, client.getClientId())
                 .type(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER);
+
+        // Wait 2 minutes (just to test that credential-offer with default expiration (5 minutes) will not expire)
+        timeOffSet.set(120);
 
         // Refresh screen. Should be still same credential-offer as before and test that there are not new events
         driver.navigate().refresh();

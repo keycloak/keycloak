@@ -17,18 +17,15 @@
 
 package org.keycloak.services;
 
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
-import org.keycloak.utils.KeycloakSessionUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ErrorResponseException extends WebApplicationException {
+public class ErrorResponseException extends RollbackWebApplicationException {
 
     private final Response response;
     private final String error;
@@ -44,6 +41,7 @@ public class ErrorResponseException extends WebApplicationException {
     }
 
     public ErrorResponseException(Response response) {
+        super((String) null, response);
         this.response = response;
         this.error = null;
         this.errorDescription = null;
@@ -59,17 +57,7 @@ public class ErrorResponseException extends WebApplicationException {
     }
 
     @Override
-    public Response getResponse() {
-        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
-        if (session != null) {
-            // This has to happen, since calling getResponse() with non-null result leads to
-            // directly returning the result instead of
-            // propagating exception to KeycloakErrorHandler.toResponse(Throwable) which would ensure rollback on other exception types.
-            //
-            // See org.jboss.resteasy.core.ExceptionHandler.unwrapException(HttpRequest, Throwable, RESTEasyTracingLogger)
-
-            session.getTransactionManager().setRollbackOnly();
-        }
+    public Response createErrorResponse() {
         if (response != null) {
             return response;
         } else {

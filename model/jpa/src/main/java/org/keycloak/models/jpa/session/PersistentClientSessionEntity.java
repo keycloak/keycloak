@@ -29,6 +29,8 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
+import org.keycloak.connections.jpa.AsynchronousCommitAllowed;
+
 import org.hibernate.annotations.DynamicUpdate;
 
 /**
@@ -68,7 +70,14 @@ import org.hibernate.annotations.DynamicUpdate;
 @Entity
 @DynamicUpdate
 @IdClass(PersistentClientSessionEntity.Key.class)
-public class PersistentClientSessionEntity {
+public class PersistentClientSessionEntity implements AsynchronousCommitAllowed {
+
+    @Override
+    public boolean isAsyncCommitAllowed(EntityOperationType operationType) {
+        // If a session is removed by revoking this client's refresh token,
+        // this needs to be durable to prevent a security relevant timing attack
+        return operationType != EntityOperationType.DELETE;
+    }
 
     public static final String LOCAL = "local";
     public static final String EXTERNAL = "external";

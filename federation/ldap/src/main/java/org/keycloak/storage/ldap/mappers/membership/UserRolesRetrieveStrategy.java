@@ -148,6 +148,15 @@ public interface UserRolesRetrieveStrategy {
             return new LDAPQueryConditionsBuilder().equal(membershipAttr + LDAPConstants.LDAP_MATCHING_RULE_IN_CHAIN, userMembership);
         }
 
+        @Override
+        public List<UserModel> getLDAPRoleMembers(RealmModel realm, CommonLDAPGroupMapper roleOrGroupMapper, LDAPObject ldapRoleOrGroup, int firstResult, int maxResults) {
+            String memberOfLdapAttrName = roleOrGroupMapper.getConfig().getMemberOfLdapAttribute();
+            String roleOrGroupDn = ldapRoleOrGroup.getDn().toString();
+            return StreamsUtil.paginatedStream(
+                    roleOrGroupMapper.getLdapProvider().searchForUserByUserAttributeStream(realm, memberOfLdapAttrName + LDAPConstants.LDAP_MATCHING_RULE_IN_CHAIN, roleOrGroupDn), firstResult, maxResults)
+                    .toList();
+        }
+
     };
 
 }

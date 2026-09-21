@@ -5,17 +5,15 @@ import java.util.List;
 import java.util.function.Function;
 
 import org.keycloak.TokenVerifier;
-import org.keycloak.admin.client.resource.ClientPoliciesPoliciesResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.protocol.oid4vc.clientpolicy.PredicateCredentialClientPolicy;
+import org.keycloak.protocol.oid4vc.model.CredentialDefinition;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.idm.ClientPoliciesRepresentation;
-import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.tests.oid4vc.OID4VCBasicWallet.AuthorizationEndpointRequest;
@@ -111,14 +109,8 @@ public class OID4VCredentialByScopeTest extends OID4VCIssuerTestBase {
 
             // Set client policy 'oid4vci-offer-required'
             //
-            ClientPoliciesPoliciesResource clientPoliciesResource = testRealm.admin().clientPoliciesPoliciesResource();
-            ClientPoliciesRepresentation policies = clientPoliciesResource.getPolicies();
-            ClientPolicyRepresentation clientPolicy = policies.getPolicies().stream()
-                    .filter(cp -> cp.getName().equals(offerRequiredPolicy.getName()))
-                    .findFirst().orElseThrow();
-            Boolean wasPolicyEnabled = clientPolicy.isEnabled();
-            clientPolicy.setEnabled(policyEnabled);
-            clientPoliciesResource.updatePolicies(policies);
+            Boolean wasPolicyEnabled = getClientPolicy(offerRequiredPolicy.getName()).isEnabled();
+            setClientPolicyEnabled(offerRequiredPolicy.getName(), policyEnabled);
 
             // Set client scope attribute 'vc.policy.offer.required'
             //
@@ -179,8 +171,7 @@ public class OID4VCredentialByScopeTest extends OID4VCIssuerTestBase {
                 assertFalse(credentialResponse.getCredentials().isEmpty(), "Credentials expected");
                 return true;
             } finally {
-                clientPolicy.setEnabled(wasPolicyEnabled);
-                clientPoliciesResource.updatePolicies(policies);
+                setClientPolicyEnabled(offerRequiredPolicy.getName(), wasPolicyEnabled);
 
                 credScope.setCredentialPolicyValue(offerRequiredPolicy, wasScopeEnabled);
                 updateCredentialScope(credScope);
@@ -213,7 +204,7 @@ public class OID4VCredentialByScopeTest extends OID4VCIssuerTestBase {
         assertEquals("did:web:test.org", jsonWebToken.getIssuer());
         Object vc = jsonWebToken.getOtherClaims().get("vc");
         VerifiableCredential credential = JsonSerialization.mapper.convertValue(vc, VerifiableCredential.class);
-        assertEquals(List.of(scope), credential.getType());
+        assertEquals(List.of(CredentialDefinition.VERIFIABLE_CREDENTIAL_TYPE, scope), credential.getType());
         assertEquals(URI.create("did:web:test.org"), credential.getIssuer());
         assertEquals(expUser + "@email.cz", credential.getCredentialSubject().getClaims().get("email"));
     }

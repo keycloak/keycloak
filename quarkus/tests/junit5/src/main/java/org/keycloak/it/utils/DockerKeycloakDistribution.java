@@ -14,8 +14,11 @@ import java.util.stream.IntStream;
 import org.keycloak.common.Version;
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.KillContainerCmd;
 import com.github.dockerjava.api.exception.NotFoundException;
+import org.awaitility.Awaitility;
 import org.jboss.logging.Logger;
+import org.junit.jupiter.api.Assertions;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.OutputFrame;
@@ -227,6 +230,15 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
                 containerId = keycloakContainer.getContainerId();
                 this.stdout = fetchOutputStream();
                 this.stderr = fetchErrorStream();
+
+                // A graceful shutdown will help with cleaning up resources, for example JDBC_PING table entries.
+                // Shutdown is fast (less than 100 ms), waiting for a stale JDBC_PING is slow (10+ seconds).
+                if (keycloakContainer.isRunning()) {
+                    try (KillContainerCmd killContainerCmd = keycloakContainer.getDockerClient().killContainerCmd(keycloakContainer.getContainerId())) {
+                        killContainerCmd.withSignal("TERM").exec();
+                    }
+                    Awaitility.await().atMost(Duration.ofSeconds(2)).untilAsserted(() -> Assertions.assertFalse(keycloakContainer.isRunning()));
+                }
 
                 keycloakContainer.stop();
                 this.exitCode = 0;

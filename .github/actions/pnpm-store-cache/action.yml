@@ -9,7 +9,7 @@ runs:
       shell: bash
       run: echo "key=pnpm-store-`date -u "+%Y-%U"`" >> $GITHUB_OUTPUT
 
-    - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       name: Cache PNPM store
       with:
         path: |
@@ -17,3 +17,7 @@ runs:
           ~/AppData/Local/pnpm/store
           ~/Library/pnpm/store
         key: ${{ runner.os }}-${{ steps.weekly-cache-key.outputs.key }}
+
+    - name: Set up Wireit GitHub Actions caching
+      uses: google/wireit@9d7c2e5346f8ef1b1ab6014c4e96c74e234f7ed5 # setup-github-actions-caching/v2
+      if: runner.os != 'Windows'

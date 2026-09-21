@@ -1,5 +1,6 @@
 package org.keycloak.models.workflow.events;
 
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.GroupMemberJoinEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -41,12 +42,12 @@ public class UserGroupMembershipAddedWorkflowEventProvider extends AbstractWorkf
         }
         if (super.configParameter != null) {
             String groupName = configParameter;
-            // this is the case when the group name is passed as a parameter to the event provider - like user-group-membership-added(mygroup)
             if (!groupName.startsWith(GROUP_PATH_SEPARATOR))
                 groupName = GROUP_PATH_SEPARATOR + groupName;
             ProviderEvent groupEvent = (ProviderEvent) context.getEvent().getEvent();
             if (groupEvent instanceof GroupMemberJoinEvent joinEvent) {
-                return groupName.equals(KeycloakModelUtils.buildGroupPath(joinEvent.getGroup()));
+                GroupModel group = KeycloakModelUtils.findGroupByPath(session, joinEvent.getRealm(), groupName);
+                return group != null && group.getId().equals(joinEvent.getGroup().getId());
             } else {
                 return false;
             }

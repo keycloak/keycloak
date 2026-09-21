@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import org.keycloak.models.KeycloakSession;
@@ -35,47 +37,13 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUB;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 
 /**
- * Sets an ID for the credential subject, either from User ID or by attribute mapping
- * <p/>
- * A Verifiable Credential (VC) is often bound to a Holder's Digital Identity (DID).
- * The Holder's DID is in turn bound to Key Material that the Issuer + Verifier can discover from the DID Document.
- * In case of "did:key:..." the Public Key is already encoded in the DID.
- * <p/>
- * Here, we make sure that the default UserProfile has a 'did' attribute when --feature=oid4vc-vci is enabled.
- * Conceptually, it is however debatable whether the Issuer should know even one of the Holder's DIDs
- * <p/>
- * In future, it may be possible that ...
- * <p/>
- *  * The Holder communicates the DID at the time of Authorization
- *  * The Issuer then verifies Holder possession of the associated Key Material
- *  * The Issuer then somehow associates the AuthorizationRequest with a registered User
- *  * The VC is then issued to the Holder without the Issuer needing to remember that Holder DID
- * <p/>
- * This kind of Authorization protocol is for example required by EBSI, which we aim to become compatible with.
- * https:*hub.ebsi.eu/conformance/build-solutions/issue-to-holder-functional-flows
- * <p/>
- * Note, that current EBSI Compatibility Tests use the Holder's DID as OIDC client_id in the AuthorizationRequest.
- * That is something we need to work with, but I don't think we should model it like that in our realm config.
- * <p/>
- * Here the attribute definition that we add by default (when not defined already)
- * <p/>
- *   {
- *     "name": "did",
- *     "displayName": "DID",
- *     "permissions": {
- *       "view": ["admin", "user"],
- *       "edit": ["admin", "user"]
- *     },
- *     "validations": {
- *       "pattern": {
- *         "pattern": "^did:.+:.+$",
- *         "error-message": "Value must start with 'did:scheme:'"
- *       }
- *     }
- *   }
+ * Sets an ID for the credential subject, either from User ID or by attribute mapping.
+ * The subject ID defaults to the user's username but can be configured to use email or internal ID.
+ *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
 public class OID4VCSubjectIdMapper extends OID4VCMapper {
@@ -98,8 +66,8 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
         userAttributeConfig.setLabel("User attribute");
         userAttributeConfig.setHelpText("The name of the user attribute that maps to the subject id.");
         userAttributeConfig.setType(ProviderConfigProperty.LIST_TYPE);
-        userAttributeConfig.setOptions(List.of(UserModel.DID, UserModel.USERNAME, UserModel.EMAIL, UserModel.ID));
-        userAttributeConfig.setDefaultValue(UserModel.DID);
+        userAttributeConfig.setOptions(List.of(UserModel.USERNAME, UserModel.EMAIL, UserModel.ID));
+        userAttributeConfig.setDefaultValue(UserModel.USERNAME);
         CONFIG_PROPERTIES.add(userAttributeConfig);
     }
 
@@ -127,12 +95,11 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
     @Override
     public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
         UserModel userModel = userSessionModel.getUser();
-        List<String> attributePath = getMetadataAttributePath();
-        if (attributePath.isEmpty()) {
+        String userAttributeName = mapperModel.getConfig().get(OID4VCMapper.USER_ATTRIBUTE_KEY);
+        String propertyName = getClaimName(userAttributeName);
+        if (propertyName == null) {
             return;
         }
-        String propertyName = attributePath.get(attributePath.size() - 1);
-        String userAttributeName = mapperModel.getConfig().get(OID4VCMapper.USER_ATTRIBUTE_KEY);
         Consumer<String> userIdConsumer = (val) -> claims.put(propertyName, val);
         if (UserModel.ID.equals(userAttributeName)) {
             userIdConsumer.accept(userModel.getId());
@@ -142,6 +109,29 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
                     .findFirst()
                     .ifPresent(userIdConsumer);
         }
+    }
+
+    // the configured user attribute serves as fallback claim name to stay compatible with mappers that were
+    // created without an explicit claim name
+    @Override
+    protected String resolveClaimName(ProtocolMapperModel mapperModel) {
+        Map<String, String> config = mapperModel.getConfig();
+        if (config == null) {
+            return null;
+        }
+
+        return Optional.ofNullable(config.get(CLAIM_NAME))
+                .orElse(config.get(OID4VCMapper.USER_ATTRIBUTE_KEY));
+    }
+
+    @Override
+    public List<String> getMetadataAttributePath() {
+        return getMetadataAttributePath(resolveClaimName(mapperModel));
+    }
+
+    @Override
+    protected List<String> getClaimLookupPath() {
+        return getClaimLookupPath(resolveClaimName(mapperModel));
     }
 
     @Override
@@ -157,6 +147,13 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
     @Override
     public ProtocolMapper create(KeycloakSession session) {
         return new OID4VCSubjectIdMapper();
+    }
+
+    // The subject-id mapper is the trusted writer of the 'sub' claim (via its 'id' alias). It must be allowed to
+    // target 'sub'/'id', but remains blocked from all other reserved claims (e.g. exp, iat, jti).
+    @Override
+    protected Set<String> getAllowedReservedClaims() {
+        return Set.of(CLAIM_NAME_SUB);
     }
 
     @Override

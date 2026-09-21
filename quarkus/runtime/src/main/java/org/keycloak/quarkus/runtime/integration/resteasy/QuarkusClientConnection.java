@@ -17,40 +17,44 @@
 
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
+import java.util.Objects;
+import java.util.Optional;
+
 import org.keycloak.common.ClientConnection;
 
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.net.SocketAddress;
 
 public final class QuarkusClientConnection implements ClientConnection {
 
     private final HttpServerRequest request;
 
     public QuarkusClientConnection(HttpServerRequest request) {
-        this.request = request;
+        this.request = Objects.requireNonNull(request);
     }
 
     @Override
     public String getRemoteAddr() {
-        return request.remoteAddress().hostAddress();
+        return Optional.ofNullable(request.remoteAddress()).map(SocketAddress::hostAddress).orElse(null);
     }
 
     @Override
     public String getRemoteHost() {
-        return request.remoteAddress().host();
+        return Optional.ofNullable(request.remoteAddress()).map(SocketAddress::host).orElse(null);
     }
 
     @Override
     public int getRemotePort() {
-        return request.remoteAddress().port();
+        return Optional.ofNullable(request.remoteAddress()).map(SocketAddress::port).orElse(0);
     }
 
     @Override
     public String getLocalAddr() {
-        return request.localAddress().hostAddress();
+        return Optional.ofNullable(request.localAddress()).map(SocketAddress::hostAddress).orElse(null);
     }
 
     @Override
     public int getLocalPort() {
-        return request.localAddress().port();
+        return Optional.ofNullable(request.localAddress()).map(SocketAddress::port).orElse(0);
     }
 }

@@ -39,7 +39,6 @@ import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.OrganizationsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.OrganizationModel;
-import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.ErrorRepresentation;
@@ -61,6 +60,7 @@ import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginUsernamePage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -186,6 +186,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testSearch() {
         // create some organizations with different names and domains.
         createOrganization("acme", "acme.org", "acme.net");
@@ -285,6 +286,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testSearchByAttributes() {
         List<OrganizationRepresentation> expected = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
@@ -495,7 +497,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         }
 
         // create another org in a different realm with the same internet domain - should be allowed.
-        createOrganization(secondRealm.admin(), "testorg", "acme.com");
+        createOrganization(secondRealm, "testorg", "acme.com");
 
         // try to remove a domain
         organization = realm.admin().organizations().get(existing.getId());
@@ -669,7 +671,9 @@ public class OrganizationTest extends AbstractOrganizationTest {
             realmRes = adminClient.realms().realm(realmRep.getRealm());
             realmRes.toRepresentation();
 
-            createOrganization(realmRes, "test-org", "test.org");
+            try (Response response = realmRes.organizations().create(createRepresentation("test-org", "test.org"))) {
+                assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            }
 
             List<OrganizationRepresentation> orgs = realmRes.organizations().list(-1, -1);
             assertThat(orgs, hasSize(1));
@@ -687,14 +691,22 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
-    public void testCount() {
+    public void testCountAndExists() {
+        // Call hasOrganizations to cache the data
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            assertFalse(orgProvider.hasOrganizations());
+        });
+
         List<String> orgIds = IntStream.range(0, 10)
                 .mapToObj(i -> createOrganization("kc.org." + i).getId())
                 .collect(Collectors.toList());
 
         String firstOrgId = orgIds.get(0);
+        orgIds.remove(firstOrgId);
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            assertTrue(orgProvider.hasOrganizations());
             assertEquals(10, orgProvider.count());
 
             OrganizationModel org = orgProvider.getById(firstOrgId);
@@ -702,6 +714,25 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
             assertEquals(9, orgProvider.count());
         });
+
+        // Remove all all entries and check if hasOrganizations changes
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            assertTrue(orgProvider.hasOrganizations());
+            orgIds.forEach(s -> {
+                OrganizationModel org = orgProvider.getById(s);
+                orgProvider.remove(org);
+            });
+            assertFalse(orgProvider.hasOrganizations());
+        });
+
+        // Call again to see if the cache was invalidated
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            assertFalse(orgProvider.hasOrganizations());
+            assertEquals(0, orgProvider.count());
+        });
+
     }
 
     @Test
@@ -1020,11 +1051,12 @@ public class OrganizationTest extends AbstractOrganizationTest {
     public void testResolveOrganizationByDomain() {
         OrganizationRepresentation orgA = createOrganization("org-a", "sub.example.com");
         OrganizationResource organization = realm.admin().organizations().get(orgA.getId());
+        orgA.getDomains().forEach(d -> d.setAutoRedirect(false));
+        organization.update(orgA).close();
         String brokerAliasA = orgA.getAlias() + "-identity-provider";
         OrganizationIdentityProviderResource broker = organization.identityProviders().get(brokerAliasA);
         IdentityProviderRepresentation brokerRepOrgA = broker.toRepresentation();
         brokerRepOrgA.setHideOnLogin(false);
-        brokerRepOrgA.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
         realm.admin().identityProviders().get(brokerRepOrgA.getAlias()).update(brokerRepOrgA);
 
         oauth.openLoginForm();
@@ -1034,11 +1066,12 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
         OrganizationRepresentation orgB = createOrganization("org-b", "example.com");
         organization = realm.admin().organizations().get(orgB.getId());
+        orgB.getDomains().forEach(d -> d.setAutoRedirect(false));
+        organization.update(orgB).close();
         String brokerAliasB = orgB.getAlias() + "-identity-provider";
         broker = organization.identityProviders().get(brokerAliasB);
         IdentityProviderRepresentation brokerRepOrgB = broker.toRepresentation();
         brokerRepOrgB.setHideOnLogin(false);
-        brokerRepOrgB.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
         realm.admin().identityProviders().get(brokerRepOrgB.getAlias()).update(brokerRepOrgB);
         oauth.openLoginForm();
         loginPage.fillLoginWithUsernameOnly("user@example.com");
@@ -1048,11 +1081,12 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
         OrganizationRepresentation orgC = createOrganization("org-c", "*.deep.sub.example.com");
         organization = realm.admin().organizations().get(orgC.getId());
+        orgC.getDomains().forEach(d -> d.setAutoRedirect(false));
+        organization.update(orgC).close();
         String brokerAliasC = orgC.getAlias() + "-identity-provider";
         broker = organization.identityProviders().get(brokerAliasC);
         IdentityProviderRepresentation brokerRepOrgC = broker.toRepresentation();
         brokerRepOrgC.setHideOnLogin(false);
-        brokerRepOrgC.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
         realm.admin().identityProviders().get(brokerRepOrgC.getAlias()).update(brokerRepOrgC);
         oauth.openLoginForm();
         loginPage.fillLoginWithUsernameOnly("user@deep.sub.example.com");
@@ -1259,5 +1293,58 @@ public class OrganizationTest extends AbstractOrganizationTest {
         OrganizationRepresentation reloaded = realm.admin().organizations().get(orgA.getId()).toRepresentation();
         assertEquals(1, reloaded.getDomains().size());
         assertNotNull(reloaded.getDomain("example.com"));
+    }
+
+    @Test
+    public void testDomainWithIdpRouting() {
+        OrganizationRepresentation org = createOrganization("idp-routing-test");
+        OrganizationResource orgResource = realm.admin().organizations().get(org.getId());
+
+        // createOrganization already sets identityProviderAlias and autoRedirect on the first domain
+        OrganizationRepresentation fetched = orgResource.toRepresentation();
+        OrganizationDomainRepresentation domain = fetched.getDomain("idp-routing-test.org");
+        assertNotNull(domain);
+        assertNotNull(domain.getIdentityProviderAlias());
+        assertTrue(domain.isAutoRedirect());
+
+        // update to clear IdP routing
+        domain.setIdentityProviderAlias(null);
+        domain.setAutoRedirect(false);
+        try (Response response = orgResource.update(fetched)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        fetched = orgResource.toRepresentation();
+        domain = fetched.getDomain("idp-routing-test.org");
+        assertNull(domain.getIdentityProviderAlias());
+        assertFalse(domain.isAutoRedirect());
+
+        // set it back
+        String brokerAlias = orgResource.identityProviders().getIdentityProviders().get(0).getAlias();
+        domain.setIdentityProviderAlias(brokerAlias);
+        domain.setAutoRedirect(true);
+        try (Response response = orgResource.update(fetched)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        fetched = orgResource.toRepresentation();
+        domain = fetched.getDomain("idp-routing-test.org");
+        assertEquals(brokerAlias, domain.getIdentityProviderAlias());
+        assertTrue(domain.isAutoRedirect());
+    }
+
+    @Test
+    public void testDomainIdpRoutingValidation() {
+        OrganizationRepresentation org = createOrganization("idp-validation-test");
+        OrganizationResource orgResource = realm.admin().organizations().get(org.getId());
+
+        OrganizationRepresentation fetched = orgResource.toRepresentation();
+        OrganizationDomainRepresentation domain = fetched.getDomain("idp-validation-test.org");
+
+        // try to set identityProviderAlias to an IdP that doesn't exist
+        domain.setIdentityProviderAlias("nonexistent-idp");
+        try (Response response = orgResource.update(fetched)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
     }
 }

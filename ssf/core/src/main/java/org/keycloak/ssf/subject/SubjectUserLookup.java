@@ -36,12 +36,28 @@ public class SubjectUserLookup {
         return null;
     }
 
+    /**
+     * Returns {@code true} when {@code iss} is this realm's own issuer
+     * URL, computed from the frontend base URI — the same value the
+     * realm stamps into its tokens. Shared issuer gate for
+     * {@code iss_sub} subjects: user lookups fall back to configured
+     * identity-provider issuers, while tenant lookups
+     * ({@link SubjectResolver#resolveOrganization}) accept only the
+     * realm issuer because organizations have no federated analog.
+     */
+    public static boolean isRealmIssuer(KeycloakSession session, String iss) {
+        if (iss == null) {
+            return false;
+        }
+        UriInfo frontendUriInfo = session.getContext().getUri(UrlType.FRONTEND);
+        String realmIssuer = Urls.realmIssuer(frontendUriInfo.getBaseUri(), session.getContext().getRealm().getName());
+        return realmIssuer.equals(iss);
+    }
+
     private static UserModel getUserByIssuerSub(KeycloakSession session, RealmModel realm, String iss, String sub) {
 
         // iss = current realm issuer
-        UriInfo frontendUriInfo = session.getContext().getUri(UrlType.FRONTEND);
-        String realmIssuer = Urls.realmIssuer(frontendUriInfo.getBaseUri(), session.getContext().getRealm().getName());
-        if (realmIssuer.equals(iss)) {
+        if (isRealmIssuer(session, iss)) {
             // Find realm user
             return getUserById(session, realm, sub);
         }

@@ -191,6 +191,10 @@ public final class Marshalling {
 
     /** see {@link org.keycloak.models.workflow.WorkflowScheduleClusterEvent} */
     public static final int WORKFLOW_SCHEDULE_CLUSTER_EVENT = 65621;
+    public static final int USER_VERIFIABLE_CREDENTIALS_UPDATED_EVENT = 65622;
+
+
+    public static final int AUTHENTICATED_USER_AUTH_SESSION_PREDICATE = 65623;
 
     public static void configure(GlobalConfigurationBuilder builder) {
         getSchemas().forEach(builder.serialization()::addContextInitializer);

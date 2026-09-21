@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { selectItem } from "../utils/form.ts";
@@ -177,5 +177,23 @@ test.describe.serial("User Fed LDAP mapper tests", () => {
     await saveMapper(page);
     await assertNotificationMessage(page, mapperCreatedSuccess);
     await assertRowExists(page, roleLdapMapper, true);
+  });
+
+  test("Client ID hidden when 'Use Realm Roles Mapping' is on", async ({
+    page,
+  }) => {
+    await clickAddMapper(page);
+    await selectItem(page, "#kc-providerId", roleLdapMapper);
+
+    // "Use Realm Roles Mapping" is ON by default — Client ID must not appear
+    await expect(page.getByText("Client ID")).toHaveCount(0);
+
+    // Toggle off — Client ID should appear
+    await page.getByTestId("use.realm.roles.mapping").click({ force: true });
+    await expect(page.getByText("Client ID")).toBeVisible();
+
+    // Toggle back on — Client ID should disappear again
+    await page.getByTestId("use.realm.roles.mapping").click({ force: true });
+    await expect(page.getByText("Client ID")).toHaveCount(0);
   });
 });

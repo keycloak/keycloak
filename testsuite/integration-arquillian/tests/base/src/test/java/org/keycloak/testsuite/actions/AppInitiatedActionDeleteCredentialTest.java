@@ -121,7 +121,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
 
             deleteCredentialPage.confirm();
 
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             assertKcActionStatus("success");
 
             Assertions.assertNull(getCredentialIdByType(OTPCredentialModel.TYPE));
@@ -155,7 +155,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
 
         loginPasswordAndOtp(null);
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         events.clear();
 
         oauth.loginForm().kcAction(getKcActionParamForDeleteCredential(credentialId)).open();
@@ -165,7 +165,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
         deleteCredentialPage.assertCredentialInMessage(OTPCredentialModel.TYPE);
         deleteCredentialPage.cancel();
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         Assertions.assertNotNull(getCredentialIdByType(OTPCredentialModel.TYPE));
     }
@@ -175,7 +175,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
         String credentialId = getCredentialIdByType(PasswordCredentialModel.TYPE);
         loginPasswordAndOtp(null);
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         events.clear();
 
         oauth.loginForm().kcAction(getKcActionParamForDeleteCredential(credentialId)).open();
@@ -200,7 +200,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
     public void missingActionId() throws Exception {
         loginPasswordAndOtp(null);
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         events.clear();
 
         oauth.loginForm().kcAction(DeleteCredentialAction.PROVIDER_ID).open();
@@ -210,20 +210,20 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
                 .error(Errors.MISSING_CREDENTIAL_ID);
 
         // Redirected to the application. Action will be ignored
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test
     public void incorrectId() throws Exception {
         loginPasswordAndOtp(null);
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         events.clear();
 
         oauth.loginForm().kcAction(getKcActionParamForDeleteCredential("incorrect")).open();
 
         // Redirected to the application. Action will be ignored
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.assertError(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION_ERROR)
                 .userId(userId)
@@ -239,7 +239,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
         managedRealm.admin().users().get(userId).update(user);
 
         loginPasswordAndOtp(null);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.assertError(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION_ERROR)
                 .userId(userId)
@@ -258,7 +258,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
 
         deleteCredentialPage.confirm();
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         assertKcActionStatus("success");
 
         Assertions.assertNull(getCredentialIdByType(OTPCredentialModel.TYPE));

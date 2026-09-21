@@ -41,6 +41,7 @@ import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.tests.workflow.util.EmailTestUtils.findEmailByRecipient;
@@ -84,7 +85,7 @@ public class UserAuthenticationWorkflowTest extends AbstractWorkflowTest {
         String username = userAlice.getUsername();
         loginPage.fillLogin(username, userAlice.getPassword());
         loginPage.submit();
-        assertTrue(driver.page().getPageSource() != null && driver.page().getPageSource().contains("Happy days"));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // test running the scheduled steps
         runOnServer.run((session -> {
@@ -166,7 +167,7 @@ public class UserAuthenticationWorkflowTest extends AbstractWorkflowTest {
         String username = userAlice.getUsername();
         loginPage.fillLogin(username, userAlice.getPassword());
         loginPage.submit();
-        assertTrue(driver.page().getPageSource() != null && driver.page().getPageSource().contains("Happy days"));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         runOnServer.run(session -> {
             RealmModel realm = session.getContext().getRealm();

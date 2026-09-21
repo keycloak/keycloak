@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc;
 
 import org.keycloak.OAuthErrorException;
+import org.keycloak.TokenVerifier;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -84,6 +85,11 @@ public class RefreshTokenIntrospectionProvider extends AccessTokenIntrospectionP
         ClientModel authenticatedClient = session.getContext().getClient();
 
         return authenticatedClient.getClientId().equals(token.getIssuedFor());
+    }
+
+    @Override
+    protected void addAdditionalVerifications(TokenVerifier<RefreshToken> verifier) {
+        // Skip additional verifications for refresh token. Audience is always KC server as issuer for refresh tokens
     }
 
 }

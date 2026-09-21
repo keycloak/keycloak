@@ -171,6 +171,7 @@ public class RoleMappingDeleteResource {
                 role = this.session.roles().getRoleById(this.realm, roleRequest.getRoleId());
             }
             if (role != null) {
+                auth.roles().requireMapRole(role);
                 deleteAction.accept(role);
             }
         }

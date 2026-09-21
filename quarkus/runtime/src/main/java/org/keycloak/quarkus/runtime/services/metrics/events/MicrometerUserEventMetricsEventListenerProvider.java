@@ -40,10 +40,10 @@ public class MicrometerUserEventMetricsEventListenerProvider implements EventLis
 
     private static final Logger logger = Logger.getLogger(MicrometerUserEventMetricsEventListenerProvider.class);
 
-    private static final String REALM_TAG = "realm";
-    private static final String IDP_TAG = "idp";
-    private static final String CLIENT_ID_TAG = "client.id";
-    private static final String ERROR_TAG = "error";
+    static final String REALM_TAG = "realm";
+    static final String IDP_TAG = "idp";
+    static final String CLIENT_ID_TAG = "client.id";
+    static final String ERROR_TAG = "error";
     private static final String EVENT_TAG = "event";
 
     private final boolean withIdp;

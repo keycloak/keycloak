@@ -313,7 +313,9 @@ export const AuthorizationScopes = ({
           message={t("emptyAuthorizationScopes")}
           instructions={t("emptyAuthorizationInstructions")}
           isDisabled={isDisabled}
-          onPrimaryAction={() => navigate(toNewScope({ id: clientId, realm }))}
+          onPrimaryAction={() =>
+            void navigate(toNewScope({ id: clientId, realm }))
+          }
           primaryActionText={t("createAuthorizationScope")}
         />
       )}

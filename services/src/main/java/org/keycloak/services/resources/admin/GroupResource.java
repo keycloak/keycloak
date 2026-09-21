@@ -41,6 +41,7 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.GroupPathChangeEvent;
@@ -106,6 +107,13 @@ public class GroupResource {
         this.auth.groups().requireView(group);
 
         GroupRepresentation rep = GroupUtils.toRepresentation(this.auth.groups(), group, true);
+
+        if (rep.getClientRoles() != null) {
+            rep.getClientRoles().keySet().removeIf(clientId -> {
+                ClientModel client = realm.getClientByClientId(clientId);
+                return client == null || !auth.clients().canView(client);
+            });
+        }
 
         rep.setAccess(auth.groups().getAccess(group));
 
@@ -187,6 +195,7 @@ public class GroupResource {
             @Parameter(description = "The maximum number of results that are to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
             @Parameter(description = "Boolean which defines whether brief groups representations are returned or not (default: false)") @QueryParam("briefRepresentation") @DefaultValue("false") Boolean briefRepresentation,
             @Parameter(description = "Boolean which defines whether to return the count of subgroups for each subgroup of this group (default: true)") @QueryParam("subGroupsCount") @DefaultValue("true") Boolean subGroupsCount) {
+        this.auth.groups().requireList();
         this.auth.groups().requireView(group);
 
         Stream<GroupModel> stream = group.getSubGroupsStream(search, exact, -1, -1);
@@ -242,6 +251,7 @@ public class GroupResource {
                 if (child == null) {
                     throw new NotFoundException("Could not find child by id");
                 }
+                auth.groups().requireManage(child);
                 if (!Objects.equals(child.getParentId(), group.getId())) {
                     realm.moveGroup(child, group);
                 }

@@ -18,25 +18,34 @@
 
 package org.keycloak.services.util;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
+import org.keycloak.locale.DefaultLocaleSelectorProvider;
 import org.keycloak.locale.LocaleSelectorProvider;
 import org.keycloak.locale.LocaleUpdaterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.theme.Theme;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:daniel.fesenmeyer@bosch.com">Daniel Fesenmeyer</a>
  */
 public class LocaleUtil {
+
+    private static final Logger logger = Logger.getLogger(LocaleUtil.class);
 
     private LocaleUtil() {
         // noop
@@ -57,6 +66,61 @@ public class LocaleUtil {
                 localeUpdater.updateLocaleCookie(locale);
             }
         }
+    }
+
+    /**
+     * Resolves a language tag received from a client to a locale the server is prepared to serve messages for.
+     * <p>
+     * The requested tag is matched against the locales declared by the theme, the locales supported by the realm and
+     * the realm default locale. Only a locale from that bounded, server-controlled set is ever returned, so a client
+     * cannot introduce arbitrary locales into the caches which are keyed by locale. A tag without a match resolves to
+     * the realm default locale, or to {@link Locale#ENGLISH}, rather than being rejected, so that clients still
+     * requesting a locale which has meanwhile been removed from the realm keep receiving usable content.
+     *
+     * @param realm the realm
+     * @param theme the theme whose messages are looked up, may be {@code null}
+     * @param localeString the requested language tag, may be {@code null}
+     * @return a supported locale, never {@code null}
+     */
+    public static Locale resolveSupportedLocale(RealmModel realm, Theme theme, String localeString) {
+        Locale match = DefaultLocaleSelectorProvider.findBestMatchingLocale(getSupportedLocales(realm, theme),
+                localeString);
+
+        return match != null ? match : getFallbackLocale(realm);
+    }
+
+    /**
+     * Returns the locales which may be used to look up messages, which is the union of the locales declared by the
+     * theme, the locales supported by the realm and the fallback locale.
+     */
+    private static List<Locale> getSupportedLocales(RealmModel realm, Theme theme) {
+        Set<Locale> supportedLocales = new LinkedHashSet<>();
+
+        if (theme != null) {
+            try {
+                for (String themeLocale : theme.getProperties().getProperty("locales", "").split(",")) {
+                    themeLocale = themeLocale.trim();
+                    if (!themeLocale.isEmpty()) {
+                        supportedLocales.add(Locale.forLanguageTag(themeLocale));
+                    }
+                }
+            } catch (IOException e) {
+                logger.warn("Failed to read the locales supported by the theme", e);
+            }
+        }
+
+        realm.getSupportedLocalesStream().map(Locale::forLanguageTag).forEach(supportedLocales::add);
+        supportedLocales.add(getFallbackLocale(realm));
+
+        return new ArrayList<>(supportedLocales);
+    }
+
+    private static Locale getFallbackLocale(RealmModel realm) {
+        if (realm.isInternationalizationEnabled() && realm.getDefaultLocale() != null) {
+            return Locale.forLanguageTag(realm.getDefaultLocale());
+        }
+
+        return Locale.ENGLISH;
     }
 
     /**

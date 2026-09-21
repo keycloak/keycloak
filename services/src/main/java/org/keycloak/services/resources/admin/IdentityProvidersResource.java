@@ -57,6 +57,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -74,6 +75,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
@@ -84,6 +86,8 @@ import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class IdentityProvidersResource {
+
+    protected static final Logger logger = Logger.getLogger(IdentityProvidersResource.class);
 
     private final RealmModel realm;
     private final KeycloakSession session;
@@ -272,6 +276,9 @@ public class IdentityProvidersResource {
 
         ReservedCharValidator.validateNoSpace(representation.getAlias());
 
+        // organization-related information should not be processed by non-organization API
+        Organizations.stripOrganizationId(representation);
+
         try {
             IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation, session);
             session.identityProviders().create(identityProvider);
@@ -287,6 +294,10 @@ public class IdentityProvidersResource {
 
             if (message == null) {
                 message = "Invalid request";
+            }
+
+            if (logger.isDebugEnabled()) {
+                logger.debug(message, e);
             }
 
             throw ErrorResponse.error(message, BAD_REQUEST);

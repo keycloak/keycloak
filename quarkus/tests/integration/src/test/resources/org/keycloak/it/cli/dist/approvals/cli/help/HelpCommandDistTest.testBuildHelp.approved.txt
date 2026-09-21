@@ -32,6 +32,9 @@ Database - additional datasources:
                      Used for named <datasource>. The fully qualified class name of the JDBC
                        driver. If not set, a default driver is set accordingly to the chosen
                        database.
+--db-health-exclude-<datasource> <true|false>
+                     If you have enabled health endpoints, but want the given datasource excluded
+                       from the health check. Default: false.
 --db-kind-<datasource> <vendor>
                      Used for named <datasource>. The database vendor. Possible values are:
                        dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres, tidb.

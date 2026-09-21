@@ -216,4 +216,9 @@ public enum ResourceType {
      *
      */
     , ORGANIZATION_GROUP_MEMBERSHIP
+
+    /**
+     *
+     */
+    , WORKFLOW
 }

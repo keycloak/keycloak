@@ -15,8 +15,8 @@ public class ResetOtpPage extends AbstractPage {
     protected WebElement description;
 
     @Override
-    public boolean isCurrent() {
-        return description.getText().equals("Which OTP configuration should be removed?");
+    public String getExpectedPageId() {
+        return "login-login-reset-otp";
     }
 
     public void selectOtp(int index) {

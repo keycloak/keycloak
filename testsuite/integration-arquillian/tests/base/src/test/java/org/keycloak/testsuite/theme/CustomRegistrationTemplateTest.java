@@ -30,7 +30,6 @@ import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 
@@ -59,10 +58,7 @@ public class CustomRegistrationTemplateTest extends AbstractTestRealmKeycloakTes
     protected LoginPage loginPage;
     @Page
     protected RegisterPage registerPage;
-    @Page
-    protected AppPage appPage;
-
-    private UPConfig upConfig;
+        private UPConfig upConfig;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

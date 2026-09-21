@@ -27,6 +27,10 @@ public class ManagedUser extends ManagedTestResource {
         return createdRepresentation.getUsername();
     }
 
+    public String getEmail() {
+        return createdRepresentation.getEmail();
+    }
+
     public String getPassword() {
         return getPassword(createdRepresentation);
     }

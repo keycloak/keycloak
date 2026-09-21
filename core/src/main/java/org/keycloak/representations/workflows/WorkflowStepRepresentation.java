@@ -5,13 +5,12 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.json.MultivaluedHashMapValue;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
@@ -54,8 +53,7 @@ public class WorkflowStepRepresentation extends AbstractWorkflowComponentReprese
         return this.uses;
     }
 
-    @JsonSerialize(using = MultivaluedHashMapValueSerializer.class)
-    @JsonDeserialize(using = MultivaluedHashMapValueDeserializer.class)
+    @MultivaluedHashMapValue
     @JsonInclude(value=JsonInclude.Include.NON_EMPTY, content=JsonInclude.Include.NON_NULL)
     public MultivaluedHashMap<String, String> getConfig() {
         return super.getConfig();

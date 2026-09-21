@@ -7,17 +7,22 @@ import java.util.Map;
 
 import org.keycloak.Config;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.common.Profile;
+import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.storage.UserStorageProvider;
 
 public class MigrateTo26_7_0 extends RealmMigration {
 
@@ -50,6 +55,36 @@ public class MigrateTo26_7_0 extends RealmMigration {
         updatePasswordAfterEmailVerificationDuringRegistrationOfUsers(realm);
         updateAdminPermissionsSchema(session, realm);
         renameDynamicScopeAttributes(realm);
+        migrateParameterizedScopeTypes(realm);
+        migrateLdapBinaryAttributeMappers(realm);
+        migrateLdapGroupAttributeMappers(realm);
+        migrateSamlAuthnContextClassRefClientScope(session, realm);
+    }
+
+    private void migrateParameterizedScopeTypes(RealmModel realm) {
+        realm.getClientScopesStream()
+                .filter(scope -> scope.isParameterizedScope())
+                .filter(scope -> scope.getAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE) == null)
+                .forEach(scope -> {
+                    String regexp = scope.getParameterizedScopeRegexp();
+                    if (regexp == null) {
+                        LOG.warnf("Parameterized client scope '%s' has no regexp. Defaulting to 'string' type.", scope.getName());
+                        scope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
+                        return;
+                    }
+
+                    String prefix = scope.getName() + ":";
+                    String defaultRegexp = prefix + "*";
+                    if (defaultRegexp.equals(regexp)) {
+                        scope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
+                        scope.removeAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP);
+                    } else if (regexp.startsWith(prefix)) {
+                        scope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "custom");
+                        scope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, regexp.substring(prefix.length()));
+                    } else {
+                        LOG.warnf("Parameterized client scope '%s' has a regexp '%s' that does not start with the expected prefix '%s'. Please migrate this scope manually.", scope.getName(), regexp, prefix);
+                    }
+                });
     }
 
     private void updatePasswordAfterEmailVerificationDuringRegistrationOfUsers(RealmModel realm) {
@@ -139,6 +174,46 @@ public class MigrateTo26_7_0 extends RealmMigration {
         if (value != null) {
             clientScope.setAttribute(newName, value);
             clientScope.removeAttribute(oldName);
+        }
+    }
+
+    private void migrateLdapBinaryAttributeMappers(RealmModel realm) {
+        realm.getComponentsStream(realm.getId(), UserStorageProvider.class.getName())
+                .filter(c -> LDAPConstants.LDAP_PROVIDER.equals(c.getProviderId()))
+                .flatMap(ldap -> realm.getComponentsStream(ldap.getId(), "org.keycloak.storage.ldap.mappers.LDAPStorageMapper"))
+                .filter(c -> "user-attribute-ldap-mapper".equals(c.getProviderId()))
+                .filter(c -> "true".equals(c.getConfig().getFirst("is.binary.attribute")))
+                .filter(c -> c.getConfig().getFirst("binary.attribute.decoder") == null)
+                .forEach(c -> {
+                    c.getConfig().putSingle("binary.attribute.decoder", "base64");
+                    realm.updateComponent(c);
+                });
+    }
+
+    private void migrateLdapGroupAttributeMappers(RealmModel realm) {
+        realm.getComponentsStream(realm.getId(), UserStorageProvider.class.getName())
+                .filter(c -> LDAPConstants.LDAP_PROVIDER.equals(c.getProviderId()))
+                .flatMap(ldap -> realm.getComponentsStream(ldap.getId(), "org.keycloak.storage.ldap.mappers.LDAPStorageMapper"))
+                .filter(c -> "group-ldap-mapper".equals(c.getProviderId()))
+                .filter(c -> c.getConfig().getFirst("decode.group.uuid.attribute") == null)
+                .forEach(c -> {
+                    c.getConfig().putSingle("decode.group.uuid.attribute", "false");
+                    realm.updateComponent(c);
+                });
+    }
+
+    private void migrateSamlAuthnContextClassRefClientScope(KeycloakSession session, RealmModel realm) {
+        if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION_SAML)) {
+            MigrationProvider migrationProvider = session.getProvider(MigrationProvider.class);
+
+            ClientScopeModel samlAuthnContextClassRefScope = KeycloakModelUtils.getClientScopeByName(realm, "AuthnContextClassRef");
+            if (samlAuthnContextClassRefScope == null) {
+                // Create 'AuthnContextClassRef' default client scope in the realm.
+                samlAuthnContextClassRefScope = migrationProvider.addSamlAuthnContextClassRefClientScope(realm);
+
+                // Add the scope to all existing SAML clients
+                session.clients().addClientScopeToAllClients(realm, samlAuthnContextClassRefScope, true);
+            }
         }
     }
 }

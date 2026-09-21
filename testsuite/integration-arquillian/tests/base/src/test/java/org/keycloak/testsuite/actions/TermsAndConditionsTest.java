@@ -33,8 +33,6 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.util.DroneUtils;
@@ -52,8 +50,6 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
-import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -68,9 +64,6 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected LoginPage loginPage;
@@ -95,13 +88,13 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assertions.assertTrue(termsPage.isCurrent());
+        termsPage.assertCurrent();
 
         termsPage.acceptTerms();
 
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID);
 
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         AuthorizationEndpointResponse response = oauth.parseLoginResponse();
         Assertions.assertNotNull(response.getCode());
 
@@ -128,13 +121,12 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
     public void termsDeclined() throws Exception {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
-        Assertions.assertTrue(termsPage.isCurrent());
+        termsPage.assertCurrent();
 
         termsPage.declineTerms();
-        WaitUtils.waitForPageToLoad();
 
         // assert on app page with reject login
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isError());
         AuthorizationEndpointResponse response = oauth.parseLoginResponse();
         Assertions.assertNull(response.getCode());
         Assertions.assertEquals(Errors.ACCESS_DENIED, response.getError());
@@ -158,14 +150,14 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
     @Test // only for firefox and chrome as it needs to go to the account console
     @IgnoreBrowserDriver(value={ChromeDriver.class, FirefoxDriver.class}, negate=true)
     public void termsDeclinedAccount() {
-        appPage.open();
-        appPage.openAccount();
+        driver.navigate().to(oauth.getBaseUrl() + "/realms/" + TEST_REALM_NAME + "/account");
 
+        WaitUtils.waitForPageToLoad();
         loginPage.assertCurrent();
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assertions.assertTrue(termsPage.isCurrent());
+        termsPage.assertCurrent();
 
         termsPage.declineTerms();
 
@@ -176,7 +168,7 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
                 .withoutDetails(Details.CONSENT)
                 .sessionId(null)
                 .clientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID)
-                .details(Details.REDIRECT_URI, getAuthServerContextRoot() + "/auth/realms/" + TEST_REALM_NAME + "/account");
+                .details(Details.REDIRECT_URI, oauth.getBaseUrl() + "/realms/" + TEST_REALM_NAME + "/account");
 
 
         // assert user attribute is properly removed
@@ -209,7 +201,7 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll());
 

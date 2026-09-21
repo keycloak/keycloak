@@ -129,6 +129,16 @@ public class DefaultMigrationProvider implements MigrationProvider {
     }
 
     @Override
+    public ClientScopeModel addOIDCUserDelegationClientScope(RealmModel realm) {
+        return getOIDCLoginProtocolFactory().addUserDelegationClientScope(realm);
+    }
+
+    @Override
+    public ClientScopeModel addOIDCClientDelegationClientScope(RealmModel realm) {
+        return getOIDCLoginProtocolFactory().addClientDelegationClientScope(realm);
+    }
+
+    @Override
     public void close() {
     }
 

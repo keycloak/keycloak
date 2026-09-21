@@ -148,6 +148,19 @@ public class StreamConfig {
     protected Integer updatedAt;
 
     /**
+     * Origin / ownership marker — set at creation time and immutable
+     * thereafter. {@link ManagedBy#RECEIVER} for streams created via
+     * the receiver-facing {@code POST /streams},
+     * {@link ManagedBy#KEYCLOAK} for streams created via the admin
+     * endpoint. Drives the admin UI's "managed by" badge and the
+     * editability of admin-side fields. {@code WRITE_ONLY} so legacy
+     * blobs that don't carry it hydrate cleanly (caller defaults to
+     * {@code RECEIVER} on load).
+     */
+    @JsonProperty(value = "kc_managed_by", access = JsonProperty.Access.WRITE_ONLY)
+    protected ManagedBy managedBy;
+
+    /**
      * Subject identifier format. Not part of SSF 1.0 §8.1.1 — only valid
      * on streams whose receiver client uses the legacy
      * {@link SsfProfile#SSE_CAEP SSE_CAEP} profile (Apple Business
@@ -279,6 +292,7 @@ public class StreamConfig {
         this.statusReason = other.statusReason;
         this.createdAt = other.createdAt;
         this.updatedAt = other.updatedAt;
+        this.managedBy = other.managedBy;
         this.format = other.format;
         this.profile = other.profile;
         this.enabled = other.enabled;
@@ -410,6 +424,14 @@ public class StreamConfig {
 
     public void setUpdatedAt(Integer updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public ManagedBy getManagedBy() {
+        return managedBy;
+    }
+
+    public void setManagedBy(ManagedBy managedBy) {
+        this.managedBy = managedBy;
     }
 
     public String getFormat() {

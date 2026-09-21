@@ -108,15 +108,6 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         backChannelLogoutTokens.add(request.getDecodedFormParameters().getFirst(OAuth2Constants.LOGOUT_TOKEN));
     }
 
-    @GET
-    @Path("/admin/frontchannelLogout")
-    public void frontchannelLogout(@QueryParam("sid") String sid, @QueryParam("iss") String issuer) {
-        LogoutToken token = new LogoutToken();
-        token.setSid(sid);
-        token.issuer(issuer);
-        frontChannelLogoutTokens.add(token);
-    }
-
     @POST
     @Consumes(MediaType.TEXT_PLAIN_UTF_8)
     @Path("/admin/k_push_not_before")
@@ -150,13 +141,6 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     @Path("/poll-backchannel-raw-logout")
     public String getBackChanneRawlLogoutAction() throws InterruptedException {
         return backChannelLogoutTokens.poll(20, TimeUnit.SECONDS);
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("/poll-frontchannel-logout")
-    public LogoutToken getFrontChannelLogoutAction() throws InterruptedException {
-        return frontChannelLogoutTokens.poll(20, TimeUnit.SECONDS);
     }
 
     @GET

@@ -33,8 +33,8 @@ public class TermsAndConditionsPage extends LanguageComboboxAwarePage {
     private WebElement cancelButton;
 
     @Override
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Terms and Conditions");
+    public String getExpectedPageId() {
+        return "login-terms";
     }
 
     public void acceptTerms() {

@@ -78,13 +78,9 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         }
     }
 
-    public boolean isCurrent() {
-        try {
-            driver.findElement(By.id("otp"));
-            return true;
-        } catch (Throwable t) {
-            return false;
-        }
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-otp";
     }
 
     // If false, we don't expect that credentials combobox is available. If true, we expect that it is available on the page

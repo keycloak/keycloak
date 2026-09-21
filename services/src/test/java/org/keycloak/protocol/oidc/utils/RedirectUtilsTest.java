@@ -17,6 +17,7 @@
 package org.keycloak.protocol.oidc.utils;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -317,5 +318,72 @@ public class RedirectUtilsTest {
         Assert.assertEquals("custom2:custom", RedirectUtils.verifyRedirectUri(session, null, "custom2:custom", set, false));
         Assert.assertEquals("custom3://custom", RedirectUtils.verifyRedirectUri(session, null, "custom3://custom", set, false));
         Assert.assertEquals("https://test.com/lala", RedirectUtils.verifyRedirectUri(session, null, "https://test.com/lala", set, false));
+    }
+
+    @Test
+    public void testVerifyRedirectUriWithPollutedParameters() {
+        Set<String> set = Stream.of(
+                "https://example.com/callback/*"
+        ).collect(Collectors.toSet());
+
+        Assert.assertNull("Should reject URL-encoded 'code' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?c%6Fde=attack", set, false));
+        Assert.assertNull("Should reject mixed-case forbidden parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?CODE=attack", set, false));
+        Assert.assertNull("Should reject redirect URI containing pre-loaded 'code' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?code=attacker_code", set, false));
+        Assert.assertNull("Should reject redirect URI containing pre-loaded 'state' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?state=attacker_state", set, false));
+        Assert.assertNull("Should reject redirect URI containing pre-loaded 'iss' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?iss=attacker_issuer", set, false));
+        Assert.assertNull("Should reject redirect URI if any forbidden OIDC parameter is mixed into the query string", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?legit_param=123&code=malicious", set, false));
+        Assert.assertNull("Should reject redirect URI containing 'session_state' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?session_state=attacker_session", set, false));
+        Assert.assertNull("Should reject redirect URI containing 'response' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?response=attacker_jwt", set, false));
+        Assert.assertNull("Should reject redirect URI containing 'kc_action' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?kc_action=evil_action", set, false));
+        Assert.assertNull("Should reject redirect URI containing 'kc_action_status' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?kc_action_status=evil_status", set, false));
+        Assert.assertNull("Should reject URL-encoded 'session_state' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?session%5Fstate=attack", set, false));
+        Assert.assertNull("Should reject mixed-case 'RESPONSE' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?RESPONSE=attack", set, false));
+        Assert.assertEquals("Should allow legitimate query parameters that do not conflict with OIDC protocol variables", "https://example.com/callback?legit_param=123", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?legit_param=123", set, false));
+
+        // Fragment-based forbidden params (CVE #51286 - response_mode=fragment)
+        Assert.assertNull("Should reject forbidden 'state' parameter in fragment", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback#state=evil", set, false));
+        Assert.assertNull("Should reject forbidden 'code' parameter in fragment", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback#code=evil", set, false));
+        Assert.assertNull("Should reject forbidden param in fragment with legitimate query params", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?legit=123#state=evil", set, false));
+        Assert.assertNull("Should reject URL-encoded forbidden param in fragment", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback#st%61te=evil", set, false));
+        Assert.assertEquals("Should allow legitimate fragment without forbidden params", "https://example.com/callback#section1", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback#section1", set, false));
+
+        // URL-encoded variants of forbidden params in query
+        Assert.assertNull("Should reject URL-encoded 'state' (st%61te)", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?st%61te=evil", set, false));
+
+        // Backward compat: empty forbidden set allows everything (query and fragment)
+        Assert.assertEquals("Empty forbidden set should allow forbidden params in query", "https://example.com/callback?state=val",
+                RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?state=val", set, false, Collections.emptySet()));
+        Assert.assertEquals("Empty forbidden set should allow forbidden params in fragment", "https://example.com/callback#state=val",
+                RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback#state=val", set, false, Collections.emptySet()));
+    }
+
+    @Test
+    public void testVerifyPostLogoutRedirectUriAndCustomParameters() {
+        Set<String> validWildcardRedirects = Collections.singleton("https://myhost/auth/realms/uka/protocol/openid-connect/auth*");
+        Set<String> validAppRedirects = Collections.singleton("https://example.com/callback*");
+
+        // 1. Post-logout redirect URI with full auth URL containing state parameter
+        String postLogoutWithState = "https://myhost/auth/realms/uka/protocol/openid-connect/auth"
+                + "?response_type=code&client_id=client&redirect_uri=urn:ietf:wg:oauth:2.0:oob"
+                + "&state=de43a890-30ae-4a76-bb7f-d4d090164d5a&login=true&scope=openid&kc_idp_hint=nosso";
+        Assert.assertEquals(postLogoutWithState, RedirectUtils.verifyRedirectUri(session, null, postLogoutWithState, validWildcardRedirects, false, Collections.emptySet()));
+
+        // 2. Post-logout redirect URI with auth URL without state parameter
+        String postLogoutWithoutState = "https://myhost/auth/realms/uka/protocol/openid-connect/auth"
+                + "?response_type=code&client_id=client&redirect_uri=urn:ietf:wg:oauth:2.0:oob&scope=openid";
+        Assert.assertEquals(postLogoutWithoutState, RedirectUtils.verifyRedirectUri(session, null, postLogoutWithoutState, validWildcardRedirects, false, Collections.emptySet()));
+
+        // 3. Plain post-logout redirect URI with no query parameters
+        String plainPostLogout = "https://myhost/auth/realms/uka/protocol/openid-connect/auth";
+        Assert.assertEquals(plainPostLogout, RedirectUtils.verifyRedirectUri(session, null, plainPostLogout, validWildcardRedirects, false, Collections.emptySet()));
+
+        // 4. Default verification allowing legitimate application query parameters
+        String customParamsUri = "https://example.com/callback?tab=profile&locale=en&app_param=123";
+        Assert.assertEquals(customParamsUri, RedirectUtils.verifyRedirectUri(session, null, customParamsUri, validAppRedirects, false));
+
+        // 5. Custom forbidden parameter set enforcement
+        String testParamUri = "https://example.com/callback?code=abc&custom=123";
+        Assert.assertEquals(testParamUri, RedirectUtils.verifyRedirectUri(session, null, testParamUri, validAppRedirects, false, Collections.emptySet()));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, testParamUri, validAppRedirects, false, Set.of("custom")));
     }
 }

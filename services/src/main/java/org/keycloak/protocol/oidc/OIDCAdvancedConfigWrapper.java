@@ -39,7 +39,7 @@ import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_RFC9068_ACCESS
  */
 public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
 
-    public static enum TokenExchangeRefreshTokenEnabled {NO, SAME_SESSION};
+    public enum TokenExchangeRefreshTokenEnabled {NO, SAME_SESSION};
 
     private OIDCAdvancedConfigWrapper(ClientModel client, ClientRepresentation clientRep) {
         super(client,clientRep);
@@ -305,6 +305,14 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN, tls_client_auth_subject_dn);
     }
 
+    public String getTlsClientAuthCASubjectDn() {
+        return getAttribute(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN);
+     }
+
+    public void setTlsClientAuthCASubjectDn(String caSubjectDn) {
+        setAttribute(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN, caSubjectDn);
+    }
+
     public boolean getAllowRegexPatternComparison() {
         String attrVal = getAttribute(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON);
         // Allow Regex Pattern Comparison by default due the backwards compatibility
@@ -537,5 +545,14 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
 
     public void setAllowUserinfoWithLightweightAccessToken(boolean allow) {
         setAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, String.valueOf(allow));
+    }
+
+    public boolean isAllowOidcParamsInRedirectUris() {
+        String val = getAttribute(OIDCConfigAttributes.ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS, "false");
+        return Boolean.parseBoolean(val);
+    }
+
+    public void setAllowOidcParamsInRedirectUris(boolean allow) {
+        setAttribute(OIDCConfigAttributes.ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS, String.valueOf(allow));
     }
 }

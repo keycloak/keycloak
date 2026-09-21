@@ -18,8 +18,11 @@
 package org.keycloak.testframework.realm;
 
 import java.util.HashMap;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -61,6 +64,42 @@ public class IdentityProviderBuilder extends Builder<IdentityProviderRepresentat
 
     public IdentityProviderBuilder addReadTokenRoleOnCreate(boolean addReadTokenRoleOnCreate) {
         rep.setAddReadTokenRoleOnCreate(addReadTokenRoleOnCreate);
+        return this;
+    }
+
+    public IdentityProviderBuilder enabled(boolean enabled) {
+        rep.setEnabled(enabled);
+        return this;
+    }
+
+    public IdentityProviderBuilder trustEmail(boolean trustEmail) {
+        rep.setTrustEmail(trustEmail);
+        return this;
+    }
+
+    public IdentityProviderBuilder linkOnly(boolean linkOnly) {
+        rep.setLinkOnly(linkOnly);
+        return this;
+    }
+
+    public IdentityProviderBuilder firstBrokerLoginFlowAlias(String firstBrokerLoginFlowAlias) {
+        rep.setFirstBrokerLoginFlowAlias(firstBrokerLoginFlowAlias);
+        return this;
+    }
+
+    public IdentityProviderBuilder postBrokerLoginFlowAlias(String postBrokerLoginFlowAlias) {
+        rep.setPostBrokerLoginFlowAlias(postBrokerLoginFlowAlias);
+        return this;
+    }
+
+    public IdentityProviderBuilder organizationIds(Set<String> organizationIds) {
+        if (organizationIds == null || organizationIds.isEmpty()) {
+            rep.setOrganizationLinks(null);
+        } else {
+            rep.setOrganizationLinks(organizationIds.stream()
+                    .map(OrganizationIdentityProviderLinkRepresentation::new)
+                    .collect(Collectors.toList()));
+        }
         return this;
     }
 

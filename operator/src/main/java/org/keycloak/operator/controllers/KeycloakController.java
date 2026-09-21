@@ -58,8 +58,12 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkus.logging.Log;
 
+@RBACRule(apiGroups = "", resources = "configmaps", verbs = {"get", "list", "watch"})
+@RBACRule(apiGroups = "", resources = "pods", verbs = {"list"})
+@RBACRule(apiGroups = "", resources = "pods/log", verbs = {"get"})
 @Workflow(
     explicitInvocation = true,
     dependents = {

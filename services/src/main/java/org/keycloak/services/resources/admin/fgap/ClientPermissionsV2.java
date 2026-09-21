@@ -61,6 +61,9 @@ class ClientPermissionsV2 extends ClientPermissions {
 
     @Override
     public boolean canManage(ClientModel client) {
+        if (isInternal(client)) {
+            return false;
+        }
         if (root.hasOneAdminRole(AdminRoles.MANAGE_CLIENTS)) {
             return true;
         }

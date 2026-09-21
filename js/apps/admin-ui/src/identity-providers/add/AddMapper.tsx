@@ -99,7 +99,7 @@ export default function AddMapper() {
         });
 
         addAlert(t("mapperCreateSuccess"), AlertVariant.success);
-        navigate(
+        void navigate(
           toIdentityProviderEditMapper({
             realm,
             alias,
@@ -127,7 +127,7 @@ export default function AddMapper() {
           id: id!,
         });
         addAlert(t("deleteMapperSuccess"), AlertVariant.success);
-        navigate(
+        void navigate(
           toIdentityProvider({ providerId, alias, tab: "mappers", realm }),
         );
       } catch (error) {
@@ -227,8 +227,10 @@ export default function AddMapper() {
               />
               <GroupResourceContext
                 value={
-                  idp?.organizationId
-                    ? adminClient.organizations.groups(idp.organizationId)
+                  idp?.organizationLinks?.[0]?.organizationId
+                    ? adminClient.organizations.groups(
+                        idp.organizationLinks[0].organizationId!,
+                      )
                     : adminClient.groups
                 }
               >

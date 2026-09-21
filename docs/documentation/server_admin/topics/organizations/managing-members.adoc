@@ -48,6 +48,18 @@ realm user to an organization, the account belongs to the realm first and foremo
 removing an organization or a member will not remove the account from the realm; the realm is
 the single-source of truth for the identity.
 
+== Changing membership type
+
+You can change the membership type of an existing organization member using the Admin REST API.
+
+`PUT /admin/realms/{realm}/organizations/{orgId}/members/{memberId}/membership-type`
+
+The request body should contain the membership type as a JSON string: `"MANAGED"` or `"UNMANAGED"`.
+
+WARNING: Changing the membership type affects the lifecycle of the member's account. When changing from *Unmanaged* to *Managed*,
+the member's account becomes bound to the organization -- removing the member from the organization or deleting the organization will also remove the account from the realm.
+Conversely, changing from *Managed* to *Unmanaged* means the account will persist in the realm even if the member is removed from the organization, but the user may lack local credentials if originally federated via an identity provider.
+
 == Adding an existing realm user as a member
 
 An existing realm user can join an organization by selecting that user from a list and adding the user to the organization.

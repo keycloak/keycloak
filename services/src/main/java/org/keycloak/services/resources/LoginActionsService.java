@@ -17,7 +17,10 @@
 package org.keycloak.services.resources;
 
 import java.net.URI;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -54,7 +57,6 @@ import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAu
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.TriFunction;
@@ -78,6 +80,8 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectKeyModel;
 import org.keycloak.models.UserConsentModel;
@@ -980,7 +984,7 @@ public class LoginActionsService {
 
         };
 
-        configureOrganization(brokerContext);
+        configureOrganization(brokerContext, authSession);
 
         Response response = processFlow(checks.isActionRequest(), execution, authSession, flowPath, brokerLoginFlow, null, processor);
         event.success();
@@ -988,15 +992,41 @@ public class LoginActionsService {
         return response;
     }
 
-    private void configureOrganization(BrokeredIdentityContext brokerContext) {
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
-            String organizationId = brokerContext.getIdpConfig().getOrganizationId();
+    private void configureOrganization(BrokeredIdentityContext brokerContext, AuthenticationSessionModel authSession) {
+        if (!Organizations.isEnabled(session)) {
+            return;
+        }
 
-            if (organizationId != null) {
-                OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
-                session.getContext().setOrganization(provider.getById(organizationId));
-                session.setAttribute(BrokeredIdentityContext.class.getName(), brokerContext);
+        session.setAttribute(BrokeredIdentityContext.class.getName(), brokerContext);
+
+        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+        OrganizationModel organization = null;
+
+        String orgId = authSession.getAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+        if (orgId != null) {
+            organization = provider.getById(orgId);
+        }
+
+        if (organization == null) {
+            String emailDomain = Organizations.getEmailDomain(brokerContext.getEmail());
+            if (emailDomain != null) {
+                try {
+                    organization = provider.getByDomainName(emailDomain);
+                } catch (ModelValidationException e) {
+                    // malformed domain from unvalidated broker email — treat as no match
+                }
             }
+        }
+
+        if (organization == null) {
+            Set<String> orgIds = brokerContext.getIdpConfig().getOrganizationIds();
+            if (orgIds.size() == 1) {
+                organization = provider.getById(orgIds.iterator().next());
+            }
+        }
+
+        if (organization != null) {
+            session.getContext().setOrganization(organization);
         }
     }
 
@@ -1018,12 +1048,18 @@ public class LoginActionsService {
         return Response.status(302).location(redirect).build();
     }
 
-    private boolean checkGranted(AuthorizationDetails details, UserConsentModel grantedConsent) {
+    private boolean checkGranted(AuthorizationDetails details, UserConsentModel grantedConsent, List<String> alwaysConsent) {
         ClientScopeModel clientScope = details.getClientScope();
         String parameter = details.getParameterizedScopeParam();
-        if (!grantedConsent.isClientScopeGranted(clientScope, parameter) && clientScope.isDisplayOnConsentScreen()) {
+        if (clientScope.isDisplayOnConsentScreen() && !clientScope.isAlwaysConsent()
+                && !grantedConsent.isClientScopeGranted(clientScope, parameter)) {
             grantedConsent.addGrantedClientScope(clientScope, parameter);
             return true;
+        } else if (clientScope.isAlwaysConsent()) {
+            String scope = parameter != null
+                    ? clientScope.getName() + ClientScopeModel.VALUE_SEPARATOR + parameter
+                    : clientScope.getName();
+            alwaysConsent.add(scope);
         }
         return false;
     }
@@ -1082,12 +1118,17 @@ public class LoginActionsService {
         }
 
         // Update may not be required if all clientScopes were already granted (May happen for example with prompt=consent)
+        List<String> alwaysConsent = new LinkedList<>();
         Boolean updateConsentRequired = AuthenticationManager.getClientScopeModelStream(session, client)
-                .map(d -> checkGranted(d, grantedConsent))
+                .map(d -> checkGranted(d, grantedConsent, alwaysConsent))
                 .reduce(Boolean::logicalOr).orElse(Boolean.FALSE);
 
         if (updateConsentRequired) {
             UserConsentManager.updateConsent(session, realm, user, grantedConsent);
+        }
+
+        if (!alwaysConsent.isEmpty()) {
+            authSession.setClientNote(OIDCLoginProtocol.CONSENT_NOTE, String.join(" ", alwaysConsent));
         }
 
         event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);

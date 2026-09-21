@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import jakarta.ws.rs.core.Response;
@@ -50,11 +49,11 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.runonserver.ExportImportHelper;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -223,7 +222,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         openIdentityFirstLoginPage(email, true, null, false, false);
         // login to the organization identity provider and run the configured first broker login flow
         loginPage.login(email, bc.getUserPassword());
-        assertThat(appPage.getRequestType(),is(AppPage.RequestType.AUTH_RESPONSE));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         AuthenticationManagementResource flows = managedRealm.admin().flows();
         List<AuthenticationExecutionInfoRepresentation> executions = flows.getExecutions(DefaultAuthenticationFlows.BROWSER_FLOW);
@@ -393,7 +392,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
     private void assertPartialExportImport(boolean exportGroupsAndRoles, boolean exportClients) {
         RealmRepresentation export = managedRealm.admin().partialExport(exportGroupsAndRoles, exportClients);
         assertTrue(Optional.ofNullable(export.getOrganizations()).orElse(List.of()).isEmpty());
-        assertTrue(Optional.ofNullable(export.getIdentityProviders()).orElse(List.of()).stream().noneMatch(idp -> Objects.nonNull(idp.getOrganizationId())));
+        assertTrue(Optional.ofNullable(export.getIdentityProviders()).orElse(List.of()).stream().noneMatch(idp -> idp.getOrganizationLinks() != null && !idp.getOrganizationLinks().isEmpty()));
         PartialImportRepresentation rep = new PartialImportRepresentation();
         rep.setUsers(export.getUsers());
         rep.setClients(export.getClients());

@@ -38,7 +38,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.provider.Provider;
-import org.keycloak.representations.AccessToken;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.cors.Cors;
 
 /**
@@ -73,6 +73,20 @@ public interface OAuth2GrantType extends Provider {
     Set<String> getTokenParameterNames();
 
     /**
+     * @return true if the grant type is intended to be used only by confidential clients.
+     */
+    default boolean isConfidentialOnlyGrantType() {
+        return false;
+    }
+
+    /**
+     * Pre-process client policies for the given grant
+     */
+    default void preProcess(KeycloakSession session, MultivaluedMap<String, String> formParams) throws ClientPolicyException {
+        // do nothing
+    }
+
+    /**
      * Processes grant request.
      * @param context grant request context
      *
@@ -80,23 +94,8 @@ public interface OAuth2GrantType extends Provider {
      */
     Response process(Context context);
 
-    /**
-     * Check if the token issued from this grant type is allowed for the current request.
-     * This allows grant types to restrict token usage to specific endpoints or contexts.
-     * The default implementation returns {@code true}, meaning tokens are allowed at all endpoints.
-     * Grant types that need to restrict token usage (e.g., pre-authorized code tokens that should
-     * only be accepted at the credential endpoint) should override this method to implement
-     * specific endpoint restrictions.
-     *
-     * @param session the Keycloak session
-     * @param token   the access token
-     * @return true if the token is allowed for the current request, false otherwise
-     */
-    default boolean isTokenAllowed(KeycloakSession session, AccessToken token) {
-        return true;
-    }
 
-    public static class Context {
+    class Context {
         protected KeycloakSession session;
         protected RealmModel realm;
         protected ClientModel client;

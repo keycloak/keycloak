@@ -18,10 +18,12 @@
 package org.keycloak.models;
 
 import java.util.Map;
+import java.util.Optional;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.provider.ProviderEvent;
+import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -30,7 +32,7 @@ import org.keycloak.provider.ProviderEvent;
 public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeContainerModel, OrderedModel {
 
     /**
-     * The character separator used to specify values when the client scope is dynamic. For instance, {@code <scope>:<value>}.
+     * The character separator used to specify values when the client scope is parameterized. For instance, {@code <scope>:<value>}.
      */
     String VALUE_SEPARATOR = ":";
 
@@ -92,6 +94,10 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
     String INCLUDE_IN_TOKEN_SCOPE = "include.in.token.scope";
     String IS_PARAMETERIZED_SCOPE = "is.parameterized.scope";
     String PARAMETERIZED_SCOPE_REGEXP = "parameterized.scope.regexp";
+    String PARAMETERIZED_SCOPE_TYPE = "parameterized.scope.type";
+    String IS_REPEATABLE_SCOPE = "parameterized.scope.repeatable";
+    String ALLOW_USER_DATA_ACCESS = "parameterized.scope.allow.user.data";
+    String IS_ALWAYS_CONSENT = "always.display.consent";
 
     /** @deprecated Use {@link #IS_PARAMETERIZED_SCOPE} instead. */
     @Deprecated
@@ -148,12 +154,54 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
         return Boolean.parseBoolean(getAttribute(IS_PARAMETERIZED_SCOPE));
     }
 
+    /**
+     * Returns the parameterized scope type identifier, or {@code null} if this scope is not parameterized.
+     */
+    default String getParameterizedScopeType() {
+        if (!isParameterizedScope()) {
+            return null;
+        }
+        return getAttribute(PARAMETERIZED_SCOPE_TYPE);
+    }
+
+    /**
+     * Returns whether protocol mappers on this scope are allowed to expose target user attributes
+     * without requiring the authenticated user to have view-users permission.
+     */
+    default boolean isAllowUserDataAccess() {
+        return isParameterizedScope() && Boolean.parseBoolean(getAttribute(ALLOW_USER_DATA_ACCESS));
+    }
+
+    default boolean isAlwaysConsent() {
+        return isParameterizedScope() && isDisplayOnConsentScreen()
+                && Boolean.parseBoolean(getAttribute(IS_ALWAYS_CONSENT))
+                && Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES);
+    }
+
     default void setIsParameterizedScope(boolean isParameterizedScope) {
         setAttribute(IS_PARAMETERIZED_SCOPE, String.valueOf(isParameterizedScope));
     }
 
     default String getParameterizedScopeRegexp() {
         return getAttribute(PARAMETERIZED_SCOPE_REGEXP);
+    }
+
+    /**
+     * Extracts the parameter value from a requested scope string in the format {@code scopeName:parameterValue}.
+     *
+     * @param requestScope the requested scope string, e.g. {@code "my_scope:some_value"}
+     * @return the extracted parameter value, or empty if this is not a parameterized scope or no valid parameter is present
+     */
+    default Optional<String> getParameterFromScope(String requestScope) {
+        if (!isParameterizedScope() || StringUtil.isBlank(requestScope)) {
+            return Optional.empty();
+        }
+        String prefix = getName() + VALUE_SEPARATOR;
+        if (!requestScope.startsWith(prefix)) {
+            return Optional.empty();
+        }
+        String value = requestScope.substring(prefix.length()).trim();
+        return Optional.of(value).filter(v -> !v.isEmpty());
     }
 
     /** @deprecated Use {@link #isParameterizedScope()} instead. */

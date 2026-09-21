@@ -28,6 +28,7 @@ import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -58,6 +59,7 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -285,7 +287,6 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
 
         String userSessionId = deviceCodeModel.getUserSessionId();
         event.detail(Details.CODE_ID, userSessionId);
-        event.session(userSessionId);
 
         // Retrieve UserSession
         var userSessionProvider = session.sessions();
@@ -310,12 +311,19 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
                 Response.Status.BAD_REQUEST);
         }
 
+        event.session(userSession);
         event.user(userSession.getUser());
 
         if (!user.isEnabled()) {
             event.error(Errors.USER_DISABLED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "User disabled",
                 Response.Status.BAD_REQUEST);
+        }
+
+        String bruteForceError = AuthenticatorUtils.getDisabledByBruteForceEventError(session.getProvider(BruteForceProtector.class), session, realm, user);
+        if (bruteForceError != null) {
+            event.error(bruteForceError);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid user credentials", Response.Status.BAD_REQUEST);
         }
 
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
@@ -347,7 +355,7 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
         // Compute client scopes again from scope parameter. Check if user still has them granted
         // (but in device_code-to-token request, it could just theoretically happen that they are not available)
         String scopeParam = deviceCodeModel.getScope();
-        if (!TokenManager.verifyConsentStillAvailable(session, user, client, scopeParam)) {
+        if (!TokenManager.verifyConsentStillAvailable(session, user, client, clientSession, scopeParam)) {
             String errorMessage = "Client no longer has requested consent from user";
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);

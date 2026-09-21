@@ -66,6 +66,18 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             String targetClientId,
             String targetUsername,
             Integer expireAt) {
+        return createCredentialOffer(user, grantType, credentialConfigurationIds, targetClientId, targetUsername,
+                expireAt.longValue());
+    }
+
+    @Override
+    public CredentialOfferState createCredentialOffer(
+            UserModel user,
+            String grantType,
+            List<String> credentialConfigurationIds,
+            String targetClientId,
+            String targetUsername,
+            long expireAt) {
 
         // Checks whether `--feature=oid4vc_vci_preauth_code` is enabled
         //

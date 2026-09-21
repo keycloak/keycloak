@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
-import org.keycloak.models.UserModel;
 import org.keycloak.testsuite.pages.LogoutSessionsPage;
 
 import org.openqa.selenium.NoSuchElementException;
@@ -44,9 +43,8 @@ public class UpdateEmailPage extends LogoutSessionsPage {
     private WebElement feedbackMessage;
 
     @Override
-    public boolean isCurrent() {
-        return driver.getCurrentUrl().contains("login-actions/required-action")
-                && driver.getCurrentUrl().contains("execution=" + UserModel.RequiredAction.UPDATE_EMAIL.name());
+    public String getExpectedPageId() {
+        return "login-update-email";
     }
 
     public void changeEmail(String email){

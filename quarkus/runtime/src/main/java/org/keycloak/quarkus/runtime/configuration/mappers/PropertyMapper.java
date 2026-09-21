@@ -36,6 +36,7 @@ import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.config.WildcardOptionsUtil;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
@@ -613,17 +614,20 @@ public class PropertyMapper<T> {
     /**
      * Create a property mapper from a feature.
      * The mapper maps to external properties the state of the feature.
-     * <p>
-     * If the feature is enabled, it returns {@code true}. Otherwise {@code null}.
      */
     public static PropertyMapper.Builder<Boolean> fromFeature(Profile.Feature feature) {
         final var option = new OptionBuilder<>(feature.getKey() + "-hidden-mapper", Boolean.class)
                 .buildTime(true)
-                .defaultValue(Boolean.TRUE)
                 .synthetic()
                 .build();
         return new Builder<>(option)
-                .isEnabled(() -> Profile.isFeatureEnabled(feature));
+                .transformer((value, context) -> {
+                    if (Profile.getInstance() == null) {
+                        // can be null when running during augmentation
+                        Environment.getCurrentOrCreateFeatureProfile();
+                    }
+                    return Profile.isFeatureEnabled(feature) ? "true" : "false";
+                });
     }
 
     public void validate(ConfigValue value) {

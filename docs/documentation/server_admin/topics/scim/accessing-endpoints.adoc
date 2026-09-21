@@ -1,0 +1,128 @@
+[id="scim-accessing-endpoints_{context}"]
+
+[[_scim_accessing_endpoints_]]
+= Accessing the SCIM endpoints
+[role="_abstract"]
+
+All SCIM endpoints require authorization using an OAuth 2.0 Bearer Token.
+
+Unauthorized requests receive a `401 Unauthorized` response. The bearer token must also have the appropriate permissions
+to perform the requested operation.
+
+Only confidential clients can access the SCIM endpoints. Public clients are not supported for SCIM API calls.
+
+== Setting up a service account client
+
+To access the SCIM APIs programmatically, you typically create a confidential client with a service account in {project_name}.
+This client obtains access tokens using the client credentials grant.
+
+.Procedure
+. Click *Clients* in the menu and then click *Create client*.
+. Set the *Client ID* (for example, `scim-client`) and click *Next*.
+. Enable *Client authentication* and *Service accounts roles*, then click *Save*.
+. On the *Credentials* tab, note the *Client secret*.
+
+== Assigning permissions
+
+The service account associated with the client must be granted the appropriate realm management roles to access
+SCIM resources. The required roles depend on the operations the client needs to perform.
+
+.Procedure
+. Click *Clients* in the menu, then select the client you created.
+. Click the *Service account roles* tab.
+. Click *Assign role*, then filter by clients and select the `realm-management` client.
+. Assign the required roles based on the operations the client needs to perform.
+
+The SCIM API relies on the same <<_admin_permissions,permission model>> as the {project_name} Admin REST API. If a service account
+already has the admin roles needed to manage users and groups through the Admin API, no additional configuration is
+required to use the SCIM endpoints.
+
+If fine-grained admin permissions are enabled for the realm, access to SCIM resources can be further
+restricted on a per-resource basis. For example, a client could be granted permission to view only specific users
+or groups. For more details, see <<_fine_grained_permissions,Fine-grained admin permissions>>.
+
+The following table summarizes the permissions required for each type of SCIM operation:
+
+[cols="1,1,2",options="header"]
+|===
+| Operation | Required Role | Description
+
+| Create, update, delete users
+| `manage-users`
+| Full management access to user resources.
+
+| Read users
+| `view-users`
+| Read-only access to individual user resources.
+
+| Search users
+| `query-users`
+| Ability to list and filter user resources.
+
+| Create, update, delete groups
+| `manage-users`
+| Full management access to group resources.
+
+| Read groups
+| `view-users`
+| Read-only access to individual group resources.
+
+| Search groups
+| `query-groups`
+| Ability to list and filter group resources.
+
+| Access discovery endpoints
+| `query-users` or `query-groups`
+| Read access to `/ServiceProviderConfig`, `/ResourceTypes`, and `/Schemas`. Any role that implies `query-users` or `query-groups` (such as `view-users` or `manage-users`) also grants access.
+|===
+
+The minimum set of roles required for full access to the SCIM API is `manage-users`, which covers all user and group
+management operations as well as access to discovery endpoints.
+
+== Configuring the token audience
+
+The SCIM API validates that access tokens contain the correct audience (`aud`) claim. The expected audience
+is the SCIM API base URL for the realm:
+
+----
+http://<host>:<port>/realms/<realm-name>/scim/v2
+----
+
+Tokens without this audience are rejected with a `401 Unauthorized` response.
+
+To configure the audience, add an *Audience* protocol mapper to the client:
+
+.Procedure
+. Click *Clients* in the menu, then select the client you created.
+. Click the *Client scopes* tab, then click the dedicated scope for the client (for example, `scim-client-dedicated`).
+. Click *Configure a new mapper*, then select *Audience*.
+. Set *Name* to a descriptive value (for example, `scim-audience`).
+. In *Included Custom Audience*, enter the SCIM API base URL for your realm (for example, `\http://localhost:8080/realms/myrealm/scim/v2`).
+. Ensure *Add to access token* is enabled.
+. Click *Save*.
+
+The audience value must match the SCIM API base URL exactly as seen by {project_name}, including the scheme, host, port,
+and path. If {project_name} is running behind a reverse proxy, use the frontend URL configured through the hostname settings.
+
+== Obtaining an access token
+
+To call the SCIM APIs, obtain an access token using the client credentials grant:
+
+[source,bash]
+----
+ACCESS_TOKEN=$(curl -s -X POST \
+  http://localhost:8080/realms/myrealm/protocol/openid-connect/token \
+  -d "grant_type=client_credentials" \
+  -d "client_id=scim-client" \
+  -d "client_secret=your-client-secret" \
+  | jq -r '.access_token')
+----
+
+Then use the token in the `Authorization` header when calling the SCIM endpoints:
+
+[source,bash]
+----
+curl http://localhost:8080/realms/myrealm/scim/v2/Users \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----

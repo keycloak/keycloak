@@ -52,10 +52,11 @@ public interface LoginProtocolFactory extends ProviderFactory<LoginProtocol> {
     /**
      * Called when new realm is created
      *
+     * @param session Keycloak session
      * @param newRealm
      * @param addScopesToExistingClients If true, then existing realm clients will be updated (created realm default scopes will be added to them)
      */
-    void createDefaultClientScopes(RealmModel newRealm, boolean addScopesToExistingClients);
+    void createDefaultClientScopes(KeycloakSession session, RealmModel newRealm, boolean addScopesToExistingClients);
 
 
     /**
@@ -96,9 +97,11 @@ public interface LoginProtocolFactory extends ProviderFactory<LoginProtocol> {
      * @param clientScope  the client scope to be assigned
      * @param defaultScope true if assigning as Default scope, false if Optional
      * @param realm        the realm where the assignment is happening
+     * @param realmLevel   true if the scope is assigned as a realm default/optional client scope (affecting all
+     *                     clients of the matching protocol), false if it is assigned to a specific client
      * @throws BadRequestException if the assignment is not allowed
      */
-    default void validateClientScopeAssignment(KeycloakSession session, ClientScopeModel clientScope, boolean defaultScope, RealmModel realm) {
+    default void validateClientScopeAssignment(KeycloakSession session, ClientScopeModel clientScope, boolean defaultScope, RealmModel realm, boolean realmLevel) {
         // Default implementation: no validation (allows all assignments)
         // Protocol-specific implementations can override to enforce restrictions
     }

@@ -17,13 +17,16 @@
 
 package org.keycloak.services;
 
+import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+import jakarta.enterprise.context.ContextNotActiveException;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.Token;
 import org.keycloak.common.ClientConnection;
@@ -92,8 +95,15 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
             if (uriInfo == null) {
                 uriInfo = new HashMap<>();
             }
-
-            uriInfo.put(type, new KeycloakUriInfo(session, type, getHttpRequest().getUri()));
+            UriInfo info = null;
+            try {
+                info = getHttpRequest().getUri();
+            } catch (ContextNotActiveException e) {
+                info = (UriInfo) Proxy.newProxyInstance(UriInfo.class.getClassLoader(), new Class[] { UriInfo.class }, (proxy, method, args) -> {
+                    throw new ContextNotActiveException(e); // see the javadoc on UriInfo / KeycloakUriInfo, but we are throwing ContextNotActiveException, rather than IllegalStateException.
+                });
+            }
+            uriInfo.put(type, new KeycloakUriInfo(session, type, info));
         }
         return uriInfo.get(type);
     }
@@ -103,7 +113,6 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
         return getUri(UrlType.FRONTEND);
     }
 
-  
     @Override
     public HttpHeaders getRequestHeaders() {
         return getHttpRequest().getHttpHeaders();
@@ -153,7 +162,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public ClientConnection getConnection() {
         if (clientConnection == null) {
-            clientConnection = createClientConnection();
+            clientConnection = createClientConnection().orElseGet(() -> new ClientConnection() {});
         }
 
         return clientConnection;
@@ -184,7 +193,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public HttpRequest getHttpRequest() {
         if (request == null) {
-            request = createHttpRequest();
+            request = createHttpRequest().orElseThrow(ContextNotActiveException::new);
         }
 
         return request;
@@ -193,19 +202,19 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public HttpResponse getHttpResponse() {
         if (response == null) {
-            response = createHttpResponse();
+            response = createHttpResponse().orElseThrow(ContextNotActiveException::new);
         }
 
         return response;
     }
 
-    protected ClientConnection createClientConnection() {
-        return null;
+    protected Optional<ClientConnection> createClientConnection() {
+        return Optional.empty();
     }
 
-    protected abstract HttpRequest createHttpRequest();
+    protected abstract Optional<HttpRequest> createHttpRequest();
 
-    protected abstract HttpResponse createHttpResponse();
+    protected abstract Optional<HttpResponse> createHttpResponse();
 
     protected KeycloakSession getSession() {
         return session;

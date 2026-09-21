@@ -51,7 +51,6 @@ import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.AdminRoles;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -62,6 +61,7 @@ import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.oidc.scope.ParameterizedScopeTypeProvider;
 import org.keycloak.provider.ConfiguredPerClientProvider;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -78,6 +78,7 @@ import org.keycloak.representations.info.CryptoInfoRepresentation;
 import org.keycloak.representations.info.FeatureRepresentation;
 import org.keycloak.representations.info.FeatureType;
 import org.keycloak.representations.info.MemoryInfoRepresentation;
+import org.keycloak.representations.info.ParameterizedScopeTypeRepresentation;
 import org.keycloak.representations.info.ProfileInfoRepresentation;
 import org.keycloak.representations.info.ProviderRepresentation;
 import org.keycloak.representations.info.ServerInfoRepresentation;
@@ -126,17 +127,20 @@ public class ServerInfoAdminResource {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
         RealmModel userRealm = session.getContext().getRealm();
         AdminPermissionEvaluator adminEvaluator = AdminPermissions.evaluator(session, userRealm, auth);
-        if (RealmManager.isAdministrationRealm(userRealm) || adminEvaluator.hasOneAdminRole(AdminRoles.VIEW_SYSTEM)) {
-            // system information is only for admins in the administration realm or fallback view-system role
-            info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp(), Version.VERSION));
-            info.setCpuInfo(CpuInfoRepresentation.create());
-            info.setMemoryInfo(MemoryInfoRepresentation.create());
-        } else if (adminEvaluator.realm().canManageRealm()) {
-            // If the user can manage his own realm just add the version information
-            SystemInfoRepresentation systemInfo = new SystemInfoRepresentation();
-            systemInfo.setVersion(Version.VERSION);
-            info.setSystemInfo(systemInfo);
+
+        if (adminEvaluator.realm().canManageRealm()) {
+            if (RealmManager.isAdministrationRealm(userRealm)) {
+                info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp(), Version.VERSION));
+                info.setCpuInfo(CpuInfoRepresentation.create());
+                info.setMemoryInfo(MemoryInfoRepresentation.create());
+            } else {
+                // If the user can manage his own realm just add the version information
+                SystemInfoRepresentation systemInfo = new SystemInfoRepresentation();
+                systemInfo.setVersion(Version.VERSION);
+                info.setSystemInfo(systemInfo);
+            }
         }
+
         info.setProfileInfo(createProfileInfo());
         info.setFeatures(createFeatureRepresentations());
 
@@ -166,7 +170,18 @@ public class ServerInfoAdminResource {
         setClientInstallations(info);
         setPasswordPolicies(info);
         info.setEnums(ENUMS);
+        info.setParameterizedScopeTypes(buildParameterizedScopeTypesList());
         return info;
+    }
+
+    private List<ParameterizedScopeTypeRepresentation> buildParameterizedScopeTypesList() {
+        return session.getKeycloakSessionFactory()
+                .getProviderFactoriesStream(ParameterizedScopeTypeProvider.class)
+                .map(f -> {
+                    ParameterizedScopeTypeProvider provider = session.getProvider(ParameterizedScopeTypeProvider.class, f.getId());
+                    return new ParameterizedScopeTypeRepresentation(provider.getTypeName(), provider.isRepeatable());
+                })
+                .collect(Collectors.toList());
     }
 
     private void setProviders(ServerInfoRepresentation info) {

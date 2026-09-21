@@ -34,7 +34,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectKeyModel;
-import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -253,8 +252,6 @@ public class LoginActionsServiceChecks {
      *  </ul>
      *
      *  When the check passes, it also sets the authentication session in token context accordingly.
-     *
-     *  @param <T>
      */
     public static <T extends JsonWebToken> boolean doesAuthenticationSessionFromCookieMatchOneFromToken(
             ActionTokenContext<T> context, AuthenticationSessionModel authSessionFromCookie, String authSessionCompoundIdFromToken) throws VerificationException {
@@ -292,9 +289,7 @@ public class LoginActionsServiceChecks {
     }
 
     public static <T extends JsonWebToken & SingleUseObjectKeyModel> void checkTokenWasNotUsedYet(T token, ActionTokenContext<T> context) throws VerificationException {
-        SingleUseObjectProvider singleUseObjectProvider = context.getSession().singleUseObjects();
-
-        if (singleUseObjectProvider.contains(token.serializeKey() + SingleUseObjectProvider.REVOKED_KEY)) {
+        if (context.getSession().revokedTokens().contains(token.serializeKey())) {
             throw new ExplainedTokenVerificationException(token, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
         }
     }

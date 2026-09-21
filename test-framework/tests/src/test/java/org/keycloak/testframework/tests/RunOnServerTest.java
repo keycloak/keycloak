@@ -7,11 +7,11 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
@@ -82,10 +82,14 @@ public class RunOnServerTest {
                 throw new ModelException("Something went wrong");
             });
             Assertions.fail("Expected exception");
-        } catch (RunOnServerException e) {
-            Assertions.assertTrue(e.getCause() instanceof ModelException);
-            Assertions.assertEquals("Something went wrong", e.getCause().getMessage());
+        } catch (ModelException e) {
+            Assertions.assertEquals("Something went wrong", e.getMessage());
         }
+    }
+
+    @Test
+    public void runOnServerAssumptionOnServer() {
+        runOnServer.run(session -> Assumptions.assumeTrue(false, "skip this test"));
     }
 
 }

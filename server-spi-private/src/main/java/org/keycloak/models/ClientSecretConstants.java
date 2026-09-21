@@ -13,6 +13,7 @@ public class ClientSecretConstants {
     public static final String CLIENT_ROTATED_SECRET_CREATION_TIME = "client.secret.rotated.creation.time";
     public static final String CLIENT_ROTATED_SECRET_EXPIRATION_TIME = "client.secret.rotated.expiration.time";
     public static final String CLIENT_SECRET_REMAINING_EXPIRATION_TIME = "client.secret.remaining.expiration.time";
+    public static final String CLIENT_ROTATED_EVENT_DETAIL = "rotated_secret";
 
     /**
      * Attribute on the client, which specifies if client authentication is limited only to "client_secret_basic" (HTTP Basic authentication) or "client_secret_post" (Client

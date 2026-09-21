@@ -66,7 +66,8 @@ public final class OAuth2BrokerTest extends AbstractAdvancedBrokerTest {
     @Test
     public void testLoginDefaultConfiguration() {
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInWithBroker(bc);
 
         updateAccountInformationPage.assertCurrent();
@@ -94,7 +95,8 @@ public final class OAuth2BrokerTest extends AbstractAdvancedBrokerTest {
         brokerResource.update(broker);
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInWithBroker(bc);
 
         List<UserRepresentation> users = adminClient.realm(bc.consumerRealmName()).users().search("username-claim");

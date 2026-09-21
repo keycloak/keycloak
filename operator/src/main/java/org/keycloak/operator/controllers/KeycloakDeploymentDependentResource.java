@@ -87,6 +87,7 @@ public class KeycloakDeploymentDependentResource extends VersionTolerantCRUDKube
 
     public static final String POD_IP = "POD_IP";
     public static final String HOST_IP_SPI_OPTION = "KC_SPI_CACHE_EMBEDDED_DEFAULT_MACHINE_NAME";
+    public static final String CACHE_EMBEDDED_NODE_NAME = "KC_CACHE_EMBEDDED_NODE_NAME";
 
     private static final List<String> COPY_ENV = Arrays.asList("HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY");
 
@@ -585,6 +586,9 @@ public class KeycloakDeploymentDependentResource extends VersionTolerantCRUDKube
         // Using spec.nodeName to avoid exposing the IP addresses in the logs.
         envVars.add(new EnvVarBuilder().withName(HOST_IP_SPI_OPTION).withNewValueFrom().withNewFieldRef()
                 .withFieldPath("spec.nodeName").withApiVersion("v1").endFieldRef().endValueFrom().build());
+
+        envVars.add(new EnvVarBuilder().withName(CACHE_EMBEDDED_NODE_NAME).withNewValueFrom().withNewFieldRef()
+                .withFieldPath("metadata.name").withApiVersion("v1").endFieldRef().endValueFrom().build());
 
         return envVars;
     }

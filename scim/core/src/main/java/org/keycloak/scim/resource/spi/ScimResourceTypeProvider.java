@@ -8,7 +8,6 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Model;
 import org.keycloak.provider.Provider;
 import org.keycloak.scim.protocol.request.PatchRequest.PatchOperation;
-import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.schema.ModelSchema;
 
@@ -23,7 +22,7 @@ import org.keycloak.scim.resource.schema.ModelSchema;
  * to the underlying model and vice versa, and for enforcing the rules of the resource type and its corresponding model
  * when managing resource type instances.
  */
-public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> extends Provider {
+public interface ScimResourceTypeProvider<R> extends Provider {
 
     public static final int DEFAULT_MAX_RESULTS = 100;
 
@@ -52,7 +51,9 @@ public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> 
      */
     String getSchema();
 
-    <M extends Model> List<ModelSchema<M, R>> getSchemas();
+    default <M extends Model> List<ModelSchema<M, R>> getSchemas() {
+        return List.of();
+    }
 
     /**
      * Returns the schema extensions names of the resource type managed by this provider.
@@ -117,19 +118,21 @@ public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> 
      * Retrieves all resources of this type. This method is invoked when a client requests a list of resources,
      * and should return a stream of all resources of this type.
      *
-     * @param searchRequest the search request containing the filter and other parameters to retrieve the matching resources
+     * @param searchOptions the search options containing the filter and other parameters to retrieve the matching resources
      * @return a stream of all resources of this type
      */
-    Stream<R> getAll(SearchRequest searchRequest);
+    Stream<R> getAll(SearchOptions searchOptions);
 
     /**
      * Counts the total number of resources of this type that match the given search request. This method is invoked when
-     * a client requests a list of resources,
+     * a client requests a list of resources.
      *
-     * @param searchRequest the search request containing the filter and other parameters to count the matching resources
+     * @param searchOptions the search options containing the filter and other parameters to count the matching resources
+     * @param resourceSize  the size of the resource list returned by {@link #getAll}, used by pageable implementations to compute
+     *                      the count without an extra database trip
      * @return the total number of resources of this type that match the given search request
      */
-    Long count(SearchRequest searchRequest);
+    Long count(SearchOptions searchOptions, int resourceSize);
 
     /**
      * Deletes a resource of this type by its identifier. This method is invoked when a client requests the deletion of a specific resource,
@@ -141,6 +144,16 @@ public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> 
 
     default void patch(R existing, List<PatchOperation> operations) {
         throw new UnsupportedOperationException("Add operation is not supported for resource type " + getName());
+    }
+
+    /**
+     * Returns the group membership changes recorded while processing the last {@link #patch} or {@link #update}
+     * call, then clears them. Providers whose resource type can change group membership (e.g. a SCIM Group's
+     * {@code members} or a SCIM User's {@code groups}) override this to report each change, so the caller can emit
+     * a dedicated {@code GROUP_MEMBERSHIP} admin event, consistently with the equivalent Admin REST API operation.
+     */
+    default List<MembershipChange> pollMembershipChanges() {
+        return List.of();
     }
 
     /**

@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.oid4vc.preauth;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -24,6 +25,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.VCFormat;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
@@ -75,10 +77,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4VCIssuerTestBase {
 
-    protected String getBearerToken(OAuthClient oauthClient, ClientRepresentation client, String scopeName) {
+    protected String getBearerToken(OAuthClient oauthClient, ClientRepresentation client) {
         AccessTokenResponse tokenResponse = oauthClient
                 .openid(false)
-                .scope(scopeName)
                 .doPasswordGrantRequest("john", TEST_PASSWORD);
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
         return tokenResponse.getAccessToken();
@@ -106,10 +107,12 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
     /**
      * Get the expected claim path for this test implementation.
-     *
-     * @return the claim path as a string
      */
-    protected abstract String getExpectedClaimPath();
+    protected abstract List<Object> getExpectedClaimPath();
+
+    protected String getClaimsNamespace() {
+        return null;
+    }
 
     protected Oid4vcTestContext prepareOid4vcTestContext(String token) throws Exception {
         Oid4vcTestContext ctx = new Oid4vcTestContext();
@@ -166,7 +169,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
     @Test
     public void testPreAuthorizedCodeWithAuthorizationDetailsCredentialConfigurationId() throws Exception {
-        String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
+        String token = getBearerToken(oauth, client);
         Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
 
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
@@ -206,22 +209,13 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
     @Test
     public void testPreAuthorizedCodeWithAuthorizationDetailsAndClaims() throws Exception {
-        String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
+        String token = getBearerToken(oauth, client);
         Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
 
         // Create claims description for a claim that should be supported
         ClaimsDescription claim = new ClaimsDescription();
 
-        // Construct claim path based on credential format
-        List<Object> claimPath;
-        if ("sd_jwt_vc".equals(getCredentialFormat())) {
-            // SD-JWT doesn't use credentialSubject prefix
-            claimPath = Arrays.asList(getExpectedClaimPath());
-        } else {
-            // JWT and other formats use credentialSubject prefix
-            claimPath = Arrays.asList("credentialSubject", getExpectedClaimPath());
-        }
-        claim.setPath(claimPath);
+        claim.setPath(getExpectedClaimPath());
         claim.setMandatory(true);
 
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
@@ -249,13 +243,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
         assertEquals(1, authDetailResponse.getClaims().size());
         ClaimsDescription responseClaim = authDetailResponse.getClaims().get(0);
 
-        List<Object> expectedClaimPath;
-        if ("sd_jwt_vc".equals(getCredentialFormat())) {
-            expectedClaimPath = Arrays.asList(getExpectedClaimPath());
-        } else {
-            expectedClaimPath = Arrays.asList("credentialSubject", getExpectedClaimPath());
-        }
-        assertEquals(expectedClaimPath, responseClaim.getPath());
+        assertEquals(getExpectedClaimPath(), responseClaim.getPath());
         assertTrue(responseClaim.isMandatory());
 
         // Verify that credential identifiers are present
@@ -266,12 +254,12 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
     @Test
     public void testPreAuthorizedCodeWithUnsupportedClaims() throws Exception {
-        String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
+        String token = getBearerToken(oauth, client);
         Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
 
         // Create claims description for a claim that should NOT be supported
         ClaimsDescription claim = new ClaimsDescription();
-        claim.setPath(Arrays.asList("credentialSubject", "unsupportedClaim"));
+        claim.setPath(buildClaimPath("unsupportedClaim"));
         claim.setMandatory(false);
 
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
@@ -297,12 +285,12 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
     @Test
     public void testPreAuthorizedCodeWithMandatoryClaimMissing() throws Exception {
-        String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
+        String token = getBearerToken(oauth, client);
         Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
 
         // Create claims description for a mandatory claim
         ClaimsDescription claim = new ClaimsDescription();
-        claim.setPath(Arrays.asList("credentialSubject", "mandatoryClaim"));
+        claim.setPath(buildClaimPath("mandatoryClaim"));
         claim.setMandatory(true);
 
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
@@ -328,12 +316,12 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
     @Test
     public void testPreAuthorizedCodeWithComplexClaimsPath() throws Exception {
-        String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
+        String token = getBearerToken(oauth, client);
         Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
 
         // Create claims description with complex path
         ClaimsDescription claim = new ClaimsDescription();
-        claim.setPath(Arrays.asList("credentialSubject", "address", "street"));
+        claim.setPath(buildClaimPath("address", "street"));
         claim.setMandatory(false);
 
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
@@ -367,7 +355,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
     @Test
     public void testPreAuthorizedCodeWithInvalidAuthorizationDetails() throws Exception {
-        String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
+        String token = getBearerToken(oauth, client);
         Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
 
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
@@ -392,7 +380,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
     @Test
     public void testPreAuthorizedCodeWithInvalidClaims() throws Exception {
-        String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
+        String token = getBearerToken(oauth, client);
         Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
 
         // Create claims description with invalid path
@@ -423,7 +411,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
     @Test
     public void testPreAuthorizedCodeWithEmptyAuthorizationDetails() throws Exception {
-        String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
+        String token = getBearerToken(oauth, client);
         Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
 
         // Send empty authorization_details array - should fail
@@ -440,7 +428,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
     @Test
     public void testPreAuthorizedCodeWithCredentialOfferBasedAuthorizationDetails() throws Exception {
-        String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
+        String token = getBearerToken(oauth, client);
         Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
 
         // Test Pre-Authorized Code Flow without authorization_details parameter
@@ -477,7 +465,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
     @Test
     public void testPreAuthorizedFlowWithCredentialOfferBasedAuthorizationDetails() throws Exception {
-        String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
+        String token = getBearerToken(oauth, client);
 
         Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
 
@@ -561,7 +549,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
     @Test
     public void testPreAuthorizedCodeTokenEndpointRestriction() throws Exception {
-        String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
+        String token = getBearerToken(oauth, client);
         Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
 
         // Step 1: Get pre-authorized code token
@@ -638,7 +626,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
     @Test
     public void testMultipleCredentialConfigurationsFromOffer() throws Exception {
-        String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
+        String token = getBearerToken(oauth, client);
         Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
 
         // Verify that the credential offer has multiple configurations (if supported by the test setup)
@@ -696,6 +684,9 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
     @Test
     public void testCompleteFlowWithExpiredCredentialOffer() throws Exception {
+        // Bigger accessToken lifespan to avoid same timeout like credential-offer (to enforce that accessToken is still valid in the credential-request, when credential-offer would be invalid)
+        testRealm.updateWithCleanup(r -> r.accessTokenLifespan(600));
+
         AccessTokenResponse tokenResponse = preAuthzCodeSuccessful();
         // Make sure that offer is expired
         timeOffSet.set(DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S + 10);
@@ -703,15 +694,16 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
     }
 
     @Test
-    public void testCompleteFlowWithConsumedCredentialOffer() throws Exception {
+    public void testCredentialReissuanceSucceedsAfterOfferConsumed() throws Exception {
         AccessTokenResponse tokenResponse = preAuthzCodeSuccessful();
         assertSuccessfulCredentialRequest(tokenResponse);
-        // Second credential request should fail as offer is already expired
-        assertFailedCredentialRequest(tokenResponse);
+        // After fix for #50340: Second request succeeds because authorization
+        // is now based on having a valid user verifiable credential, not the offer
+        assertSuccessfulCredentialRequest(tokenResponse);
     }
 
     private AccessTokenResponse preAuthzCodeSuccessful() throws Exception {
-        String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
+        String token = getBearerToken(oauth, client);
         String credConfigId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
         Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
 
@@ -719,14 +711,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
         // This tests that requested claims are validated and present in the final credential
         ClaimsDescription claim = new ClaimsDescription();
 
-        // Construct claim path based on credential format
-        List<Object> claimPath;
-        if ("sd_jwt_vc".equals(getCredentialFormat())) {
-            claimPath = Arrays.asList(getExpectedClaimPath());
-        } else {
-            claimPath = Arrays.asList("credentialSubject", getExpectedClaimPath());
-        }
-        claim.setPath(claimPath);
+        claim.setPath(getExpectedClaimPath());
         claim.setMandatory(true);
 
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
@@ -837,9 +822,32 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
         MatcherAssert.assertThat(errorEvent.getUserId(), EventMatchers.isUUID());
     }
 
+    // Test that invoking credential-request endpoint with the access token, which is not targetted for credential-endpoint, should fail
+    @Test
+    public void testCredentialRequestWithIncorrectAccessToken() throws Exception {
+        String token = getBearerToken(oauth, client);
+        Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
+
+        events.clear();
+
+        // Request credential with incorrect access token
+        events.clear();
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier("credential-identifier")
+                .bearerToken(token)
+                .send();
+
+        assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
+
+        EventRepresentation invalidTokenEvent = events.poll();
+        EventAssertion.assertError(invalidTokenEvent )
+                .type(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR);
+        assertEquals(ErrorType.INVALID_TOKEN.getValue(), invalidTokenEvent.getError());
+    }
+
     @Test
     public void testCredentialRequestWithEmptyPayload() throws Exception {
-        String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
+        String token = getBearerToken(oauth, client);
         Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
 
         events.clear();
@@ -865,10 +873,9 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
     @Test
     public void testCredentialRequestWithInvalidCredentialIdentifier() throws Exception {
-        String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
+        String token = getBearerToken(oauth, client);
         Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
-
-        events.clear();
+        AccessTokenResponse tokenResponse = preAuthzCodeSuccessful();
 
         // Request credential with invalid credential identifier
         String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
@@ -877,7 +884,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
                 .credentialIdentifier("invalid-credential-identifier")
                 .proofs(new Proofs().setJwt(List.of(
                         generateJwtProof(ctx.credentialIssuer.getCredentialIssuer(), cNonce))))
-                .bearerToken(token)
+                .bearerToken(tokenResponse.getAccessToken())
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
@@ -900,6 +907,22 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
     protected void verifyCredentialStructure(Object credentialObj) {
         // Default implementation - subclasses should override
         assertNotNull(credentialObj, "Credential object should not be null");
+    }
+
+    private List<Object> buildClaimPath(String... relativePath) {
+        if ("sd_jwt_vc".equals(getCredentialFormat())) {
+            return Arrays.stream(relativePath).map(path -> (Object) path).toList();
+        }
+        if (VCFormat.MSO_MDOC.equals(getCredentialFormat())) {
+            List<Object> claimPath = new ArrayList<>();
+            claimPath.add(getClaimsNamespace());
+            claimPath.addAll(Arrays.asList(relativePath));
+            return claimPath;
+        }
+        List<Object> claimPath = new ArrayList<>();
+        claimPath.add("credentialSubject");
+        claimPath.addAll(Arrays.asList(relativePath));
+        return claimPath;
     }
 
     private String getCredentialIssuerFromAuthDetails(AccessTokenResponse tokenResponse) {

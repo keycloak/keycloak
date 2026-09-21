@@ -108,7 +108,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 @KeycloakIntegrationTest
-@DatabaseTest
 public class GroupTest extends AbstractGroupTest {
 
     @InjectRealm(config = GroupTestRealmConfig.class)
@@ -125,6 +124,7 @@ public class GroupTest extends AbstractGroupTest {
 
     
     @Test
+    @DatabaseTest
     @DisabledForDatabases("mssql")
     public void createMultiDeleteMultiReadMulti() {
         // create multiple groups
@@ -214,6 +214,7 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    @DatabaseTest
     // KEYCLOAK-16888 Error messages for groups with same name in the same level
     public void doNotAllowSameGroupNameAtSameLevel() {
         RealmResource realm = managedRealm.admin();
@@ -252,6 +253,7 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    @DatabaseTest
     // KEYCLOAK-11412 Unintended Groups with same names
     public void doNotAllowSameGroupNameAtSameLevelWhenUpdatingName() {
         RealmResource realm = managedRealm.admin();
@@ -305,6 +307,7 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    @DatabaseTest
     public void doNotAllowSameGroupNameAtTopLevel() {
         // creating "/test-group"
         GroupRepresentation topGroup = new GroupRepresentation();
@@ -319,6 +322,7 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    @DatabaseTest
     public void doNotAllowSameGroupNameAtTopLevelInDatabase() {
         String realmName = managedRealm.getName();
         final String id = runOnServer.fetch(session -> {
@@ -654,6 +658,7 @@ public class GroupTest extends AbstractGroupTest {
 
 
     @Test
+    @DatabaseTest
     //KEYCLOAK-6300 List of group members is not sorted alphabetically
     public void groupMembershipUsersOrder() {
         RealmResource realm = managedRealm.admin();
@@ -842,6 +847,7 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    @DatabaseTest
     public void defaultMaxResults() {
         GroupsResource groups = managedRealm.admin().groups();
         Response response = groups.add(GroupBuilder.create().name("test").build());

@@ -137,7 +137,7 @@ public class UserAttributeWorkflowConditionProvider implements WorkflowCondition
     @Override
     public void validate() {
         if (expectedAttribute == null) {
-            throw new WorkflowInvalidStateException("Expected 'key:value' pair is not set.");
+            throw new WorkflowInvalidStateException("workflowConditionAttributeNotSet");
         }
     }
 
@@ -158,7 +158,7 @@ public class UserAttributeWorkflowConditionProvider implements WorkflowCondition
         try {
             props.load(new StringReader(keyValuePair));
         } catch (java.io.IOException e) {
-            throw new WorkflowInvalidStateException("Error reading key-value pair " + keyValuePair + ". Expected format 'key:value'");
+            throw new WorkflowInvalidStateException("workflowConditionAttributeInvalid", keyValuePair);
         }
         String key = props.stringPropertyNames().iterator().next();
         String value = props.getProperty(key);

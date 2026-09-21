@@ -17,6 +17,13 @@ the necessary admin roles or permissions to access the user.
 In this release, client scope evaluation now requires at the very least the `view-users` admin role granted to the
 realm administrator or any permission that grants the `view` scope on the user.
 
+=== User profile metadata no longer returned on user search
+
+When searching for users using the Admin REST API, the user profile metadata is no longer included for each user in the search results.
+
+This change was made to improve performance of user search operations, as fetching user profile metadata for each user can be resource-intensive.
+The user profile metadata can still be retrieved when fetching a specific user by their identifier.
+
 == Notable changes
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
@@ -38,3 +45,25 @@ OIDC/OAuth2 token parameter or you can use something such as `req-params-max-siz
 Cross-origin requests sent to OIDC endpoints (such as the token, userinfo, token revocation, logout, and PAR endpoints) are now validated against the client's configured Web Origins before the endpoint reaches its authentication and request-processing logic. Previously, requests carrying an `Origin` header that did not match any of the client's allowed Web Origins could be processed up to the point where the response was about to be returned, which could result in inconsistent error responses depending on how far the request progressed.
 
 After this change, such requests are rejected immediately with a CORS failure returning Forbidden (403) HTTP error status. There is no behavior change for same-origin requests (no `Origin` header) or for cross-origin requests whose `Origin` is already permitted by the client's Web Origins configuration.
+
+=== Extensions must not restart a Keycloak transaction
+
+This change might affect custom {project_name} extensions.
+
+The implicit transaction handling in {project_name} previously assumed that a transaction is started once per session, which is usually request-scoped. If it was started a second time, this might have led to an inconsistent state.
+
+Starting with this version, this is now enforced and a session's transaction can only be started once. This prevents difficult-to-track errors and lost commits. It also ensures that at the start of the transaction, all nested transactions are started if they have not been started earlier.
+
+A transaction is started automatically before the REST endpoint code is invoked, even if the session was created earlier in a filter.
+
+As before, transactions can be nested, which will pause the outer transaction once the nested transaction starts, and will resume the outer transaction once the nested transaction ends.
+
+=== Validation of client_session_host parameter
+
+The `client_session_host` parameter is now validated against the client's registered nodes and management URL.
+
+This parameter is sent by clients during token refresh and is used when the `${application.session.host}` placeholder is present in a client's backchannel logout URL configuration.
+
+It was primarily used by legacy adapters that have been removed.
+
+This improves security by ensuring that only trusted, pre-registered hosts can be used in backchannel logout URLs.

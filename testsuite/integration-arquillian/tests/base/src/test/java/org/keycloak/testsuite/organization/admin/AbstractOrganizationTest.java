@@ -28,8 +28,6 @@ import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.models.OrganizationModel;
-import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -46,7 +44,6 @@ import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.broker.BrokerConfiguration;
 import org.keycloak.testsuite.broker.KcOidcBrokerConfiguration;
 import org.keycloak.testsuite.organization.broker.BrokerConfigurationWrapper;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -62,7 +59,6 @@ import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -98,9 +94,6 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
 
     @Page
     protected UpdateAccountInformationPage updateAccountInformationPage;
-
-    @Page
-    protected AppPage appPage;
 
     protected BrokerConfiguration bc = brokerConfigFunction.apply(organizationName);
 
@@ -155,14 +148,23 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             id = ApiUtil.getCreatedId(response);
         }
 
-        if (orgDomains != null && orgDomains.length > 0) {
-            // set the idp domain to the first domain used to create the org.
-            broker.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomains[0]);
-            broker.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
-        }
         testRealm.identityProviders().create(broker).close();
         testCleanup.addCleanup(testRealm.identityProviders().get(broker.getAlias())::remove);
         testRealm.organizations().get(id).identityProviders().addIdentityProvider(broker.getAlias()).close();
+
+        if (orgDomains != null && orgDomains.length > 0) {
+            org = testRealm.organizations().get(id).toRepresentation();
+            String brokerAlias = broker.getAlias();
+            org.getDomains().stream()
+                    .filter(d -> d.getName().equals(orgDomains[0]))
+                    .findFirst()
+                    .ifPresent(d -> {
+                        d.setIdentityProviderAlias(brokerAlias);
+                        d.setAutoRedirect(true);
+                    });
+            testRealm.organizations().get(id).update(org).close();
+        }
+
         org = testRealm.organizations().get(id).toRepresentation();
         testCleanup.addCleanup(() -> testRealm.organizations().get(id).delete().close());
 
@@ -257,8 +259,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         }
 
         if (redirectToApp) {
-            appPage.assertCurrent();
-            assertThat(appPage.getRequestType(), is(AppPage.RequestType.AUTH_RESPONSE));
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         }
 
         List<UserRepresentation> users = realmsResouce().realm(bc.consumerRealmName()).users().search(username, Boolean.TRUE);
@@ -312,7 +313,8 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
 
     protected void openIdentityFirstLoginPage(String username, boolean autoIDPRedirect, String idpAlias, boolean isVisible, boolean clickIdp) {
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         log.debug("Logging in");
         assertTrue(loginPage.isUsernameInputPresent());
         assertNull(loginPage.getUsernameInputError());

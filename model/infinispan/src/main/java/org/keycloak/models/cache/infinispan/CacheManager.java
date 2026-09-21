@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
+import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
@@ -236,5 +237,24 @@ public abstract class CacheManager {
 
     public void invalidateCacheKey(String key, Set<String> invalidations) {
         invalidations.add(key);
+    }
+
+    /**
+     * Handles a cluster-wide cache clear event by clearing all entries from this cache manager.
+     *
+     * @param ignored The cluster event (unused).
+     */
+    public void onClearEvent(ClusterEvent ignored) {
+        clear();
+    }
+
+    /**
+     * Handles a cluster-wide invalidation event by delegating to {@link #invalidationEventReceived(InvalidationEvent)}.
+     *
+     * @param event The cluster event, which must be an {@link InvalidationEvent}.
+     */
+    public void onInvalidateEvent(ClusterEvent event) {
+        assert event instanceof InvalidationEvent;
+        invalidationEventReceived((InvalidationEvent) event);
     }
 }

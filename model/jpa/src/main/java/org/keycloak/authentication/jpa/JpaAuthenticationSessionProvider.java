@@ -18,6 +18,8 @@
 package org.keycloak.authentication.jpa;
 
 import java.lang.invoke.MethodHandles;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import jakarta.persistence.EntityManager;
@@ -26,21 +28,26 @@ import jakarta.persistence.LockModeType;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.connections.jpa.support.EntityManagerProxy;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import org.jboss.logging.Logger;
 
-public class JpaAuthenticationSessionProvider implements AuthenticationSessionProvider {
+public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransaction implements AuthenticationSessionProvider {
 
     private final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
     private final KeycloakSession session;
     private final int authSessionsLimit;
+    private final Map<String, RootAuthenticationSessionAdapter> transientSessions = new HashMap<>();
+    private boolean enlisted;
 
     public JpaAuthenticationSessionProvider(KeycloakSession session, int authSessionsLimit) {
         this.session = Objects.requireNonNull(session);
@@ -49,9 +56,19 @@ public class JpaAuthenticationSessionProvider implements AuthenticationSessionPr
 
     @Override
     public RootAuthenticationSessionModel createRootAuthenticationSession(RealmModel realm) {
-        var model = RootAuthenticationSessionAdapter.create(session, realm, SecretGenerator.SECURE_ID_GENERATOR.get(), Time.currentTime(), authSessionsLimit);
-        getEntityManager().persist(model.getEntity());
+        var model = RootAuthenticationSessionAdapter.create(session, realm, SecretGenerator.SECURE_ID_GENERATOR.get(), Time.currentTimeSeconds(), authSessionsLimit);
+        // Those newly created authentication sessions with a random ID do not exist in the database, so there can not be any conflict.
+        // For resource owner password grants, those sessions are created temporarily, so we only insert them if they are not removed within the same session.
+        transientSessions.put(model.getEntity().getId(), model);
+        prepareTransaction();
         return model;
+    }
+
+    private void prepareTransaction() {
+        if (!enlisted) {
+            enlisted = true;
+            session.getTransactionManager().enlistPrepare(this);
+        }
     }
 
     @Override
@@ -60,19 +77,29 @@ public class JpaAuthenticationSessionProvider implements AuthenticationSessionPr
             return createRootAuthenticationSession(realm);
         }
         var em = getEntityManager();
-        em.createNamedQuery("insertRootAuthSessionIfAbsent")
-                .setParameter("id", id)
-                .setParameter("realmId", realm.getId())
-                .setParameter("timestamp", Time.currentTime())
-                .executeUpdate();
-        var entity = em.find(RootAuthenticationSessionEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
-        if (entity == null) {
-            throw new ModelException("Unable to create or find root authentication session with id '" + id + "'");
+        // INSERT ON CONFLICT DO NOTHING does not lock the conflicting row, so a concurrent DELETE
+        // could remove it between the INSERT and the subsequent find. Retry if this happens.
+        RootAuthenticationSessionEntity entity;
+        for (;;) {
+            EntityManagerProxy.allowAsyncCommit(em, em.createNamedQuery("insertRootAuthSessionIfAbsent"))
+                    .setParameter("id", id)
+                    .setParameter("realmId", realm.getId())
+                    .setParameter("timestamp", Time.currentTimeSeconds())
+                    .executeUpdate();
+            entity = em.find(RootAuthenticationSessionEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
+            if (entity != null) {
+                break;
+            }
+        }
+        if (!Objects.equals(realm.getId(), entity.getRealmId())) {
+            throw new ModelException("Another root authentication session with id '" + id + "' already exists in other realm");
         }
         var lifespan = SessionExpiration.getAuthSessionLifespan(realm);
-        if (entity.getTimestamp() + lifespan < Time.currentTime()) {
+        if (entity.getTimestamp() + lifespan < Time.currentTimeSeconds()) {
             logger.debugf("Root authentication session with id '%s' is expired.", id);
-            return null;
+            // let's restart it
+            entity.setTimestamp(Time.currentTimeSeconds());
+            entity.getAuthenticationSessions().clear();
         }
         return RootAuthenticationSessionAdapter.wrapEntity(session, realm,  entity, authSessionsLimit);
     }
@@ -82,14 +109,20 @@ public class JpaAuthenticationSessionProvider implements AuthenticationSessionPr
         if (id == null) {
             return null;
         }
+        var model = transientSessions.get(id);
+        if (model != null && Objects.equals(model.getRealm().getId(), realm.getId())) {
+            // NOTE: Check if this session belongs to the correct realm to avoid a wrong cross-reference
+            // as a second line of defense.
+            return model;
+        }
 
         var em = getEntityManager();
         var entity = em.find(RootAuthenticationSessionEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
-        if (entity == null) {
+        if (entity == null || !Objects.equals(realm.getId(), entity.getRealmId())) {
             return null;
         }
         var lifespan = SessionExpiration.getAuthSessionLifespan(realm);
-        if (entity.getTimestamp() + lifespan < Time.currentTime()) {
+        if (entity.getTimestamp() + lifespan < Time.currentTimeSeconds()) {
             logger.debugf("Root authentication session with id '%s' is expired.", id);
             em.remove(entity);
             return null;
@@ -99,6 +132,12 @@ public class JpaAuthenticationSessionProvider implements AuthenticationSessionPr
 
     @Override
     public void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession) {
+        if (!Objects.equals(realm.getId(), authenticationSession.getRealm().getId())) {
+            throw new ModelException("Authentication session with id '" + authenticationSession.getId() + "' does not belong to realm '" + realm.getId() + "'");
+        }
+        if (transientSessions.remove(authenticationSession.getId()) != null) {
+            return;
+        }
         var em = getEntityManager();
         if (authenticationSession instanceof RootAuthenticationSessionAdapter adapter) {
             em.remove(adapter.getEntity());
@@ -108,6 +147,16 @@ public class JpaAuthenticationSessionProvider implements AuthenticationSessionPr
         if (entity != null) {
             em.remove(entity);
         }
+    }
+
+    @Override
+    public void removeRootAuthenticationSessionsByAuthenticatedUser(RealmModel realm, UserModel user, String rootAuthenticationSessionIdToKeep) {
+        getEntityManager()
+                .createNamedQuery("deleteRootAuthSessionsByUser")
+                .setParameter("realmId", realm.getId())
+                .setParameter("userId", user.getId())
+                .setParameter("rootSessionIdToKeep", rootAuthenticationSessionIdToKeep)
+                .executeUpdate();
     }
 
     @Override
@@ -125,5 +174,14 @@ public class JpaAuthenticationSessionProvider implements AuthenticationSessionPr
 
     private EntityManager getEntityManager() {
         return session.getProvider(JpaConnectionProvider.class).getEntityManager();
+    }
+
+    @Override
+    protected void commitImpl() {
+        transientSessions.forEach((key, value) -> getEntityManager().persist(value.getEntity()));
+    }
+
+    @Override
+    protected void rollbackImpl() {
     }
 }

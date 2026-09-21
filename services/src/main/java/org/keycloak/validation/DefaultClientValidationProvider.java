@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -51,9 +52,15 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.utils.StringUtil;
 
+import org.jboss.logging.Logger;
+
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
+import static org.keycloak.services.managers.ResourceAdminManager.CLIENT_SESSION_HOST_PROPERTY;
 
 public class DefaultClientValidationProvider implements ClientValidationProvider {
+
+    private static final Logger logger = Logger.getLogger(DefaultClientValidationProvider.class);
+
     private enum FieldMessages {
         ROOT_URL("rootUrl",
                 "Root URL is not a valid URL", "clientRootURLInvalid",
@@ -67,8 +74,18 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
 
         REDIRECT_URIS("redirectUris",
                 "A redirect URI is not a valid URI", "clientRedirectURIsInvalid",
-                "Redirect URIs must not contain an URI fragment", "clientRedirectURIsFragmentError",
+                "A redirect URI must not contain an URL fragment", "clientRedirectURIsFragmentError",
                 "A redirect URI uses an illegal scheme", "clientRedirectURIsIllegalSchemeError"),
+
+        POST_LOGOUT_REDIRECT_URIS("postLogoutUris",
+                "A post-logout redirect URI is not a valid URI", "clientPostLogoutRedirectURIsInvalid",
+                "A post-logout redirect URI must not contain an URL fragment", "clientPostLogoutRedirectURIsFragmentError",
+                "A post-logout redirect URI uses an illegal scheme", "clientPostLogoutRedirectURIsIllegalSchemeError"),
+
+        REQUEST_URIS("requestUris",
+                "Valid request URIs has an invalid value", "requestUrisAreInvalid",
+                null, null,
+                "Valid request URIs has a value with illegal scheme", "requestUrisHasIllegalSchemeError"),
 
         BACKCHANNEL_LOGOUT_URL("backchannelLogoutUrl",
                 "Backchannel logout URL is not a valid URL", "backchannelLogoutUrlIsInvalid",
@@ -90,7 +107,22 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
                 null, null,
                 "Terms of service URL uses an illegal scheme", "tosURLIllegalSchemeError"),
 
-        ADMIN_URL("masterSamlProcessingUrl",
+        ADMIN_URL("adminUrl",
+                "Admin URL is not a valid URL", "adminURLInvalid",
+                null, null,
+                "Admin URL uses an illegal scheme", "adminURLIllegalSchemeError"),
+
+        JWKS_URL("jwksUrl",
+                "JWKS URL is not a valid URL", "jwksURLInvalid",
+                null, null,
+                "JWKS URL uses an illegal scheme", "jwksURLIllegalSchemeError"),
+
+        FRONTCHANNEL_LOGOUT_URL("frontchannelLogoutUrl",
+                "Front-channel logout URL is not a valid URL", "frontchannelLogoutUrlInvalid",
+                null, null,
+                "Front-channel logout URL uses an illegal scheme", "frontchannelLogoutUrlIllegalSchemeError"),
+
+        SAML_ADMIN_URL("masterSamlProcessingUrl",
                 "Master SAML Processing URL is not a valid URL", "adminUrlURLInvalid",
                 null, null,
                 "Master SAML Processing URL uses an illegal scheme", "adminUrlURLIllegalSchemeError"),
@@ -203,6 +235,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         validateDefaultAcrValues(context);
         validateMinimumAcrValue(context);
         validateClientSessionTimeout(context);
+        validateX509Credentials(context);
 
         return context.toResult();
     }
@@ -251,6 +284,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
 
     private void validateUrls(ValidationContext<ClientModel> context) {
         ClientModel client = context.getObjectToValidate();
+        OIDCAdvancedConfigWrapper clientWrapper = OIDCAdvancedConfigWrapper.fromClientModel(client);
 
 
         // Use a fake URL for validating relative URLs as we may not be validating clients in the context of a request (import at startup)
@@ -261,7 +295,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         // don't need to use actual rootUrl here as it'd interfere with others URL validations
         String baseUrl = ResolveRelative.resolveRelativeUri(authServerUrl, authServerUrl, authServerUrl, client.getBaseUrl());
 
-        String backchannelLogoutUrl = OIDCAdvancedConfigWrapper.fromClientModel(client).getBackchannelLogoutUrl();
+        String backchannelLogoutUrl = clientWrapper.getBackchannelLogoutUrl();
         String resolvedBackchannelLogoutUrl =
                 ResolveRelative.resolveRelativeUri(authServerUrl, authServerUrl, authServerUrl, backchannelLogoutUrl);
 
@@ -271,13 +305,39 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         client.getRedirectUris().stream()
                 .map(u -> ResolveRelative.resolveRelativeUri(authServerUrl, authServerUrl, rootUrl, u))
                 .forEach(u -> checkUri(FieldMessages.REDIRECT_URIS, u, context, false, true));
+
+        List<String> postLogoutRedirectUris = clientWrapper.getAttributeMultivalued(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
+        postLogoutRedirectUris.stream()
+                .filter(uri -> !"-".equals(uri) && !"+".equals(uri) && !"*".equals(uri)) // In case of "+", the redirect-uris would be validated, so no need to repeat the error message again
+                .map(u -> ResolveRelative.resolveRelativeUri(authServerUrl, authServerUrl, rootUrl, u))
+                .forEach(u -> checkUri(FieldMessages.POST_LOGOUT_REDIRECT_URIS, u, context, false, true));
+
+        List<String> requestUris = clientWrapper.getRequestUris();
+        requestUris.stream()
+                .map(u -> ResolveRelative.resolveRelativeUri(authServerUrl, authServerUrl, rootUrl, u))
+                .forEach(u -> checkUri(FieldMessages.REQUEST_URIS, u, context, false, false));
+
+        // For SAML, it is tested below
+        if (OIDCLoginProtocol.LOGIN_PROTOCOL.equals(client.getProtocol())) {
+            String adminUrl = ResolveRelative.resolveRelativeUri(authServerUrl, authServerUrl, rootUrl, client.getManagementUrl());
+            if (adminUrl != null && adminUrl.contains(CLIENT_SESSION_HOST_PROPERTY)) {
+                // Fake hostname just for validation
+                adminUrl = adminUrl.replace(CLIENT_SESSION_HOST_PROPERTY, "localhost");
+            }
+            checkUri(FieldMessages.ADMIN_URL, adminUrl, context, true, false);
+        }
+        String jwksUrl = ResolveRelative.resolveRelativeUri(authServerUrl, authServerUrl, rootUrl, clientWrapper.getJwksUrl());
+        checkUri(FieldMessages.JWKS_URL, jwksUrl, context, true, false);
+        String frontchannelLogoutUrl = ResolveRelative.resolveRelativeUri(authServerUrl, authServerUrl, rootUrl, clientWrapper.getFrontChannelLogoutUrl());
+        checkUri(FieldMessages.FRONTCHANNEL_LOGOUT_URL, frontchannelLogoutUrl, context, true, false);
+
         checkUriLogo(FieldMessages.LOGO_URI, client.getAttribute(ClientModel.LOGO_URI), context);
         checkUri(FieldMessages.POLICY_URI, client.getAttribute(ClientModel.POLICY_URI), context, true, false);
         checkUri(FieldMessages.TOS_URI, client.getAttribute(ClientModel.TOS_URI), context, true, false);
 
         // extra validation URLs for SAML clients
         if (SamlProtocol.LOGIN_PROTOCOL.equals(client.getProtocol())) {
-            checkUri(FieldMessages.ADMIN_URL, client.getManagementUrl(), context, true, false);
+            checkUri(FieldMessages.SAML_ADMIN_URL, client.getManagementUrl(), context, true, false);
             checkUri(FieldMessages.SAML_ASSERTION_CONSUMER_URL_POST_URI, client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE), context, true, false);
             checkUri(FieldMessages.SAML_ASSERTION_CONSUMER_URL_REDIRECT_URI, client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE), context, true, false);
             checkUri(FieldMessages.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_URI, client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE), context, true, false);
@@ -307,7 +367,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
             URI uri = new URI(urlToCheck);
 
             boolean valid = true;
-            if (uri.getScheme() != null && (uri.getScheme().equals("data") || uri.getScheme().equals("javascript"))) {
+            if (uri.getScheme() != null && (uri.getScheme().equalsIgnoreCase("data") || uri.getScheme().equalsIgnoreCase("javascript"))) {
                 context.addError(field.getFieldId(), field.getScheme(), field.getSchemeKey());
                 valid = false;
             }
@@ -369,7 +429,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         try {
             URI uri = new URI(url);
 
-            if (uri.getScheme() != null &&  uri.getScheme().equals("javascript")) {
+            if (uri.getScheme() != null &&  uri.getScheme().equalsIgnoreCase("javascript")) {
                 context.addError(field.getFieldId(), field.getScheme(), field.getSchemeKey());
             }
 
@@ -542,6 +602,21 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
             }
         }
 
+    }
+
+    private void validateX509Credentials(ValidationContext<ClientModel> context) {
+        ClientModel client = context.getObjectToValidate();
+        if (!client.isPublicClient() && !client.isBearerOnly() && X509ClientAuthenticator.PROVIDER_ID.equals(client.getClientAuthenticatorType())) {
+            // TODO: return validation error for keycloak 27.0
+            if (Boolean.parseBoolean(client.getAttribute(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON))) {
+                logger.warnf("Option '%s' is deprecated. Please configure the X.509 client authenticator to use exact Subject DN for client '%s' in realm '%s'.",
+                        X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, client.getClientId(), context.getSession().getContext().getRealm().getName());
+            }
+            if (StringUtil.isBlank(client.getAttribute(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN))) {
+                logger.warnf("Option '%s' is null or empty, this configuration is deprecated, please configure it for better security for client '%s' in realm '%s'",
+                        X509ClientAuthenticator.ATTR_CA_SUBJECT_DN, client.getClientId(), context.getSession().getContext().getRealm().getName());
+            }
+        }
     }
 
     private Integer parseIntAttribute(String value) {

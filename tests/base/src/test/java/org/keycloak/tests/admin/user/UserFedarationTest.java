@@ -24,7 +24,6 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.providers.federation.UserMapStorageFactory;
-import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
@@ -40,7 +39,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class UserFedarationTest extends AbstractUserTest {
 
     @Test
-    @DatabaseTest
     public void getFederatedIdentities() {
         // Add sample identity provider
         addSampleIdentityProvider();
@@ -122,7 +120,6 @@ public class UserFedarationTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void createFederatedIdentities() {
         String identityProviderAlias = "social-provider-id";
         String username = "federated-identities";

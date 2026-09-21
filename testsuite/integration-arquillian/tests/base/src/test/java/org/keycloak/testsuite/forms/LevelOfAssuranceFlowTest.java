@@ -72,7 +72,6 @@ import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.DeleteCredentialPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
@@ -85,7 +84,6 @@ import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.RealmRepUtil;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
@@ -141,9 +139,6 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
     @Page
     protected DeleteCredentialPage deleteCredentialPage;
-
-    @Page
-    protected AppPage appPage;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -212,7 +207,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         configureStepUpFlow(TEST_REALM_NAME, testingClient, maxAge1, maxAge2, maxAge3);
     }
 
-    private static void configureStepUpFlow(String realmName, KeycloakTestingClient testingClient, int maxAge1, int maxAge2, int maxAge3) {
+    public static void configureStepUpFlow(String realmName, KeycloakTestingClient testingClient, int maxAge1, int maxAge2, int maxAge3) {
         testingClient.server(realmName).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(FLOW_ALIAS));
         testingClient.server(realmName)
                 .run(session -> FlowUtil.inCurrentRealm(session).selectFlow(FLOW_ALIAS).inForms(forms -> forms.clear()
@@ -1102,9 +1097,9 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
             authenticateWithUsernamePassword();
             authenticateWithTotp();
             assertLoggedInWithAcr("gold");
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             openLoginFormWithAcrClaim(true, "gold");
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         }
     }
 
@@ -1149,26 +1144,22 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
     }
     
     private void authenticateWithUsernamePassword() {
-        WaitUtils.waitUntilPageIsCurrent(loginPage);
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
     }
 
     private void reauthenticateWithPassword() {
-        WaitUtils.waitUntilPageIsCurrent(loginPage);
         loginPage.assertCurrent();
         Assertions.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
         loginPage.login(getPassword("test-user@localhost"));
     }
 
     private void authenticateWithTotp() {
-        WaitUtils.waitUntilPageIsCurrent(loginTotpPage);
         loginTotpPage.assertCurrent();
         loginTotpPage.login(totp.generateTOTP("totpSecret"));
     }
 
     private void authenticateWithButton() {
-        WaitUtils.waitUntilPageIsCurrent(pushTheButtonPage);
         pushTheButtonPage.assertCurrent();
         pushTheButtonPage.submit();
     }
@@ -1183,7 +1174,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
     }
 
     private void assertErrorPage(String expectedError) {
-        assertThat(true, is(errorPage.isCurrent()));
+        errorPage.assertCurrent();
         Assertions.assertEquals(expectedError, errorPage.getError());
         events.clear();
     }

@@ -26,9 +26,9 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.HtmlUnitBrowser;
+import org.keycloak.testsuite.util.MutualTLSUtils;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -120,6 +120,27 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     }
 
     @Test
+    public void loginWithRevalidateCertEnabledCertIsTrustedAndCASubjectDN() throws Exception {
+        x509BrowserLogin(createLoginSubjectEmailWithRevalidateCert("InvalidCN", "CN=Other", MutualTLSUtils.CA_CERTIFICATE_SUBJECT_DN), userId, "test-user@localhost", "test-user@localhost");
+    }
+
+    @Test
+    public void loginWithRevalidateCertEnabledAndInvalidCASubjectDN() throws Exception {
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", createLoginSubjectEmailWithRevalidateCert(
+                false, MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN, "CN=Other").getConfig());
+        String cfgId = createConfig(browserExecution.getId(), cfg);
+        Assertions.assertNotNull(cfgId);
+
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+
+        // Verify there is an error message
+        Assertions.assertNotNull(loginPage.getError());
+
+        assertThat(loginPage.getError(), containsString("Certificate validation's failed."));
+    }
+
+    @Test
     public void loginWithRevalidateCertEnabledCertWithIncorrectTruststoreConfig() throws Exception {
         try {
             // Simulate disabling of Truststore SPI on server
@@ -156,8 +177,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         loginConfirmationPage.ignore();
         loginPage.login("test-user@localhost", "password");
 
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
          EventAssertion.expectLoginSuccess(events.poll())
                  .userId(userId)
@@ -294,8 +314,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         loginPage.login("test-user@localhost", "password");
 
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll())
                 .userId(userId)
@@ -312,8 +331,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         // Continue with form based login
         loginPage.login("test-user@localhost", "password");
 
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.expectLoginSuccess(events.poll())
                 .userId(userId)
                 .details(Details.USERNAME, "test-user@localhost");
@@ -349,8 +367,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         // Continue with form based login
         loginPage.login("test-user@localhost", "password");
 
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.expectLoginSuccess(events.poll())
                 .userId(userId)
                 .details(Details.USERNAME, "test-user@localhost");
@@ -385,8 +402,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         loginConfirmationPage.confirm();
 
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test
@@ -494,8 +510,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         // X509 authenticator extracts the user identity, maps it to an existing
         // user and automatically logs the user in without prompting to confirm
         // the identity.
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation eventRep = EventAssertion.expectLoginSuccess(events.poll())
                 .userId(userId)
@@ -546,6 +561,6 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         loginConfirmationPage.confirm();
 
         log.debug("check if logged in");
-        assertThat(appPage.getRequestType(), is(equalTo(AppPage.RequestType.AUTH_RESPONSE)));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 }

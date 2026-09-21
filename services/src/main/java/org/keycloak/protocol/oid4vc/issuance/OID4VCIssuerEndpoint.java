@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oid4vc.issuance;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.PublicKey;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -53,7 +54,6 @@ import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.Details;
@@ -69,18 +69,18 @@ import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.IssuedVerifiableCredentialModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
-import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderFactory;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderException;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
@@ -93,6 +93,7 @@ import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSignerException;
 import org.keycloak.protocol.oid4vc.model.AttestationProof;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import org.keycloak.protocol.oid4vc.model.CredentialIssuer.BatchCredentialIssuance;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
@@ -112,10 +113,13 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
 import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
+import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.saml.processing.api.util.DeflateUtil;
 import org.keycloak.services.CorsErrorResponseException;
@@ -139,6 +143,7 @@ import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
+import static org.keycloak.constants.OID4VCIConstants.BATCH_CREDENTIAL_ISSUANCE_DEFAULT_MAX_BATCH_SIZE;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.getSupportedCredentials;
 import static org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant.AUTH_CODE_GRANT_TYPE;
@@ -180,7 +185,11 @@ public class OID4VCIssuerEndpoint {
     private AuthenticationManager.AuthResult cachedAuthResult;
 
     public static final String CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY = "credentialOfferLifespanS";
-    public static final int DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S = 30;
+
+    /**
+     * Default credential-offer lifespan is same as default "User-Initiated Action Lifespan" (5 minutes)
+     */
+    public static final int DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S = Constants.DEFAULT_ACCESS_CODE_LIFESPAN_USER_ACTION;
 
     public static final String DEFLATE_COMPRESSION = "DEF";
     public static final String NONCE_PATH = "nonce";
@@ -196,27 +205,13 @@ public class OID4VCIssuerEndpoint {
     // lifespan of credential offers in seconds
     private final int credentialOfferLifespan;
 
-    /**
-     * Credential builders are responsible for initiating the production of
-     * credentials in a specific format. Their output is an appropriate credential
-     * representation to be signed by a credential signer of the same format.
-     * <p></p>
-     * Due to technical constraints, we explicitly load credential builders into
-     * this map for they are configurable components. The key of the map is the
-     * credential {@link VCFormat} associated with the builder. The matching credential
-     * signer is directly loaded from the Keycloak container.
-     */
-    private final Map<String, CredentialBuilder> credentialBuilders;
-
     public OID4VCIssuerEndpoint(KeycloakSession session,
-                                Map<String, CredentialBuilder> credentialBuilders,
                                 AppAuthManager.BearerTokenAuthenticator authenticator,
                                 TimeProvider timeProvider,
                                 int credentialOfferLifespan) {
         this.session = session;
         this.bearerTokenAuthenticator = authenticator;
         this.timeProvider = timeProvider;
-        this.credentialBuilders = credentialBuilders;
         this.credentialOfferLifespan = credentialOfferLifespan;
     }
 
@@ -224,27 +219,24 @@ public class OID4VCIssuerEndpoint {
         this.session = keycloakSession;
         this.bearerTokenAuthenticator = new AppAuthManager.BearerTokenAuthenticator(keycloakSession);
         this.timeProvider = new OffsetTimeProvider();
-
-        this.credentialBuilders = loadCredentialBuilders(session);
-
-        RealmModel realm = keycloakSession.getContext().getRealm();
-        this.credentialOfferLifespan = Optional.ofNullable(realm.getAttribute(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY))
-                .map(Integer::valueOf)
-                .orElse(DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S);
+        this.credentialOfferLifespan = getCredentialOfferLifespan(keycloakSession.getContext().getRealm());
     }
 
     /**
-     * Create credential builders from configured component models in Keycloak.
-     *
-     * @return a map of the created credential builders with their supported formats as keys.
+     * Returns the configured credential-offer lifespan, falling back to the default for missing or malformed values.
      */
-    private Map<String, CredentialBuilder> loadCredentialBuilders(KeycloakSession keycloakSession) {
-        KeycloakSessionFactory keycloakSessionFactory = keycloakSession.getKeycloakSessionFactory();
-        return keycloakSessionFactory.getProviderFactoriesStream(CredentialBuilder.class)
-                .map(factory -> (CredentialBuilderFactory) factory)
-                .map(factory -> factory.create(keycloakSession, null))
-                .collect(Collectors.toMap(CredentialBuilder::getSupportedFormat,
-                        credentialBuilder ->  credentialBuilder));
+    public static int getCredentialOfferLifespan(RealmModel realm) {
+        String configuredLifespan = realm.getAttribute(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY);
+        if (configuredLifespan == null) {
+            return DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
+        }
+        try {
+            return Integer.parseInt(configuredLifespan);
+        } catch (NumberFormatException e) {
+            LOGGER.warnf("Invalid credential offer lifespan '%s' configured for realm '%s'; using default of %d seconds",
+                    configuredLifespan, realm.getName(), DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S);
+            return DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
+        }
     }
 
     /**
@@ -304,7 +296,7 @@ public class OID4VCIssuerEndpoint {
      * @throws CorsErrorResponseException if the client is not enabled for OID4VCI.
      */
     private void checkClientEnabled(EventBuilder eventBuilder) {
-        AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
+        AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession(eventBuilder);
         ClientModel client = clientSession.getClient();
 
         boolean oid4vciEnabled = Boolean.parseBoolean(client.getAttributes().get(OID4VCI_ENABLED_ATTRIBUTE_KEY));
@@ -424,7 +416,7 @@ public class OID4VCIssuerEndpoint {
      * | yes      | yes      | yes     | Offer restricted to a specific user.       |
      * +----------+----------+---------+--------------------------------------------+
      * </p>
-     * <b>Pre-Authorized Offer</b>
+     * <b>Pre-Authorized Code Grant Offer</b>
      * <ul>
      *   <li>A pre-authorized offer is authorized for the clientId from the current login session</li>
      *   <li>If targetUser is null or empty, it defaults to the user from the current login session</li>
@@ -434,7 +426,7 @@ public class OID4VCIssuerEndpoint {
      *   <li>An offer can optionally have a predefined expiry date</li>
      * </ul>
      *
-     * <b>Non Pre-Authorized Offer</b>
+     * <b>Authorization Code Grant Offer</b>
      * <ul>
      *   <li>If targetUser is null or empty, the generated offer is "anonymous"</li>
      *   <li>If targetUser is equal to the current login, the offer is "self issued"</li>
@@ -475,20 +467,20 @@ public class OID4VCIssuerEndpoint {
             @QueryParam("credential_configuration_id") String credentialConfigurationId,
             @QueryParam("pre_authorized") @DefaultValue("false") Boolean preAuthorized,
             @QueryParam("target_user") String targetUser,
-            @QueryParam("expire") Integer expiresAt,
+            @QueryParam("expire") Long expiresAt,
             @QueryParam("type") @DefaultValue("uri") OfferResponseType responseType,
             @QueryParam("width") @DefaultValue("200") int width,
             @QueryParam("height") @DefaultValue("200") int height
     ) {
         configureCors(true);
-        AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
+        EventBuilder eventBuilder = new EventBuilder(session.getContext().getRealm(), session, session.getContext().getConnection())
+                .event(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER);
+        AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession(eventBuilder);
         UserSessionModel userSession = clientSession.getUserSession();
         UserModel loginUserModel = userSession.getUser();
         ClientModel clientModel = clientSession.getClient();
-        RealmModel realmModel = clientModel.getRealm();
 
-        EventBuilder eventBuilder = new EventBuilder(realmModel, session, session.getContext().getConnection());
-        eventBuilder.event(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER)
+        eventBuilder
                 .client(clientModel)
                 .user(loginUserModel)
                 .session(userSession.getId())
@@ -529,15 +521,28 @@ public class OID4VCIssuerEndpoint {
             targetUser = loginUserModel.getUsername();
         }
 
+        long currentTime = timeProvider.currentTimeSeconds();
+        long maximumExpiresAt = currentTime + credentialOfferLifespan;
         if (expiresAt == null) {
-            expiresAt = timeProvider.currentTimeSeconds() + credentialOfferLifespan;
+            expiresAt = maximumExpiresAt;
+        }
+        if (expiresAt <= currentTime || expiresAt > maximumExpiresAt) {
+            var errorMessage = String.format(
+                    "Credential offer expiration must be after the current time and no later than %d", maximumExpiresAt);
+            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_REQUEST.getValue());
+            throw new CorsErrorResponseException(cors,
+                    ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(), errorMessage, Response.Status.BAD_REQUEST);
         }
 
         // Create the CredentialsOffer
         //
-        String targetClientId = clientModel.getClientId();
         String grantType = preAuthorized ? PRE_AUTH_GRANT_TYPE : AUTH_CODE_GRANT_TYPE;
         List<String> credentialConfigurationIds = List.of(credentialConfigurationId);
+
+        // Bind pre-authorized code offers to the authenticated client to prevent redemption from a different client_id.
+        // Authorization Code Grant offers are intentionally not bound to a client_id.
+        // https://github.com/keycloak/keycloak/issues/48188
+        String targetClientId = preAuthorized ? clientModel.getClientId() : null;
 
         CredentialOfferState offerState;
         try {
@@ -545,6 +550,30 @@ public class OID4VCIssuerEndpoint {
             CredentialOfferProvider offerProvider = session.getProvider(CredentialOfferProvider.class);
             offerState = offerProvider.createCredentialOffer(loginUserModel, grantType,
                     credentialConfigurationIds, targetClientId, targetUser, expiresAt);
+            if (preAuthorized) {
+                offerState.setOriginatingUserId(loginUserModel.getId());
+                // Bearer authentication reconstructs request-scoped sessions for stateless tokens. Bind the offer to
+                // a session only when the access token identifies a persistent online or offline origin.
+                AccessTokenContext.SessionType originatingSessionType = session
+                        .getProvider(TokenContextEncoderProvider.class)
+                        .getTokenContextFromTokenId(getAuthResult(eventBuilder).token().getId())
+                        .getSessionType();
+                boolean transientUserSession = originatingSessionType == AccessTokenContext.SessionType.TRANSIENT;
+                boolean originatingSessionOffline = switch (originatingSessionType) {
+                    case OFFLINE, OFFLINE_TRANSIENT_CLIENT -> true;
+                    case UNKNOWN -> userSession.isOffline();
+                    default -> false;
+                };
+                boolean bindOriginatingSession = !transientUserSession
+                        && (originatingSessionType != AccessTokenContext.SessionType.UNKNOWN
+                        || loginUserModel.getServiceAccountClientLink() == null);
+                if (bindOriginatingSession) {
+                    offerState.setOriginatingUserSessionId(userSession.getId());
+                    offerState.setOriginatingUserSessionOffline(originatingSessionOffline);
+                }
+                offerState.setOriginatingUserPasswordCredentialCreatedDate(
+                        OID4VCUtil.getPasswordCredentialTimestamp(loginUserModel));
+            }
 
         } catch (CredentialOfferException ex) {
             eventBuilder.detail(Details.REASON, ex.getMessage()).error(ex.getErrorType());
@@ -696,14 +725,14 @@ public class OID4VCIssuerEndpoint {
                 .entity(credOffer));
     }
 
-    private void checkScope(CredentialScopeModel requestedCredential) {
-        AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
+    private void checkScope(CredentialScopeModel requestedCredential, EventBuilder event) {
+        AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession(event);
         String vcIssuanceFlow = clientSession.getNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
 
         if (vcIssuanceFlow == null || !vcIssuanceFlow.equals(PRE_AUTH_GRANT_TYPE)) {
             // Use getAuthResult() instead of bearerTokenAuthenticator.authenticate() directly
             // This ensures we benefit from the cachedAuthResult caching that prevents DPoP proof reuse
-            AccessToken accessToken = getAuthResult().token();
+            AccessToken accessToken = getAuthResult(event).token();
             if (Arrays.stream(accessToken.getScope().split(" "))
                     .noneMatch(tokenScope -> tokenScope.equals(requestedCredential.getScope()))) {
                 LOGGER.debugf("Scope check failure: required scope = %s, " +
@@ -726,6 +755,21 @@ public class OID4VCIssuerEndpoint {
     private void checkUserHasVerifiableCredential(UserModel user, CredentialScopeModel requestedCredential, EventBuilder event) {
         if (!OID4VCUtil.hasVerifiableCredential(session, user, requestedCredential)) {
             String errorMessage = String.format("User '%s' does not have requested verifiable credential '%s'", user.getUsername(), requestedCredential.getCredentialConfigurationId());
+            LOGGER.debugf(errorMessage);
+            event.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+            throw new CorsErrorResponseException(cors,
+                    ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(),
+                    errorMessage,
+                    Response.Status.BAD_REQUEST);
+        }
+    }
+
+    private void checkUserHasIssuedVerifiableCredential(UserModel user, CredentialScopeModel requestedCredential, String issuedCredentialId, ClientModel client, EventBuilder event) {
+        try {
+            OID4VCUtil.checkIssuedVerifiableCredential(session, user, issuedCredentialId, requestedCredential, client);
+        } catch (IllegalStateException ise) {
+            String errorMessage = String.format("User '%s' does not have valid requested issued verifiable credential with ID '%s'. Details: %s",
+                    user.getUsername(), issuedCredentialId, ise.getMessage());
             LOGGER.debugf(errorMessage);
             event.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
             throw new CorsErrorResponseException(cors,
@@ -760,13 +804,13 @@ public class OID4VCIssuerEndpoint {
 
         cors = Cors.builder().auth().allowedMethods(HttpPost.METHOD_NAME).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
+        // Authenticate before any processing of the payload
+        AuthenticationManager.AuthResult authResult = getAuthResult(eventBuilder);
+
         CredentialIssuer issuerMetadata = new OID4VCIssuerWellKnownProvider(session).getIssuerMetadata();
 
         // Validate request encryption
         CredentialRequest credentialRequest = validateRequestEncryption(requestPayload, issuerMetadata, eventBuilder);
-
-        // Authenticate first to fail fast on auth errors
-        AuthenticationManager.AuthResult authResult = getAuthResult();
 
         // Set client and user info in event
         ClientModel clientModel = session.getContext().getClient();
@@ -875,42 +919,43 @@ public class OID4VCIssuerEndpoint {
 
             offerState = offerStorage.getOfferStateById(credOfferId);
             if (offerState == null) {
-                var errorMessage = "No credential offer state for: " + credOfferId;
-                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
-            }
+                if (tokenAuthDetail.getIssuedCredentialId() == null) {
+                    var errorMessage = "No credential offer state for: " + credOfferId;
+                    eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+                }
+                LOGGER.debugf("Credential offer '%s' no longer present in storage — skipping offer validation for re-issuance (issuedCredentialId: %s)",
+                        credOfferId, tokenAuthDetail.getIssuedCredentialId());
+            } else {
 
-            // Verify not expired
-            // The cache should have evicted the expired CredentialOfferState - we check anyway
-            if (offerState.isExpired()) {
-                var errorMessage = "Credential offer has already expired";
-                LOGGER.errorf(errorMessage);
-                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
-            }
+                if (offerState.isExpired()) {
+                    var errorMessage = "Credential offer has already expired";
+                    LOGGER.errorf(errorMessage);
+                    eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+                }
 
-            // Verify the user login session
-            //
-            if (offerState.getTargetUserId() != null && !offerState.getTargetUserId().equals(userModel.getId())) {
-                var errorMessage = "Unexpected login user: " + userModel.getUsername();
-                LOGGER.errorf(errorMessage + " != %s", offerState.getTargetUserId());
-                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
-            }
+                if (offerState.getTargetUserId() != null && !offerState.getTargetUserId().equals(userModel.getId())) {
+                    var errorMessage = "Unexpected login user: " + userModel.getUsername();
+                    LOGGER.errorf(errorMessage + " != %s", offerState.getTargetUserId());
+                    eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+                }
 
-            // Verify the login client
-            //
-            if (offerState.getTargetClientId() != null && !offerState.getTargetClientId().equals(clientModel.getClientId())) {
-                var errorMessage = "Unexpected login client: " + clientModel.getClientId();
-                LOGGER.errorf(errorMessage + " != %s", offerState.getTargetClientId());
-                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+                if (offerState.getTargetClientId() != null && !offerState.getTargetClientId().equals(clientModel.getClientId())) {
+                    var errorMessage = "Unexpected login client: " + clientModel.getClientId();
+                    LOGGER.errorf(errorMessage + " != %s", offerState.getTargetClientId());
+                    eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+                }
             }
         }
 
         // Validate that authorization_details from the token matches the offer state
         // This ensures the correct access token is being used for the credential request
-        if (offerState != null && !List.of(tokenAuthDetail).equals(offerState.getAuthorizationDetails())) {
+        LOGGER.debugf("Validating authorization_details: offerState=%s, credOfferId=%s, issuedCredentialId=%s",
+                offerState != null ? "present" : "null", credOfferId, tokenAuthDetail.getIssuedCredentialId());
+        if (offerState != null && !offerState.matchAuthorizationDetails(List.of(tokenAuthDetail))) {
             var errorMessage = "Authorization details in access token do not match the credential offer state. " +
                     "The access token may not be the one issued for this credential offer.";
             LOGGER.debug(errorMessage);
@@ -970,38 +1015,68 @@ public class OID4VCIssuerEndpoint {
         LOGGER.debugf("Found credential scope for credential_configuration_id: %s", authorizedCredentialConfigurationId);
         eventBuilder.detail(Details.CREDENTIAL_TYPE, authorizedCredentialConfigurationId);
 
-        checkScope(authorizedCredentialScope);
+        checkScope(authorizedCredentialScope, eventBuilder);
         checkUserHasVerifiableCredential(userModel, authorizedCredentialScope, eventBuilder);
+        checkUserHasIssuedVerifiableCredential(userModel, authorizedCredentialScope, tokenAuthDetail.getIssuedCredentialId(), clientModel, eventBuilder);
 
         SupportedCredentialConfiguration supportedCredential =
                 OID4VCIssuerWellKnownProvider.toSupportedCredentialConfiguration(session, authorizedCredentialScope);
 
         enforceProofContractForCredential(supportedCredential, credentialRequest.getProofs());
+        Map<String, JsonWebToken> verifiedProofCNonces = new HashMap<>();
 
         // Get the list of all proofs (handles single proof, multiple proofs, or none)
         List<String> allProofs = getAllProofs(credentialRequest);
+        if (allProofs.stream().anyMatch(p -> p == null || p.isBlank())) {
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_PROOF, "Proof values must not be null or blank"));
+        }
 
-        // Generate credential response
-        CredentialResponse responseVO = new CredentialResponse();
+        // Prepare credential bodies and validate key binding proofs before consuming the nonce.
+        List<VCIssuanceContext> vcIssuanceContexts = new ArrayList<>();
 
         if (allProofs.isEmpty()) {
             // Single issuance without proof
-            Object theCredential = getCredential(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder);
-            responseVO.addCredential(theCredential);
+            VCIssuanceContext vcIssuanceContext = prepareCredential(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder);
+            vcIssuanceContexts.add(vcIssuanceContext);
+            verifiedProofCNonces.putAll(vcIssuanceContext.getVerifiedCNonces());
         } else {
             // Issue credentials for each proof
             Proofs originalProofs = credentialRequest.getProofs();
             // Determine the proof type from the original proofs
             String proofType = originalProofs.getProofType();
 
-            for (String currentProof : allProofs) {
-                Proofs proofForIteration = Proofs.create(proofType, currentProof);
-                // Creating credential with keybinding to the current proof
-                credentialRequest.setProofs(proofForIteration);
-                Object theCredential = getCredential(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder);
-                responseVO.addCredential(theCredential);
+            if (allProofs.size() > 1) {
+                Integer maxBatchSize = Optional.ofNullable(issuerMetadata.getBatchCredentialIssuance())
+                        .map(BatchCredentialIssuance::getBatchSize)
+                        .orElse(BATCH_CREDENTIAL_ISSUANCE_DEFAULT_MAX_BATCH_SIZE);
+                if (allProofs.size() > maxBatchSize) {
+                    LOGGER.warnf("Reducing credential batch size to: %d", maxBatchSize);
+                    allProofs = allProofs.subList(0, maxBatchSize);
+                }
             }
-            credentialRequest.setProofs(originalProofs);
+
+            try {
+                for (String currentProof : allProofs) {
+                    Proofs proofForIteration = Proofs.create(proofType, currentProof);
+                    // Creating credential with keybinding to the current proof
+                    credentialRequest.setProofs(proofForIteration);
+                    VCIssuanceContext vcIssuanceContext = prepareCredential(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder);
+                    vcIssuanceContexts.add(vcIssuanceContext);
+                    verifiedProofCNonces.putAll(vcIssuanceContext.getVerifiedCNonces());
+                }
+            } finally {
+                credentialRequest.setProofs(originalProofs);
+            }
+        }
+
+        // Fail-fast if any cnonce already consumed without consuming it
+        rejectConsumedProofCNonce(verifiedProofCNonces);
+
+        // Generate credential response before consuming the nonce, so server-side signing/encryption failures do not
+        // burn an otherwise valid proof nonce.
+        CredentialResponse responseVO = new CredentialResponse();
+        for (VCIssuanceContext vcIssuanceContext : vcIssuanceContexts) {
+            responseVO.addCredential(signCredential(supportedCredential, vcIssuanceContext, eventBuilder));
         }
 
         // Encrypt all responses if encryption parameters are provided, except for error credential responses
@@ -1020,12 +1095,13 @@ public class OID4VCIssuerEndpoint {
                     .build();
         }
 
+        // Consume cnonce to prevent replay
+        consumeProofCNonce(verifiedProofCNonces);
+
         // Mark event as successful
         eventBuilder.detail(Details.SCOPE, supportedCredential.getScope())
                 .detail(Details.VERIFIABLE_CREDENTIAL_FORMAT, supportedCredential.getFormat())
                 .detail(Details.VERIFIABLE_CREDENTIALS_ISSUED, String.valueOf(responseVO.getCredentials().size()));
-
-        recordIssuedVerifiableCredentials(userModel, clientModel, authorizedCredentialScope, responseVO.getCredentials().size());
 
         eventBuilder.success();
 
@@ -1037,24 +1113,6 @@ public class OID4VCIssuerEndpoint {
         }
 
         return response;
-    }
-
-    private void recordIssuedVerifiableCredentials(UserModel userModel, ClientModel clientModel, CredentialScopeModel credentialScope, int count) {
-        String credentialScopeName = credentialScope.getName();
-        try {
-            if (count > 0) {
-                IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel(userModel.getId(), credentialScopeName, clientModel.getId());
-
-                long issuedAt = Time.currentTimeMillis();
-                model.setIssuedAt(issuedAt);
-                model.setExpiresAt(issuedAt + (credentialScope.getExpiryInSeconds() * 1000));
-
-                session.users().addIssuedVerifiableCredential(model);
-                LOGGER.debugf("Recorded VC issuance: user=%s, client=%s, type=%s, credentials=%d", userModel.getUsername(), clientModel.getClientId(), credentialScopeName, count);
-            }
-        } catch (Exception e) {
-            LOGGER.warnf(e, "Failed to record VC issuance for user=%s, client=%s, type=%s", userModel.getUsername(), clientModel.getClientId(), credentialScopeName);
-        }
     }
 
     private List<OID4VCAuthorizationDetail> getAuthorizationDetailsResponse(AccessToken accessToken) {
@@ -1110,7 +1168,8 @@ public class OID4VCIssuerEndpoint {
                         eventBuilder.detail(Details.REASON, errorMessage)
                                 .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                     }
-                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS,
+                            "Encryption is required but request is not a valid JWE."));
                 }
                 if (contentTypeIsJwt) {
                     String errorMessage = "Request has JWT content-type but is not a valid JWE: " + e.getMessage();
@@ -1119,7 +1178,8 @@ public class OID4VCIssuerEndpoint {
                         eventBuilder.detail(Details.REASON, errorMessage)
                                 .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                     }
-                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS,
+                            "Request has JWT content-type but is not a valid JWE."));
                 }
             }
         }
@@ -1204,6 +1264,18 @@ public class OID4VCIssuerEndpoint {
         }
         KeyWrapper keyWrapper = matchingKeys.get(0);
 
+        String alg = header.getAlgorithm();
+        if (alg == null) {
+            throw new JWEException("Missing alg in JWE header");
+        }
+        if (!alg.equals(keyWrapper.getAlgorithm())) {
+            String errorMessage = String.format(
+                    "Key management algorithm mismatch: header alg=%s does not match key algorithm=%s for kid=%s",
+                    alg, keyWrapper.getAlgorithm(), kid);
+            LOGGER.debug(errorMessage);
+            throw new JWEException(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
+        }
+
         // Set the decryption key
         jwe.getKeyStorage().setDecryptionKey(keyWrapper.getPrivateKey());
 
@@ -1242,8 +1314,8 @@ public class OID4VCIssuerEndpoint {
     // TODO handle compression/decompression transparently at the JWE software layer.
     private byte[] decompress(byte[] content, String zipAlgorithm) throws JWEException {
         if (DEFLATE_COMPRESSION.equals(zipAlgorithm)) {
-            try {
-                return IOUtils.toByteArray(DeflateUtil.decode(content));
+            try (InputStream decoded = DeflateUtil.decode(content)) {
+                return IOUtils.toByteArray(decoded);
             } catch (IOException e) {
                 throw new JWEException("Failed to decompress: " + e.getMessage());
             }
@@ -1334,6 +1406,52 @@ public class OID4VCIssuerEndpoint {
 
         // Validation already happened in normalizeProofFields, so we can safely extract proofs
         return proofs.getAllProofs();
+    }
+
+    private CNonceHandler getCNonceHandlerForProofValidation() {
+        CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
+
+        if (cNonceHandler == null) {
+            throw new ErrorResponseException(INVALID_PROOF.getValue(), "CNonce handler not configured", Response.Status.BAD_REQUEST);
+        }
+
+        if (!cNonceHandler.supportsCNonceConsumption()) {
+            throw new ErrorResponseException(INVALID_PROOF.getValue(), "CNonce handler does not support nonce consumption", Response.Status.BAD_REQUEST);
+        }
+
+        return  cNonceHandler;
+    }
+
+    private void rejectConsumedProofCNonce(Map<String, JsonWebToken> verifiedCNonces) {
+        if (verifiedCNonces.isEmpty()) {
+            return;
+        }
+
+        CNonceHandler cNonceHandler = getCNonceHandlerForProofValidation();
+
+        for (Map.Entry<String, JsonWebToken> cNonce : verifiedCNonces.entrySet()) {
+            try {
+                cNonceHandler.ensureCNonceNotYetConsumed(cNonce.getKey());
+            } catch (VerificationException e) {
+                throw new ErrorResponseException(INVALID_NONCE.getValue(), e.getMessage(), Response.Status.BAD_REQUEST);
+            }
+        }
+    }
+
+    private void consumeProofCNonce(Map<String, JsonWebToken> verifiedCNonces) {
+        if (verifiedCNonces.isEmpty()) {
+            return;
+        }
+
+        CNonceHandler cNonceHandler = getCNonceHandlerForProofValidation();
+
+        for (Map.Entry<String, JsonWebToken> cNonce : verifiedCNonces.entrySet()) {
+            try {
+                cNonceHandler.consumeCNonce(cNonce.getKey(), cNonce.getValue());
+            } catch (VerificationException e) {
+                throw new ErrorResponseException(INVALID_NONCE.getValue(), e.getMessage(), Response.Status.BAD_REQUEST);
+            }
+        }
     }
 
     private void enforceProofContractForCredential(SupportedCredentialConfiguration credentialConfiguration, Proofs proofs) {
@@ -1529,14 +1647,15 @@ public class OID4VCIssuerEndpoint {
         }
     }
 
-    private AuthenticatedClientSessionModel getAuthenticatedClientSession() {
-        AuthenticationManager.AuthResult authResult = getAuthResult();
+    private AuthenticatedClientSessionModel getAuthenticatedClientSession(EventBuilder event) {
+        AuthenticationManager.AuthResult authResult = getAuthResult(event);
         UserSessionModel userSessionModel = authResult.session();
 
         AuthenticatedClientSessionModel clientSession = userSessionModel.
                 getAuthenticatedClientSessionByClient(
                         authResult.client().getId());
         if (clientSession == null) {
+            event.detail(Details.REASON, "Missing client session on the user session").error(ErrorType.INVALID_TOKEN.getValue());
             throw new CorsErrorResponseException(
                     cors,
                     ErrorType.INVALID_TOKEN.getValue(),
@@ -1546,13 +1665,14 @@ public class OID4VCIssuerEndpoint {
         return clientSession;
     }
 
-    private AuthenticationManager.AuthResult getAuthResult() {
+    private AuthenticationManager.AuthResult getAuthResult(EventBuilder event) {
         if (cachedAuthResult != null) {
             return cachedAuthResult;
         }
 
         AuthenticationManager.AuthResult authResult = bearerTokenAuthenticator.authenticate();
         if (authResult == null) {
+            event.detail(Details.REASON, "Invalid or missing token").error(ErrorType.INVALID_TOKEN.getValue());
             throw new CorsErrorResponseException(
                     cors,
                     ErrorType.INVALID_TOKEN.getValue(),
@@ -1578,6 +1698,7 @@ public class OID4VCIssuerEndpoint {
                     );
                 } catch (VerificationException e) {
                     LOGGER.debugf("DPoP nonce validation failed: %s", e.getMessage());
+                    event.detail(Details.REASON, "Invalid or missing token. DPoP nonce validation failed").error(ErrorType.INVALID_TOKEN.getValue());
                     throw new CorsErrorResponseException(
                             cors,
                             ErrorType.INVALID_TOKEN.getValue(),
@@ -1592,20 +1713,13 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
-     * Get a signed credential
-     *
-     * @param authResult          authResult containing the userSession to create the credential for
-     * @param credentialConfig    the supported credential configuration
-     * @param authDetail          Parsed OID4VC authorization_detail
-     * @param credentialRequestVO the credential request
-     * @param eventBuilder        the event builder for logging events
-     * @return the signed credential
+     * Prepare an unsigned credential and validate any key binding proof before signing.
      */
-    private Object getCredential(AuthenticationManager.AuthResult authResult,
-                                 SupportedCredentialConfiguration credentialConfig,
-                                 OID4VCAuthorizationDetail authDetail,
-                                 CredentialRequest credentialRequestVO,
-                                 EventBuilder eventBuilder
+    private VCIssuanceContext prepareCredential(AuthenticationManager.AuthResult authResult,
+                                                SupportedCredentialConfiguration credentialConfig,
+                                                OID4VCAuthorizationDetail authDetail,
+                                                CredentialRequest credentialRequestVO,
+                                                EventBuilder eventBuilder
     ) {
 
         // Get the client scope model from the credential configuration
@@ -1625,13 +1739,20 @@ public class OID4VCIssuerEndpoint {
                     return null;
                 })
                 .filter(Objects::nonNull)
+                .filter(mapper -> mapper.supportsCredentialFormat(credentialScopeModel.getFormat()))
                 .toList();
 
         VCIssuanceContext vcIssuanceContext = getVCToSign(protocolMappers, credentialConfig, authResult, authDetail, credentialRequestVO, credentialScopeModel, eventBuilder);
 
         // Enforce key binding prior to signing if necessary
-        enforceKeyBindingIfProofProvided(vcIssuanceContext);
+        enforceKeyBindingIfProofProvided(vcIssuanceContext, eventBuilder);
 
+        return vcIssuanceContext;
+    }
+
+    private Object signCredential(SupportedCredentialConfiguration credentialConfig,
+                                  VCIssuanceContext vcIssuanceContext,
+                                  EventBuilder eventBuilder) {
         // Retrieve matching credential signer
         CredentialSigner<?> credentialSigner = session.getProvider(CredentialSigner.class,
                 credentialConfig.getFormat());
@@ -1704,9 +1825,10 @@ public class OID4VCIssuerEndpoint {
         Instant normalizedIssuance = timeClaimNormalizer.normalize(issuance);
 
         // Compute expiration date from client scope configuration and normalize it
+        // Note: The IssuedVerifiableCredentialModel.expiresAt and refresh token still use the full credential lifetime
         CredentialScopeModel clientScopeModel = credentialScopeModel;
-        Integer expiryInSeconds = clientScopeModel.getExpiryInSeconds();
-        Instant expiration = normalizedIssuance.plusSeconds(expiryInSeconds);
+        Integer refreshIntervalInSeconds = clientScopeModel.getRefreshIntervalInSeconds();
+        Instant expiration = normalizedIssuance.plusSeconds(refreshIntervalInSeconds);
         Instant normalizedExpiration = timeClaimNormalizer.normalize(expiration);
 
         // set the required claims
@@ -1716,26 +1838,61 @@ public class OID4VCIssuerEndpoint {
                 .setType(credentialScopeModel.getSupportedCredentialTypes());
 
         Map<String, Object> subjectClaims = new HashMap<>();
-        protocolMappers.forEach(mapper -> mapper.setClaim(subjectClaims, authResult.session()));
-
         Map<String, Object> subjectClaimsWithMetadataPrefix = new HashMap<>();
-        protocolMappers
-                .forEach(mapper -> mapper.setClaimWithMetadataPrefix(subjectClaims, subjectClaimsWithMetadataPrefix));
+
+        // A scope whose format was switched, or whose mappers were created via scope update/import, is not
+        // revalidated by the admin API. Guard here against misconfigured mappers (a missing mdoc namespace, or
+        // user-controlled data mapped to a reserved claim) so they fail the request instead of emitting broken
+        // or overridden claims.
+        for (OID4VCMapper mapper : protocolMappers) {
+            try {
+                mapper.validate();
+            } catch (ProtocolMapperConfigException e) {
+                throw badRequestException(ErrorType.INVALID_CREDENTIAL_REQUEST, e.getMessage(), eventBuilder);
+            }
+        }
+
+        if (VCFormat.MSO_MDOC.equals(credentialConfig.getFormat())) {
+            // mDoc data element identifiers may repeat across namespaces while sharing one raw claim key, so each
+            // mapper writes into its own scratch map. A shared map would let a mapper without a value pick up the
+            // claim of a previous mapper with the same name and copy it into the wrong namespace.
+            protocolMappers.forEach(mapper -> {
+                Map<String, Object> mapperClaims = new HashMap<>();
+                mapper.setClaim(mapperClaims, authResult.session());
+                mapper.setClaimWithMetadataPrefix(mapperClaims, subjectClaimsWithMetadataPrefix);
+            });
+        } else {
+            protocolMappers.forEach(mapper -> mapper.setClaim(subjectClaims, authResult.session()));
+            protocolMappers
+                    .forEach(mapper -> mapper.setClaimWithMetadataPrefix(subjectClaims, subjectClaimsWithMetadataPrefix));
+        }
 
         // Validate that requested claims from authorization_details are present
         String credentialConfigId = credentialConfig.getId();
         validateRequestedClaimsArePresent(subjectClaimsWithMetadataPrefix, credentialConfig, authResult.user(), authDetail, credentialConfigId, eventBuilder);
 
+        // OID4VCI 1.0 Appendix C.2 gives ISO mdoc paths namespace/data-element semantics. The metadata-prefixed
+        // claim map already has that namespace -> data element layout; JSON-based formats keep credentialSubject.
+        Map<String, Object> credentialSubjectClaims = VCFormat.MSO_MDOC.equals(credentialConfig.getFormat())
+                ? subjectClaimsWithMetadataPrefix
+                : subjectClaims;
+
         // Include all available claims
-        subjectClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
+        credentialSubjectClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
 
         protocolMappers.forEach(mapper -> mapper.setClaim(vc, authResult.session()));
 
         LOGGER.debugf("The credential to sign is: %s", vc);
 
         // Build format-specific credential
-        CredentialBody credentialBody = this.findCredentialBuilder(credentialConfig)
-                .buildCredentialBody(vc, credentialConfig.getCredentialBuildConfig());
+        CredentialBody credentialBody;
+        try {
+            credentialBody = this.findCredentialBuilder(session, credentialConfig)
+                    .buildCredentialBody(vc, credentialConfig.getCredentialBuildConfig());
+        } catch (CredentialBuilderException e) {
+            throw badRequestException(ErrorType.INVALID_CREDENTIAL_REQUEST,
+                    "Could not build credential: " + e.getMessage(), eventBuilder);
+        }
 
         return new VCIssuanceContext()
                 .setAuthResult(authResult)
@@ -1747,7 +1904,7 @@ public class OID4VCIssuerEndpoint {
     /**
      * Enforce key binding: Validate proof and bind associated key to credential in issuance context.
      */
-    private void enforceKeyBindingIfProofProvided(VCIssuanceContext vcIssuanceContext) {
+    private void enforceKeyBindingIfProofProvided(VCIssuanceContext vcIssuanceContext, EventBuilder eventBuilder) {
         Proofs proofs = vcIssuanceContext.getCredentialRequest().getProofs();
         if (proofs == null) {
             LOGGER.debugf("No proofs provided, skipping key binding");
@@ -1756,11 +1913,11 @@ public class OID4VCIssuerEndpoint {
 
         // Validate each proof type that is present
         for (String proofType : proofs.getPresentProofTypes()) {
-            validateProofs(vcIssuanceContext, proofType);
+            validateProofs(vcIssuanceContext, proofType, eventBuilder);
         }
     }
 
-    private void validateProofs(VCIssuanceContext vcIssuanceContext, String proofType) {
+    private void validateProofs(VCIssuanceContext vcIssuanceContext, String proofType, EventBuilder eventBuilder) {
         ProofValidator proofValidator = session.getProvider(ProofValidator.class, proofType);
         if (proofValidator == null) {
             throw new BadRequestException(String.format("Unable to validate proofs of type %s", proofType));
@@ -1774,6 +1931,13 @@ public class OID4VCIssuerEndpoint {
                 vcIssuanceContext.getCredentialBody().addKeyBinding(jwks.get(0));
             }
         } catch (VCIssuerException e) {
+            eventBuilder.detail(Details.REASON, e.getMessage())
+                    .error(e.getErrorType().getValue());
+
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(e.getMessage(), e);
+            }
+
             switch (e.getErrorType()) {
                 case INVALID_NONCE:
                     throw new ErrorResponseException(INVALID_NONCE.getValue(), e.getMessage(), Response.Status.BAD_REQUEST);
@@ -1782,12 +1946,23 @@ public class OID4VCIssuerEndpoint {
                 default:
                     throw new BadRequestException("Could not validate provided proof", e);
             }
+        } catch (CredentialBuilderException e) {
+            eventBuilder.detail(Details.REASON, e.getMessage())
+                    .error(INVALID_PROOF.getValue());
+
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(e.getMessage(), e);
+            }
+
+            // A proof key that cannot be bound to the credential, such as an mDoc COSE_Key conversion that rejects
+            // the key curve, is an invalid proof rather than a server error.
+            throw new ErrorResponseException(INVALID_PROOF.getValue(), e.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
-    private CredentialBuilder findCredentialBuilder(SupportedCredentialConfiguration credentialConfig) {
+    private CredentialBuilder findCredentialBuilder(KeycloakSession session, SupportedCredentialConfiguration credentialConfig) {
         String format = credentialConfig.getFormat();
-        CredentialBuilder credentialBuilder = credentialBuilders.get(format);
+        CredentialBuilder credentialBuilder = session.getProvider(CredentialBuilder.class, format);
 
         if (credentialBuilder == null) {
             String message = String.format("No credential builder found for format %s", format);
@@ -1811,8 +1986,10 @@ public class OID4VCIssuerEndpoint {
     private void validateRequestedClaimsArePresent(Map<String, Object> allClaims, SupportedCredentialConfiguration credentialConfig,
                                                    UserModel user, OID4VCAuthorizationDetail authzDetail, String scope, EventBuilder eventBuilder) {
         // Protocol mappers from configuration
-        Map<List<Object>, ClaimsDescription> claimsConfig = credentialConfig.getCredentialMetadata().getClaims()
+        Map<List<Object>, ClaimsDescription> claimsConfig = Optional.ofNullable(credentialConfig.getCredentialMetadata())
+                .map(metadata -> metadata.getClaims())
                 .stream()
+                .flatMap(claims -> claims.stream())
                 .map(claim -> {
                     List<Object> pathObj = new ArrayList<>(claim.getPath());
                     return new ClaimsDescription(pathObj, claim.isMandatory());

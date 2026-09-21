@@ -91,6 +91,18 @@ public class ClientAdapter implements ClientModel, CachedObject {
         return cached.getId();
     }
 
+    @Override
+    public Long getCreatedTimestamp() {
+        if (isUpdated()) return updated.getCreatedTimestamp();
+        return cached.getCreatedTimestamp();
+    }
+
+    @Override
+    public Long getLastModifiedTimestamp() {
+        if (isUpdated()) return updated.getLastModifiedTimestamp();
+        return cached.getLastModifiedTimestamp();
+    }
+
     public Set<String> getWebOrigins() {
         if (isUpdated()) return updated.getWebOrigins();
         return cached.getWebOrigins();
@@ -242,7 +254,8 @@ public class ClientAdapter implements ClientModel, CachedObject {
     public Stream<RoleModel> getScopeMappingsStream() {
         if (isUpdated()) return updated.getScopeMappingsStream();
         return cached.getScope().stream()
-          .map(id -> cacheSession.getRoleById(cachedRealm, id));
+          .map(id -> cacheSession.getRoleById(cachedRealm, id))
+          .filter(Objects::nonNull);
     }
 
     public void addScopeMapping(RoleModel role) {

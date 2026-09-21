@@ -36,6 +36,8 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.TrustManager;
 
 import org.keycloak.Config;
+import org.keycloak.cluster.infinispan.ClusterHealthRestored;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.config.CachingOptions;
@@ -188,6 +190,7 @@ public final class JGroupsConfigurator {
         readConfigAndSet(config, RACK_NAME, transport::rackId);
         readConfigAndSet(config, MACHINE_NAME, transport::machineId);
         readConfigAndSet(config, NODE_NAME, transport::nodeName);
+        readConfigAndSet(config, DefaultCacheEmbeddedConfigProviderFactory.CLUSTER_NAME, transport::clusterName);
     }
 
     static void createJGroupsProperties(ProviderConfigurationBuilder builder) {
@@ -243,6 +246,14 @@ public final class JGroupsConfigurator {
         var stackXmlAttribute = transportStackOf(holder);
         if (stackXmlAttribute.isModified() && !isJdbcPingStack(stackXmlAttribute.get())) {
             logger.debugf("Custom stack configured (%s). JDBC_PING discovery disabled.", stackXmlAttribute.get());
+            if (Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
+                if (Objects.equals("test", stackXmlAttribute.get())) {
+                    // TODO: Remove this case once the model tests have been migrated
+                    logger.error("The stateless feature must hast JDBC_PING discovery enabled");
+                } else {
+                    throw new RuntimeException("The stateless feature must have JDBC_PING discovery enabled");
+                }
+            }
             return;
         }
 
@@ -264,7 +275,7 @@ public final class JGroupsConfigurator {
         Address address = Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(),
                 s -> prepareJGroupsAddress(s, clusterName)),
                 50, 10);
-        holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(stackName, stack, connectionFactory, isUdp, address), null);
+        holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(session.getKeycloakSessionFactory(), stackName, stack, connectionFactory, isUdp, address), null);
 
         transportOf(holder).stack(stackName);
         JGroupsConfigurator.logger.info("JGroups JDBC_PING discovery enabled.");
@@ -336,22 +347,24 @@ public final class JGroupsConfigurator {
     private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, boolean udp, boolean tracingEnabled, boolean fdSockEnabled) {
         var list = new ArrayList<ProtocolConfiguration>(4);
         list.add(new ProtocolConfiguration(KEYCLOAK_JDBC_PING2.class.getName(),
-              Map.of(
+              Map.ofEntries(
                     // Leave initialize_sql blank as table is already created by Keycloak
-                    "initialize_sql", "",
+                    Map.entry("initialize_sql", ""),
                     // Explicitly specify clear and select_all SQL to ensure "cluster_name" column is used, as the default
                     // "cluster" cannot be used with Oracle DB as it's a reserved word.
-                    "clear_sql", String.format("DELETE from %s WHERE cluster_name=?", tableName),
-                    "delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName),
-                    "insert_single_sql", String.format("INSERT INTO %s (address, name, cluster_name, ip, coord, last_update, coordinated_by) values (?, ?, ?, ?, ?, ?, ?)", tableName),
-                    "select_all_pingdata_sql", String.format("SELECT address, name, ip, coord, coordinated_by, last_update FROM %s WHERE cluster_name=?", tableName),
+                    Map.entry("clear_sql", String.format("DELETE from %s WHERE cluster_name=?", tableName)),
+                    Map.entry("delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName)),
+                    Map.entry("insert_single_sql", String.format("INSERT INTO %s (address, name, cluster_name, ip, coord, last_update, coordinated_by) values (?, ?, ?, ?, ?, ?, ?)", tableName)),
+                    Map.entry("select_all_pingdata_sql", String.format("SELECT address, name, ip, coord, coordinated_by, last_update FROM %s WHERE cluster_name=?", tableName)),
+                    Map.entry("select_other_clusters_count_sql", String.format("SELECT COUNT(*) FROM %s WHERE cluster_name != ? AND last_update >= ?", tableName)),
+                    Map.entry("allow_multiple_clusters", String.valueOf(Profile.isFeatureEnabled(Profile.Feature.STATELESS))),
                     // This guarantees cleanup of stale data
-                    "remove_all_data_on_view_change", "true",
+                    Map.entry("remove_all_data_on_view_change", "true"),
                     // This guarantees that merging happens even after the info writer completed
-                    "write_data_on_find", "true",
-                    "register_shutdown_hook", "false",
-                    "stack.combine", "REPLACE",
-                    "stack.position", udp ? "PING" : "MPING"
+                    Map.entry("write_data_on_find", "true"),
+                    Map.entry("register_shutdown_hook", "false"),
+                    Map.entry("stack.combine", "REPLACE"),
+                    Map.entry("stack.position", udp ? "PING" : "MPING")
               ))
         );
 
@@ -430,12 +443,14 @@ public final class JGroupsConfigurator {
 
     private static class JpaFactoryAwareJGroupsChannelConfigurator extends EmbeddedJGroupsChannelConfigurator {
 
-        private final JpaConnectionProviderFactory factory;
+        private final KeycloakSessionFactory factory;
+        private final JpaConnectionProviderFactory jpaConnectionProviderFactory;
         private final Address address;
 
-        public JpaFactoryAwareJGroupsChannelConfigurator(String name, List<ProtocolConfiguration> stack, JpaConnectionProviderFactory factory, boolean isUdp, Address address) {
+        public JpaFactoryAwareJGroupsChannelConfigurator(KeycloakSessionFactory factory, String name, List<ProtocolConfiguration> stack, JpaConnectionProviderFactory jpaConnectionProviderFactory, boolean isUdp, Address address) {
             super(name, stack, null, isUdp ? "udp" : "tcp");
-            this.factory = Objects.requireNonNull(factory);
+            this.factory = factory;
+            this.jpaConnectionProviderFactory = Objects.requireNonNull(jpaConnectionProviderFactory);
             this.address = address;
         }
 
@@ -449,7 +464,10 @@ public final class JGroupsConfigurator {
         public void afterCreation(Protocol protocol) {
             super.afterCreation(protocol);
             if (protocol instanceof KEYCLOAK_JDBC_PING2 kcPing) {
-                kcPing.setJpaConnectionProviderFactory(factory);
+                kcPing.setJpaConnectionProviderFactory(jpaConnectionProviderFactory);
+                kcPing.setOnHealthRestored(() -> {
+                    factory.publish(new ClusterHealthRestored());
+                });
             }
         }
     }

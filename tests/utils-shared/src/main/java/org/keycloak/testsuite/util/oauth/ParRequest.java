@@ -78,6 +78,11 @@ public class ParRequest extends AbstractHttpPostRequest<ParRequest, ParResponse>
         return this;
     }
 
+    public ParRequest prompt(String prompt) {
+        parameter(OIDCLoginProtocol.PROMPT_PARAM, prompt);
+        return this;
+    }
+
     public ParRequest scopeParam(String scope) {
         scopeExplicitlySet = true;
         parameter(OAuth2Constants.SCOPE, scope);

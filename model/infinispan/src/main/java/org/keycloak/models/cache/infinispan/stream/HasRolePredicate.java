@@ -6,6 +6,7 @@ import java.util.function.Predicate;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.cache.infinispan.entities.CachedClient;
 import org.keycloak.models.cache.infinispan.entities.CachedClientScope;
+import org.keycloak.models.cache.infinispan.entities.CachedCompositeRoles;
 import org.keycloak.models.cache.infinispan.entities.CachedGroup;
 import org.keycloak.models.cache.infinispan.entities.CachedRole;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
@@ -44,6 +45,7 @@ public class HasRolePredicate implements Predicate<Map.Entry<String, Revisioned>
     public boolean test(Map.Entry<String, Revisioned> entry) {
         Object value = entry.getValue();
         return (value instanceof CachedRole cachedRole && cachedRole.getCachedComposites().ids().contains(role)) ||
+                (value instanceof CachedCompositeRoles cachedCompositeRoles && (cachedCompositeRoles.getCompositeIds().contains(role) || cachedCompositeRoles.getParentIds().contains(role))) ||
                 (value instanceof CachedGroup cachedGroup && cachedGroup.getCachedRoleMappings().contains(role)) ||
                 (value instanceof RoleQuery roleQuery && roleQuery.getRoles().contains(role)) ||
                 (value instanceof CachedClient cachedClient && cachedClient.getScope().contains(role)) ||

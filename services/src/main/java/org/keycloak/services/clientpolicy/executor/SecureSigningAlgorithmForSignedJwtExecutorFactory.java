@@ -17,8 +17,6 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
@@ -66,7 +64,7 @@ public class SecureSigningAlgorithmForSignedJwtExecutorFactory implements Client
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return new ArrayList<>(Arrays.asList(REQUIRE_CLIENT_ASSERTION_PROPERTY));
+        return List.of(REQUIRE_CLIENT_ASSERTION_PROPERTY);
     }
 
 }

@@ -112,7 +112,7 @@ public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverCl
 
         // Successfully update password and assert user logged
         updatePasswordPage.changePassword("password", "password");
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     public static String getAuthSessionCookieValue(WebDriver driver) {

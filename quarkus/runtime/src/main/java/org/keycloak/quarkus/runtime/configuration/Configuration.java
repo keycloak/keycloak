@@ -27,7 +27,9 @@ import org.keycloak.utils.StringUtil;
 
 import io.quarkus.runtime.configuration.ConfigUtils;
 import io.smallrye.config.ConfigValue;
+import io.smallrye.config.DotEnvConfigSourceProvider;
 import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SysPropConfigSource;
 
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
@@ -101,7 +103,14 @@ public final class Configuration {
 
     public static synchronized SmallRyeConfig getConfig() {
         if (config == null) {
-            config = ConfigUtils.emptyConfigBuilder().addDiscoveredSources().build();
+            // we're manually adding the default sources to have control over the EnvConfigSource
+            config = ConfigUtils.emptyConfigBuilder().setAddDefaultSources(false).setAddPropertiesSources(true)
+                    .addDiscoveredSources()
+                    .withCustomizers(new ConfigBuilderCustomizer())
+                    .withSources(new SysPropConfigSource())
+                    .withSources(new DotEnvConfigSourceProvider()
+                            .getConfigSources(Thread.currentThread().getContextClassLoader()))
+                    .build();
         }
         return config;
     }

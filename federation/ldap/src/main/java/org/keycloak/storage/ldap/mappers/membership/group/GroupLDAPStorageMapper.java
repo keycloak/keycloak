@@ -48,6 +48,7 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
+import org.keycloak.storage.ldap.idm.store.ldap.LDAPUtil;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.CommonLDAPGroupMapper;
 import org.keycloak.storage.ldap.mappers.membership.CommonLDAPGroupMapperConfig;
@@ -353,12 +354,19 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
     private void updateAttributesOfKCGroup(GroupModel kcGroup, LDAPObject ldapGroup) {
         Collection<String> groupAttributes = config.getGroupAttributes();
+        LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
 
         for (String attrName : groupAttributes) {
             Set<String> attrValues = ldapGroup.getAttributeAsSet(attrName);
-            if (attrValues==null) {
+            if (attrValues == null) {
                 kcGroup.removeAttribute(attrName);
             } else {
+                if (config.isDecodeGroupUuidAttribute()
+                        && attrName.equalsIgnoreCase(ldapConfig.getUuidLDAPAttributeName())) {
+                    attrValues = attrValues.stream()
+                            .map(v -> LDAPUtil.decodeBase64ToUuid(v, ldapConfig))
+                            .collect(Collectors.toCollection(java.util.LinkedHashSet::new));
+                }
                 kcGroup.setAttribute(attrName, new LinkedList<>(attrValues));
             }
         }

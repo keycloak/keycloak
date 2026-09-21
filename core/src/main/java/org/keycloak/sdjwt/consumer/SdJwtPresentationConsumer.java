@@ -26,6 +26,9 @@ import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
 import org.keycloak.sdjwt.vp.KeyBindingJwtVerificationOpts;
 import org.keycloak.sdjwt.vp.SdJwtVP;
+import org.keycloak.sdjwt.vp.SdJwtVpVerificationResult;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * A component for consuming (verifying) SD-JWT presentations.
@@ -47,9 +50,10 @@ public class SdJwtPresentationConsumer {
      * @param trustedSdJwtIssuers             trusted issuers for the verification
      * @param issuerSignedJwtVerificationOpts policy for Issuer-signed JWT verification
      * @param keyBindingJwtVerificationOpts   policy for Key-binding JWT verification
+     * @return the verified presentation with its fully disclosed Issuer-signed payload
      * @throws VerificationException if the verification fails for some reason
      */
-    public void verifySdJwtPresentation(
+    public SdJwtVpVerificationResult verifySdJwtPresentation(
             SdJwtVP sdJwtVP,
             PresentationRequirements presentationRequirements,
             List<TrustedSdJwtIssuer> trustedSdJwtIssuers,
@@ -67,12 +71,13 @@ public class SdJwtPresentationConsumer {
 
         // Verify the SD-JWT token cryptographically
         // Pass presentation requirements to enforce that the presented token meets them
-        sdJwtVP.getSdJwtVerificationContext()
+        JsonNode disclosedPayload = sdJwtVP.getSdJwtVerificationContext()
                 .verifyPresentation(
                         issuerVerifyingKeys,
                         issuerSignedJwtVerificationOpts,
                         keyBindingJwtVerificationOpts,
                         presentationRequirements
                 );
+        return new SdJwtVpVerificationResult(disclosedPayload);
     }
 }

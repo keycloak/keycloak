@@ -12,7 +12,6 @@ import org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMapper
 import io.smallrye.config.Expressions;
 import io.smallrye.config.SmallRyeConfig;
 import org.h2.jdbcx.JdbcDataSource;
-import org.hibernate.dialect.H2Dialect;
 import org.hibernate.dialect.MariaDBDialect;
 import org.hibernate.dialect.PostgreSQLDialect;
 import org.junit.Test;
@@ -102,14 +101,14 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
     public void defaults() {
         ConfigArgsConfigSource.setCliArgs("--db-kind-store=dev-file");
         initConfig();
-        assertConfig("db-dialect-store", H2Dialect.class.getName());
+        assertConfig("db-dialect-store", "org.keycloak.connections.jpa.dialect.KeycloakH2Dialect");
         // XA datasource is the default
         assertExternalConfig("quarkus.datasource.\"store\".jdbc.driver", JdbcDataSource.class.getName());
         onAfter();
 
         ConfigArgsConfigSource.setCliArgs("--db-kind-store=dev-mem");
         initConfig();
-        assertConfig("db-dialect-store", H2Dialect.class.getName());
+        assertConfig("db-dialect-store", "org.keycloak.connections.jpa.dialect.KeycloakH2Dialect");
         assertExternalConfig("quarkus.datasource.\"store\".jdbc.url", "jdbc:h2:mem:keycloakdb-store;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0");
         assertExternalConfig("quarkus.datasource.\"store\".db-kind", "h2");
         onAfter();
@@ -214,7 +213,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs("--db-kind-realms=mssql", "--db-url-host-realms=myhost", "--db-url-database-realms=kcdb", "--db-url-port-realms=1234", "--db-url-properties-realms=?foo=bar");
         initConfig();
 
-        assertConfig("db-dialect-realms", "org.hibernate.dialect.SQLServerDialect");
+        assertConfig("db-dialect-realms", "org.keycloak.connections.jpa.dialect.KeycloakSQLServerDialect");
         assertExternalConfig(Map.of(
                 "quarkus.datasource.\"realms\".jdbc.url", "jdbc:sqlserver://myhost:1234;databaseName=kcdb?foo=bar",
                 "quarkus.datasource.\"realms\".db-kind", "mssql"
@@ -242,7 +241,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
 
         initConfig();
 
-        assertConfig("db-dialect-clients", H2Dialect.class.getName());
+        assertConfig("db-dialect-clients", "org.keycloak.connections.jpa.dialect.KeycloakH2Dialect");
         assertExternalConfig(Map.of(
                 "quarkus.datasource.\"clients\".jdbc.url", "jdbc:h2:file:test-dir/data/h2-clients/keycloakdb-clients;;test=test;test1=test1;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0",
                 "quarkus.datasource.\"clients\".jdbc.transactions", "xa"
@@ -583,6 +582,21 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         assertEquals("15", config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.connectTimeout").getValue());
         // the to mapping for other source types should not be set
         assertNull(config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.loginTimeout").getValue());
+
+        // Oracle named datasource in XA mode
+        config = createConfigFromCliArguments("--db=postgres", "--db-kind-users=oracle", "--transaction-xa-enabled-users=true");
+        assertEquals("oracle.net.CONNECT_TIMEOUT=10000", config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties").getValue());
+        assertNull(config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.oracle.net.CONNECT_TIMEOUT").getValue());
+
+        // Oracle named datasource in XA mode — user sets ConnectionProperties directly
+        setSystemProperty("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties", "oracle.net.keepAlive=true", () -> {
+            SmallRyeConfig xaConfig = createConfigFromCliArguments("--db=postgres", "--db-kind-users=oracle", "--transaction-xa-enabled-users=true");
+            assertEquals("oracle.net.keepAlive=true", xaConfig.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties").getValue());
+        });
+        setSystemProperty("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties", "oracle.net.keepAlive=true", () -> {
+            SmallRyeConfig xaConfig = createConfigFromCliArguments("--db=postgres", "--db-kind-users=oracle", "--transaction-xa-enabled-users=true", "--db-connect-timeout-users=30s");
+            assertEquals("oracle.net.keepAlive=true", xaConfig.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties").getValue());
+        });
     }
 
     private static void doDatabaseTlsOptionTest(String dbKind, String dbUrl,

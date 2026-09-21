@@ -35,7 +35,10 @@ import org.openqa.selenium.support.FindBy;
  * Provides some generic utils available on most of login pages (Language combobox, Link "Try another way" etc)
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ *
+ * THIS ABSTRACT PAGE WON'T BE MIGRATED TO THE NEW TEST FRAMEWORK!
  */
+@Deprecated(forRemoval = true)
 public abstract class LanguageComboboxAwarePage extends AbstractPage {
 
     @FindBy(xpath = "//select[@aria-label='languages']/option[@selected]")

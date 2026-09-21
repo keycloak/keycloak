@@ -124,7 +124,6 @@ public class RoleByIdResourceTest {
     }
 
     @Test
-    @DatabaseTest
     public void updateRole() {
         RoleRepresentation role = resource.getRole(roleIds.get(roleNameA));
 
@@ -143,7 +142,6 @@ public class RoleByIdResourceTest {
     }
 
     @Test
-    @DatabaseTest
     public void deleteRole() {
         assertNotNull(resource.getRole(roleIds.get(roleNameA)));
         resource.deleteRole(roleIds.get(roleNameA));

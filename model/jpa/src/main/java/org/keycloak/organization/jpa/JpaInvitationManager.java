@@ -62,8 +62,7 @@ record JpaInvitationManager(KeycloakSession session, EntityManager em) implement
         for (Entry<Filter, String> filter : attributes.entrySet()) {
             switch (filter.getKey()) {
                 case EMAIL -> {
-                    String escapedValue = filter.getValue().toLowerCase().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("*", "%");
-                    predicates.add(builder.like(root.get("email"), "%" + escapedValue + "%", '\\'));
+                    predicates.add(builder.equal(builder.lower(root.get("email")), filter.getValue().toLowerCase()));
                 }
                 case STATUS -> {
                     Status value = Status.valueOf(filter.getValue());
@@ -75,12 +74,10 @@ record JpaInvitationManager(KeycloakSession session, EntityManager em) implement
                     }
                 }
                 case FIRST_NAME -> {
-                    String escapedValue = filter.getValue().toLowerCase().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("*", "%");
-                    predicates.add(builder.like(builder.lower(root.get("firstName")), "%" + escapedValue + "%", '\\'));
+                    predicates.add(builder.equal(builder.lower(root.get("firstName")), filter.getValue().toLowerCase()));
                 }
                 case LAST_NAME -> {
-                    String escapedValue = filter.getValue().toLowerCase().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("*", "%");
-                    predicates.add(builder.like(builder.lower(root.get("lastName")), "%" + escapedValue + "%", '\\'));
+                    predicates.add(builder.equal(builder.lower(root.get("lastName")), filter.getValue().toLowerCase()));
                 }
                 case SEARCH -> {
                     String escapedValue = filter.getValue().toLowerCase().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("*", "%");

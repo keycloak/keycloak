@@ -32,6 +32,8 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
@@ -87,65 +89,67 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
         super.onComplete();
 
         if (request.isSubmitRequest()) {
-            StoreFactory storeFactory = authorization.getStoreFactory();
-            ResourceStore resourceStore = storeFactory.getResourceStore();
+            // At this point, onGrant() has already removed granted permissions from the ticket,
+            // so ticket.getPermissions() contains only the denied ones that need permission tickets.
             List<Permission> permissions = ticket.getPermissions();
+            if (permissions == null || permissions.isEmpty()) return;
 
-            if (permissions != null) {
+            String resourceServerId = resourceServer.getId();
+            String identityId = identity.getId();
+            KeycloakSession session = authorization.getKeycloakSession();
+
+            // Create tickets in a separate transaction so they survive the rollback
+            KeycloakModelUtils.enlistAfterCompletion(session, ctx -> {
+                AuthorizationProvider authz = ctx.session().getProvider(AuthorizationProvider.class);
+                StoreFactory sf = authz.getStoreFactory();
+                ResourceServer rs = sf.getResourceServerStore().findById(resourceServerId);
+                if (rs == null) return;
+
+                ResourceStore resourceStore = sf.getResourceStore();
+                ScopeStore scopeStore = sf.getScopeStore();
+
                 for (Permission permission : permissions) {
-                    Resource resource = resourceStore.findById(resourceServer, permission.getResourceId());
-
+                    Resource resource = resourceStore.findById(rs, permission.getResourceId());
                     if (resource == null) {
-                        resource = resourceStore.findByName(resourceServer, permission.getResourceId(), identity.getId());
+                        resource = resourceStore.findByName(rs, permission.getResourceId(), identityId);
                     }
-
-                    if (resource == null || !resource.isOwnerManagedAccess() || resource.getOwner().equals(identity.getId()) || resource.getOwner().equals(resourceServer.getClientId())) {
+                    if (resource == null || !resource.isOwnerManagedAccess()
+                            || resource.getOwner().equals(identityId)
+                            || resource.getOwner().equals(rs.getClientId())) {
                         continue;
                     }
 
                     Set<String> scopes = permission.getScopes();
-
                     if (scopes.isEmpty()) {
                         scopes = resource.getScopes().stream().map(Scope::getName).collect(Collectors.toSet());
                     }
 
                     if (scopes.isEmpty()) {
-                        Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
-
-                        filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
-                        filters.put(PermissionTicket.FilterOption.REQUESTER, identity.getId());
-                        filters.put(PermissionTicket.FilterOption.SCOPE_IS_NULL, Boolean.TRUE.toString());
-
-                        List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(resourceServer, filters, null, null);
-
-                        if (tickets.isEmpty()) {
-                            authorization.getStoreFactory().getPermissionTicketStore().create(resourceServer, resource, null, identity.getId());
-                        }
+                        createTicketIfNotExists(sf, rs, resource, null, identityId);
                     } else {
-                        ScopeStore scopeStore = authorization.getStoreFactory().getScopeStore();
-
-                        for (String scopeId : scopes) {
-                            Scope scope = scopeStore.findByName(resourceServer, scopeId);
-
-                            if (scope == null) {
-                                scope = scopeStore.findById(resourceServer, scopeId);
-                            }
-
-                            Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
-
-                            filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
-                            filters.put(PermissionTicket.FilterOption.REQUESTER, identity.getId());
-                            filters.put(PermissionTicket.FilterOption.SCOPE_ID, scope.getId());
-
-                            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(resourceServer, filters, null, null);
-
-                            if (tickets.isEmpty()) {
-                                authorization.getStoreFactory().getPermissionTicketStore().create(resourceServer, resource, scope, identity.getId());
-                            }
+                        for (String scopeName : scopes) {
+                            Scope scope = scopeStore.findByName(rs, scopeName);
+                            if (scope == null) scope = scopeStore.findById(rs, scopeName);
+                            if (scope != null) createTicketIfNotExists(sf, rs, resource, scope, identityId);
                         }
                     }
                 }
-            }
+            });
+        }
+    }
+
+    private static void createTicketIfNotExists(StoreFactory sf, ResourceServer rs, Resource resource, Scope scope, String requester) {
+        Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
+        filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
+        filters.put(PermissionTicket.FilterOption.REQUESTER, requester);
+        if (scope != null) {
+            filters.put(PermissionTicket.FilterOption.SCOPE_ID, scope.getId());
+        } else {
+            filters.put(PermissionTicket.FilterOption.SCOPE_IS_NULL, Boolean.TRUE.toString());
+        }
+
+        if (sf.getPermissionTicketStore().find(rs, filters, null, null).isEmpty()) {
+            sf.getPermissionTicketStore().create(rs, resource, scope, requester);
         }
     }
 }

@@ -1,14 +1,15 @@
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { IdentityProviderType } from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import type { IdentityProvidersQuery } from "@keycloak/keycloak-admin-client/lib/resources/identityProviders";
-import { SelectVariant, useFetch } from "@keycloak/keycloak-ui-shared";
+import { useFetch } from "@keycloak/keycloak-ui-shared";
 import { useState } from "react";
 import { useAdminClient } from "../../admin-client";
-import type { ComponentProps } from "../dynamic/components";
-import { MultiValuedListComponent } from "../dynamic/MultivaluedListComponent";
+import {
+  MultiValuedListComponent,
+  MultiValuedListComponentProps,
+} from "../dynamic/MultivaluedListComponent";
 
-type IdentityProviderSelectProps = ComponentProps & {
-  variant?: `${SelectVariant}`;
+type IdentityProviderSelectProps = MultiValuedListComponentProps & {
   identityProviderType?: IdentityProviderType;
   realmOnly?: boolean;
 };

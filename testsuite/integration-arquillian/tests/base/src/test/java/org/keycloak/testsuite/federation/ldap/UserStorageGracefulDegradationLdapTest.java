@@ -33,7 +33,6 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
@@ -154,15 +153,13 @@ public class UserStorageGracefulDegradationLdapTest extends AbstractLDAPTest {
             loginPage.login("testldapuser", "TestPassword123!");
             
             // Should stay on login page with error since LDAP user can't be authenticated
-            Assertions.assertTrue(loginPage.isCurrent(), 
-                            "Should stay on login page when LDAP user login fails");
+            loginPage.assertCurrent();
             
             // Now try to login with the local user - this should work despite LDAP being down
             loginPage.login("user@domain.com", "password");
             
             // Should succeed despite LDAP failure
-            appPage.assertCurrent();
-            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             
         } finally {
             // Cleanup

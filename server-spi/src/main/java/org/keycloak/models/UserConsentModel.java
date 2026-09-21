@@ -48,6 +48,10 @@ public class UserConsentModel {
     }
 
     public void addGrantedClientScope(ClientScopeModel clientScope, String parameter) {
+        if (clientScope.isAlwaysConsent()) {
+            // always consent scopes are skipped
+            return;
+        }
         clientScopes.add(clientScope);
         if (ClientScopeModel.isParameterizedScope(clientScope)) {
             if (parameter == null) {

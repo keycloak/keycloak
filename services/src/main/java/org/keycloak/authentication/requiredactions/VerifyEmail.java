@@ -75,6 +75,10 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
         if (context.getRealm().isVerifyEmail() && !context.getUser().isEmailVerified()) {
+            if (Validation.isBlank(context.getUser().getEmail())) {
+                logger.debug("Skipping VERIFY_EMAIL because the user has no email set");
+                return;
+            }
             // Don't add VERIFY_EMAIL if UPDATE_EMAIL is already present (UPDATE_EMAIL takes precedence)
             if (context.getUser().getRequiredActionsStream().noneMatch(action -> UserModel.RequiredAction.UPDATE_EMAIL.name().equals(action))) {
                 context.getUser().addRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);

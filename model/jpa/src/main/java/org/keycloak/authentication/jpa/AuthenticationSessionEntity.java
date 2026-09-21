@@ -19,30 +19,34 @@ package org.keycloak.authentication.jpa;
 
 import java.util.Objects;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+
+import org.keycloak.connections.jpa.AsynchronousCommitAllowed;
 
 import org.hibernate.annotations.DynamicUpdate;
 
 @Entity
 @Table(name = "AUTH_SESSION")
 @DynamicUpdate
-public class AuthenticationSessionEntity {
+@IdClass(AuthenticationSessionKey.class)
+public class AuthenticationSessionEntity implements AsynchronousCommitAllowed {
+
+    @Id
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ROOT_AUTH_SESSION_ID")
+    private RootAuthenticationSessionEntity rootAuthenticationSession;
 
     @Id
     @Column(name = "TAB_ID", length = 36)
     private String tabId;
-
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
-    @JoinColumn(name = "ROOT_AUTH_SESSION_ID")
-    private RootAuthenticationSessionEntity rootAuthenticationSession;
 
     @Column(name = "CLIENT_UUID")
     private String clientUUID;
@@ -223,4 +227,5 @@ public class AuthenticationSessionEntity {
                 ", rootAuthenticationSessionId=" + (rootAuthenticationSession != null ? rootAuthenticationSession.getId() : null) + // avoid lazy-load just for a log message.
                 '}';
     }
+
 }

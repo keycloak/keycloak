@@ -37,13 +37,22 @@ public class CredentialDefinition {
     private List<String> context;
     private List<String> type = new ArrayList<>();
 
+    public static final String VERIFIABLE_CREDENTIAL_TYPE = "VerifiableCredential";
+
     public static CredentialDefinition parse(CredentialScopeModel credentialModel) {
         List<String> contexts = Optional.of(credentialModel.getVcContexts())
                                         .filter(list -> !list.isEmpty())
                                         .orElseGet(() -> new ArrayList<>(List.of(credentialModel.getName())));
         List<String> types = Optional.ofNullable(credentialModel.getSupportedCredentialTypes())
                                      .filter(list -> !list.isEmpty())
+                                     .map(ArrayList::new)
                                      .orElseGet(() -> new ArrayList<>(List.of(credentialModel.getName())));
+
+        // Ensure VerifiableCredential is always included as a base type
+        // per the W3C Verifiable Credentials Data Model specification.
+        if (!types.contains(VERIFIABLE_CREDENTIAL_TYPE)) {
+            types.add(0, VERIFIABLE_CREDENTIAL_TYPE);
+        }
 
         return new CredentialDefinition().setContext(contexts)
                                          .setType(types);

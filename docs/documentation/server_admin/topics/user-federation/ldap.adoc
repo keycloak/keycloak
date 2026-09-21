@@ -96,6 +96,41 @@ When you configure a secure connection URL to your LDAP store (for example,`ldap
 
 The `Use Truststore SPI` configuration property is deprecated.  It should normally be left as `Always`.
 
+==== Connecting to multiple LDAP servers for failover
+
+You can configure multiple LDAP server URLs for failover by entering them as a *space-separated* list in the *Connection URL* field. For example:
+
+```
+ldap://server1:389 ldap://server2:389
+```
+
+or for SSL connections:
+
+```
+ldaps://server1:636 ldaps://server2:636
+```
+
+When multiple URLs are configured, the underlying Java JNDI provider tries each URL in order from left to right. If a connection to the first URL fails, it tries the next URL, and so on until a connection succeeds. This is a sequential failover mechanism, not load balancing — the first reachable server is always used.
+
+Failover occurs at connection creation time. If a server becomes unreachable after a connection has been established, the current operation may fail, but subsequent operations create new connections and go through the failover list again.
+
+[NOTE]
+====
+All configured LDAP servers must be *replicas of the same directory* (for example, Active Directory domain controllers in the same domain, or replicated OpenLDAP instances). Each LDAP entry must have the same unique identifier (such as `entryUUID` or `objectGUID`) across all servers. If the servers are independent instances loaded with the same data, each server generates its own unique identifiers, which will cause synchronization and authentication failures when failover switches to a different server.
+====
+
+[WARNING]
+====
+URLs must be separated by *spaces only*. Do not use commas as separators:
+
+* `ldap://server1,ldap://server2` results in a connection error.
+* `ldap://server1, ldap://server2` (comma followed by a space) silently discards the first URL due to the trailing comma, leaving you with no failover and no warning.
+====
+
+The *Connection Timeout* setting controls how long {project_name} waits for a TCP connection to each URL before trying the next one. The default is 5000 milliseconds (5 seconds). If a server is unreachable (for example, due to a network partition or a firewall silently dropping packets), the full timeout is spent on each unreachable URL before failover proceeds. Adjust this value based on your network environment to balance between fast failover and tolerance for slow connections.
+
+NOTE: If a server is cleanly stopped (the port is closed), the connection is refused immediately and failover to the next URL occurs with no noticeable delay.
+
 ==== Synchronizing LDAP users to {project_name}
 
 If you set the *Import Users* option, the LDAP Provider handles importing LDAP users into the {project_name} local database. The first time a user logs in or is returned as part of a user query (e.g. using the search field in the admin console), the LDAP provider imports the LDAP user into the {project_name} database. During authentication, the LDAP password is validated.

@@ -130,6 +130,7 @@ public class ResourceSetService {
         AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
 
         requireManage();
+        validateUris(resource);
         StoreFactory storeFactory = this.authorization.getStoreFactory();
         ResourceOwnerRepresentation owner = resource.getOwner();
 
@@ -165,6 +166,7 @@ public class ResourceSetService {
     public Response update(@PathParam("resource-id") String id, ResourceRepresentation resource) {
         AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
         requireManage();
+        validateUris(resource);
         resource.setId(id);
         getResource(id);
         toModel(resource, resourceServer, authorization);
@@ -540,6 +542,23 @@ public class ResourceSetService {
             adminEvent.operation(operation).resourcePath(session.getContext().getUri(), id).representation(resource).success();
         } else {
             adminEvent.operation(operation).resourcePath(session.getContext().getUri()).representation(resource).success();
+        }
+    }
+
+    private static void validateUris(ResourceRepresentation resource) {
+        Set<String> uris = resource.getUris();
+
+        if (uris == null) {
+            return;
+        }
+
+        for (String uri : uris) {
+            String error = PathMatcher.validateTemplate(uri);
+            if (error != null) {
+                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST,
+                        "URI [" + uri + "] is not a valid template: " + error,
+                        Status.BAD_REQUEST);
+            }
         }
     }
 }

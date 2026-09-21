@@ -184,7 +184,7 @@ export const AuthorizationPolicies = ({
             <NewPolicyDialog
               policyProviders={policyProviders}
               onSelect={(p) =>
-                navigate(
+                void navigate(
                   isAdminPermissionsClient
                     ? toCreatePermissionPolicy({
                         realm,
@@ -379,7 +379,7 @@ export const AuthorizationPolicies = ({
                 (p) => p.type !== "aggregate",
               )}
               onSelect={(p) =>
-                navigate(
+                void navigate(
                   isAdminPermissionsClient
                     ? toCreatePermissionPolicy({
                         realm,

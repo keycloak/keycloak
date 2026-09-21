@@ -28,7 +28,7 @@ abstract class OIDCClientRepresentationMixIn {
     private Integer client_id_issued_at;
 
     @JsonIgnore
-    private Integer client_secret_expires_at;
+    private Long client_secret_expires_at;
 
     @JsonIgnore
     private String registration_client_uri;

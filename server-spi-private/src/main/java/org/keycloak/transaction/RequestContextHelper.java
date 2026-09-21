@@ -22,6 +22,7 @@ package org.keycloak.transaction;
 import java.util.List;
 import java.util.Set;
 
+import jakarta.enterprise.context.ContextNotActiveException;
 import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.OAuth2Constants;
@@ -82,6 +83,8 @@ public class RequestContextHelper {
                         .append(httpRequest.getUri().getPath())
                         .toString();
             }
+        } catch (ContextNotActiveException e) {
+            // non-http context
         } catch (Exception e) {
             return "Unknown context";
         }

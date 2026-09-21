@@ -38,7 +38,6 @@ import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.hamcrest.MatcherAssert;
@@ -91,7 +90,7 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
 
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_EMAIL).details(Details.PREVIOUS_EMAIL, "test-user@localhost")
                 .details(Details.UPDATED_EMAIL, "new@localhost");
-        assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation event2 = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
         List<UserSessionRepresentation> sessions = testUser.getUserSessions();
@@ -143,7 +142,7 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
         loginPage.login("test-user@localhost", "password");
 
         // UPDATE_EMAIL required action is skipped and cleared
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         assertEquals(0, testUser.toRepresentation().getRequiredActions().size());
     }
@@ -162,7 +161,7 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
         updateProfilePage.update("Tom", "Brady");
 
         // successfully update the profile without providing the email
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         assertEquals(0, testUser.toRepresentation().getRequiredActions().size());
     }
 
@@ -182,7 +181,7 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
         assertTrue(updateProfilePage.isEmailInputPresent());
         updateProfilePage.update("Tom", "Brady", "test-user@localhost");
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         rep = testUser.toRepresentation();
         assertEquals(0, rep.getRequiredActions().size());
         assertNull(Optional.ofNullable(rep.getAttributes()).orElse(Map.of()).get(UserModel.EMAIL_PENDING));
@@ -212,7 +211,7 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
         assertFalse(updateProfilePage.isEmailInputPresent());
         updateProfilePage.update("Tom", "Brady");
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         rep = testUser.toRepresentation();
         assertEquals(0, rep.getRequiredActions().size());
         assertNull(Optional.ofNullable(rep.getAttributes()).orElse(Map.of()).get(UserModel.EMAIL_PENDING));

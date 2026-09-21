@@ -40,7 +40,7 @@ export const GroupSelect = ({
     getValues,
     formState: { errors },
   } = useFormContext();
-  const values: string[] = getValues(name!);
+  const values: string[] = getValues(name!) || [];
   const [open, setOpen] = useState(false);
   const [groups, setGroups] = useState<GroupRepresentation[]>([]);
 

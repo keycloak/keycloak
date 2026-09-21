@@ -16,49 +16,36 @@
  */
 package org.keycloak.testsuite.util;
 
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
-
 public class TestAppHelper {
     private OAuthClient oauth;
     private LoginPage loginPage;
     private LoginTotpPage loginTotpPage;
-    private AppPage appPage;
+
     private String refreshToken;
 
-    public TestAppHelper(OAuthClient oauth, LoginPage loginPage, AppPage appPage) {
+    public TestAppHelper(OAuthClient oauth, LoginPage loginPage) {
         this.oauth = oauth;
         this.loginPage = loginPage;
-        this.appPage = appPage;
     }
-    public TestAppHelper(OAuthClient oauth, LoginPage loginPage, LoginTotpPage loginTotpPage, AppPage appPage) {
+    public TestAppHelper(OAuthClient oauth, LoginPage loginPage, LoginTotpPage loginTotpPage) {
         this.oauth = oauth;
         this.loginPage = loginPage;
         this.loginTotpPage = loginTotpPage;
-        this.appPage = appPage;
     }
 
-    public boolean login(String username, String password) {
+    public void login(String username, String password) {
         startLogin(username, password);
-
-        if (loginPage.isCurrent()) {
-            return false;
-        }
-
         completeLogin();
-
-        return appPage.isCurrent();
     }
 
-    public boolean startLogin(String username, String password) {
+    public void startLogin(String username, String password) {
         oauth.openLoginForm();
         loginPage.login(username, password);
-
-        return appPage.isCurrent();
     }
 
     public void completeLogin() {
@@ -67,32 +54,19 @@ public class TestAppHelper {
         refreshToken = tokenResponse.getRefreshToken();
     }
 
-    public boolean login(String username, String password, String otp) {
+    public void login(String username, String password, String otp) {
         startLogin(username, password);
-
         loginTotpPage.login(otp);
-        if (loginTotpPage.isCurrent()) {
-            return false;
-        }
-
         completeLogin();
-
-        return appPage.isCurrent();
     }
 
-    public boolean login(String username, String password, String realm, String clientId, String idp) {
+    public void login(String username, String password, String realm, String clientId, String idp) {
         oauth.client(clientId);
-        loginPage.open(realm);
+        oauth.realm(realm);
+        oauth.openLoginForm();
         loginPage.clickSocial(idp);
         loginPage.login(username, password);
-
-        if (loginPage.isCurrent(realm)) {
-            return false;
-        }
-
         completeLogin();
-
-        return appPage.isCurrent();
     }
 
     public boolean logout() {

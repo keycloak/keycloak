@@ -178,7 +178,7 @@ export const RolesList = ({
               isReadOnly ? "" : t(`noRolesInstructions-${messageBundle}`)
             }
             primaryActionText={isReadOnly ? "" : t("createRole")}
-            onPrimaryAction={() => navigate(toCreate)}
+            onPrimaryAction={() => void navigate(toCreate)}
           />
         }
       />

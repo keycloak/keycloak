@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
-import { switchOff, switchOn } from "../utils/form.ts";
+import { clickSwitch, switchOff, switchOn } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { confirmModal } from "../utils/modal.ts";
@@ -63,11 +63,13 @@ test.describe.serial("Realm settings general tab tests", () => {
 
   test("realm enable/disable switch", async ({ page }) => {
     // Enable realm
-    await switchOn(page, `#${realmName}-switch`);
+    const realmSwitch = page.locator(`#${realmName}-switch`);
+    await expect(realmSwitch).not.toBeChecked();
+    await switchOn(page, realmSwitch);
     await assertNotificationMessage(page, "Realm successfully updated");
 
     // Disable realm
-    await switchOff(page, `#${realmName}-switch`);
+    await clickSwitch(page, realmSwitch);
     await confirmModal(page);
     await assertNotificationMessage(page, "Realm successfully updated");
   });

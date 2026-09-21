@@ -521,6 +521,48 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     }
 
     @Test
+    public void testCreateUserWithUnpermittedGroupAssignment() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdminPermission = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+
+        // grant myadmin Users manage scope — allows creating users
+        createAllPermission(adminPermissionsClient, usersType, allowMyAdminPermission, Set.of(MANAGE));
+        createAllPermission(adminPermissionsClient, AdminPermissionsSchema.GROUPS.getType(), allowMyAdminPermission, Set.of(VIEW));
+
+        // create two groups: one permitted, one not
+        GroupRepresentation permittedGroup = createGroup("permitted-group");
+        GroupRepresentation unpermittedGroup = createGroup("unpermitted-group");
+
+        // grant manage-membership only on the permitted group
+        createGroupPermission(permittedGroup, Set.of(MANAGE_MEMBERSHIP), allowMyAdminPermission);
+
+        // creating a user without groups should succeed (admin has Users manage)
+        String noGroupUserId = ApiUtil.getCreatedId(realmAdminClient.realm(realm.getName()).users()
+                .create(UserBuilder.create().username("user-no-groups").build()));
+        realm.cleanup().add(r -> r.users().delete(noGroupUserId));
+
+        // creating a user assigned to the permitted group should succeed
+        String permittedUserId = ApiUtil.getCreatedId(realmAdminClient.realm(realm.getName()).users()
+                .create(UserBuilder.create().username("user-permitted-group").groups("/" + permittedGroup.getName()).build()));
+        realm.cleanup().add(r -> r.users().delete(permittedUserId));
+        assertTrue(realm.admin().users().get(permittedUserId).groups().stream()
+                .anyMatch(g -> permittedGroup.getId().equals(g.getId())));
+
+        // creating a user assigned to the unpermitted group should be forbidden
+        try (Response response = realmAdminClient.realm(realm.getName()).users()
+                .create(UserBuilder.create().username("user-unpermitted-group").groups("/" + unpermittedGroup.getName()).build())) {
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+        }
+
+        // creating a user assigned to both groups should also be forbidden
+        try (Response response = realmAdminClient.realm(realm.getName()).users()
+                .create(UserBuilder.create().username("user-both-groups")
+                        .groups("/" + permittedGroup.getName(), "/" + unpermittedGroup.getName()).build())) {
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
     public void testViewUserWithAdminRoleAfterDisablingFgap() {
         // setup permission to allow view all users by myadmin
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);

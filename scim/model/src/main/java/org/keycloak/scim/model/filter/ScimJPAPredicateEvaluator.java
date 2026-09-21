@@ -1,8 +1,10 @@
 package org.keycloak.scim.model.filter;
 
 import java.util.List;
+import java.util.function.BiPredicate;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Root;
 
 import org.keycloak.scim.filter.FilterUtils;
@@ -22,9 +24,15 @@ public class ScimJPAPredicateEvaluator extends ScimFilterParserBaseVisitor<JPAFi
     private String parentPath;
 
     @SuppressWarnings("unchecked,rawtypes")
-    public ScimJPAPredicateEvaluator(ScimResourceTypeProvider resourceTypeProvider, List schemas, CriteriaBuilder cb, Root<?> root) {
+    public ScimJPAPredicateEvaluator(ScimResourceTypeProvider resourceTypeProvider, List schemas, CriteriaBuilder cb, CriteriaQuery<?> query, Root<?> root) {
+        this(resourceTypeProvider, schemas, cb, query, root, null);
+    }
+
+    @SuppressWarnings("unchecked,rawtypes")
+    public ScimJPAPredicateEvaluator(ScimResourceTypeProvider resourceTypeProvider, List schemas, CriteriaBuilder cb, CriteriaQuery<?> query, Root<?> root,
+                                      BiPredicate<String, String> filterAuthorizationCheck) {
         this.cb = cb;
-        this.predicateProvider = new ScimJPAPredicateProvider(resourceTypeProvider, schemas, cb, root);
+        this.predicateProvider = new ScimJPAPredicateProvider(resourceTypeProvider, schemas, cb, query, root, filterAuthorizationCheck);
     }
 
     @Override
@@ -42,7 +50,8 @@ public class ScimJPAPredicateEvaluator extends ScimFilterParserBaseVisitor<JPAFi
             if (left.unsupported()) return right;
             if (right.unsupported()) return left;
 
-            return JPAFilterResult.valid(cb.or(left.predicate(), right.predicate()));
+            boolean prot = left.authzProtected() || right.authzProtected();
+            return JPAFilterResult.valid(cb.or(left.predicate(), right.predicate()), prot);
         }
         return visit(ctx.andExpression());
     }
@@ -50,6 +59,12 @@ public class ScimJPAPredicateEvaluator extends ScimFilterParserBaseVisitor<JPAFi
     @Override
     public JPAFilterResult visitAndExpression(ScimFilterParser.AndExpressionContext ctx) {
         if (ctx.AND() != null) {
+            if (parentPath != null) {
+                // AND inside a value path (e.g. groups[value eq "A" and value eq "B"]) requires all conditions to
+                // be satisfied by the same collection element; reject it for multivalued/non-complex attributes
+                // rather than silently evaluating each condition as an independent EXISTS subquery
+                predicateProvider.validateAndOperatorInValuePath(parentPath);
+            }
             JPAFilterResult left = visit(ctx.andExpression());
             JPAFilterResult right = visit(ctx.notExpression());
 
@@ -57,7 +72,8 @@ public class ScimJPAPredicateEvaluator extends ScimFilterParserBaseVisitor<JPAFi
             if (left.unsupported() || right.unsupported()) {
                 return JPAFilterResult.unsupported(cb.disjunction());
             }
-            return JPAFilterResult.valid(cb.and(left.predicate(), right.predicate()));
+            boolean prot = left.authzProtected() || right.authzProtected();
+            return JPAFilterResult.valid(cb.and(left.predicate(), right.predicate()), prot);
         }
         return visit(ctx.notExpression());
     }
@@ -66,9 +82,12 @@ public class ScimJPAPredicateEvaluator extends ScimFilterParserBaseVisitor<JPAFi
     public JPAFilterResult visitNotExpression(ScimFilterParser.NotExpressionContext ctx) {
         if (ctx.NOT() != null) {
             JPAFilterResult child = visit(ctx.notExpression());
-            // If the child is a disjunction caused by an unsupported attribute, per RFC 7644, 'not (unknownAttr pr)' MUST still be an empty set.
             if (child.unsupported()) {
                 return child;
+            }
+            // negating an authz-protected predicate would invert it into a membership oracle
+            if (child.authzProtected()) {
+                return JPAFilterResult.unsupported(cb.disjunction());
             }
             return JPAFilterResult.valid(cb.not(child.predicate()));
         }
@@ -88,11 +107,12 @@ public class ScimJPAPredicateEvaluator extends ScimFilterParserBaseVisitor<JPAFi
 
     @Override
     public JPAFilterResult visitValuePath(ScimFilterParser.ValuePathContext ctx) {
-        parentPath = ctx.ATTRPATH().getText();
+        String previousPath = parentPath;
+        parentPath = resolveAttrPath(ctx.ATTRPATH().getText());
         try {
             return visit(ctx.expression());
         } finally {
-            parentPath = null;
+            parentPath = previousPath;
         }
     }
 

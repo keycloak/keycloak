@@ -164,7 +164,7 @@ export default function NewClientPolicyCondition() {
         policies: updatedPolicies,
       });
       setPolicies(updatedPolicies);
-      navigate(toEditClientPolicy({ realm, policyName: policyName! }));
+      void navigate(toEditClientPolicy({ realm, policyName: policyName! }));
       addAlert(
         conditionName
           ? t("updateClientConditionSuccess")
@@ -265,7 +265,7 @@ export default function NewClientPolicyCondition() {
                 variant="link"
                 data-testid="addCondition-cancelBtn"
                 onClick={() =>
-                  navigate(
+                  void navigate(
                     toEditClientPolicy({ realm, policyName: policyName! }),
                   )
                 }

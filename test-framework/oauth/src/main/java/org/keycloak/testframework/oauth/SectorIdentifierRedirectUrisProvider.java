@@ -4,6 +4,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import jakarta.ws.rs.core.Response;
 
@@ -22,12 +23,24 @@ public class SectorIdentifierRedirectUrisProvider implements Closeable {
     public static final String CONTEXT = "/sector-identifier-redirect-uris";
 
     private final HttpServer httpServer;
-    private final String[] sectorIdentifierRedirectUris;
+    private List<String> sectorIdentifierRedirectUris;
 
     public SectorIdentifierRedirectUrisProvider(HttpServer httpServer, String[] sectorIdentifierRedirectUris) {
         this.httpServer = httpServer;
-        this.sectorIdentifierRedirectUris = sectorIdentifierRedirectUris;
+        this.sectorIdentifierRedirectUris = sectorIdentifierRedirectUris != null ? List.of(sectorIdentifierRedirectUris) : List.of();
         this.httpServer.createContext(CONTEXT, new SectorIdentifierRedirectUrisHandler());
+    }
+
+    public void setSectorIdentifierRedirectUris(List<String> uris) {
+        this.sectorIdentifierRedirectUris = uris != null ? uris : List.of();
+    }
+
+    public List<String> getSectorIdentifierRedirectUris() {
+        return sectorIdentifierRedirectUris;
+    }
+
+    public String getUri() {
+        return "http://127.0.0.1:" + httpServer.getAddress().getPort() + CONTEXT;
     }
 
     @Override

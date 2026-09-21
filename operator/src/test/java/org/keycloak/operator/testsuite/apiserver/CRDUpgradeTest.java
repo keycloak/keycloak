@@ -17,7 +17,7 @@
 
 package org.keycloak.operator.testsuite.apiserver;
 
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
@@ -40,7 +40,7 @@ public class CRDUpgradeTest {
     static final ObjectMapper mapper = new ObjectMapper();
 
     @Test
-    public void testKeycloak() throws FileNotFoundException {
+    public void testKeycloak() throws IOException {
         //start with the v2alpha1 crd
         K8sUtils.set(client, this.getClass().getResourceAsStream("/v2alpha1-keycloak-crd.yaml"));
 

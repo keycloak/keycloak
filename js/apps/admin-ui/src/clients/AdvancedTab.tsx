@@ -220,7 +220,12 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                 <OpenIdVerifiableCredentials
                   client={client}
                   save={save}
-                  reset={() => resetFields(["oid4vci.enabled"])}
+                  reset={() =>
+                    resetFields([
+                      "oid4vci.enabled",
+                      "oid4vci.attester_trust_idps",
+                    ])
+                  }
                 />
               </>
             ),

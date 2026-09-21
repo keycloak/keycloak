@@ -16,34 +16,48 @@
  */
 package org.keycloak.tests.client;
 
+import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
+
 import jakarta.ws.rs.NotFoundException;
 
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.jboss.logging.Logger;
 import org.junit.jupiter.api.BeforeEach;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public abstract class AbstractClientRegistrationTest {
+
+    protected static final String REALM_NAME = "test";
+    protected static final String CLIENT_ID = "test-client";
+    protected static final String CLIENT_SECRET = "test-client-secret";
+    protected final Logger log = Logger.getLogger(getClass());
 
     @InjectRealm(config = ClientRegistrationRealmConfig.class)
     ManagedRealm managedRealm;
@@ -60,11 +74,22 @@ public abstract class AbstractClientRegistrationTest {
     @InjectHttpClient
     CloseableHttpClient closeableHttpClient;
 
+    @InjectAdminClient
+    Keycloak adminClient;
+
     ClientRegistration reg;
 
     @BeforeEach
     public void before() throws Exception {
         reg = oauth.clientRegistration();
+    }
+
+    protected ClientRepresentation buildClient() {
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId(CLIENT_ID);
+        client.setSecret(CLIENT_SECRET);
+
+        return client;
     }
 
     public ClientRepresentation createClient(ClientRepresentation client) throws ClientRegistrationException {
@@ -106,13 +131,34 @@ public abstract class AbstractClientRegistrationTest {
         }
     }
 
-    public static class ClientRegistrationRealmConfig implements RealmConfig {
+    protected URI getAuthServerRoot() {
+        return keycloakUrls.getBaseBuilder().path("/").build();
+    }
+
+    protected String createUser(String realm, String username, String password, String... requiredActions) {
+        UserRepresentation user = new UserRepresentation();
+        user.setEnabled(true);
+        user.setUsername(username);
+        user.setEmail(username);
+        user.setEmailVerified(true);
+        user.setFirstName("First");
+        user.setLastName("Last");
+
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setValue(password);
+        user.setCredentials(List.of(credential));
+        user.setRequiredActions(Arrays.asList(requiredActions));
+        return AdminApiUtil.createUserWithAdminClient(adminClient.realm(realm), user);
+    }
+
+    static class ClientRegistrationRealmConfig implements RealmConfig {
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.clients(ClientBuilder.create("myclient-test")
-                    .publicClient(true)
-                    .directAccessGrantsEnabled(true));
+            realm.name(REALM_NAME)
+                    .id(REALM_NAME)
+                    .loginWithEmailAllowed(true);
 
             UserBuilder manageClientUser = UserBuilder.create()
                     .username("manage-clients")
@@ -137,16 +183,10 @@ public abstract class AbstractClientRegistrationTest {
                     .email("no-access@test.com")
                     .emailVerified(true);
 
-            UserBuilder appUser = UserBuilder.create()
-                    .username("test-user")
-                    .name("test", "user")
-                    .password("password")
-                    .email("test-user@localhost")
-                    .emailVerified(true);
-
-            realm.users(manageClientUser, createClientUser, noAccessUser, appUser);
+            realm.users(manageClientUser, createClientUser, noAccessUser);
 
             return realm;
         }
     }
+
 }

@@ -33,6 +33,7 @@ import org.keycloak.config.CachingOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
+import org.keycloak.quarkus.runtime.configuration.mappers.ManagementPropertyMappers;
 import org.keycloak.quarkus.runtime.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory;
 import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderSpi;
@@ -45,7 +46,6 @@ import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 import org.h2.Driver;
-import org.hibernate.dialect.H2Dialect;
 import org.hibernate.dialect.MariaDBDialect;
 import org.hibernate.dialect.PostgreSQLDialect;
 import org.junit.Assert;
@@ -104,7 +104,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(Configuration.getConfig().isPropertyPresent("quarkus.log.category.\"io.k8s\".level"));
         putEnvVar("SOME_LOG_LEVEL", "debug");
         assertEquals("debug", createConfig().getRawValue("kc.log-level"));
-        SmallRyeConfig config = ConfigUtils.emptyConfigBuilder().setAddDefaultSources(false).addDiscoveredSources().build();
+        SmallRyeConfig config = ConfigBuilderCustomizer.addInterceptors(ConfigUtils.emptyConfigBuilder().setAddDefaultSources(false).addDiscoveredSources()).build();
         assertNull(Expressions.withoutExpansion(() -> config.getConfigValue("kc.log-level")).getValue());
     }
 
@@ -294,14 +294,14 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testDatabaseDefaults() {
         ConfigArgsConfigSource.setCliArgs("--db=dev-file");
         SmallRyeConfig config = createConfig();
-        assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
+        assertEquals("org.keycloak.connections.jpa.dialect.KeycloakH2Dialect", config.getConfigValue("kc.db-dialect").getValue());
         assertEquals(Driver.class.getName(), config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
 
         assertEquals("jdbc:h2:file:" + Environment.getHomeDir().orElseThrow() + "/data/h2/keycloakdb;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=dev-mem");
         config = createConfig();
-        assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
+        assertEquals("org.keycloak.connections.jpa.dialect.KeycloakH2Dialect", config.getConfigValue("kc.db-dialect").getValue());
         assertEquals("jdbc:h2:mem:keycloakdb;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertEquals("h2", config.getConfigValue("quarkus.datasource.db-kind").getValue());
 
@@ -357,7 +357,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testDefaultDbPortGetApplied() {
         ConfigArgsConfigSource.setCliArgs("--db=mssql", "--db-url-host=myhost", "--db-url-database=kcdb", "--db-url-port=1234", "--db-url-properties=?foo=bar");
         SmallRyeConfig config = createConfig();
-        assertEquals("org.hibernate.dialect.SQLServerDialect",
+        assertEquals("org.keycloak.connections.jpa.dialect.KeycloakSQLServerDialect",
                 config.getConfigValue("kc.db-dialect").getValue());
         assertEquals("jdbc:sqlserver://myhost:1234;databaseName=kcdb?foo=bar", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertEquals("mssql", config.getConfigValue("quarkus.datasource.db-kind").getValue());
@@ -379,12 +379,12 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         System.setProperty("kc.db-url-path", "test-dir");
         System.setProperty("kc.transaction-xa-enabled", "true");
         SmallRyeConfig config = createConfigFromCliArguments("--db=dev-file");
-        assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
+        assertEquals("org.keycloak.connections.jpa.dialect.KeycloakH2Dialect", config.getConfigValue("kc.db-dialect").getValue());
         assertEquals("jdbc:h2:file:test-dir/data/h2/keycloakdb;;test=test;test1=test1;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertEquals("xa", config.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
 
         config = createConfigFromCliArguments("");
-        assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
+        assertEquals("org.keycloak.connections.jpa.dialect.KeycloakH2Dialect", config.getConfigValue("kc.db-dialect").getValue());
         assertEquals("jdbc:h2:file:test-dir/data/h2/keycloakdb;;test=test;test1=test1;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         System.setProperty("kc.db-url-properties", "?test=test&test1=test1");
@@ -600,24 +600,26 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testReloadPeriod() {
         ConfigArgsConfigSource.setCliArgs("");
         var config = createConfig();
+        String httpReloadPeriod = HttpPropertyMappers.TLS_PREFIX + "reload-period";
+        String mgmtReloadPeriod = ManagementPropertyMappers.MGMT_TLS_PREFIX + "reload-period";
         assertExternalConfig(Map.of(
-                "quarkus.http.ssl.certificate.reload-period", "1h",
-                "quarkus.management.ssl.certificate.reload-period", "1h"
+                httpReloadPeriod, "1h",
+                mgmtReloadPeriod, "1h"
         ));
-        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).anyMatch("quarkus.http.ssl.certificate.reload-period"::equals));
+        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).anyMatch(httpReloadPeriod::equals));
 
         ConfigArgsConfigSource.setCliArgs("--https-certificates-reload-period=-1");
         config = createConfig();
 
-        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).noneMatch("quarkus.http.ssl.certificate.reload-period"::equals));
-        assertExternalConfigNull("quarkus.http.ssl.certificate.reload-period");
-        assertExternalConfigNull("quarkus.management.ssl.certificate.reload-period");
+        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).noneMatch(httpReloadPeriod::equals));
+        assertExternalConfigNull(httpReloadPeriod);
+        assertExternalConfigNull(mgmtReloadPeriod);
 
         ConfigArgsConfigSource.setCliArgs("--https-certificates-reload-period=2h");
         initConfig();
         assertExternalConfig(Map.of(
-                "quarkus.http.ssl.certificate.reload-period", "2h",
-                "quarkus.management.ssl.certificate.reload-period", "2h"
+                httpReloadPeriod, "2h",
+                mgmtReloadPeriod, "2h"
         ));
     }
 
@@ -629,16 +631,21 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         if (FileSystems.getDefault().getSeparator().equals("\\")) {
             expected = "/some/file";
         }
-        assertEquals(expected, createConfig().getConfigValue("quarkus.http.ssl.certificate.files").getValue());
+        assertEquals(expected, createConfig().getConfigValue(HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.cert").getValue());
     }
 
     @Test
     public void testHttpTrustStoreType() {
-        ConfigArgsConfigSource.setCliArgs("--fips-mode=strict");
-        assertEquals("BCFKS", createConfig().getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE).getValue());
+        String otherTypeProp = HttpPropertyMappers.TLS_PREFIX + "trust-store.other.type";
 
-        ConfigArgsConfigSource.setCliArgs("--https-trust-store-type=jks");
-        assertEquals("jks", createConfig().getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE).getValue());
+        ConfigArgsConfigSource.setCliArgs("--fips-mode=strict", "--https-trust-store-file=trust.bcfks");
+        assertEquals("BCFKS", createConfig().getConfigValue(otherTypeProp).getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--https-trust-store-type=jks", "--https-trust-store-file=trust.jks", "--https-trust-store-password=pass");
+        assertNull(createConfig().getConfigValue(otherTypeProp).getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--https-trust-store-type=BCFKS", "--https-trust-store-file=trust.bcfks");
+        assertEquals("BCFKS", createConfig().getConfigValue(otherTypeProp).getValue());
     }
 
     @Test
@@ -675,8 +682,8 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testKeycloakConfQuarkusPropertyNotUsed() {
         ConfigArgsConfigSource.setCliArgs("");
         SmallRyeConfig config = createConfig();
-        assertNull(config.getConfigValue("quarkus.management.ssl.cipher-suites").getValue());
-        assertNotNull(config.getConfigValue("kc.quarkus.management.ssl.cipher-suites").getValue());
+        assertNull(config.getConfigValue(ManagementPropertyMappers.MGMT_TLS_PREFIX + "cipher-suites").getValue());
+        assertNotNull(config.getConfigValue("kc." + ManagementPropertyMappers.MGMT_TLS_PREFIX + "cipher-suites").getValue());
     }
 
     @Test
@@ -700,6 +707,15 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs("");
         SmallRyeConfig config = createConfig();
         assertEquals("200k", config.getConfigValue("quarkus.http.limits.max-header-size").getValue());
+    }
+
+    @Test
+    public void testHttp2HeaderListSizeMatchesHttp1HeaderSizeDefault() {
+        ConfigArgsConfigSource.setCliArgs("");
+        SmallRyeConfig config = createConfig();
+        assertEquals(config.getConfigValue("quarkus.http.limits.max-header-size").getValue(),
+                config.getConfigValue("quarkus.http.limits.max-header-list-size").getValue());
+        assertEquals("65535", config.getConfigValue("quarkus.http.limits.max-header-list-size").getValue());
     }
 
     @Test
@@ -946,20 +962,51 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
         assertEquals("PT1M", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
 
-        // Oracle:
+        // Oracle (non-XA mode — default):
         config = createConfigFromCliArguments("--db=oracle");
         assertEquals("10000", config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+        assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES).getValue());
         assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
         assertEquals("PT20S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
+
         config = createConfigFromCliArguments("--db=oracle", "--db-url-properties=?oracle.net.CONNECT_TIMEOUT=5000");
         assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+        assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES).getValue());
         config = createConfigFromCliArguments("--db=oracle", "--db-url=jdbc:oracle:thin:@//localhost:1521/keycloak?oracle.net.CONNECT_TIMEOUT=5000");
         assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+        assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES).getValue());
 
         config = createConfigFromCliArguments("--db=oracle", "--db-connect-timeout=30s");
         assertEquals("30000", config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+        assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES).getValue());
         assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
         assertEquals("PT1M", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
+
+        // Oracle (XA mode):
+        config = createConfigFromCliArguments("--db=oracle", "--transaction-xa-enabled=true");
+        assertEquals("oracle.net.CONNECT_TIMEOUT=10000", config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES).getValue());
+        assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+        assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT20S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
+
+        config = createConfigFromCliArguments("--db=oracle", "--transaction-xa-enabled=true", "--db-url-properties=?oracle.net.CONNECT_TIMEOUT=5000");
+        assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES).getValue());
+        assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+        config = createConfigFromCliArguments("--db=oracle", "--transaction-xa-enabled=true", "--db-url=jdbc:oracle:thin:@//localhost:1521/keycloak?oracle.net.CONNECT_TIMEOUT=5000");
+        assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES).getValue());
+        assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+
+        // Oracle (XA mode) — user sets ConnectionProperties directly, connect timeout is not overridden:
+        setSystemProperty(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES, "oracle.net.keepAlive=true", () -> {
+            SmallRyeConfig xaWithUserProps = createConfigFromCliArguments("--db=oracle", "--transaction-xa-enabled=true");
+            assertEquals("oracle.net.keepAlive=true", xaWithUserProps.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES).getValue());
+            assertNull(xaWithUserProps.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+        });
+        setSystemProperty(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES, "oracle.net.keepAlive=true", () -> {
+            SmallRyeConfig xaWithUserPropsExplicit = createConfigFromCliArguments("--db=oracle", "--transaction-xa-enabled=true", "--db-connect-timeout=30s");
+            assertEquals("oracle.net.keepAlive=true", xaWithUserPropsExplicit.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES).getValue());
+            assertNull(xaWithUserPropsExplicit.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+        });
 
         // MSSQL:
         config = createConfigFromCliArguments("--db=mssql");
@@ -1085,5 +1132,174 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         var config = createConfigFromCliArguments("--cache-embedded-mtls-enabled=false");
         assertEquals("false", config.getConfigValue("kc.spi-jgroups-mtls--default--activated").getValue());
         assertNull(config.getConfigValue("kc.spi-jgroups-mtls--default--enabled").getValue());
+    }
+    
+    @Test
+    public void testSniNotSetViaConfig() {
+        // SNI is enabled via KeycloakHttpServerOptionsCustomizer, not via config property
+        var config = createConfigFromCliArguments("--https-certificate-file=\\some\\file");
+        assertNull(config.getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_SNI).getValue());
+    }
+
+    @Test
+    public void testTlsConfigNameWiring() {
+        var config = createConfigFromCliArguments("--https-certificate-file=/cert.pem", "--https-certificate-key-file=/key.pem");
+        assertEquals(HttpPropertyMappers.TLS_BUCKET,
+                config.getConfigValue("quarkus.http.tls-configuration-name").getValue());
+
+        config = createConfigFromCliArguments();
+        assertNull(config.getConfigValue("quarkus.http.tls-configuration-name").getValue());
+    }
+
+    @Test
+    public void testHttpPemCertKeyMapping() {
+        ConfigArgsConfigSource.setCliArgs("--https-certificate-file=/my/cert.pem", "--https-certificate-key-file=/my/key.pem");
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.cert", "/my/cert.pem",
+                HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.key", "/my/key.pem"
+        ));
+    }
+
+    @Test
+    public void testHttpPemKeyFilePassword() {
+        ConfigArgsConfigSource.setCliArgs("--https-certificate-file=/cert.pem",
+                "--https-certificate-key-file=/key.pem",
+                "--https-certificate-key-file-password=secret");
+        initConfig();
+        assertExternalConfig(HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.password", "secret");
+    }
+
+    @Test
+    public void testHttpKeystoreDispatchPkcs12() {
+        ConfigArgsConfigSource.setCliArgs("--https-key-store-file=server.p12", "--https-key-store-password=pass");
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "key-store.p12.path", "server.p12",
+                HttpPropertyMappers.TLS_PREFIX + "key-store.p12.password", "pass"
+        ));
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.jks.path");
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.other.path");
+    }
+
+    @Test
+    public void testHttpKeystoreDispatchJks() {
+        ConfigArgsConfigSource.setCliArgs("--https-key-store-file=server.jks", "--https-key-store-password=pass");
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "key-store.jks.path", "server.jks",
+                HttpPropertyMappers.TLS_PREFIX + "key-store.jks.password", "pass"
+        ));
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.p12.path");
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.other.path");
+    }
+
+    @Test
+    public void testHttpKeystoreDispatchBcfks() {
+        ConfigArgsConfigSource.setCliArgs("--https-key-store-file=server.bcfks",
+                "--https-key-store-type=BCFKS", "--https-key-store-password=pass");
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "key-store.other.path", "server.bcfks",
+                HttpPropertyMappers.TLS_PREFIX + "key-store.other.password", "pass",
+                HttpPropertyMappers.TLS_PREFIX + "key-store.other.type", "BCFKS"
+        ));
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.p12.path");
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.jks.path");
+    }
+
+    @Test
+    public void testHttpKeystoreExplicitTypeOverridesExtension() {
+        ConfigArgsConfigSource.setCliArgs("--https-key-store-file=server.p12",
+                "--https-key-store-type=JKS", "--https-key-store-password=pass");
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "key-store.jks.path", "server.p12",
+                HttpPropertyMappers.TLS_PREFIX + "key-store.jks.password", "pass"
+        ));
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.p12.path");
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.other.type");
+    }
+
+    @Test
+    public void testHttpTrustStoreDispatchPkcs12() {
+        ConfigArgsConfigSource.setCliArgs("--https-trust-store-file=truststore.p12", "--https-trust-store-password=pass");
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "trust-store.p12.path", "truststore.p12",
+                HttpPropertyMappers.TLS_PREFIX + "trust-store.p12.password", "pass"
+        ));
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "trust-store.jks.path");
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "trust-store.other.path");
+    }
+
+    @Test
+    public void testHttpTrustStoreDispatchJks() {
+        ConfigArgsConfigSource.setCliArgs("--https-trust-store-file=truststore.jks", "--https-trust-store-password=pass");
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "trust-store.jks.path", "truststore.jks",
+                HttpPropertyMappers.TLS_PREFIX + "trust-store.jks.password", "pass"
+        ));
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "trust-store.p12.path");
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "trust-store.other.path");
+    }
+
+    @Test
+    public void testHttpCipherSuitesAndProtocols() {
+        ConfigArgsConfigSource.setCliArgs("--https-cipher-suites=TLS_AES_256_GCM_SHA384",
+                "--https-protocols=TLSv1.3");
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "cipher-suites", "TLS_AES_256_GCM_SHA384",
+                HttpPropertyMappers.TLS_PREFIX + "protocols", "TLSv1.3"
+        ));
+    }
+
+    @Test
+    public void testHttpKeyStoreTypeFilterOnlyOther() {
+        ConfigArgsConfigSource.setCliArgs("--https-key-store-type=PKCS12");
+        initConfig();
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.other.type");
+
+        ConfigArgsConfigSource.setCliArgs("--https-key-store-type=JKS");
+        initConfig();
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.other.type");
+
+        ConfigArgsConfigSource.setCliArgs("--https-key-store-type=BCFKS", "--https-key-store-file=server.bcfks", "--https-key-store-password=pass");
+        initConfig();
+        assertExternalConfig(HttpPropertyMappers.TLS_PREFIX + "key-store.other.type", "BCFKS");
+    }
+
+    @Test
+    public void testDefaultProtocolsPreserved() {
+        ConfigArgsConfigSource.setCliArgs("--https-certificate-file=/cert.pem", "--https-certificate-key-file=/key.pem");
+        initConfig();
+        assertExternalConfig(HttpPropertyMappers.TLS_PREFIX + "protocols", "TLSv1.3,TLSv1.2");
+    }
+
+    @Test
+    public void testPemPasswordNotSetWhenNotSpecified() {
+        ConfigArgsConfigSource.setCliArgs("--https-certificate-file=/cert.pem", "--https-certificate-key-file=/key.pem");
+        initConfig();
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.password");
+    }
+
+    @Test
+    public void testPasswordOnlyDoesNotWireTlsConfigName() {
+        ConfigArgsConfigSource.setCliArgs("--https-certificate-key-file-password=secret");
+        initConfig();
+        assertNull(createConfig().getConfigValue("quarkus.http.tls-configuration-name").getValue());
+    }
+
+    @Test
+    public void testPemPasswordViaEnvVar() {
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/cert.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/key.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE_PASSWORD", "env-secret"
+        ));
+        initConfig();
+        assertExternalConfig(HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.password", "env-secret");
     }
 }

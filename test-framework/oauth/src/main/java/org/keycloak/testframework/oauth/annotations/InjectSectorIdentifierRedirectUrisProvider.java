@@ -16,5 +16,5 @@ import org.keycloak.testframework.injection.LifeCycle;
 public @interface InjectSectorIdentifierRedirectUrisProvider {
     LifeCycle lifecycle() default LifeCycle.GLOBAL;
 
-    String[] value();
+    String[] value() default {};
 }

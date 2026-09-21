@@ -343,7 +343,7 @@ export default function ClientDetails() {
       try {
         await adminClient.clients.del({ id: clientId });
         addAlert(t("clientDeletedSuccess"), AlertVariant.success);
-        navigate(toClients({ realm }));
+        void navigate(toClients({ realm }));
       } catch (error) {
         addError("clientDeleteError", error);
       }

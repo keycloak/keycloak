@@ -331,6 +331,7 @@ public class AdminClientTest {
                     .serviceAccountsEnabled(true)
                     .authenticatorType(X509ClientAuthenticator.PROVIDER_ID)
                     .attribute(X509ClientAuthenticator.ATTR_SUBJECT_DN, "(.*?)(?:$)")
+                    .attribute(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN, "CN=myclient")
                     .attribute(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, "true"));
 
             // This user is associated with the x509-client-sa service account above and

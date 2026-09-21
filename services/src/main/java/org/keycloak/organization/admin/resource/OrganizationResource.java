@@ -71,6 +71,10 @@ public class OrganizationResource {
         this.auth = auth;
     }
 
+    /**
+     * Precondition: caller must have passed through {@link OrganizationsResource#get(String)}
+     * which enforces {@code auth.orgs().requireView(organization)}.
+     */
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)

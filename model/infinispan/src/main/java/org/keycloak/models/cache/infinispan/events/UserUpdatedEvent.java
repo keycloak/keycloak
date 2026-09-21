@@ -42,7 +42,7 @@ public class UserUpdatedEvent extends InvalidationEvent implements UserCacheInva
 
     private UserUpdatedEvent(String id, String username, String email, String realmId) {
         super(id);
-        this.username = Objects.requireNonNull(username);
+        this.username = username;
         this.email = email;
         this.realmId = Objects.requireNonNull(realmId);
     }

@@ -214,7 +214,7 @@ public class PasswordPolicy implements Serializable {
         }
 
         public PasswordPolicy build(KeycloakSession session) {
-            Map<String, Object> config = new HashMap<>();
+            Map<String, Object> config = new LinkedHashMap<>();
             for (Map.Entry<String, String> e : map.entrySet()) {
 
                 PasswordPolicyProvider provider = session.getProvider(PasswordPolicyProvider.class, e.getKey());

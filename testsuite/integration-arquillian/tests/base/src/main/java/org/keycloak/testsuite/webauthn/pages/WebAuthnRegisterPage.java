@@ -25,7 +25,6 @@ import org.keycloak.testsuite.util.WaitUtils;
 
 import org.hamcrest.CoreMatchers;
 import org.openqa.selenium.Alert;
-import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
@@ -114,10 +113,8 @@ public class WebAuthnRegisterPage extends LogoutSessionsPage {
     }
 
     @Override
-    public boolean isCurrent() {
-        final String formTitle = getFormTitle();
-        return formTitle != null && formTitle.equals("Passkey Registration") &&
-                driver.findElement(By.id("registerWebAuthn")).isDisplayed();
+    public String getExpectedPageId() {
+        return "login-webauthn-register";
     }
 
 }

@@ -27,8 +27,6 @@ import org.keycloak.authentication.FormAuthenticator;
 import org.keycloak.authentication.FormAuthenticatorFactory;
 import org.keycloak.authentication.FormContext;
 import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
-import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -57,7 +55,7 @@ public class RegistrationPage implements FormAuthenticator, FormAuthenticatorFac
 
     @Override
     public Response render(FormContext context, LoginFormsProvider form) {
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (Organizations.isEnabled(context.getSession())) {
             try {
                 InviteOrgActionToken token = Organizations.parseInvitationToken(context.getSession(), context.getHttpRequest());
 

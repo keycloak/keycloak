@@ -1,6 +1,7 @@
 package org.keycloak.testframework.scim.client;
 
 import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 
@@ -8,6 +9,7 @@ import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.scim.client.ScimClient;
 import org.keycloak.scim.client.authorization.OAuth2Bearer;
@@ -33,13 +35,25 @@ public class ScimClientSupplier implements Supplier<ScimClient, InjectScimClient
         KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
         ManagedRealm managedRealm = instanceContext.getDependency(ManagedRealm.class);
         InjectScimClient config = instanceContext.getAnnotation();
+        String serverBaseUrl = server.getBaseUrl();
         List<ClientRepresentation> scimClient = managedRealm.admin().clients().findByClientId(config.clientId());
 
         if (scimClient.isEmpty() && config.attachTo().isEmpty()) {
+            String scimAudience = serverBaseUrl + "/realms/" + managedRealm.getName() + "/scim/v2";
+            ProtocolMapperRepresentation audienceMapper = new ProtocolMapperRepresentation();
+            audienceMapper.setName("scim-audience-mapper");
+            audienceMapper.setProtocol("openid-connect");
+            audienceMapper.setProtocolMapper("oidc-audience-mapper");
+            audienceMapper.setConfig(Map.of(
+                    "included.custom.audience", scimAudience,
+                    "access.token.claim", "true"
+            ));
+
             try (Response response = managedRealm.admin().clients().create(ClientBuilder.create()
                             .clientId(config.clientId())
                             .secret(config.clientSecret())
                             .serviceAccountsEnabled(true)
+                            .protocolMappers(audienceMapper)
                             .enabled(true)
                     .build())) {
                 String id = ApiUtil.getCreatedId(response);
@@ -53,7 +67,6 @@ public class ScimClientSupplier implements Supplier<ScimClient, InjectScimClient
             }
         }
 
-        String serverBaseUrl = server.getBaseUrl();
         String tokenEndpoint = serverBaseUrl + "/realms/" + managedRealm.getName() + "/protocol/openid-connect/token";
         return ScimClient.create(httpClient)
                 .withBaseUrl(serverBaseUrl + "/realms/" + managedRealm.getName())

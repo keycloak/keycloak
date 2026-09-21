@@ -40,8 +40,8 @@ public class IdpLinkActionPage extends AbstractPage {
     private WebElement message;
 
     @Override
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).startsWith("Linking ");
+    public String getExpectedPageId() {
+        return "login-link-idp-action";
     }
 
     public void confirm() {

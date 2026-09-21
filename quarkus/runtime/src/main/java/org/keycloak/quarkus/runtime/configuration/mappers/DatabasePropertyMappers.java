@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.DurationConverter;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.CachingOptions.Stack;
@@ -58,7 +59,9 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     public static final String CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
     public static final String SOCKET_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.socketTimeout";
     public static final String ORACLEDB_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.oracle.net.CONNECT_TIMEOUT";
+    public static final String ORACLEDB_CONNECTION_PROPERTIES = "quarkus.datasource.jdbc.additional-jdbc-properties.ConnectionProperties";
     public static final String MSSQL_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.loginTimeout";
+    private static final String ORACLE_NET_CONNECT_TIMEOUT = "oracle.net.CONNECT_TIMEOUT";
     public static final String JDBC_LOGIN_TIMEOUT = "quarkus.datasource.jdbc.login-timeout";
     public static final String JDBC_ACQUISITION_TIMEOUT = "quarkus.datasource.jdbc.acquisition-timeout";
 
@@ -101,8 +104,12 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getConnectTimeout(EnumSet.of(Database.Vendor.MYSQL, Database.Vendor.MARIADB, Database.Vendor.POSTGRES, Database.Vendor.TIDB), "connectTimeout"))
                         .build(),
                 fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(ORACLEDB_CONNECTION_PROPERTIES)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getOracleConnectTimeout(true))
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
                         .to(ORACLEDB_CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getConnectTimeout(EnumSet.of(Database.Vendor.ORACLE), "oracle.net.CONNECT_TIMEOUT"))
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getOracleConnectTimeout(false))
                         .build(),
                 fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
                         .to(MSSQL_CONNECT_TIMEOUT)
@@ -256,6 +263,9 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .transformer(DatabasePropertyMappers::toDatabaseKind)
                         .paramLabel("vendor")
                         .build(),
+                fromOption(DatabaseOptions.DB_HEALTH_EXCLUDE)
+                        .to("quarkus.datasource.\"<datasource>\".health-exclude")
+                        .build(),
                 fromOption(DatabaseOptions.DB_POOL_MAX_LIFETIME)
                         .to("quarkus.datasource.jdbc.max-lifetime")
                         .mapFrom(DB, DatabasePropertyMappers::transformPoolMaxLifetime)
@@ -275,6 +285,10 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "false")
                         .to(MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
                         .isEnabled(DatabasePropertyMappers::isMssqlSendStringParametersAsUnicode)
+                        .build(),
+                fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "read-committed")
+                        .to("quarkus.datasource.jdbc.transaction-isolation-level")
+                        .isEnabled(DatabasePropertyMappers::isReadCommittedIsolationRequired)
                         .build()
         ));
         return result;
@@ -353,6 +367,22 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 !dbUrlProperties.contains("sendStringParametersAsUnicode");
     }
 
+    /**
+     * MySQL and MariaDB default to REPEATABLE READ transaction isolation, which acquires gap locks on
+     * {@code INSERT ... ON DUPLICATE KEY UPDATE} statements. When the stateless feature is enabled,
+     * concurrent login requests execute such upserts on authentication session and login failure tables,
+     * causing deadlocks under load. Switching to READ COMMITTED eliminates gap locks and resolves
+     * these deadlocks. This matches the isolation level PostgreSQL, Oracle, and SQL Server use by default.
+     */
+    public static boolean isReadCommittedIsolationRequired() {
+        String db = Configuration.getConfigValue(DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElse(null);
+        if (vendor != Database.Vendor.MYSQL && vendor != Database.Vendor.MARIADB && vendor != Database.Vendor.TIDB) {
+            return false;
+        }
+        return Profile.isFeatureEnabled(Profile.Feature.STATELESS);
+    }
+
     private static ValueMapper getConnectTimeout(Collection<Database.Vendor> validForVendors, String timeoutProperty) {
         return (String datasource, String value, ConfigSourceInterceptorContext context) -> {
             String db = getDatasourceOptionValue(DB, datasource).orElse(null);
@@ -365,12 +395,46 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
             if (vendor == Vendor.MSSQL || vendor == Vendor.POSTGRES) {
                 return durationToSeconds(value);
             }
-            if (vendor == Vendor.MYSQL || vendor == Vendor.MARIADB || vendor == Vendor.ORACLE || vendor == Vendor.TIDB) {
+            if (vendor == Vendor.MYSQL || vendor == Vendor.MARIADB || vendor == Vendor.TIDB) {
                 return durationToMillis(value);
             }
 
             // We don't know if it is seconds or milliseconds for other databases.
             throw new IllegalArgumentException("Vendor " + vendor + " not supported for socket timeout calculation");
+        };
+    }
+
+    private static ValueMapper getOracleConnectTimeout(boolean forXa) {
+        return (String datasource, String value, ConfigSourceInterceptorContext context) -> {
+            String db = getDatasourceOptionValue(DB, datasource).orElse(null);
+            Database.Vendor vendor = Database.getVendor(db).orElse(null);
+
+            if (checkSettingsAndVendor(EnumSet.of(Database.Vendor.ORACLE), ORACLE_NET_CONNECT_TIMEOUT, datasource, vendor, db)) {
+                return null;
+            }
+
+            var key = StringUtil.isNotBlank(datasource) ? TransactionOptions.getNamedTxXADatasource(datasource) : TransactionOptions.TRANSACTION_XA_ENABLED.getKey();
+            boolean isXaEnabled = Configuration.isKcPropertyTrue(key);
+
+            if (forXa != isXaEnabled) {
+                return null;
+            }
+
+            if (forXa) {
+                String connectionPropertiesKey = StringUtil.isNotBlank(datasource)
+                        ? "quarkus.datasource.\"" + datasource + "\".jdbc.additional-jdbc-properties.ConnectionProperties"
+                        : ORACLEDB_CONNECTION_PROPERTIES;
+                ConfigValue existing = context.proceed(connectionPropertiesKey);
+                if (existing != null && existing.getValue() != null) {
+                    if (!existing.getValue().contains(ORACLE_NET_CONNECT_TIMEOUT)) {
+                        log.warnf("Custom ConnectionProperties does not contain '%s'; the socket connect timeout will not be set.",
+                                ORACLE_NET_CONNECT_TIMEOUT);
+                    }
+                    return null;
+                }
+                return ORACLE_NET_CONNECT_TIMEOUT + "=" + durationToMillis(value);
+            }
+            return durationToMillis(value);
         };
     }
 

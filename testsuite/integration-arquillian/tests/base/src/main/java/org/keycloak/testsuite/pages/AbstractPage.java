@@ -17,15 +17,24 @@
 
 package org.keycloak.testsuite.pages;
 
+import java.time.Duration;
+
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.jupiter.api.Assertions;
+import org.openqa.selenium.By;
+import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ *
+ * THIS ABSTRACT PAGE WON'T BE MIGRATED TO THE NEW TEST FRAMEWORK!
  */
+@Deprecated(forRemoval = true)
 public abstract class AbstractPage {
 
     @ArquillianResource
@@ -35,20 +44,30 @@ public abstract class AbstractPage {
     protected OAuthClient oauth;
 
     public void assertCurrent() {
-        String name = getClass().getSimpleName();
-        Assertions.assertTrue(isCurrent(),
-                "Expected " + name + " but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")");
+        waitForPage(this);
     }
 
-    abstract public boolean isCurrent();
-
-    public boolean isCurrent(String expectedTitle) {
-        return PageUtils.getPageTitle(driver).equals(expectedTitle);
-    }
+    public abstract String getExpectedPageId();
 
     public void setDriver(WebDriver driver) {
         this.driver = driver ;
         oauth.setDriver(driver);
     }
 
+    private void waitForPage(AbstractPage page) {
+        String expectedPageId = page.getExpectedPageId();
+        try {
+            createDefaultWait().ignoring(StaleElementReferenceException.class).until(d -> expectedPageId.equals(getCurrentPageId()));
+        } catch (TimeoutException e) {
+            Assertions.fail("Expected page '" + expectedPageId + "' to be loaded, but currently on page '" + getCurrentPageId() + "' after timeout");
+        }
+    }
+
+    private WebDriverWait createDefaultWait() {
+        return new WebDriverWait(driver, Duration.ofSeconds(5), Duration.ofMillis(50));
+    }
+
+    private String getCurrentPageId() {
+        return driver.findElement(By.xpath("//body")).getAttribute("data-page-id");
+    }
 }

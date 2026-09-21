@@ -62,6 +62,9 @@ public class RegisterPage extends AbstractLoginPage {
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
+    @FindBy(linkText = "« Back to Login")
+    private WebElement backToLoginLink;
+
     public RegisterPage(ManagedWebDriver driver) {
         super(driver);
     }
@@ -73,6 +76,17 @@ public class RegisterPage extends AbstractLoginPage {
 
     public void register(String firstName, String lastName, String email, String username, String password) {
         register(firstName, lastName, email, username, password, password, null, null, null);
+    }
+
+    public void registerWithEmailAsUsername(String firstName, String lastName, String email, String password) {
+        registerWithEmailAsUsername(firstName, lastName, email, password, password);
+    }
+
+    public void registerWithEmailAsUsername(String firstName, String lastName, String email, String password, String passwordConfirm) {
+        if (isUsernamePresent()) {
+            Assertions.fail("Form must be without username field");
+        }
+        register(firstName, lastName, email, null, password, passwordConfirm, null, null, null);
     }
 
     public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm) {
@@ -97,9 +111,11 @@ public class RegisterPage extends AbstractLoginPage {
             }
         }
 
-        usernameInput.clear();
-        if (username != null) {
-            usernameInput.sendKeys(username);
+        if (isUsernamePresent()) {
+            usernameInput.clear();
+            if (username != null) {
+                usernameInput.sendKeys(username);
+            }
         }
 
         if (!isPasswordPresent() && password != null) {
@@ -175,6 +191,14 @@ public class RegisterPage extends AbstractLoginPage {
         }
     }
 
+    public boolean isUsernamePresent() {
+        try {
+            return driver.findElement(By.name("username")).isDisplayed();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
+    }
+
     public boolean isPasswordPresent() {
         try {
             return driver.findElement(By.name("password")).isDisplayed();
@@ -186,5 +210,9 @@ public class RegisterPage extends AbstractLoginPage {
     @Override
     public String getExpectedPageId() {
         return "login-register";
+    }
+
+    public void clickBackToLogin() {
+        backToLoginLink.click();
     }
 }

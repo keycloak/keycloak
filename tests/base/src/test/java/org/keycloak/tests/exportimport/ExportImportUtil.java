@@ -80,7 +80,6 @@ import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
 import org.keycloak.testframework.remote.providers.runonserver.FetchOnServerWrapper;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.tests.providers.federation.DummyUserFederationProviderFactory;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -124,7 +123,7 @@ public class ExportImportUtil {
         Assertions.assertEquals(0, userRsc.getFederatedIdentity().size());
 
         List<ClientRepresentation> resources = realmRsc.clients().findAll();
-        Assertions.assertEquals(10, resources.size());
+        Assertions.assertEquals(13, resources.size());
 
         // Test applications imported
         ClientRepresentation application = AdminApiUtil.findClientByClientId(realmRsc, "Application").toRepresentation();
@@ -136,7 +135,7 @@ public class ExportImportUtil {
         Assertions.assertNotNull(otherApp);
         Assertions.assertNull(nonExisting);
         List<ClientRepresentation> clients = realmRsc.clients().findAll();
-        Assertions.assertEquals(10, clients.size());
+        Assertions.assertEquals(13, clients.size());
         Assertions.assertTrue(hasClient(clients, application));
         Assertions.assertTrue(hasClient(clients, otherApp));
         Assertions.assertTrue(hasClient(clients, accountApp));
@@ -292,10 +291,11 @@ public class ExportImportUtil {
 
         // Test smtp config
         Map<String, String> smtpConfig = realm.getSmtpServer();
-        Assertions.assertTrue(smtpConfig.size() == 3);
+        Assertions.assertTrue(smtpConfig.size() == 4);
         Assertions.assertEquals("auto@keycloak.org", smtpConfig.get("from"));
         Assertions.assertEquals("localhost", smtpConfig.get("host"));
         Assertions.assertEquals("3025", smtpConfig.get("port"));
+        Assertions.assertNotNull(smtpConfig.get("password"));
 
         // Test identity providers
         List<IdentityProviderRepresentation> identityProviders = realmRsc.identityProviders().findAll();
@@ -339,9 +339,6 @@ public class ExportImportUtil {
         Assertions.assertEquals(FullNameLDAPStorageMapperFactory.PROVIDER_ID, fullNameMapper.getProviderId());
         Assertions.assertEquals("cn", fullNameMapper.getConfig().getFirst(FullNameLDAPStorageMapper.LDAP_FULL_NAME_ATTRIBUTE));
         /////////////////
-
-        // Assert that federation link wasn't created during import
-        Assertions.assertNull(runOnServerMaster.fetch(getUserByUsernameFromFedProviderFactory(realm.getRealm(), "wburke")));
 
         // Test builtin authentication flows
         AuthenticationFlowRepresentation clientFlow = realmRsc.flows().getFlows().stream()
@@ -817,27 +814,6 @@ public class ExportImportUtil {
         };
     }
 
-    private static FetchOnServerWrapper<UserRepresentation> getUserByUsernameFromFedProviderFactory(String realmName, String userName) {
-        return new FetchOnServerWrapper<>() {
-
-            @Override
-            public FetchOnServer getRunOnServer() {
-                return session -> {
-                    RealmModel realm = session.realms().getRealmByName(realmName);
-                    if (realm == null) return null;
-                    DummyUserFederationProviderFactory factory = (DummyUserFederationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, "dummy");
-                    UserModel user = factory.create(session, null).getUserByUsername(realm, userName);
-                    if (user == null) return null;
-                    return ModelToRepresentation.toRepresentation(session, realm, user);
-                };
-            }
-
-            @Override
-            public Class<UserRepresentation> getResultClass() {
-                return UserRepresentation.class;
-            }
-        };
-    }
     private static FetchOnServerWrapper<UserRepresentation> getUserByFederatedIdentity(
             String realmName,
             String identityProvider,

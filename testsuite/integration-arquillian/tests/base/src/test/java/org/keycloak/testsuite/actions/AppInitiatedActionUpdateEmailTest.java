@@ -142,8 +142,7 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
 
     @IgnoreBrowserDriver(value={FirefoxDriver.class}, negate=true)
     public void updateEmailReAuthentication() {
-        appPage.open();
-        appPage.openAccount();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
         timeOffSet.set(400);
@@ -158,8 +157,7 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
     @Test
     @IgnoreBrowserDriver(value={FirefoxDriver.class}, negate=true)
     public void testNoReAuthenticationIfMaxAgeNotReached() {
-        appPage.open();
-        appPage.openAccount();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
         UIUtils.clickLink(updateEmailBtn);
@@ -183,8 +181,7 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
         updateEmailAction.getConfig().put(Constants.MAX_AUTH_AGE_KEY, "0");
         managedRealm.admin().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name(), updateEmailAction);
 
-        appPage.open();
-        appPage.openAccount();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
         UIUtils.clickLink(updateEmailBtn);

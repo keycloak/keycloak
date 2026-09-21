@@ -41,7 +41,6 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
@@ -81,9 +80,6 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
     protected LogoutConfirmPage logoutConfirmPage;
 
     @Page
-    protected AppPage appPage;
-
-    @Page
     protected ErrorPage errorPage;
 
     @Override
@@ -106,7 +102,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
 
         grantPage.accept();
 
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
                 .clientId(THIRD_PARTY_APP)
@@ -187,7 +183,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
 
         // Open login form and assert grantPage not shown
         oauth.openLoginForm();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.expectLoginSuccess(events.poll())
                 .details(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
                 .details(Details.REDIRECT_URI, oauth.getRedirectUri())
@@ -365,7 +361,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
 
         // Assert automatically logged another time
         oauth.openLoginForm();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.expectLoginSuccess(events.poll())
                 .details(Details.REDIRECT_URI, oauth.getRedirectUri())
                 .details(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
@@ -458,7 +454,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
         grantPage.accept();
 
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
                 .clientId(THIRD_PARTY_APP)

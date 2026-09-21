@@ -18,13 +18,11 @@
 package org.keycloak.truststore;
 
 import java.io.File;
-import java.security.InvalidKeyException;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PublicKey;
-import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -41,7 +39,10 @@ import javax.security.auth.x500.X500Principal;
 
 import org.keycloak.Config;
 import org.keycloak.common.enums.HostnameVerificationPolicy;
+import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.config.HttpOptions;
+import org.keycloak.config.ProxyOptions;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -127,9 +128,34 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
             }
         }
 
+        // load the HTTP trust-store if defined at startup
+        String httpsTrustStoreFile = config.root().get(HttpOptions.HTTPS_TRUST_STORE_FILE.getKey());
+        KeyStore httpsTruststore = null;
+        TruststoreCertificatesLoader httpsCertsLoader = null;
+        if (httpsTrustStoreFile != null && config.root().get(ProxyOptions.PROXY_HEADERS.getKey()) == null) {
+            try {
+                String httpsTrustStorePassword = config.root().get(HttpOptions.HTTPS_TRUST_STORE_PASSWORD.getKey());
+                String httpsTrustStoreType = config.root().get(HttpOptions.HTTPS_TRUST_STORE_TYPE.getKey());
+                final String truststoreType = KeystoreUtil.getTruststoreType(httpsTrustStoreType, httpsTrustStoreFile, KeyStore.getDefaultType());
+                if (KeystoreUtil.TruststoreFormat.PEM.name().equalsIgnoreCase(truststoreType)) {
+                    httpsTruststore = TruststoreBuilder.createGeneratedTrustStore();
+                    TruststoreBuilder.mergePemFile(httpsTruststore, httpsTrustStoreFile, true);
+                } else {
+                    httpsTruststore = KeystoreUtil.loadKeyStore(httpsTrustStoreFile, httpsTrustStorePassword, httpsTrustStoreType);
+                }
+                httpsCertsLoader = new TruststoreCertificatesLoader(httpsTruststore);
+            } catch (Exception e) {
+                log.debugf(e, "Error loading HTTPS trust-store file '%s'", httpsTrustStoreFile);
+            }
+        }
+
         TruststoreCertificatesLoader certsLoader = new TruststoreCertificatesLoader(truststore);
-        provider = new FileTruststoreProvider(truststore, verificationPolicy, Collections.unmodifiableMap(certsLoader.trustedRootCerts)
-                , Collections.unmodifiableMap(certsLoader.intermediateCerts));
+        provider = new FileTruststoreProvider(truststore, verificationPolicy, Collections.unmodifiableMap(certsLoader.trustedRootCerts),
+                Collections.unmodifiableMap(certsLoader.intermediateCerts),
+                httpsTruststore,
+                httpsCertsLoader != null ? Collections.unmodifiableMap(httpsCertsLoader.trustedRootCerts) : null,
+                httpsCertsLoader != null ? Collections.unmodifiableMap(httpsCertsLoader.intermediateCerts) : null
+        );
         TruststoreProviderSingleton.set(provider);
         log.debugf("File truststore provider initialized: %s, Truststore type: %s",  new File(storepath).getAbsolutePath(), type);
     }
@@ -212,7 +238,7 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
 
                 if (certificate instanceof X509Certificate) {
                     X509Certificate cax509cert = (X509Certificate) certificate;
-                    if (isSelfSigned(cax509cert)) {
+                    if (CertificateUtils.isSelfSigned(cax509cert)) {
                         X500Principal principal = cax509cert.getSubjectX500Principal();
                         List<X509Certificate> certs = trustedRootCerts.get(principal);
                         if (certs == null) {
@@ -235,29 +261,9 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
                     log.info("Skipping certificate with alias [" + alias + "] from truststore, because it's not an X509Certificate");
             } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException | NoSuchProviderException e) {
                 log.warnf("Error while reading Keycloak truststore entry [%s]. Exception message: %s", alias, e.getMessage(), e);
+            } catch (GeneralSecurityException e) {
+                throw new RuntimeException("Failed to verify whether truststore certificate is self-signed.", e);
             }
-        }
-
-        /**
-         * Checks whether given X.509 certificate is self-signed.
-         */
-        private boolean isSelfSigned(X509Certificate cert)
-                throws CertificateException, NoSuchAlgorithmException,
-                NoSuchProviderException {
-            try {
-                // Try to verify certificate signature with its own public key
-                PublicKey key = cert.getPublicKey();
-                cert.verify(key);
-                log.trace("certificate " + cert.getSubjectDN() + " detected as root CA");
-                return true;
-            } catch (SignatureException sigEx) {
-                // Invalid signature --> not self-signed
-                log.trace("certificate " + cert.getSubjectDN() + " detected as intermediate CA");
-            } catch (InvalidKeyException keyEx) {
-                // Invalid key --> not self-signed
-                log.trace("certificate " + cert.getSubjectDN() + " detected as intermediate CA");
-            }
-            return false;
         }
     }
 }

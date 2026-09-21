@@ -51,8 +51,6 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.cluster.AuthenticationSessionFailoverClusterTest;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -104,9 +102,6 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
     @Rule
     public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected LoginPage loginPage;
@@ -223,8 +218,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
           .details(Details.EMAIL, "test-user@localhost")
           .details(Details.CODE_ID, mailCodeId);
 
-        appPage.assertCurrent();
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll()).userId(testUserId).sessionId(mailCodeId).details(Details.USERNAME, "test-user@localhost");
     }
@@ -258,7 +252,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         updatePasswordOnChangePasswordPage(updatePasswordPage, userId);
 
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll()).userId(userId).sessionId(mailCodeId).details(Details.USERNAME, "verifyemail");
     }
@@ -315,7 +309,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         loginPage.assertCurrent();
         Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
         loginPage.login("verifyemail-br2", "password");
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test
@@ -360,7 +354,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         driver.navigate().to(verificationLink2.trim());
         updatePasswordPage.assertCurrent();
         updatePasswordPage.changePassword("password", "password");
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         driver.navigate().to(verificationLink1.trim());
         assertTrue(errorPage.getError().contains("You are already authenticated as different user"));
         UserRepresentation user1 = managedRealm.admin().users().search(username1).get(0);
@@ -426,8 +420,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         driver.navigate().to(verificationUrl.trim());
 
-        appPage.assertCurrent();
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.VERIFY_EMAIL)
           .userId(testUserId)
@@ -490,8 +483,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         driver.navigate().to(verificationUrl.trim());
 
-        appPage.assertCurrent();
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.VERIFY_EMAIL)
           .userId(testUserId)
@@ -520,8 +512,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         driver.navigate().to(verificationUrl1.trim());
 
-        appPage.assertCurrent();
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         MimeMessage message2 = mail.getReceivedMessages()[1];
 
@@ -581,7 +572,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         MimeMessage message2 = mail.getReceivedMessages()[1];
         String verificationUrl2 = getEmailLink(message2);
         driver.navigate().to(verificationUrl2.trim());
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         driver.navigate().to(verificationUrl1.trim());
         assertEquals("Your email address has been verified already.", infoPage.getInfo());
@@ -838,9 +829,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
             assertEquals("Your account has been updated.", infoPage.getInfo());
 
             // Now login to app
-            TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
+            TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage);
             testAppHelper.login("test-user@localhost", "password");
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         }
     }
 
@@ -897,7 +888,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
             driver.navigate().to(verificationUrl.trim());
 
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         }
     }
 
@@ -947,7 +938,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
             loginPage.assertCurrent();
             loginPage.login("test-user@localhost", "password");
 
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         }
     }
 
@@ -957,12 +948,12 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                 .setEmailVerified(true)
                 .update()) {
 
-            TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
+            TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage);
             testAppHelper.login("test-user@localhost", "password");
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             testAppHelper.logout();
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             verifyEmailDuringAuthFlow();
         }
@@ -976,9 +967,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
             final String testRealmName = managedRealm.admin().toRepresentation().getRealm();
 
             // Browser 1: Log in
-            TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
+            TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage);
             testAppHelper.login("test-user@localhost", "password");
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             // Browser 2: Log in
             driver2.navigate().to(oauth.loginForm().build());
@@ -1001,8 +992,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
                 // Browser 1: Logout
                 testAppHelper.logout();
-                appPage.assertCurrent();
-
+                Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
                 // Browser 1: Log in
                 testAppHelper.login("test-user@localhost", "password");
@@ -1029,7 +1019,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                 // Browser 1: Expect that it needs to authenticate from scratch after browser refresh
                 driver.navigate().refresh();
                 testAppHelper.login("test-user@localhost", "password");
-                appPage.assertCurrent();
+                Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             }
         }
     }
@@ -1041,7 +1031,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         userAttributeUpdater.setEmailVerified(false).setRequiredActions(RequiredAction.VERIFY_EMAIL).update();
 
@@ -1058,7 +1048,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         driver.navigate().to(verificationUrl);
 
         // back to app, already logged in
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // email should be verified and required actions empty
         UserRepresentation user = managedRealm.admin().users().get(testUserId).toRepresentation();
@@ -1099,7 +1089,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         driver.navigate().to(verificationUrl);
 
         // back to app, already logged in
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // email should be verified and required actions empty
         UserRepresentation user = managedRealm.admin().users().get(testUserId).toRepresentation();
@@ -1114,7 +1104,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         userAttributeUpdater.setEmailVerified(false).setRequiredActions(RequiredAction.VERIFY_EMAIL).update();
 
@@ -1152,7 +1142,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         // after refresh in the first browser the app should be shown
         driver.navigate().refresh();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test
@@ -1267,7 +1257,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         driver.navigate().to(verificationUrl);
 
         // back to app, already logged in
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // email should be verified and required actions empty
         userRep = user.toRepresentation();

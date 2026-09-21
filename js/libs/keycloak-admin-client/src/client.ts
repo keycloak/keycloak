@@ -13,6 +13,7 @@ import { Organizations } from "./resources/organizations.js";
 import { Workflows } from "./resources/workflows.js";
 import { Roles } from "./resources/roles.js";
 import { ServerInfo } from "./resources/serverInfo.js";
+import { Ssf } from "./resources/ssf.js";
 import { Users } from "./resources/users.js";
 import { UserStorageProvider } from "./resources/userStorageProvider.js";
 import { WhoAmI } from "./resources/whoAmI.js";
@@ -61,6 +62,7 @@ export class KeycloakAdminClient {
   public attackDetection: AttackDetection;
   public authenticationManagement: AuthenticationManagement;
   public cache: Cache;
+  public ssf: Ssf;
 
   // Members
   public baseUrl: string;
@@ -105,6 +107,7 @@ export class KeycloakAdminClient {
     this.whoAmI = new WhoAmI(this);
     this.attackDetection = new AttackDetection(this);
     this.cache = new Cache(this);
+    this.ssf = new Ssf(this);
   }
 
   public async auth(credentials: Credentials) {
@@ -142,9 +145,9 @@ export class KeycloakAdminClient {
     this.#accessTokenDecoded = decodeToken(token);
   }
 
-  public setRefreshToken(token: string) {
+  public setRefreshToken(token?: string) {
     this.refreshToken = token;
-    this.#refreshTokenDecoded = decodeToken(token);
+    this.#refreshTokenDecoded = token ? decodeToken(token) : undefined;
   }
 
   public async getAccessToken() {
@@ -180,7 +183,11 @@ export class KeycloakAdminClient {
     );
 
     this.setAccessToken(accessToken);
-    this.setRefreshToken(refreshToken);
+
+    // The current refresh token remains valid if the response does not carry a new one.
+    if (refreshToken) {
+      this.setRefreshToken(refreshToken);
+    }
   }
 
   public isTokenExpired(): boolean {

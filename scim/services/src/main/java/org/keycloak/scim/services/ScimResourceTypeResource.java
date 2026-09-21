@@ -24,7 +24,10 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.request.PatchRequest;
 import org.keycloak.scim.protocol.request.SearchRequest;
@@ -32,13 +35,17 @@ import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.Scim;
 import org.keycloak.scim.resource.common.Meta;
+import org.keycloak.scim.resource.spi.MembershipChange;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
+import org.keycloak.scim.resource.spi.SearchOptions;
 import org.keycloak.scim.resource.spi.SingletonResourceTypeProvider;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import org.jboss.logging.Logger;
 
+import static org.keycloak.scim.resource.spi.ScimResourceTypeProvider.DEFAULT_MAX_RESULTS;
 import static org.keycloak.scim.services.Error.badRequest;
 import static org.keycloak.scim.services.Error.forbidden;
 import static org.keycloak.scim.services.Error.invalidSyntax;
@@ -47,6 +54,7 @@ import static org.keycloak.scim.services.Error.toResponse;
 
 public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
 
+    private static final Logger logger = Logger.getLogger(ScimResourceTypeResource.class);
     private static final String APPLICATION_SCIM_JSON = "application/scim+json";
 
     private final KeycloakSession session;
@@ -74,6 +82,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
         return onPersist(resource, Status.CREATED,
                 (rScimResourceTypeProvider, r) -> {
                     R created = resourceTypeProvider.create(r);
+                    logger.debugf("SCIM CREATE %s id=%s", resourceTypeProvider.getName(), created.getId());
                     adminEvent.operation(OperationType.CREATE)
                             .resourcePath(session.getContext().getUri(), created.getId())
                             .representation(created)
@@ -88,6 +97,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     public Response get(@PathParam("id") String id,
                         @QueryParam("attributes") String attributes,
                         @QueryParam("excludedAttributes") String excludedAttributes) {
+        logger.debugf("SCIM GET %s id=%s", resourceTypeProvider.getName(), id);
         List<String> attrList = attributes != null ? List.of(attributes.split(",")) : null;
         List<String> excludedList = excludedAttributes != null ? List.of(excludedAttributes.split(",")) : null;
 
@@ -127,7 +137,14 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     @Produces(APPLICATION_SCIM_JSON)
     public Response search(SearchRequest searchRequest) {
         try {
-            Stream<R> stream = resourceTypeProvider.getAll(searchRequest)
+            normalizePagination(searchRequest);
+
+            // sort is ignored for now
+            SearchOptions searchOptions = SearchOptions.builder().withAttributes(searchRequest.getAttributes())
+                    .withCount(searchRequest.getCount()).withExcludedAttributes(searchRequest.getExcludedAttributes())
+                    .withFilter(searchRequest.getFilter()).withStartIndex(searchRequest.getStartIndex()).build();
+
+            Stream<R> stream = resourceTypeProvider.getAll(searchOptions)
                     .peek(this::setMetadata);
 
             if (resourceTypeProvider instanceof SingletonResourceTypeProvider<R>) {
@@ -137,12 +154,12 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
             }
 
             List<R> resources = stream.toList();
-            Long totalResults = resourceTypeProvider.count(searchRequest);
+            Long totalResults = resourceTypeProvider.count(searchOptions, resources.size());
             ListResponse<R> response = new ListResponse<>();
 
             response.setResources(resources);
             response.setTotalResults(totalResults.intValue());
-            response.setStartIndex(searchRequest.getStartIndex() != null ? searchRequest.getStartIndex() : 1);
+            response.setStartIndex(searchRequest.getStartIndex());
             response.setItemsPerPage(resources.size());
 
             return Response.ok().entity(response).build();
@@ -155,6 +172,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     @DELETE
     @Produces(APPLICATION_SCIM_JSON)
     public Response delete(@PathParam("id") String id) {
+        logger.debugf("SCIM DELETE %s id=%s", resourceTypeProvider.getName(), id);
         try {
             R resource = getResource(id);
 
@@ -181,6 +199,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     @Consumes({APPLICATION_SCIM_JSON, MediaType.APPLICATION_JSON})
     @Produces(APPLICATION_SCIM_JSON)
     public Response update(@PathParam("id") String id, InputStream is) {
+        logger.debugf("SCIM UPDATE %s id=%s", resourceTypeProvider.getName(), id);
         R existing = getResource(id);
 
         if (existing == null) {
@@ -200,6 +219,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
                             .resourcePath(session.getContext().getUri())
                             .representation(updated)
                             .success();
+                    emitMembershipChangeEvents(id);
                     return updated;
                 });
     }
@@ -209,6 +229,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     @Consumes({APPLICATION_SCIM_JSON, MediaType.APPLICATION_JSON})
     @Produces(APPLICATION_SCIM_JSON)
     public Response patch(@PathParam("id") String id, PatchRequest request) {
+        logger.debugf("SCIM PATCH %s id=%s", resourceTypeProvider.getName(), id);
         R existing = getResource(id);
 
         if (existing == null) {
@@ -226,8 +247,34 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
                     .resourcePath(session.getContext().getUri())
                     .representation(patched)
                     .success();
+            emitMembershipChangeEvents(id);
             return patched;
         });
+    }
+
+    /**
+     * Emits a dedicated {@code GROUP_MEMBERSHIP} admin event for each group membership change recorded by the
+     * resource type provider while processing the current PATCH/PUT request, consistently with the equivalent
+     * Admin REST API operation.
+     *
+     * @param id the identifier of the resource (group or user) targeted by the current request, already part of
+     *           the current request URI; the event's resource path is completed with whichever id of the pair
+     *           (group id, user id) is not already {@code id}
+     */
+    private void emitMembershipChangeEvents(String id) {
+        for (MembershipChange change : resourceTypeProvider.pollMembershipChanges()) {
+            String otherId = id.equals(change.user().getId()) ? change.group().getId() : change.user().getId();
+            // reset accumulated details from a previous iteration: detail() is a no-op for blank values,
+            // so a blank value on this change could otherwise inherit the previous change's detail
+            adminEvent.getEvent().setDetails(null);
+            adminEvent.operation(change.added() ? OperationType.CREATE : OperationType.DELETE)
+                    .resource(ResourceType.GROUP_MEMBERSHIP)
+                    .resourcePath(session.getContext().getUri(), otherId)
+                    .representation(ModelToRepresentation.toRepresentation(change.group(), true))
+                    .detail(UserModel.USERNAME, change.user().getUsername())
+                    .detail(UserModel.EMAIL, change.user().getEmail())
+                    .success();
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -290,5 +337,21 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
         } catch (ForbiddenException fe) {
             throw new jakarta.ws.rs.ForbiddenException(forbidden());
         }
+    }
+
+    /**
+     * Normalizes pagination parameters on the given request in place:
+     * Defaults startIndex to 1 (SCIM based) if unset, and count to the range [0, DEFAULT_MAX_RESULTS]
+     *
+     * @param searchRequest the request to normalize, mutated directly
+     */
+    private void normalizePagination(SearchRequest searchRequest) {
+        Integer startIndex = searchRequest.getStartIndex();
+        startIndex = startIndex != null ? Math.max(1, startIndex) : 1;
+        searchRequest.setStartIndex(startIndex);
+
+        Integer count = searchRequest.getCount();
+        count = count != null ? Math.max(0, Math.min(count, DEFAULT_MAX_RESULTS)) : DEFAULT_MAX_RESULTS;
+        searchRequest.setCount(count);
     }
 }

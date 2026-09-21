@@ -35,6 +35,13 @@ public class TokenInputValidationTest {
     }
 
     @Test
+    public void userInfoRejectsTokensWithoutAlgorithmHeader() {
+        assertUserInfoRejectsInvalidToken("eyJhbGciOm51bGx9.eyJzdWIiOiJ0ZXN0In0.ZmFrZQ");
+        assertUserInfoRejectsInvalidToken("eyJ0eXAiOiJKV1QifQ.eyJzdWIiOiJ0ZXN0In0.ZmFrZQ");
+        assertUserInfoRejectsInvalidToken("e30.eyJzdWIiOiJ0ZXN0In0.ZmFrZQ");
+    }
+
+    @Test
     public void introspectionRejectsAlgNoneToken() throws IOException {
         String noneToken = new JWSBuilder().jsonContent(createDefaultToken()).none();
         IntrospectionResponse response = oauth.doIntrospectionAccessTokenRequest(noneToken);
@@ -51,6 +58,14 @@ public class TokenInputValidationTest {
         token.exp((long) (Time.currentTime() + 300));
         token.subject("attacker");
         return token;
+    }
+
+    private void assertUserInfoRejectsInvalidToken(String token) {
+        UserInfoResponse response = oauth.doUserInfoRequest(token);
+
+        assertEquals(401, response.getStatusCode());
+        assertFalse(response.isSuccess());
+        assertEquals(OAuthErrorException.INVALID_TOKEN, response.getError());
     }
 
 }

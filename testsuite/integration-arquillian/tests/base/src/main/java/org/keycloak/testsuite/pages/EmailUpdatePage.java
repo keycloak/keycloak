@@ -49,8 +49,8 @@ public class EmailUpdatePage extends AbstractPage {
 	}
 
 	@Override
-	public boolean isCurrent() {
-		return PageUtils.getPageTitle(driver).equals("Update email");
+	public String getExpectedPageId() {
+		return "login-update-email";
 	}
 
 	public String getEmailError() {

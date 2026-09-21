@@ -268,7 +268,7 @@ export default function EditUser() {
           await adminClient.users.del({ id: user!.id! });
         }
         addAlert(t("userDeletedSuccess"), AlertVariant.success);
-        navigate(toUsers({ realm: realmName }));
+        void navigate(toUsers({ realm: realmName }));
       } catch (error) {
         addError("userDeletedError", error);
       }
@@ -398,6 +398,17 @@ export default function EditUser() {
               >
                 <UserCredentials user={user} setUser={setUser} />
               </Tab>
+              {showVerifiableCredentials && (
+                <Tab
+                  data-testid="verifiable-credentials-tab"
+                  title={
+                    <TabTitleText>{t("verifiableCredentials")}</TabTitleText>
+                  }
+                  {...verifiableCredentialsTab}
+                >
+                  <UserVerifiableCredentials user={user} />
+                </Tab>
+              )}
               <Tab
                 data-testid="role-mapping-tab"
                 isHidden={!user.access?.view}
@@ -470,17 +481,6 @@ export default function EditUser() {
                       <AdminEvents resourcePath={`users/${user.id}*`} />
                     </Tab>
                   </Tabs>
-                </Tab>
-              )}
-              {showVerifiableCredentials && (
-                <Tab
-                  data-testid="verifiable-credentials-tab"
-                  title={
-                    <TabTitleText>{t("verifiableCredentials")}</TabTitleText>
-                  }
-                  {...verifiableCredentialsTab}
-                >
-                  <UserVerifiableCredentials userId={user.id!} />
                 </Tab>
               )}
               {isFeatureEnabled(Feature.Workflows) && (

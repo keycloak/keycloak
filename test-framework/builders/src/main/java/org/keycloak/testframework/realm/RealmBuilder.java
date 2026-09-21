@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
@@ -158,6 +159,16 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder identityProviderMappers(IdentityProviderMapperBuilder... identityProviderMappers) {
+        rep.setIdentityProviderMappers(combine(rep.getIdentityProviderMappers(), identityProviderMappers));
+        return this;
+    }
+
+    public RealmBuilder loginWithEmailAllowed(boolean loginWithEmailAllowed) {
+        rep.setLoginWithEmailAllowed(loginWithEmailAllowed);
+        return this;
+    }
+
     public RealmBuilder registrationEmailAsUsername(boolean registrationEmailAsUsername) {
         rep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
         return this;
@@ -223,6 +234,12 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder browserSecurityHeader(String name, String value) {
+        rep.setBrowserSecurityHeaders(createIfNull(rep.getBrowserSecurityHeaders(), HashMap::new));
+        rep.getBrowserSecurityHeaders().put(name, value);
+        return this;
+    }
+
     public RealmBuilder setEventsListeners(List<String> eventListeners) {
         rep.setEventsListeners(eventListeners);
         return this;
@@ -231,6 +248,10 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
     public RealmBuilder eventsExpiration(long eventsExpiration) {
         rep.setEventsExpiration(eventsExpiration);
         return this;
+    }
+
+    public RealmBuilder adminEventsExpiration(long adminEventsExpiration) {
+        return attribute(RealmAttributes.ADMIN_EVENTS_EXPIRATION, String.valueOf(adminEventsExpiration));
     }
 
     public RealmBuilder internationalizationEnabled(boolean enabled) {
@@ -397,6 +418,11 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder maxSecondaryAuthFailures(int count) {
+        rep.setMaxSecondaryAuthFailures(count);
+        return this;
+    }
+
     public RealmBuilder duplicateEmailsAllowed(boolean allowed) {
         rep.setDuplicateEmailsAllowed(allowed);
         return this;
@@ -479,8 +505,17 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
-    public RealmBuilder webAuthnPolicyRequireResidentKey(String residentKey) {
-        rep.setWebAuthnPolicyRequireResidentKey(residentKey);
+    /**
+     * @deprecated Use {@link #webAuthnPolicyResidentKey(String)} instead.
+     */
+    @Deprecated
+    public RealmBuilder webAuthnPolicyRequireResidentKey(String requireResidentKey) {
+        rep.setWebAuthnPolicyRequireResidentKey(requireResidentKey);
+        return this;
+    }
+
+    public RealmBuilder webAuthnPolicyResidentKey(String residentKey) {
+        rep.setWebAuthnPolicyResidentKey(residentKey);
         return this;
     }
 
@@ -524,8 +559,17 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
-    public RealmBuilder webAuthnPolicyPasswordlessRequireResidentKey(String residentKey) {
-        rep.setWebAuthnPolicyPasswordlessRequireResidentKey(residentKey);
+    /**
+     * @deprecated Use {@link #webAuthnPolicyPasswordlessResidentKey(String)} instead.
+     */
+    @Deprecated
+    public RealmBuilder webAuthnPolicyPasswordlessRequireResidentKey(String requireResidentKey) {
+        rep.setWebAuthnPolicyPasswordlessRequireResidentKey(requireResidentKey);
+        return this;
+    }
+
+    public RealmBuilder webAuthnPolicyPasswordlessResidentKey(String residentKey) {
+        rep.setWebAuthnPolicyPasswordlessResidentKey(residentKey);
         return this;
     }
 
@@ -561,6 +605,16 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
 
     public RealmBuilder webAuthnPolicyAcceptableAaguids(List<String> aaguids) {
         rep.setWebAuthnPolicyAcceptableAaguids(aaguids);
+        return this;
+    }
+
+    public RealmBuilder webAuthnPolicyPasswordlessAcceptableAaguids(List<String> aaguids) {
+        rep.setWebAuthnPolicyPasswordlessAcceptableAaguids(aaguids);
+        return this;
+    }
+
+    public RealmBuilder webAuthnPolicyPasswordlessRpId(String rpId) {
+        rep.setWebAuthnPolicyPasswordlessRpId(rpId);
         return this;
     }
 
@@ -615,6 +669,21 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
 
     public RealmBuilder accountTheme(String accountTheme) {
         rep.setAccountTheme(accountTheme);
+        return this;
+    }
+
+    public RealmBuilder permanentLockout(boolean permanentLockout) {
+        rep.setPermanentLockout(permanentLockout);
+        return this;
+    }
+
+    public RealmBuilder maxTemporaryLockouts(int maxTemporaryLockouts) {
+        rep.setMaxTemporaryLockouts(maxTemporaryLockouts);
+        return this;
+    }
+
+    public RealmBuilder maxDeltaTimeSeconds(int maxDeltaTimeSeconds) {
+        rep.setMaxDeltaTimeSeconds(maxDeltaTimeSeconds);
         return this;
     }
 

@@ -19,17 +19,20 @@ package org.keycloak.services.clientpolicy.context;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class TokenIntrospectContext implements ClientPolicyContext {
+public class TokenIntrospectContext implements ClientPolicyContext, ClientModelContext {
 
+    private final ClientModel client;
     private final MultivaluedMap<String, String> params;
 
-    public TokenIntrospectContext(MultivaluedMap<String, String> params) {
+    public TokenIntrospectContext(ClientModel client, MultivaluedMap<String, String> params) {
+        this.client = client;
         this.params = params;
     }
 
@@ -42,4 +45,8 @@ public class TokenIntrospectContext implements ClientPolicyContext {
         return params;
     }
 
+    @Override
+    public ClientModel getClient() {
+        return client;
+    }
 }

@@ -36,12 +36,10 @@ import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
@@ -49,9 +47,7 @@ import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Abstract test for various values of response_type
@@ -62,9 +58,6 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected LoginPage loginPage;
@@ -96,22 +89,6 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         }
     }
 
-
-    @Test
-    public void initialSessionStateUsedInRedirect() {
-        EventRepresentation loginEvent = loginUserWithRedirect("abcdef123456", OAuthClient.APP_ROOT + "/auth?session_state=foo");
-
-        AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
-        Assertions.assertNotNull(authzResponse.getSessionState());
-
-        List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
-
-        for (IDToken idToken : idTokens) {
-            Assertions.assertEquals(authzResponse.getSessionState(), idToken.getSessionState());
-        }
-    }
-
-
     @Test
     public void authorizationRequestMissingResponseType() throws IOException {
         oauth.responseType(null);
@@ -132,8 +109,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
     protected void validateNonceNotUsedErrorExpected() {
         oauth.loginForm().nonce(null).open();
 
-        assertFalse(loginPage.isCurrent());
-        assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isError());
 
         // Assert error response was sent because not logged in
         AuthorizationEndpointResponse resp = oauth.parseLoginResponse();
@@ -186,7 +162,8 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(driver.getCurrentUrl().startsWith(oauth.getRedirectUri()));
+        Assertions.assertTrue(oauth.parseLoginResponse().getState().equals("somestate"));
 
         EventRepresentation eventRep = events.poll();
         EventAssertion.expectLoginSuccess(eventRep).details(Details.USERNAME, "test-user@localhost");
@@ -202,7 +179,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation eventRep = events.poll();
         EventAssertion.expectLoginSuccess(eventRep)

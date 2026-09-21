@@ -81,6 +81,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 public class RequiredActionUpdateProfileTest {
 
     private static final String PASSWORD = PasswordGenerateUtil.generatePassword();
+    private static final String EMAIL_ALREADY_EXISTS_ERROR_MESSAGE = "This email is already associated with an existing account.";
 
     @InjectRealm(config = RequiredActionUpdateProfileRealmConfig.class)
     ManagedRealm realm;
@@ -121,7 +122,7 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
 
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE).details(Details.PREVIOUS_FIRST_NAME, "Tom").details(Details.UPDATED_FIRST_NAME, "New first")
                 .details(Details.PREVIOUS_LAST_NAME, "Brady").details(Details.UPDATED_LAST_NAME, "New last")
@@ -152,7 +153,7 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.prepareUpdate().username("new").firstName("New first").lastName("New last").email("john-doh@localhost").submit();
 
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.UPDATE_PROFILE)
@@ -339,7 +340,7 @@ public class RequiredActionUpdateProfileTest {
         Assertions.assertEquals("New last", updateProfilePage.getLastName());
         Assertions.assertEquals("keycloak-user@localhost", updateProfilePage.getEmail());
 
-        Assertions.assertEquals("Email already exists.", updateProfilePage.getInputErrors().getEmailError());
+        Assertions.assertEquals(EMAIL_ALREADY_EXISTS_ERROR_MESSAGE, updateProfilePage.getInputErrors().getEmailError());
 
         Assertions.assertNull(events.poll());
     }
@@ -399,7 +400,7 @@ public class RequiredActionUpdateProfileTest {
         Assertions.assertEquals("New last", updateProfilePage.getLastName());
         Assertions.assertEquals("user1@local.com", updateProfilePage.getEmail());
 
-        Assertions.assertEquals("Email already exists.", updateProfilePage.getInputErrors().getEmailError());
+        Assertions.assertEquals(EMAIL_ALREADY_EXISTS_ERROR_MESSAGE, updateProfilePage.getInputErrors().getEmailError());
 
         Assertions.assertNull(events.poll());
     }
@@ -445,7 +446,7 @@ public class RequiredActionUpdateProfileTest {
 
             updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
 
-            Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE).details(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name()).details(Details.PREVIOUS_EMAIL, "test-user@localhost").details(Details.UPDATED_EMAIL, "new@email.com");
 

@@ -59,23 +59,6 @@ public class DirExportProvider extends MultipleStepsExportProvider<DirExportProv
         return rootDirectory;
     }
 
-    public static boolean recursiveDeleteDir(File dirPath) {
-        if (dirPath.exists()) {
-            File[] files = dirPath.listFiles();
-            for (int i = 0; i < files.length; i++) {
-                if (files[i].isDirectory()) {
-                    recursiveDeleteDir(files[i]);
-                } else {
-                    files[i].delete();
-                }
-            }
-        }
-        if (dirPath.exists())
-            return dirPath.delete();
-        else
-            return true;
-    }
-
     @Override
     public void writeRealm(String fileName, RealmRepresentation rep) throws IOException {
         File file = new File(getRootDirectory(), fileName);

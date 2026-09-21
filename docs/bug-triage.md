@@ -3,10 +3,10 @@
 ## Actions
 
 When triaging a bug in most cases there is a single action required. Actions can be
-executed on an GitHub Issue either by adding the label `action-<action name>` or
+executed on an GitHub Issue either by adding the label `action/<action name>` or
 adding `~<action-name>` as the last line of the comment.
 
-For example if an issue is missing information you could comment:
+For example, if an issue is missing information you could comment:
 
 ```
 There is not enough information here, and I'm not following the steps-to-reproduce.
@@ -24,7 +24,7 @@ The first step is to verify if the issue is a valid issue following these questi
 
 ![Bug triaging - Verify!](bug-triage-verify.svg "Bug Triage - Verify")
 
-If an issue is not valid add a comment with some explanation, and add `~<action-name>` as the last line of the comment
+If an issue is not valid, add a comment with some explanation, and add `~<action-name>` as the last line of the comment
 to trigger corresponding action. 
 
 In cases where it is clear that no additional comment is needed you can just add the `action/<action-name>` label. For
@@ -33,18 +33,20 @@ missing.
 
 #### CVE reports on third-party libraries
 
-Known CVEs on third-party libraries will be automatically created as GitHub issues, labeled with `kind/cve`, `kind/bug`, and `status/triage`. The triager identifies the responsible team for the dependency and assigned the appropriate `team/...` label. This process is similar to the bug triage process previously mentioned.
+Known CVEs on third-party libraries will be automatically created as GitHub issues, labeled with `kind/cve`, `kind/bug`,
+and `status/triage`. The triager identifies the responsible team for the dependency and assigns the appropriate
+`team/...` label. This process is similar to the bug triage process previously mentioned.
 
 When evaluating the CVE report, assess the impact on the codebase by determining if we are vulnerable or affected. "Vulnerable" means that we use the code reported in the CVE, while "affected" means that we have the dependency with the CVE present but do not use the vulnerable code, making it impossible to exploit the CVE. If closing an issue as "not planned," include a proper explanation and the reason for closing it for future reference.
 
 ### Prioritize the issue
 
-Second step is to prioritize the bug depending on how common the use-case is, if it's a regression, 
+The second step is to prioritize the bug depending on how common the use-case is, if it's a regression,
 or not blocking anything, for example a typo:
 
 ![Bug triaging - Prioritize!](bug-triage-prioritize.svg "Bug Triage - Prioritize")
 
-When selecting the priority for an issue add the `action-<action-name>` label to the issue.
+When selecting the priority for an issue add the `action/<action-name>` label to the issue.
 
 
 ## Missing information
@@ -52,14 +54,14 @@ When selecting the priority for an issue add the `action-<action-name>` label to
 Bugs with insufficient information are assigned the labels `status/missing-info` and `status/auto-expire`, and the
 `status/triage` label is removed.
 
-If the original reporter provides additional information the issue is automatically move back to triage by re-adding
-the `status/triage` label. Otherwise, if the reporter does not provide additional information within 14 days the issue 
+If the original reporter provides additional information, the issue is automatically moved back to triage by re-adding
+the `status/triage` label. Otherwise, if the reporter does not provide additional information within 14 days, the issue
 is automatically closed.
 
 This effectively means that teams do not actively have to look at issues with missing information, since the issue
-will be moved back to their triage backlog of more information is provided.
+will be moved back to their triage backlog if more information is provided.
 
-To prevent an issue with missing information to be automatically closed, remove the `status/auto-expire` label.
+To prevent an issue with missing information from being automatically closed, remove the `status/auto-expire` label.
 
 
 ## Low and normal priority issues
@@ -93,11 +95,12 @@ The priority for an issue is also bumped to important if the `team/rh-iam` label
 
 ## Backporting
 
-When triaging or fixing an issue consider if the fix should be backported. If it should be backported add the
+When triaging or fixing an issue, consider if the fix should be backported. If it should be backported add the
 corresponding `backport/<release branch>` label.
 
 For convenience, use the `.github/scripts/pr-backport.sh` to help create the backport PRs. 
 
 By adding a `backport/<release branch>` label to the issue it is automatically added to the patch release project, and
-additionally when merging the PR the `backport/<release branch>` is automatically replaced with a `release/x.y.z` label.
+additionally when merging the PR the label `backport/<release branch>` is automatically replaced with a `release/x.y.z`
+label.
 Please do not add `release/x.y.z` manually!  

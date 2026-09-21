@@ -47,7 +47,7 @@ public class OrganizationTokenPostProcessor implements TokenPostProcessor{
     }
 
     private void addOrganizationRefreshTokenClaim(TokenPostProcessorContext context, String orgAlias) {
-        if (orgAlias == null) {
+        if (orgAlias == null || !Organizations.isEnabled(session)) {
             return;
         }
 

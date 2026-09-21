@@ -82,6 +82,7 @@ import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -201,7 +202,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         clientScope.setName("dynamic-scope");
         clientScope.setAttributes(new HashMap<String, String>() {{
             put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic-scope:*");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
         }});
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         RealmResource realmResource = adminClient.realm("test");
@@ -555,7 +556,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         oauth.client("resource-owner", "secret");
 
-        AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("direct-login", "password");
 
         assertEquals(400, response.getStatusCode());
 
@@ -570,12 +571,31 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                 .userId(null);
 
         RealmManager.realm(realmResource).verifyEmail(false);
-        UserManager.realm(realmResource).username("test-user@localhost").removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL.toString());
+        UserManager.realm(realmResource).username("direct-login").removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL.toString());
 
         // Check that count of authSessions is same as before authentication (as authentication session was removed)
         Assertions.assertEquals(authSessionsBefore, getAuthenticationSessionsCount());
     }
-    
+
+    @Test
+    public void grantAccessTokenVerifyEmailUserWithoutEmail() throws Exception {
+        RealmResource realmResource = adminClient.realm("test");
+        RealmManager.realm(realmResource).verifyEmail(true);
+
+        oauth.client("resource-owner", "secret");
+
+        // "test-user@localhost" has no email set
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+
+        assertEquals(200, response.getStatusCode());
+        assertNotNull(response.getAccessToken());
+
+        UserRepresentation user = realmResource.users().search("test-user@localhost", true).get(0);
+        assertFalse(user.getRequiredActions().contains(UserModel.RequiredAction.VERIFY_EMAIL.name()));
+
+        RealmManager.realm(realmResource).verifyEmail(false);
+    }
+
     @Test
     public void grantAccessTokenVerifyEmailInvalidPassword() throws Exception {
 

@@ -40,6 +40,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
@@ -98,7 +99,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         webAuthnRegisterPage.clickRegister();
         webAuthnRegisterPage.registerWebAuthnCredential(authenticatorLabel);
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
         // confirm that registration is successfully completed
         userId = AdminApiUtil.findUserByUsername(managedRealm.admin(), username).getId();
@@ -142,7 +143,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         // confirm user registered
         assertUserRegistered(userId, username.toLowerCase(), email.toLowerCase());
-        assertRegisteredCredentials(userId, ALL_ZERO_AAGUID, "none");
+        assertRegisteredCredentials(userId, ALL_ZERO_AAGUID, "none", 1);
 
         events.clear();
 
@@ -163,13 +164,14 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnLoginPage.clickAuthenticate();
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
         // confirm login event
         EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, regPubKeyCredentialId2)
                 .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, Boolean.FALSE.toString());
+        assertRegisteredCredentials(userId, ALL_ZERO_AAGUID, "none", 2);
 
         events.clear();
         // logout by user
@@ -187,9 +189,8 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         final String WEBAUTHN_LABEL = "webauthn";
         final String PASSWORDLESS_LABEL = "passwordless";
 
+        managedRealm.addUser(UserBuilder.create(USERNAME).password(PASSWORD).name("WebAuthn", "User") .email("webauthn-user@localhost").emailVerified(true));
         managedRealm.updateWithCleanup(r -> r.browserFlow(webAuthnTogetherPasswordlessFlow()));
-        final UserRepresentation cleanupUser = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME);
-        managedRealm.cleanup().add(r -> r.users().get(cleanupUser.getId()).update(cleanupUser));
 
         UserRepresentation user = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME);
 
@@ -236,7 +237,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         webAuthnRegisterPage.clickRegister();
         webAuthnRegisterPage.registerWebAuthnCredential(PASSWORDLESS_LABEL);
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
         EventAssertion.assertSuccess(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).sessionId(null).userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
@@ -276,7 +277,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnLoginPage.clickAuthenticate();
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
         logout();
 
         // Only passwordless login
@@ -298,7 +299,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnLoginPage.clickAuthenticate();
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
         logout();
     }
 
@@ -363,7 +364,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         webAuthnRegisterPage.clickRegister();
         webAuthnRegisterPage.registerWebAuthnCredential(PASSWORDLESS_LABEL);
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
         logout();
 
@@ -384,7 +385,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnLoginPage.clickAuthenticate();
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
         logout();
 
         // Only passwordless login
@@ -419,6 +420,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
     public void webAuthnTwoFactorAndWebAuthnPasswordlessTogether() {
         // Change binding to browser-webauthn-passwordless. This is flow, which contains both "webauthn" and "webauthn-passwordless" authenticator
         managedRealm.updateWithCleanup(r -> r.browserFlow("browser-webauthn-passwordless"));
+        managedRealm.addUser(UserBuilder.create(USERNAME).password(PASSWORD).name("WebAuthn", "User") .email("webauthn-user@localhost").emailVerified(true));
         // Login as webauthn-user with password
         oAuthClient.openLoginForm();
         loginPage.fillLogin(USERNAME, PASSWORD);
@@ -446,7 +448,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         assertThat(user.getLastName(), is("lastName"));
     }
 
-    private void assertRegisteredCredentials(String userId, String aaguid, String attestationStatementFormat) {
+    private void assertRegisteredCredentials(String userId, String aaguid, String attestationStatementFormat, long expectedCounter) {
         List<CredentialRepresentation> credentials = getCredentials(userId);
         credentials.forEach(i -> {
             if (WebAuthnCredentialModel.TYPE_TWOFACTOR.equals(i.getType())) {
@@ -454,6 +456,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
                     WebAuthnCredentialData data = JsonSerialization.readValue(i.getCredentialData(), WebAuthnCredentialData.class);
                     assertThat(data.getAaguid(), is(aaguid));
                     assertThat(data.getAttestationStatementFormat(), is(attestationStatementFormat));
+                    assertThat(data.getCounter(), is(expectedCounter));
                 } catch (IOException e) {
                     Assertions.fail();
                 }

@@ -82,7 +82,7 @@ public class KerberosConstants {
 
 
     /**
-     * Internal attribute used in "state" map . Contains token to be passed in HTTP Response back to browser to continue handshake
+     * Internal attribute used in "state" map. Contains a token to be passed in the HTTP response to continue or complete the handshake.
      */
     public static final String RESPONSE_TOKEN = "SpnegoResponseToken";
 

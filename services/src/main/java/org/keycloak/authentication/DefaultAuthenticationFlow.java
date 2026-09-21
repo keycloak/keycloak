@@ -118,7 +118,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             if (inputData.containsKey("tryAnotherWay")) {
                 logger.trace("User clicked on link 'Try Another Way'");
 
-                processor.getAuthenticationSession().setAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED, "true");
+                processor.getAuthenticationSession().setAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED, model.getId());
                 return createSelectAuthenticatorsScreen(model);
             }
 
@@ -262,15 +262,17 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     @Override
     public Response processFlow() {
         logger.debugf("processFlow: %s", flow.getAlias());
-
-        if (Boolean.parseBoolean(processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED))) {
-            logger.tracef("Refreshed page on authentication selector screen");
+        String selector = processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED);
+        if (selector != null) {
             String lastExecutionId = processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
-            if (lastExecutionId != null) {
+            if (selector.equalsIgnoreCase(lastExecutionId)) {
+                logger.tracef("Refreshed page on authentication selector screen");
                 AuthenticationExecutionModel executionModel = processor.getRealm().getAuthenticationExecutionById(lastExecutionId);
                 if (executionModel != null) {
                     return createSelectAuthenticatorsScreen(executionModel);
                 }
+            } else {
+                processor.getAuthenticationSession().removeAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED);
             }
         }
 

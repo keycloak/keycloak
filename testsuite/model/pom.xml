@@ -227,9 +227,9 @@
             </properties>
         </profile>
         <profile>
-            <id>jpa+infinispan+cacheless</id>
+            <id>jpa+infinispan+stateless</id>
             <properties>
-                <keycloak.model.parameters>Infinispan,Jpa,Cacheless</keycloak.model.parameters>
+                <keycloak.model.parameters>Infinispan,Jpa,Stateless</keycloak.model.parameters>
             </properties>
         </profile>
 

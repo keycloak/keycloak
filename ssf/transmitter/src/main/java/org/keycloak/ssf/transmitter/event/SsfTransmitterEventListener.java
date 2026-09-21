@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
@@ -16,6 +15,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.metadata.DefaultSubjects;
@@ -200,7 +200,10 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
             return;
         }
 
-        if (!Boolean.parseBoolean(client.getAttribute(ClientStreamStore.SSF_ENABLED_KEY))) {
+        // Skip when the receiver is unconfigured or its client is disabled —
+        // no point tagging a user to receive events for a receiver that is
+        // off the air.
+        if (!SsfUtil.isReceiverEnabled(client)) {
             return;
         }
         if (!Boolean.parseBoolean(client.getAttribute(ClientStreamStore.SSF_AUTO_NOTIFY_ON_LOGIN_KEY))) {
@@ -270,13 +273,10 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
      * truth for both the auto-notify guard and the dispatch gate.
      */
     protected boolean isAnyOrganizationNotified(SsfTransmitterProvider transmitter, UserModel user, ClientModel client) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+        if (!Organizations.isEnabled(session)) {
             return false;
         }
         OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-        if (orgProvider == null) {
-            return false;
-        }
         String receiverClientId = client.getClientId();
         return orgProvider.getByMember(user)
                 .anyMatch(org -> transmitter.subjectInclusionResolver()
@@ -375,6 +375,12 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
                 log.debugf("Could not generate SSF Security Event Token for Admin Event. id=%s", adminEvent.getId());
                 continue;
             }
+            if (isAnyEventEmitOnlyForReceiver(securityEventToken, stream)) {
+                log.debugf("Skipping native auto-emit — event type is in receiver's emitOnlyEvents set. "
+                                + "streamId=%s clientId=%s jti=%s",
+                        stream.getStreamId(), stream.getClientClientId(), securityEventToken.getJti());
+                continue;
+            }
             log.debugf("Generated SSF Security Event Token for Admin Event. "
                             + "realm=%s clientId=%s streamId=%s operationType=%s resourceType=%s resourcePath=%s jti=%s",
                     session.getContext().getRealm().getName(),
@@ -391,9 +397,17 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
     }
 
     protected boolean isUserSessionExpiration(Event event) {
-        return EventType.USER_SESSION_DELETED.equals(event.getType()) &&
-               (Details.INVALID_USER_SESSION_REMEMBER_ME_REASON.equals(event.getDetails().get(Details.REASON))
-               || Details.USER_SESSION_EXPIRED_REASON.equals(event.getDetails().get(Details.REASON)));
+        if (!EventType.USER_SESSION_DELETED.equals(event.getType())) {
+            return false;
+        }
+        // details can be null depending on how the event was constructed
+        Map<String, String> details = event.getDetails();
+        if (details == null) {
+            return false;
+        }
+        String reason = details.get(Details.REASON);
+        return Details.INVALID_USER_SESSION_REMEMBER_ME_REASON.equals(reason)
+               || Details.USER_SESSION_EXPIRED_REASON.equals(reason);
     }
 
     @Override

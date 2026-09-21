@@ -1,11 +1,16 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <#import "theme-resources.ftl" as themeResourceTags>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light${(properties.darkMode)?boolean?then(' dark', '')}">
     <title>Welcome to ${productName}</title>
-    <link rel="shortcut icon" href="${resourcesCommonPath}/img/favicon.ico">
+    <#if themeResources?? && themeResources.favicons?has_content>
+      <@themeResourceTags.renderFavicons themeResources.favicons resourcesCommonPath />
+    <#else>
+      <link rel="shortcut icon" href="${resourcesCommonPath}/img/favicon.ico">
+    </#if>
     <#if properties.darkMode?boolean>
       <script type="module" async blocking="render">
           <#outputformat "JavaScript">
@@ -27,14 +32,18 @@
           </#outputformat>
       </script>
     </#if>
-    <#if properties.stylesCommon?has_content>
+    <#if themeResources?? && themeResources.stylesCommon?has_content>
+      <@themeResourceTags.renderStyles themeResources.stylesCommon resourcesCommonPath />
+    <#elseif properties.stylesCommon?has_content>
       <#list properties.stylesCommon?split(' ') as style>
-        <link rel="stylesheet" href="${resourcesCommonPath}/${style}">
+        <link href="${resourcesCommonPath}/${style}" rel="stylesheet" />
       </#list>
     </#if>
-    <#if properties.styles?has_content>
+    <#if themeResources?? && themeResources.styles?has_content>
+      <@themeResourceTags.renderStyles themeResources.styles resourcesPath />
+    <#elseif properties.styles?has_content>
       <#list properties.styles?split(' ') as style>
-        <link rel="stylesheet" href="${resourcesPath}/${style}">
+        <link href="${resourcesPath}/${style}" rel="stylesheet" />
       </#list>
     </#if>
   </head>
