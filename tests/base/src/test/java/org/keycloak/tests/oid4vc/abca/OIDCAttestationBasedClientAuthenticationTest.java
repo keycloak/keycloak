@@ -124,6 +124,17 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
     }
 
     @Test
+    public void testClientAttestationChallengeEndpointRejectsDisabledRealm() {
+        testRealm.updateWithCleanup(realm -> realm.enabled(false));
+
+        var response = oauth.clientAttestationChallengeRequest().send();
+
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.ACCESS_DENIED, response.getError());
+        assertEquals("Realm not enabled", response.getErrorDescription());
+    }
+
+    @Test
     public void testClientAttestationJWT() throws VerificationException {
 
         var ctx = new OID4VCTestContext(abcaClient, sdJwtTypeCredentialScope);

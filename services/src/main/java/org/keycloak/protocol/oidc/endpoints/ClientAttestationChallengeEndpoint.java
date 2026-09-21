@@ -66,6 +66,9 @@ public class ClientAttestationChallengeEndpoint {
         if (cNonceHandler == null) {
             throw new IllegalStateException("Client attestation challenge handler is not configured");
         }
+        if (!cNonceHandler.supportsCNonceConsumption()) {
+            throw new IllegalStateException("Client attestation challenge handler does not support challenge consumption");
+        }
 
         String issuer = Urls.realmIssuer(session.getContext().getUri(UrlType.FRONTEND).getBaseUri(),
                 session.getContext().getRealm().getName());
@@ -82,6 +85,7 @@ public class ClientAttestationChallengeEndpoint {
                 .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS,
                         AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_CHALLENGE_HEADER);
         checkSsl(cors);
+        checkRealm(cors);
 
         String challenge = buildChallenge(session);
         ClientAttestationChallengeResponse challengeResponse = new ClientAttestationChallengeResponse();
@@ -99,6 +103,13 @@ public class ClientAttestationChallengeEndpoint {
                 && realm.getSslRequired().isRequired(clientConnection)) {
             throw new CorsErrorResponseException(cors.allowAllOrigins(), OAuthErrorException.INVALID_REQUEST,
                     "HTTPS required", Response.Status.FORBIDDEN);
+        }
+    }
+
+    private void checkRealm(Cors cors) {
+        if (!realm.isEnabled()) {
+            throw new CorsErrorResponseException(cors.allowAllOrigins(), OAuthErrorException.ACCESS_DENIED,
+                    "Realm not enabled", Response.Status.FORBIDDEN);
         }
     }
 }
