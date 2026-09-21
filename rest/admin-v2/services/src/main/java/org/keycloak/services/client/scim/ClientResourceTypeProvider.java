@@ -203,7 +203,8 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
             }
     
             // Generate random secret if applicable
-            String currentSecret = generateClientSecretIfNeeded(client, model, context == PatchClient.class);
+            String currentSecret = model.getSecret();
+            String generatedSecret = generateClientSecretIfNeeded(client, model, context == PatchClient.class);
             if (!create) {
                 session.clientPolicy().triggerOnEvent(new AdminClientUpdateContext(proposedRepresentation, model, permissions.adminAuth()));
             }
@@ -223,7 +224,7 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
             if (create) {
                 session.clientPolicy().triggerOnEvent(new AdminClientRegisteredContext(model, permissions.adminAuth()));
             } else {
-                ClientModelContext updatedContext = currentSecret != null
+                ClientModelContext updatedContext = generatedSecret != null && currentSecret != null
                         ? new ClientSecretRotationContext(proposedRepresentation, model, currentSecret, permissions.adminAuth())
                         : new AdminClientUpdatedContext(proposedRepresentation, model, permissions.adminAuth());
                 session.clientPolicy().triggerOnEvent(updatedContext);
@@ -244,7 +245,13 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
     
             EntityManagers.flush(session, false); // flush to ensure the timestamps are updated
             fireAdminEvent(create ? OperationType.CREATE : OperationType.UPDATE, schema.fromModel(model));
-            return schema.fromModel(model);
+            var result = schema.fromModel(model);
+            
+            // the only time we make the secret visible is when it is generated
+            if (generatedSecret != null && result instanceof OIDCClientRepresentation oidcClient && oidcClient.getAuth() != null) {
+                oidcClient.getAuth().setSecret(generatedSecret);
+            }
+            return result;
         } catch (ClientPolicyException e) {
             throw new ServiceException(e.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
@@ -463,25 +470,26 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
     }
 
     private String generateClientSecretIfNeeded(BaseClientRepresentation client, ClientModel model, boolean rotateSecret) {
-        String currentSecret = null;
+        String generatedSecret = null;
         if (client instanceof OIDCClientRepresentation oidcClient
                 && OIDCClientRepresentation.PROTOCOL.equals(client.getProtocol())) {
             var auth = oidcClient.getAuth();
             if (auth != null && isClientSecret(auth.getMethod()) && isBlank(auth.getSecret())) {
                 if (rotateSecret) {
-                    currentSecret = model.getSecret(); // return current password for rotation
-                    auth.setSecret(KeycloakModelUtils.generateSecret(model));
+                    generatedSecret = KeycloakModelUtils.generateSecret(model);
+                    auth.setSecret(generatedSecret);
                 } else {
                     // for non-rotation, only create the secret if it doesn't already exist
                     if (!isBlank(model.getSecret())) {
                         auth.setSecret(model.getSecret());
                     } else {
-                        auth.setSecret(KeycloakModelUtils.generateSecret(model));
+                        generatedSecret = KeycloakModelUtils.generateSecret(model);
+                        auth.setSecret(generatedSecret);
                     }
                 }
             }
         }
-        return currentSecret;
+        return generatedSecret;
     }
 
     /**

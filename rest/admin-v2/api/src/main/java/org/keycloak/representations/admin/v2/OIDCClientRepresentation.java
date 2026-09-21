@@ -107,7 +107,7 @@ public class OIDCClientRepresentation extends BaseClientRepresentation {
         private String method;
 
         @Size(min = 6, max = 255)
-        @JsonPropertyDescription("Secret used to authenticate this client with Secret authentication")
+        @JsonPropertyDescription("Secret used to authenticate this client with Secret authentication. Will only be populated by the server when generated, otherwise it will be omitted.")
         private String secret;
 
         @Size(max = 65536)

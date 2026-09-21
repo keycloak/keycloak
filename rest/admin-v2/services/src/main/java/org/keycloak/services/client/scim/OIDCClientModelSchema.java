@@ -97,7 +97,7 @@ public final class OIDCClientModelSchema extends BaseClientModelSchema<OIDCClien
         if (!model.isPublicClient()) {
             OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
             auth.setMethod(model.getClientAuthenticatorType());
-            auth.setSecret(model.getSecret());
+            // the secret is not copied - it will only be present when generated
             return auth;
         }
         return null;

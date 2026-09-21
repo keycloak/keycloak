@@ -15,7 +15,7 @@
             "type" : "string",
             "minLength" : 6,
             "maxLength" : 255,
-            "description" : "Secret used to authenticate this client with Secret authentication. Validation: size must be between 6 and 255; on update: Client secret must not be blank"
+            "description" : "Secret used to authenticate this client with Secret authentication. Will only be populated by the server when generated, otherwise it will be omitted.. Validation: size must be between 6 and 255; on update: Client secret must not be blank"
           },
           "certificate" : {
             "type" : "string",
