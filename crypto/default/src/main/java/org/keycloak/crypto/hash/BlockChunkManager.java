@@ -62,8 +62,9 @@ public class BlockChunkManager {
     }
 
     private void releaseChunks(List<FixedBlockPool> chunks) {
-        for (FixedBlockPool chunk : chunks) {
-            availableChunks.offerFirst(new SoftReference<>(chunk));
+        // Reverse order so full chunks land at the head; the partial tail chunk ends up at the tail where it ages out.
+        for (int i = chunks.size() - 1; i >= 0; i--) {
+            availableChunks.offerFirst(new SoftReference<>(chunks.get(i)));
         }
     }
 
