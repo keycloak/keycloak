@@ -71,13 +71,13 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
         File cacheDir = new File(cacheRoot, Version.RESOURCES_VERSION);
 
         if (cacheRoot.isDirectory()) {
+            // Also clear the cache of the current resources version, as theme resources might have changed since the
+            // cache was written. This matches the lifecycle of the in-memory theme cache, which is cleared on restart.
             for (File f : cacheRoot.listFiles()) {
-                if (!f.getName().equals(Version.RESOURCES_VERSION)) {
-                    try {
-                        FileUtils.deleteDirectory(f);
-                    } catch (IOException e) {
-                        logger.warn("Failed to delete old gzip cache directory", e);
-                    }
+                try {
+                    FileUtils.deleteDirectory(f);
+                } catch (IOException e) {
+                    logger.warn("Failed to delete gzip cache directory", e);
                 }
             }
         }
