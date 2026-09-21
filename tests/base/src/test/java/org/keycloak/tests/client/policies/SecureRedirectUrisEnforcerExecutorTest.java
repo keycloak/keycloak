@@ -127,6 +127,28 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         updateClientByAdmin(realm, cId, rep -> rep.setName("updated-name"));
     }
 
+    // Ensures partial updates with a null rootUrl still allow valid absolute stored URIs.
+    @Test
+    public void testPartialUpdate_nullRootUrl_keepsStoredPostLogoutUris() throws Exception {
+        setupSecureRedirectPolicy();
+
+        String cId = createClientByAdmin(realm, generateSuffixedName("client-root-url"), OIDCLoginProtocol.LOGIN_PROTOCOL, rep -> {
+            rep.setStandardFlowEnabled(Boolean.TRUE);
+            rep.setRootUrl("https://app.example.com");
+            rep.setRedirectUris(Collections.singletonList(HTTPS_CALLBACK));
+            rep.getAttributes().put(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, HTTPS_SAFE_URI);
+        });
+
+        // Updating basic fields shouldn't affect post-logout URIs
+        updateClientByAdmin(realm, cId, rep -> rep.setName("updated-root-url-client"));
+
+        // Clearing rootUrl shouldn't break fallback validation for stored absolute URIs
+        updateClientByAdmin(realm, cId, rep -> {
+            rep.setRootUrl(null);
+            rep.getAttributes().remove(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
+        });
+    }
+
     @Test
     public void testCreateWithNoPostLogoutUriSucceeds() throws Exception {
         setupSecureRedirectPolicy();
