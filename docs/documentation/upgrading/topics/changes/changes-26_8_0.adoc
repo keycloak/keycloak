@@ -171,7 +171,7 @@ Previously, some flows marked the email of a user as verified even though their 
 This could make an account registered by a different party than the owner of the email address look trusted.
 An email is now marked as verified only when the user completes an email verification.
 This changes the behavior of identity provider account linking by email, of admin-initiated action emails that do not include the *Verify Email* action,
-and of the verifiable credential offer emails of the experimental OID4VCI feature.
+and of the verifiable credential offer emails of the OID4VCI feature.
 The *Trust Email* setting of identity providers and LDAP federation is not affected, as it is an explicit decision of the administrator to trust the email from the external source.
 
 === Offline session expiration indexes rebuilt with session bucket and coarse refresh columns
