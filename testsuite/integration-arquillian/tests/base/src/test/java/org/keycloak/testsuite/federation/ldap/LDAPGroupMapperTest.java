@@ -609,6 +609,54 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
         managedRealm.admin().components().component(groupMapperRep.getId()).update(groupMapperRep);
     }
 
+    // Regression for the memberOf strategy matching groups by their first RDN only: a memberOf value that
+    // shares the RDN of an existing group but has a different parent must not resolve to that group.
+    @Test
+    public void test05_DoNotResolveGroupsIfMemberOfDnDoesNotMatchExactly() throws Exception {
+        ComponentRepresentation groupMapperRep = findMapperRepByName("groupsMapper");
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            LDAPTestUtils.addUserAttributeMapper(appRealm, ctx.getLdapModel(), "streetMapper", "street", LDAPConstants.STREET);
+
+            // DN of the real "group1" and a DN with the same first RDN under a different (non-existent) subtree
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+            GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ctx.getLdapProvider(), appRealm);
+            LDAPDn realGroupDn = groupMapper.loadLDAPGroupByName("group1").getDn();
+            String sameRdnOtherParentDn = "cn=group1,ou=otherBranch," + realGroupDn.getParentDn().toString();
+
+            // User whose memberOf (street) points at the same-named group in the other subtree only
+            LDAPObject dana = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "danakeycloak", "Dana", "Doel", "dana.doel@email.org", sameRdnOtherParentDn, "1234");
+            LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), dana, "Password1");
+
+            LDAPTestUtils.updateConfigOptions(mapperModel,
+                    GroupMapperConfig.USER_ROLES_RETRIEVE_STRATEGY, GroupMapperConfig.GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE,
+                    GroupMapperConfig.MEMBEROF_LDAP_ATTRIBUTE, LDAPConstants.STREET);
+            appRealm.updateComponent(mapperModel);
+        });
+
+        ComponentRepresentation streetMapperRep = findMapperRepByName("streetMapper");
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            UserModel dana = session.users().getUserByUsername(appRealm, "danakeycloak");
+            Set<GroupModel> danaGroups = dana.getGroupsStream().collect(Collectors.toSet());
+
+            GroupModel group1 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group1");
+            Assertions.assertFalse(danaGroups.contains(group1), "same-named group under another parent must not be granted");
+            Assertions.assertTrue(danaGroups.isEmpty());
+        });
+
+        // Revert mappers
+        managedRealm.admin().components().component(streetMapperRep.getId()).remove();
+        groupMapperRep.getConfig().putSingle(GroupMapperConfig.USER_ROLES_RETRIEVE_STRATEGY, GroupMapperConfig.LOAD_GROUPS_BY_MEMBER_ATTRIBUTE);
+        managedRealm.admin().components().component(groupMapperRep.getId()).update(groupMapperRep);
+    }
+
     @Test
     public void test05_DoNotResolveGroupsIfMemberOfNotChildOfGroupBaseDN() {
         ComponentRepresentation groupMapperRep = findMapperRepByName("groupsMapper");
@@ -1249,22 +1297,5 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             assertThat("User should be in default group 11", groups.contains(defaultGroup11), equalTo(true));
             assertThat("User should be in default group 12", groups.contains(defaultGroup12), equalTo(true));
         });
-    }
-
-    @Test
-    public void test15_memberOfExactDnMatch() throws Exception {
-        // Create groups with same RDN but different OU (Parent)
-        LDAPTestUtils.createLDAPGroup(ldapProvider, "role-admin", "cn=role-admin,ou=groupA," + config.getLDAPGroupsDn());
-        LDAPTestUtils.createLDAPGroup(ldapProvider, "role-admin", "cn=role-admin,ou=groupB," + config.getLDAPGroupsDn());
-
-        // Assign user only to groupA's role-admin
-        UserModel bser = session.users().getUserByUsername(realm, "bser");
-        LDAPTestUtils.assignUserToGroup(ldapProvider, bser, "cn=role-admin,ou=groupA," + config.getLDAPGroupsDn());
-
-        // Sync and verify
-        List<GroupModel> groups = bser.getGroupsStream().collect(Collectors.toList());
-        Assert.assertEquals(1, groups.size());
-        Assert.assertTrue(groups.get(0).getName().contains("groupA"));
-        Assert.assertFalse(groups.get(0).getName().contains("groupB"));
     }
 }

@@ -20,6 +20,7 @@ package org.keycloak.storage.ldap.mappers.membership;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
@@ -114,9 +115,14 @@ public interface UserRolesRetrieveStrategy {
 
                 ldapQuery.addWhereCondition(conditionBuilder.orCondition(conditions));
 
-                java.util.List<LDAPObject> results = LDAPUtils.loadAllLDAPObjects(ldapQuery, ldapConfig);
-                    java.util.Set<LDAPDn> expectedDns = memberOfValues.stream().map(LDAPDn::fromString).collect(java.util.stream.Collectors.toSet());
-                    return results.stream().filter(obj -> expectedDns.contains(obj.getDn())).collect(java.util.stream.Collectors.toList());
+                // The query above matches by the first RDN only, so a same-named group anywhere under the
+                // groups DN would be returned. Keep only the entries whose full DN the user is really memberOf.
+                Set<LDAPDn> memberOfDns = memberOfValues.stream()
+                        .map(LDAPDn::fromString)
+                        .collect(Collectors.toSet());
+                return LDAPUtils.loadAllLDAPObjects(ldapQuery, ldapConfig).stream()
+                        .filter(group -> memberOfDns.contains(group.getDn()))
+                        .collect(Collectors.toList());
             }
         }
 
