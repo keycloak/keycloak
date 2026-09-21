@@ -43,6 +43,14 @@ runs:
           ~/.m2/wrapper/dists
           !~/.m2/repository/org/keycloak
         key: mvn-and-wrapper-${{ runner.os }}-${{ steps.weekly-cache-key.outputs.key }}
+        # Fall back to the previous week's cache until the build job has populated this week's key
+        restore-keys: |
+          mvn-and-wrapper-${{ runner.os }}-
+
+    - id: restore-quarkus-snapshot
+      name: Restore Quarkus snapshot cache
+      if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
+      uses: ./.github/actions/quarkus-snapshot-cache
 
     - id: node-cache
       name: Node cache
