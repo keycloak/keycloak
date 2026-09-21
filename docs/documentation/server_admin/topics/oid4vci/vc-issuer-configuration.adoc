@@ -1,7 +1,7 @@
 [[_oid4vci]]
 == Configuring {project_name} as a Verifiable Credential Issuer
 
-[NOTE]
+[WARNING]
 ====
 This feature is in preview and is not fully supported. It is disabled by default and can be enabled with `--features=preview` or `--features=oid4vc-vci`. Backward compatibility is not guaranteed, and future updates may introduce breaking changes.
 ====
@@ -649,7 +649,7 @@ You have successfully configured **{project_name} as a Verifiable Credential Iss
 This setup leverages {project_name}'s robust **identity management capabilities** to issue secure, **standards-compliant VCs**.
 
 For a **complete reference implementation**, see the sample project:
-https://github.com/{project_name}/{project_name}-oauth-sig/tree/main/oid4vci-deployment[OID4VCI deployment].
+https://github.com/keycloak/keycloak-oauth-sig/tree/main/oid4vci-deployment[OID4VCI deployment].
 
 include::credential-offer-aia.adoc[]
 
