@@ -21,10 +21,6 @@ public class KubernetesJwksEndpointLoader implements PublicKeyLoader {
     private final String issuer;
     private final String jwksUrl;
 
-    public KubernetesJwksEndpointLoader(KeycloakSession session, String issuer) {
-        this(session, issuer, null);
-    }
-
     public KubernetesJwksEndpointLoader(KeycloakSession session, String issuer, String jwksUrl) {
         this.session = session;
         this.issuer = issuer;
@@ -35,7 +31,7 @@ public class KubernetesJwksEndpointLoader implements PublicKeyLoader {
     public PublicKeysWrapper loadKeys() throws Exception {
         SimpleHttp simpleHttp = SimpleHttp.create(session);
 
-        String token = getToken(issuer);
+        String token = KubernetesUtils.getServiceAccountToken(issuer);
         String jwksUri = jwksUrl;
         if (Strings.isEmpty(jwksUri)) {
             String wellKnownEndpoint = KubernetesUtils.discoveryUrl(issuer);
@@ -59,7 +55,4 @@ public class KubernetesJwksEndpointLoader implements PublicKeyLoader {
         return JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.SIG);
     }
 
-    private String getToken(String issuer) {
-        return KubernetesUtils.getToken(issuer);
-    }
 }

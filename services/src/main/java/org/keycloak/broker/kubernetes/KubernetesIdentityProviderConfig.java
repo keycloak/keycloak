@@ -68,14 +68,17 @@ public class KubernetesIdentityProviderConfig extends IdentityProviderModel impl
     public void validate(RealmModel realm) {
         super.validate(realm);
 
-        if (Strings.isEmpty(getConfig().get(ISSUER))) {
-            String issuerDiscoveryUrl = getIssuerDiscoveryUrl();
-            if (Strings.isEmpty(issuerDiscoveryUrl)) {
-                getConfig().put(ISSUER, getIssuer());
-            } else {
-                resolveIssuer(realm, issuerDiscoveryUrl);
-            }
+        String issuerDiscoveryUrl = getIssuerDiscoveryUrl();
+        if (!Strings.isEmpty(issuerDiscoveryUrl)) {
+            resolveIssuer(realm, issuerDiscoveryUrl);
+        } else if (Strings.isEmpty(getConfig().get(ISSUER))) {
+            getConfig().put(ISSUER, getIssuer());
         }
+
+        if (Strings.isEmpty(issuerDiscoveryUrl)) {
+            getConfig().remove(JWKS_URL);
+        }
+
         validateIssuer(realm, IdentityProviderType.CLIENT_ASSERTION);
     }
 

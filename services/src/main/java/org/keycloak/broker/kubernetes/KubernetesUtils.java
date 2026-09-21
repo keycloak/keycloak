@@ -29,8 +29,11 @@ final class KubernetesUtils {
     }
 
     static String getServiceAccountToken() {
+        return getServiceAccountToken(new File(SERVICE_ACCOUNT_TOKEN_PATH));
+    }
+
+    static String getServiceAccountToken(File file) {
         try {
-            File file = new File(SERVICE_ACCOUNT_TOKEN_PATH);
             if (!file.exists()) {
                 return null;
             }
@@ -43,9 +46,13 @@ final class KubernetesUtils {
         }
     }
 
-    static String getToken(String issuer) {
+    static String getServiceAccountToken(String issuer) {
+        return getServiceAccountToken(issuer, new File(SERVICE_ACCOUNT_TOKEN_PATH));
+    }
+
+    static String getServiceAccountToken(String issuer, File file) {
         try {
-            String token = getServiceAccountToken();
+            String token = getServiceAccountToken(file);
             if (token == null) {
                 return null;
             }

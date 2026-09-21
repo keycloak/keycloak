@@ -82,7 +82,6 @@ public class IdentityProviderKubernetesTest extends AbstractIdentityProviderTest
     @Test
     public void testCreateIdentityProviderWithConfiguredIssuerSkipsAutomaticDiscovery() {
         IdentityProviderRepresentation identityProvider = createRep("kubernetes", "kubernetes");
-        identityProvider.getConfig().put("issuerDiscoveryUrl", INVALID_DISCOVERY_URL);
         identityProvider.getConfig().put("issuer", "https://localhost");
 
         try (Response response = managedRealm.admin().identityProviders().create(identityProvider)) {
@@ -114,8 +113,17 @@ public class IdentityProviderKubernetesTest extends AbstractIdentityProviderTest
         assertEquals(DISCOVERED_ISSUER, updated.getConfig().get("issuer"));
         assertEquals(DISCOVERED_JWKS_URL, updated.getConfig().get("jwksUrl"));
 
-        updated.getConfig().put("issuer", "https://localhost");
+        updated.getConfig().put("issuer", "https://stale.example.test/issuer");
+        updated.getConfig().put("jwksUrl", "http://127.0.0.1:8500/idp/stale-jwks");
         idpResource.update(updated);
+
+        IdentityProviderRepresentation refreshed = idpResource.toRepresentation();
+        assertEquals(DISCOVERED_ISSUER, refreshed.getConfig().get("issuer"));
+        assertEquals(DISCOVERED_JWKS_URL, refreshed.getConfig().get("jwksUrl"));
+
+        refreshed.getConfig().remove("issuerDiscoveryUrl");
+        refreshed.getConfig().put("issuer", "https://localhost");
+        idpResource.update(refreshed);
 
         IdentityProviderRepresentation directIssuer = idpResource.toRepresentation();
         assertEquals("https://localhost", directIssuer.getConfig().get("issuer"));

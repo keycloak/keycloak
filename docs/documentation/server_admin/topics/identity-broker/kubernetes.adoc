@@ -10,11 +10,11 @@ The default issuer URL for a Kubernetes cluster is `\https://kubernetes.default.
 this value by decoding a service account token to retrieve the value of the `iss` claim.
 For managed Kubernetes clusters where service account tokens use an external issuer, leave the issuer URL empty and
 provide the Kubernetes API server or another OIDC discovery URL instead. When the identity provider is saved,
-{project_name} resolves and persists the issuer URL and JWKS URL from the discovery document. Discovery is not
-refreshed automatically after save.
+{project_name} resolves and persists the issuer URL and JWKS URL from the discovery document. When the provider is
+updated with a discovery URL, {project_name} resolves the discovery document again and updates the persisted values.
 
 When an issuer discovery URL is configured, Keycloak invokes its
-`<DISCOVERY_URL>/.well-known/openid-configuration` endpoint when the provider is saved and persists the returned JWKS
+`<DISCOVERY_URL>/.well-known/openid-configuration` endpoint when the provider is saved or updated and persists the returned JWKS
 URL. Otherwise, it discovers keys from `<ISSUER>/.well-known/openid-configuration` when needed. {project_name} uses the token from
 `/var/run/secrets/kubernetes.io/serviceaccount/token` to access the in-cluster discovery endpoint. When loading JWKS,
 it uses the token when its `iss` claim matches the configured issuer.
@@ -44,10 +44,10 @@ and make sure tokens can not be intercepted in communication between the client 
 |The alias for the identity provider is used to link a client to the provider
 
 |Kubernetes Issuer URL
-|Optional issuer URL of service account tokens. If omitted, provide an issuer discovery URL so {project_name} can resolve and persist the issuer and JWKS URL when the provider is saved.
+|Optional issuer URL of service account tokens. If omitted, {project_name} resolves it from the issuer discovery URL when configured; otherwise, it uses the default Kubernetes issuer.
 
 |Issuer discovery URL
-|Optional Kubernetes API server or external OIDC discovery base URL. It is used only when the issuer URL is empty; discovery runs when the provider is saved and is not refreshed automatically.
+|Optional Kubernetes API server or external OIDC discovery base URL. When configured, {project_name} resolves and persists the issuer and JWKS URL when the provider is saved or updated.
 
 |===
 +
