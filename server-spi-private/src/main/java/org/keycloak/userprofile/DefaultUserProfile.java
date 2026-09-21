@@ -180,12 +180,16 @@ public final class DefaultUserProfile implements UserProfile {
 
                 attrsToRemove.removeAll(attributes.nameSet());
 
+                boolean phoneNumberRemoved = attrsToRemove.contains(PHONE_NUMBER) && !attributes.isReadOnly(PHONE_NUMBER)
+                        && metadata.getContext().isResetPhoneNumberVerified();
+
+                if (phoneNumberVerifiedReset || phoneNumberRemoved) {
+                    // reset rather than removed
+                    attrsToRemove.remove(PHONE_NUMBER_VERIFIED);
+                }
+
                 for (String name : attrsToRemove) {
                     if (attributes.isReadOnly(name)) {
-                        continue;
-                    }
-
-                    if (PHONE_NUMBER_VERIFIED.equals(name) && phoneNumberVerifiedReset) {
                         continue;
                     }
 
