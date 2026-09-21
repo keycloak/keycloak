@@ -35,6 +35,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.BruteForceUserProperty;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
@@ -186,6 +187,10 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         UserModel user = null;
         try {
             user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
+            if (user == null) {
+                user = BruteForceUserProperty.findUserByProtectedPropertyValue(context.getSession(), context.getRealm(),
+                        username);
+            }
         } catch (ModelDuplicateException mde) {
             ServicesLogger.LOGGER.modelDuplicateException(mde);
 

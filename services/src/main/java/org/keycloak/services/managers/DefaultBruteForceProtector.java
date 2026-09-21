@@ -98,6 +98,9 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
 
     private void failure(KeycloakSession session, RealmModel realm, UserModel user, String failureKey,
             String remoteAddr, long failureTime, Set<String> categories) {
+        // Property counters block only the submitted identifier. Disabling the user record would
+        // also block identifiers that still have their own remaining attempt budget.
+        boolean disablesAccount = !BruteForceUserProperty.isPropertyKey(failureKey);
         UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, failureKey);
         if (userLoginFailure == null) {
             userLoginFailure = session.loginFailures().addUserLoginFailure(realm, failureKey);
@@ -157,8 +160,10 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
                 // Converting to int is workaround for the fact that "failedLoginNotBefore" is int in the model. Should be fine as user would be considered temporarily disabled with Integer.MAX_VALUE
                 int notBeforeInt = notBefore > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) notBefore;
                 userLoginFailure.setFailedLoginNotBefore(notBeforeInt);
-                sendEvent(session, realm, user != null ? user.getId() : failureKey, userLoginFailure,
-                        EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT);
+                if (disablesAccount) {
+                    sendEvent(session, realm, user != null ? user.getId() : failureKey, userLoginFailure,
+                            EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT);
+                }
             }
         }
 
@@ -167,13 +172,14 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
             boolean lockoutEnabled = maxSecondaryAuthFailures > 0;
             userLoginFailure.incrementSecondaryAuthFailures();
             logger.debugv("new num secondaryAuthFailures: {0}", Integer.valueOf(userLoginFailure.getNumSecondaryAuthFailures()));
-            if (lockoutEnabled && userLoginFailure.getNumSecondaryAuthFailures() > maxSecondaryAuthFailures) {
+            if (lockoutEnabled && disablesAccount
+                    && userLoginFailure.getNumSecondaryAuthFailures() > maxSecondaryAuthFailures) {
                 // permanently lock user account anyway
                 permanentUserLockOut(session, realm, user, userLoginFailure);
             }
         }
 
-        if(!realm.isPermanentLockout()) {
+        if(!realm.isPermanentLockout() || !disablesAccount) {
             return;
         }
 
@@ -228,6 +234,11 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
     public void shutdown() {}
 
     protected void success(KeycloakSession session, RealmModel realm, String userId, Set<String> categories) {
+        success(session, realm, userId, categories, null);
+    }
+
+    protected void success(KeycloakSession session, RealmModel realm, String userId, Set<String> categories,
+            String attemptedIdentifier) {
         UserModel user = session.users().getUserById(realm, userId);
         if (user == null) {
             return;
@@ -235,7 +246,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         if (logger.isDebugEnabled()) {
             logger.debugv("user {0} successfully logged in:", user.getUsername());
         }
-        for (String failureKey : BruteForceUserProperty.getFailureKeys(realm, user)) {
+        for (String failureKey : BruteForceUserProperty.getFailureKeysForAttempt(realm, user, attemptedIdentifier)) {
             UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, failureKey);
             if (userLoginFailure != null) {
                 if (categories != null && categories.contains(OTP_CATEGORY)) {
@@ -271,11 +282,17 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
 
     @Override
     public void successfulLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo, Set<String> authenticationCategories) {
+        successfulLogin(realm, user, clientConnection, uriInfo, authenticationCategories, null);
+    }
+
+    @Override
+    public void successfulLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo,
+            Set<String> authenticationCategories, String attemptedIdentifier) {
         if (authenticationCategories == null || Collections.disjoint(ALLOWED_AUTHENTICATION_CATEGORIES, authenticationCategories)) {
             logger.debugf("'%s' authentication category not allowed for brute force", authenticationCategories);
             return;
         }
-        processLogin(realm, user, clientConnection, uriInfo, true, authenticationCategories);
+        processLogin(realm, user, clientConnection, uriInfo, true, authenticationCategories, attemptedIdentifier);
         logger.trace("sent success event");
     }
 
@@ -297,7 +314,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
             s.getContext().setHttpRequest(bruteForceHttpRequest);
             s.getContext().setHttpResponse(bruteForceHttpResponse);
             if (success) {
-                success(s, currentRealm, user.getId(), categories);
+                success(s, currentRealm, user.getId(), categories, attemptedIdentifier);
             } else {
                 failure(s, currentRealm, user.getId(), clientConnection.getRemoteHost(), Time.currentTimeMillis(),
                         categories, attemptedIdentifier);
@@ -307,7 +324,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
 
     @Override
     public boolean isTemporarilyDisabled(KeycloakSession session, RealmModel realm, UserModel user) {
-        for (String failureKey : BruteForceUserProperty.getFailureKeys(realm, user)) {
+        for (String failureKey : BruteForceUserProperty.getAccountLockKeys(realm, user)) {
             UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, failureKey);
             if (userLoginFailure == null) {
                 continue;
@@ -333,7 +350,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         if (!realm.isPermanentLockout()) return false;
 
         // recheck failures just in case we are in a race
-        return BruteForceUserProperty.getFailureKeys(realm, user).stream()
+        return BruteForceUserProperty.getAccountLockKeys(realm, user).stream()
                 .anyMatch(failureKey -> {
                     UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, failureKey);
                     return userLoginFailure != null
@@ -341,6 +358,47 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
                             || (realm.getMaxTemporaryLockouts() == 0
                             && userLoginFailure.getNumFailures() >= BruteForceUserProperty.getFailureFactor(realm, failureKey)));
                 });
+    }
+
+    @Override
+    public boolean isTemporarilyDisabled(KeycloakSession session, RealmModel realm, UserModel user,
+            String attemptedIdentifier) {
+        return isTemporarilyDisabled(session, realm, user)
+                || isAnyKeyTemporarilyDisabled(session, realm,
+                        BruteForceUserProperty.getMatchingPropertyKeys(realm, user, attemptedIdentifier));
+    }
+
+    @Override
+    public boolean isPermanentlyLockedOut(KeycloakSession session, RealmModel realm, UserModel user,
+            String attemptedIdentifier) {
+        return isPermanentlyLockedOut(session, realm, user)
+                || isAnyKeyPermanentlyLocked(session, realm,
+                        BruteForceUserProperty.getMatchingPropertyKeys(realm, user, attemptedIdentifier));
+    }
+
+    private boolean isAnyKeyTemporarilyDisabled(KeycloakSession session, RealmModel realm, List<String> failureKeys) {
+        long currTime = Time.currentTimeMillis() / 1000;
+        for (String failureKey : failureKeys) {
+            UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, failureKey);
+            if (userLoginFailure != null && currTime < userLoginFailure.getFailedLoginNotBefore()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isAnyKeyPermanentlyLocked(KeycloakSession session, RealmModel realm, List<String> failureKeys) {
+        if (!realm.isPermanentLockout()) {
+            return false;
+        }
+        for (String failureKey : failureKeys) {
+            UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, failureKey);
+            if (userLoginFailure != null
+                    && BruteForceUserProperty.isPermanentlyLocked(realm, userLoginFailure, failureKey)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
@@ -40,9 +41,11 @@ import org.keycloak.models.UserModel;
  * <p>The realm {@link org.keycloak.representations.idm.RealmRepresentation.BruteForceLockPolicy}
  * decides whether login is locked by the per-user id counter, by selected user properties,
  * or by either. Failed attempts increment the user-id counter and/or the submitted
- * identifier's property counter. Reaching either independently configured threshold locks
- * the account. Property counters are shared by every user with the same property value.
- * Counter keys store a digest of the value rather than the raw attribute.</p>
+ * identifier's property counter. The user-id threshold disables every identifier for that
+ * account. A property threshold blocks only attempts that reuse that property value, so a
+ * locked email does not block a phone number or username that still has remaining attempts.
+ * Property counters are shared by every user with the same property value. Counter keys
+ * store a digest of the value rather than the raw attribute.</p>
  */
 public final class BruteForceUserProperty {
 
@@ -108,6 +111,45 @@ public final class BruteForceUserProperty {
             return realm.getBruteForcePropertyFailureFactor();
         }
         return realm.getFailureFactor();
+    }
+
+    /**
+     * Counters that disable every identifier of this user. Property keys are omitted so a
+     * locked email or phone number cannot disable login with a different identifier.
+     */
+    public static List<String> getAccountLockKeys(RealmModel realm, UserModel user) {
+        if (!getProtectedProperties(realm).contains(ID)) {
+            return List.of();
+        }
+        return List.of(user.getId());
+    }
+
+    public static boolean isPropertyKey(String failureKey) {
+        return failureKey != null && failureKey.startsWith(PROPERTY_KEY_PREFIX);
+    }
+
+    /**
+     * Find a user by a protected custom attribute such as {@code phoneNumber} after username
+     * and email lookup missed. Built-in username and email are left to
+     * {@link org.keycloak.models.utils.KeycloakModelUtils#findUserByNameOrEmail}.
+     */
+    public static UserModel findUserByProtectedPropertyValue(KeycloakSession session, RealmModel realm,
+            String identifier) {
+        if (identifier == null || identifier.isBlank()) {
+            return null;
+        }
+        Map<String, UserModel> users = new LinkedHashMap<>();
+        for (String property : realm.getBruteForceProtectedUserProperties()) {
+            if (ID.equals(property) || UserModel.USERNAME.equals(property) || UserModel.EMAIL.equals(property)) {
+                continue;
+            }
+            findUsersByPropertyValue(session, realm, property, identifier)
+                    .forEach(found -> users.putIfAbsent(found.getId(), found));
+        }
+        if (users.size() > 1) {
+            throw new ModelDuplicateException("Multiple users match protected property value");
+        }
+        return users.isEmpty() ? null : users.values().iterator().next();
     }
 
     public static boolean isPermanentlyLocked(RealmModel realm, UserLoginFailureModel model, String failureKey) {

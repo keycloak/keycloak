@@ -90,6 +90,28 @@ public class BruteForceUserPropertyTest {
     }
 
     @Test
+    public void propertyCountersDoNotLockTheAccount() {
+        RealmModel realm = realm(BruteForceLockPolicy.PROPERTIES, "email", "phoneNumber");
+        UserModel user = user("user-id", "UserName", "User@Example.com",
+                Map.of("phoneNumber", List.of("+1-555-0100")));
+
+        Assert.assertEquals(List.of(), BruteForceUserProperty.getAccountLockKeys(realm, user));
+        Assert.assertTrue(BruteForceUserProperty.isPropertyKey(
+                BruteForceUserProperty.propertyKey("email", "user@example.com")));
+        Assert.assertFalse(BruteForceUserProperty.isPropertyKey("user-id"));
+    }
+
+    @Test
+    public void userAndAnyPoliciesLockTheAccount() {
+        UserModel user = user("user-id", "UserName", "User@Example.com", Map.of());
+
+        Assert.assertEquals(List.of("user-id"),
+                BruteForceUserProperty.getAccountLockKeys(realm(BruteForceLockPolicy.USER, "email"), user));
+        Assert.assertEquals(List.of("user-id"),
+                BruteForceUserProperty.getAccountLockKeys(realm(BruteForceLockPolicy.ANY, "email"), user));
+    }
+
+    @Test
     public void propertiesPolicyWithNoPropertiesFallsBackToUserId() {
         RealmModel realm = realm(BruteForceLockPolicy.PROPERTIES);
         UserModel user = user("user-id", "UserName", "User@Example.com", Map.of());

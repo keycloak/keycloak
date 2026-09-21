@@ -81,7 +81,7 @@ public class DefaultLockingBruteForceProtector extends DefaultBruteForceProtecto
     protected void processLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo,
             boolean success, Set<String> categories, String attemptedIdentifier) {
         if (success) {
-            success(session, realm, user.getId(), categories);
+            success(session, realm, user.getId(), categories, attemptedIdentifier);
         } else {
             failure(session, realm, user.getId(), clientConnection.getRemoteHost(), Time.currentTimeMillis(), categories,
                     attemptedIdentifier);

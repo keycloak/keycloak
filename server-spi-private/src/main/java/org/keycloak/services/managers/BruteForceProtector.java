@@ -47,9 +47,34 @@ public interface BruteForceProtector extends Provider {
 
     void successfulLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo, Set<String> authenticationCategories);
 
+    /**
+     * Records a successful login, clearing only the counters that apply to {@code attemptedIdentifier}.
+     * Custom providers can ignore the identifier by delegating to {@link #successfulLogin}.
+     */
+    default void successfulLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo,
+            Set<String> authenticationCategories, String attemptedIdentifier) {
+        successfulLogin(realm, user, clientConnection, uriInfo, authenticationCategories);
+    }
+
     boolean isTemporarilyDisabled(KeycloakSession session, RealmModel realm, UserModel user);
 
+    /**
+     * Whether the account or submitted identifier is temporarily blocked.
+     */
+    default boolean isTemporarilyDisabled(KeycloakSession session, RealmModel realm, UserModel user,
+            String attemptedIdentifier) {
+        return isTemporarilyDisabled(session, realm, user);
+    }
+
     boolean isPermanentlyLockedOut(KeycloakSession session, RealmModel realm, UserModel user);
+
+    /**
+     * Whether the account or submitted identifier is permanently blocked.
+     */
+    default boolean isPermanentlyLockedOut(KeycloakSession session, RealmModel realm, UserModel user,
+            String attemptedIdentifier) {
+        return isPermanentlyLockedOut(session, realm, user);
+    }
 
     /**
      * Clears any remaining traces of the permanent lockout. Does not enable the user as such!

@@ -40,6 +40,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.BruteForceUserProperty;
 
 import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
 
@@ -82,6 +83,10 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
         UserModel user = null;
         try {
             user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
+            if (user == null) {
+                user = BruteForceUserProperty.findUserByProtectedPropertyValue(context.getSession(), context.getRealm(),
+                        username);
+            }
         } catch (ModelDuplicateException mde) {
             ServicesLogger.LOGGER.modelDuplicateException(mde);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", "Invalid user credentials");

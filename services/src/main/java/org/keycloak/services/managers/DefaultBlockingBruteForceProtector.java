@@ -163,8 +163,14 @@ public class DefaultBlockingBruteForceProtector extends DefaultBruteForceProtect
 
     @Override
     protected void success(KeycloakSession session, RealmModel realm, String userId, Set<String> categories) {
+        success(session, realm, userId, categories, null);
+    }
+
+    @Override
+    protected void success(KeycloakSession session, RealmModel realm, String userId, Set<String> categories,
+            String attemptedIdentifier) {
         // remove the user from concurrent login attempts once it's processed
         enlistRemoval(session, userId);
-        super.success(session, realm, userId, categories);
+        super.success(session, realm, userId, categories, attemptedIdentifier);
     }
 }
