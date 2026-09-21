@@ -154,6 +154,7 @@ public class GitLabIdentityProvider extends OIDCIdentityProvider  implements Soc
 			try {
 				Thread.sleep(200);
 			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
 				throw new RuntimeException(e);
 			}
 		}
