@@ -121,7 +121,12 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
             OrganizationModel model = getDelegate().getById(id);
             if (model == null) return null;
             if (isRealmCacheKeyInvalid(id)) return model;
-            cached = new CachedOrganization(loaded, getRealm(), model, d -> realmCache.registerInvalidation(cacheKeyByDomain(d)));
+            Map<String, OrganizationIdentityProviderLinkModel> links = new HashMap<>();
+            model.getIdentityProviders().forEach(idp -> {
+                OrganizationIdentityProviderLinkModel link = getDelegate().getIdentityProviderLink(model, idp);
+                if (link != null) links.put(link.getIdentityProviderId(), link);
+            });
+            cached = new CachedOrganization(loaded, getRealm(), model, links, d -> realmCache.registerInvalidation(cacheKeyByDomain(d)));
             realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
         } else if (isRealmCacheKeyInvalid(id)) {
             return getDelegate().getById(id);
@@ -441,6 +446,13 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     @Override
     public OrganizationIdentityProviderLinkModel getIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider) {
+        if (realmCache == null) {
+            return getDelegate().getIdentityProviderLink(organization, identityProvider);
+        }
+        OrganizationModel org = getById(organization.getId());
+        if (org instanceof OrganizationAdapter adapter) {
+            return adapter.getIdentityProviderLink(identityProvider);
+        }
         return getDelegate().getIdentityProviderLink(organization, identityProvider);
     }
 
@@ -454,7 +466,11 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     @Override
     public Stream<IdentityProviderModel> getIdentityProviders(OrganizationModel organization) {
-        return getDelegate().getIdentityProviders(organization);
+        if (realmCache == null) {
+            return getDelegate().getIdentityProviders(organization);
+        }
+        OrganizationModel org = getById(organization.getId());
+        return org != null ? org.getIdentityProviders() : Stream.empty();
     }
 
     @Override
