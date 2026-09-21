@@ -17,7 +17,6 @@
 
 package org.keycloak.protocol.oidc.grants.device.endpoints;
 
-import java.lang.annotation.Annotation;
 import java.util.Map;
 
 import jakarta.ws.rs.Consumes;
@@ -75,7 +74,6 @@ import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
-import org.jboss.resteasy.reactive.server.core.CurrentRequestManager;
 
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.OAUTH2_DEVICE_USER_CODE;
 
@@ -104,9 +102,6 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         // per https://datatracker.ietf.org/doc/html/rfc8628#section-3.2
         // if you need to narrow this response to only specific endpoint, extract this mapper with 'handleDeviceRequest'
         // into a dedicated resource
-
-        // FIXME: drop when https://github.com/quarkusio/quarkus/issues/55818 is fixed
-        CurrentRequestManager.get().setAllAnnotations(new Annotation[]{});
 
         return Response.status(400)
                 .entity(new OAuth2ErrorRepresentation(OAuthErrorException.INVALID_REQUEST, "Invalid Content-Type header"))
