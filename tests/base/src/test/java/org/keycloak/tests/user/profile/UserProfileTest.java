@@ -83,6 +83,7 @@ import org.keycloak.userprofile.validator.UsernameIDNHomographValidator;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.validators.EmailValidator;
 import org.keycloak.validate.validators.LengthValidator;
+import org.keycloak.validate.validators.OptionsValidator;
 import org.keycloak.validate.validators.UriValidator;
 
 import org.hamcrest.Matchers;
@@ -1410,6 +1411,43 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
         profile.validate();
+    }
+
+    @Test
+    public void testRequiredMultivaluedAttributeWithBlankValue() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testRequiredMultivaluedAttributeWithBlankValue);
+    }
+
+    private static void testRequiredMultivaluedAttributeWithBlankValue(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
+        UPAttribute attribute = new UPAttribute(ATT_ADDRESS, new UPAttributePermissions(Set.of(), Set.of(ROLE_USER)), new UPAttributeRequired());
+        attribute.setMultivalued(true);
+        attribute.addValidation(OptionsValidator.ID, Map.of(OptionsValidator.KEY_OPTIONS, List.of("opt1", "opt2")));
+        config.addOrReplaceAttribute(attribute);
+        provider.setConfiguration(config);
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
+
+        // only blank values, as sent by the login theme when no checkbox is selected
+        attributes.put(ATT_ADDRESS, List.of(""));
+        try {
+            provider.create(UserProfileContext.REGISTRATION, attributes).validate();
+            fail("Should fail validation");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(ATT_ADDRESS));
+        }
+
+        // blank value sent together with the selected values
+        attributes.put(ATT_ADDRESS, List.of("", "opt1", "opt2"));
+        UserProfile profile = provider.create(UserProfileContext.REGISTRATION, attributes);
+        profile.validate();
+        UserModel user = profile.create();
+        assertThat(user.getAttributes().get(ATT_ADDRESS), containsInAnyOrder("opt1", "opt2"));
     }
 
     @Test
