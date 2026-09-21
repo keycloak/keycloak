@@ -35,10 +35,8 @@ import com.webauthn4j.data.attestation.authenticator.AAGUID;
  * anything, unlike {@link com.webauthn4j.anchor.KeyStoreTrustAnchorRepository}, which scans the whole
  * {@link KeyStore} once in its constructor and caches the result forever.
  * <p>
- * This repository is only consulted while an actual WebAuthn registration is being verified (see
- * {@link com.webauthn4j.verifier.attestation.trustworthiness.certpath.DefaultCertPathTrustworthinessVerifier#verify}),
- * which happens far less often than a {@link WebAuthnRegisterFactory} is instantiated (once per login, merely
- * to check whether the required action is triggered), so re-scanning the truststore here on each use is cheap
+ * which happens far less often than {@link WebAuthnRegisterFactory#create(KeycloakSession)} is called (once per login,
+ * merely to check whether the required action is triggered), so re-scanning the truststore here on each use is cheap
  * enough that no caching is needed.
  */
 public class KeycloakTrustAnchorRepository implements TrustAnchorRepository {
