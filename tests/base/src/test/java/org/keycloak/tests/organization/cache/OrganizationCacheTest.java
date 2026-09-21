@@ -28,10 +28,12 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.NotFoundException;
 
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.models.IdentityProviderStorageProvider.FetchMode;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.OrganizationDomainModel;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -45,6 +47,7 @@ import org.keycloak.models.cache.infinispan.organization.InfinispanOrganizationP
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -63,6 +66,7 @@ import static org.keycloak.models.cache.infinispan.organization.CachedOrganizati
 import static org.keycloak.models.cache.infinispan.organization.InfinispanOrganizationProvider.cacheKeyOrgMemberCount;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -560,6 +564,176 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
             assertNotNull(identityProviderListQuery);
             assertEquals(11, identityProviderListQuery.getIDPs(orgaId).size());
 
+        });
+    }
+
+    @Test
+    public void testCacheGetIdentityProviders() {
+        String orgaId = realm.admin().organizations().list(-1, -1).get(0).getId();
+
+        // 1. Call getIdentityProviders(org) to populate cache, verify data comes from CachedOrganization
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel orga = orgProvider.getById(orgaId);
+            assertNotNull(orga);
+
+            long count = orgProvider.getIdentityProviders(orga).count();
+            assertEquals(1, count);
+
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            CachedOrganization cachedOrg = realmCache.getCache().get(orgaId, CachedOrganization.class);
+            assertNotNull(cachedOrg);
+            assertEquals(1, cachedOrg.getIdentityProviders().count());
+        });
+
+        // 2. Update org domain to trigger invalidation
+        OrganizationRepresentation rep = realm.admin().organizations().get(orgaId).toRepresentation();
+        OrganizationDomainRepresentation domainRep = new OrganizationDomainRepresentation();
+        domainRep.setName("orga-updated.org");
+        rep.addDomain(domainRep);
+        realm.admin().organizations().get(orgaId).update(rep).close();
+
+        // 3. Verify cache was invalidated and repopulated
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel orga = orgProvider.getById(orgaId);
+            assertNotNull(orga);
+
+            long count = orgProvider.getIdentityProviders(orga).count();
+            assertEquals(1, count);
+
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            CachedOrganization cachedOrg = realmCache.getCache().get(orgaId, CachedOrganization.class);
+            assertNotNull(cachedOrg);
+            assertEquals(1, cachedOrg.getIdentityProviders().count());
+        });
+    }
+
+    @Test
+    public void testCacheGetIdentityProviderLink() {
+        String orgaId = realm.admin().organizations().list(-1, -1).get(0).getId();
+
+        // 1. Get link via provider and verify it is cached in CachedOrganization
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel orga = orgProvider.getById(orgaId);
+            assertNotNull(orga);
+
+            IdentityProviderModel idp = orgProvider.getIdentityProviders(orga).findFirst().orElse(null);
+            assertNotNull(idp);
+
+            OrganizationIdentityProviderLinkModel link = orgProvider.getIdentityProviderLink(orga, idp);
+            assertNotNull(link);
+            assertTrue(link.isAutoMembership());
+            assertEquals(MembershipType.UNMANAGED, link.getMembershipType());
+
+            // Verify link is in the CachedOrganization
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            CachedOrganization cachedOrg = realmCache.getCache().get(orgaId, CachedOrganization.class);
+            assertNotNull(cachedOrg);
+            OrganizationIdentityProviderLinkModel cachedLink = cachedOrg.getIdentityProviderLink(idp.getInternalId());
+            assertNotNull(cachedLink);
+            assertEquals(link.isAutoMembership(), cachedLink.isAutoMembership());
+            assertEquals(link.getMembershipType(), cachedLink.getMembershipType());
+        });
+
+        // 2. Update link config (change autoMembership to false)
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel orga = orgProvider.getById(orgaId);
+            IdentityProviderModel idp = orgProvider.getIdentityProviders(orga).findFirst().orElse(null);
+            orgProvider.updateIdentityProviderLink(orga, idp, false, MembershipType.UNMANAGED);
+        });
+
+        // 3. Verify cache was invalidated and re-fetch returns updated values
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel orga = orgProvider.getById(orgaId);
+            IdentityProviderModel idp = orgProvider.getIdentityProviders(orga).findFirst().orElse(null);
+            assertNotNull(idp);
+
+            OrganizationIdentityProviderLinkModel link = orgProvider.getIdentityProviderLink(orga, idp);
+            assertNotNull(link);
+            assertFalse(link.isAutoMembership());
+            assertEquals(MembershipType.UNMANAGED, link.getMembershipType());
+
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            CachedOrganization cachedOrg = realmCache.getCache().get(orgaId, CachedOrganization.class);
+            assertNotNull(cachedOrg);
+            OrganizationIdentityProviderLinkModel cachedLink = cachedOrg.getIdentityProviderLink(idp.getInternalId());
+            assertNotNull(cachedLink);
+            assertFalse(cachedLink.isAutoMembership());
+            assertEquals(MembershipType.UNMANAGED, cachedLink.getMembershipType());
+        });
+
+        // 4. Remove IdP from org, verify cache invalidation
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel orga = orgProvider.getById(orgaId);
+            IdentityProviderModel idp = orgProvider.getIdentityProviders(orga).findFirst().orElse(null);
+            assertNotNull(idp);
+            orgProvider.removeIdentityProvider(orga, idp);
+        });
+
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel orga = orgProvider.getById(orgaId);
+            assertNotNull(orga);
+
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            CachedOrganization cachedOrg = realmCache.getCache().get(orgaId, CachedOrganization.class);
+            assertNotNull(cachedOrg);
+            assertTrue(cachedOrg.getIdentityProviderLinks().isEmpty());
+        });
+    }
+
+    @Test
+    public void testCacheDomainByName() {
+        String orgaId = realm.admin().organizations().list(-1, -1).get(0).getId();
+
+        // 1. Fetch org to populate cache, verify domainsByName index
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            orgProvider.getById(orgaId);
+
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            CachedOrganization cachedOrg = realmCache.getCache().get(orgaId, CachedOrganization.class);
+            assertNotNull(cachedOrg);
+
+            OrganizationDomainModel domain = cachedOrg.getDomainByName("orga.org");
+            assertNotNull(domain);
+            assertEquals("orga.org", domain.getName());
+
+            assertNull(cachedOrg.getDomainByName("nonexistent.org"));
+            assertNull(cachedOrg.getDomainByName(null));
+        });
+
+        // 2. Case-insensitive lookup
+        runOnServer.run(session -> {
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            CachedOrganization cachedOrg = realmCache.getCache().get(orgaId, CachedOrganization.class);
+            assertNotNull(cachedOrg);
+            assertNotNull(cachedOrg.getDomainByName("ORGA.ORG"));
+            assertNotNull(cachedOrg.getDomainByName("Orga.Org"));
+        });
+
+        // 3. Update domains, verify cache is invalidated and repopulated with new index
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel orga = orgProvider.getById(orgaId);
+            orga.setDomains(Set.of(new OrganizationDomainModel("updated.org")));
+        });
+
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            orgProvider.getById(orgaId);
+
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            CachedOrganization cachedOrg = realmCache.getCache().get(orgaId, CachedOrganization.class);
+            assertNotNull(cachedOrg);
+
+            assertNull(cachedOrg.getDomainByName("orga.org"));
+            assertNotNull(cachedOrg.getDomainByName("updated.org"));
         });
     }
 
