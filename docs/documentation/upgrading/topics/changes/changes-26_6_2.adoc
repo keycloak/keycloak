@@ -31,6 +31,8 @@ WARNING: Both server-wide and per-client options are deprecated and will be remo
 
 NOTE: For lightweight access tokens, the audience claim may only be present in the introspection response (not in the token itself). The audience check validates the transformed token returned by introspection, ensuring proper validation for both standard and lightweight tokens.
 
+NOTE: Refresh and offline tokens are not subject to the audience check, because their `aud` claim is the realm rather than a set of clients, and audience protocol mappers do not apply to them. Such a token can be introspected only by the client it was issued for (`azp`), and the compatibility options above do not relax that rule. {project_name} detects refresh and offline tokens from the token itself, so this applies whether or not `token_type_hint` is provided.
+
 === UserInfo endpoint rejects lightweight access tokens
 
 The UserInfo endpoint now rejects lightweight access tokens by default. Lightweight access tokens contain minimal claims and are designed for token introspection.
