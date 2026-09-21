@@ -45,9 +45,13 @@ public class DefaultActionTokenKey extends JsonWebToken implements SingleUseObje
     }
 
     public DefaultActionTokenKey(String userId, String actionId, int absoluteExpirationInSecs, UUID actionVerificationNonce) {
+        this(userId, actionId, (long) absoluteExpirationInSecs, actionVerificationNonce);
+    }
+
+    public DefaultActionTokenKey(String userId, String actionId, long absoluteExpirationInSecs, UUID actionVerificationNonce) {
         this.subject = userId;
         this.type = actionId;
-        this.exp = Long.valueOf(absoluteExpirationInSecs);
+        this.exp = absoluteExpirationInSecs;
         this.actionVerificationNonce = actionVerificationNonce == null ? SecretGenerator.getInstance().generateSecureUUID() : actionVerificationNonce;
     }
 
@@ -85,7 +89,7 @@ public class DefaultActionTokenKey extends JsonWebToken implements SingleUseObje
         } catch (IllegalArgumentException ex) {
             userId = parsed[0];
         }
-        return new DefaultActionTokenKey(userId, parsed[3], Integer.parseInt(parsed[1]), UUID.fromString(parsed[2]));
+        return new DefaultActionTokenKey(userId, parsed[3], Long.parseLong(parsed[1]), UUID.fromString(parsed[2]));
     }
 
 }

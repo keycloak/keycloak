@@ -35,14 +35,26 @@ public class UpdateEmailActionToken extends DefaultActionToken {
     private String redirectUri;
 
     public UpdateEmailActionToken(String userId, int absoluteExpirationInSecs, String oldEmail, String newEmail, String clientId) {
+        this(userId, (long) absoluteExpirationInSecs, oldEmail, newEmail, clientId);
+    }
+
+    public UpdateEmailActionToken(String userId, int absoluteExpirationInSecs, String oldEmail, String newEmail, String clientId, Boolean logoutSessions) {
+        this(userId, (long) absoluteExpirationInSecs, oldEmail, newEmail, clientId, logoutSessions);
+    }
+
+    public UpdateEmailActionToken(String userId, int absoluteExpirationInSecs, String oldEmail, String newEmail, String clientId, Boolean logoutSessions, String redirectUri) {
+        this(userId, (long) absoluteExpirationInSecs, oldEmail, newEmail, clientId, logoutSessions, redirectUri);
+    }
+
+    public UpdateEmailActionToken(String userId, long absoluteExpirationInSecs, String oldEmail, String newEmail, String clientId) {
           this(userId, absoluteExpirationInSecs, oldEmail, newEmail, clientId, null);
     }
 
-	public UpdateEmailActionToken(String userId, int absoluteExpirationInSecs, String oldEmail, String newEmail, String clientId, Boolean logoutSessions){
+	public UpdateEmailActionToken(String userId, long absoluteExpirationInSecs, String oldEmail, String newEmail, String clientId, Boolean logoutSessions){
 		this(userId, absoluteExpirationInSecs, oldEmail, newEmail, clientId, logoutSessions, null);
 	}
 
-	public UpdateEmailActionToken(String userId, int absoluteExpirationInSecs, String oldEmail, String newEmail, String clientId, Boolean logoutSessions, String redirectUri){
+	public UpdateEmailActionToken(String userId, long absoluteExpirationInSecs, String oldEmail, String newEmail, String clientId, Boolean logoutSessions, String redirectUri){
 		super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null);
 		this.oldEmail = oldEmail;
 		this.newEmail = newEmail;

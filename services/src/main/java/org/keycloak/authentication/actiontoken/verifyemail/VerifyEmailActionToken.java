@@ -39,6 +39,10 @@ public class VerifyEmailActionToken extends DefaultActionToken {
     private String redirectUri;
 
     public VerifyEmailActionToken(String userId, int absoluteExpirationInSecs, String compoundAuthenticationSessionId, String email, String clientId) {
+        this(userId, (long) absoluteExpirationInSecs, compoundAuthenticationSessionId, email, clientId);
+    }
+
+    public VerifyEmailActionToken(String userId, long absoluteExpirationInSecs, String compoundAuthenticationSessionId, String email, String clientId) {
         super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, compoundAuthenticationSessionId);
         setEmail(email);
         this.issuedFor = clientId;

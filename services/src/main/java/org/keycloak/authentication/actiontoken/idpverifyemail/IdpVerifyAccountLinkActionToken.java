@@ -48,6 +48,12 @@ public class IdpVerifyAccountLinkActionToken extends DefaultActionToken {
 
     public IdpVerifyAccountLinkActionToken(String userId, String email, int absoluteExpirationInSecs, String compoundAuthenticationSessionId,
       String identityProviderUsername, String externalId, String identityProviderAlias, String clientId) {
+        this(userId, email, (long) absoluteExpirationInSecs, compoundAuthenticationSessionId, identityProviderUsername, externalId,
+          identityProviderAlias, clientId);
+    }
+
+    public IdpVerifyAccountLinkActionToken(String userId, String email, long absoluteExpirationInSecs, String compoundAuthenticationSessionId,
+      String identityProviderUsername, String externalId, String identityProviderAlias, String clientId) {
         super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, compoundAuthenticationSessionId);
         this.identityProviderUsername = identityProviderUsername;
         this.externalId = externalId;
