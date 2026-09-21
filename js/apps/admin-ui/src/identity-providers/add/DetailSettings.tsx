@@ -412,6 +412,20 @@ export default function DetailSettings() {
       if (updatedProvider) {
         setProvider(updatedProvider);
         reset(toFormValues(updatedProvider));
+
+        if (updatedProvider.config?.authnContextClassRefs) {
+          form.setValue(
+            "config.authnContextClassRefs",
+            JSON.parse(updatedProvider.config.authnContextClassRefs),
+          );
+        }
+
+        if (updatedProvider.config?.authnContextDeclRefs) {
+          form.setValue(
+            "config.authnContextDeclRefs",
+            JSON.parse(updatedProvider.config.authnContextDeclRefs),
+          );
+        }
       } else {
         reset(toFormValues(p));
       }
