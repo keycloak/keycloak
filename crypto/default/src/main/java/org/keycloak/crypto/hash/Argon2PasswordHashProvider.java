@@ -115,32 +115,24 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
         return tracing.trace(Argon2PasswordHashProvider.class, "encode", span -> {
             try {
                 cpuCoreSemaphore.acquire();
-                try {
+                try (BlockChunkManager.LeasedBlockPool pool = blockChunkManager != null ? blockChunkManager.lease() : null) {
                     org.bouncycastle.crypto.params.Argon2Parameters.Builder builder = new org.bouncycastle.crypto.params.Argon2Parameters.Builder(Argon2Parameters.getTypeValue(type))
                             .withVersion(Argon2Parameters.getVersionValue(version))
                             .withSalt(salt)
                             .withParallelism(parallelism)
                             .withMemoryAsKB(memory)
                             .withIterations(iterations);
-
-                    BlockChunkManager.LeasedBlockPool pool = blockChunkManager != null ? blockChunkManager.lease(memory, parallelism) : null;
-                    try {
-                        if (pool != null) {
-                            builder.withBlockPool(pool);
-                        }
-                        org.bouncycastle.crypto.params.Argon2Parameters parameters = builder.build();
-
-                        Argon2BytesGenerator generator = new Argon2BytesGenerator();
-                        generator.init(parameters);
-
-                        byte[] result = new byte[hashLength];
-                        generator.generateBytes(rawPassword.toCharArray(), result);
-                        return Base64.getEncoder().encodeToString(result);
-                    } finally {
-                        if (pool != null) {
-                            pool.close();
-                        }
+                    if (pool != null) {
+                        builder.withBlockPool(pool);
                     }
+                    org.bouncycastle.crypto.params.Argon2Parameters parameters = builder.build();
+
+                    Argon2BytesGenerator generator = new Argon2BytesGenerator();
+                    generator.init(parameters);
+
+                    byte[] result = new byte[hashLength];
+                    generator.generateBytes(rawPassword.toCharArray(), result);
+                    return Base64.getEncoder().encodeToString(result);
                 } finally {
                     cpuCoreSemaphore.release();
                 }

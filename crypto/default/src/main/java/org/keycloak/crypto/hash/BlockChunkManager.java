@@ -1,10 +1,9 @@
 package org.keycloak.crypto.hash;
 
 import java.lang.ref.SoftReference;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator.Block;
@@ -15,14 +14,17 @@ import org.jboss.logging.Logger;
 /**
  * Pool-of-chunks for Argon2 memory blocks. All chunks are uniform 1 MB ({@value CHUNK_BLOCKS}
  * blocks of 1 KB each) and shared across all Argon2 configurations, so different memory settings
- * (e.g. 7 MB, 12 MB, 19 MB) draw from and return to the same pool of reusable chunks. Each hash
- * operation leases enough chunks to satisfy its block requirement, uses them for all
- * allocations/deallocations, then releases the chunks back. Without pooling, each hash allocates
- * and discards ~7 MB of {@code long[]} arrays (with default settings), creating significant GC
- * pressure under load.
+ * (e.g. 7 MB, 12 MB, 19 MB) draw from and return to the same pool of reusable chunks. Chunks are
+ * acquired lazily as BouncyCastle calls {@link BlockPool#allocate()}, so there is no need to
+ * mirror BC's internal block count calculation. Without pooling, each hash allocates and discards
+ * ~7 MB of {@code long[]} arrays (with default settings), creating significant GC pressure
+ * under load.
  *
  * <p>Each chunk is a {@link FixedBlockPool} wrapped in a {@link SoftReference} so the JVM can
- * reclaim them independently under memory pressure.
+ * reclaim them independently under memory pressure. The pool uses LIFO ordering: chunks are
+ * returned to and acquired from the head, so the same hot working set is reused while idle
+ * chunks at the tail age out and are reclaimed, allowing the pool to shrink naturally when
+ * load drops.
  *
  * <p>{@link FixedBlockPool} is used for individual chunks because
  * {@link Argon2BytesGenerator.Block#clear()} is private — only {@code FixedBlockPool},
@@ -38,85 +40,56 @@ public class BlockChunkManager {
 
     private static final Logger logger = Logger.getLogger(BlockChunkManager.class);
 
-    public static final int CHUNK_BLOCKS = 1024; // 1 MB chunk (1024 blocks of 1 KB)
+    static final int CHUNK_BLOCKS = 1024; // 1 MB chunk (1024 blocks of 1 KB)
 
-    private static final int ARGON2_SYNC_POINTS = 4;
-    // FillBlock allocates 4 scratch blocks (R, Z, addressBlock, inputBlock) in
-    // addition to the primary memory blocks.
-    private static final int SCRATCH_BLOCKS = 4;
+    private final ConcurrentLinkedDeque<SoftReference<FixedBlockPool>> availableChunks = new ConcurrentLinkedDeque<>();
 
-    private final Deque<SoftReference<FixedBlockPool>> availableChunks = new ArrayDeque<>();
-
-    static int computeMaxBlocks(int memoryInKB, int parallelism) {
-        if (parallelism < 1 || parallelism > ((1 << 24) - 1)) {
-            throw new IllegalArgumentException("parallelism must be between 1 and " + ((1 << 24) - 1));
-        }
-        // Mirror BouncyCastle's effective block count calculation:
-        // memoryBlocks = max(memory, 2 * SYNC_POINTS * lanes), then rounded to a
-        // multiple of 4 * lanes.
-        int memoryBlocks = Math.max(memoryInKB, 2 * ARGON2_SYNC_POINTS * parallelism);
-        int segmentLength = memoryBlocks / (ARGON2_SYNC_POINTS * parallelism);
-        int laneLength = segmentLength * ARGON2_SYNC_POINTS;
-        return parallelism * laneLength + SCRATCH_BLOCKS;
+    public LeasedBlockPool lease() {
+        return new LeasedBlockPool();
     }
 
-    public LeasedBlockPool lease(int memoryKb, int parallelism) {
-        int maxBlocks = computeMaxBlocks(memoryKb, parallelism);
-        int chunksNeeded = (maxBlocks + CHUNK_BLOCKS - 1) / CHUNK_BLOCKS;
-        List<FixedBlockPool> acquiredChunks = new ArrayList<>(chunksNeeded);
-
-        synchronized (availableChunks) {
-            while (acquiredChunks.size() < chunksNeeded && !availableChunks.isEmpty()) {
-                SoftReference<FixedBlockPool> ref = availableChunks.pop();
-                FixedBlockPool chunk = ref.get();
-                if (chunk != null) {
-                    acquiredChunks.add(chunk);
-                } else {
-                    logger.debug("Soft reference was evicted");
-                }
+    private FixedBlockPool acquireChunk() {
+        SoftReference<FixedBlockPool> ref;
+        while ((ref = availableChunks.pollFirst()) != null) {
+            FixedBlockPool chunk = ref.get();
+            if (chunk != null) {
+                return chunk;
+            } else {
+                logger.debug("Soft reference was evicted");
             }
         }
-
-        while (acquiredChunks.size() < chunksNeeded) {
-            acquiredChunks.add(new FixedBlockPool(CHUNK_BLOCKS));
-        }
-
-        return new LeasedBlockPool(acquiredChunks);
+        return new FixedBlockPool(CHUNK_BLOCKS);
     }
 
-    private void release(List<FixedBlockPool> chunks) {
-        synchronized (availableChunks) {
-            for (FixedBlockPool chunk : chunks) {
-                availableChunks.push(new SoftReference<>(chunk));
-            }
+    private void releaseChunks(List<FixedBlockPool> chunks) {
+        for (FixedBlockPool chunk : chunks) {
+            availableChunks.offerFirst(new SoftReference<>(chunk));
         }
     }
 
     public class LeasedBlockPool implements BlockPool, AutoCloseable {
-        private final List<FixedBlockPool> chunks;
-        private int allocatedCount;
-        private int deallocatedCount;
-
-        private LeasedBlockPool(List<FixedBlockPool> chunks) {
-            this.chunks = chunks;
-        }
+        private final List<FixedBlockPool> chunks = new ArrayList<>();
+        private int blockCount;
 
         @Override
         public Block allocate() {
-            Block result = chunks.get((allocatedCount / CHUNK_BLOCKS) % chunks.size()).allocate();
-            allocatedCount++;
-            return result;
+            if (blockCount % CHUNK_BLOCKS == 0) {
+                chunks.add(acquireChunk());
+            }
+            Block block = chunks.get(blockCount / CHUNK_BLOCKS).allocate();
+            blockCount++;
+            return block;
         }
 
         @Override
         public void deallocate(Block block) {
-            chunks.get((deallocatedCount / CHUNK_BLOCKS) % chunks.size()).deallocate(block);
-            deallocatedCount++;
+            blockCount--;
+            chunks.get(blockCount / CHUNK_BLOCKS).deallocate(block);
         }
 
         @Override
         public void close() {
-            BlockChunkManager.this.release(chunks);
+            releaseChunks(chunks);
         }
     }
 }
