@@ -42,7 +42,7 @@ public class BlockChunkManager {
 
     static final int CHUNK_BLOCKS = 1024; // 1 MB chunk (1024 blocks of 1 KB)
 
-    private final ConcurrentLinkedDeque<SoftReference<FixedBlockPool>> availableChunks = new ConcurrentLinkedDeque<>();
+    final ConcurrentLinkedDeque<SoftReference<FixedBlockPool>> availableChunks = new ConcurrentLinkedDeque<>();
 
     public LeasedBlockPool lease() {
         return new LeasedBlockPool();
