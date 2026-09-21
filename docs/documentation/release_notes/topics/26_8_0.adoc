@@ -26,16 +26,16 @@ endif::[]
 The attestation-based client authentication (`client-auth-abca`), pre-authorized code grant (`oid4vc-vci-preauth-code`), REST credential offer endpoint (`oid4vc-vci-rest-credential-offer`), and OpenID4VP (`oid4vc-vp`) remain experimental features. This release also adds experimental support for the mdoc format, provided by the new experimental feature `oid4vc-mdoc`.
 
 ifeval::[{project_community}==true]
-Many community members were involved in the development. Many thanks to https://github.com/Awambeng[Awambeng], 
-https://github.com/babisRoutis[Babis Routis], https://github.com/CAOShurong[ShurongCAO], 
-https://github.com/Captain-P-Goldfish[Pascal Knüppel], https://github.com/thomasdarimont[Thomas Darimont], 
-https://github.com/dominikschlosser[Dominik Schlosser], https://github.com/forkimenjeckayang[forkimenjeckayang], 
-https://github.com/francis-pouatcha[Francis Pouatcha], https://github.com/hagerm98[Hager Khamis], 
-https://github.com/IngridPuppet[Ingrid Kamga], https://github.com/namanONcode[Naman Jain], 
-https://github.com/officialasishkumar[Asish Kumar], https://github.com/Ogenbertrand[Ogen Bertrand], 
-https://github.com/pulsastrix[Hugo Hakim Damer], https://github.com/r0h1tb[Rohit Behera], 
-https://github.com/rameshkumarkoyya[rameshkumarkoyya], https://github.com/shashankxrm[Shashank RM], 
-https://github.com/tdiesler[Thomas Diesler], https://github.com/VinodAnandan[Vinod Anandan], 
+Many community members were involved in the development. Many thanks to https://github.com/Awambeng[Awambeng],
+https://github.com/babisRoutis[Babis Routis], https://github.com/CAOShurong[ShurongCAO],
+https://github.com/Captain-P-Goldfish[Pascal Knüppel], https://github.com/thomasdarimont[Thomas Darimont],
+https://github.com/dominikschlosser[Dominik Schlosser], https://github.com/forkimenjeckayang[forkimenjeckayang],
+https://github.com/francis-pouatcha[Francis Pouatcha], https://github.com/hagerm98[Hager Khamis],
+https://github.com/IngridPuppet[Ingrid Kamga], https://github.com/namanONcode[Naman Jain],
+https://github.com/officialasishkumar[Asish Kumar], https://github.com/Ogenbertrand[Ogen Bertrand],
+https://github.com/pulsastrix[Hugo Hakim Damer], https://github.com/r0h1tb[Rohit Behera],
+https://github.com/rameshkumarkoyya[rameshkumarkoyya], https://github.com/shashankxrm[Shashank RM],
+https://github.com/tdiesler[Thomas Diesler], https://github.com/VinodAnandan[Vinod Anandan],
 https://github.com/Vitalisn4[Palpable] and https://github.com/wistefan[Stefan Wiedemann] for the contributions!
 endif::[]
 

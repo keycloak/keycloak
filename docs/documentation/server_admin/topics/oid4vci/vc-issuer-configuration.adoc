@@ -3,7 +3,7 @@
 
 [WARNING]
 ====
-This feature is in preview and is not fully supported. It is disabled by default and can be enabled with `--features=preview` or `--features=oid4vc-vci`. Backward compatibility is not guaranteed, and future updates may introduce breaking changes.
+This feature is in preview and is not fully supported. It is disabled by default and can be enabled with `--features=oid4vc-vci`. Alternatively, users who explicitly want to enable the full preview feature set can use `--features=preview`. Backward compatibility is not guaranteed, and future updates may introduce breaking changes.
 ====
 
 {project_name} supports the https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[OpenID for Verifiable Credential Issuance (OpenID4VCI)] protocol, enabling it to act as a credential issuer in decentralized identity ecosystems. With this protocol, you can issue digitally signed Verifiable Credentials (VCs) that relying parties (verifiers) can independently verify without contacting {project_name}.
