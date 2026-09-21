@@ -217,6 +217,7 @@ jobs:
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
+        if: ${{ !cancelled() }}
         env:
           GH_TOKEN: ${{ github.token }}
         with:
