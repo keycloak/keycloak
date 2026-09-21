@@ -19,6 +19,7 @@ package org.keycloak.protocol.saml.installation;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.MatchResult;
@@ -26,6 +27,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import jakarta.ws.rs.core.Response;
 
@@ -39,49 +44,90 @@ import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlService;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.common.util.TransformerUtil;
+
+import org.jboss.logging.Logger;
+import org.w3c.dom.Document;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class ModAuthMellonClientInstallation implements ClientInstallationProvider {
+
+    private static final Logger logger = Logger.getLogger(ModAuthMellonClientInstallation.class);
+
     @Override
     public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI serverBaseUri) {
         SamlClient samlClient = new SamlClient(client);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ZipOutputStream zip = new ZipOutputStream(baos);
         String idpDescriptor = SamlService.getIDPMetadataDescriptor(session.getContext().getUri(), session, realm);
         String spDescriptor = SamlSPDescriptorClientInstallation.getSPDescriptorForClient(client);
         String clientDirName = client.getClientId()
                 .replace('/', '_')
                 .replace(' ', '_');
-        try {
+        String clientSigningPrivateKey = null;
+        String clientSigningCertificate = null;
+        if (samlClient.requiresClientSignature()) {
+            clientSigningPrivateKey = samlClient.getClientSigningPrivateKey();
+            clientSigningCertificate = samlClient.getClientSigningCertificate();
+        }
+        byte[] zip = createZip(clientDirName, idpDescriptor, spDescriptor, clientSigningPrivateKey, clientSigningCertificate);
+
+        return Response.ok(zip, getMediaType()).build();
+    }
+
+    static byte[] createZip(String clientDirName, String idpDescriptor, String spDescriptor,
+            String clientSigningPrivateKey, String clientSigningCertificate) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zip = new ZipOutputStream(baos)) {
             zip.putNextEntry(new ZipEntry(clientDirName + "/idp-metadata.xml"));
-            zip.write(idpDescriptor.getBytes());
+            zip.write(prettyPrintXml(idpDescriptor).getBytes(StandardCharsets.UTF_8));
             zip.closeEntry();
             zip.putNextEntry(new ZipEntry(clientDirName + "/sp-metadata.xml"));
-            zip.write(spDescriptor.getBytes());
+            zip.write(prettyPrintXml(spDescriptor).getBytes(StandardCharsets.UTF_8));
             zip.closeEntry();
-            if (samlClient.requiresClientSignature()) {
-                if (samlClient.getClientSigningPrivateKey() != null) {
-                    zip.putNextEntry(new ZipEntry(clientDirName + "/client-private-key.pem"));
-                    zip.write(createClientSigningPrivateKeyRfc7468Representation(samlClient.getClientSigningPrivateKey()));
-                    zip.closeEntry();
-                }
-                if (samlClient.getClientSigningCertificate() != null) {
-                    zip.putNextEntry(new ZipEntry(clientDirName + "/client-cert.pem"));
-                    zip.write(createClientSigningCertificateRfc7468Representation(samlClient.getClientSigningCertificate()));
-                    zip.closeEntry();
-                }
+            if (clientSigningPrivateKey != null) {
+                zip.putNextEntry(new ZipEntry(clientDirName + "/client-private-key.pem"));
+                zip.write(createClientSigningPrivateKeyRfc7468Representation(clientSigningPrivateKey));
+                zip.closeEntry();
             }
-            zip.close();
-            baos.close();
+            if (clientSigningCertificate != null) {
+                zip.putNextEntry(new ZipEntry(clientDirName + "/client-cert.pem"));
+                zip.write(createClientSigningCertificateRfc7468Representation(clientSigningCertificate));
+                zip.closeEntry();
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        return baos.toByteArray();
+    }
 
-
-        return Response.ok(baos.toByteArray(), getMediaType()).build();
+    /**
+     * Indents the given XML document to make it human-readable. Signed documents are returned unchanged,
+     * as adding whitespace would invalidate the signature.
+     */
+    static String prettyPrintXml(String xml) {
+        if (xml == null || xml.isEmpty()) {
+            return xml;
+        }
+        try {
+            Document document = DocumentUtil.getDocument(xml);
+            if (document.getElementsByTagNameNS(JBossSAMLURIConstants.XMLDSIG_NSURI.get(), "Signature").getLength() > 0) {
+                return xml;
+            }
+            Transformer transformer = TransformerUtil.getTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+            transformer.setOutputProperty(OutputKeys.ENCODING, StandardCharsets.UTF_8.name());
+            StringWriter out = new StringWriter();
+            transformer.transform(new DOMSource(document), new StreamResult(out));
+            return out.toString();
+        } catch (Exception e) {
+            logger.warn("Cannot pretty-print XML, using it unformatted", e);
+            return xml;
+        }
     }
 
     @Override
