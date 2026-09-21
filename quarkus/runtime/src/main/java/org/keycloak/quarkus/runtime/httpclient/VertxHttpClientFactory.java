@@ -25,7 +25,7 @@ import io.quarkus.arc.Arc;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
-import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -202,7 +202,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
             } else {
                 HostnameVerificationPolicy policy = truststoreProvider.getPolicy();
                 options.setVerifyHost(policy != HostnameVerificationPolicy.ANY);
-                options.setTrustOptions(keystoreToJksOptions(truststoreProvider.getTruststore(), null));
+                options.setTrustOptions(keystoreToOptions(truststoreProvider.getTruststore(), null));
                 options.setSsl(true);
             }
         }
@@ -213,7 +213,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
             String clientKeystorePassword = config.get("client-keystore-password");
             try {
                 KeyStore ks = KeystoreUtil.loadKeyStore(clientKeystore, clientKeystorePassword);
-                options.setKeyCertOptions(keystoreToJksOptions(ks, config.get("client-key-password", clientKeystorePassword)));
+                options.setKeyCertOptions(keystoreToOptions(ks, config.get("client-key-password", clientKeystorePassword)));
                 options.setSsl(true);
                 logger.debug("Client keystore configured for mutual TLS");
             } catch (Exception e) {
@@ -222,12 +222,13 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
         }
     }
 
-    private JksOptions keystoreToJksOptions(KeyStore keyStore, String password) {
+    private KeyStoreOptions keystoreToOptions(KeyStore keyStore, String password) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             char[] pw = password != null ? password.toCharArray() : new char[0];
             keyStore.store(baos, pw);
-            return new JksOptions()
+            return new KeyStoreOptions()
+                    .setType(keyStore.getType())
                     .setValue(Buffer.buffer(baos.toByteArray()))
                     .setPassword(password != null ? password : "");
         } catch (Exception e) {
@@ -252,7 +253,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
 
         if (mappings != null && !mappings.isEmpty()) {
             this.proxyMappings = mappings;
-            logger.info("Proxy mappings configured — per-request proxy routing enabled");
+            logger.debug("Proxy mappings configured — per-request proxy routing enabled");
         }
     }
 

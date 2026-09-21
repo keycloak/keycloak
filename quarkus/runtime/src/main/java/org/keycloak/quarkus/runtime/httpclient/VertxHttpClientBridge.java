@@ -116,14 +116,14 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
             }
 
             HttpClientRequest clientReq = reqAr.result();
+            requestRef.set(clientReq);
             if (future.isDone()) {
                 clientReq.reset();
                 return;
             }
-            requestRef.set(clientReq);
 
             for (Header header : request.getAllHeaders()) {
-                clientReq.putHeader(header.getName(), header.getValue());
+                clientReq.headers().add(header.getName(), header.getValue());
             }
 
             if (sendContentType != null && !request.containsHeader(sendContentType.getName())) {
