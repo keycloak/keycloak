@@ -34,9 +34,8 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
     private final int iterations;
     private final int parallelism;
     private final Semaphore cpuCoreSemaphore;
-    private final Argon2PasswordHashProviderFactory.SoftBlockPool blockPoolManager;
 
-    public Argon2PasswordHashProvider(String version, String type, int hashLength, int memory, int iterations, int parallelism, Semaphore cpuCoreSemaphore, Argon2PasswordHashProviderFactory.SoftBlockPool blockPoolManager) {
+    public Argon2PasswordHashProvider(String version, String type, int hashLength, int memory, int iterations, int parallelism, Semaphore cpuCoreSemaphore) {
         this.version = version;
         this.type = type;
         this.hashLength = hashLength;
@@ -44,7 +43,6 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
         this.iterations = iterations;
         this.parallelism = parallelism;
         this.cpuCoreSemaphore = cpuCoreSemaphore;
-        this.blockPoolManager = blockPoolManager;
     }
 
     @Override
@@ -115,14 +113,13 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
         return tracing.trace(Argon2PasswordHashProvider.class, "encode", span -> {
             try {
                 cpuCoreSemaphore.acquire();
-                try (var handle = blockPoolManager.acquire(memory, parallelism)) {
+                try {
                     org.bouncycastle.crypto.params.Argon2Parameters parameters = new org.bouncycastle.crypto.params.Argon2Parameters.Builder(Argon2Parameters.getTypeValue(type))
                             .withVersion(Argon2Parameters.getVersionValue(version))
                             .withSalt(salt)
                             .withParallelism(parallelism)
                             .withMemoryAsKB(memory)
-                            .withIterations(iterations)
-                            .withBlockPool(handle.pool()).build();
+                            .withIterations(iterations).build();
 
                     Argon2BytesGenerator generator = new Argon2BytesGenerator();
                     generator.init(parameters);
