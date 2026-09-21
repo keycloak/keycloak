@@ -48,6 +48,7 @@ import org.keycloak.models.GroupModel.GroupPathChangeEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -108,12 +109,20 @@ public class GroupResource {
 
         GroupRepresentation rep = GroupUtils.toRepresentation(this.auth.groups(), group, true);
 
-        // #50581 is scoped to FGAP v2. Without admin permissions, client visibility falls back to view-clients,
-        // which a view-users administrator does not hold, so the roles would disappear (#52753).
-        if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) && rep.getClientRoles() != null) {
-            rep.getClientRoles().keySet().removeIf(clientId -> {
-                ClientModel client = realm.getClientByClientId(clientId);
-                return client == null || !auth.clients().canView(client);
+        if (rep.getClientRoles() != null) {
+            rep.getClientRoles().entrySet().removeIf(entry -> {
+                ClientModel client = realm.getClientByClientId(entry.getKey());
+
+                if (client == null) {
+                    return true;
+                }
+
+                List<String> roles = entry.getValue();
+                roles.removeIf(roleName -> {
+                    RoleModel role = session.roles().getClientRole(client, roleName);
+                    return !auth.roles().canView(role);
+                });
+                return roles.isEmpty();
             });
         }
 

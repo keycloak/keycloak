@@ -508,11 +508,12 @@ public class PermissionsTest extends AbstractPermissionsTest {
     }
 
     /**
-     * Realm role mappings on a user are user data, guarded by {@code view-users}. They are not realm configuration,
-     * so viewing them must not require {@code view-realm}.
+     * Viewing a role mapping requires being able to map the role or to view its container, not {@code view-realm}.
+     * A {@code manage-users} admin can map non-admin realm roles, so it sees the realm role mapping on a user. A
+     * {@code view-users}-only admin can neither map the role nor view the realm, so the realm mapping is filtered out.
      */
     @Test
-    public void realmRoleMappingsVisibleWithViewUsers() {
+    public void realmRoleMappingsVisibleWithManageUsers() {
         String roleName = "role-mapping-visibility";
         RoleRepresentation role = new RoleRepresentation();
         role.setName(roleName);
@@ -526,20 +527,28 @@ public class PermissionsTest extends AbstractPermissionsTest {
         managedRealm1.admin().users().get(userUuid).roles().realmLevel()
                 .add(List.of(managedRealm1.admin().roles().get(roleName).toRepresentation()));
 
-        MappingsRepresentation mappings = clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME)
+        MappingsRepresentation mappings = clients.get(AdminRoles.MANAGE_USERS).realm(REALM_NAME)
                 .users().get(userUuid).roles().getAll();
 
         assertThat(mappings.getRealmMappings(), Matchers.notNullValue());
         assertThat(mappings.getRealmMappings().stream().map(RoleRepresentation::getName).toList(),
                 Matchers.hasItem(roleName));
+
+        MappingsRepresentation viewOnlyMappings = clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME)
+                .users().get(userUuid).roles().getAll();
+
+        List<String> viewOnlyRealmMappings = viewOnlyMappings.getRealmMappings() == null ? List.of()
+                : viewOnlyMappings.getRealmMappings().stream().map(RoleRepresentation::getName).toList();
+        assertThat(viewOnlyRealmMappings, Matchers.not(Matchers.hasItem(roleName)));
     }
 
     /**
-     * Client role mappings on a group are group data, guarded by {@code view-users}. Without admin permissions they
-     * must not additionally require {@code view-clients}.
+     * Viewing a client role mapping requires being able to map the role or to view its client container. A
+     * {@code manage-users} admin can map the client role, so it sees the mapping on a group. A {@code view-users}-only
+     * admin can neither map the role nor view the client, so the client mapping is filtered out.
      */
     @Test
-    public void groupClientRolesVisibleWithViewUsers() {
+    public void groupClientRolesVisibleWithManageUsers() {
         String clientId = "group-client-roles";
         String roleName = "group-client-role";
 
@@ -558,11 +567,19 @@ public class PermissionsTest extends AbstractPermissionsTest {
         managedRealm1.admin().groups().group(groupUuid).roles().clientLevel(clientUuid)
                 .add(List.of(managedRealm1.admin().clients().get(clientUuid).roles().get(roleName).toRepresentation()));
 
-        GroupRepresentation group = clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME)
+        GroupRepresentation group = clients.get(AdminRoles.MANAGE_USERS).realm(REALM_NAME)
                 .groups().group(groupUuid).toRepresentation();
 
         assertThat(group.getClientRoles(), Matchers.notNullValue());
         assertThat(group.getClientRoles().get(clientId), Matchers.hasItem(roleName));
+
+        GroupRepresentation viewOnlyGroup = clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME)
+                .groups().group(groupUuid).toRepresentation();
+
+        Map<String, List<String>> viewOnlyClientRoles = viewOnlyGroup.getClientRoles();
+        List<String> viewOnlyGroupClientRoles = viewOnlyClientRoles == null ? List.of()
+                : viewOnlyClientRoles.getOrDefault(clientId, List.of());
+        assertThat(viewOnlyGroupClientRoles, Matchers.not(Matchers.hasItem(roleName)));
     }
 
     @Test

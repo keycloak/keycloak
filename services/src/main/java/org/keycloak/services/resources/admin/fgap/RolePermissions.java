@@ -512,6 +512,9 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     @Override
     public boolean canView(RoleModel role) {
+        if (canMapRole(role)) {
+            return true;
+        }
         if (role.getContainer() instanceof RealmModel) {
             return root.realm().canViewRealm();
         } else if (role.getContainer() instanceof ClientModel) {
