@@ -33,7 +33,7 @@ In this release, multi-cluster v2 and the `stateless` feature are promoted from 
 
 Multi-cluster v1 (the `multi-site` feature) is deprecated and will be removed in a future major release. Multi-cluster v2, which uses the `stateless` feature, is the recommended replacement. It simplifies the deployment architecture by eliminating the external {jdgserver_name} cluster and its cross-site replication.
 
-If you are using `--features=multi-site`, migrate to `--features=stateless`. For migration instructions, see <@links.ha id="multi-cluster-v2-migrate-from-v1-to-v2" />.
+If you are using `--features=multi-site`, migrate to `--features=stateless`. For migration instructions, see https://www.keycloak.org/high-availability/multi-cluster-v2/migrate-from-v1-to-v2[Migrating from multi-cluster v1 to v2] in the {highavailabilityguide_name}.
 
 == Support for encrypted PEM private keys
 
