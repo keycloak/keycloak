@@ -192,6 +192,9 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
         if (spDescriptorType == null) {
             throw new BadRequestException("No SPSSODescriptorType defined in the entity descriptor file");
         }
+        // client signature is required when the SP states it signs its AuthnRequests (a signing key below also enables it)
+        attributes.put(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, Boolean.TRUE.equals(spDescriptorType.isAuthnRequestsSigned())
+                ? SamlProtocol.ATTRIBUTE_TRUE_VALUE : SamlProtocol.ATTRIBUTE_FALSE_VALUE);
         if (spDescriptorType.isWantAssertionsSigned()) {
             attributes.put(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, SamlProtocol.ATTRIBUTE_TRUE_VALUE);
         }

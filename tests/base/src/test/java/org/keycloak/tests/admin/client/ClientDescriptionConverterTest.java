@@ -21,12 +21,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
+import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.util.ApiUtil;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  *
@@ -45,5 +50,25 @@ public class ClientDescriptionConverterTest {
             String data = IOUtils.toString(is, StandardCharsets.UTF_8);
             realm.admin().convertClientDescription(data);
         }
+    }
+
+    // https://github.com/keycloak/keycloak/issues/28390
+    @Test
+    public void testClientSignatureFollowsAuthnRequestsSigned() {
+        assertEquals("false", createClientFromMetadata("sp-unsigned-requests", false)
+                .getAttributes().get(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE));
+        assertEquals("true", createClientFromMetadata("sp-signed-requests", true)
+                .getAttributes().get(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE));
+    }
+
+    private ClientRepresentation createClientFromMetadata(String entityId, boolean authnRequestsSigned) {
+        String metadata = "<md:EntityDescriptor xmlns:md=\"urn:oasis:names:tc:SAML:2.0:metadata\" entityID=\"" + entityId + "\">"
+                + "<md:SPSSODescriptor AuthnRequestsSigned=\"" + authnRequestsSigned + "\" protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol\">"
+                + "<md:AssertionConsumerService Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\" Location=\"https://sp.example.org/acs\" index=\"0\"/>"
+                + "</md:SPSSODescriptor></md:EntityDescriptor>";
+        ClientRepresentation converted = realm.admin().convertClientDescription(metadata);
+        String id = ApiUtil.getCreatedId(realm.admin().clients().create(converted));
+        realm.cleanup().add(r -> r.clients().get(id).remove());
+        return realm.admin().clients().get(id).toRepresentation();
     }
 }
