@@ -122,6 +122,14 @@ Custom login themes that override `social-providers.ftl` or apply CSS targeting 
 
 Test your custom login theme to ensure the identity provider buttons display correctly.
 
+=== Vert.x-based outbound HTTP client available as preview
+
+A Vert.x-based HTTP client is available as a preview feature for all outgoing HTTP connections ({project_name} to external services). It replaces the Apache HTTP Client with Vert.x/Netty, enabling future PQC (Post-Quantum Cryptography) support via OpenSSL. To enable it, set `--features=http-client:v2`.
+
+When enabled, all outgoing HTTP traffic (identity provider federation, token exchange, backchannel logout, OCSP/CRL validation, SAML artifact resolution, and more) uses the Vert.x HTTP client instead of Apache. Existing configuration options (`socket-timeout-millis`, `max-pooled-per-route`, `proxy-mappings`, `NO_PROXY`, etc.) work the same way. For details, see the link:{server_guide_base_link}/outgoinghttp[Configuring outgoing HTTP requests] guide.
+
+The `getHttpClient()` method on `HttpClientProvider` is now deprecated. Extension providers should migrate to `SimpleHttp` or the provider-neutral helper methods on `HttpClientProvider`. The Apache compatibility bridge remains for backward compatibility during the transition period but will be removed in a future release.
+
 === Token introspection `act` claim now uses user ID for `sub`
 
 The token introspection endpoint previously set the `act.sub` field to the impersonator's username. It now uses the impersonator's user ID to be consistent with the `act` claim in JWT access tokens and ID tokens. The `preferred_username` field has been added to the introspection `act` object for consumers that need the impersonator's username.
@@ -409,6 +417,10 @@ The previous default of storing login failure data only in the in-memory Infinis
 === Kerberos credential delegation is deprecated
 
 Kerberos credential delegation (the `gss delegation credential` protocol mapper) is now deprecated for security reasons and will be removed in a future release.
+
+=== `getHttpClient()` on `HttpClientProvider` is deprecated
+
+The `getHttpClient()` method, which returns an Apache `CloseableHttpClient`, is deprecated and will be removed in a future release. Extension providers should use `SimpleHttp.create(session)` for general HTTP calls, or the provider-neutral helper methods (`getString`, `getInputStream`, `postText`, `postBinary`) for simple operations.
 
 === Organization invitation link no longer exposed in API responses
 
