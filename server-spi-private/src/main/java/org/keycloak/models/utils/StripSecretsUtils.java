@@ -225,7 +225,7 @@ public class StripSecretsUtils {
         return user;
     }
 
-    protected static ClientRepresentation stripClient(ClientRepresentation rep) {
+    public static ClientRepresentation stripClient(ClientRepresentation rep) {
         if (rep.getSecret() != null) {
             rep.setSecret(maskNonVaultValue(rep.getSecret()));
         }

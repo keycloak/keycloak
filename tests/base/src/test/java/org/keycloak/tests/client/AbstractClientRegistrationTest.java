@@ -141,6 +141,14 @@ public abstract class AbstractClientRegistrationTest {
                     .emailVerified(true)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.CREATE_CLIENT);
 
+            UserBuilder viewClientUser = UserBuilder.create()
+                    .username("view-clients")
+                    .name("view", "clients")
+                    .password("password")
+                    .email("view-clients@test.com")
+                    .emailVerified(true)
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_CLIENTS);
+
             UserBuilder noAccessUser = UserBuilder.create()
                     .username("no-access")
                     .name("no", "access")
@@ -155,7 +163,7 @@ public abstract class AbstractClientRegistrationTest {
                     .email("test-user@localhost")
                     .emailVerified(true);
 
-            realm.users(manageClientUser, createClientUser, noAccessUser, appUser);
+            realm.users(manageClientUser, createClientUser, viewClientUser, noAccessUser, appUser);
 
             return realm;
         }
