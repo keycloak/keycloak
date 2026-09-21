@@ -99,11 +99,13 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     }
 
     private static String base64EncodeRequestToken(RequestToken requestToken) throws IOException {
-      try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-              OutputStream base64Stream = Base64.getEncoder().wrap(baos);
-              ObjectOutputStream oos = new ObjectOutputStream(base64Stream)) {
-          oos.writeObject(requestToken);
-          oos.close();
+      try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+          // Nested try-with-resources: inner block must close before baos.toString(),
+          // because Base64.wrap() only writes padding bytes ('=') on close().
+          try (OutputStream base64Stream = Base64.getEncoder().wrap(baos);
+               ObjectOutputStream oos = new ObjectOutputStream(base64Stream)) {
+              oos.writeObject(requestToken);
+          }
           return baos.toString(StandardCharsets.US_ASCII);
       }
     }

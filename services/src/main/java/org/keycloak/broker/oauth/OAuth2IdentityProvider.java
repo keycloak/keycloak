@@ -136,6 +136,7 @@ public class OAuth2IdentityProvider extends AbstractOAuth2IdentityProvider<OAuth
             return response;
         } catch (Exception e) {
             // On exception, the caller never receives the response and can't close it, so we must close it here.
+            // Catching Exception (not IOException) is intentional — compiles via Java 7+ improved rethrow (JLS §11.2.2).
             try {
                 response.close();
             } catch (Exception closeException) {
