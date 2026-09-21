@@ -20,7 +20,7 @@ ifeval::[{project_community}==true]
 Example applications are provided in this release (for illustration, not officially supported):
 
 * https://github.com/keycloak/keycloak-oauth-sig/tree/main/oid4vci-deployment[Quickstart OID4VCI deployment] - a playground for rapid prototyping with mdoc and SD-JWT credentials
-* https://github.com/keycloak/keycloak-playground/tree/main/fapi-playground#oid4vci-demo[OID4VCI Demo in Keycloak FAPI playground] - available to show the details of the OID4VCI protocol messages sent between wallet and issuer and illustrate the advanced concepts like proofs, attestation, credential refresh etc.
+* https://github.com/keycloak/keycloak-playground/tree/main/fapi-playground#oid4vci-demo[OID4VCI Demo in Keycloak FAPI playground] - available to show the details of the OID4VCI protocol messages exchanged between wallet and issuer, and to illustrate advanced concepts like proofs, attestation, credential refresh, and more.
 endif::[]
 
 The attestation-based client authentication (`client-auth-abca`), pre-authorized code grant (`oid4vc-vci-preauth-code`), REST credential offer endpoint (`oid4vc-vci-rest-credential-offer`), and OpenID4VP (`oid4vc-vp`) remain experimental features. This release also adds experimental support for the mdoc format, provided by the new experimental feature `oid4vc-mdoc`.
