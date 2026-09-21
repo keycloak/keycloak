@@ -21,9 +21,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.events.Details;
@@ -43,6 +48,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.util.JsonSerialization;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -139,61 +145,73 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
             fail();
         }
 
-        // Two-step partial-update bypass regression test
-        // Step 1: register a client with both flows disabled and an HTTP post-logout redirect URI.
-        //         the post-logout check runs regardless of flow state. --> reject
+        // Regression test: omitting post.logout.redirect.uris in a partial update must
+        // still validate stored HTTP URIs against stored rootUrl and fail.
+        //
+        // Note: Can't use updateClientByAdmin() here because it re-populates attributes.
+        // We need a fresh ClientRepresentation to actually test the missing-attribute fallback path.
+
         String bypassClientId = generateSuffixedName(CLIENT_NAME);
 
-        ClientPolicyException ex = Assert.assertThrows("Step 1: should have been rejected — HTTP post-logout URI must not be stored",
-                ClientPolicyException.class, () -> createClientByAdmin(bypassClientId, (ClientRepresentation clientRep) -> {
-                clientRep.setSecret("secret");
-                clientRep.setRedirectUris(List.of("https://oauth.redirect/some"));
-                OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep)
-                        .setPostLogoutRedirectUris(List.of("http://attacker.example/steal"));
-                clientRep.setStandardFlowEnabled(false);
-                clientRep.setImplicitFlowEnabled(false);
-            })
-        );
-        assertEquals(OAuthErrorException.INVALID_REQUEST,  ex.getError());
-
-
-        // Step 1 (clean): register the same client with a safe post-logout URI and flows disabled,
-        //                  then manually plant an HTTP post-logout URI via a flows-disabled update
-        //                  to simulate a stored unsafe URI reaching Step 2.
+        // Step 1: Seed an unsafe HTTP URI before the policy is enabled
+        revertToBuiltinPolicies();
         String bypassCId = createClientByAdmin(bypassClientId, (ClientRepresentation clientRep) -> {
             clientRep.setSecret("secret");
             clientRep.setRedirectUris(List.of("https://oauth.redirect/some"));
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep)
-                    .setPostLogoutRedirectUris(List.of("-")); // no post-logout URIs stored
+                    .setPostLogoutRedirectUris(List.of("http://attacker.example/steal"));
             clientRep.setStandardFlowEnabled(false);
             clientRep.setImplicitFlowEnabled(false);
         });
 
-        // Step 2: partial update that re-enables standard flow and supplies a safe redirect URI,
-        //         but omits post.logout.redirect.uris. The stored post-logout URIs (none here,
-        //         so the "-" placeholder means disabled) should not cause a false failure.
-        try {
-            updateClientByAdmin(bypassCId, (ClientRepresentation clientRep) -> {
-                clientRep.setStandardFlowEnabled(true);
-                clientRep.setRedirectUris(List.of("https://oauth.redirect/some"));
-                // post.logout.redirect.uris intentionally omitted — executor must re-validate stored ones
-            });
-        } catch (ClientPolicyException cpe) {
-            fail("Step 2: clean stored post-logout URIs should not block re-enabling standard flow");
-        }
+        // Re-enable the policy.
+        String profileJson = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
+                (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                        .addExecutor(SecureRedirectUrisEnforcerExecutorFactory.PROVIDER_ID,
+                                createSecureRedirectUrisEnforcerExecutorConfig(it -> {}))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(profileJson);
+        String policyJson = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(policyJson);
 
-        // Step 2 (attack variant): store an HTTP post-logout URI via an UPDATE while flows are still
-        //                           disabled — this must be rejected immediately.
-        ClientPolicyException exp =  Assert.assertThrows("Attack step: updating to an HTTP post-logout URI must be rejected even with flows disabled",
-                ClientPolicyException.class, () -> updateClientByAdmin(bypassCId, (ClientRepresentation clientRep) -> {
-                    OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep)
-                            .setPostLogoutRedirectUris(List.of("http://attacker.example/steal"));
-                    clientRep.setStandardFlowEnabled(false);
-                    clientRep.setImplicitFlowEnabled(false);
-                })
+        // Step 2 (attack): fresh rep with no attributes map AND no redirectUris.
+        // OIDCAdvancedConfigWrapper.getPostLogoutRedirectUris() falls back to
+        // clientRep.getRedirectUris(); when that is also null it returns null,
+        // triggering the executor's stored-model fallback. The stored HTTP URI is rejected.
+        ClientRepresentation freshPartialRep = new ClientRepresentation();
+        freshPartialRep.setId(bypassCId);
+        freshPartialRep.setClientId(bypassClientId);
+        freshPartialRep.setSecret("secret");
+        freshPartialRep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        freshPartialRep.setStandardFlowEnabled(false); // flows disabled → only post-logout check runs
+        freshPartialRep.setImplicitFlowEnabled(false);
+        // deliberately no attributes map AND no redirectUris → getPostLogoutRedirectUris() returns null
+        // → executor falls back to stored HTTP URI → rejected
+
+        ClientPolicyException ex = Assert.assertThrows(
+                "Partial update omitting post-logout URIs must be rejected when stored URI is HTTP",
+                ClientPolicyException.class,
+                () -> {
+                    try {
+                        adminClient.realm(REALM_NAME).clients().get(bypassCId).update(freshPartialRep);
+                    } catch (BadRequestException bre) {
+                        Response resp = bre.getResponse();
+                        if (resp.getStatus() == Response.Status.BAD_REQUEST.getStatusCode()) {
+                            String respBody = resp.readEntity(String.class);
+                            Map<String, String> responseJson = JsonSerialization.readValue(respBody, Map.class);
+                            throw new ClientPolicyException(responseJson.get(OAuth2Constants.ERROR), responseJson.get(OAuth2Constants.ERROR_DESCRIPTION));
+                        }
+                        throw bre;
+                    }
+                }
         );
-
-        assertEquals(OAuthErrorException.INVALID_REQUEST, exp.getError());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, ex.getError());
     }
 
     @Test
