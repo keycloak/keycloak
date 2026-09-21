@@ -305,4 +305,9 @@
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_BackfillGroupOrgId"/>
     </changeSet>
 
+    <!-- Default allowAdminRoleMapping to true for identity providers created before the setting existed -->
+    <changeSet author="keycloak" id="26.8.0-idp-allow-admin-role-mapping-default">
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_AllowAdminRoleMappingDefault"/>
+    </changeSet>
+
 </databaseChangeLog>
