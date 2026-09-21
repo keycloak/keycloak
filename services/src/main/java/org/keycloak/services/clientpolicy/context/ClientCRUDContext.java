@@ -21,12 +21,11 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.services.clientpolicy.ClientPolicyContext;
 
 /**
  * Represents the context in the request to register/read/update/unregister client by Dynamic Client Registration or Admin REST API.
  */
-public interface ClientCRUDContext extends ClientPolicyContext {
+public interface ClientCRUDContext extends ClientPolicyCRUDContext {
 
     /**
      * returns {@link ClientRepresentation} for creating the new client or updating the existing client.

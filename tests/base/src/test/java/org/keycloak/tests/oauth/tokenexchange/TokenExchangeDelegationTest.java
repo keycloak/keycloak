@@ -14,6 +14,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -36,6 +37,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
@@ -108,8 +110,11 @@ public class TokenExchangeDelegationTest {
     @InjectUser(config = AdministratorUserConfig.class)
     ManagedUser administrator;
 
-    @InjectClient(config = AdminClientConfig.class)
+    @InjectClient(config = AdminClientConfig.class, ref = "adminApp")
     ManagedClient adminApp;
+
+    @InjectClient(config = ServiceAccountClientConfig.class, ref = "serviceAccountApp")
+    ManagedClient serviceAccountApp;
 
     @InjectEvents
     protected Events events;
@@ -159,6 +164,39 @@ public class TokenExchangeDelegationTest {
 
         // logout
         LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
+        Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
+    }
+
+    @Test
+    public void userDelegationRejectsServiceAccountUsername() {
+        ClientResource adminPerms = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
+        ClientPolicyRepresentation clientPolicy = PermissionTestUtils.createClientPolicy(realm, adminPerms,
+                "SA Client Policy", serviceAccountApp.getClientId());
+        PermissionTestUtils.createAllPermission(adminPerms, AdminPermissionsSchema.USERS_RESOURCE_TYPE,
+                clientPolicy, Set.of(AdminPermissionsSchema.DELEGATE));
+
+        String serviceAccountUsername = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + serviceAccountApp.getClientId();
+
+        // user-delegation with a service-account username is rejected even with delegation permission
+        final String userScope = OIDCLoginProtocolFactory.USER_DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + serviceAccountUsername;
+        AccessTokenResponse res = loginWithDelegation(userScope, grants -> MatcherAssert.assertThat(grants,
+                Matchers.not(Matchers.hasItem(Matchers.containsString("Delegate token")))));
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeNotContains(res.getScope(), userScope);
+        assertMayActNotPresent(oauth.verifyToken(res.getAccessToken()));
+
+        LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
+        Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT);
+
+        // client-delegation with the same client works
+        final String clientScope = OIDCLoginProtocolFactory.CLIENT_DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + serviceAccountApp.getClientId();
+        res = loginWithDelegation(clientScope, grants -> MatcherAssert.assertThat(grants,
+                Matchers.hasItem("Allow " + serviceAccountApp.getClientId() + " to act on your behalf?")));
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), clientScope);
+
+        logout = oauth.doLogout(res.getRefreshToken());
         Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
     }
 
@@ -837,6 +875,15 @@ public class TokenExchangeDelegationTest {
             return client.clientId("admin-app").name("admin-app").secret("secret")
                     .directAccessGrantsEnabled()
                     .protocolMappers(audienceMapper);
+        }
+    }
+
+    static class ServiceAccountClientConfig implements ClientConfig {
+
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return client.clientId("sa-app").name("Service Account App").secret("sa-secret")
+                    .serviceAccountsEnabled(true);
         }
     }
 

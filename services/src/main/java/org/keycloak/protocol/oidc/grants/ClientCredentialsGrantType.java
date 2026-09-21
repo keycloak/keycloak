@@ -60,6 +60,11 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
     private static final Logger logger = Logger.getLogger(ClientCredentialsGrantType.class);
 
     @Override
+    public boolean isConfidentialOnlyGrantType() {
+        return true;
+    }
+
+    @Override
     public Response process(Context context) {
         setContext(context);
 

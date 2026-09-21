@@ -228,6 +228,9 @@ public interface UserModel extends RoleMapperModel, Model {
     String getFederationLink();
     void setFederationLink(String link);
 
+    default boolean isServiceAccount() {
+        return getServiceAccountClientLink() != null;
+    }
     String getServiceAccountClientLink();
     void setServiceAccountClientLink(String clientInternalId);
 

@@ -28,6 +28,10 @@ import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProviderF
  *         <li>Restrict same domain: only allow {client_id} and {redirect_uri} parameter of an authorization request whose hostname is under the one of the permitted domain (wildcard * can be used)</li>
  *         <li>Required properties: only allow a client metadata that includes all required properties</li>
  *     </ul>
+ *     <li>Resource Indicators (RFC 8707) support</li>
+ *     <ul>
+ *         <li>Resource indicator allow list: only allow a {@code resource} parameter value that is included in the configured allow list</li>
+ *     </ul>
  * </ul>
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -44,6 +48,9 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
     // Client Metadata Validation
     public static final String REQUIRED_PROPERTIES = "cimd-required-properties";
     public static final String RESTRICT_SAME_DOMAIN = "cimd-restrict-same-domain";
+
+    // Resource Indicators (RFC 8707) support
+    public static final String RESOURCE_INDICATOR_ALLOW_LIST = "cimd-resource-indicator-allow-list";
 
     // Factory Global Settings
     public static final String CONFIG_CIMD_PROVIDER_NAME = "cimd-provider-name";
@@ -110,6 +117,18 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
                 REQUIRED_PROPERTIES,
                 "Required properties",
                 "If client metadata does not include all the properties, the executor does not accept the client metadata.",
+                ProviderConfigProperty.MULTIVALUED_STRING_TYPE,
+                null);
+        configProperties.add(property);
+
+        // Resource Indicators (RFC 8707) support
+        property = new ProviderConfigProperty(
+                RESOURCE_INDICATOR_ALLOW_LIST,
+                "Resource indicator allow list",
+                "Only effective if Resource Indicators feature (RFC 8707) is enabled. " +
+                        "If a resource parameter value of an authorization request is not included in this allow list, the executor rejects the request. " +
+                        "If the request does not include a resource parameter, the executor does not enforce this allow list. " +
+                        "If the allow list is vacant, no resource parameter value is accepted.",
                 ProviderConfigProperty.MULTIVALUED_STRING_TYPE,
                 null);
         configProperties.add(property);

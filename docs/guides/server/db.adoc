@@ -300,7 +300,7 @@ Default: `10s`.
 
 === Asynchronous commits
 
-Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use PostgreSQL's async commit feature (`synchronous_commit = off`).
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, or events will use PostgreSQL's async commit feature (`synchronous_commit = off`).
 Logouts will still force a synchronous commit.
 
 You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
@@ -474,7 +474,7 @@ In the output, look for the row where the option is `isolation level`. The value
 
 === Asynchronous commits
 
-Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events can use MS SQL Server's delayed durability feature.
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, or events can use MS SQL Server's delayed durability feature.
 Logouts will still force a durable commit.
 
 To enable this optimization, set the database to allow delayed durability:
@@ -494,7 +494,7 @@ You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--asy
 
 === Asynchronous commits
 
-Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use Oracle's asynchronous redo log write (`COMMIT WRITE BATCH NOWAIT`).
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, or events will use Oracle's asynchronous redo log write (`COMMIT WRITE BATCH NOWAIT`).
 Logouts will still force a synchronous commit.
 
 NOTE: This optimization is not available when using XA datasources (`+--transaction-xa-enabled=true+`).

@@ -287,6 +287,43 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
     }
 
     @Test
+    public void testAuthCodeOffer_TargetedDifferentUser() {
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+        });
+
+        String issuerState = credOffer.getIssuerState();
+        assertNotNull(issuerState, "No IssuerState");
+
+        var attacker = testRealm.admin().users().search(TEST_USER).stream().findFirst().orElseThrow();
+        int issuedCredentialsBefore = testRealm.admin().users().get(attacker.getId())
+                .verifiableCredentials().getIssuedCredentials().size();
+
+        AuthorizationEndpointResponse authResponse = wallet
+                .authorizationRequest()
+                .scope(ctx.getScope())
+                .issuerState(issuerState)
+                .send(TEST_USER, TEST_PASSWORD);
+        String authCode = authResponse.getCode();
+        assertNotNull(authCode, "No authCode");
+
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode).send();
+        assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
+        assertEquals("invalid_authorization_details", tokenResponse.getError());
+        assertEquals("Invalid authorization_details: Credential offer target user different from login user 'john'", tokenResponse.getErrorDescription());
+        assertNull(tokenResponse.getAccessToken(), "No access token should be issued");
+        assertNull(tokenResponse.getRefreshToken(), "No refresh token should be issued");
+
+        int issuedCredentialsAfter = testRealm.admin().users().get(attacker.getId())
+                .verifiableCredentials().getIssuedCredentials().size();
+        assertEquals(issuedCredentialsBefore, issuedCredentialsAfter,
+                "No issued credential should be created for a non-target user");
+    }
+
+    @Test
     public void testAuthCodeOffer_QRCode() {
 
         var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);

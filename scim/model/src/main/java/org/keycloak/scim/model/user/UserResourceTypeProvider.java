@@ -37,11 +37,11 @@ import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
 import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.request.PatchRequest.PatchOperation;
-import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
 import org.keycloak.scim.resource.spi.MembershipChange;
 import org.keycloak.scim.resource.spi.ScimPatchException;
+import org.keycloak.scim.resource.spi.SearchOptions;
 import org.keycloak.scim.resource.user.User;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.userprofile.UserProfile;
@@ -205,7 +205,7 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     }
 
     @Override
-    protected Stream<UserModel> getModels(SearchRequest searchRequest) {
+    protected Stream<UserModel> getModels(SearchOptions searchRequest) {
         RealmModel realm = session.getContext().getRealm();
 
         ScimFilterParser.FilterContext filterContext = searchRequest.getFilterContext();
@@ -229,7 +229,7 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     }
 
     @Override
-    public Long count(SearchRequest searchRequest, int resourceSize) {
+    public Long count(SearchOptions searchRequest, int resourceSize) {
         if (resourceSize < searchRequest.getCount() && (resourceSize > 0 || searchRequest.getStartIndex() == 1)) {
             return (long) (searchRequest.getStartIndex() - 1 + resourceSize);
         }
@@ -346,6 +346,9 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
 
     @Override
     protected boolean isManageable(UserModel model) {
+        if (model == null) {
+            return false;
+        }
         return !session.getContext().getPermissions().isAdminUser(model);
     }
 }

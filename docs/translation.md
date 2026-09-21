@@ -100,14 +100,7 @@ The goal is to merge those pull requests within 2-3 working days.
 Translations are reviewed in Weblate by language maintainers for their correctness, still maintainers do some minimal checks as outlined below.
 
 1. Check that the changes to the `messages_*.properties` files are syntactically correct.
-2. Do a spot-check with Google Translate or Claude to avoid malicious community translations.
-   Claude prompt:
-   > Analyze pull request (URL) and list new or updated translations that significantly deviate from the English message that it translates. Group results by language, and mention the language maintainers. Prepare the result as Markdown. Skip languages that have no findings.
-
-   Common deviation patterns to watch for in the spot-check results:
-   - **Placeholder mismatches** — `{{var}}` or `{0}` missing, duplicated, or altered.
-   - **CJK false positives** — Chinese, Japanese, and Korean translations are naturally much shorter in character count; do not flag based on length alone.
-   - **Multi-line properties** — English `.properties` files use trailing `\` for line continuation; read the full value before comparing.
+2. Check for malicious or broken community translations. With Claude or Copilot CLI, check out the PR branch locally and run `/kc-translation-review <PR number or URL>`. This reviews every changed key against its English source and writes findings to `pr-<number>-translation-review.md`. Review the findings, and post them as a comment to the PR.
 3. If the changes are ok, approve the PR and squash-merge it. For pull requests created by Weblate there is no referenced GitHub issue, therefore reference the ID of the pull request in the squash-message.
 4. Once the PR is merged, notify the respective language maintainers via a comment in the pull request that there are changes for their languages.
 

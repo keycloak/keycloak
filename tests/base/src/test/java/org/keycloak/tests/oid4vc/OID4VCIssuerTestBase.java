@@ -474,15 +474,7 @@ public abstract class OID4VCIssuerTestBase {
     }
 
     protected String getBearerToken(OAuthClient oauthClient, ClientRepresentation client) {
-        return getBearerToken(oauthClient, client, null);
-    }
-
-    protected String getBearerToken(OAuthClient oauthClient, ClientRepresentation client, String scope) {
-        return getBearerToken(oauthClient, client, "john", scope);
-    }
-
-    protected String getBearerToken(OAuthClient oauthClient, ClientRepresentation client, String username, String scope) {
-        return getBearerTokenCodeFlow(oauthClient, client, username, scope).getAccessToken();
+        return getBearerTokenCodeFlow(oauthClient, client, "john", null).getAccessToken();
     }
 
     protected AccessTokenResponse getBearerTokenCodeFlow(OAuthClient oauthClient, ClientRepresentation client, String username, String scope) {

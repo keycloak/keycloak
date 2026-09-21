@@ -19,7 +19,6 @@ package org.keycloak.tests.webauthn.registration;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.function.Consumer;
 
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
@@ -47,7 +46,6 @@ import com.webauthn4j.data.attestation.statement.COSEKeyType;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -202,9 +200,24 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void apiNotAllowedErrorMessage() {
+        // Short timeout so the test doesn't wait long for the ceremony to fail.
         setWebAuthnPolicyCreateTimeout(3);
-        assertBrowserApiErrorMessage(options -> options.setIsUserConsenting(false),
-                "The Passkey operation was not allowed or timed out.");
+
+        oAuthClient.openRegistrationForm();
+        registerPage.assertCurrent();
+        registerPage.register("firstName", "lastName", EMAIL, USERNAME, PASSWORD);
+        webAuthnRegisterPage.assertCurrent();
+        String userId = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME).getId();
+        managedRealm.cleanup().add(r -> r.users().get(userId).remove());
+
+        // Remove the authenticator so the ceremony fails with NotAllowedError.
+        // We don't use VirtualAuthenticatorOptions.setIsUserConsenting(false) because
+        // Chrome 152+ ignores that flag and completes the ceremony successfully.
+        getVirtualAuthManager().removeAuthenticator();
+        webAuthnRegisterPage.clickRegister();
+
+        webAuthnErrorPage.assertCurrent();
+        assertThat(webAuthnErrorPage.getError(), containsString("The Passkey operation was not allowed or timed out."));
     }
 
     @Test
@@ -246,26 +259,6 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnErrorPage.assertCurrent();
         assertThat(webAuthnErrorPage.getError(), containsString("A security error occurred during the Passkey operation. Please ensure you are on the correct site and try again."));
-    }
-
-    private void assertBrowserApiErrorMessage(Consumer<VirtualAuthenticatorOptions> optionsConsumer, String expectedMessage) {
-        getVirtualAuthManager().removeAuthenticator();
-        VirtualAuthenticatorOptions options = getDefaultAuthenticatorOptions();
-        optionsConsumer.accept(options);
-        getVirtualAuthManager().useAuthenticator(options);
-
-        oAuthClient.openRegistrationForm();
-        registerPage.assertCurrent();
-        registerPage.register("firstName", "lastName", EMAIL, USERNAME, PASSWORD);
-        webAuthnRegisterPage.assertCurrent();
-        String userId = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME).getId();
-        managedRealm.cleanup().add(r -> r.users().get(userId).remove());
-
-        webAuthnRegisterPage.clickRegister();
-
-
-        webAuthnErrorPage.assertCurrent();
-        assertThat(webAuthnErrorPage.getError(), containsString(expectedMessage));
     }
 
     private String registerProviderId() {

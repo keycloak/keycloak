@@ -209,7 +209,7 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
             Attribute<M, R> attribute = getAttributeMapperByModelAttribute(name);
 
             if (attribute != null) {
-                mappers.put(name, attribute);
+                mappers.put(attribute.getName(), attribute);
             }
         }
 
