@@ -29,6 +29,7 @@ import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -43,6 +44,7 @@ import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
@@ -83,7 +85,9 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         ).toString();
         updatePolicies(json);
 
-        // The executor's check logic is not executed to an auth code flow or implicit flow disabled client.
+        // The executor's redirect uri check is not executed to an auth code flow or implicit flow disabled client.
+        // The post-logout redirect uri check is executed regardless of the enabled flows, so the client below
+        // switches the post-logout redirect uris off ("-") to keep its redirect uris out of that check.
 
         // Registration
         // Success - even if not setting a valid redirect uri
@@ -94,6 +98,7 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
             cId = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
                 clientRep.setSecret("secret");
                 clientRep.setRedirectUris(List.of("http://oauth.redirect/some")); // normally, a redirect url with http scheme is not allowed.
+                OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setPostLogoutRedirectUris(List.of("-"));
                 clientRep.setStandardFlowEnabled(false);
                 clientRep.setImplicitFlowEnabled(false);
                 clientRep.setServiceAccountsEnabled(true);
@@ -102,6 +107,23 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
             assertEquals(new HashSet<>(List.of("http://oauth.redirect/some")), new HashSet<>(cRep.getRedirectUris()));
         } catch (ClientPolicyException cpe) {
             fail();
+        }
+
+        // Registration
+        // Fail - the post-logout redirect uri is checked even though both redirect based flows are disabled
+        try {
+            createClientByAdmin(generateSuffixedName(CLIENT_NAME), (ClientRepresentation clientRep) -> {
+                clientRep.setSecret("secret");
+                clientRep.setRedirectUris(List.of("https://oauth.redirect/some"));
+                OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep)
+                        .setPostLogoutRedirectUris(List.of("http://oauth.redirect/post-logout"));
+                clientRep.setStandardFlowEnabled(false);
+                clientRep.setImplicitFlowEnabled(false);
+                clientRep.setServiceAccountsEnabled(true);
+            });
+            fail("Expected to fail with an http post-logout redirect uri");
+        } catch (ClientPolicyException cpe) {
+            assertEquals(OAuthErrorException.INVALID_REQUEST, cpe.getError());
         }
 
         // Update
@@ -116,6 +138,62 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         } catch (ClientPolicyException cpe) {
             fail();
         }
+
+        // Two-step partial-update bypass regression test
+        // Step 1: register a client with both flows disabled and an HTTP post-logout redirect URI.
+        //         the post-logout check runs regardless of flow state. --> reject
+        String bypassClientId = generateSuffixedName(CLIENT_NAME);
+
+        ClientPolicyException ex = Assert.assertThrows("Step 1: should have been rejected — HTTP post-logout URI must not be stored",
+                ClientPolicyException.class, () -> createClientByAdmin(bypassClientId, (ClientRepresentation clientRep) -> {
+                clientRep.setSecret("secret");
+                clientRep.setRedirectUris(List.of("https://oauth.redirect/some"));
+                OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep)
+                        .setPostLogoutRedirectUris(List.of("http://attacker.example/steal"));
+                clientRep.setStandardFlowEnabled(false);
+                clientRep.setImplicitFlowEnabled(false);
+            })
+        );
+        assertEquals(OAuthErrorException.INVALID_REQUEST,  ex.getError());
+
+
+        // Step 1 (clean): register the same client with a safe post-logout URI and flows disabled,
+        //                  then manually plant an HTTP post-logout URI via a flows-disabled update
+        //                  to simulate a stored unsafe URI reaching Step 2.
+        String bypassCId = createClientByAdmin(bypassClientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret("secret");
+            clientRep.setRedirectUris(List.of("https://oauth.redirect/some"));
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep)
+                    .setPostLogoutRedirectUris(List.of("-")); // no post-logout URIs stored
+            clientRep.setStandardFlowEnabled(false);
+            clientRep.setImplicitFlowEnabled(false);
+        });
+
+        // Step 2: partial update that re-enables standard flow and supplies a safe redirect URI,
+        //         but omits post.logout.redirect.uris. The stored post-logout URIs (none here,
+        //         so the "-" placeholder means disabled) should not cause a false failure.
+        try {
+            updateClientByAdmin(bypassCId, (ClientRepresentation clientRep) -> {
+                clientRep.setStandardFlowEnabled(true);
+                clientRep.setRedirectUris(List.of("https://oauth.redirect/some"));
+                // post.logout.redirect.uris intentionally omitted — executor must re-validate stored ones
+            });
+        } catch (ClientPolicyException cpe) {
+            fail("Step 2: clean stored post-logout URIs should not block re-enabling standard flow");
+        }
+
+        // Step 2 (attack variant): store an HTTP post-logout URI via an UPDATE while flows are still
+        //                           disabled — this must be rejected immediately.
+        ClientPolicyException exp =  Assert.assertThrows("Attack step: updating to an HTTP post-logout URI must be rejected even with flows disabled",
+                ClientPolicyException.class, () -> updateClientByAdmin(bypassCId, (ClientRepresentation clientRep) -> {
+                    OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep)
+                            .setPostLogoutRedirectUris(List.of("http://attacker.example/steal"));
+                    clientRep.setStandardFlowEnabled(false);
+                    clientRep.setImplicitFlowEnabled(false);
+                })
+        );
+
+        assertEquals(OAuthErrorException.INVALID_REQUEST, exp.getError());
     }
 
     @Test
