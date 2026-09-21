@@ -10,6 +10,10 @@ inputs:
     description: JDK version
     required: false
     default: "25"
+  download-dist:
+    description: Download the Keycloak distribution tar.gz built by the build job into quarkus/dist/target
+    required: false
+    default: "false"
 
 runs:
   using: composite
@@ -28,11 +32,6 @@ runs:
     - id: maven-cache
       name: Maven cache
       uses: ./.github/actions/maven-cache
-
-    - id: restore-quarkus-snapshot
-      name: Restore Quarkus snapshot cache
-      if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
-      uses: ./.github/actions/quarkus-snapshot-cache
 
     - id: pnpm-store-cache
       name: PNPM store cache
@@ -53,3 +52,11 @@ runs:
           which zstd > /dev/null || choco install zstandard
         fi
         tar -C ~/ --use-compress-program="zstd -d" -xf m2-keycloak.tzts
+
+    - id: download-keycloak-dist
+      name: Download Keycloak distribution
+      if: inputs.download-dist == 'true'
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      with:
+        name: keycloak-dist
+        path: quarkus/dist/target
