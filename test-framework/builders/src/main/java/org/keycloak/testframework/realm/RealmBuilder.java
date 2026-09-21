@@ -672,6 +672,11 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder loginTheme(String loginTheme) {
+        rep.setLoginTheme(loginTheme);
+        return this;
+    }
+
     public RealmBuilder permanentLockout(boolean permanentLockout) {
         rep.setPermanentLockout(permanentLockout);
         return this;
