@@ -455,6 +455,15 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             .userId(user.getId())
             .details(Details.PREF_PREVIOUS + "phoneNumberVerified", "true")
             .details(Details.PREF_UPDATED + "phoneNumberVerified", "false");
+
+        // Omitting both the number and the flag - flag must be reset to false, not removed
+        setPhoneNumberVerified(userResource, "+15555550123");
+        user = getUser(token);
+        user.getAttributes().remove("phoneNumber");
+        user.getAttributes().remove("phoneNumberVerified");
+        user = updateAndGet(user, token);
+        Assertions.assertNull(user.getAttributes().get("phoneNumber"));
+        Assertions.assertEquals(List.of("false"), user.getAttributes().get("phoneNumberVerified"));
     }
 
     private void registerPhoneNumberCleanup(String username) {
