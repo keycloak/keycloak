@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -98,8 +99,9 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     }
 
     private static String base64EncodeRequestToken(RequestToken requestToken) throws IOException {
-      try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); 
-              ObjectOutputStream oos = new ObjectOutputStream(Base64.getEncoder().wrap(baos))) {
+      try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+              OutputStream base64Stream = Base64.getEncoder().wrap(baos);
+              ObjectOutputStream oos = new ObjectOutputStream(base64Stream)) {
           oos.writeObject(requestToken);
           oos.close();
           return baos.toString(StandardCharsets.US_ASCII);

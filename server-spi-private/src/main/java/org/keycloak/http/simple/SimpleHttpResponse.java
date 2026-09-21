@@ -41,25 +41,25 @@ public class SimpleHttpResponse implements AutoCloseable {
         if (statusCode == -1) {
             statusCode = response.getStatusLine().getStatusCode();
 
-            InputStream is;
             HttpEntity entity = response.getEntity();
             if (entity != null) {
-                is = entity.getContent();
-                contentType = ContentType.getOrDefault(entity);
-                Charset charset = contentType.getCharset();
-                try {
+                try (InputStream entityStream = entity.getContent()) {
+                    contentType = ContentType.getOrDefault(entity);
+                    Charset charset = contentType.getCharset();
+
+                    boolean gzip = false;
                     HeaderIterator it = response.headerIterator();
                     while (it.hasNext()) {
                         Header header = it.nextHeader();
                         if (header.getName().equals("Content-Encoding") && header.getValue().equals("gzip")) {
-                            is = new GZIPInputStream(is);
+                            gzip = true;
                         }
                     }
 
-                    is = new SafeInputStream(is, maxConsumedResponseSize);
-
-                    try (InputStreamReader reader = charset == null ? new InputStreamReader(is, StandardCharsets.UTF_8) :
-                            new InputStreamReader(is, charset)) {
+                    try (InputStream decoded = gzip ? new GZIPInputStream(entityStream) : entityStream;
+                         SafeInputStream safe = new SafeInputStream(decoded, maxConsumedResponseSize);
+                         InputStreamReader reader = charset == null ? new InputStreamReader(safe, StandardCharsets.UTF_8) :
+                                 new InputStreamReader(safe, charset)) {
 
                         StringWriter writer = new StringWriter();
 
@@ -69,10 +69,6 @@ public class SimpleHttpResponse implements AutoCloseable {
                         }
 
                         responseString = writer.toString();
-                    }
-                } finally {
-                    if (is != null) {
-                        is.close();
                     }
                 }
             }

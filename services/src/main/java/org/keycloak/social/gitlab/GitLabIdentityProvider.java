@@ -137,34 +137,25 @@ public class GitLabIdentityProvider extends OIDCIdentityProvider  implements Soc
 
 
 	protected BrokeredIdentityContext extractIdentity(AccessTokenResponse tokenResponse, String accessToken, JsonWebToken idToken) throws IOException {
-		SimpleHttpResponse response = null;
-		int status = 0;
+		JsonNode profile = null;
 
 		for (int i = 0; i < 10; i++) {
-			try {
-				String userInfoUrl = getUserInfoUrl();
-				response = SimpleHttp.create(session).doGet(userInfoUrl)
-						.header("Authorization", "Bearer " + accessToken).asResponse();
-				status = response.getStatus();
+			try (SimpleHttpResponse response = SimpleHttp.create(session).doGet(getUserInfoUrl())
+					.header("Authorization", "Bearer " + accessToken).asResponse()) {
+				if (response.getStatus() == 200) {
+					profile = response.asJson();
+					break;
+				}
 			} catch (IOException e) {
 				logger.debug("Failed to invoke user info for external exchange", e);
 			}
-			if (status == 200) break;
-			response.close();
 			try {
 				Thread.sleep(200);
 			} catch (InterruptedException e) {
 				throw new RuntimeException(e);
 			}
 		}
-		if (status != 200) {
-			logger.debug("Failed to invoke user info status: " + status);
-			throw new IdentityBrokerException("Gitlab user info call failure");
-		}
-		JsonNode profile = null;
-		try {
-			profile = response.asJson();
-		} catch (IOException e) {
+		if (profile == null) {
 			throw new IdentityBrokerException("Gitlab user info call failure");
 		}
 		String id = getJsonProperty(profile, "id");
