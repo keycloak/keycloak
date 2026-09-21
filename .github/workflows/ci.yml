@@ -209,6 +209,7 @@ jobs:
 
       # Reuses the adapter distributions and app servers built above instead of building them again in a separate job
       - name: Run adapter tests (strict cookies)
+        if: ${{ !cancelled() }}
         run: |
           TESTS="org.keycloak.testsuite.adapter.**"
           echo "Tests: $TESTS"
