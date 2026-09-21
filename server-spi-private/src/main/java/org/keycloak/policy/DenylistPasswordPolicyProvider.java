@@ -45,7 +45,7 @@ public class DenylistPasswordPolicyProvider implements PasswordPolicyProvider {
 
     PasswordDenylist denylist = (FileBasedPasswordDenylist) policyConfig;
 
-    if (!denylist.contains(password.toLowerCase())) {
+    if (!denylist.contains(DenylistPasswordPolicyProviderFactory.normalizePassword(password))) {
       return null;
     }
 
