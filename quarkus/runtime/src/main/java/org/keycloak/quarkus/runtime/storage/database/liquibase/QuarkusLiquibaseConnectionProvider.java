@@ -25,6 +25,7 @@ import javax.xml.parsers.SAXParserFactory;
 import org.keycloak.connections.jpa.updater.liquibase.conn.DefaultLiquibaseConnectionProvider;
 
 import liquibase.Scope;
+import liquibase.analytics.configuration.AnalyticsArgs;
 import liquibase.parser.ChangeLogParser;
 import liquibase.parser.ChangeLogParserFactory;
 import liquibase.parser.core.xml.XMLChangeLogSAXParser;
@@ -42,6 +43,8 @@ public class QuarkusLiquibaseConnectionProvider extends DefaultLiquibaseConnecti
         // initialize Liquibase using a custom scope
         final Map<String, Object> scopeValues = new HashMap<>();
         scopeValues.put(Scope.Attr.ui.name(), new LoggerUIService());
+        // Disable Liquibase analytics; Keycloak does not send product usage data to Liquibase
+        scopeValues.put(AnalyticsArgs.ENABLED.getKey(), Boolean.FALSE);
         try {
             Scope.enter(scopeValues);
         } catch (Exception e) {
