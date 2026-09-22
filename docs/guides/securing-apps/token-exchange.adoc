@@ -350,6 +350,12 @@ This feature requires the `parameterized-scopes` feature to be enabled. To enabl
 bin/kc.[sh|bat] start --features=token-exchange-delegation,parameterized-scopes
 ----
 
+Delegation is requested through a parameterized client scope that names the actor. Two forms are available, and they differ in the type of actor they authorize:
+
+* <<_token-exchange-delegation-admin,`delegation:user:<username>`>> - the actor is another *user*, typically an administrator acting on behalf of the subject.
+* <<_token-exchange-delegation-client,`delegation:client:<client-id>`>> - the actor is a *client*, represented by its service-account user.
+
+[[_token-exchange-delegation-admin]]
 === Admin delegation
 
 Admin delegation allows a user (subject) to delegate their token to an administrator (actor). The client requests the `delegation:user` scope with the administrator's identifier as a parameter using the https://datatracker.ietf.org/doc/html/rfc9396[parameterized scopes] syntax.
@@ -427,6 +433,137 @@ The resulting token will then include:
 ----
 
 Other useful claims to add include `may_act.email` (user property `email`) or `may_act.iss` (for cross-realm delegation scenarios).
+
+[[_token-exchange-delegation-client]]
+=== Client delegation
+
+Client delegation allows a user (subject) to authorize an OIDC client, represented by its service-account user, to act on the user's behalf (actor). The client requesting the token asks for the `delegation:client` scope with the actor client's identifier as a parameter using the https://datatracker.ietf.org/doc/html/rfc9396[parameterized scopes] syntax, and the user approves the delegation on a consent screen. The actor client then performs a token exchange using its own token as the `actor_token`.
+
+When the feature is enabled, the `delegation:client` client scope is automatically created in all realms (new and existing) as an *Optional* client scope, making it available to all clients by default. As with admin delegation, client delegation requires <<Granting delegation permission,granting delegation permission>>. Without a matching permission granting the `delegate` scope, the delegation scope is silently dropped from the token.
+
+==== Configuring the actor client
+
+The client named in the delegation scope must be:
+
+* Enabled.
+* Confidential, because it authenticates itself when performing the token exchange.
+* Configured with *Service accounts roles* enabled. The service account user represents the actor identity.
+* Configured with *Standard Token Exchange* enabled, as described in <<_standard-token-exchange-enable,How to enable token exchange>>.
+
+The client also requires a delegation permission granting the `delegate` scope for the subject users, with a policy that targets this client.
+
+If the client does not exist, is disabled, or does not have service accounts enabled, the delegation scope is rejected while the scope is resolved and no `may_act` claim is issued. The remaining requirements apply to the token exchange request itself.
+
+==== How it works
+
+. The application the user logs in to requests the `delegation:client` scope with the actor client's identifier as a parameter, for example `scope=openid delegation:client:agent-app`:
++
+[source,subs="attributes+"]
+----
+{kc_realms_path}/{realm-name}/protocol/openid-connect/auth
+  ?client_id=test-app
+  &response_type=code
+  &redirect_uri=https%3A%2F%2Fmyapp.example.com%2Fcallback
+  &scope=openid+delegation%3Aclient%3Aagent-app
+----
+. {project_name} validates that the specified client (actor) exists, is enabled, has service accounts enabled, and that its service account has the `delegate` permission for the user (subject) through FGAP V2.
+. The user (subject) is presented with a consent screen to approve the delegation, which reads `Allow agent-app to act on your behalf?`.
+. If the user consents and validation passes, the issued token includes the `may_act` claim:
++
+[source,json]
+----
+{
+  "sub": "3bdc11fc-3d87-4fbf-87ae-96a360e5c05f",
+  "preferred_username": "alice",
+  "azp": "test-app",
+  "aud": "agent-app",
+  "scope": "openid delegation:client:agent-app profile email",
+  "may_act": {
+    "sub": "7f8ac269-0269-410b-ab5c-70701dea7c71",
+    "client_id": "agent-app"
+  },
+  ...
+}
+----
+
+The `may_act` claim declares that the specified client (actor) is authorized to act on behalf of the user (subject). Note that the two identifiers inside `may_act` are different things:
+
+`may_act.sub`:: The user ID of the actor client's *service account user*, not the client ID. This is the actor identity that the token exchange validates the `actor_token` against.
+`may_act.client_id`:: The public *client ID* of the actor client, which is the value used as the scope parameter. The token exchange requires that the `actor_token` was issued to this client and that this client is the one performing the exchange.
+
+The audience of the subject token also includes the actor client, so the token can be passed to it.
+
+==== Obtaining the actor token
+
+The actor client obtains its own token for its service account with the client credentials grant:
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+  -d "client_id=agent-app" \
+  -d "client_secret=<agent-app secret>" \
+  -d "grant_type=client_credentials" \
+  "{kc_realms_path}/{realm-name}/protocol/openid-connect/token"
+----
+
+The `sub` of the resulting token is the service account user ID, matching `may_act.sub` in the subject token.
+
+==== Performing the token exchange
+
+The actor client sends both tokens to the token endpoint. It authenticates as itself, and it must be the client named in `may_act.client_id`:
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+  -d "client_id=agent-app" \
+  -d "client_secret=<agent-app secret>" \
+  -d "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+  -d "subject_token=<token obtained by the user>" \
+  -d "subject_token_type=urn:ietf:params:oauth:token-type:access_token" \
+  -d "actor_token=<token of the actor client>" \
+  -d "actor_token_type=urn:ietf:params:oauth:token-type:access_token" \
+  -d "requested_token_type=urn:ietf:params:oauth:token-type:access_token" \
+  "{kc_realms_path}/{realm-name}/protocol/openid-connect/token"
+----
+
+The presence of `actor_token` is what selects delegation instead of standard token exchange. Both `actor_token` and `actor_token_type` are required, and `actor_token_type` must be `urn:ietf:params:oauth:token-type:access_token`.
+
+Delegation issues only access tokens. The exchange uses a transient session, so no refresh token is returned and the delegated token has no `sid` claim. Requesting `requested_token_type=urn:ietf:params:oauth:token-type:refresh_token` returns an error. The `requested_token_type` parameter can be omitted, in which case an access token is issued.
+
+The scope of the delegated token can be narrowed by sending the `scope` parameter, as described in <<_standard-token-exchange-scope,Scopes and audiences>>.
+
+==== The delegated token
+
+The exchanged token keeps the user as the subject and identifies the actor in the `act` claim:
+
+[source,json]
+----
+{
+  "sub": "3bdc11fc-3d87-4fbf-87ae-96a360e5c05f",
+  "preferred_username": "alice",
+  "azp": "agent-app",
+  "scope": "profile email",
+  "act": {
+    "sub": "7f8ac269-0269-410b-ab5c-70701dea7c71",
+    "client_id": "agent-app"
+  },
+  ...
+}
+----
+
+`sub`:: Still identifies the user (subject). Delegation does not replace the subject, which is what distinguishes it from impersonation.
+`act`:: Identifies the actor that is currently acting, using the same `sub` (service account user ID) and `client_id` (client ID) pair that was authorized in `may_act`.
+
+The `may_act` claim is not copied into the delegated token.
+
+==== How a resource server interprets the delegated token
+
+Because the subject is preserved and the actor is reported separately, a resource server or audit system can tell the two kinds of request apart from the token alone:
+
+Direct request from the user:: `sub` identifies the user and there is no `act` claim.
+Delegated request from the client:: `sub` identifies the same user, and `act` identifies the client that is acting.
+
+In both cases the request is authorized for the same user, so the resource server applies that user's permissions. The difference is *who performed it*: when `act` is present, the request was made by the client named there on the user's behalf, which lets the resource server record both identities and apply its own policy to actions taken by a client rather than by the user directly.
 
 [[_legacy-token-exchange]]
 == Legacy token exchange
