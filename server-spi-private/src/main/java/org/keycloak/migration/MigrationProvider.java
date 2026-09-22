@@ -116,4 +116,12 @@ public interface MigrationProvider extends Provider {
      * @return created or already existing client scope 'delegation:client'
      */
     ClientScopeModel addOIDCClientDelegationClientScope(RealmModel realm);
+
+    /**
+     * Add the built-in {@code kc-admin-api} client scope or return it if it already exists.
+     *
+     * @param realm
+     * @return created or already existing client scope 'kc-admin-api'
+     */
+    ClientScopeModel addOIDCAdminApiClientScope(RealmModel realm);
 }

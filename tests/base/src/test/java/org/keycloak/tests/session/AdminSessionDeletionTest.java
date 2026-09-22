@@ -55,6 +55,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static org.keycloak.tests.utils.admin.AdminApiUtil.addAdminApiClientScope;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -94,6 +96,7 @@ public class AdminSessionDeletionTest {
         var backend = realm.admin().clients().findByClientId(BACKEND).get(0);
         backend.getAttributes().put("client_credentials.use_refresh_token", Boolean.toString(useRefreshTokens));
         realm.admin().clients().get(backend.getId()).update(backend);
+        addAdminApiClientScope(realm.admin(), BACKEND);
 
         try (Keycloak admin = adminClientFactory.create()
                 .realm(realm.getName()).clientId(BACKEND).clientSecret(SECRET)

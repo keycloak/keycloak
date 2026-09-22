@@ -84,6 +84,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.tests.utils.admin.AdminApiUtil.addAdminApiClientScope;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -313,6 +315,7 @@ public class LDAPGroupMapperFgapTest {
     }
 
     private Keycloak createDelegatedAdmin() {
+        addAdminApiClientScope(managedRealm.admin(), "test-app");
         return KeycloakBuilder.builder().serverUrl(oauth.getBaseUrl())
                 .realm(managedRealm.getName()).username("johnkeycloak").password("Password1")
                 .clientId("test-app").clientSecret("password").build();
