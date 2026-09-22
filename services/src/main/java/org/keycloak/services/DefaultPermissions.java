@@ -149,7 +149,7 @@ public class DefaultPermissions implements Permissions {
 
     private AdminPermissionEvaluator getEvaluator(AccessToken accessToken) {
         if (realmAuth == null) {
-            AdminAuth auth = AdminRoot.getRealmAdminAuth(session).orElse(new AdminAuth(context.getRealm(), accessToken, context.getUser(), context.getClient()));
+            AdminAuth auth = AdminRoot.getRealmAdminAuth(session).orElseGet(() -> new AdminAuth(context.getRealm(), accessToken, context.getUser(), context.getClient()));
             realmAuth = AdminPermissions.evaluator(session, context.getRealm(), auth);
         }
         return realmAuth;
