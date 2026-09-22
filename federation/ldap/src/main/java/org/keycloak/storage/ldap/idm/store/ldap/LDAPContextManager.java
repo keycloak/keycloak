@@ -106,7 +106,7 @@ public final class LDAPContextManager implements AutoCloseable {
                     sslSocketFactory = provider.getSSLSocketFactory();
                 }
 
-                tlsResponse = startTLS(ldapContext, sslSocketFactory);
+                tlsResponse = startTLS(ldapContext, sslSocketFactory, ldapConfig.getStartTlsCloseTimeout());
 
                 // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
                 if (tlsResponse == null) {
@@ -143,10 +143,19 @@ public final class LDAPContextManager implements AutoCloseable {
     }
 
     public static StartTlsResponse startTLS(LdapContext ldapContext, SSLSocketFactory sslSocketFactory) throws NamingException {
+        return startTLS(ldapContext, sslSocketFactory, Integer.parseInt(LDAPConfig.DEFAULT_CONNECTION_TIMEOUT));
+    }
+
+    /**
+     * @param closeTimeoutMillis upper bound for how long closing the returned response may block, see
+     *                           {@link LDAPConfig#getStartTlsCloseTimeout()}
+     */
+    public static StartTlsResponse startTLS(LdapContext ldapContext, SSLSocketFactory sslSocketFactory, int closeTimeoutMillis) throws NamingException {
         StartTlsResponse tls = null;
 
         try {
-            tls = (StartTlsResponse) ldapContext.extendedOperation(new StartTlsRequest());
+            tls = new StartTlsResponseWithCloseTimeout(
+                    (StartTlsResponse) ldapContext.extendedOperation(new StartTlsRequest()), closeTimeoutMillis);
             tls.negotiate(sslSocketFactory);
         } catch (Exception e) {
             logger.error("Could not negotiate TLS", e);

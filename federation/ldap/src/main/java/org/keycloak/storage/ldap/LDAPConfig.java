@@ -158,6 +158,24 @@ public class LDAPConfig {
         return config.getFirst(LDAPConstants.READ_TIMEOUT);
     }
 
+    /**
+     * Upper bound, in milliseconds, for how long closing a StartTLS connection may wait for the server to acknowledge
+     * the TLS shutdown. Derived from the configured read timeout, falling back to the connection timeout.
+     */
+    public int getStartTlsCloseTimeout() {
+        String timeout = getReadTimeout();
+
+        if (timeout == null || timeout.isEmpty()) {
+            timeout = getConnectionTimeout();
+        }
+
+        try {
+            return Integer.parseInt(timeout);
+        } catch (NumberFormatException e) {
+            return Integer.parseInt(DEFAULT_CONNECTION_TIMEOUT);
+        }
+    }
+
     public Properties getAdditionalConnectionProperties() {
         // not supported for now
         return null;
