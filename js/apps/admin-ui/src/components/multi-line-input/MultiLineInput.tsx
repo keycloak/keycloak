@@ -16,7 +16,7 @@ function stringToMultiline(value?: string): string[] {
   return typeof value === "string" ? value.split("##") : [""];
 }
 
-function toStringValue(formValue: string[]): string {
+function toStringValue(formValue: (string | undefined)[]): string {
   return formValue.join("##");
 }
 
@@ -53,7 +53,7 @@ export const MultiLineInput = ({
     defaultValue: defaultValue || "",
   });
 
-  const fields = useMemo<string[]>(() => {
+  const fields = useMemo<(string | undefined)[]>(() => {
     let values = stringify
       ? stringToMultiline(
           Array.isArray(value) && value.length === 1 ? value[0] : value,
@@ -68,7 +68,7 @@ export const MultiLineInput = ({
         : defaultValue) || [""];
     }
 
-    return values;
+    return values.map((v) => v ?? "");
   }, [value]);
 
   const remove = (index: number) => {
@@ -83,12 +83,12 @@ export const MultiLineInput = ({
     update([...fields.slice(0, index), value, ...fields.slice(index + 1)]);
   };
 
-  const update = (values: string[]) => {
+  const update = (values: (string | undefined)[]) => {
     const fieldValue = values.flatMap((field) => field);
     // Avoid persisting blank-only values as "" / [""]. Empty string attributes
     // (e.g. post.logout.redirect.uris) break client policy executors such as
     // secure-redirect-uris-enforcer used by oauth-2-1-for-public-client.
-    const isBlank = fieldValue.every((v) => !v.trim());
+    const isBlank = fieldValue.every((v) => !(v ?? "").trim());
     setValue(
       name,
       isBlank ? undefined : stringify ? toStringValue(fieldValue) : fieldValue,
@@ -101,7 +101,10 @@ export const MultiLineInput = ({
 
   // Only seed the form when there is a non-empty default to persist (see #43949).
   // Seeding blank values caused empty attributes to be submitted on save (#51315).
-  if (typeof getValues(name) === "undefined" && fields.some((v) => v.trim())) {
+  if (
+    typeof getValues(name) === "undefined" &&
+    fields.some((v) => (v ?? "").trim())
+  ) {
     update(fields);
   }
 
