@@ -12,7 +12,7 @@ import org.bouncycastle.crypto.generators.Argon2BytesGenerator.FixedBlockPool;
 import org.jboss.logging.Logger;
 
 /**
- * Pool-of-chunks for Argon2 memory blocks. All chunks are uniform 1 MB ({@value CHUNK_BLOCKS}
+ * Pool-of-chunks for Argon2 memory blocks. All chunks are uniform ~1 MB ({@value #CHUNK_BLOCKS}
  * blocks of 1 KB each) and shared across all Argon2 configurations, so different memory settings
  * (e.g. 7 MB, 12 MB, 19 MB) draw from and return to the same pool of reusable chunks. Chunks are
  * acquired lazily as BouncyCastle calls {@link BlockPool#allocate()}, so there is no need to
@@ -40,7 +40,10 @@ public class BlockChunkManager {
 
     private static final Logger logger = Logger.getLogger(BlockChunkManager.class);
 
-    static final int CHUNK_BLOCKS = 1024; // 1 MB chunk (1024 blocks of 1 KB)
+    // 1025 instead of 1024: all OWASP-recommended Argon2id memory sizes (7/9/12/19/46 MiB) are
+    // multiples of 1024 blocks, and BC adds 4 scratch blocks. 1025 absorbs the scratch blocks
+    // in the last chunk, avoiding an almost-empty extra chunk per hash operation.
+    static final int CHUNK_BLOCKS = 1025;
 
     final ConcurrentLinkedDeque<SoftReference<FixedBlockPool>> availableChunks = new ConcurrentLinkedDeque<>();
 
