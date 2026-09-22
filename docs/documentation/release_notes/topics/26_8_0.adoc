@@ -111,19 +111,6 @@ Administrators can plan the rotation schedule and anticipate when applications n
 In this release, Client Secret Rotation is promoted from preview to supported.
 For more details, see the link:{adminguide_link}#_secret_rotation[{adminguide_name}].
 
-// TODO: Review feature status before publishing — SCIM may be promoted to supported
-== SCIM for managing users though standard API endpoints (preview)
-// https://github.com/keycloak/keycloak/issues/50856
-
-The SCIM API received extensive improvements in this release.
-Users can now manage multivalued user attributes through SCIM, mapped through User Profile.
-Read and write operations enforce User Profile view, edit, and mutability permissions, and Fine-Grained Admin Permissions are applied to search filters.
-Search and listing performance has been significantly improved, especially for large user bases.
-Several RFC 7643 compliance issues have been addressed, including case-insensitive matching, `caseExact` defaults, and a configurable `maxOperations` limit.
-User creation behavior with federation providers is now documented and tested.
-
-For more details, see the link:{adminguide_link}#_managing_scim[Managing users and groups through SCIM] documentation.
-
 == Invite users automatically with workflows
 // https://github.com/keycloak/keycloak/issues/49297
 
@@ -147,7 +134,8 @@ Client Policies now provide the `allowed-protocol-mappers` executor to restrict 
 
 The SCIM (System for Cross-domain Identity Management) API provides a standards-based interface for managing users and groups across realms. It enables seamless integration with identity management systems and applications that support the SCIM protocol.
 
-In this release, the SCIM API is promoted from preview to supported.
+In this release, the SCIM API is promoted from preview to supported. The SCIM API received extensive improvements including support for multivalued user attributes, User Profile permissions, Fine-Grained Admin Permissions in search filters, and improved performance for large user bases.
+For more details, see the link:{adminguide_link}#_managing_scim[Managing users and groups through SCIM] documentation.
 
 = Configuring and Running
 
