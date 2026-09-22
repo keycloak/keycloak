@@ -121,7 +121,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
         SessionUpdatesList<V> myUpdates = updates.get(key);
         if (myUpdates == null) {
             SessionEntityWrapper<V> wrappedEntity = cacheHolder.cache().get(key);
-            if (wrappedEntity == null) {
+            if (wrappedEntity == null || wrappedEntity.isTombstone()) {
                 return null;
             }
 
@@ -222,6 +222,14 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
             updates.put(key, new SessionUpdatesList<>(realmModel, session));
             return null;
         }
+        if (existing.isTombstoneBlockingImportOf(session)) {
+            return existing.getEntity();
+        }
+        if (existing.isTombstone()) {
+            cacheHolder.cache().put(key, session, computeLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS, computeMaxIdle(maxIdle, lifespan), TimeUnit.MILLISECONDS);
+            updates.put(key, new SessionUpdatesList<>(realmModel, session));
+            return null;
+        }
         updates.put(key, new SessionUpdatesList<>(realmModel, existing));
         return existing.getEntity();
     }
@@ -265,7 +273,12 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
             }
             var future = cacheHolder.cache().putIfAbsentAsync(key, session, computeLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS, computeMaxIdle(maxIdle, lifespan), TimeUnit.MILLISECONDS);
             // write result into concurrent hash map because the consumer is invoked in a different thread each time.
-            stage.dependsOn(future.thenAccept(existing -> allSessions.put(key, existing == null ? session : existing)));
+            stage.dependsOn(future.thenAccept(existing -> {
+                if (existing != null && existing.isTombstoneBlockingImportOf(session)) {
+                    return;
+                }
+                allSessions.put(key, existing == null || existing.isTombstone() ? session : existing);
+            }));
         });
 
         CompletionStages.join(stage.freeze());
@@ -275,7 +288,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
     private void lookupAndAndExecuteTask(K key, SessionUpdateTask<V> task) {
         // Lookup entity from cache
         SessionEntityWrapper<V> wrappedEntity = cacheHolder.cache().get(key);
-        if (wrappedEntity == null) {
+        if (wrappedEntity == null || wrappedEntity.isTombstone()) {
             logger.tracef("Not present cache item for key %s", key);
             return;
         }
