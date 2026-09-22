@@ -1297,12 +1297,12 @@ Environment.setHomeDir(tmp);
     public void httpOptimizedSerializers() {
         var nonRunningPicocli = pseudoLaunch("start-dev");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertExternalConfig("quarkus.rest.jackson.optimization.enable-reflection-free-serializers", "true");
+        assertExternalConfig("quarkus.rest.jackson.optimization.enable-reflection-free-serializers", "false");
         onAfter();
 
-        nonRunningPicocli = pseudoLaunch("start-dev", "--features-disabled=http-optimized-serializers");
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=http-optimized-serializers");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertExternalConfig("quarkus.rest.jackson.optimization.enable-reflection-free-serializers", "false");
+        assertExternalConfig("quarkus.rest.jackson.optimization.enable-reflection-free-serializers", "true");
     }
 
     @Test
