@@ -143,6 +143,12 @@ endif::[]
 
 Client Policies now provide the `allowed-protocol-mappers` executor to restrict protocol mapper types that can be created or updated through the dedicated Admin REST API protocol mapper endpoints.
 
+== SCIM API (supported)
+
+The SCIM (System for Cross-domain Identity Management) API provides a standards-based interface for managing users and groups across realms. It enables seamless integration with identity management systems and applications that support the SCIM protocol.
+
+In this release, the SCIM API is promoted from preview to supported.
+
 = Configuring and Running
 
 == Multi-cluster v2 (supported)

@@ -200,7 +200,7 @@ public class Profile {
         @Deprecated
         TWITTER_BROKER("Twitter Identity Broker", Type.DEFAULT, 1, true, null, null),
 
-        SCIM_API("Exposes a SCIM API for managing realm resources on a per-realm basis", Type.PREVIEW),
+        SCIM_API("Exposes a SCIM API for managing realm resources on a per-realm basis", Type.DEFAULT),
 
         RESOURCE_INDICATORS("Resource Indicators for OAuth 2.0", Type.EXPERIMENTAL),
 

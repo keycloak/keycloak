@@ -3,7 +3,6 @@ package org.keycloak.tests.scim.tck;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -238,7 +237,6 @@ public class FederatedUserTest extends AbstractScimTest {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config
-                    .features(Feature.SCIM_API)
                     .dependency("org.keycloak.tests", "keycloak-tests-custom-providers");
         }
     }
