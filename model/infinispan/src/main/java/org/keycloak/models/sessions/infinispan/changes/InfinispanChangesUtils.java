@@ -28,9 +28,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.CacheDecorators;
 import org.keycloak.models.sessions.infinispan.SessionAffinityService;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
-import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
-import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 import org.infinispan.Cache;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
@@ -86,6 +84,18 @@ public class InfinispanChangesUtils {
             AggregateCompletionStage<Void> stage,
             Logger logger
     ) {
+        runOperationInCluster(cacheHolder, key, task, sessionWrapper, stage, logger, false);
+    }
+
+    public static <K, V extends SessionEntity> void runOperationInCluster(
+            CacheHolder<K, V> cacheHolder,
+            K key,
+            MergedUpdate<V> task,
+            SessionEntityWrapper<V> sessionWrapper,
+            AggregateCompletionStage<Void> stage,
+            Logger logger,
+            boolean useTombstones
+    ) {
         SessionUpdateTask.CacheOperation operation = task.getOperation();
 
         // Don't need to run update of underlying entity. Local updates were already run
@@ -93,8 +103,7 @@ public class InfinispanChangesUtils {
 
         switch (operation) {
             case REMOVE:
-                if (sessionWrapper.getEntity() instanceof UserSessionEntity
-                        || sessionWrapper.getEntity() instanceof AuthenticatedClientSessionEntity) {
+                if (useTombstones) {
                     // Put a short-lived tombstone instead of removing. This prevents a concurrent
                     // cache-miss reader from resurrecting the session via putIfAbsent before the
                     // DB delete commits. The tombstone auto-expires after TOMBSTONE_LIFESPAN_MS.

@@ -48,10 +48,15 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
     protected final KeycloakSession kcSession;
     protected final Map<K, SessionUpdatesList<V>> updates = new HashMap<>();
     protected final CacheHolder<K, V> cacheHolder;
+    private boolean useTombstones;
 
     public InfinispanChangelogBasedTransaction(KeycloakSession kcSession, CacheHolder<K, V> cacheHolder) {
         this.kcSession = kcSession;
         this.cacheHolder = cacheHolder;
+    }
+
+    public void setUseTombstones(boolean useTombstones) {
+        this.useTombstones = useTombstones;
     }
 
 
@@ -171,7 +176,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
 
             if (merged != null) {
                 // Now run the operation in our cluster
-                InfinispanChangesUtils.runOperationInCluster(cacheHolder, entry.getKey(), merged, sessionWrapper, stage, logger);
+                InfinispanChangesUtils.runOperationInCluster(cacheHolder, entry.getKey(), merged, sessionWrapper, stage, logger, useTombstones);
             }
         }
     }

@@ -172,7 +172,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                 var c = isOffline ? offlineCacheHolder : cacheHolder;
                 if (c.cache() != null) {
                     // Update cache. It is non-blocking.
-                    InfinispanChangesUtils.runOperationInCluster(c, entry.getKey(), merged, entry.getValue().getEntityWrapper(), stage, LOG);
+                    InfinispanChangesUtils.runOperationInCluster(c, entry.getKey(), merged, entry.getValue().getEntityWrapper(), stage, LOG, true);
                 }
 
                 if (persister == null) {
