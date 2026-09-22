@@ -58,9 +58,10 @@ public class GzipResourceEncodingProviderTest {
 
     @Test
     public void changedResourceIsServedAfterRestart() throws IOException {
-        assertEquals("VERSION-ONE", encode(newProvider(), "VERSION-ONE"));
-        // served from the cache while the server is running
-        assertEquals("VERSION-ONE", encode(newProvider(), "VERSION-ONE"));
+        GzipResourceEncodingProviderFactory factory = new GzipResourceEncodingProviderFactory();
+        assertEquals("VERSION-ONE", encode(factory.create(null), "VERSION-ONE"));
+        // the cached resource is served while the server is running, even if the theme resource changed
+        assertEquals("VERSION-ONE", encode(factory.create(null), "VERSION-TWO"));
 
         // a new factory simulates a restart after the theme resource was changed
         assertEquals("VERSION-TWO", encode(newProvider(), "VERSION-TWO"));
