@@ -15,7 +15,6 @@ public class DefaultAdminApi implements AdminApi {
 
     public DefaultAdminApi(KeycloakSession session, String realmName) {
         this.session = session;
-        // TODO: This will be consolidated with context permissions logic later
         AdminRoot.authenticateRealmAdminRequest(session);
         RealmModel realm = session.realms().getRealmByName(realmName);
         if (realm == null) throw new NotFoundException("Realm not found.");

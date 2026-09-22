@@ -105,8 +105,7 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
     public ClientResourceTypeProvider(KeycloakSession session) {
         super(session, SCHEMAS.values().stream());
         this.realm = session.getContext().getRealm();
-        var authInfo = AdminRoot.authenticateRealmAdminRequest(session);
-        session.getContext().setRealm(realm); // authenticateRealmAdminRequest clears the context realm
+        var authInfo = AdminRoot.getRealmAdminAuth(session).orElseThrow(() -> new IllegalStateException("Expected the admin to already be authenticated"));
         this.permissions = AdminPermissions.evaluator(session, realm, authInfo);
         this.adminEventBuilder = new AdminEventV2Builder(realm, permissions.adminAuth(), session, session.getContext().getConnection()).resource(ResourceType.CLIENT);
         this.validator = new HibernateValidatorProvider(new ValidationContext(session, realm));
@@ -267,25 +266,7 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
     }
         
     @Override
-    protected boolean hasPermission(ClientModel model, String realmResourceType, String scope) {
-        // TODO: session.getContext().getPermissions() expects the context
-        // to have the auth realm set
-        // however subsequent v2 logic expects to have the context realm set
-        session.getContext().setRealm(permissions.adminAuth().getRealm());
-        try {
-            return super.hasPermission(model, realmResourceType, scope);
-        } finally {
-            session.getContext().setRealm(realm);
-        }
-    }
-
-    @Override
     protected boolean onDelete(ClientModel client) {
-        // TODO: the scim rest layer is handling the null check - seems like this should be in a common place
-        if (client == null) {
-            throw new ServiceException("Could not find client", Response.Status.NOT_FOUND);
-        }
-
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientUnregisterContext(client, permissions.adminAuth()));
         } catch (ClientPolicyException e) {

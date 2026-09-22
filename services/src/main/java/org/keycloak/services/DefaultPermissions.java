@@ -12,6 +12,7 @@ import org.keycloak.models.Permissions;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.resources.admin.AdminAuth;
+import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.services.resources.admin.fgap.ClientPermissionEvaluator;
@@ -148,7 +149,8 @@ public class DefaultPermissions implements Permissions {
 
     private AdminPermissionEvaluator getEvaluator(AccessToken accessToken) {
         if (realmAuth == null) {
-            realmAuth = AdminPermissions.evaluator(session, context.getRealm(), new AdminAuth(context.getRealm(), accessToken, context.getUser(), context.getClient()));
+            AdminAuth auth = AdminRoot.getRealmAdminAuth(session).orElse(new AdminAuth(context.getRealm(), accessToken, context.getUser(), context.getClient()));
+            realmAuth = AdminPermissions.evaluator(session, context.getRealm(), auth);
         }
         return realmAuth;
     }
