@@ -85,17 +85,17 @@ public class KeycloakClientBaseControllerTest {
     }
 
     @Test
-    public void testValidateLeafCertificateAcceptsEndEntityCert() throws Exception {
+    public void testDisableHostnameVerificationAcceptsEndEntityCert() throws Exception {
         X509Certificate cert = decodeCert(LEAF_CERT_BASE64);
         // must not throw
-        KeycloakClientBaseController.validateLeafCertificate(cert, "my-tls-secret");
+        assertTrue(KeycloakClientBaseController.disableHostnameVerification("some-host.com", "my-tls-secret", cert));
     }
 
     @Test
-    public void testValidateLeafCertificateRejectsCACert() throws Exception {
+    public void testDisableHostnameVerificationRejectsCACert() throws Exception {
         X509Certificate cert = decodeCert(CA_CERT_BASE64);
         RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> KeycloakClientBaseController.validateLeafCertificate(cert, "my-tls-secret"));
+                () -> KeycloakClientBaseController.disableHostnameVerification("some-host.com", "my-tls-secret", cert));
         assertTrue(ex.getMessage().contains("my-tls-secret"));
         assertTrue(ex.getMessage().contains("CA certificate"));
     }
@@ -146,15 +146,9 @@ public class KeycloakClientBaseControllerTest {
     }
 
     @Test
-    public void testNoopHostnameVerifierUsedWhenCertDoesNotCoverServiceHostname() throws Exception {
-        // LEAF_CERT_BASE64 has CN=leaf and no SANs — does not cover a Kubernetes service hostname
-        assertFalse(KeycloakClientBaseController.certCoversHostname(decodeCert(LEAF_CERT_BASE64), "keycloak.mynamespace.svc"));
-    }
-
-    @Test
     public void testDefaultHostnameVerifierUsedWhenCertCoversServiceHostname() throws Exception {
         // SVC_CERT_BASE64 has SAN DNS:keycloak.mynamespace.svc
-        assertTrue(KeycloakClientBaseController.certCoversHostname(decodeCert(SVC_CERT_BASE64), "keycloak.mynamespace.svc"));
+        assertFalse(KeycloakClientBaseController.disableHostnameVerification("keycloak.mynamespace.svc", "my-tls-secret", decodeCert(SVC_CERT_BASE64)));
     }
 
     private static X509Certificate decodeCert(String base64) throws Exception {

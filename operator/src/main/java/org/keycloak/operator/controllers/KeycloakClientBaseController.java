@@ -364,9 +364,6 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
         try {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             X509Certificate cert = (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(certBytes));
-
-            validateLeafCertificate(cert, tlsSecretName);
-
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
             ks.load(null);
@@ -380,10 +377,8 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
             ClientBuilder clientBuilder = ResteasyClientClassicProvider.createClientBuilder().sslContext(sslContext);
 
             // Only disable hostname verification when the cert does not cover the service hostname
-            // (TLS passthrough case where the cert carries an external name). When it does match,
-            // the default JSSE hostname verifier provides the stronger guarantee.
-            if (!certCoversHostname(cert, serviceHostname)) {
-                Log.debugf("Server certificate in secret '%s' does not cover service hostname '%s'; disabling hostname verification", tlsSecretName, serviceHostname);
+            // (TLS passthrough case where the cert carries an external name) and it's a leaf cert
+            if (disableHostnameVerification(serviceHostname, tlsSecretName, cert)) {
                 clientBuilder.hostnameVerifier(NoopHostnameVerifier.INSTANCE);
             }
 
@@ -393,6 +388,18 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
             throw new RuntimeException(e);
         }
         return restEasyClient;
+    }
+
+    static boolean disableHostnameVerification(String serviceHostname, String tlsSecretName, X509Certificate cert) {
+        if (!certCoversHostname(cert, serviceHostname)) {
+            if (cert.getBasicConstraints() < 0) {
+                Log.debugf("Server certificate in secret '%s' does not cover service hostname '%s'; disabling hostname verification", tlsSecretName, serviceHostname);
+                return true;
+            }
+            throw new RuntimeException("Cannot safely connect to the admin TLS via the service hostname. The server TLS certificate in secret '" + tlsSecretName
+                    + "' does not match the service hostname yet it is a CA certificate, not a leaf (end-entity) certificate.");
+        }
+        return false;
     }
 
     private static KeyManager[] createKeyManagers(KubernetesClient client, Keycloak keycloak)
@@ -431,13 +438,6 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
             return true;
         } catch (javax.net.ssl.SSLException e) {
             return false;
-        }
-    }
-
-    static void validateLeafCertificate(X509Certificate cert, String secretName) {
-        if (cert.getBasicConstraints() >= 0) {
-            throw new RuntimeException("The server TLS certificate in secret '" + secretName
-                    + "' is a CA certificate, not a leaf (end-entity) certificate");
         }
     }
 
