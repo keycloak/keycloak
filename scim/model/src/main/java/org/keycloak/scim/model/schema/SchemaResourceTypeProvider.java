@@ -108,6 +108,7 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     subAttr.setMultiValued(false);
                     subAttr.setReturned(attribute.getReturned());
                     subAttr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+                    subAttr.setCaseExact(attribute.isCaseExact());
                     subAttr.setUniqueness(attribute.getUniqueness());
 
                     List<Attribute> subAttributes = parent.getSubAttributes();

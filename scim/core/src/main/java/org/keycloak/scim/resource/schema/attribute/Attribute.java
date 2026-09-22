@@ -342,6 +342,47 @@ public class Attribute<M extends Model, R> {
     public boolean isExtension() {
         return getName().contains(":");
     }
+    
+    /**
+     * Optional metadata that can be passed to {@code withAttribute} to configure
+     * individual sub-attribute characteristics such as alias or caseExact.
+     * <p>Use {@link #defaults()} to start from the default values and chain the
+     * fluent setters to override only what you need
+     */
+    public static final class ComplexAttributeOptions {
+
+        private String alias = null;
+        private boolean caseExact = false;
+
+        private ComplexAttributeOptions() {
+        }
+
+        /** Returns an instance populated with the default values. */
+        public static ComplexAttributeOptions defaults() {
+            return new ComplexAttributeOptions();
+        }
+
+        /**
+         * Sets an alternate SCIM path accepted when resolving this sub-attribute.
+         */
+        public ComplexAttributeOptions alias(String alias) {
+            this.alias = alias;
+            return this;
+        }
+
+        /** Marks the sub-attribute as case-sensitive (SCIM {@code caseExact = true}). */
+        public ComplexAttributeOptions caseExact() {
+            this.caseExact = true;
+            return this;
+        }
+
+        /** Marks the sub-attribute as case-insensitive (SCIM {@code caseExact = false}, the default). */
+        public ComplexAttributeOptions notCaseExact() {
+            this.caseExact = false;
+            return this;
+        }
+
+    }
 
     public static class Builder<M extends Model, R> {
 
@@ -397,11 +438,12 @@ public class Attribute<M extends Model, R> {
             return withAttribute(name, null, modelSetter);
         }
 
-        public Builder<M, R> withAttribute(String name, String alias, TriConsumer<M, String, String> modelSetter) {
+        public Builder<M, R> withAttribute(String name, ComplexAttributeOptions options, TriConsumer<M, String, String> modelSetter) {
             String subName = this.name + "." + name;
-            Attribute<M, R> attribute = assembleAttribute(subName, this.name, alias,
+            ComplexAttributeOptions opts = options != null ? options : ComplexAttributeOptions.defaults();
+            Attribute<M, R> attribute = assembleAttribute(subName, this.name, opts.alias,
                     new AttributeMapper<>(modelSetter, new ComplexAttributeSetter<>(this.name, name, complexType)),
-                    modelAttributeResolver, "string", null, returned, false, false, false, false, null, null);
+                    modelAttributeResolver, "string", null, returned, false, false, opts.caseExact, false, null, null);
             attributes.add(attribute);
             return this;
         }
