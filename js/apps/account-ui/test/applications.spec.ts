@@ -19,6 +19,51 @@ test.describe("Applications", () => {
     );
   });
 
+  test("opens application links without granting window.opener access", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed();
+
+    const effectiveUrl = "https://example.com/app";
+    await page.route("**/applications", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            clientId: "external-app",
+            clientName: "External Application",
+            effectiveUrl,
+          },
+        ]),
+      });
+    });
+
+    await login(page, testBed.realm);
+    await page.getByTestId("applications").click();
+
+    await page.evaluate(() => {
+      const win = window as Window & { __openCalls: unknown[][] };
+      win.__openCalls = [];
+      window.open = (...args) => {
+        win.__openCalls.push(args);
+        return null;
+      };
+    });
+
+    await page
+      .getByTestId("applications-list-item")
+      .getByText("External Application")
+      .click();
+
+    const openCalls = await page.evaluate(
+      () => (window as Window & { __openCalls: unknown[][] }).__openCalls,
+    );
+    expect(openCalls).toEqual([
+      [effectiveUrl, "_blank", "noopener,noreferrer"],
+    ]);
+  });
+
   test("sorts applications alphabetically", async ({ page }) => {
     await using testBed = await createTestBed();
 
