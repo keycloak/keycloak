@@ -1425,6 +1425,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attribute.setMultivalued(true);
         attribute.addValidation(OptionsValidator.ID, Map.of(OptionsValidator.KEY_OPTIONS, List.of("opt1", "opt2")));
         config.addOrReplaceAttribute(attribute);
+        config.addOrReplaceAttribute(new UPAttribute("department", new UPAttributePermissions(Set.of(), Set.of(ROLE_USER)), new UPAttributeRequired()));
         provider.setConfiguration(config);
 
         Map<String, Object> attributes = new HashMap<>();
@@ -1432,6 +1433,18 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attributes.put(UserModel.FIRST_NAME, "John");
         attributes.put(UserModel.LAST_NAME, "Doe");
         attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
+        attributes.put("department", "sales");
+
+        // a value that is blank according to String.isBlank() would not be stored, so it does not satisfy the required check
+        attributes.put(ATT_ADDRESS, List.of("opt1"));
+        attributes.put("department", List.of(" "));
+        try {
+            provider.create(UserProfileContext.REGISTRATION, attributes).validate();
+            fail("Should fail validation");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError("department"));
+        }
+        attributes.put("department", "sales");
 
         // only blank values, as sent by the login theme when no checkbox is selected
         attributes.put(ATT_ADDRESS, List.of(""));
