@@ -66,6 +66,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.addAdminApiClientScope;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
@@ -202,6 +203,7 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
         try (Response response = realm.admin().clients().create(fullScopeClient)) {
             fullScopeClient.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(fullScopeClient.getId());
 
         // Verify the permission works with a full-scope client
         try (Keycloak client = adminClientFactory.create()
@@ -224,6 +226,7 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
         try (Response response = realm.admin().clients().create(restrictedClient)) {
             restrictedClient.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(restrictedClient.getId());
 
         // Add query-users and view-users to scope — custom-manager is NOT in scope
         realm.admin().clients().get(restrictedClient.getId()).getScopeMappings()
@@ -287,6 +290,7 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
         try (Response response = realm.admin().clients().create(restrictedClient)) {
             restrictedClient.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(restrictedClient.getId());
 
         realm.admin().clients().get(restrictedClient.getId()).getScopeMappings()
                 .clientLevel(realmMgmt.getId()).add(List.of(queryUsersRole, viewUsersRole));
@@ -353,6 +357,7 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
         try (Response response = realm.admin().clients().create(fullScopeClient)) {
             fullScopeClient.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(fullScopeClient.getId());
 
         try (Keycloak client = adminClientFactory.create()
                 .realm(realmName)
@@ -374,6 +379,7 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
         try (Response response = realm.admin().clients().create(restrictedClient)) {
             restrictedClient.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(restrictedClient.getId());
 
         realm.admin().clients().get(restrictedClient.getId()).getScopeMappings()
                 .clientLevel(realmMgmt.getId()).add(List.of(queryUsersRole, viewUsersRole));
@@ -433,6 +439,7 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
         try (Response response = realm.admin().clients().create(maliciousClient)) {
             maliciousClient.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(maliciousClient.getId());
         ProtocolMapperRepresentation mapper = toRepresentation(
                 HardcodedRole.create("inject-custom-manager", "custom-manager"));
         realm.admin().clients().get(maliciousClient.getId())
@@ -502,6 +509,7 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
         try (Response response = realm.admin().clients().create(maliciousClient)) {
             maliciousClient.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(maliciousClient.getId());
         ProtocolMapperRepresentation mapper = toRepresentation(
                 HardcodedRole.create("inject-app-manager", "custom-app.app-manager"));
         realm.admin().clients().get(maliciousClient.getId())
@@ -884,6 +892,10 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
                 fail("Should not have access to manage workflows if user is master realm admin with manage-realm role in a realm");
             } catch (ForbiddenException ignore) {}
         }
+    }
+
+    private void addAdminApiScope(String clientDbId) {
+        addAdminApiClientScope(realm.admin(), realm.admin().clients().get(clientDbId), true);
     }
 
     public static class ServerConfig implements KeycloakServerConfig {
