@@ -298,5 +298,6 @@ After writing or editing entries:
    ```
    For each missing link, find the issue number using the methods in "Finding GitHub Issues" and add the comment line.
 4. Remove empty sections — any section that has no real content or only contains `<TODO>` placeholders. This applies to any section, including Breaking changes, Notable changes, Deprecated features, and Removed features.
-5. Review both files for clarity, spelling, and grammar against the Writing Quality rules. In the release notes, verify each entry follows the problem-then-solution paragraph pattern: first explain the problem or need, then describe what {project_name} now does. Rewrite entries that significantly deviate from this pattern, but only when you are confident in the facts from commit messages, issue descriptions, and documentation — do not invent information.
-6. Do NOT commit changes — let the user review and commit
+5. **One sentence per line**: These are AsciiDoc files. Each sentence must start on its own line. Do not join multiple sentences on a single line. This makes diffs cleaner and simplifies review.
+6. Review both files for clarity, spelling, and grammar against the Writing Quality rules. In the release notes, verify each entry follows the problem-then-solution paragraph pattern: first explain the problem or need, then describe what {project_name} now does. Rewrite entries that significantly deviate from this pattern, but only when you are confident in the facts from commit messages, issue descriptions, and documentation — do not invent information.
+7. Do NOT commit changes — let the user review and commit
