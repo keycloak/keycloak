@@ -33,11 +33,12 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
         }
 
         if (reuse && !TestcontainersConfiguration.getInstance().environmentSupportsReuse()) {
-            throw new RuntimeException(
-                    "KC_TEST_DATABASE_REUSE is enabled, but testcontainers reuse is not configured. " +
+            getLogger().errorf(
+                    "%s is enabled, but testcontainers reuse is not configured. " +
                     "Set testcontainers.reuse.enable=true in ~/.testcontainers.properties " +
                     "or set the environment variable TESTCONTAINERS_REUSE_ENABLE=true. " +
-                    "Note: TESTCONTAINERS_REUSE_ENABLE must be a real environment variable, not a .env.test entry.");
+                    "Note: TESTCONTAINERS_REUSE_ENABLE must be a real environment variable, not a .env.test entry.", reuseProp);
+            this.reuse = false;
         }
 
         container = createContainer();
