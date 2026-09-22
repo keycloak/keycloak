@@ -145,7 +145,10 @@ You can use only a https://github.com/keycloak/keycloak/blob/main/quarkus/runtim
 * A lock icon for a Quarkus property in the https://quarkus.io/guides/all-config[Quarkus documentation] indicates a build time property. You run the `build` command to apply this property. For details about the build command, see the subsequent sections on optimizing {project_name}.
 * No lock icon for a property in the Quarkus guide indicates a runtime property for Quarkus and {project_name}.
 
-You can also store Quarkus properties in a Java KeyStore.
+Quarkus options may also be specified as environment variables, or via a Java Keystore.
+
+However {project_name} cannot distinguish at startup what quarkus options are build vs runtime. If you are running unoptimized, a change in the raw value from the quarkus.properties will trigger a re-build.
+If you are running optimized, changes to those values are ignored.
 
 === Using special characters in values
 
@@ -263,7 +266,7 @@ If the initial administrator already exists and the environment variables are st
 We recommend optimizing {project_name} to provide faster startup and better memory consumption before deploying {project_name} in a production environment. This section describes how to apply {project_name} optimizations for the best performance and runtime behavior.
 
 === Creating an optimized {project_name} build
-By default, when you use the `start` or `start-dev` command, {project_name} runs a `build` command under the covers for convenience reasons.
+By default, when you use the `start` or `start-dev` command, {project_name} runs a `build` command under the covers if needed for convenience reasons.
 
 This `build` command performs a set of optimizations for the startup and runtime behavior. The build process can take a few seconds. Especially when running {project_name} in containerized environments such as Kubernetes or OpenShift, startup time is important. To avoid losing that time, run a `build` explicitly before starting up, such as a separate step in a CI/CD pipeline.
 
@@ -272,12 +275,10 @@ To run a `build`, enter the following command:
 
 <@kc.build parameters="<build-options>"/>
 
-This command shows `build options` that you enter. {project_name} distinguishes between **build options**, that are usable when running the `build` command, and **configuration options**, that are usable when starting up the server.
-
-For a non-optimized startup of {project_name}, this distinction has no effect. However, if you run a build before the startup, only a subset of options is available to the build command. The restriction is due to the build options getting persisted into an optimized {project_name} image. For example, configuration for credentials such as `db-password` (which is a configuration option) must not get persisted for security reasons.
+{project_name} distinguishes **build options**, that are usable when running the `build` command.
 
 [WARNING]
-All build options are persisted in a plain text. Do not store any sensitive data as the build options. This applies across all the available configuration sources, including the KeyStore Config Source. Hence, we also do not recommend to store any build options in a Java keystore. Also, when it comes to the configuration options, we recommend to use the KeyStore Config Source primarily for storing sensitive data. For non-sensitive data you can use the remaining configuration sources.
+Build options are persisted in a plain text - including raw values from the quarkus.properties file. Therefore, do not put any sensitive values directly in the quarkus.properties file.
 
 Build options are marked in <@links.server id="all-config"/> with a tool icon.
 To find available build options, see https://www.keycloak.org/server/all-config?f=build[All configuration page with build options selected] or enter the following command:
@@ -287,40 +288,46 @@ To find available build options, see https://www.keycloak.org/server/all-config?
 .Example: Run a `build` to set the database to PostgreSQL before startup
 <@kc.build parameters="--db=postgres"/>
 
-==== Second step: Start {project_name} using `--optimized`
-After a successful build, you can start {project_name} and turn off the default startup behavior by entering the following command:
+==== Second step: Set the `optimized` option
 
-<@kc.start parameters="--optimized <configuration-options>"/>
+Using either the config file or an environment variable set the `optimized` option to `true`.
 
-The `--optimized` parameter tells {project_name} to assume a pre-built, already optimized {project_name} image is used. As a result, {project_name} avoids checking for and running a build directly at startup, which saves time.
+[source,bash]
+----
+export KC_OPTIMIZED=true
+----
 
-You can enter all configuration options at startup; these options are the ones in <@links.server id="all-config"/> that are **not** marked with a tool icon.
+==== Third step: Start {project_name}
+After a successful build, start {project_name} by entering the following command:
 
-* If a build option is found at startup with a value that is equal to the value used when entering the `build`, that option gets silently ignored when you use the `--optimized` parameter.
-* If that option has a different value than the value used when a build was entered, an error occurs. For this value to take effect, run a new `build` before starting.
+<@kc.start parameters="<configuration-options>"/>
 
-.Create an optimized build
+You may specify additional configuration options at startup; these runtime options are the ones in <@links.server id="all-config"/> that are **not** marked with a tool icon.
 
-The following example shows the creation of an optimized build followed by the use of the `--optimized` parameter when starting {project_name}.
+If a build option has a different value than the value used when a build was run, an error occurs. For this value to take effect you can run a new `build` to refine the optimized build.
 
-. Set the build option for the PostgreSQL database vendor using the build command
-+
-    <@kc.build parameters="--db=postgres"/>
+Sample shows the creation of an optimized build.
 
-. Set the runtime configuration options for postgres in the `conf/keycloak.conf` file.
+. Set the configuration options for postgres in the `conf/keycloak.conf` file.
 +
 [source]
 ----
+db=postgres
 db-url-host=keycloak-postgres
 db-username=keycloak
 db-password=change_me
 hostname=mykeycloak.acme.com
 https-certificate-file
+optimized=true
 ----
 
-. Start the server with the optimized parameter
+. Run the build command
 +
-    <@kc.start parameters="--optimized"/>
+    <@kc.build parameters=""/>
+
+. Start the server
++
+    <@kc.start parameters=""/>
 
 == Using system variables in the realm configuration
 

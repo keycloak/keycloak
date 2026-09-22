@@ -596,11 +596,5 @@ Bootstrap Admin:
                        created. Available only when bootstrap admin password is set. Default:
                        temp-admin.
 
-By default, this command tries to update the server configuration by running a
-'build' before starting the server. You can disable this behavior by using the
-'--optimized' option:
-
-      $ kc.sh start '--optimized'
-
-By doing that, the server should start faster based on any previous
-configuration you have set when manually running the 'build' command.
+This command will run a 'build' if needed before starting the server. You can
+disable this behavior by setting the `optimized` option to `true`

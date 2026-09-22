@@ -70,7 +70,8 @@ ENV KC_DB=oracle
 # Add all other build parameters needed, for example enable health and metrics:
 ENV KC_HEALTH_ENABLED=true
 ENV KC_METRICS_ENABLED=true
-# To be able to use the image with the {project_name} Operator, it needs to be optimized, which requires {project_name}'s build step:
+# It is recommended to use optimized images
+ENV KC_OPTIMIZED=true
 RUN /opt/keycloak/bin/kc.sh build
 ----
 +
@@ -107,7 +108,8 @@ ENV KC_DB=mssql
 # Add all other build parameters needed, for example enable health and metrics:
 ENV KC_HEALTH_ENABLED=true
 ENV KC_METRICS_ENABLED=true
-# To be able to use the image with the {project_name} Operator, it needs to be optimized, which requires {project_name}'s build step:
+# It is recommended to use optimized images
+ENV KC_OPTIMIZED=true
 RUN /opt/keycloak/bin/kc.sh build
 ----
 +
@@ -121,11 +123,11 @@ Then continue configuring the database as described in the next section.
 
 For each supported database, the server provides some opinionated defaults to simplify database configuration. You complete the configuration by providing some key settings such as the database host and credentials.
 
-The configuration can be set during a `build` command OR a `start` command:
+The configuration can be set via environment variables, config file, CLI, etc. The CLI is not recommended for sensitive options.
 
-. Using a `build` command followed by an optimized `start` command (recommended)
+. Using the config file
 +
-First, the minimum settings needed to connect to the database can be specified in `conf/keycloak.conf`:
+Add the minimum settings needed to connect to the database in `conf/keycloak.conf`:
 +
 ----
 # The database vendor.
@@ -142,15 +144,14 @@ db-url-host=keycloak-postgres
 ----
 +
 
-Then, the following commands create a new and optimized server image based on the configuration options and start the server.
+Then, start the server.
 +
 ----
-bin/kc.[sh|bat] build
-bin/kc.[sh|bat] start --optimized
+bin/kc.[sh|bat] start
 ----
 +
 
-. Using *only a `start`* command (without `--optimized`)
+. Using CLI options
 +
 <@kc.start parameters="--db postgres --db-url-host keycloak-postgres --db-username keycloak --db-password change_me"/>
 
