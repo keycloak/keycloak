@@ -48,9 +48,9 @@ public class SAML2BindingBuilderTest {
         TestSAML2BindingBuilder.RedirectBindingBuilder builder = new TestSAML2BindingBuilder.RedirectBindingBuilder(saml2BindingBuilder);
 
         // SAMLRequest test
-        checkRedirectUriOperation(builder, generateDoubledSamlParams(true, false), true, false);
+        checkRedirectUriOperation(builder, generateDoubledSamlParams(true, false), true);
         // SAMLResponse test
-        checkRedirectUriOperation(builder, generateDoubledSamlParams(false, true), false, true);
+        checkRedirectUriOperation(builder, generateDoubledSamlParams(false, true), false);
     }
 
     /**
@@ -66,9 +66,9 @@ public class SAML2BindingBuilderTest {
         TestSAML2BindingBuilder.RedirectBindingBuilder builder = new TestSAML2BindingBuilder.RedirectBindingBuilder(saml2BindingBuilder);
 
         // SAMLRequest test
-        checkRedirectUriOperation(builder, generategenerateDoubledSamlParamsWithRelayState(true, true), true, true);
+        checkRedirectUriOperation(builder, generateDoubledSamlParamsWithRelayState(true, true), true);
         // SAMLResponse test
-        checkRedirectUriOperation(builder, generategenerateDoubledSamlParamsWithRelayState(false, false), false, false);
+        checkRedirectUriOperation(builder, generateDoubledSamlParamsWithRelayState(false, false), false);
     }
 
 
@@ -91,7 +91,7 @@ public class SAML2BindingBuilderTest {
         return samlParams;
     }
 
-    private String[] generategenerateDoubledSamlParamsWithRelayState(boolean asRequest, boolean faultyEncode) {
+    private String[] generateDoubledSamlParamsWithRelayState(boolean asRequest, boolean faultyEncode) {
         String[] part1 = generateDoubledSamlParams(asRequest, faultyEncode);
         String[] part2 = new String[] {
                 GeneralConstants.RELAY_STATE, "RS2"
@@ -101,9 +101,9 @@ public class SAML2BindingBuilderTest {
         return result;
     }
 
-    private void checkRedirectUriOperation(TestSAML2BindingBuilder.RedirectBindingBuilder builder, String[] samlParams, boolean asRequest, boolean faultyEncode) throws Exception {
+    private void checkRedirectUriOperation(TestSAML2BindingBuilder.RedirectBindingBuilder builder, String[] samlParams, boolean asRequest) throws Exception {
 
-        StringBuffer sb = new StringBuffer("http://127.0.0.1:8080/acs?");
+        StringBuilder sb = new StringBuilder("http://127.0.0.1:8080/acs?");
         for (int i = 0; i < samlParams.length; i+=2) {
             if (i > 0) sb.append("&");
             sb.append(samlParams[i]).append("=").append(samlParams[i+1]);
