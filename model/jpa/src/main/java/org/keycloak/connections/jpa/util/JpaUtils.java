@@ -81,6 +81,10 @@ public class JpaUtils {
         return descriptors.stream().map(descriptor -> (ParsedPersistenceXmlDescriptor) descriptor).collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated this method should not be used in production and will be removed together with legacy testsuite
+     */
+    @Deprecated(forRemoval = true)
     public static EntityManagerFactory createEntityManagerFactory(KeycloakSession session, String unitName, Map<String, Object> properties, boolean jta) {
         PersistenceUnitTransactionType txType = jta ? PersistenceUnitTransactionType.JTA : PersistenceUnitTransactionType.RESOURCE_LOCAL;
         PersistenceXmlParser parser = PersistenceXmlParser.create(properties);
@@ -116,7 +120,9 @@ public class JpaUtils {
      *
      * @param session the keycloak session
      * @return a list of all provided entities (can be an empty list)
+     * @deprecated this method should not be used in production and will be removed together with legacy testsuite
      */
+    @Deprecated(forRemoval = true)
     public static List<Class<?>> getProvidedEntities(KeycloakSession session) {
         List<Class<?>> providedEntityClasses = new ArrayList<>();
         // Get all configured entity providers.
