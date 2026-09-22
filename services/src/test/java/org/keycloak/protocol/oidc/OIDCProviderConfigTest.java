@@ -40,8 +40,7 @@ public class OIDCProviderConfigTest {
     @Test
     public void getMaxLengthForTheParameterIsMemoized() {
         CountingScope config = new CountingScope(new HashMap<>());
-        OIDCProviderConfig providerConfig = new OIDCProviderConfig(config);
-        providerConfig.setMaxLengthCaches(new FakeLocalCache<>(), new FakeLocalCache<>());
+        OIDCProviderConfig providerConfig = new OIDCProviderConfig(config, new FakeLocalCache<>(), new FakeLocalCache<>());
 
         int first = providerConfig.getMaxLengthForTheParameter("state", false);
         int second = providerConfig.getMaxLengthForTheParameter("state", false);
@@ -56,8 +55,7 @@ public class OIDCProviderConfigTest {
     @Test
     public void getMaxLengthForTheParameterDoesNotConflateTokenAndNonTokenLookups() {
         CountingScope config = new CountingScope(new HashMap<>());
-        OIDCProviderConfig providerConfig = new OIDCProviderConfig(config);
-        providerConfig.setMaxLengthCaches(new FakeLocalCache<>(), new FakeLocalCache<>());
+        OIDCProviderConfig providerConfig = new OIDCProviderConfig(config, new FakeLocalCache<>(), new FakeLocalCache<>());
 
         int nonToken = providerConfig.getMaxLengthForTheParameter("subject_token", false);
         int token = providerConfig.getMaxLengthForTheParameter("subject_token", true);
@@ -75,9 +73,15 @@ public class OIDCProviderConfigTest {
                 2, config.getIntInvocations("req-params-max-size--subject_token"));
     }
 
+    /**
+     * @deprecated Exercises the deprecated single-argument {@link OIDCProviderConfig#OIDCProviderConfig(Config.Scope)}
+     * constructor; remove this test together with that constructor.
+     */
+    @Deprecated
     @Test
+    @SuppressWarnings("deprecation")
     public void getMaxLengthForTheParameterWorksWithoutACacheWiredIn() {
-        // No setMaxLengthCaches() call: simulates constructing OIDCProviderConfig outside of the factory lifecycle.
+        // Single-argument constructor: simulates constructing OIDCProviderConfig outside of the factory lifecycle.
         CountingScope config = new CountingScope(new HashMap<>());
         OIDCProviderConfig providerConfig = new OIDCProviderConfig(config);
 
@@ -119,7 +123,7 @@ public class OIDCProviderConfigTest {
      * A {@link Config.Scope} that counts, per key, how many times {@link #getInt(String, Integer)} has been called,
      * so that tests can assert the caching layer in {@link OIDCProviderConfig} avoids redundant resolution.
      */
-    private static class CountingScope implements Config.Scope {
+    private static class CountingScope extends Config.AbstractScope {
 
         private final Config.Scope delegate;
         private final Map<String, AtomicInteger> invocations = new HashMap<>();
@@ -135,32 +139,12 @@ public class OIDCProviderConfigTest {
         @Override
         public Integer getInt(String key, Integer defaultValue) {
             invocations.computeIfAbsent(key, k -> new AtomicInteger()).incrementAndGet();
-            return delegate.getInt(key, defaultValue);
+            return super.getInt(key, defaultValue);
         }
 
         @Override
         public String get(String key) {
             return delegate.get(key);
-        }
-
-        @Override
-        public String get(String key, String defaultValue) {
-            return delegate.get(key, defaultValue);
-        }
-
-        @Override
-        public String[] getArray(String key) {
-            return delegate.getArray(key);
-        }
-
-        @Override
-        public Long getLong(String key, Long defaultValue) {
-            return delegate.getLong(key, defaultValue);
-        }
-
-        @Override
-        public Boolean getBoolean(String key, Boolean defaultValue) {
-            return delegate.getBoolean(key, defaultValue);
         }
 
         @Override
