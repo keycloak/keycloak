@@ -314,8 +314,8 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             LOG.debugf(exception, "Failed to import session %s", session);
         }
         if (existing == null) {
-            String cName = offline ? offlineCacheHolder.cache().getName() : cacheHolder.cache().getName();
-            if (SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, cName, key, session)) {
+            if (tombstoneBackupCache != null
+                    && SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, getCache(offline).getName(), key, session)) {
                 LOG.debugf("Session %s was recently deleted (backup tombstone found), skipping import", key);
                 try {
                     getCache(offline).remove(key);
