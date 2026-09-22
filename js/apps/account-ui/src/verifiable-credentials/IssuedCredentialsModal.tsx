@@ -210,7 +210,13 @@ export const IssuedCredentialsModal = ({
                         className="pf-v5-u-pl-0 title-case"
                         component="a"
                         variant="link"
-                        onClick={() => window.open(credential.clientBaseUrl)}
+                        onClick={() =>
+                          window.open(
+                            credential.clientBaseUrl,
+                            "_blank",
+                            "noopener,noreferrer",
+                          )
+                        }
                       >
                         {label(t, displayName)} <ExternalLinkAltIcon />
                       </Button>
