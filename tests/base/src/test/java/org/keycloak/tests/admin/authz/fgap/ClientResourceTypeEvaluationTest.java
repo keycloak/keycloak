@@ -760,4 +760,93 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         assertThat(groupMappings.getRealmMappings(), notNullValue());
         assertThat(groupMappings.getRealmMappings().stream().map(RoleRepresentation::getName).toList(), hasItem("MAPPABLE_REALM_ROLE"));
     }
+
+    /**
+     * R1: holding {@code map-role} on a realm role grants visibility of that role. The available-roles endpoint already
+     * exposes the role (filtered by {@code map-role}), so a delegated admin with {@code map-role} (and no
+     * {@code view-realm}) may both see the role in the role-mappings list and read it by id
+     * ({@code GET /roles-by-id/{id}}). This locks the intended behavior that {@code map-role} implies {@code canView}.
+     */
+    @Test
+    public void testMapRolePermissionGrantsRoleByIdRead() {
+        RoleRepresentation mappableRole = new RoleRepresentation();
+        mappableRole.setName("MAPPABLE_REALM_ROLE");
+        realm.admin().roles().create(mappableRole);
+        mappableRole = realm.admin().roles().get("MAPPABLE_REALM_ROLE").toRepresentation();
+        final String mappableRoleId = mappableRole.getId();
+        realm.cleanup().add(r -> r.roles().deleteRole("MAPPABLE_REALM_ROLE"));
+
+        UserRepresentation targetUser = createUser("map-role-view-user");
+        realm.admin().users().get(targetUser.getId()).roles().realmLevel().add(List.of(mappableRole));
+
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "myadmin-map-role-view-policy", myadmin.getId());
+        createPermission(adminPermissionsClient, targetUser.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        createPermission(adminPermissionsClient, mappableRoleId, AdminPermissionsSchema.ROLES.getType(), Set.of(MAP_ROLE), policy);
+
+        // the role is visible in the role-mappings list
+        MappingsRepresentation userMappings = realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).roles().getAll();
+        assertThat(userMappings.getRealmMappings(), notNullValue());
+        assertThat(userMappings.getRealmMappings().stream().map(RoleRepresentation::getName).toList(), hasItem("MAPPABLE_REALM_ROLE"));
+
+        // and reading the role by id is allowed because map-role implies visibility of the role
+        RoleRepresentation byId = realmAdminClient.realm(realm.getName()).rolesById().getRole(mappableRoleId);
+        assertThat(byId, notNullValue());
+        assertThat(byId.getName(), is("MAPPABLE_REALM_ROLE"));
+    }
+
+    /**
+     * Reproducer R2: {@code GET /groups/{id}} must apply the same per-role visibility filter to {@code realmRoles} that
+     * {@code /groups/{id}/role-mappings} applies. An admin who can view the group but not the realm must not receive the
+     * assigned realm-role names through the full group representation.
+     */
+    @Test
+    public void testGroupRepresentationFiltersRealmRoles() {
+        RoleRepresentation realmRole = new RoleRepresentation();
+        realmRole.setName("HIDDEN_REALM_ROLE");
+        realm.admin().roles().create(realmRole);
+        realmRole = realm.admin().roles().get("HIDDEN_REALM_ROLE").toRepresentation();
+        realm.cleanup().add(r -> r.roles().deleteRole("HIDDEN_REALM_ROLE"));
+
+        GroupRepresentation targetGroup = createGroup("realm-role-leak-group");
+        realm.admin().groups().group(targetGroup.getId()).roles().realmLevel().add(List.of(realmRole));
+
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "myadmin-group-realm-role-policy", myadmin.getId());
+        createGroupPermission(targetGroup, Set.of(VIEW), policy);
+
+        GroupRepresentation groupRep = realmAdminClient.realm(realm.getName()).groups().group(targetGroup.getId()).toRepresentation();
+
+        List<String> realmRoles = groupRep.getRealmRoles() == null ? List.of() : groupRep.getRealmRoles();
+        assertThat(realmRoles, not(hasItem("HIDDEN_REALM_ROLE")));
+    }
+
+    /**
+     * Reproducer R3: the dedicated {@code /role-mappings/realm} and {@code /role-mappings/realm/composite} endpoints
+     * must filter realm roles per the caller's visibility, consistently with the combined {@code /role-mappings}
+     * endpoint. An admin who can view the user but not the realm must not receive realm-role mappings there.
+     */
+    @Test
+    public void testRealmRoleMappingEndpointsFilterByVisibility() {
+        RoleRepresentation realmRole = new RoleRepresentation();
+        realmRole.setName("HIDDEN_REALM_ROLE");
+        realm.admin().roles().create(realmRole);
+        realmRole = realm.admin().roles().get("HIDDEN_REALM_ROLE").toRepresentation();
+        realm.cleanup().add(r -> r.roles().deleteRole("HIDDEN_REALM_ROLE"));
+
+        UserRepresentation targetUser = createUser("realm-mapping-endpoint-user");
+        realm.admin().users().get(targetUser.getId()).roles().realmLevel().add(List.of(realmRole));
+
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "myadmin-realm-mapping-endpoint-policy", myadmin.getId());
+        createPermission(adminPermissionsClient, targetUser.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(VIEW), policy);
+
+        List<String> realmMappings = realmAdminClient.realm(realm.getName()).users().get(targetUser.getId())
+                .roles().realmLevel().listAll().stream().map(RoleRepresentation::getName).toList();
+        assertThat(realmMappings, not(hasItem("HIDDEN_REALM_ROLE")));
+
+        List<String> compositeRealmMappings = realmAdminClient.realm(realm.getName()).users().get(targetUser.getId())
+                .roles().realmLevel().listEffective().stream().map(RoleRepresentation::getName).toList();
+        assertThat(compositeRealmMappings, not(hasItem("HIDDEN_REALM_ROLE")));
+    }
 }

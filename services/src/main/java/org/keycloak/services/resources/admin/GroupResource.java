@@ -120,9 +120,16 @@ public class GroupResource {
                 List<String> roles = entry.getValue();
                 roles.removeIf(roleName -> {
                     RoleModel role = session.roles().getClientRole(client, roleName);
-                    return !auth.roles().canView(role);
+                    return role == null || !auth.roles().canView(role);
                 });
                 return roles.isEmpty();
+            });
+        }
+
+        if (rep.getRealmRoles() != null) {
+            rep.getRealmRoles().removeIf(roleName -> {
+                RoleModel role = realm.getRole(roleName);
+                return role == null || !auth.roles().canView(role);
             });
         }
 

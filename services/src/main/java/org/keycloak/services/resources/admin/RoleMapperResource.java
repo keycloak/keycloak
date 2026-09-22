@@ -189,7 +189,9 @@ public class RoleMapperResource {
     public Stream<RoleRepresentation> getRealmRoleMappings() {
         viewPermission.require();
 
-        return roleMapper.getRealmRoleMappingsStream().map(ModelToRepresentation::toBriefRepresentation);
+        return roleMapper.getRealmRoleMappingsStream()
+                .filter(auth.roles()::canView)
+                .map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
@@ -230,6 +232,7 @@ public class RoleMapperResource {
             deepMappings = RoleUtils.getDeepRoleMappings(roleMapper);
         }
         return deepMappings.stream()
+                .filter(auth.roles()::canView)
                 .filter(r -> RoleUtils.isRealmRole(r, realm))
                 .map(toBriefRepresentation);
     }
@@ -253,7 +256,7 @@ public class RoleMapperResource {
         viewPermission.require();
 
         return realm.getRolesStream()
-                .filter(this::canMapRole)
+                .filter(auth.roles()::canMapRole)
                 .filter(((Predicate<RoleModel>) roleMapper::hasDirectRole).negate())
                 .map(ModelToRepresentation::toBriefRepresentation);
     }
@@ -354,10 +357,6 @@ public class RoleMapperResource {
 
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(roles).success();
 
-    }
-
-    private boolean canMapRole(RoleModel roleModel) {
-        return auth.roles().canMapRole(roleModel);
     }
 
     @Path("clients/{client-id}")
