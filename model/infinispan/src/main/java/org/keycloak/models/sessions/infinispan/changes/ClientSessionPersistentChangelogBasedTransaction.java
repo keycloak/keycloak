@@ -74,6 +74,14 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
                 wrappedEntity = cache.get(key);
             }
 
+            if (wrappedEntity != null && wrappedEntity.isTombstone()) {
+                // Treat tombstone as cache miss — fall through to DB read.
+                // A re-created client session with a different timestamp may exist in the DB.
+                LOG.debugf("Client-session tombstone found in cache, loading from persister. userSessionId=%s, clientSessionId=%s, clientId=%s, offline=%s",
+                        userSession.getId(), key, client.getId(), offline);
+                wrappedEntity = null;
+            }
+
             if (wrappedEntity == null) {
                 LOG.tracef("Client-session not found in cache, loading from persister. userSessionId=%s, clientSessionId=%s, clientId=%s, offline=%s",
                         userSession.getId(), key, client.getId(), offline);
@@ -198,6 +206,11 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         SessionEntityWrapper<AuthenticatedClientSessionEntity> imported = importSession(realm, clientSessionId, wrapper, offline, lifespan, maxIdle);
 
         if (imported != null) {
+            if (imported.isTombstone()) {
+                LOG.debugf("Client-session was recently deleted (tombstone found). userSessionId=%s, clientSessionId=%s, clientId=%s, offline=%s",
+                        userSession.getId(), clientSessionId, client.getId(), offline);
+                return null;
+            }
             LOG.debugf("Client-session already imported by another transaction. userSessionId=%s, clientSessionId=%s, clientId=%s, offline=%s",
                     userSession.getId(), clientSessionId, client.getId(), offline);
             imported.getEntity().setUserSessionId(userSession.getId());

@@ -42,6 +42,8 @@ import org.jboss.logging.Logger;
  */
 public class InfinispanChangesUtils {
 
+    private static final long TOMBSTONE_LIFESPAN_MS = 60_000;
+
     private InfinispanChangesUtils() {
     }
 
@@ -89,8 +91,11 @@ public class InfinispanChangesUtils {
 
         switch (operation) {
             case REMOVE:
-                // Just remove it
-                stage.dependsOn(CacheDecorators.ignoreReturnValues(cacheHolder.cache()).removeAsync(key));
+                // Put a short-lived tombstone instead of removing. This prevents a concurrent
+                // cache-miss reader from resurrecting the session via putIfAbsent before the
+                // DB delete commits. The tombstone auto-expires after TOMBSTONE_LIFESPAN_MS.
+                stage.dependsOn(CacheDecorators.ignoreReturnValues(cacheHolder.cache())
+                        .putAsync(key, sessionWrapper.asTombstone(), TOMBSTONE_LIFESPAN_MS, TimeUnit.MILLISECONDS));
                 break;
             case ADD:
                 CompletableFuture<?> future = CacheDecorators.ignoreReturnValues(cacheHolder.cache())
@@ -102,7 +107,7 @@ public class InfinispanChangesUtils {
                 break;
             case ADD_IF_ABSENT:
                 CompletableFuture<Void> putIfAbsentFuture = cacheHolder.cache().putIfAbsentAsync(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS)
-                        .thenCompose(existing -> handlePutIfAbsentResponse(cacheHolder, existing, key, task, logger));
+                        .thenCompose(existing -> handlePutIfAbsentResponse(cacheHolder, existing, key, task, sessionWrapper, logger));
                 stage.dependsOn(putIfAbsentFuture);
                 break;
             case REPLACE:
@@ -119,6 +124,7 @@ public class InfinispanChangesUtils {
             SessionEntityWrapper<V> existing,
             K key,
             MergedUpdate<V> task,
+            SessionEntityWrapper<V> newSession,
             Logger logger
     ) {
         if (existing == null) {
@@ -126,6 +132,16 @@ public class InfinispanChangesUtils {
                 logger.tracef("Add_if_absent successfully called for entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cacheHolder.cache().getName(), task.getLifespanMs(), task.getMaxIdleTimeMs());
             }
             return CompletableFutures.completedNull();
+        }
+        if (existing.isTombstoneBlockingImportOf(newSession)) {
+            logger.debugf("Entity '%s' is a tombstone, skipping ADD_IF_ABSENT update", key);
+            return CompletableFutures.completedNull();
+        }
+        if (existing.isTombstone()) {
+            // Tombstone doesn't apply to this entity (different timestamp), overwrite it
+            return CacheDecorators.ignoreReturnValues(cacheHolder.cache())
+                    .putAsync(key, newSession, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS)
+                    .thenRun(CompletionStages.NO_OP_RUNNABLE);
         }
         if (logger.isDebugEnabled()) {
             logger.debugf("Existing entity in cache for key: %s . Will update it", key);
@@ -157,6 +173,10 @@ public class InfinispanChangesUtils {
     ) {
         if (iteration >= InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
             logger.warnf("Failed to replace entity '%s' in cache '%s'. Expected: %s, Current: %s", key, cache.getName(), previousSession, expectedSession);
+            return CompletableFutures.completedNull();
+        }
+        if (expectedSession.isTombstone()) {
+            logger.debugf("Entity '%s' is a tombstone, skipping replace", key);
             return CompletableFutures.completedNull();
         }
         V session = expectedSession.getEntity();

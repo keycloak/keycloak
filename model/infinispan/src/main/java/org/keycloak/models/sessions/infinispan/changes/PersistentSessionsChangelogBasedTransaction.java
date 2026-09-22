@@ -83,7 +83,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         SessionUpdatesList<V> myUpdates = getUpdates(offline).get(key);
         if (myUpdates == null) {
             SessionEntityWrapper<V> wrappedEntity = getCache(offline).get(key);
-            if (wrappedEntity == null) {
+            if (wrappedEntity == null || wrappedEntity.isTombstone()) {
                 return null;
             }
             wrappedEntity.getEntity().setOffline(offline);
@@ -221,7 +221,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
     private void lookupAndAndExecuteTask(K key, PersistentSessionUpdateTask<V> task) {
         // Lookup entity from cache
         SessionEntityWrapper<V> wrappedEntity = getCache(task.isOffline()).get(key);
-        if (wrappedEntity == null) {
+        if (wrappedEntity == null || wrappedEntity.isTombstone()) {
             LOG.tracef("Not present cache item for key %s", key);
             return;
         }
@@ -315,6 +315,21 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             updates.put(key, new SessionUpdatesList<>(realmModel, session));
             return null;
         }
+        if (existing.isTombstoneBlockingImportOf(session)) {
+            LOG.debugf("Session %s was recently deleted (tombstone found), skipping import", key);
+            return existing;
+        }
+        if (existing.isTombstone()) {
+            // Tombstone exists but doesn't apply to this entity (e.g., new client session with different timestamp).
+            // Overwrite the tombstone with the new session.
+            try {
+                getCache(offline).put(key, session, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS);
+            } catch (RuntimeException exception) {
+                LOG.debugf(exception, "Failed to overwrite tombstone for session %s", session);
+            }
+            updates.put(key, new SessionUpdatesList<>(realmModel, session));
+            return null;
+        }
         updates.put(key, new SessionUpdatesList<>(realmModel, existing));
         return existing;
     }
@@ -361,7 +376,12 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                         return null;
                     });
             // write result into concurrent hash map because the consumer is invoked in a different thread each time.
-            stage.dependsOn(future.thenAccept(existing -> allSessions.put(key, existing == null ? session : existing)));
+            stage.dependsOn(future.thenAccept(existing -> {
+                if (existing != null && existing.isTombstoneBlockingImportOf(session)) {
+                    return;
+                }
+                allSessions.put(key, existing == null || existing.isTombstone() ? session : existing);
+            }));
         });
 
         CompletionStages.join(stage.freeze());
