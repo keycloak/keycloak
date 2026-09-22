@@ -1058,9 +1058,13 @@ public class AuthorizationTest extends AbstractScimTest {
                 .clientId("scim-idtoken-client")
                 .secret("secret")
                 .directAccessGrantsEnabled()
+                .fullScopeEnabled(false)
                 .protocolMappers(createScimAudienceMapper())
                 .enabled(true);
-        realm.admin().clients().create(clientBuilder.build()).close();
+        String idTokenClientDbId;
+        try (Response response = realm.admin().clients().create(clientBuilder.build())) {
+            idTokenClientDbId = ApiUtil.getCreatedId(response);
+        }
         UserRepresentation user = UserBuilder.create()
                 .username("idtoken-user")
                 .firstName("f")
@@ -1072,7 +1076,7 @@ public class AuthorizationTest extends AbstractScimTest {
         try (Response response = realm.admin().users().create(user)) {
             user.setId(ApiUtil.getCreatedId(response));
         }
-        grantAdminRole(AdminRoles.MANAGE_USERS, user);
+        grantAdminRole(AdminRoles.MANAGE_USERS, user, idTokenClientDbId);
 
         String tokenEndpoint = keycloakUrls.getToken(realm.getName());
         ScimClient idTokenScimClient = ScimClient.create(httpClient)
@@ -1102,6 +1106,7 @@ public class AuthorizationTest extends AbstractScimTest {
                 .clientId("scim-no-audience-client")
                 .secret("secret")
                 .serviceAccountsEnabled(true)
+                .fullScopeEnabled(false)
                 .enabled(true)
                 .build();
 
@@ -1115,6 +1120,8 @@ public class AuthorizationTest extends AbstractScimTest {
         RoleRepresentation manageUsersRole = realm.admin().clients().get(realmMgmt.getId()).roles()
                 .get(AdminRoles.MANAGE_USERS).toRepresentation();
         realm.admin().users().get(serviceAccountUser.getId()).roles()
+                .clientLevel(realmMgmt.getId()).add(List.of(manageUsersRole));
+        realm.admin().clients().get(clientDbId).getScopeMappings()
                 .clientLevel(realmMgmt.getId()).add(List.of(manageUsersRole));
 
         String tokenEndpoint = keycloakUrls.getToken(realm.getName());
@@ -1143,9 +1150,13 @@ public class AuthorizationTest extends AbstractScimTest {
                 .clientId("public-scim-client")
                 .publicClient()
                 .directAccessGrantsEnabled()
+                .fullScopeEnabled(false)
                 .enabled(true)
                 .build();
-        realm.admin().clients().create(publicClient).close();
+        String publicClientDbId;
+        try (Response response = realm.admin().clients().create(publicClient)) {
+            publicClientDbId = ApiUtil.getCreatedId(response);
+        }
         UserRepresentation user = UserBuilder.create()
                 .username("public-client-user")
                 .firstName("f")
@@ -1157,8 +1168,8 @@ public class AuthorizationTest extends AbstractScimTest {
         try (Response response = realm.admin().users().create(user)) {
             user.setId(ApiUtil.getCreatedId(response));
         }
-        grantAdminRole(AdminRoles.MANAGE_REALM, user);
-        grantAdminRole(AdminRoles.MANAGE_USERS, user);
+        grantAdminRole(AdminRoles.MANAGE_REALM, user, publicClientDbId);
+        grantAdminRole(AdminRoles.MANAGE_USERS, user, publicClientDbId);
 
         String tokenEndpoint = keycloakUrls.getToken(realm.getName());
         ScimClient publicScimClient = ScimClient.create(httpClient)
@@ -1205,6 +1216,8 @@ public class AuthorizationTest extends AbstractScimTest {
                         .get(masterRealmMgmt.getId()).roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
                 adminClient.realm("master").users().get(scimServiceAccount.getId())
                         .roles().clientLevel(masterRealmMgmt.getId()).add(List.of(manageUsersRole));
+                adminClient.realm("master").clients().get(scimMasterClient.getId())
+                        .getScopeMappings().clientLevel(masterRealmMgmt.getId()).add(List.of(manageUsersRole));
 
                 UserRepresentation subRealmAdmin = UserBuilder.create()
                         .username("sub-realm-admin-user")
@@ -1514,13 +1527,14 @@ public class AuthorizationTest extends AbstractScimTest {
     private void grantAdminRole(String role) {
         ClientRepresentation clientRep = getScimClient();
         UserRepresentation serviceAccountUser = realm.admin().clients().get(clientRep.getId()).getServiceAccountUser();
-        grantAdminRole(role, serviceAccountUser);
+        grantAdminRole(role, serviceAccountUser, clientRep.getId());
     }
 
-    private void grantAdminRole(String role, UserRepresentation serviceAccountUser) {
+    private void grantAdminRole(String role, UserRepresentation serviceAccountUser, String clientDbId) {
         ClientRepresentation realmMgmt = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
         RoleRepresentation viewUserRole = realm.admin().clients().get(realmMgmt.getId()).roles().get(role).toRepresentation();
         realm.admin().users().get(serviceAccountUser.getId()).roles().clientLevel(realmMgmt.getId()).add(List.of(viewUserRole));
+        realm.admin().clients().get(clientDbId).getScopeMappings().clientLevel(realmMgmt.getId()).add(List.of(viewUserRole));
     }
 
     @Test
