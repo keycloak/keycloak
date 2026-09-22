@@ -104,11 +104,11 @@ Sending invitation emails to newly created users previously required external au
 
 The new `invite-user` workflow step sends an action-token email automatically when a user is created, without requiring external tooling or a custom workflow step provider. Administrators can configure which required actions the user must complete (defaulting to password update and email verification), and optionally specify a client and redirect URI for the post-completion flow.
 
+For details, see the link:{adminguide_link}++#_workflow_steps_++[Defining Steps] guide.
+
 ifeval::[{project_community}==true]
 Thanks to https://github.com/bilkoua[bilkoua] for this contribution.
 endif::[]
-
-For details, see the link:{adminguide_link}++#_workflow_steps_++[Defining Steps] guide.
 
 == Protocol mapper allow-list for Admin REST API
 // https://github.com/keycloak/keycloak/issues/50131
@@ -131,7 +131,7 @@ Multi-cluster v1 (the `multi-site` feature) is deprecated and will be removed in
 
 If you are using `--features=multi-site`, migrate to `--features=stateless`. For migration instructions, see https://www.keycloak.org/high-availability/multi-cluster-v2/migrate-from-v1-to-v2[Migrating from multi-cluster v1 to v2] in the {highavailabilityguide_name}.
 
-== Support for encrypted PEM private keys for TLS server keys
+== Support for encrypted PEM files for TLS certificate and private key
 // https://github.com/keycloak/keycloak/issues/27437
 
 Deploying {project_name} with encrypted private keys previously required converting them to an unencrypted format or using a keystore, adding operational complexity.
