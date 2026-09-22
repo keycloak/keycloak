@@ -28,7 +28,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.CacheDecorators;
 import org.keycloak.models.sessions.infinispan.SessionAffinityService;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
+import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 import org.infinispan.Cache;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
@@ -91,11 +93,16 @@ public class InfinispanChangesUtils {
 
         switch (operation) {
             case REMOVE:
-                // Put a short-lived tombstone instead of removing. This prevents a concurrent
-                // cache-miss reader from resurrecting the session via putIfAbsent before the
-                // DB delete commits. The tombstone auto-expires after TOMBSTONE_LIFESPAN_MS.
-                stage.dependsOn(CacheDecorators.ignoreReturnValues(cacheHolder.cache())
-                        .putAsync(key, sessionWrapper.asTombstone(), TOMBSTONE_LIFESPAN_MS, TimeUnit.MILLISECONDS));
+                if (sessionWrapper.getEntity() instanceof UserSessionEntity
+                        || sessionWrapper.getEntity() instanceof AuthenticatedClientSessionEntity) {
+                    // Put a short-lived tombstone instead of removing. This prevents a concurrent
+                    // cache-miss reader from resurrecting the session via putIfAbsent before the
+                    // DB delete commits. The tombstone auto-expires after TOMBSTONE_LIFESPAN_MS.
+                    stage.dependsOn(CacheDecorators.ignoreReturnValues(cacheHolder.cache())
+                            .putAsync(key, sessionWrapper.asTombstone(), TOMBSTONE_LIFESPAN_MS, TimeUnit.MILLISECONDS));
+                } else {
+                    stage.dependsOn(CacheDecorators.ignoreReturnValues(cacheHolder.cache()).removeAsync(key));
+                }
                 break;
             case ADD:
                 CompletableFuture<?> future = CacheDecorators.ignoreReturnValues(cacheHolder.cache())
