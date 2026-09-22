@@ -58,7 +58,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         this.cacheName = cacheName;
         this.cacheHolder = cacheHolder;
         this.offlineCacheHolder = offlineCacheHolder;
-        this.tombstoneBackupCache = cacheHolder.cache() != null ? SessionTombstoneBackup.getBackupCache(session) : null;
+        this.tombstoneBackupCache = cacheHolder != null && cacheHolder.cache() != null ? SessionTombstoneBackup.getBackupCache(session) : null;
     }
 
     public Cache<K, SessionEntityWrapper<V>> getCache(boolean offline) {
