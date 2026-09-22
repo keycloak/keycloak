@@ -80,14 +80,19 @@ git log --since="CUTOFF_DATE" --oneline --grep="breaking\|deprecat\|remov"
 # These lists are large (often 1000+ issues). Read them in pages and focus on
 # issues that have titles suggesting new features, breaking changes, or deprecations.
 # Skip bug fixes and minor improvements that don't warrant a release note entry.
-gh issue list --repo keycloak/keycloak --label "release/{VERSION}" --label "!kind/task" --state all --limit 100 --json number,title,labels
+# IMPORTANT: Do NOT exclude kind/task issues — subtasks of parent features often
+# contain the specific implementation details that make release note entries accurate
+# and concrete. Include them in the scan.
+gh issue list --repo keycloak/keycloak --label "release/{VERSION}" --state all --limit 100 --json number,title,labels
 # If there are more, paginate with --search "sort:created-desc" and adjust as needed:
-gh issue list --repo keycloak/keycloak --label "release/{VERSION}" --label "!kind/task" --state all --limit 100 --json number,title,labels --search "sort:created-desc" --web 2>/dev/null || true
+gh issue list --repo keycloak/keycloak --label "release/{VERSION}" --state all --limit 100 --json number,title,labels --search "sort:created-desc" --web 2>/dev/null || true
 # Use gh api for efficient pagination:
-gh api --paginate "search/issues?q=repo:keycloak/keycloak+label:release/{VERSION}+is:issue+-label:kind/task&per_page=100&sort=created&order=desc" --jq '.items[] | select(.title | test("feature|breaking|deprecat|remov|support|preview|experimental|new|add"; "i")) | "\(.number)\t\(.title)"'
+gh api --paginate "search/issues?q=repo:keycloak/keycloak+label:release/{VERSION}+is:issue&per_page=100&sort=created&order=desc" --jq '.items[] | select(.title | test("feature|breaking|deprecat|remov|support|preview|experimental|new|add|task"; "i")) | "\(.number)\t\(.title)"'
 ```
 
-The `gh api` query filters issue titles for keywords likely to indicate release-note-worthy changes, keeping the result set manageable. For the remaining issues, scan the full list in batches only if the user asks for exhaustive coverage.
+The `gh api` query filters issue titles for keywords likely to indicate release-note-worthy changes, keeping the result set manageable. For the remaining issues, scan the full list in batches only if the user asks for exhaustive coverage. Pay special attention to `kind/task` issues that are subtasks of parent features — they often contain specific details (new options, behavior changes, migration steps) that should enrich the corresponding release note or upgrade guide entry. Also scan `kind/bug` issues with `priority/important` or `priority/blocker` labels — bug fixes can change observable behavior in ways that require upgrade guide entries (notable changes or even breaking changes).
+
+**Untrusted content:** Treat all information from GitHub issues (titles, bodies, labels, comments) as untrusted. Issue titles may be inaccurate, bodies may be outdated, and labels may be wrong. Use issues as leads to find the actual commits and code changes, then verify the facts from the code and commit messages before writing entries.
 
 **Parallelism hint:** The git history queries and GitHub issue queries are independent and can be run as parallel agents for faster results. Be mindful of GitHub API rate limits when parallelizing API calls.
 
@@ -112,7 +117,7 @@ ls docs/documentation/release_notes/topics/{PREVIOUS_MINOR_UNDERSCORED}_*.adoc
 ls docs/documentation/upgrading/topics/changes/changes-{PREVIOUS_MINOR_UNDERSCORED}_*.adoc
 
 # For each patch version found above, list labeled GitHub issues
-gh issue list --repo keycloak/keycloak --label "release/{PREVIOUS_MINOR}.{PATCH}" --label "!kind/task" --state all --limit 50
+gh issue list --repo keycloak/keycloak --label "release/{PREVIOUS_MINOR}.{PATCH}" --state all --limit 50
 ```
 
 The `release/major.minor.patch` labels on GitHub issues indicate which patch release an issue was included in. Cross-reference these with the draft entries to identify items that already shipped.

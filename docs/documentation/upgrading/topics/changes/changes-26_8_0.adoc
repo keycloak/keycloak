@@ -46,6 +46,14 @@ Please see link:https://www.keycloak.org/server/reverseproxy[Using a reverse pro
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
+=== `NO_PROXY` entries with leading dots or spaces after commas now parsed correctly
+// https://github.com/keycloak/keycloak/issues/52706
+
+`NO_PROXY` entries with a leading dot (for example, `.corp.com`) or whitespace after a comma (for example, `localhost, internal.corp.com`) previously failed to match silently, causing traffic to go through the proxy despite the exclusion rule.
+Both patterns are now handled correctly.
+
+If your deployment relied on this broken parsing and routed traffic through the proxy intentionally by using a leading-dot entry as a no-op, that traffic will now bypass the proxy after upgrading.
+
 === `kcadm` and `kcreg` now enforce owner-only permissions on existing configuration files
 // https://github.com/keycloak/keycloak/issues/52681
 
