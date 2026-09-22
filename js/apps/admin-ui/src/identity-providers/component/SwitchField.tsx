@@ -1,7 +1,6 @@
 import { Switch } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { FieldProps, FormGroupField } from "./FormGroupField";
 
 type FieldType = "boolean" | "string";
@@ -13,7 +12,7 @@ type SwitchFieldProps = FieldProps & {
 
 export const SwitchField = ({
   label,
-  field,
+  field: fieldName,
   fieldType = "string",
   isReadOnly = false,
   defaultValue,
@@ -23,7 +22,7 @@ export const SwitchField = ({
   return (
     <FormGroupField label={label}>
       <Controller
-        name={field}
+        name={fieldName}
         defaultValue={
           defaultValue ? defaultValue : fieldType === "string" ? "false" : false
         }
@@ -31,6 +30,7 @@ export const SwitchField = ({
         render={({ field }) => (
           <Switch
             id={label}
+            data-testid={fieldName}
             label={t("on")}
             labelOff={t("off")}
             isChecked={

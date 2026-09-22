@@ -25,7 +25,7 @@ import {
   Text,
   ToolbarItem,
 } from "@patternfly/react-core";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Controller,
   FormProvider,
@@ -34,7 +34,7 @@ import {
   useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
@@ -325,11 +325,29 @@ export default function DetailSettings() {
 
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
+  const location = useLocation();
+  const previousPathRef = useRef<string>();
   const { realm, realmRepresentation } = useRealm();
   const [key, setKey] = useState(0);
-  const refresh = () => setKey(key + 1);
+  const refresh = () => setKey((current) => current + 1);
   const [orgSubTab, setOrgSubTab] = useState("org-list");
   const { hasAccess } = useAccess();
+
+  useEffect(() => {
+    const previousPath = previousPathRef.current;
+    previousPathRef.current = location.pathname;
+
+    if (!previousPath) {
+      return;
+    }
+
+    const onMappersList = /\/mappers\/?$/.test(location.pathname);
+    const wasOnMapperDetail = /\/mappers\/[^/]+/.test(previousPath);
+
+    if (onMappersList && wasOnMapperDetail) {
+      refresh();
+    }
+  }, [location.pathname]);
 
   useFetch(
     () => adminClient.identityProviders.findOne({ alias }),
@@ -815,8 +833,7 @@ export default function DetailSettings() {
                     }
                   />
                 }
-                loader={loader}
-                key={key}
+                loader={{ signal: key, loader }}
                 ariaLabelKey="mappersList"
                 searchPlaceholderKey="searchForMapper"
                 toolbarItem={

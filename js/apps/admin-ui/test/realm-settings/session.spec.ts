@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
+import { switchOn } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { goToRealm, goToRealmSettings } from "../utils/sidebar.ts";
@@ -48,8 +49,7 @@ test.describe.serial("Sessions", () => {
   test("Add session data when Remember Me is enabled", async ({ page }) => {
     //Enable Remember Me and save realm
     await page.getByTestId("rs-login-tab").click();
-    const rememberMeSwitch = page.locator('[for="kc-remember-me-switch"]');
-    await rememberMeSwitch.click();
+    await switchOn(page, page.getByTestId("remember-me-switch"));
     await goToSessionsTab(page);
     await populateSessionsPageRememberMeEnabled(page);
     await clickSaveSessionsButton(page);
