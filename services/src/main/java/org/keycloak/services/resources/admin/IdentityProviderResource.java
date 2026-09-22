@@ -344,6 +344,8 @@ public class IdentityProviderResource {
             throw new jakarta.ws.rs.NotFoundException();
         }
 
+        // Reject attempts to bind the mapper to a different identity provider than the one from the request path.
+        validateMapperRepresenationIdentityProviderAlias(mapper);
         IdentityProviderMapperModel model = RepresentationToModel.toModel(mapper);
         validateMapperAdminRoleMapping(model);
 
@@ -405,7 +407,15 @@ public class IdentityProviderResource {
         }
 
         IdentityProviderMapperModel model = session.identityProviders().getMapperById(id);
-        if (model == null) throw new NotFoundException("Model not found");
+        if (model == null || !identityProviderModel.getAlias().equals(model.getIdentityProviderAlias())) {
+            throw new NotFoundException("Model not found");
+        }
+        // Reject attempts to retarget the update to a different identity provider or mapper via the representation.
+        validateMapperRepresenationIdentityProviderAlias(rep);
+        if (rep.getId() != null && !id.equals(rep.getId())) {
+            throw ErrorResponse.error("The mapper id in the representation [" + rep.getId()
+                    + "] does not match the mapper id from the request path [" + id + "].", Response.Status.BAD_REQUEST);
+        }
         model = RepresentationToModel.toModel(rep);
         validateMapperAdminRoleMapping(model);
 
@@ -518,6 +528,15 @@ public class IdentityProviderResource {
 
         IdentityProvider<?> provider = IdentityBrokerService.getIdentityProvider(session, identityProviderModel.getAlias());
         return provider.reloadKeys();
+    }
+
+    private void validateMapperRepresenationIdentityProviderAlias(IdentityProviderMapperRepresentation rep) {
+        String mapperAlias = rep.getIdentityProviderAlias();
+        if (mapperAlias != null && !identityProviderModel.getAlias().equals(mapperAlias)) {
+            throw ErrorResponse.error("The identity provider alias in the mapper representation [" + mapperAlias
+                    + "] does not match the identity provider from the request path [" + identityProviderModel.getAlias() + "].",
+                    Response.Status.BAD_REQUEST);
+        }
     }
 
     private void validateMapperAdminRoleMapping(IdentityProviderMapperModel mapperModel) {
