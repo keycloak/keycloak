@@ -2,14 +2,18 @@ package org.keycloak.client.admin.cli.v2;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.UUID;
 
 import org.keycloak.client.admin.cli.KcAdmMain;
 import org.keycloak.client.admin.cli.commands.AbstractTargetAuthOptionsCmd;
 import org.keycloak.client.admin.cli.v2.KcAdmV2CommandDescriptor.CommandDescriptor;
 import org.keycloak.client.cli.common.Globals;
 import org.keycloak.client.cli.config.ConfigData;
+import org.keycloak.client.cli.util.IoUtil;
 import org.keycloak.client.cli.util.OutputUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -117,7 +121,12 @@ final class KcAdmV2EditCmd extends KcAdmV2RequestExecutor {
     }
 
     private String openInEditor(String editor, String content) throws IOException, InterruptedException {
-        Path tempFile = Files.createTempFile("kcadm-edit-", ".json");
+        // this narrows TOCTOU window
+        Path tempDir = Path.of(System.getProperty("java.io.tmpdir"), "kcadm-edit-" + UUID.randomUUID());
+        // we don't want the file to exist, so that directory has already owner permissions and user couldn't open
+        // the empty file before we write to the file on Windows
+        Path tempFile = tempDir.resolve("edit-" + UUID.randomUUID() + ".json");
+        IoUtil.ensureFile(tempFile);
         try {
             Files.writeString(tempFile, content);
 
@@ -143,7 +152,16 @@ final class KcAdmV2EditCmd extends KcAdmV2RequestExecutor {
 
             return Files.readString(tempFile);
         } finally {
-            Files.deleteIfExists(tempFile);
+            // walk all files in case the editor left some own files
+            try (var stream = Files.walk(tempDir)) {
+                stream.sorted(Comparator.reverseOrder()).forEach(path -> {
+                            try {
+                                Files.delete(path);
+                            } catch (IOException e) {
+                                throw new UncheckedIOException(e);
+                            }
+                        });
+            }
         }
     }
 
