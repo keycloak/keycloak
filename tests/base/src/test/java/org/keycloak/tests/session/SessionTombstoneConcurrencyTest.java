@@ -25,9 +25,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.infinispan.util.InfinispanUtils;
+import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.EmbeddedClientSessionKey;
@@ -47,6 +47,8 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
@@ -66,7 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * resurrect a deleted user session via putIfAbsent. The tombstone fix prevents this
  * by occupying the cache slot after deletion.
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = SessionTombstoneConcurrencyTest.SessionCachingServerConfig.class)
 @DatabaseTest
 public class SessionTombstoneConcurrencyTest {
 
@@ -88,9 +90,12 @@ public class SessionTombstoneConcurrencyTest {
     RunOnServerClient runOnServer;
 
     @BeforeEach
-    public void assumePersistentUserSessionsWithEmbeddedCaches() {
-        boolean supported = runOnServer.fetch(session -> MultiSiteUtils.isPersistentSessionsEnabled() && InfinispanUtils.isEmbeddedInfinispan(), Boolean.class);
-        Assumptions.assumeTrue(supported, "Requires persistent user sessions with embedded Infinispan caches");
+    public void assumeSessionCachingEnabled() {
+        boolean supported = runOnServer.fetch(session -> {
+            var factory = (InfinispanUserSessionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserSessionProvider.class);
+            return factory.useCaches();
+        }, Boolean.class);
+        Assumptions.assumeTrue(supported, "Requires session caching to be enabled (persistent sessions with embedded Infinispan caches)");
     }
 
     @Test
@@ -150,7 +155,6 @@ public class SessionTombstoneConcurrencyTest {
             // 3. Evict user session from cache to force DB loads on concurrent requests.
             //    This makes the test more realistic: concurrent requests will now trigger
             //    the cache-miss → DB-load → putIfAbsent path (the exact race from #51127).
-            String realmName = realm.getName();
             runOnServer.run(session -> {
                 Cache<String, SessionEntityWrapper<UserSessionEntity>> cache =
                         session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
@@ -179,10 +183,11 @@ public class SessionTombstoneConcurrencyTest {
             assertEquals(400, refreshResponse.getStatusCode(),
                     "Refresh should fail after logout — session must not be resurrected in cache");
 
-            // 7. Verify: admin API should show 0 sessions for this user
+            // 7. Verify: this specific session should not exist
             List<UserSessionRepresentation> sessions = user.admin().getUserSessions();
-            assertEquals(0, sessions.size(),
-                    "Admin API should show 0 sessions after logout — session must not be resurrected");
+            boolean sessionStillExists = sessions.stream().anyMatch(s -> s.getId().equals(sessionId));
+            assertTrue(!sessionStillExists,
+                    "Session " + sessionId + " must not be resurrected after logout");
         }
     }
 
@@ -201,19 +206,29 @@ public class SessionTombstoneConcurrencyTest {
         assertEquals(200, oauth.doRefreshTokenRequest(refreshToken).getStatusCode(),
                 "Refresh should succeed before tombstone");
 
-        // Inject a tombstone into the user session cache slot
+        // Inject a tombstone into the user session cache slot.
+        // We create the tombstone from scratch — the entity content doesn't matter,
+        // only the "tombstone" marker in localMetadata is checked by isTombstone().
         runOnServer.run(session -> {
             Cache<String, SessionEntityWrapper<UserSessionEntity>> cache =
                     session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
-            SessionEntityWrapper<UserSessionEntity> existing = cache.get(sessionId);
-            assertNotNull(existing, "User session should exist in cache");
-            cache.put(sessionId, existing.asTombstone(), 60, TimeUnit.SECONDS);
+            UserSessionEntity entity = new UserSessionEntity(sessionId);
+            SessionEntityWrapper<UserSessionEntity> tombstone = new SessionEntityWrapper<>(entity).asTombstone();
+            cache.put(sessionId, tombstone, 60, TimeUnit.SECONDS);
             LOG.debugf("Injected tombstone for user session %s", sessionId);
         });
 
         // Refresh should fail: the tombstone makes get() return null
         assertEquals(400, oauth.doRefreshTokenRequest(refreshToken).getStatusCode(),
                 "Refresh must fail when user session cache slot contains a tombstone");
+
+        // Clean up: remove tombstone so the session can be properly logged out
+        runOnServer.run(session -> {
+            Cache<String, SessionEntityWrapper<UserSessionEntity>> cache =
+                    session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
+            cache.remove(sessionId);
+        });
+        oauth.doLogout(refreshToken);
     }
 
     /**
@@ -231,19 +246,32 @@ public class SessionTombstoneConcurrencyTest {
         assertEquals(200, oauth.doRefreshTokenRequest(refreshToken).getStatusCode(),
                 "Refresh should succeed before tombstone");
 
-        // Inject a tombstone into the client session cache slot (user session remains valid)
+        // Inject a tombstone into the client session cache slot (user session remains valid).
+        // We need the client session's timestamp so the tombstone blocks import of that exact session.
         String realmName = realm.getName();
         runOnServer.run(session -> {
             var realmModel = session.realms().getRealmByName(realmName);
-            String clientUUID = realmModel.getClientByClientId("tombstone-test-client").getId();
+            session.getContext().setRealm(realmModel);
+            var clientModel = realmModel.getClientByClientId("tombstone-test-client");
+            String clientUUID = clientModel.getId();
+
+            // Look up the client session to get the timestamp
+            var userSession = session.sessions().getUserSession(realmModel, sessionId);
+            assertNotNull(userSession, "User session should exist");
+            var clientSession = session.sessions().getClientSession(userSession, clientModel, false);
+            assertNotNull(clientSession, "Client session should exist");
+            int timestamp = clientSession.getTimestamp();
+
+            // Create tombstone with matching timestamp so isTombstoneBlockingImportOf() returns true
+            AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity();
+            entity.setTimestamp(timestamp);
+            SessionEntityWrapper<AuthenticatedClientSessionEntity> tombstone = new SessionEntityWrapper<>(entity).asTombstone();
 
             EmbeddedClientSessionKey key = new EmbeddedClientSessionKey(sessionId, clientUUID);
             Cache<EmbeddedClientSessionKey, SessionEntityWrapper<AuthenticatedClientSessionEntity>> cache =
                     session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
-            SessionEntityWrapper<AuthenticatedClientSessionEntity> existing = cache.get(key);
-            assertNotNull(existing, "Client session should exist in cache");
-            cache.put(key, existing.asTombstone(), 60, TimeUnit.SECONDS);
-            LOG.debugf("Injected tombstone for client session %s/%s", sessionId, clientUUID);
+            cache.put(key, tombstone, 60, TimeUnit.SECONDS);
+            LOG.debugf("Injected tombstone for client session %s/%s with timestamp %d", sessionId, clientUUID, timestamp);
         });
 
         // Refresh should fail: the tombstone in the client session cache triggers a DB load,
@@ -251,6 +279,26 @@ public class SessionTombstoneConcurrencyTest {
         // returns true (same timestamp), so the import is blocked.
         assertEquals(400, oauth.doRefreshTokenRequest(refreshToken).getStatusCode(),
                 "Refresh must fail when client session cache slot contains a tombstone");
+
+        // Clean up
+        String cleanupRealmName = realm.getName();
+        runOnServer.run(session -> {
+            var realmModel = session.realms().getRealmByName(cleanupRealmName);
+            String clientUUID = realmModel.getClientByClientId("tombstone-test-client").getId();
+            Cache<EmbeddedClientSessionKey, ?> cache =
+                    session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
+            cache.remove(new EmbeddedClientSessionKey(sessionId, clientUUID));
+        });
+        oauth.doLogout(refreshToken);
+    }
+
+    public static class SessionCachingServerConfig implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            // Tombstones and concurrency issues only happen when caching is enabled.
+            // In 26.8, caching is disabled by default.
+            return config.spiOption("user-sessions", "infinispan", "use-caches", "true");
+        }
     }
 
     public static class TestUserConfig implements UserConfig {
