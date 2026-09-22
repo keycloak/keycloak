@@ -23,15 +23,16 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
 
     private Set<String> excludedContentTypes = new HashSet<>();
 
-    private File cacheDir;
+    private volatile File cacheDir;
 
     @Override
     public ResourceEncodingProvider create(KeycloakSession session) {
-        if (cacheDir == null) {
-            cacheDir = initCacheDir();
+        File dir = cacheDir;
+        if (dir == null) {
+            dir = initCacheDir();
         }
 
-        return new GzipResourceEncodingProvider(cacheDir);
+        return new GzipResourceEncodingProvider(dir);
     }
 
     @Override
@@ -68,7 +69,7 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
         }
 
         File cacheRoot = new File(KeycloakApplication.getTmpDirectory(), "kc-gzip-cache");
-        File cacheDir = new File(cacheRoot, Version.RESOURCES_VERSION);
+        File dir = new File(cacheRoot, Version.RESOURCES_VERSION);
 
         if (cacheRoot.isDirectory()) {
             // Also clear the cache of the current resources version, as theme resources might have changed since the
@@ -82,12 +83,14 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
             }
         }
 
-        cacheDir.mkdirs();
-        if (!cacheDir.isDirectory()) {
-            logger.warn("Failed to create gzip cache directory " + cacheDir.getAbsolutePath());
+        dir.mkdirs();
+        if (!dir.isDirectory()) {
+            logger.warn("Failed to create gzip cache directory " + dir.getAbsolutePath());
             return null;
         }
 
-        return cacheDir;
+        // published while holding the lock, so a concurrent first request cannot clear the directory again
+        cacheDir = dir;
+        return dir;
     }
 }
