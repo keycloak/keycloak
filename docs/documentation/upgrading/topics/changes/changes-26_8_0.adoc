@@ -35,6 +35,19 @@ Note that {project_name}'s trust store (or mTLS store) is shared for all the rea
 
 Revalidating certificates can be problematic in certain installations (for example if a proxy is configured for TLS termination and the certificates are passed to {project_name} using headers). The trust-store or mTLS store in {project_name} should always be configured correctly to validate the client certificate chain. Please see link:https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] and link:https://www.keycloak.org/server/mutual-tls[Configuring trusted certificates for mTLS], for more information if you are using a TLS termination proxy and X509 client authentication.
 
+=== Mandatory signature validation for OIDC identity provider backchannel logout tokens
+
+{project_name} now always validates the signature of backchannel logout tokens received from external OIDC identity providers, regardless of the `Validate Signatures` setting on the identity provider configuration. This change addresses CVE-2026-18569, where an unauthenticated attacker could forge unsigned logout tokens (using `alg=none`) to force-logout targeted users when signature validation was disabled.
+
+The OIDC Back-Channel Logout 1.0 specification mandates that logout tokens MUST be signed and that `alg=none` is explicitly prohibited. {project_name} now enforces this requirement.
+
+Other token types (ID tokens, access tokens) continue to respect the `Validate Signatures` setting as before.
+
+If your OIDC identity provider has `Validate Signatures` set to *OFF* and uses backchannel logout, you must configure the identity provider's public key so that {project_name} can validate logout token signatures. Either:
+
+* Set `Use JWKS URL` to *ON* and configure the `JWKS URL` pointing to the external IDP's JWKS endpoint, or
+* Provide the IDP's public key directly via the `Validating Public Key` field and, if needed, its key ID via the `Validating Public Key Id` field.
+
 === Client policy source groups condition matches the full group path
 
 The `client-updater-source-groups` client policy condition now matches groups by their full path instead of the simple group name. A configured value without a leading slash is treated as a top level group, so a condition configured with `topGroup` matches `/topGroup` and keeps behaving as before. Top level groups configured by their simple name do not require any change.
