@@ -198,6 +198,11 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public void init(Config.Scope config) {
         this.config = config;
         initBuiltIns();
+        if (providerConfig != null) {
+            // Hack: This is used in the old test suite in KcOidcBrokerLogoutTest when the provider is re-initialized by calling init()
+            // Remove once the old Arquillian test suite is no longer used.
+            this.providerConfig = new OIDCProviderConfig(config, reqParamMaxLengthCache, tokenParamMaxLengthCache);
+        }
     }
 
     /**
