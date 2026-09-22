@@ -29,6 +29,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
 import org.keycloak.models.sessions.infinispan.transaction.DatabaseUpdate;
 import org.keycloak.models.sessions.infinispan.transaction.NonBlockingTransaction;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
@@ -48,15 +49,15 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
     protected final KeycloakSession kcSession;
     protected final Map<K, SessionUpdatesList<V>> updates = new HashMap<>();
     protected final CacheHolder<K, V> cacheHolder;
-    private boolean useTombstones;
+    private Cache<String, SingleUseObjectValueEntity> tombstoneBackupCache;
 
     public InfinispanChangelogBasedTransaction(KeycloakSession kcSession, CacheHolder<K, V> cacheHolder) {
         this.kcSession = kcSession;
         this.cacheHolder = cacheHolder;
     }
 
-    public void setUseTombstones(boolean useTombstones) {
-        this.useTombstones = useTombstones;
+    public void enableTombstones() {
+        this.tombstoneBackupCache = SessionTombstoneBackup.getBackupCache(kcSession);
     }
 
 
@@ -176,7 +177,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
 
             if (merged != null) {
                 // Now run the operation in our cluster
-                InfinispanChangesUtils.runOperationInCluster(cacheHolder, entry.getKey(), merged, sessionWrapper, stage, logger, useTombstones);
+                InfinispanChangesUtils.runOperationInCluster(cacheHolder, entry.getKey(), merged, sessionWrapper, stage, logger, tombstoneBackupCache);
             }
         }
     }
@@ -223,7 +224,10 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
         }
         SessionEntityWrapper<V> existing = cacheHolder.cache().putIfAbsent(key, session, computeLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS, computeMaxIdle(maxIdle, lifespan), TimeUnit.MILLISECONDS);
         if (existing == null) {
-            // keep track of the imported session for updates
+            if (SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, cacheHolder.cache().getName(), key, session)) {
+                cacheHolder.cache().remove(key);
+                return session.getEntity();
+            }
             updates.put(key, new SessionUpdatesList<>(realmModel, session));
             return null;
         }
@@ -278,8 +282,13 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
             }
             var future = cacheHolder.cache().putIfAbsentAsync(key, session, computeLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS, computeMaxIdle(maxIdle, lifespan), TimeUnit.MILLISECONDS);
             // write result into concurrent hash map because the consumer is invoked in a different thread each time.
+            String cacheName = cacheHolder.cache().getName();
             stage.dependsOn(future.thenAccept(existing -> {
                 if (existing != null && existing.isTombstoneBlockingImportOf(session)) {
+                    return;
+                }
+                if (existing == null && SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, cacheName, key, session)) {
+                    cacheHolder.cache().remove(key);
                     return;
                 }
                 allSessions.put(key, existing == null || existing.isTombstone() ? session : existing);

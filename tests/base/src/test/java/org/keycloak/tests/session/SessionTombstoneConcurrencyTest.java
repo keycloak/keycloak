@@ -18,6 +18,7 @@
 package org.keycloak.tests.session;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -31,6 +32,7 @@ import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFact
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.EmbeddedClientSessionKey;
+import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -214,7 +216,7 @@ public class SessionTombstoneConcurrencyTest {
                     session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
             UserSessionEntity entity = new UserSessionEntity(sessionId);
             SessionEntityWrapper<UserSessionEntity> tombstone = new SessionEntityWrapper<>(entity).asTombstone();
-            cache.put(sessionId, tombstone, 60, TimeUnit.SECONDS);
+            cache.put(sessionId, tombstone, 30, TimeUnit.SECONDS);
             LOG.debugf("Injected tombstone for user session %s", sessionId);
         });
 
@@ -270,7 +272,7 @@ public class SessionTombstoneConcurrencyTest {
             EmbeddedClientSessionKey key = new EmbeddedClientSessionKey(sessionId, clientUUID);
             Cache<EmbeddedClientSessionKey, SessionEntityWrapper<AuthenticatedClientSessionEntity>> cache =
                     session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
-            cache.put(key, tombstone, 60, TimeUnit.SECONDS);
+            cache.put(key, tombstone, 30, TimeUnit.SECONDS);
             LOG.debugf("Injected tombstone for client session %s/%s with timestamp %d", sessionId, clientUUID, timestamp);
         });
 
@@ -288,6 +290,49 @@ public class SessionTombstoneConcurrencyTest {
             Cache<EmbeddedClientSessionKey, ?> cache =
                     session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
             cache.remove(new EmbeddedClientSessionKey(sessionId, clientUUID));
+        });
+        oauth.doLogout(refreshToken);
+    }
+
+    /**
+     * Verifies that a backup tombstone in the action token cache blocks session import
+     * even when no tombstone exists in the session cache (simulating eviction from bounded cache).
+     */
+    @Test
+    public void backupTombstoneInActionTokenCacheBlocksImport() {
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest(user.getUsername(), "password");
+        assertEquals(200, tokenResponse.getStatusCode());
+        String refreshToken = tokenResponse.getRefreshToken();
+        String sessionId = oauth.parseRefreshToken(refreshToken).getSessionId();
+
+        // Verify the session works
+        assertEquals(200, oauth.doRefreshTokenRequest(refreshToken).getStatusCode(),
+                "Refresh should succeed before backup tombstone");
+
+        // Inject a backup tombstone into the action token cache (no tombstone in session cache).
+        // Then remove the session from the session cache to force a DB reload → putIfAbsent path.
+        runOnServer.run(session -> {
+            Cache<String, SingleUseObjectValueEntity> actionTokenCache =
+                    session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE);
+            String backupKey = "tomb:" + InfinispanConnectionProvider.USER_SESSION_CACHE_NAME + ":" + sessionId;
+            actionTokenCache.put(backupKey, new SingleUseObjectValueEntity(Map.of()), 30, TimeUnit.SECONDS);
+
+            Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache =
+                    session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
+            sessionCache.remove(sessionId);
+            LOG.debugf("Injected backup tombstone for user session %s and evicted from session cache", sessionId);
+        });
+
+        // Refresh should fail: putIfAbsent succeeds (no tombstone in session cache),
+        // but the backup check in the action token cache detects the deletion and removes the entry.
+        assertEquals(400, oauth.doRefreshTokenRequest(refreshToken).getStatusCode(),
+                "Refresh must fail when backup tombstone exists in action token cache");
+
+        // Clean up
+        runOnServer.run(session -> {
+            Cache<String, SingleUseObjectValueEntity> actionTokenCache =
+                    session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE);
+            actionTokenCache.remove("tomb:" + InfinispanConnectionProvider.USER_SESSION_CACHE_NAME + ":" + sessionId);
         });
         oauth.doLogout(refreshToken);
     }

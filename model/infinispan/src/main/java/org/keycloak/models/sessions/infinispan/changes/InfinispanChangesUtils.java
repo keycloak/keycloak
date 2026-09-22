@@ -29,6 +29,7 @@ import org.keycloak.models.sessions.infinispan.CacheDecorators;
 import org.keycloak.models.sessions.infinispan.SessionAffinityService;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
 
 import org.infinispan.Cache;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
@@ -41,8 +42,6 @@ import org.jboss.logging.Logger;
  * Utility methods for embedded and change-log based transaction
  */
 public class InfinispanChangesUtils {
-
-    private static final long TOMBSTONE_LIFESPAN_MS = 60_000;
 
     private InfinispanChangesUtils() {
     }
@@ -84,7 +83,7 @@ public class InfinispanChangesUtils {
             AggregateCompletionStage<Void> stage,
             Logger logger
     ) {
-        runOperationInCluster(cacheHolder, key, task, sessionWrapper, stage, logger, false);
+        runOperationInCluster(cacheHolder, key, task, sessionWrapper, stage, logger, null);
     }
 
     public static <K, V extends SessionEntity> void runOperationInCluster(
@@ -94,7 +93,7 @@ public class InfinispanChangesUtils {
             SessionEntityWrapper<V> sessionWrapper,
             AggregateCompletionStage<Void> stage,
             Logger logger,
-            boolean useTombstones
+            Cache<String, SingleUseObjectValueEntity> tombstoneBackupCache
     ) {
         SessionUpdateTask.CacheOperation operation = task.getOperation();
 
@@ -103,12 +102,16 @@ public class InfinispanChangesUtils {
 
         switch (operation) {
             case REMOVE:
-                if (useTombstones) {
-                    // Put a short-lived tombstone instead of removing. This prevents a concurrent
-                    // cache-miss reader from resurrecting the session via putIfAbsent before the
-                    // DB delete commits. The tombstone auto-expires after TOMBSTONE_LIFESPAN_MS.
-                    stage.dependsOn(CacheDecorators.ignoreReturnValues(cacheHolder.cache())
-                            .putAsync(key, sessionWrapper.asTombstone(), TOMBSTONE_LIFESPAN_MS, TimeUnit.MILLISECONDS));
+                if (tombstoneBackupCache != null) {
+                    // Write backup marker to the action token cache (unbounded, no eviction) first,
+                    // then put a short-lived tombstone in the session cache (bounded, may be evicted).
+                    // The backup ensures that even if the session cache evicts the tombstone,
+                    // the import path can still detect the deletion.
+                    String cacheName = cacheHolder.cache().getName();
+                    stage.dependsOn(
+                            SessionTombstoneBackup.writeAsync(tombstoneBackupCache, cacheName, key, sessionWrapper)
+                                    .thenCompose(v -> CacheDecorators.ignoreReturnValues(cacheHolder.cache())
+                                            .putAsync(key, sessionWrapper.asTombstone(), SessionTombstoneBackup.TOMBSTONE_LIFESPAN_MS, TimeUnit.MILLISECONDS)));
                 } else {
                     stage.dependsOn(CacheDecorators.ignoreReturnValues(cacheHolder.cache()).removeAsync(key));
                 }

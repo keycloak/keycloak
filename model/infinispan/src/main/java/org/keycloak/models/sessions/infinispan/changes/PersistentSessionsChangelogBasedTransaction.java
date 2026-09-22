@@ -29,6 +29,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
 import org.keycloak.models.sessions.infinispan.transaction.DatabaseUpdate;
 import org.keycloak.models.sessions.infinispan.transaction.NonBlockingTransaction;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
@@ -47,6 +48,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
     private final String cacheName;
     private final CacheHolder<K, V> cacheHolder;
     private final CacheHolder<K, V> offlineCacheHolder;
+    private final Cache<String, SingleUseObjectValueEntity> tombstoneBackupCache;
 
     public PersistentSessionsChangelogBasedTransaction(KeycloakSession session,
                                                        String cacheName,
@@ -56,6 +58,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         this.cacheName = cacheName;
         this.cacheHolder = cacheHolder;
         this.offlineCacheHolder = offlineCacheHolder;
+        this.tombstoneBackupCache = SessionTombstoneBackup.getBackupCache(session);
     }
 
     public Cache<K, SessionEntityWrapper<V>> getCache(boolean offline) {
@@ -172,7 +175,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                 var c = isOffline ? offlineCacheHolder : cacheHolder;
                 if (c.cache() != null) {
                     // Update cache. It is non-blocking.
-                    InfinispanChangesUtils.runOperationInCluster(c, entry.getKey(), merged, entry.getValue().getEntityWrapper(), stage, LOG, true);
+                    InfinispanChangesUtils.runOperationInCluster(c, entry.getKey(), merged, entry.getValue().getEntityWrapper(), stage, LOG, tombstoneBackupCache);
                 }
 
                 if (persister == null) {
@@ -311,7 +314,16 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             LOG.debugf(exception, "Failed to import session %s", session);
         }
         if (existing == null) {
-            // keep track of the imported session for updates
+            String cName = offline ? offlineCacheHolder.cache().getName() : cacheHolder.cache().getName();
+            if (SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, cName, key, session)) {
+                LOG.debugf("Session %s was recently deleted (backup tombstone found), skipping import", key);
+                try {
+                    getCache(offline).remove(key);
+                } catch (RuntimeException exception) {
+                    LOG.debugf(exception, "Failed to remove resurrected session %s", key);
+                }
+                return session.asTombstone();
+            }
             updates.put(key, new SessionUpdatesList<>(realmModel, session));
             return null;
         }
@@ -375,9 +387,13 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                         LOG.debugf(throwable, "Failed to import session %s", session);
                         return null;
                     });
-            // write result into concurrent hash map because the consumer is invoked in a different thread each time.
+            String cName = cache.getName();
             stage.dependsOn(future.thenAccept(existing -> {
                 if (existing != null && existing.isTombstoneBlockingImportOf(session)) {
+                    return;
+                }
+                if (existing == null && SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, cName, key, session)) {
+                    cache.remove(key);
                     return;
                 }
                 allSessions.put(key, existing == null || existing.isTombstone() ? session : existing);

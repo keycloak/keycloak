@@ -422,8 +422,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         var clientSessionTx = new UserSessionInfinispanChangelogBasedTransaction<>(session, clientSessionCacheHolder);
         var offlineClientSessionTx = new UserSessionInfinispanChangelogBasedTransaction<>(session, offlineClientSessionCacheHolder);
 
-        offlineSessionTx.setUseTombstones(true);
-        offlineClientSessionTx.setUseTombstones(true);
+        offlineSessionTx.enableTombstones();
+        offlineClientSessionTx.enableTombstones();
 
         var transactionProvider = session.getProvider(InfinispanTransactionProvider.class);
         transactionProvider.registerTransaction(sessionTx);

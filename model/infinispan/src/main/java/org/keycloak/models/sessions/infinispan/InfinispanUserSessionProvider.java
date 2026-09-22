@@ -299,7 +299,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
                         lifespan, maxIdle);
 
         if (existing != null) {
-            // skip import the client sessions, they should have been imported too.
+            if (getTransaction(true).get(userSessionEntityToImport.getId()) == null) {
+                log.debugf("User-session was recently deleted (tombstone found) for sessionId=%s offline=true", sessionId);
+                return null;
+            }
             log.debugf("The user-session already imported by another transaction for sessionId=%s offline=true", sessionId);
             return existing;
         }
