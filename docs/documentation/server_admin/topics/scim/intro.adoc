@@ -1,10 +1,6 @@
 [id="scim-introduction_{context}"]
 [role="_abstract"]
 
-:tech_feature_name: SCIM API
-:tech_feature_id: scim-api
-include::../../topics/templates/techpreview.adoc[]
-
 SCIM (System for Cross-domain Identity Management) is a standard protocol designed to simplify identity management across
 multiple systems and domains. Defined by https://datatracker.ietf.org/doc/html/rfc7643[RFC 7643] (Core Schema) and
 https://datatracker.ietf.org/doc/html/rfc7644[RFC 7644] (Protocol), SCIM provides a common set of REST APIs and schemas
