@@ -48,6 +48,6 @@ https://www.h2database.com/*
 https://www.iso.org/*
 
 # Remove after 26.8 release
-https://www.keycloak.org/server/db#mariadb-galera-cluster-considerations
+https://www.keycloak.org/server/db#galera-cluster-considerations
 https://www.keycloak.org/server/db#mysql-mariadb-transaction-isolation-level-in-stateless-mode
 https://www.keycloak.org/high-availability/multi-cluster-v2/migrate-from-v1-to-v2
