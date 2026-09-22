@@ -52,6 +52,10 @@ Organizations adopting verifiable credentials need a way to accept credential pr
 
 {project_name} can now act as an OID4VP verifier, enabling authentication flows where users present verifiable credentials from their wallets. The verifier supports cross-device presentation flows and the `direct_post.jwt` encrypted response mode. Trust material for credential verification can be delegated to an external identity provider by alias, and SD-JWT User Attribute and Session mappers are available to extract claims from presented credentials.
 
+ifeval::[{project_community}==true]
+Thanks to https://github.com/dominikschlosser[Dominik Schlosser] for this contribution.
+endif::[]
+
 == React to account status changes with Shared Signals Framework (experimental)
 // https://github.com/keycloak/keycloak/issues/48900
 
@@ -180,20 +184,4 @@ The `http-optimized-serializers` feature is now supported and enabled by default
 This improves how {project_name} handles JSON in the HTTP layer, increasing throughput by about 5%, stabilizing response times, and reducing resource usage.
 
 If you need to disable it, use the `--features-disabled=http-optimized-serializers` server option.
-
-= Observability
-
-== Java Flight Recorder guide
-// https://github.com/keycloak/keycloak/issues/50507
-
-A new guide explains how to create and analyze Java Flight Recorder (JFR) recordings for {project_name}. It covers starting recordings with JDK standard tools, scrubbing sensitive data before sharing, and analyzing recordings with JDK Mission Control. This complements the existing thread dumps guide for diagnosing performance issues and hangs.
-
-= Themes
-
-== Redesigned identity provider buttons on the login page
-// https://github.com/keycloak/keycloak/issues/50992
-
-The social identity provider section on the login page has been refreshed with updated icons, a new divider layout, and improved button labels.
-
-If you have a custom login theme, see the link:{upgradingguide_link}[{upgradingguide_name}] for details on what changed.
 
