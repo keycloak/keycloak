@@ -201,7 +201,6 @@ See the link:https://www.keycloak.org/server/db#mysql-mariadb-transaction-isolat
 
 Changing the default transaction isolation level for all modes is being considered for a future release.
 
-[#mariadb-galera-cluster-considerations]
 === Galera Cluster considerations
 // https://github.com/keycloak/keycloak/issues/51855
 
@@ -210,7 +209,7 @@ WARNING: Galera Cluster is not a supported database configuration for {project_n
 On a multi-writer Galera setup, concurrent writes to the same row on different nodes can trigger certification failures, and asynchronous replication can cause stale reads.
 {project_name} logs an error at startup when it detects Galera with `wsrep_sync_wait = 0`.
 
-See the link:https://www.keycloak.org/server/db#galera-cluster-considerations[Galera Cluster] section in the database configuration guide for recommended settings and limitations.
+See the link:https://www.keycloak.org/server/db#cluster-considerations[Galera Cluster] section in the database configuration guide for recommended settings and limitations.
 
 === Asynchronous commit on MS SQL Server and Oracle databases
 // https://github.com/keycloak/keycloak/issues/52012
