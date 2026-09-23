@@ -532,7 +532,7 @@ public class IdentityProviderResource {
 
     private void validateMapperRepresenationIdentityProviderAlias(IdentityProviderMapperRepresentation rep) {
         String mapperAlias = rep.getIdentityProviderAlias();
-        if (mapperAlias != null && !identityProviderModel.getAlias().equals(mapperAlias)) {
+        if (mapperAlias == null || !identityProviderModel.getAlias().equals(mapperAlias)) {
             throw ErrorResponse.error("The identity provider alias in the mapper representation [" + mapperAlias
                     + "] does not match the identity provider from the request path [" + identityProviderModel.getAlias() + "].",
                     Response.Status.BAD_REQUEST);
