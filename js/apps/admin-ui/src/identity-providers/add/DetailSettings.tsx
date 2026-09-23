@@ -405,7 +405,30 @@ export default function DetailSettings() {
       if (origAuthnContextDeclRefs) {
         p.config!.authnContextDeclRefs = origAuthnContextDeclRefs;
       }
-      reset(toFormValues(p));
+      const updatedProvider = await adminClient.identityProviders.findOne({
+        alias: provider?.alias || alias,
+      });
+
+      if (updatedProvider) {
+        setProvider(updatedProvider);
+        reset(toFormValues(updatedProvider));
+
+        if (updatedProvider.config?.authnContextClassRefs) {
+          form.setValue(
+            "config.authnContextClassRefs",
+            JSON.parse(updatedProvider.config.authnContextClassRefs),
+          );
+        }
+
+        if (updatedProvider.config?.authnContextDeclRefs) {
+          form.setValue(
+            "config.authnContextDeclRefs",
+            JSON.parse(updatedProvider.config.authnContextDeclRefs),
+          );
+        }
+      } else {
+        reset(toFormValues(p));
+      }
       addAlert(t("updateSuccessIdentityProvider"), AlertVariant.success);
     } catch (error) {
       addError("updateErrorIdentityProvider", error);
