@@ -51,6 +51,10 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
 
     private final static Logger logger = Logger.getLogger(X509ClientCertificateAuthenticator.class);
 
+    public X509ClientCertificateAuthenticator(boolean legacyCriticalBehavior) {
+        super(legacyCriticalBehavior);
+    }
+
     @Override
     public void close() {
 
@@ -90,12 +94,12 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
             try {
                 CertificateValidator.CertificateValidatorBuilder builder = certificateValidationParameters(context.getSession(), config);
                 CertificateValidator validator = builder.build(certs);
-                validator.checkRevocationStatus()
-                         .validateTrust()
-                         .validateKeyUsage()
-                         .validateExtendedKeyUsage()
+                validator.validateTrust()
+                         .validateTimestamps()
+                         .validateKeyUsage(isLegacyCriticalBehavior())
+                         .validateExtendedKeyUsage(isLegacyCriticalBehavior())
                          .validatePolicy()
-                         .validateTimestamps();
+                         .checkRevocationStatus();
             } catch(Exception e) {
                 logger.error(e.getMessage(), e);
                 // TODO use specific locale to load error messages

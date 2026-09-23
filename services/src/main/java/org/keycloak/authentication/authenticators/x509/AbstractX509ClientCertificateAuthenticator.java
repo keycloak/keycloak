@@ -94,7 +94,13 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     public static final String CONFIRMATION_PAGE_DISALLOWED = "x509-cert-auth.confirmation-page-disallowed";
     public static final String REVALIDATE_CERTIFICATE = "x509-cert-auth.revalidate-certificate-enabled";
 
-    private final static Logger logger = Logger.getLogger(AbstractX509ClientCertificateAuthenticator.class);;
+    private final static Logger logger = Logger.getLogger(AbstractX509ClientCertificateAuthenticator.class);
+
+    private boolean legacyCriticalBehavior;
+
+    public AbstractX509ClientCertificateAuthenticator(boolean legacyCriticalBehavior) {
+        this.legacyCriticalBehavior = legacyCriticalBehavior;
+    }
 
     protected Response createInfoResponse(AuthenticationFlowContext context, String infoMessage, Object ... parameters) {
         LoginFormsProvider form = context.form();
@@ -313,5 +319,9 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
 
     @Override
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
+    }
+
+    public boolean isLegacyCriticalBehavior() {
+        return legacyCriticalBehavior;
     }
 }
