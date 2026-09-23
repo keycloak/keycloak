@@ -412,7 +412,7 @@ public class IdentityProviderResource {
         }
         // Reject attempts to retarget the update to a different identity provider or mapper via the representation.
         validateMapperRepresenationIdentityProviderAlias(rep);
-        if (rep.getId() != null && !id.equals(rep.getId())) {
+        if (rep.getId() == null || !id.equals(rep.getId())) {
             throw ErrorResponse.error("The mapper id in the representation [" + rep.getId()
                     + "] does not match the mapper id from the request path [" + id + "].", Response.Status.BAD_REQUEST);
         }
