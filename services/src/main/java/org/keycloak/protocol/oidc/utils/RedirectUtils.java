@@ -306,7 +306,7 @@ public class RedirectUtils {
             return Objects.equals(configuredUri.getRawSchemeSpecificPart(), redirectUri.getRawSchemeSpecificPart())
                     && Objects.equals(configuredUri.getRawFragment(), redirectUri.getRawFragment());
         }
-        return Objects.equals(configuredUri.getRawUserInfo(), redirectUri.getRawUserInfo())
+        return UriUtils.rawUserInfoEqual(configuredUri, redirectUri)
                 && Objects.equals(configuredUri.getRawPath(), redirectUri.getRawPath())
                 && Objects.equals(configuredUri.getRawQuery(), redirectUri.getRawQuery())
                 && Objects.equals(configuredUri.getRawFragment(), redirectUri.getRawFragment());
@@ -331,10 +331,14 @@ public class RedirectUtils {
             if (!UriUtils.schemeAndHostEqual(redirectUri, prefixUri)) {
                 return false;
             }
+            // Port wildcard requires an explicit port in the redirect (reject host-only URIs).
+            if (!UriUtils.hasExplicitPort(redirectUri)) {
+                return false;
+            }
         } else if (!UriUtils.schemeHostAndPortEqual(redirectUri, prefixUri)) {
             return false;
         }
-        if (!Objects.equals(redirectUri.getRawUserInfo(), prefixUri.getRawUserInfo())) {
+        if (!UriUtils.rawUserInfoEqual(redirectUri, prefixUri)) {
             return false;
         }
         if (redirectUri.isOpaque() || prefixUri.isOpaque()) {

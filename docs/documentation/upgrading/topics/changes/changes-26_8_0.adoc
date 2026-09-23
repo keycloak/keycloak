@@ -51,6 +51,14 @@ This change addresses CVE-2026-93999.
 
 For more details, see link:{adminguide_link}#_audience_disabled_clients[Disabled clients and the audience] in the {adminguide_name}.
 
+=== Redirect URI and web origin hostnames compared case-insensitively
+
+Valid redirect URIs and web origins now compare the URI scheme and hostname case-insensitively, while path, query, fragment, and user-info remain case-sensitive. This follows link:https://datatracker.ietf.org/doc/html/rfc3986#section-3.2.2[RFC 3986], which defines hostnames as case-insensitive, and replaces the exact string matching for scheme and hostname introduced in {project_name} 23.0.2.
+
+For example, a client configured with `https://Example.COM/callback` now accepts `https://example.com/callback` and `HTTPS://example.com/callback`, but still rejects `https://example.com/Callback`. The same rules apply to CORS and login-status iframe origin checks.
+
+Realms that previously listed multiple redirect URIs that differed only by hostname or scheme case can keep a single entry.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

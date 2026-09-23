@@ -100,6 +100,27 @@ public class RedirectUtilsTest {
     }
 
     @Test
+    public void testVerifyRedirectUriPortWildcardRequiresExplicitPort() {
+        Set<String> set = Stream.of("https://keycloak:*").collect(Collectors.toSet());
+
+        Assert.assertEquals("https://keycloak:443/whatever",
+                RedirectUtils.verifyRedirectUri(session, null, "https://keycloak:443/whatever", set, false));
+        Assert.assertEquals("https://KEYCLOAK:443/whatever",
+                RedirectUtils.verifyRedirectUri(session, null, "https://KEYCLOAK:443/whatever", set, false));
+        // Port wildcard must not accept a host-only URI without an explicit port
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak/whatever", set, false));
+    }
+
+    @Test
+    public void testVerifyRedirectUriRegistryUserInfoCaseSensitive() {
+        Set<String> set = Stream.of("https://Alice@allowed_host/exact").collect(Collectors.toSet());
+
+        Assert.assertEquals("https://Alice@ALLOWED_HOST/exact",
+                RedirectUtils.verifyRedirectUri(session, null, "https://Alice@ALLOWED_HOST/exact", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://alice@allowed_host/exact", set, false));
+    }
+
+    @Test
     public void testVerifyRedirectUriLoopbackSchemeCaseInsensitive() {
         Set<String> set = Stream.of("http://127.0.0.1/callback").collect(Collectors.toSet());
 
@@ -246,8 +267,7 @@ public class RedirectUtilsTest {
     }
 
     @Test
-    // https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics#name-protecting-redirect-based-f
-    // OAuth recommends/advises exact matching string comparison for URIs
+    // Scheme and hostname are case-insensitive (RFC 3986); path, query, and fragment remain case-sensitive
     public void testVerifyRedirectUriCaseSensitivityRules() {
         Set<String> set = Stream.of(
                 "https://keycloak.org/*",

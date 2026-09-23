@@ -82,7 +82,39 @@ public class UriUtils {
         if (!schemeAndHostEqual(uriA, uriB)) {
             return false;
         }
-        return uriA.getPort() == uriB.getPort();
+        return portsEqual(uriA, uriB);
+    }
+
+    /**
+     * Compare user-info case-sensitively, including registry-name authorities where
+     * {@link URI#getRawUserInfo()} is left null by Java.
+     */
+    public static boolean rawUserInfoEqual(URI uriA, URI uriB) {
+        if (uriA == null || uriB == null) {
+            return uriA == uriB;
+        }
+        String userInfoA = uriA.getRawUserInfo();
+        String userInfoB = uriB.getRawUserInfo();
+        if (userInfoA != null || userInfoB != null) {
+            return Objects.equals(userInfoA, userInfoB);
+        }
+        return Objects.equals(userInfoFromAuthority(uriA.getRawAuthority()),
+                userInfoFromAuthority(uriB.getRawAuthority()));
+    }
+
+    /**
+     * Whether the URI authority includes an explicit port separator (including an empty port).
+     * Used for port-wildcard redirect prefixes such as {@code https://example.com:*}.
+     */
+    public static boolean hasExplicitPort(URI uri) {
+        if (uri == null) {
+            return false;
+        }
+        if (uri.getPort() != -1) {
+            return true;
+        }
+        String hostPort = hostPortFromAuthority(uri.getRawAuthority());
+        return hostPort != null && hostPort.indexOf(':') >= 0;
     }
 
     private static boolean hostsEqual(URI uriA, URI uriB) {
@@ -99,37 +131,87 @@ public class UriUtils {
         String authorityA = uriA.getRawAuthority();
         String authorityB = uriB.getRawAuthority();
         if (authorityA == null && authorityB == null) {
-            return true;
+            // Opaque URIs (e.g. mailto:) have no authority; compare the scheme-specific part
+            // so distinct targets are not treated as equal by scheme alone.
+            return Objects.equals(uriA.getRawSchemeSpecificPart(), uriB.getRawSchemeSpecificPart());
         }
         if (authorityA == null || authorityB == null) {
             return false;
         }
-        return registryAuthoritiesEqual(authorityA, authorityB);
+        // Origin is scheme + host + port only; user-info is not compared here.
+        String hostOnlyA = hostFromHostPort(hostPortFromAuthority(authorityA));
+        String hostOnlyB = hostFromHostPort(hostPortFromAuthority(authorityB));
+        return hostOnlyA.equalsIgnoreCase(hostOnlyB);
     }
 
-    /**
-     * Compare registry-name authorities: user-info case-sensitive, host (and port if present)
-     * case-insensitive. Java does not split user-info when {@link URI#getHost()} is null.
-     */
-    private static boolean registryAuthoritiesEqual(String authorityA, String authorityB) {
-        String userInfoA = null;
-        String userInfoB = null;
-        String hostPortA = authorityA;
-        String hostPortB = authorityB;
-        int atA = authorityA.lastIndexOf('@');
-        int atB = authorityB.lastIndexOf('@');
-        if (atA >= 0) {
-            userInfoA = authorityA.substring(0, atA);
-            hostPortA = authorityA.substring(atA + 1);
+    private static boolean portsEqual(URI uriA, URI uriB) {
+        int portA = uriA.getPort();
+        int portB = uriB.getPort();
+        if (portA != -1 && portB != -1) {
+            return portA == portB;
         }
-        if (atB >= 0) {
-            userInfoB = authorityB.substring(0, atB);
-            hostPortB = authorityB.substring(atB + 1);
+        Integer explicitA = portA != -1 ? Integer.valueOf(portA) : explicitPortFromAuthority(uriA.getRawAuthority());
+        Integer explicitB = portB != -1 ? Integer.valueOf(portB) : explicitPortFromAuthority(uriB.getRawAuthority());
+        return Objects.equals(explicitA, explicitB);
+    }
+
+    private static String userInfoFromAuthority(String authority) {
+        if (authority == null) {
+            return null;
         }
-        if (!Objects.equals(userInfoA, userInfoB)) {
-            return false;
+        int at = authority.lastIndexOf('@');
+        return at >= 0 ? authority.substring(0, at) : null;
+    }
+
+    private static String hostPortFromAuthority(String authority) {
+        if (authority == null) {
+            return null;
         }
-        return hostPortA.equalsIgnoreCase(hostPortB);
+        int at = authority.lastIndexOf('@');
+        return at >= 0 ? authority.substring(at + 1) : authority;
+    }
+
+    private static String hostFromHostPort(String hostPort) {
+        if (hostPort == null) {
+            return "";
+        }
+        if (hostPort.startsWith("[")) {
+            int close = hostPort.indexOf(']');
+            return close >= 0 ? hostPort.substring(0, close + 1) : hostPort;
+        }
+        int colon = hostPort.lastIndexOf(':');
+        return colon >= 0 ? hostPort.substring(0, colon) : hostPort;
+    }
+
+    private static Integer explicitPortFromAuthority(String authority) {
+        String hostPort = hostPortFromAuthority(authority);
+        if (hostPort == null) {
+            return null;
+        }
+        if (hostPort.startsWith("[")) {
+            int close = hostPort.indexOf(']');
+            if (close < 0 || close + 1 >= hostPort.length() || hostPort.charAt(close + 1) != ':') {
+                return null;
+            }
+            String port = hostPort.substring(close + 2);
+            if (port.isEmpty()) {
+                return null;
+            }
+            try {
+                return Integer.parseInt(port);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        int colon = hostPort.lastIndexOf(':');
+        if (colon < 0 || colon == hostPort.length() - 1) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(hostPort.substring(colon + 1));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     public static String getHost(String uri) {
