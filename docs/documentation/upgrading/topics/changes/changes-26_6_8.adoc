@@ -31,6 +31,14 @@ This applies to the CRL Path option and to CRL distribution points that contain 
 
 If a CRL file is stored outside the `conf` directory, move or mount the file into the `conf` directory and set the CRL Path option to the file path relative to that directory.
 
+=== Disabled clients are no longer added to the token audience
+
+A disabled or removed client is never added to the `aud` claim of a token, and its client roles are not present in the `resource_access` claim.
+Tokens are still issued, only without that client, so logins and refreshes keep succeeding.
+This change addresses CVE-2026-93999.
+
+For more details, see link:{adminguide_link}#_audience_disabled_clients[Disabled clients and the audience] in the {adminguide_name}.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

@@ -97,6 +97,8 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createGrantTypeCond
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -794,7 +796,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
 
             oauth.client("requester-client", "secret");
             response = oauth.doRefreshTokenRequest(response.getRefreshToken());
-            AccessToken exchangedToken = assertAudiencesAndScopes(response, List.of("requester-client", "target-client1"), List.of("default-scope1", "optional-scope2"));
+            AccessToken exchangedToken = assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
             events.expect(EventType.REFRESH_TOKEN)
                     .detail(Details.TOKEN_ID, exchangedToken.getId())
                     .detail(Details.REFRESH_TOKEN_ID, AssertEvents.isTokenId())
@@ -804,13 +806,43 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
 
             oauth.client("requester-client", "secret");
             response = oauth.doRefreshTokenRequest(response.getRefreshToken());
-            exchangedToken = assertAudiencesAndScopes(response, List.of("requester-client", "target-client1"), List.of("default-scope1", "optional-scope2"));
+            exchangedToken = assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
             events.expect(EventType.REFRESH_TOKEN)
                     .detail(Details.TOKEN_ID, exchangedToken.getId())
                     .detail(Details.REFRESH_TOKEN_ID, AssertEvents.isTokenId())
                     .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
                     .detail(Details.UPDATED_REFRESH_TOKEN_ID, AssertEvents.isTokenId())
                     .session(exchangedToken.getSessionId());
+        }
+    }
+
+    @Test
+    public void testRefreshIgnoresDisabledAudienceClient() throws Exception {
+        try (ClientAttributeUpdater requesterUpdater = ClientAttributeUpdater.forClient(adminClient, TEST, "requester-client")
+                .setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name())
+                .update()) {
+            String accessToken = resourceOwnerLogin("mike", "password", "subject-client", "secret").getAccessToken();
+            AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", List.of("target-client1"), OAuth2Constants.REFRESH_TOKEN_TYPE);
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+            assertNotNull(response.getRefreshToken());
+
+            try (ClientAttributeUpdater targetUpdater = ClientAttributeUpdater.forClient(adminClient, TEST, "target-client1")
+                    .setEnabled(false)
+                    .update()) {
+                // A new exchange for the disabled audience client is rejected
+                AccessTokenResponse exchangeResponse = tokenExchange(accessToken, "requester-client", "secret", List.of("target-client1"), OAuth2Constants.REFRESH_TOKEN_TYPE);
+                assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), exchangeResponse.getStatusCode());
+                assertEquals(OAuthErrorException.INVALID_CLIENT, exchangeResponse.getError());
+                assertEquals("Client disabled", exchangeResponse.getErrorDescription());
+
+                // The refresh keeps succeeding, but the disabled audience client is no longer part of the issued token
+                oauth.client("requester-client", "secret");
+                response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+                assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+                AccessToken refreshedToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).parse().getToken();
+                MatcherAssert.assertThat(refreshedToken.getAudience() == null ? List.of() : List.of(refreshedToken.getAudience()), not(hasItem("target-client1")));
+                MatcherAssert.assertThat(refreshedToken.getResourceAccess().keySet(), not(hasItem("target-client1")));
+            }
         }
     }
 
