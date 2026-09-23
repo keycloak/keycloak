@@ -144,17 +144,20 @@ public class OAuth2Error {
         try {
             Constructor<? extends WebApplicationException> constructor = clazz.getConstructor(new Class[] { Response.class });
 
+            WWWAuthenticate.BearerChallenge bearer = DPOP_SCHEME.equals(this.authScheme) ? new WWWAuthenticate.DPoPChallenge(session) : new WWWAuthenticate.BearerChallenge();
+            bearer.setRealm(realm == null ? null : realm.getName());
+            bearer.setError(error);
+            bearer.setErrorDescription(errorDescription);
+            new WWWAuthenticate(bearer).build(builder::header);
+            cors.ifPresent(_cors -> _cors.exposedHeaders(WWW_AUTHENTICATE));
+
             if (json) {
-                OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation(error, errorDescription);
+                // JSON body with the HTTP status as error code and the failure reason:
+                // for example {"error":"HTTP 401 Unauthorized","error_description":"Token signature invalid"}
+                String errorCode = "HTTP " + status.getStatusCode() + " " + status.getReasonPhrase();
+                OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation(errorCode, errorDescription);
                 builder.entity(errorRep).type(MediaType.APPLICATION_JSON_TYPE);
             } else {
-                WWWAuthenticate.BearerChallenge bearer = DPOP_SCHEME.equals(this.authScheme) ? new WWWAuthenticate.DPoPChallenge(session) : new WWWAuthenticate.BearerChallenge();
-                bearer.setRealm(realm.getName());
-                bearer.setError(error);
-                bearer.setErrorDescription(errorDescription);
-                WWWAuthenticate wwwAuthenticate = new WWWAuthenticate(bearer);
-                wwwAuthenticate.build(builder::header);
-                cors.ifPresent(_cors -> _cors.exposedHeaders(WWW_AUTHENTICATE));
                 builder.entity("").type(MediaType.TEXT_PLAIN_UTF_8_TYPE);
             }
             cors.ifPresent(Cors::add);

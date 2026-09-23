@@ -78,6 +78,7 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutor;
 import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.BearerCredentialsMissingException;
 import org.keycloak.testsuite.rest.TestApplicationResourceProviderFactory;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 import org.keycloak.util.JsonSerialization;
@@ -684,7 +685,12 @@ public class TestingOIDCEndpointsApplicationResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response requestAuthenticationChannel(@Context HttpHeaders headers, AuthenticationChannelRequest request) {
-        String rawBearerToken = AppAuthManager.extractAuthorizationHeaderToken(headers);
+        String rawBearerToken;
+        try {
+            rawBearerToken = AppAuthManager.extractAuthorizationHeaderToken(headers);
+        } catch (BearerCredentialsMissingException e) {
+            throw new RuntimeException("Missing bearer token", e);
+        }
         AccessToken bearerToken;
 
         try {
@@ -737,7 +743,12 @@ public class TestingOIDCEndpointsApplicationResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response cibaClientNotificationEndpoint(@Context HttpHeaders headers, ClientNotificationEndpointRequest request) {
-        String clientNotificationToken = AppAuthManager.extractAuthorizationHeaderToken(headers);
+        String clientNotificationToken;
+        try {
+            clientNotificationToken = AppAuthManager.extractAuthorizationHeaderToken(headers);
+        } catch (BearerCredentialsMissingException e) {
+            throw new RuntimeException("Missing bearer token", e);
+        }
         ClientNotificationEndpointRequest existing = cibaClientNotifications.putIfAbsent(clientNotificationToken, request);
         if (existing != null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "There is already entry for clientNotification " + clientNotificationToken + ". Make sure to cleanup after previous tests.",
