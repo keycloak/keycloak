@@ -156,10 +156,10 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
     }
 
     @Test
-    public void loginWithNonSupportedCertExtendedKeyUsage() throws Exception {
+    public void loginWithCertExtendedKeyUsage() throws Exception {
         // Set the X509 authenticator configuration
         AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config",
-                createLoginSubjectEmailWithExtendedKeyUsage("serverAuth").getConfig());
+                createLoginSubjectEmailWithExtendedKeyUsage("1.3.6.1.5.5.7.3.2").getConfig());
         String cfgId = createConfig(directGrantExecution.getId(), cfg);
         Assertions.assertNotNull(cfgId);
 
@@ -167,6 +167,23 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
         AccessTokenResponse response = oauth.doPasswordGrantRequest("", "");
 
         assertEquals(200, response.getStatusCode());
+    }
+
+    @Test
+    public void loginWithNonSupportedCertExtendedKeyUsage() throws Exception {
+        // Set the X509 authenticator configuration
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config",
+                createLoginSubjectEmailWithExtendedKeyUsage("1.3.6.1.5.5.7.3.1").getConfig());
+        String cfgId = createConfig(directGrantExecution.getId(), cfg);
+        Assertions.assertNotNull(cfgId);
+
+        oauth.client("resource-owner", "secret");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("", "");
+
+        assertEquals(401, response.getStatusCode());
+        assertEquals("invalid_request", response.getError());
+        assertThat(response.getErrorDescription(), containsString("Extended Key Usage '1.3.6.1.5.5.7.3.1' is missing."));
+        events.clear();
     }
 
     @Test
