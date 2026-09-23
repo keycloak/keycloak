@@ -59,7 +59,7 @@ public class TimePolicyProvider implements PolicyProvider {
             String notBefore = policy.getConfig().get("nbf");
             if (notBefore != null && !"".equals(notBefore)) {
                 if (actualDate.before(dateFormat.parse(format(notBefore)))) {
-                    logger.debugv("Provided date is before the accepted date: (nbf) ", notBefore);
+                    logger.debugv("Provided date is before the accepted date: (nbf) {0}", notBefore);
                     evaluation.deny();
                     return;
                 }
