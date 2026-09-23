@@ -102,6 +102,11 @@ public abstract class BasicDatabaseTest {
         var count = countMatches(outputLowerCase, "create table public.databasechangelog (")
                 + countMatches(outputLowerCase, "create table keycloak.databasechangelog (");
         assertThat(count, is(1));
+
+        // ... and the lock table, which the server would otherwise have to create itself on first startup
+        var lockCount = countMatches(outputLowerCase, "create table public.databasechangeloglock (")
+                + countMatches(outputLowerCase, "create table keycloak.databasechangeloglock (");
+        assertThat(lockCount, is(1));
         assertThat(output, containsString("Change Log: META-INF/jpa-changelog-master.xml"));
         assertThat(output, containsString("Changeset META-INF/jpa-changelog-26.2.6.xml"));
 
