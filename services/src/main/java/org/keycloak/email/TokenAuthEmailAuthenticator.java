@@ -24,23 +24,25 @@ public class TokenAuthEmailAuthenticator implements EmailAuthenticator {
     public static final int FALLBACK_EXPIRES_AT_IN_SECONDS = 60;
 
     private final Map<String, TokenAuthEmailAuthenticator.TokenStoreEntry> tokenStore = new ConcurrentHashMap<>();
+    private final Map<String, Object> tokenLocks = new ConcurrentHashMap<>();
 
     @Override
     public void connect(KeycloakSession session, Map<String, String> config, Transport transport) throws EmailException {
+        String token = gatherValidToken(session, config);
         try {
-            String token = gatherValidToken(session, config);
-
             transport.connect(config.get("user"), token);
 
         } catch (AuthenticationFailedException e) {
 
-            this.tokenStore.remove(session.getContext().getRealm().getId());
+            // only drop the rejected token: a concurrent request may already have cached a new one
+            this.tokenStore.computeIfPresent(session.getContext().getRealm().getId(),
+                    (realmId, entry) -> entry.token.equals(token) ? null : entry);
             logger.debugf("AuthenticationFailed-Exception for SMTP in realm %s failed response was %s, will try again", KeycloakSessionUtil.getRealmNameFromContext(session), e.getMessage());
 
-            String token = gatherValidToken(session, config);
+            String retryToken = gatherValidToken(session, config);
 
             try {
-                transport.connect(config.get("user"), token);
+                transport.connect(config.get("user"), retryToken);
             } catch (MessagingException ex) {
                 logger.warnf("Retry after AuthenticationFailed-Exception for SMTP in realm %s failed response was %s", KeycloakSessionUtil.getRealmNameFromContext(session), ex);
                 throw new EmailException("Retry after AuthenticationFailed-Exception for SMTP failed.", ex);
@@ -58,13 +60,15 @@ public class TokenAuthEmailAuthenticator implements EmailAuthenticator {
             String authTokenClientId = config.get("authTokenClientId");
             String authTokenScope = config.get("authTokenScope");
             int authTokenClientSecretHash = authTokenClientSecret.hashCode();
+            String realmId = session.getContext().getRealm().getId();
 
-            TokenStoreEntry tokenStoreEntry = this.tokenStore.get(session.getContext().getRealm().getId());
+            TokenStoreEntry tokenStoreEntry = this.tokenStore.get(realmId);
             if (isValidAuthToken(authTokenUrl, authTokenScope, authTokenClientId, authTokenClientSecretHash, tokenStoreEntry)) {
                 return tokenStoreEntry.token;
             }
 
-            synchronized (this.tokenStore) {
+            synchronized (this.tokenLocks.computeIfAbsent(realmId, id -> new Object())) {
+                tokenStoreEntry = this.tokenStore.get(realmId);
                 if (isValidAuthToken(authTokenUrl, authTokenScope, authTokenClientId, authTokenClientSecretHash, tokenStoreEntry)) {
                     return tokenStoreEntry.token;
                 }
@@ -76,7 +80,7 @@ public class TokenAuthEmailAuthenticator implements EmailAuthenticator {
 
                 if (maybeToken.isPresent()) {
                     String token = maybeToken.get();
-                    this.tokenStore.put(session.getContext().getRealm().getId(),
+                    this.tokenStore.put(realmId,
                             new TokenStoreEntry(
                                     maybeExpiresAt.orElse(LocalDateTime.now().plusSeconds(FALLBACK_EXPIRES_AT_IN_SECONDS)),
                                     authTokenUrl,
