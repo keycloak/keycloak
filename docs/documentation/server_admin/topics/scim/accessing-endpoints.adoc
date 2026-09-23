@@ -34,6 +34,7 @@ the SCIM client. Instead, explicitly configure the required role scope mappings 
 .Procedure
 . Click *Clients* in the menu, then select the client you created.
 . Click the *Client scopes* tab, select the dedicated client scope for the client (for example, `scim-client-dedicated`), then click the *Scope* tab.
+. Set *Full Scope Allowed* to *Off*.
 . Click *Assign role*, then filter by clients and select the `realm-management` client.
 . Assign the required roles based on the operations the client needs to perform. This adds the roles to the client's role scope mappings.
 . Click the *Service account roles* tab.
