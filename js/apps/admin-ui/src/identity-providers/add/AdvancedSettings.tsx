@@ -124,7 +124,6 @@ export const AdvancedSettings = ({
     defaultValue: "false",
   });
   const claimFilterRequired = filteredByClaim === "true";
-  const { hasAccess } = useAccess();
   const isFeatureEnabled = useIsFeatureEnabled();
   const isTransientUsersEnabled = isFeatureEnabled(Feature.TransientUsers);
   const isClientAuthFederatedEnabled = isFeatureEnabled(
