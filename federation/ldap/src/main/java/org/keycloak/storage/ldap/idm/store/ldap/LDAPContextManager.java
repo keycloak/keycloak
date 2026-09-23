@@ -106,6 +106,11 @@ public final class LDAPContextManager implements AutoCloseable {
                     sslSocketFactory = provider.getSSLSocketFactory();
                 }
 
+                // Wrap factory to ensure SNI hostname is set for endpoint verification
+                if (sslSocketFactory != null) {
+                    sslSocketFactory = new SNIAwareSSLSocketFactory(sslSocketFactory);
+                }
+
                 tlsResponse = startTLS(ldapContext, sslSocketFactory);
 
                 // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
@@ -290,6 +295,71 @@ public final class LDAPContextManager implements AutoCloseable {
         }
 
         return new Hashtable<>(env);
+    }
+
+    private static class SNIAwareSSLSocketFactory extends javax.net.ssl.SSLSocketFactory {
+        private final javax.net.ssl.SSLSocketFactory delegate;
+
+        SNIAwareSSLSocketFactory(javax.net.ssl.SSLSocketFactory delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public String[] getDefaultCipherSuites() {
+            return delegate.getDefaultCipherSuites();
+        }
+
+        @Override
+        public String[] getSupportedCipherSuites() {
+            return delegate.getSupportedCipherSuites();
+        }
+
+        @Override
+        public java.net.Socket createSocket(java.net.Socket socket, String host, int port, boolean autoClose) throws java.io.IOException {
+            return setSNI(delegate.createSocket(socket, host, port, autoClose), host);
+        }
+
+        @Override
+        public java.net.Socket createSocket(String host, int port) throws java.io.IOException {
+            return setSNI(delegate.createSocket(host, port), host);
+        }
+
+        @Override
+        public java.net.Socket createSocket(String host, int port, java.net.InetAddress localHost, int localPort) throws java.io.IOException {
+            return setSNI(delegate.createSocket(host, port, localHost, localPort), host);
+        }
+
+        @Override
+        public java.net.Socket createSocket(java.net.InetAddress address, int port) throws java.io.IOException {
+            return delegate.createSocket(address, port);
+        }
+
+        @Override
+        public java.net.Socket createSocket(java.net.InetAddress address, int port, java.net.InetAddress localAddress, int localPort) throws java.io.IOException {
+            return delegate.createSocket(address, port, localAddress, localPort);
+        }
+
+        @Override
+        public java.net.Socket createSocket() throws java.io.IOException {
+            return delegate.createSocket();
+        }
+
+        private static java.net.Socket setSNI(java.net.Socket socket, String hostname) {
+            if (hostname != null && socket instanceof javax.net.ssl.SSLSocket) {
+                try {
+                    javax.net.ssl.SSLSocket sslSocket = (javax.net.ssl.SSLSocket) socket;
+                    javax.net.ssl.SSLParameters params = sslSocket.getSSLParameters();
+                    if (params == null) {
+                        params = new javax.net.ssl.SSLParameters();
+                    }
+                    params.setServerNames(java.util.Collections.singletonList(new javax.net.ssl.SNIHostName(hostname)));
+                    sslSocket.setSSLParameters(params);
+                } catch (Exception e) {
+                    logger.debugf("Failed to set SNI hostname '%s' for LDAP TLS: %s", hostname, e.getMessage());
+                }
+            }
+            return socket;
+        }
     }
 
     @Override
