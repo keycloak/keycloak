@@ -527,11 +527,14 @@ public class TokenManager {
         clientSession.setRedirectUri(authSession.getRedirectUri());
         clientSession.setProtocol(authSession.getProtocol());
 
+        // Pins are re-established during token generation; refresh never reaches this path
+        ParameterizedScopeTypeProvider.clearPinnedIdentities(clientSession);
+
         String scopeParam = authSession.getClientNote(OAuth2Constants.SCOPE);
         Set<ClientScopeModel> clientScopes;
 
         if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
-            clientScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, client, userSession.getUser(), scopeParam)
+            clientScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, client, userSession.getUser(), clientSession, scopeParam)
                     .collect(Collectors.toSet());
         } else {
             clientScopes = getRequestedClientScopes(session, scopeParam, client, userSession.getUser())

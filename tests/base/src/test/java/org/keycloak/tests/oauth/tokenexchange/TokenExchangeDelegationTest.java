@@ -37,6 +37,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
@@ -477,6 +478,213 @@ public class TokenExchangeDelegationTest {
     }
 
     @Test
+    public void delegationDroppedWhenTargetUserRecreated() {
+        String tempUsername = "temp-delegate";
+
+        String tempUserId = createUser(tempUsername);
+        ScopePermissionRepresentation oldPermission = addDelegationPermission(tempUserId, "Temp Delegate Policy");
+
+        // login with delegation to temp user and accept consent
+        final String scope = OIDCLoginProtocolFactory.USER_DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + tempUsername;
+        AccessTokenResponse res = loginWithDelegation(scope, grants ->
+                MatcherAssert.assertThat(grants, Matchers.hasItem(Matchers.containsString("Delegate token"))));
+
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), tempUserId);
+
+        // refresh with the original user still in place - should succeed
+        res = oauth.scope(null).doRefreshTokenRequest(res.getRefreshToken());
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), tempUserId);
+
+        // remove stale permission, delete the temp user and recreate with the same username (new UUID)
+        ClientResource adminPerms = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
+        adminPerms.authorization().permissions().scope().findById(oldPermission.getId()).remove();
+        realm.admin().users().get(tempUserId).remove();
+        String newUserId = recreateUserWithDelegation(tempUsername);
+
+        // refresh - FGAP passes but identity pinning detects the mismatch, scope dropped
+        res = oauth.scope(null).doRefreshTokenRequest(res.getRefreshToken());
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeNotContains(res.getScope(), scope);
+        assertMayActNotPresent(oauth.verifyToken(res.getAccessToken()));
+
+        // revoke consent and re-authorize within the same SSO session;
+        // fresh auth clears the stale pin, so re-consent works with the new identity
+        AccountHelper.revokeConsents(realm.admin(), USERNAME, oauth.getClientId());
+        res = loginWithDelegation(scope, grants ->
+                MatcherAssert.assertThat(grants, Matchers.hasItem(Matchers.containsString("Delegate token"))), false);
+
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), newUserId);
+
+        // refresh with the re-pinned identity should succeed
+        res = oauth.scope(null).doRefreshTokenRequest(res.getRefreshToken());
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), newUserId);
+
+        LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
+        Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
+    }
+
+    @Test
+    public void delegationDroppedWhenTargetUserRecreatedBeforeCodeExchange() {
+        String tempUsername = "temp-delegate-code";
+
+        String tempUserId = createUser(tempUsername);
+        ScopePermissionRepresentation oldPermission = addDelegationPermission(tempUserId, "Temp Delegate Policy Code");
+
+        // authorize with delegation to the temp user, but hold on to the code without redeeming it yet
+        final String scope = OIDCLoginProtocolFactory.USER_DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + tempUsername;
+        oauth.scope(scope).openLoginForm();
+        oauth.fillLoginForm(USERNAME, PASSWORD);
+        grantPage.assertCurrent();
+        MatcherAssert.assertThat(grantPage.getDisplayedGrants(), Matchers.hasItem(Matchers.containsString("Delegate token")));
+        grantPage.accept();
+        events.poll();
+        String code = oauth.parseLoginResponse().getCode();
+
+        // attacker window: target user is deleted and recreated with the same username before the code is redeemed
+        ClientResource adminPerms = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
+        adminPerms.authorization().permissions().scope().findById(oldPermission.getId()).remove();
+        realm.admin().users().get(tempUserId).remove();
+        recreateUserWithDelegation(tempUsername);
+
+        // redeem the code - identity pinning must reject the scope for the recreated identity even on first issuance
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeNotContains(res.getScope(), scope);
+        assertMayActNotPresent(oauth.verifyToken(res.getAccessToken()));
+
+        LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
+        Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
+    }
+
+    @Test
+    public void delegationDroppedOnCrossClientIntrospectionAfterTargetUserRecreated() {
+        String tempUsername = "temp-delegate-introspect";
+        String tempUserId = createUser(tempUsername);
+        ScopePermissionRepresentation oldPermission = addDelegationPermission(tempUserId, "Temp Delegate Policy Introspect");
+
+        // login with delegation to the temp user and accept consent
+        final String scope = OIDCLoginProtocolFactory.USER_DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + tempUsername;
+        AccessTokenResponse res = loginWithDelegation(scope, grants ->
+                MatcherAssert.assertThat(grants, Matchers.hasItem(Matchers.containsString("Delegate token"))));
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), tempUserId);
+
+        // remove stale permission, delete the temp user and recreate with the same username (new UUID)
+        ClientResource adminPerms = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
+        adminPerms.authorization().permissions().scope().findById(oldPermission.getId()).remove();
+        realm.admin().users().get(tempUserId).remove();
+        recreateUserWithDelegation(tempUsername);
+
+        // a different client (not the one the token was issued to) introspects the already-issued access token;
+        // identity pinning must be enforced using the token's own client session, not the introspecting client
+        createIntrospectingClient("cross-client-introspector", "cross-client-secret");
+        IntrospectionResponse introspectRes;
+        try {
+            introspectRes = oauth.client("cross-client-introspector", "cross-client-secret")
+                    .doIntrospectionAccessTokenRequest(res.getAccessToken());
+        } finally {
+            oauth.client("test-app", "test-secret");
+        }
+        Assertions.assertTrue(introspectRes.isSuccess());
+        try {
+            // introspection's "scope" field is copied verbatim from the original token and isn't re-validated;
+            // may_act is added by a mapper driven by the freshly re-resolved scopes, so it reflects the pin check
+            TokenMetadataRepresentation rep = introspectRes.asTokenMetadata();
+            Assertions.assertTrue(rep.isActive(), "Token must still be reported as active");
+            assertMayActNotPresent(rep);
+        } catch (IOException e) {
+            Assertions.fail(e);
+        }
+
+        LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
+        Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
+    }
+
+    @Test
+    public void delegationOfflineSessionPinSyncedOnReauthorization() {
+        // offline tokens need both the client scope and the user role, granted at runtime to not replace the defaults
+        String offlineScopeId = AdminApiUtil.findClientScopeByName(realm.admin(), OAuth2Constants.OFFLINE_ACCESS).toRepresentation().getId();
+        AdminApiUtil.findClientByClientId(realm.admin(), oauth.getClientId()).addOptionalClientScope(offlineScopeId);
+        realm.cleanup().add(r -> AdminApiUtil.findClientByClientId(r, oauth.getClientId()).removeOptionalClientScope(offlineScopeId));
+
+        RoleRepresentation offlineRole = AdminApiUtil.findRealmRoleByName(realm.admin(), Constants.OFFLINE_ACCESS_ROLE).toRepresentation();
+        AdminApiUtil.findUserByUsernameId(realm.admin(), USERNAME).roles().realmLevel().add(List.of(offlineRole));
+        realm.cleanup().add(r -> AdminApiUtil.findUserByUsernameId(r, USERNAME).roles().realmLevel().remove(List.of(offlineRole)));
+
+        String tempUsername = "temp-delegate-offline";
+        String tempUserId = createUser(tempUsername);
+        ScopePermissionRepresentation oldPermission = addDelegationPermission(tempUserId, "Temp Delegate Policy Offline");
+
+        final String delegationScope = OIDCLoginProtocolFactory.USER_DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + tempUsername;
+        final String scope = delegationScope + " " + OAuth2Constants.OFFLINE_ACCESS;
+
+        // plain login first - an SSO session created by the offline request itself is removed again right away
+        loginWithDelegation(delegationScope, grants ->
+                MatcherAssert.assertThat(grants, Matchers.hasItem(Matchers.containsString("Delegate token"))));
+
+        // offline_access in the existing SSO session creates the offline client session
+        AccessTokenResponse res = loginWithDelegation(scope, grants ->
+                MatcherAssert.assertThat(grants, Matchers.hasItem(Matchers.containsString("Delegate token"))), false);
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), delegationScope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), tempUserId);
+
+        // remove stale permission, delete the temp user and recreate with the same username (new UUID)
+        ClientResource adminPerms = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
+        adminPerms.authorization().permissions().scope().findById(oldPermission.getId()).remove();
+        realm.admin().users().get(tempUserId).remove();
+        String newUserId = recreateUserWithDelegation(tempUsername);
+
+        // stale pin on the offline session - delegation is dropped, not followed to the recreated user
+        AccessTokenResponse staleRefresh = oauth.scope(null).doRefreshTokenRequest(res.getRefreshToken());
+        Assertions.assertTrue(staleRefresh.isSuccess(), staleRefresh.getError() + " - " + staleRefresh.getErrorDescription());
+        assertScopeNotContains(staleRefresh.getScope(), delegationScope);
+        assertMayActNotPresent(oauth.verifyToken(staleRefresh.getAccessToken()));
+
+        // refreshing again must not clear the pin
+        staleRefresh = oauth.scope(null).doRefreshTokenRequest(staleRefresh.getRefreshToken());
+        Assertions.assertTrue(staleRefresh.isSuccess(), staleRefresh.getError() + " - " + staleRefresh.getErrorDescription());
+        assertScopeNotContains(staleRefresh.getScope(), delegationScope);
+        assertMayActNotPresent(oauth.verifyToken(staleRefresh.getAccessToken()));
+
+        // an authorization without the delegation scope has no pin to sync and must not clear the existing one
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS).openLoginForm();
+        events.poll();
+        oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        events.poll();
+
+        staleRefresh = oauth.scope(null).doRefreshTokenRequest(staleRefresh.getRefreshToken());
+        Assertions.assertTrue(staleRefresh.isSuccess(), staleRefresh.getError() + " - " + staleRefresh.getErrorDescription());
+        assertScopeNotContains(staleRefresh.getScope(), delegationScope);
+        assertMayActNotPresent(oauth.verifyToken(staleRefresh.getAccessToken()));
+
+        // re-authorize in the same SSO session - fresh auth re-pins to the recreated identity
+        AccessTokenResponse res2 = loginWithDelegation(scope, grants ->
+                MatcherAssert.assertThat(grants, Matchers.hasItem(Matchers.containsString("Delegate token"))), false);
+        Assertions.assertTrue(res2.isSuccess(), res2.getError() + " - " + res2.getErrorDescription());
+        assertScopeContains(res2.getScope(), delegationScope);
+        assertMayActPresent(oauth.verifyToken(res2.getAccessToken()), newUserId);
+
+        // the reused offline client session must have picked up the new pin
+        AccessTokenResponse offlineRefresh = oauth.scope(null).doRefreshTokenRequest(staleRefresh.getRefreshToken());
+        Assertions.assertTrue(offlineRefresh.isSuccess(), offlineRefresh.getError() + " - " + offlineRefresh.getErrorDescription());
+        assertScopeContains(offlineRefresh.getScope(), delegationScope);
+        assertMayActPresent(oauth.verifyToken(offlineRefresh.getAccessToken()), newUserId);
+
+        LogoutResponse logout = oauth.doLogout(res2.getRefreshToken());
+        Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
+    }
+
+    @Test
     public void cibaDelegationNoDelegatePermission() throws Exception {
 
         // request delegation with a user that has no delegate permission
@@ -819,9 +1027,45 @@ public class TokenExchangeDelegationTest {
     }
 
     private ScopePermissionRepresentation addDelegationPermission() {
+        return addDelegationPermission(administrator.getId(), "Administrator Policy");
+    }
+
+    private ScopePermissionRepresentation addDelegationPermission(String userId, String policyName) {
         ClientResource adminPerms = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
-        UserPolicyRepresentation policy = PermissionTestUtils.createUserPolicy(realm, adminPerms, "Administrator Policy", administrator.getId());
+        UserPolicyRepresentation policy = PermissionTestUtils.createUserPolicy(realm, adminPerms, policyName, userId);
         return PermissionTestUtils.createAllPermission(adminPerms, AdminPermissionsSchema.USERS_RESOURCE_TYPE, policy, Set.of(AdminPermissionsSchema.DELEGATE));
+    }
+
+    private String recreateUserWithDelegation(String username) {
+        String newUserId = createUser(username);
+        addDelegationPermission(newUserId, "Recreated " + username + " Policy");
+        return newUserId;
+    }
+
+    private String createUser(String username) {
+        String userId;
+        try (Response response = realm.admin().users().create(
+                UserBuilder.create(username).email(username + "@localhost").build())) {
+            userId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.users().search(username).stream()
+                .findFirst().ifPresent(u -> r.users().get(u.getId()).remove()));
+        return userId;
+    }
+
+    private String createIntrospectingClient(String clientId, String secret) {
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId(clientId);
+        clientRep.setSecret(secret);
+        clientRep.setEnabled(true);
+        clientRep.setPublicClient(false);
+        clientRep.setAttributes(Map.of(OIDCConfigAttributes.ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK, "true"));
+        String clientUuid;
+        try (Response response = realm.admin().clients().create(clientRep)) {
+            clientUuid = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clients().get(clientUuid).remove());
+        return clientUuid;
     }
 
     private void assertExchangeError(AccessTokenResponse tokenExchangeRes, String error, String reason) {
@@ -884,14 +1128,24 @@ public class TokenExchangeDelegationTest {
     }
 
     private AccessTokenResponse loginWithDelegation(String scope, Consumer<List<String>> grantsValidator) {
-        AccessTokenResponse res = loginWithDelegationNoEvent(scope, grantsValidator);
+        return loginWithDelegation(scope, grantsValidator, true);
+    }
+
+    private AccessTokenResponse loginWithDelegation(String scope, Consumer<List<String>> grantsValidator, boolean fillLoginForm) {
+        AccessTokenResponse res = loginWithDelegationNoEvent(scope, grantsValidator, fillLoginForm);
         EventAssertion.assertSuccess(events.poll()).type(EventType.CODE_TO_TOKEN);
         return res;
     }
 
     private AccessTokenResponse loginWithDelegationNoEvent(String scope, Consumer<List<String>> grantsValidator) {
+        return loginWithDelegationNoEvent(scope, grantsValidator, true);
+    }
+
+    private AccessTokenResponse loginWithDelegationNoEvent(String scope, Consumer<List<String>> grantsValidator, boolean fillLoginForm) {
         oauth.scope(scope).openLoginForm();
-        oauth.fillLoginForm(USERNAME, PASSWORD);
+        if (fillLoginForm) {
+            oauth.fillLoginForm(USERNAME, PASSWORD);
+        }
         grantPage.assertCurrent();
         List<String> grants = grantPage.getDisplayedGrants();
         grantsValidator.accept(grants);
