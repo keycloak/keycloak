@@ -37,6 +37,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
@@ -598,12 +599,88 @@ public class TokenExchangeDelegationTest {
             // introspection's "scope" field is copied verbatim from the original token and isn't re-validated;
             // may_act is added by a mapper driven by the freshly re-resolved scopes, so it reflects the pin check
             TokenMetadataRepresentation rep = introspectRes.asTokenMetadata();
+            Assertions.assertTrue(rep.isActive(), "Token must still be reported as active");
             assertMayActNotPresent(rep);
         } catch (IOException e) {
             Assertions.fail(e);
         }
 
         LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
+        Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
+    }
+
+    @Test
+    public void delegationOfflineSessionPinSyncedOnReauthorization() {
+        // offline tokens need both the client scope and the user role, granted at runtime to not replace the defaults
+        String offlineScopeId = AdminApiUtil.findClientScopeByName(realm.admin(), OAuth2Constants.OFFLINE_ACCESS).toRepresentation().getId();
+        AdminApiUtil.findClientByClientId(realm.admin(), oauth.getClientId()).addOptionalClientScope(offlineScopeId);
+        realm.cleanup().add(r -> AdminApiUtil.findClientByClientId(r, oauth.getClientId()).removeOptionalClientScope(offlineScopeId));
+
+        RoleRepresentation offlineRole = AdminApiUtil.findRealmRoleByName(realm.admin(), Constants.OFFLINE_ACCESS_ROLE).toRepresentation();
+        AdminApiUtil.findUserByUsernameId(realm.admin(), USERNAME).roles().realmLevel().add(List.of(offlineRole));
+        realm.cleanup().add(r -> AdminApiUtil.findUserByUsernameId(r, USERNAME).roles().realmLevel().remove(List.of(offlineRole)));
+
+        String tempUsername = "temp-delegate-offline";
+        String tempUserId = createUser(tempUsername);
+        ScopePermissionRepresentation oldPermission = addDelegationPermission(tempUserId, "Temp Delegate Policy Offline");
+
+        final String delegationScope = OIDCLoginProtocolFactory.USER_DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + tempUsername;
+        final String scope = delegationScope + " " + OAuth2Constants.OFFLINE_ACCESS;
+
+        // plain login first - an SSO session created by the offline request itself is removed again right away
+        loginWithDelegation(delegationScope, grants ->
+                MatcherAssert.assertThat(grants, Matchers.hasItem(Matchers.containsString("Delegate token"))));
+
+        // offline_access in the existing SSO session creates the offline client session
+        AccessTokenResponse res = loginWithDelegation(scope, grants ->
+                MatcherAssert.assertThat(grants, Matchers.hasItem(Matchers.containsString("Delegate token"))), false);
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), delegationScope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), tempUserId);
+
+        // remove stale permission, delete the temp user and recreate with the same username (new UUID)
+        ClientResource adminPerms = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
+        adminPerms.authorization().permissions().scope().findById(oldPermission.getId()).remove();
+        realm.admin().users().get(tempUserId).remove();
+        String newUserId = recreateUserWithDelegation(tempUsername);
+
+        // stale pin on the offline session - delegation is dropped, not followed to the recreated user
+        AccessTokenResponse staleRefresh = oauth.scope(null).doRefreshTokenRequest(res.getRefreshToken());
+        Assertions.assertTrue(staleRefresh.isSuccess(), staleRefresh.getError() + " - " + staleRefresh.getErrorDescription());
+        assertScopeNotContains(staleRefresh.getScope(), delegationScope);
+        assertMayActNotPresent(oauth.verifyToken(staleRefresh.getAccessToken()));
+
+        // refreshing again must not clear the pin
+        staleRefresh = oauth.scope(null).doRefreshTokenRequest(staleRefresh.getRefreshToken());
+        Assertions.assertTrue(staleRefresh.isSuccess(), staleRefresh.getError() + " - " + staleRefresh.getErrorDescription());
+        assertScopeNotContains(staleRefresh.getScope(), delegationScope);
+        assertMayActNotPresent(oauth.verifyToken(staleRefresh.getAccessToken()));
+
+        // an authorization without the delegation scope has no pin to sync and must not clear the existing one
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS).openLoginForm();
+        events.poll();
+        oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        events.poll();
+
+        staleRefresh = oauth.scope(null).doRefreshTokenRequest(staleRefresh.getRefreshToken());
+        Assertions.assertTrue(staleRefresh.isSuccess(), staleRefresh.getError() + " - " + staleRefresh.getErrorDescription());
+        assertScopeNotContains(staleRefresh.getScope(), delegationScope);
+        assertMayActNotPresent(oauth.verifyToken(staleRefresh.getAccessToken()));
+
+        // re-authorize in the same SSO session - fresh auth re-pins to the recreated identity
+        AccessTokenResponse res2 = loginWithDelegation(scope, grants ->
+                MatcherAssert.assertThat(grants, Matchers.hasItem(Matchers.containsString("Delegate token"))), false);
+        Assertions.assertTrue(res2.isSuccess(), res2.getError() + " - " + res2.getErrorDescription());
+        assertScopeContains(res2.getScope(), delegationScope);
+        assertMayActPresent(oauth.verifyToken(res2.getAccessToken()), newUserId);
+
+        // the reused offline client session must have picked up the new pin
+        AccessTokenResponse offlineRefresh = oauth.scope(null).doRefreshTokenRequest(staleRefresh.getRefreshToken());
+        Assertions.assertTrue(offlineRefresh.isSuccess(), offlineRefresh.getError() + " - " + offlineRefresh.getErrorDescription());
+        assertScopeContains(offlineRefresh.getScope(), delegationScope);
+        assertMayActPresent(oauth.verifyToken(offlineRefresh.getAccessToken()), newUserId);
+
+        LogoutResponse logout = oauth.doLogout(res2.getRefreshToken());
         Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
     }
 

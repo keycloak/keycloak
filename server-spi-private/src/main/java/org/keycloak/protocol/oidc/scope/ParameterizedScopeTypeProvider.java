@@ -1,8 +1,12 @@
 package org.keycloak.protocol.oidc.scope;
 
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import jakarta.annotation.Nonnull;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
@@ -40,6 +44,26 @@ public interface ParameterizedScopeTypeProvider extends Provider, ProviderFactor
                 .filter(k -> k.startsWith(PINNED_IDENTITY_NOTE_PREFIX))
                 .toList()
                 .forEach(clientSession::removeNote);
+    }
+
+    /**
+     * Merges {@code source}'s pinned identity notes into {@code target}. Needed when an offline client session is
+     * reused rather than recreated, as it otherwise keeps the pins it had when first created.
+     *
+     * <p>Pins absent from {@code source} are left untouched, so an authorization that does not request a given
+     * parameterized scope cannot drop the pin an older offline token is still validated against.
+     *
+     * @param source the client session to copy pinned identities from (e.g. the online client session)
+     * @param target the client session to copy pinned identities to (e.g. the reused offline client session)
+     */
+    static void syncPinnedIdentities(AuthenticatedClientSessionModel source, AuthenticatedClientSessionModel target) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
+            return;
+        }
+        Map<String, String> pins = source.getNotes().entrySet().stream()
+                .filter(e -> e.getKey().startsWith(PINNED_IDENTITY_NOTE_PREFIX))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        pins.forEach(target::setNote);
     }
 
     /**
