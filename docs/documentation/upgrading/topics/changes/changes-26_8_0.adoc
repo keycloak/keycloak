@@ -43,6 +43,14 @@ Revalidating certificates can be problematic in certain installations (for examp
 The trust-store or mTLS store in {project_name} should always be configured correctly to validate the client certificate chain.
 Please see link:https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] and link:https://www.keycloak.org/server/mutual-tls[Configuring trusted certificates for mTLS], for more information if you are using a TLS termination proxy and X509 client authentication.
 
+=== Disabled clients are no longer added to the token audience
+
+A disabled client is never added to the `aud` claim of a token, and its client roles are not present in the `resource_access` claim.
+Tokens are still issued, only without that client, so logins and refreshes keep succeeding.
+This change addresses CVE-2026-93999.
+
+For more details, see link:{adminguide_link}#_audience_disabled_clients[Disabled clients and the audience] in the {adminguide_name}.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
