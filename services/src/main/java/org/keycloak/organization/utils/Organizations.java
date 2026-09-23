@@ -412,7 +412,7 @@ public class Organizations {
         if (organizations.isEmpty()) {
             // no membership, any org that matches the domain
             return resolveByDomain(ofNullable(emailDomain)
-                    .map(provider::getByDomainName)
+                    .map(d -> getByDomainNameOrNull(provider, d))
                     .map(List::of)
                     .orElse(List.of()), emailDomain);
         }
@@ -424,6 +424,15 @@ public class Organizations {
         }
 
         return resolveByDomain(organizations, emailDomain);
+    }
+
+    private static OrganizationModel getByDomainNameOrNull(OrganizationProvider provider, String domain) {
+        try {
+            return provider.getByDomainName(domain);
+        } catch (ModelValidationException e) {
+            // malformed domain (e.g. a typo in the login username, or an unvalidated stored email) - treat as no match
+            return null;
+        }
     }
 
     public static OrganizationProvider getProvider(KeycloakSession session) {
