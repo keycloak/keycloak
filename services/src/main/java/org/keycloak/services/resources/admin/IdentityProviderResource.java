@@ -540,6 +540,10 @@ public class IdentityProviderResource {
     }
 
     private void validateMapperAdminRoleMapping(IdentityProviderMapperModel mapperModel) {
+        if (mapperModel.getConfig() == null) {
+           throw ErrorResponse.error("Mapper config must not be null.", Response.Status.BAD_REQUEST);
+        }
+        
         if (mapperGrantsAdminRole(mapperModel) || mapperJoinsAdminGroup(mapperModel)) {
             if (!identityProviderModel.isAllowAdminRoleMapping()) {
                 throw ErrorResponse.error("This identity provider is not configured to allow granting admin roles via mappers. "
