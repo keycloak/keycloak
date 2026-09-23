@@ -540,10 +540,6 @@ public class IdentityProviderResource {
     }
 
     private void validateMapperAdminRoleMapping(IdentityProviderMapperModel mapperModel) {
-        if (auth.hasOneAdminRole(AdminRoles.MANAGE_REALM)) {
-            return;
-        }
-
         if (mapperGrantsAdminRole(mapperModel) || mapperJoinsAdminGroup(mapperModel)) {
             if (!identityProviderModel.isAllowAdminRoleMapping()) {
                 throw ErrorResponse.error("This identity provider is not configured to allow granting admin roles via mappers. "
