@@ -17,6 +17,8 @@
 
 package org.keycloak.util;
 
+import java.net.URI;
+
 import org.keycloak.common.util.UriUtils;
 
 import org.junit.Test;
@@ -70,9 +72,17 @@ public class UriUtilsTest {
         assertFalse(UriUtils.originEquals("https://Example.COM:8443", "https://example.com:8444"));
         assertFalse(UriUtils.originEquals("https://Example.COM:8443", "https://other.com:8443"));
         assertFalse(UriUtils.originEquals("https://allowed_host", "https://evil_host"));
-        // Registry-name hosts: hostname case-insensitive, user-info case-sensitive
-        assertTrue(UriUtils.originEquals("https://Alice@allowed_host", "https://Alice@ALLOWED_HOST"));
-        assertFalse(UriUtils.originEquals("https://Alice@allowed_host", "https://alice@allowed_host"));
+        // Origin is scheme + host + port; user-info is not part of the origin
+        assertTrue(UriUtils.originEquals("https://Alice@allowed_host", "https://alice@ALLOWED_HOST"));
+        assertTrue(UriUtils.originEquals("https://Alice@example.com", "https://alice@example.com"));
+        // Opaque URIs with no authority must not match on scheme alone
+        assertFalse(UriUtils.schemeAndHostEqual(URI.create("mailto:alice@example.com"),
+                URI.create("mailto:bob@evil.test")));
+        assertTrue(UriUtils.schemeAndHostEqual(URI.create("mailto:alice@example.com"),
+                URI.create("MAILTO:alice@example.com")));
+        // Registry-name host case-insensitive; port still compared for origin equality
+        assertTrue(UriUtils.originEquals("https://ALLOWED_HOST:444", "https://allowed_host:444"));
+        assertFalse(UriUtils.originEquals("https://allowed_host:444", "https://allowed_host:443"));
     }
 
     @Test
