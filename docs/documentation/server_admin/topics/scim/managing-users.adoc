@@ -4,7 +4,7 @@
 = Managing users
 [role="_abstract"]
 
-The SCIM `/Users` endpoint allows you to create, read, update, and delete user resources in {project_name}. User resources
+The SCIM `/Users` endpoint allows you to create, read, update, and delete realm user resources in {project_name}. User resources
 conform to the `urn:ietf:params:scim:schemas:core:2.0:User` schema as defined in RFC 7643.
 
 == Core user attributes
