@@ -150,6 +150,19 @@ The Admin REST API endpoints for listing client sessions (`GET /admin/realms/\{r
 Previously, any caller with the `view-clients` role could see all user sessions for a client, potentially exposing user identities to callers without the `view-users` role.
 After upgrading, callers without `view-users` permission will see fewer results from these endpoints.
 
+=== Administrators that can map a role can also view it
+// https://github.com/keycloak/keycloak/issues/52753
+
+An administrator that is allowed to map a role to a user is now also allowed to view that role. This applies to the `manage-users` realm admin role, to the `map-role` and `map-roles` permissions of fine-grained admin permissions V1, and to the `map-role` operation of the *Roles* resource type in fine-grained admin permissions V2.
+
+Previously, viewing a realm role additionally required the `view-realm` role, or a *view* permission on the client for a client role. As a result, the role mappings of a user or group returned by `GET /admin/realms/\{realm}/users/\{id}/role-mappings` and `GET /admin/realms/\{realm}/groups/\{id}/role-mappings` omitted the roles an
+administrator could map but not view, the client-level endpoints `GET /admin/realms/\{realm}/users/\{id}/role-mappings/clients/\{client}` and `GET /admin/realms/\{realm}/groups/\{id}/role-mappings/clients/\{client}` returned `403 Forbidden` without a *view* permission on the client, and the `realmRoles` and `clientRoles` of a group returned by `GET /admin/realms/\{realm}/groups/\{id}` were filtered by the same rule.
+
+Now all these endpoints return the roles the administrator is allowed to view or map, and filter out the remaining roles instead of returning `403 Forbidden`.
+
+After upgrading, these administrators can also read the role through `GET /admin/realms/\{realm}/roles-by-id/\{id}`, including its attributes and composites. Reading the management permission references of a role with fine-grained admin permissions V1 still requires permission to view the realm or the client the role belongs to.
+Roles that an administrator can neither view nor map remain hidden. The only difference for these administrators is that the client-level role mapping endpoints now return an empty list instead of `403 Forbidden` when they have no *view* permission on the client.
+
 === Client Secret Rotation is now enabled by default
 // https://github.com/keycloak/keycloak/issues/51888
 

@@ -31,6 +31,8 @@ import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.admin.client.resource.RoleByIdResource;
+import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -68,6 +70,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.CLIENTS;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES_COMPOSITE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
@@ -75,9 +78,11 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
@@ -697,12 +702,10 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         List<RoleRepresentation> visibleRoles = realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).roles().clientLevel(visibleClient.getId()).listAll();
         assertThat(visibleRoles, hasSize(1));
 
-        // user: hidden client role-mappings and composites should be denied
+        // user: hidden client role-mappings and composites should be filtered out
         String hiddenId = hiddenClient.getId();
-        Assertions.assertThrows(ForbiddenException.class, () ->
-                realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).roles().clientLevel(hiddenId).listAll());
-        Assertions.assertThrows(ForbiddenException.class, () ->
-                realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).roles().clientLevel(hiddenId).listEffective());
+        assertThat(realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).roles().clientLevel(hiddenId).listAll(), is(empty()));
+        assertThat(realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).roles().clientLevel(hiddenId).listEffective(), is(empty()));
 
         // group role-mappings: getAll should contain visible-client but not hidden-client
         // realm roles should be filtered since myadmin lacks view-realm
@@ -713,11 +716,9 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         assertThat(groupClientMappings, hasKey("visible-client"));
         assertThat(groupClientMappings, not(hasKey("hidden-client")));
 
-        // group: hidden client role-mappings and composites should be denied
-        Assertions.assertThrows(ForbiddenException.class, () ->
-                realmAdminClient.realm(realm.getName()).groups().group(targetGroup.getId()).roles().clientLevel(hiddenId).listAll());
-        Assertions.assertThrows(ForbiddenException.class, () ->
-                realmAdminClient.realm(realm.getName()).groups().group(targetGroup.getId()).roles().clientLevel(hiddenId).listEffective());
+        // group: hidden client role-mappings and composites should be filtered out
+        assertThat(realmAdminClient.realm(realm.getName()).groups().group(targetGroup.getId()).roles().clientLevel(hiddenId).listAll(), is(empty()));
+        assertThat(realmAdminClient.realm(realm.getName()).groups().group(targetGroup.getId()).roles().clientLevel(hiddenId).listEffective(), is(empty()));
 
         // group full representation should not contain hidden-client in clientRoles
         GroupRepresentation groupRep = realmAdminClient.realm(realm.getName()).groups().group(targetGroup.getId()).toRepresentation();
@@ -725,5 +726,142 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         assertThat(clientRoles, notNullValue());
         assertThat(clientRoles, hasKey("visible-client"));
         assertThat(clientRoles, not(hasKey("hidden-client")));
+    }
+
+    @Test
+    public void testRealmRoleMappingVisibleWithMapRolePermission() {
+        RoleRepresentation mappableRole = new RoleRepresentation();
+        mappableRole.setName("MAPPABLE_REALM_ROLE");
+        realm.admin().roles().create(mappableRole);
+        mappableRole = realm.admin().roles().get("MAPPABLE_REALM_ROLE").toRepresentation();
+        final String mappableRoleId = mappableRole.getId();
+        realm.cleanup().add(r -> r.roles().deleteRole("MAPPABLE_REALM_ROLE"));
+
+        UserRepresentation targetUser = createUser("map-role-target-user");
+        GroupRepresentation targetGroup = createGroup("map-role-target-group");
+
+        realm.admin().users().get(targetUser.getId()).roles().realmLevel().add(List.of(mappableRole));
+        realm.admin().groups().group(targetGroup.getId()).roles().realmLevel().add(List.of(mappableRole));
+
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "myadmin-map-role-policy", myadmin.getId());
+        createPermission(adminPermissionsClient, targetUser.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        createGroupPermission(targetGroup, Set.of(VIEW), policy);
+        // grant map-role on the specific realm role only, without view-realm
+        createPermission(adminPermissionsClient, mappableRoleId, AdminPermissionsSchema.ROLES.getType(), Set.of(MAP_ROLE), policy);
+
+        // user role-mappings: the mappable realm role must be visible through the map-role permission
+        MappingsRepresentation userMappings = realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).roles().getAll();
+        assertThat(userMappings.getRealmMappings(), notNullValue());
+        assertThat(userMappings.getRealmMappings().stream().map(RoleRepresentation::getName).toList(), hasItem("MAPPABLE_REALM_ROLE"));
+
+        // group role-mappings: same expectation
+        MappingsRepresentation groupMappings = realmAdminClient.realm(realm.getName()).groups().group(targetGroup.getId()).roles().getAll();
+        assertThat(groupMappings.getRealmMappings(), notNullValue());
+        assertThat(groupMappings.getRealmMappings().stream().map(RoleRepresentation::getName).toList(), hasItem("MAPPABLE_REALM_ROLE"));
+    }
+
+    @Test
+    public void testMapRolePermissionGrantsRoleByIdRead() {
+        RoleRepresentation mappableRole = new RoleRepresentation();
+        mappableRole.setName("MAPPABLE_REALM_ROLE");
+        realm.admin().roles().create(mappableRole);
+        mappableRole = realm.admin().roles().get("MAPPABLE_REALM_ROLE").toRepresentation();
+        final String mappableRoleId = mappableRole.getId();
+        realm.cleanup().add(r -> r.roles().deleteRole("MAPPABLE_REALM_ROLE"));
+
+        RoleRepresentation unmappableRole = new RoleRepresentation();
+        unmappableRole.setName("UNMAPPABLE_REALM_ROLE");
+        realm.admin().roles().create(unmappableRole);
+        final String unmappableRoleId = realm.admin().roles().get("UNMAPPABLE_REALM_ROLE").toRepresentation().getId();
+        realm.cleanup().add(r -> r.roles().deleteRole("UNMAPPABLE_REALM_ROLE"));
+
+        UserRepresentation targetUser = createUser("map-role-view-user");
+        realm.admin().users().get(targetUser.getId()).roles().realmLevel().add(List.of(mappableRole));
+
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "myadmin-map-role-view-policy", myadmin.getId());
+        createPermission(adminPermissionsClient, targetUser.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        createPermission(adminPermissionsClient, mappableRoleId, AdminPermissionsSchema.ROLES.getType(), Set.of(MAP_ROLE), policy);
+
+        // the role is visible in the role-mappings list
+        MappingsRepresentation userMappings = realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).roles().getAll();
+        assertThat(userMappings.getRealmMappings(), notNullValue());
+        assertThat(userMappings.getRealmMappings().stream().map(RoleRepresentation::getName).toList(), hasItem("MAPPABLE_REALM_ROLE"));
+
+        // and reading the role by id is allowed because map-role implies visibility of the role
+        RoleRepresentation byId = realmAdminClient.realm(realm.getName()).rolesById().getRole(mappableRoleId);
+        assertThat(byId, notNullValue());
+        assertThat(byId.getName(), is("MAPPABLE_REALM_ROLE"));
+
+        // roles without map-role remain hidden
+        Assertions.assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName()).rolesById().getRole(unmappableRoleId));
+
+        // but map-role does not grant management of the role itself
+        RolesResource roles = realmAdminClient.realm(realm.getName()).roles();
+        RoleByIdResource rolesById = realmAdminClient.realm(realm.getName()).rolesById();
+        Assertions.assertThrows(ForbiddenException.class, () -> rolesById.updateRole(mappableRoleId, byId));
+        Assertions.assertThrows(ForbiddenException.class, () -> rolesById.addComposites(mappableRoleId, List.of()));
+        Assertions.assertThrows(ForbiddenException.class, () -> rolesById.deleteComposites(mappableRoleId, List.of()));
+        Assertions.assertThrows(ForbiddenException.class, () -> rolesById.deleteRole(mappableRoleId));
+        Assertions.assertThrows(ForbiddenException.class, () -> roles.get("MAPPABLE_REALM_ROLE").update(byId));
+        Assertions.assertThrows(ForbiddenException.class, () -> roles.get("MAPPABLE_REALM_ROLE").addComposites(List.of()));
+        Assertions.assertThrows(ForbiddenException.class, () -> roles.get("MAPPABLE_REALM_ROLE").deleteComposites(List.of()));
+        Assertions.assertThrows(ForbiddenException.class, () -> roles.deleteRole("MAPPABLE_REALM_ROLE"));
+    }
+
+    @Test
+    public void testGroupRepresentationFiltersRolesByVisibility() {
+        RoleRepresentation mappableRealmRole = new RoleRepresentation();
+        mappableRealmRole.setName("GROUP_REP_MAPPABLE_REALM_ROLE");
+        realm.admin().roles().create(mappableRealmRole);
+        mappableRealmRole = realm.admin().roles().get("GROUP_REP_MAPPABLE_REALM_ROLE").toRepresentation();
+        realm.cleanup().add(r -> r.roles().deleteRole("GROUP_REP_MAPPABLE_REALM_ROLE"));
+
+        RoleRepresentation hiddenRealmRole = new RoleRepresentation();
+        hiddenRealmRole.setName("GROUP_REP_HIDDEN_REALM_ROLE");
+        realm.admin().roles().create(hiddenRealmRole);
+        hiddenRealmRole = realm.admin().roles().get("GROUP_REP_HIDDEN_REALM_ROLE").toRepresentation();
+        realm.cleanup().add(r -> r.roles().deleteRole("GROUP_REP_HIDDEN_REALM_ROLE"));
+
+        ClientRepresentation hiddenClient = new ClientRepresentation();
+        hiddenClient.setClientId("group-rep-hidden-client");
+        hiddenClient.setEnabled(true);
+        try (Response response = realm.admin().clients().create(hiddenClient)) {
+            hiddenClient.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(r -> r.clients().get(hiddenClient.getId()).remove());
+
+        RoleRepresentation mappableClientRole = new RoleRepresentation();
+        mappableClientRole.setName("GROUP_REP_MAPPABLE_CLIENT_ROLE");
+        realm.admin().clients().get(hiddenClient.getId()).roles().create(mappableClientRole);
+        mappableClientRole = realm.admin().clients().get(hiddenClient.getId()).roles().get("GROUP_REP_MAPPABLE_CLIENT_ROLE").toRepresentation();
+
+        RoleRepresentation hiddenClientRole = new RoleRepresentation();
+        hiddenClientRole.setName("GROUP_REP_HIDDEN_CLIENT_ROLE");
+        realm.admin().clients().get(hiddenClient.getId()).roles().create(hiddenClientRole);
+        hiddenClientRole = realm.admin().clients().get(hiddenClient.getId()).roles().get("GROUP_REP_HIDDEN_CLIENT_ROLE").toRepresentation();
+
+        GroupRepresentation targetGroup = createGroup("group-rep-visibility-group");
+        realm.admin().groups().group(targetGroup.getId()).roles().realmLevel().add(List.of(mappableRealmRole, hiddenRealmRole));
+        realm.admin().groups().group(targetGroup.getId()).roles().clientLevel(hiddenClient.getId()).add(List.of(mappableClientRole, hiddenClientRole));
+
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "myadmin-group-rep-policy", myadmin.getId());
+        createGroupPermission(targetGroup, Set.of(VIEW), policy);
+        // map-role on specific roles only, without view-realm or view on the client
+        createPermission(adminPermissionsClient, mappableRealmRole.getId(), AdminPermissionsSchema.ROLES.getType(), Set.of(MAP_ROLE), policy);
+        createPermission(adminPermissionsClient, mappableClientRole.getId(), AdminPermissionsSchema.ROLES.getType(), Set.of(MAP_ROLE), policy);
+
+        GroupRepresentation groupRep = realmAdminClient.realm(realm.getName()).groups().group(targetGroup.getId()).toRepresentation();
+
+        assertThat(groupRep.getRealmRoles(), notNullValue());
+        assertThat(groupRep.getRealmRoles(), hasItem("GROUP_REP_MAPPABLE_REALM_ROLE"));
+        assertThat(groupRep.getRealmRoles(), not(hasItem("GROUP_REP_HIDDEN_REALM_ROLE")));
+
+        assertThat(groupRep.getClientRoles(), notNullValue());
+        assertThat(groupRep.getClientRoles(), hasKey("group-rep-hidden-client"));
+        assertThat(groupRep.getClientRoles().get("group-rep-hidden-client"), hasItem("GROUP_REP_MAPPABLE_CLIENT_ROLE"));
+        assertThat(groupRep.getClientRoles().get("group-rep-hidden-client"), not(hasItem("GROUP_REP_HIDDEN_CLIENT_ROLE")));
     }
 }
