@@ -495,12 +495,29 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         mapperNonAdmin.getConfig().put("role", "offline_access");
         mapperNonAdmin.getConfig().put("syncMode", "INHERIT");
 
+        String[] nonAdminMapperIdHolder = new String[1];
         runAs(realmName, "admin-cli", attackerName, attackerClient -> {
             try (Response response = attackerClient.realm(realmName)
                     .identityProviders().get("test-idp").addMapper(mapperNonAdmin)) {
                 assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+                nonAdminMapperIdHolder[0] = ApiUtil.getCreatedId(response);
             }
         });
+        String nonAdminMapperId = nonAdminMapperIdHolder[0];
+        String adminRole = Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.REALM_ADMIN;
+
+        // Updating the benign mapper to grant an admin role must be rejected too (switch is off by default)
+        runAs(realmName, "admin-cli", attackerName, attackerClient -> {
+            IdentityProviderMapperRepresentation toEscalate = attackerClient.realm(realmName)
+                    .identityProviders().get("test-idp").getMapperById(nonAdminMapperId);
+            toEscalate.getConfig().put("role", adminRole);
+            assertThrows(ForbiddenException.class, () ->
+                            attackerClient.realm(realmName).identityProviders().get("test-idp").update(nonAdminMapperId, toEscalate),
+                    "Updating a mapper to grant an admin role should be forbidden when allowAdminRoleMapping is disabled");
+        });
+        assertEquals("offline_access",
+                testRealm.identityProviders().get("test-idp").getMapperById(nonAdminMapperId).getConfig().get("role"),
+                "A rejected update must not modify the mapper");
 
         // Realm admin enables the switch
         IdentityProviderRepresentation idpRep = testRealm.identityProviders().get("test-idp").toRepresentation();
@@ -515,6 +532,17 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
                         "Creating mapper with realm-admin role should succeed when allowAdminRoleMapping is enabled");
             }
         });
+
+        // ...and can now update the benign mapper to grant the admin role
+        runAs(realmName, "admin-cli", attackerName, attackerClient -> {
+            IdentityProviderMapperRepresentation toEscalate = attackerClient.realm(realmName)
+                    .identityProviders().get("test-idp").getMapperById(nonAdminMapperId);
+            toEscalate.getConfig().put("role", adminRole);
+            attackerClient.realm(realmName).identityProviders().get("test-idp").update(nonAdminMapperId, toEscalate);
+        });
+        assertEquals(adminRole,
+                testRealm.identityProviders().get("test-idp").getMapperById(nonAdminMapperId).getConfig().get("role"),
+                "Updating a mapper to grant an admin role should succeed when allowAdminRoleMapping is enabled");
     }
 
     @Test
