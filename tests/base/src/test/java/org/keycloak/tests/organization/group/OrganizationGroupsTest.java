@@ -22,19 +22,25 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.admin.client.resource.OrganizationGroupsResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
-import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.annotations.InjectOrganization;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedOrganization;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.tests.organization.admin.AbstractOrganizationTest;
 
 import org.junit.jupiter.api.Test;
 
@@ -49,22 +55,31 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest
-public class OrganizationGroupsTest extends AbstractOrganizationTest {
+public class OrganizationGroupsTest {
+
+    @InjectRealm
+    ManagedRealm realm;
+
+    @InjectOrganization
+    ManagedOrganization organization;
+
+    @InjectOrganization(ref = "other")
+    ManagedOrganization otherOrganization;
+
+    @InjectUser(config = MemberConfig.class)
+    ManagedUser member;
+
+    @InjectUser(ref = "non-member", config = NonMemberConfig.class)
+    ManagedUser nonMember;
 
     @Test
     public void testCreateOrganizationGroup() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
         GroupRepresentation groupRep = new GroupRepresentation();
         groupRep.setName("test-group");
         groupRep.singleAttribute("department", "Engineering");
+        createGroup(organization, groupRep);
 
-        try (Response response = orgResource.groups().addTopLevelGroup(groupRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-        }
-
-        List<GroupRepresentation> groups = orgResource.groups().getAll(null, null, null, null, null, false, false);
+        List<GroupRepresentation> groups = groups().getAll(null, null, null, null, null, false, false);
         assertThat(groups, hasSize(1));
         assertThat(groups.get(0).getName(), is("test-group"));
         assertThat(groups.get(0).getPath(), is("/test-group"));
@@ -73,44 +88,29 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         assertThat(groups.get(0).getAttributes().get("department").get(0), is("Engineering"));
 
         // retrieve brief rep
-        groups = orgResource.groups().getAll(null, null, null, null, null, true, false);
+        groups = groups().getAll(null, null, null, null, null, true, false);
         assertThat(groups, hasSize(1));
         assertThat(groups.get(0).getAttributes(), nullValue());
     }
 
     @Test
     public void testCreateDuplicateGroupName() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+        createGroup("duplicate-group");
 
+        // Try to create another group with the same name
         GroupRepresentation groupRep = new GroupRepresentation();
         groupRep.setName("duplicate-group");
 
-        try (Response response = orgResource.groups().addTopLevelGroup(groupRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-        }
-
-        // Try to create another group with the same name
-        try (Response response = orgResource.groups().addTopLevelGroup(groupRep)) {
+        try (Response response = groups().addTopLevelGroup(groupRep)) {
             assertThat(response.getStatus(), is(Status.CONFLICT.getStatusCode()));
         }
     }
 
     @Test
     public void testGetOrganizationGroup() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+        String groupId = createGroup("test-group");
 
-        GroupRepresentation groupRep = new GroupRepresentation();
-        groupRep.setName("test-group");
-
-        String groupId;
-        try (Response response = orgResource.groups().addTopLevelGroup(groupRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            groupId = ApiUtil.getCreatedId(response);
-        }
-
-        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation(false);
+        GroupRepresentation retrieved = groups().group(groupId).toRepresentation(false);
         assertNotNull(retrieved);
         assertThat(retrieved.getName(), is("test-group"));
         assertThat(retrieved.getPath(), is("/test-group"));
@@ -118,24 +118,16 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
 
     @Test
     public void testOrgGroupAttributes() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
         // Create group with attributes
         GroupRepresentation groupRep = new GroupRepresentation();
         groupRep.setName("test-group");
         groupRep.setAttributes(new HashMap<>());
         groupRep.getAttributes().put("department", List.of("Engineering"));
         groupRep.getAttributes().put("location", List.of("NYC", "SF"));
-
-        String groupId;
-        try (Response response = orgResource.groups().addTopLevelGroup(groupRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            groupId = ApiUtil.getCreatedId(response);
-        }
+        String groupId = createGroup(organization, groupRep);
 
         // Retrieve and verify attributes are included
-        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation(false);
+        GroupRepresentation retrieved = groups().group(groupId).toRepresentation(false);
         assertNotNull(retrieved.getAttributes());
         assertThat(retrieved.getAttributes().get("department"), hasSize(1));
         assertThat(retrieved.getAttributes().get("department").get(0), is("Engineering"));
@@ -144,19 +136,9 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
 
     @Test
     public void testOrgGroupRepresentationIncludesEmptyRoleMappings() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+        String groupId = createGroup("test-group");
 
-        GroupRepresentation groupRep = new GroupRepresentation();
-        groupRep.setName("test-group");
-
-        String groupId;
-        try (Response response = orgResource.groups().addTopLevelGroup(groupRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            groupId = ApiUtil.getCreatedId(response);
-        }
-
-        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation(false);
+        GroupRepresentation retrieved = groups().group(groupId).toRepresentation(false);
         assertThat(retrieved, notNullValue());
         assertThat(retrieved.getRealmRoles(), notNullValue());
         assertThat(retrieved.getRealmRoles(), hasSize(0));
@@ -166,30 +148,22 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
 
     @Test
     public void testUpdateOrganizationGroup() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
         GroupRepresentation groupRep = new GroupRepresentation();
         groupRep.setName("original-name");
         groupRep.setDescription("Original description");
-
-        String groupId;
-        try (Response response = orgResource.groups().addTopLevelGroup(groupRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            groupId = ApiUtil.getCreatedId(response);
-        }
+        String groupId = createGroup(organization, groupRep);
 
         // Update the group
         GroupRepresentation updateRep = new GroupRepresentation();
         updateRep.setName("updated-name");
         updateRep.setDescription("Updated description");
 
-        try (Response response = orgResource.groups().group(groupId).update(updateRep)) {
+        try (Response response = groups().group(groupId).update(updateRep)) {
             assertThat(response.getStatus(), is(Status.NO_CONTENT.getStatusCode()));
         }
 
         // Verify the update
-        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation(false);
+        GroupRepresentation retrieved = groups().group(groupId).toRepresentation(false);
         assertThat(retrieved.getName(), is("updated-name"));
         assertThat(retrieved.getPath(), is("/updated-name"));
         assertThat(retrieved.getDescription(), is("Updated description"));
@@ -197,151 +171,73 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
 
     @Test
     public void testDeleteOrganizationGroup() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
-        GroupRepresentation groupRep = new GroupRepresentation();
-        groupRep.setName("test-group");
-
-        String groupId;
-        try (Response response = orgResource.groups().addTopLevelGroup(groupRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            groupId = ApiUtil.getCreatedId(response);
-        }
+        String groupId = createGroup("test-group");
 
         // Delete the group
-        orgResource.groups().group(groupId).delete();
+        groups().group(groupId).delete();
 
         // Verify it's deleted
-        List<GroupRepresentation> groups = orgResource.groups().getAll(null, null, null, 0, 10, true, false);
+        List<GroupRepresentation> groups = groups().getAll(null, null, null, 0, 10, true, false);
         assertThat(groups, hasSize(0));
     }
 
     @Test
     public void testCreateSubGroup() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
-        // Create parent group
-        GroupRepresentation parentRep = new GroupRepresentation();
-        parentRep.setName("parent-group");
-
-        String parentId;
-        try (Response response = orgResource.groups().addTopLevelGroup(parentRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            parentId = ApiUtil.getCreatedId(response);
-        }
-
-        // Create subgroup
-        GroupRepresentation childRep = new GroupRepresentation();
-        childRep.setName("child-group");
-
-        try (Response response = orgResource.groups().group(parentId).addSubGroup(childRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-        }
+        String parentId = createGroup("parent-group");
+        createSubGroup(parentId, "child-group");
 
         // Verify subgroup exists
-        List<GroupRepresentation> subGroups = orgResource.groups().group(parentId).getSubGroups(null, null, 0, 10);
+        List<GroupRepresentation> subGroups = groups().group(parentId).getSubGroups(null, null, 0, 10);
         assertThat(subGroups, hasSize(1));
         assertThat(subGroups.get(0).getName(), is("child-group"));
         assertThat(subGroups.get(0).getPath(), is("/parent-group/child-group"));
 
         // Verify parent's subgroup count
-        GroupRepresentation parentWithCount = orgResource.groups().group(parentId).toRepresentation(true);
+        GroupRepresentation parentWithCount = groups().group(parentId).toRepresentation(true);
         assertThat(parentWithCount.getSubGroupCount(), is(1L));
     }
 
     @Test
     public void testMemberJoinGroup() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
-        // Create a member
-        MemberRepresentation member = addMember(orgResource);
-
-        // Create a group
-        GroupRepresentation groupRep = new GroupRepresentation();
-        groupRep.setName("test-group");
-
-        String groupId;
-        try (Response response = orgResource.groups().addTopLevelGroup(groupRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            groupId = ApiUtil.getCreatedId(response);
-        }
+        addMember(member);
+        String groupId = createGroup("test-group");
 
         // Add member to group
-        orgResource.groups().group(groupId).addMember(member.getId());
+        groups().group(groupId).addMember(member.getId());
 
         // Verify member is in group
-        List<MemberRepresentation> members = orgResource.groups().group(groupId).getMembers(0, 10, false);
+        List<MemberRepresentation> members = groups().group(groupId).getMembers(0, 10, false);
         assertThat(members, hasSize(1));
         assertThat(members.get(0).getId(), is(member.getId()));
     }
 
     @Test
     public void testMemberLeaveGroup() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
-        // Create a member
-        MemberRepresentation member = addMember(orgResource);
-
-        // Create a group
-        GroupRepresentation groupRep = new GroupRepresentation();
-        groupRep.setName("test-group");
-
-        String groupId;
-        try (Response response = orgResource.groups().addTopLevelGroup(groupRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            groupId = ApiUtil.getCreatedId(response);
-        }
+        addMember(member);
+        String groupId = createGroup("test-group");
 
         // Add member to group
-        orgResource.groups().group(groupId).addMember(member.getId());
+        groups().group(groupId).addMember(member.getId());
 
         // Verify member is in group
-        List<MemberRepresentation> members = orgResource.groups().group(groupId).getMembers(0, 10, false);
+        List<MemberRepresentation> members = groups().group(groupId).getMembers(0, 10, false);
         assertThat(members, hasSize(1));
 
         // Remove member from group
-        orgResource.groups().group(groupId).removeMember(member.getId());
+        groups().group(groupId).removeMember(member.getId());
 
         // Verify member is not in group
-        members = orgResource.groups().group(groupId).getMembers(0, 10, false);
+        members = groups().group(groupId).getMembers(0, 10, false);
         assertThat(members, hasSize(0));
     }
 
     @Test
     public void testNonMemberCannotJoinGroup() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+        String groupId = createGroup("test-group");
 
-        // Create a user who is NOT a member of the organization
-        UserRepresentation nonMember = new UserRepresentation();
-        nonMember.setEmail("nonmember@example.com");
-        nonMember.setUsername("nonmember");
-        nonMember.setEnabled(true);
-
-        String userId;
-        try (Response response = realm.admin().users().create(nonMember)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            userId = ApiUtil.getCreatedId(response);
-        }
-        realm.cleanup().add(r -> r.users().get(userId).remove());
-
-        // Create a group
-        GroupRepresentation groupRep = new GroupRepresentation();
-        groupRep.setName("test-group");
-
-        String groupId;
-        try (Response response = orgResource.groups().addTopLevelGroup(groupRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            groupId = ApiUtil.getCreatedId(response);
-        }
-
-        // Try to add non-member to group - should fail
+        // Try to add a user who is NOT a member of the organization to group - should fail
         try {
-            orgResource.groups().group(groupId).addMember(userId);
+            groups().group(groupId).addMember(nonMember.getId());
             fail("Should not be able to add non-member to organization group");
         } catch (Exception e) {
             assertThat(e.getMessage(), containsString(Status.BAD_REQUEST.toString()));
@@ -350,28 +246,15 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
 
     @Test
     public void testMemberAlreadyInGroup() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
-        // Create a member
-        MemberRepresentation member = addMember(orgResource);
-
-        // Create a group
-        GroupRepresentation groupRep = new GroupRepresentation();
-        groupRep.setName("test-group");
-
-        String groupId;
-        try (Response response = orgResource.groups().addTopLevelGroup(groupRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            groupId = ApiUtil.getCreatedId(response);
-        }
+        addMember(member);
+        String groupId = createGroup("test-group");
 
         // Add member to group
-        orgResource.groups().group(groupId).addMember(member.getId());
+        groups().group(groupId).addMember(member.getId());
 
         // Try to add the same member again - should return conflict
         try {
-            orgResource.groups().group(groupId).addMember(member.getId());
+            groups().group(groupId).addMember(member.getId());
             fail("Should return conflict when adding member already in group");
         } catch (Exception e) {
             assertThat(e.getMessage(), containsString(Status.CONFLICT.toString()));
@@ -380,25 +263,12 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
 
     @Test
     public void testCannotJoinOrganizationGroupViaUserAPI() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
-        // Create a member
-        MemberRepresentation member = addMember(orgResource);
-
-        // Create a group
-        GroupRepresentation groupRep = new GroupRepresentation();
-        groupRep.setName("test-group");
-
-        String groupId;
-        try (Response response = orgResource.groups().addTopLevelGroup(groupRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            groupId = ApiUtil.getCreatedId(response);
-        }
+        addMember(member);
+        String groupId = createGroup("test-group");
 
         // Try to join group via User API - should fail
         try {
-            realm.admin().users().get(member.getId()).joinGroup(groupId);
+            member.admin().joinGroup(groupId);
             fail("Should not be able to join organization group via User API");
         } catch (Exception e) {
             assertThat(e.getMessage(), containsString(Status.BAD_REQUEST.toString()));
@@ -407,41 +277,14 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
 
     @Test
     public void testMoveGroupWithinOrganization() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
-        // Create parent group 1
-        GroupRepresentation parent1Rep = new GroupRepresentation();
-        parent1Rep.setName("parent1");
-
-        String parent1Id;
-        try (Response response = orgResource.groups().addTopLevelGroup(parent1Rep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            parent1Id = ApiUtil.getCreatedId(response);
-        }
-
-        // Create parent group 2
-        GroupRepresentation parent2Rep = new GroupRepresentation();
-        parent2Rep.setName("parent2");
-
-        String parent2Id;
-        try (Response response = orgResource.groups().addTopLevelGroup(parent2Rep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            parent2Id = ApiUtil.getCreatedId(response);
-        }
+        String parent1Id = createGroup("parent1");
+        String parent2Id = createGroup("parent2");
 
         // Create child group under parent1
-        GroupRepresentation childRep = new GroupRepresentation();
-        childRep.setName("child-group");
-
-        String childId;
-        try (Response response = orgResource.groups().group(parent1Id).addSubGroup(childRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            childId = response.readEntity(GroupRepresentation.class).getId();
-        }
+        String childId = createSubGroup(parent1Id, "child-group");
 
         // Verify child is under parent1
-        List<GroupRepresentation> subGroups = orgResource.groups().group(parent1Id).getSubGroups(null, null, 0, 10);
+        List<GroupRepresentation> subGroups = groups().group(parent1Id).getSubGroups(null, null, 0, 10);
         assertThat(subGroups, hasSize(1));
         assertThat(subGroups.get(0).getName(), is("child-group"));
 
@@ -450,100 +293,58 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         moveRep.setId(childId);
         moveRep.setName("child-group");
 
-        try (Response response = orgResource.groups().group(parent2Id).addSubGroup(moveRep)) {
+        try (Response response = groups().group(parent2Id).addSubGroup(moveRep)) {
             assertThat(response.getStatus(), is(Status.NO_CONTENT.getStatusCode()));
         }
 
         // Verify child is no longer under parent1
-        subGroups = orgResource.groups().group(parent1Id).getSubGroups(null, null, 0, 10);
+        subGroups = groups().group(parent1Id).getSubGroups(null, null, 0, 10);
         assertThat(subGroups, hasSize(0));
 
         // Verify child is now under parent2
-        subGroups = orgResource.groups().group(parent2Id).getSubGroups(null, null, 0, 10);
+        subGroups = groups().group(parent2Id).getSubGroups(null, null, 0, 10);
         assertThat(subGroups, hasSize(1));
         assertThat(subGroups.get(0).getName(), is("child-group"));
 
         // Verify parent1's count decreased
-        GroupRepresentation parent1WithCount = orgResource.groups().group(parent1Id).toRepresentation(true);
+        GroupRepresentation parent1WithCount = groups().group(parent1Id).toRepresentation(true);
         assertThat(parent1WithCount.getSubGroupCount(), is(0L));
 
         // Verify parent2's count increased
-        GroupRepresentation parent2WithCount = orgResource.groups().group(parent2Id).toRepresentation(true);
+        GroupRepresentation parent2WithCount = groups().group(parent2Id).toRepresentation(true);
         assertThat(parent2WithCount.getSubGroupCount(), is(1L));
     }
 
     @Test
     public void testCannotMoveGroupToDifferentOrganization() {
-        // Create first organization
-        OrganizationRepresentation org1Rep = createOrganization("org1");
-        OrganizationResource org1Resource = realm.admin().organizations().get(org1Rep.getId());
+        // Create a group in the first organization
+        String groupId = createGroup("test-group");
 
-        // Create second organization
-        OrganizationRepresentation org2Rep = createOrganization("org2");
-        OrganizationResource org2Resource = realm.admin().organizations().get(org2Rep.getId());
-
-        // Create a group in org1
-        GroupRepresentation groupRep = new GroupRepresentation();
-        groupRep.setName("test-group");
-
-        String groupId;
-        try (Response response = org1Resource.groups().addTopLevelGroup(groupRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            groupId = ApiUtil.getCreatedId(response);
-        }
-
-        // Create a parent in org2
+        // Create a parent in the other organization
         GroupRepresentation parentRep = new GroupRepresentation();
         parentRep.setName("parent-group");
+        String parentId = createGroup(otherOrganization, parentRep);
 
-        String parentId;
-        try (Response response = org2Resource.groups().addTopLevelGroup(parentRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            parentId = ApiUtil.getCreatedId(response);
-        }
-
-        // Try to move org1's group to org2's parent - should fail
+        // Try to move the group to the parent of the other organization - should fail
         GroupRepresentation moveRep = new GroupRepresentation();
         moveRep.setId(groupId);
         moveRep.setName("test-group");
 
-        try (Response response = org2Resource.groups().group(parentId).addSubGroup(moveRep)) {
+        try (Response response = otherOrganization.admin().groups().group(parentId).addSubGroup(moveRep)) {
             assertThat(response.getStatus(), is(Status.BAD_REQUEST.getStatusCode()));
         }
     }
 
     @Test
     public void testSearchGroupsByNameNonExact() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
         // Create multiple groups with different names
-        GroupRepresentation group1 = new GroupRepresentation();
-        group1.setName("sales");
-        try (Response response = orgResource.groups().addTopLevelGroup(group1)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-        }
-
-        GroupRepresentation group2 = new GroupRepresentation();
-        group2.setName("sales-team");
-        try (Response response = orgResource.groups().addTopLevelGroup(group2)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-        }
-
-        GroupRepresentation group3 = new GroupRepresentation();
-        group3.setName("marketing");
-        try (Response response = orgResource.groups().addTopLevelGroup(group3)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-        }
-
-        GroupRepresentation group4 = new GroupRepresentation();
-        group4.setName("engineering");
-        try (Response response = orgResource.groups().addTopLevelGroup(group4)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-        }
+        createGroup("sales");
+        createGroup("sales-team");
+        createGroup("marketing");
+        createGroup("engineering");
 
         // Search for groups containing "sales" with exact=false
-        List<GroupRepresentation> results = orgResource.groups().getAll("sales", null, false, null, null, true, false);
+        List<GroupRepresentation> results = groups().getAll("sales", null, false, null, null, true, false);
 
         // Should only return groups with "sales" in the name: "sales" and "sales-team"
         assertThat(results, hasSize(2));
@@ -551,67 +352,46 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
 
     @Test
     public void testFindGroupByPathWithNestedOrganizationGroups() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
         // Create a 3-level hierarchy: parent/child/grandchild
-        GroupRepresentation parentRep = new GroupRepresentation();
-        parentRep.setName("parent");
-        String parentId;
-        try (Response response = orgResource.groups().addTopLevelGroup(parentRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            parentId = ApiUtil.getCreatedId(response);
-        }
+        String parentId = createGroup("parent");
+        String childId = createSubGroup(parentId, "child");
 
-        GroupRepresentation childRep = new GroupRepresentation();
-        childRep.setName("child");
-        try (Response response = orgResource.groups().group(parentId).addSubGroup(childRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-        }
-
-        List<GroupRepresentation> subGroups = orgResource.groups().group(parentId).getSubGroups(null, null, null, null);
+        List<GroupRepresentation> subGroups = groups().group(parentId).getSubGroups(null, null, null, null);
         assertThat(subGroups, hasSize(1));
         assertThat(subGroups.get(0).getName(), is("child"));
-        String childId = subGroups.get(0).getId();
+        assertThat(subGroups.get(0).getId(), is(childId));
 
-        GroupRepresentation grandchildRep = new GroupRepresentation();
-        grandchildRep.setName("grandchild");
-        try (Response response = orgResource.groups().group(childId).addSubGroup(grandchildRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-        }
+        createSubGroup(childId, "grandchild");
 
         // Test resolving the full path - this exercises the recursive getGroupModel path
-        GroupRepresentation found = orgResource.groups().getGroupByPath("/parent/child/grandchild", false);
+        GroupRepresentation found = groups().getGroupByPath("/parent/child/grandchild", false);
         assertThat(found, notNullValue());
         assertThat(found.getName(), is("grandchild"));
         assertThat(found.getPath(), is("/parent/child/grandchild"));
 
         // Test resolving intermediate paths
-        GroupRepresentation foundChild = orgResource.groups().getGroupByPath("/parent/child", false);
+        GroupRepresentation foundChild = groups().getGroupByPath("/parent/child", false);
         assertThat(foundChild, notNullValue());
         assertThat(foundChild.getName(), is("child"));
         assertThat(foundChild.getPath(), is("/parent/child"));
 
         // Test resolving top-level path
-        GroupRepresentation foundParent = orgResource.groups().getGroupByPath("/parent", false);
+        GroupRepresentation foundParent = groups().getGroupByPath("/parent", false);
         assertThat(foundParent, notNullValue());
         assertThat(foundParent.getName(), is("parent"));
         assertThat(foundParent.getPath(), is("/parent"));
 
         // Test non-existent path
         try {
-            orgResource.groups().getGroupByPath("/parent/nonexistent", false);
+            groups().getGroupByPath("/parent/nonexistent", false);
             fail("Should have thrown NotFoundException");
-        } catch (jakarta.ws.rs.NotFoundException e) {
+        } catch (NotFoundException e) {
             // Expected
         }
     }
 
     @Test
     public void testFindGroupByPathWithBriefRepresentation() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
         // Create a realm role and a client role to be mapped to the group
         RoleRepresentation realmRole = new RoleRepresentation("brief-rep-realm-role", "Test realm role", false);
         realm.admin().roles().create(realmRole);
@@ -633,17 +413,13 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         GroupRepresentation parentRep = new GroupRepresentation();
         parentRep.setName("parent");
         parentRep.singleAttribute("department", "Engineering");
-        String parentId;
-        try (Response response = orgResource.groups().addTopLevelGroup(parentRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            parentId = ApiUtil.getCreatedId(response);
-        }
+        String parentId = createGroup(organization, parentRep);
 
-        orgResource.groups().group(parentId).roles().realmLevel().add(List.of(createdRealmRole));
-        orgResource.groups().group(parentId).roles().clientLevel(clientUuid).add(List.of(createdClientRole));
+        groups().group(parentId).roles().realmLevel().add(List.of(createdRealmRole));
+        groups().group(parentId).roles().clientLevel(clientUuid).add(List.of(createdClientRole));
 
         // briefRepresentation = false returns the full representation
-        GroupRepresentation full = orgResource.groups().getGroupByPath("/parent", false, false);
+        GroupRepresentation full = groups().getGroupByPath("/parent", false, false);
         assertThat(full.getName(), is("parent"));
         assertThat(full.getPath(), is("/parent"));
         assertThat(full.getAttributes().get("department").get(0), is("Engineering"));
@@ -651,7 +427,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         assertThat(full.getClientRoles().get("brief-rep-client"), containsInAnyOrder("brief-rep-client-role"));
 
         // briefRepresentation = true omits attributes and role mappings
-        GroupRepresentation brief = orgResource.groups().getGroupByPath("/parent", true, false);
+        GroupRepresentation brief = groups().getGroupByPath("/parent", true, false);
         assertThat(brief.getName(), is("parent"));
         assertThat(brief.getPath(), is("/parent"));
         assertThat(brief.getAttributes(), nullValue());
@@ -659,7 +435,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         assertThat(brief.getClientRoles(), nullValue());
 
         // briefRepresentation defaults to true when the parameter is not sent
-        GroupRepresentation defaultRep = orgResource.groups().getGroupByPath("/parent", false);
+        GroupRepresentation defaultRep = groups().getGroupByPath("/parent", false);
         assertThat(defaultRep.getName(), is("parent"));
         assertThat(defaultRep.getPath(), is("/parent"));
         assertThat(defaultRep.getAttributes(), nullValue());
@@ -669,113 +445,75 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
 
     @Test
     public void testSubGroupCountQueryParameter() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
         // Create parent with 3 subgroups
-        GroupRepresentation parentRep = new GroupRepresentation();
-        parentRep.setName("parent");
-        String parentId;
-        try (Response response = orgResource.groups().addTopLevelGroup(parentRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            parentId = ApiUtil.getCreatedId(response);
-        }
-
-        // Add 3 children
+        String parentId = createGroup("parent");
         for (int i = 1; i <= 3; i++) {
-            GroupRepresentation childRep = new GroupRepresentation();
-            childRep.setName("child-" + i);
-            try (Response response = orgResource.groups().group(parentId).addSubGroup(childRep)) {
-                assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            }
+            createSubGroup(parentId, "child-" + i);
         }
 
         // Test with subGroupsCount = true
-        GroupRepresentation withCount = orgResource.groups().group(parentId).toRepresentation(true);
+        GroupRepresentation withCount = groups().group(parentId).toRepresentation(true);
         assertThat(withCount.getSubGroupCount(), is(3L));
 
         // Test with subGroupsCount = false (default)
-        GroupRepresentation withoutCount = orgResource.groups().group(parentId).toRepresentation(false);
+        GroupRepresentation withoutCount = groups().group(parentId).toRepresentation(false);
         assertThat(withoutCount.getSubGroupCount(), nullValue());
 
         // Test group with no subgroups
-        GroupRepresentation leafRep = new GroupRepresentation();
-        leafRep.setName("leaf-group");
-        String leafId;
-        try (Response response = orgResource.groups().addTopLevelGroup(leafRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            leafId = ApiUtil.getCreatedId(response);
-        }
+        String leafId = createGroup("leaf-group");
 
-        GroupRepresentation leafWithCount = orgResource.groups().group(leafId).toRepresentation(true);
+        GroupRepresentation leafWithCount = groups().group(leafId).toRepresentation(true);
         assertThat(leafWithCount.getSubGroupCount(), is(0L));
 
         // Test getAll() with subGroupsCount parameter
-        List<GroupRepresentation> allWithCount = orgResource.groups().getAll(null, null, null, null, null, false, true);
+        List<GroupRepresentation> allWithCount = groups().getAll(null, null, null, null, null, false, true);
         assertThat(allWithCount, hasSize(2)); // parent, leaf-group
         allWithCount.forEach(g -> assertThat(g.getSubGroupCount(), notNullValue()));
 
-        List<GroupRepresentation> allWithoutCount = orgResource.groups().getAll(null, null, null, null, null, false, false);
+        List<GroupRepresentation> allWithoutCount = groups().getAll(null, null, null, null, null, false, false);
         assertThat(allWithoutCount, hasSize(2));
         allWithoutCount.forEach(g -> assertThat(g.getSubGroupCount(), nullValue()));
 
         // Test getGroupByPath with subGroupsCount
-        GroupRepresentation byPathWithCount = orgResource.groups().getGroupByPath("/parent", true);
+        GroupRepresentation byPathWithCount = groups().getGroupByPath("/parent", true);
         assertThat(byPathWithCount.getSubGroupCount(), is(3L));
 
-        GroupRepresentation byPathWithoutCount = orgResource.groups().getGroupByPath("/parent", false);
+        GroupRepresentation byPathWithoutCount = groups().getGroupByPath("/parent", false);
         assertThat(byPathWithoutCount.getSubGroupCount(), nullValue());
     }
 
     @Test
     public void testMoveGroupToTopLevel() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
-        // Create parent group
-        GroupRepresentation parentRep = new GroupRepresentation();
-        parentRep.setName("parent-group");
-        String parentId;
-        try (Response response = orgResource.groups().addTopLevelGroup(parentRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            parentId = ApiUtil.getCreatedId(response);
-        }
-
-        // Create child group under parent
-        GroupRepresentation childRep = new GroupRepresentation();
-        childRep.setName("child-group");
-        try (Response response = orgResource.groups().group(parentId).addSubGroup(childRep)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-        }
+        String parentId = createGroup("parent-group");
+        String childId = createSubGroup(parentId, "child-group");
 
         // Verify initial state: parent has 1 subgroup
-        List<GroupRepresentation> subGroups = orgResource.groups().group(parentId).getSubGroups(null, null, null, null);
+        List<GroupRepresentation> subGroups = groups().group(parentId).getSubGroups(null, null, null, null);
         assertThat(subGroups, hasSize(1));
         assertThat(subGroups.get(0).getName(), is("child-group"));
-        String childId = subGroups.get(0).getId();
 
         // Verify child's path shows it's under parent
-        GroupRepresentation child = orgResource.groups().group(childId).toRepresentation(false);
+        GroupRepresentation child = groups().group(childId).toRepresentation(false);
         assertThat(child.getPath(), is("/parent-group/child-group"));
 
         // Move child to top-level by calling addTopLevelGroup with ID
         GroupRepresentation moveRep = new GroupRepresentation();
         moveRep.setId(childId);
         moveRep.setName("child-group");
-        try (Response response = orgResource.groups().addTopLevelGroup(moveRep)) {
+        try (Response response = groups().addTopLevelGroup(moveRep)) {
             assertThat(response.getStatus(), is(Status.NO_CONTENT.getStatusCode()));
         }
 
         // Verify child is now top-level (path should not include parent)
-        child = orgResource.groups().group(childId).toRepresentation(false);
+        child = groups().group(childId).toRepresentation(false);
         assertThat(child.getPath(), is("/child-group"));
 
         // Verify parent no longer has subgroups
-        subGroups = orgResource.groups().group(parentId).getSubGroups(null, null, null, null);
+        subGroups = groups().group(parentId).getSubGroups(null, null, null, null);
         assertThat(subGroups, hasSize(0));
 
         // Verify getAll returns both as top-level groups
-        List<GroupRepresentation> topLevelGroups = orgResource.groups().getAll(null, null, null, null, null, true, false);
+        List<GroupRepresentation> topLevelGroups = groups().getAll(null, null, null, null, null, true, false);
         assertThat(topLevelGroups, hasSize(2));
         Set<String> groupNames = topLevelGroups.stream().map(GroupRepresentation::getName).collect(Collectors.toSet());
         assertThat(groupNames, containsInAnyOrder("parent-group", "child-group"));
@@ -783,33 +521,97 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
 
     @Test
     public void testMoveGroupToTopLevelValidation() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
         // Create a realm group (not org group)
         GroupRepresentation realmGroupRep = new GroupRepresentation();
         realmGroupRep.setName("realm-group");
+        String realmGroupId;
         try (Response response = realm.admin().groups().add(realmGroupRep)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            String realmGroupId = ApiUtil.getCreatedId(response);
+            realmGroupId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.groups().group(realmGroupId).remove());
 
-            // Try to move realm group to org top-level - should fail
-            GroupRepresentation moveRep = new GroupRepresentation();
-            moveRep.setId(realmGroupId);
-            moveRep.setName("realm-group");
-            try (Response moveResponse = orgResource.groups().addTopLevelGroup(moveRep)) {
-                assertThat(moveResponse.getStatus(), is(Status.BAD_REQUEST.getStatusCode()));
-            }
-
-            realm.admin().groups().group(realmGroupId).remove();
+        // Try to move realm group to org top-level - should fail
+        GroupRepresentation moveRep = new GroupRepresentation();
+        moveRep.setId(realmGroupId);
+        moveRep.setName("realm-group");
+        try (Response response = groups().addTopLevelGroup(moveRep)) {
+            assertThat(response.getStatus(), is(Status.BAD_REQUEST.getStatusCode()));
         }
 
         // Try to move non-existent group - should fail
         GroupRepresentation nonExistentRep = new GroupRepresentation();
         nonExistentRep.setId("non-existent-id");
         nonExistentRep.setName("non-existent");
-        try (Response response = orgResource.groups().addTopLevelGroup(nonExistentRep)) {
+        try (Response response = groups().addTopLevelGroup(nonExistentRep)) {
             assertThat(response.getStatus(), is(Status.NOT_FOUND.getStatusCode()));
+        }
+    }
+
+    private OrganizationGroupsResource groups() {
+        return organization.admin().groups();
+    }
+
+    private String createGroup(String name) {
+        GroupRepresentation groupRep = new GroupRepresentation();
+        groupRep.setName(name);
+        return createGroup(organization, groupRep);
+    }
+
+    private String createGroup(ManagedOrganization org, GroupRepresentation groupRep) {
+        String groupId;
+        try (Response response = org.admin().groups().addTopLevelGroup(groupRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            groupId = ApiUtil.getCreatedId(response);
+        }
+        deleteGroupAfterTest(org, groupId);
+        return groupId;
+    }
+
+    private String createSubGroup(String parentId, String name) {
+        GroupRepresentation groupRep = new GroupRepresentation();
+        groupRep.setName(name);
+
+        String groupId;
+        try (Response response = groups().group(parentId).addSubGroup(groupRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            groupId = response.readEntity(GroupRepresentation.class).getId();
+        }
+        // the subgroup is usually deleted together with its parent, but not if the test moved it elsewhere
+        deleteGroupAfterTest(organization, groupId);
+        return groupId;
+    }
+
+    private void deleteGroupAfterTest(ManagedOrganization org, String groupId) {
+        org.cleanup().add(o -> {
+            try {
+                o.groups().group(groupId).delete();
+            } catch (NotFoundException ignored) {
+                // already deleted by the test itself or together with its parent
+            }
+        });
+    }
+
+    private void addMember(ManagedUser user) {
+        try (Response response = organization.admin().members().addMember(user.getId())) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+        }
+        organization.cleanup().add(o -> o.members().member(user.getId()).delete().close());
+    }
+
+    public static class MemberConfig implements UserConfig {
+
+        @Override
+        public UserBuilder configure(UserBuilder user) {
+            return user.username("member").email("member@example.org").emailVerified(true);
+        }
+    }
+
+    public static class NonMemberConfig implements UserConfig {
+
+        @Override
+        public UserBuilder configure(UserBuilder user) {
+            return user.username("nonmember").email("nonmember@example.org").emailVerified(true);
         }
     }
 }
