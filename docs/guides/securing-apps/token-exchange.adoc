@@ -363,7 +363,7 @@ Delegation permissions are managed through link:{adminguide_link}#_fine_grained_
 ===== Granting delegation to all users
 
 . Go to *Realm Settings* -> *Admin Permissions* and enable Admin Permissions.
-. Navigate to *Admin Permissions* -> *Users*.
+. Navigate to *Admin Permissions*.
 . Create a new permission on the *Users* resource type.
 . Add the *delegate* scope.
 . Assign a policy that grants this permission.
@@ -372,9 +372,9 @@ NOTE: To restrict delegation to specific users, select individual users when cre
 
 ===== Granting delegation to members of a specific group
 
-. Navigate to *Admin Permissions* -> *Groups*.
-. Select the target group.
-. Create a new permission on the group.
+. Navigate to *Admin Permissions*.
+. Create a new permission on the *Groups* resource type.
+. Select the target groups.
 . Add the *delegate-members* scope.
 . Assign a policy targeting the administrator or service account allowed to delegate.
 
@@ -388,7 +388,7 @@ NOTE: To restrict delegation to specific users, select individual users when cre
 [source,json]
 ----
 {
-  "sub": "subject@example.com",
+  "sub": "0fa1e5d4-3c2b-4a19-8765-0123456789ab",
   "may_act": {
     "sub": "f1234567-89ab-cdef-0123-456789abcdef"
   },
@@ -409,8 +409,8 @@ By default, only the actor's `sub` (user ID) is included in the `may_act` claim.
 
 For example, to include the actor's username:
 
-. Navigate to *Client scopes* -> *delegation:user* -> *Mappers* -> *Add mapper* -> *By type* -> *Parameterized Scope User Property*.
-. Set *User Property* to `username`.
+. Navigate to *Client scopes* -> *delegation:user* -> *Mappers* -> *Add mapper* -> *By configuration* -> *Parameterized Scope User Property*.
+. Set *User Attribute* to `username`.
 . Set *Token Claim Name* to `may_act.preferred_username`.
 . Enable the token types where the claim should be included (e.g. access token, ID token).
 
@@ -426,7 +426,7 @@ The resulting token will then include:
 }
 ----
 
-Other useful claims to add include `may_act.email` (user property `email`) or `may_act.iss` (for cross-realm delegation scenarios).
+Other useful claims to add include `may_act.email` (user attribute `email`) or `may_act.iss` (for cross-realm delegation scenarios).
 
 [[_legacy-token-exchange]]
 == Legacy token exchange
