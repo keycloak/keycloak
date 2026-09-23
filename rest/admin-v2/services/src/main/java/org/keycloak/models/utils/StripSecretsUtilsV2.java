@@ -1,44 +1,67 @@
+/*
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.models.utils;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.BiConsumer;
-
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
-import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.utils.StringUtil;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 /**
- * Strip secrets from representations
+ * Masks secrets in Admin API v2 representations for admin events.
+ * <p>
+ * Operates on a {@link JsonNode} tree so the original representation object is left unchanged
+ * and can still be returned in the HTTP response with secrets intact.
  */
 public class StripSecretsUtilsV2 extends StripSecretsUtils {
-    private static final Map<Class<?>, BiConsumer<KeycloakSession, Object>> REPRESENTATION_FORMATTER = new HashMap<>();
 
-    static {
-        REPRESENTATION_FORMATTER.put(OIDCClientRepresentation.class, (session, o) -> StripSecretsUtilsV2.stripOidcClient((OIDCClientRepresentation) o));
-        REPRESENTATION_FORMATTER.put(SAMLClientRepresentation.class, (session, o) -> StripSecretsUtilsV2.stripSamlClient((SAMLClientRepresentation) o));
+    private StripSecretsUtilsV2() {
     }
 
-    public static <T> T stripSecrets(KeycloakSession session, T representation) {
-        return stripSecrets(session, representation, REPRESENTATION_FORMATTER);
+    /**
+     * Masks known secret fields on the given JSON tree in place.
+     *
+     * @param node representation JSON (typically from {@code JsonSerialization.writeValueAsNode})
+     * @return the same node instance after masking
+     */
+    public static JsonNode maskSecrets(JsonNode node) {
+        if (node == null || !node.isObject()) {
+            return node;
+        }
+
+        ObjectNode object = (ObjectNode) node;
+
+        // OIDC: auth.secret
+        JsonNode auth = object.get("auth");
+        if (auth != null && auth.isObject()) {
+            ObjectNode authObject = (ObjectNode) auth;
+            JsonNode secret = authObject.get("secret");
+            if (secret != null && secret.isTextual() && StringUtil.isNotBlank(secret.asText())) {
+                authObject.put("secret", maskNonVaultValue(secret.asText()));
+            }
+        }
+
+        // SAML: signingCertificate
+        JsonNode signingCertificate = object.get("signingCertificate");
+        if (signingCertificate != null && signingCertificate.isTextual()
+                && StringUtil.isNotBlank(signingCertificate.asText())) {
+            object.put("signingCertificate", maskNonVaultValue(signingCertificate.asText()));
+        }
+
+        return object;
     }
-
-    protected static OIDCClientRepresentation stripOidcClient(OIDCClientRepresentation rep) {
-        Optional.ofNullable(rep.getAuth())
-                .map(OIDCClientRepresentation.Auth::getSecret)
-                .filter(StringUtil::isNotBlank)
-                .ifPresent(secret -> rep.getAuth().setSecret(maskNonVaultValue(secret)));
-        return rep;
-    }
-
-    protected static SAMLClientRepresentation stripSamlClient(SAMLClientRepresentation rep) {
-        Optional.ofNullable(rep.getSigningCertificate())
-                .filter(StringUtil::isNotBlank)
-                .ifPresent(cert -> rep.setSigningCertificate(maskNonVaultValue(cert)));
-
-        return rep;
-    }
-
 }

@@ -243,8 +243,9 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
             }
     
             EntityManagers.flush(session, false); // flush to ensure the timestamps are updated
-            fireAdminEvent(create ? OperationType.CREATE : OperationType.UPDATE, schema.fromModel(model));
-            return schema.fromModel(model);
+            var representation = schema.fromModel(model);
+            fireAdminEvent(create ? OperationType.CREATE : OperationType.UPDATE, representation);
+            return representation;
         } catch (ClientPolicyException e) {
             throw new ServiceException(e.getErrorDetail(), Response.Status.BAD_REQUEST);
         }

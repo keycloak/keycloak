@@ -17,6 +17,8 @@
 package org.keycloak.events.admin.v2;
 
 
+import java.io.IOException;
+
 import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.common.ClientConnection;
@@ -25,13 +27,17 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.StripSecretsUtilsV2;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Builder for Admin API v2 events.
  * <p>
  * Extends the v1 AdminEventBuilder with v2-specific behavior:
  * - Events are marked with an "apiVersion" detail set to "v2" to distinguish them from v1 events.
- * - Representation is serialized without stripping secrets (v2 representations handle this differently).
+ * - Secrets are masked on a JsonNode copy during serialization so the original representation
+ *   object is not mutated and can be returned in the HTTP response.
  */
 public class AdminEventV2Builder extends AdminEventBuilder {
     public static final String API_VERSION_DETAIL_KEY = "apiVersion";
@@ -51,7 +57,18 @@ public class AdminEventV2Builder extends AdminEventBuilder {
     }
 
     @Override
-    protected void stripSecretsFromRepresentation(Object value) {
-        StripSecretsUtilsV2.stripSecrets(session, value);
+    public AdminEventBuilder representation(Object value) {
+        if (value == null || value.equals("")) {
+            return this;
+        }
+
+        try {
+            JsonNode node = JsonSerialization.writeValueAsNode(value);
+            StripSecretsUtilsV2.maskSecrets(node);
+            adminEvent.setRepresentation(JsonSerialization.writeValueAsString(node));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return this;
     }
 }
