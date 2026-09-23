@@ -14,14 +14,14 @@ There are currently five versions of the Model Context Protocol (MCP) specificat
 * 2025-03-26
 * 2024-11-05 (initial version)
 
-The initial version (2024-11-05) does not cover authorization, as such is not covered in this guide.
+The initial version (2024-11-05) does not cover authorization and is therefore not covered in this guide.
 
 This guide shows you the following:
 
 * Which MCP version {project_name} supports.
 * How to set up {project_name} as an authorization server in MCP.
 
-However, the guide does not cover everything you need to know. Therefore, you are recommended to read the authorization section of the relevant MCP version as well.
+However, the guide does not cover everything you need to know. Therefore, it is recommended that you read the authorization section of the relevant MCP version as well.
 
 == Standards Compliance MCP requires
 
@@ -53,7 +53,7 @@ According to the https://modelcontextprotocol.io/specification/draft/basic/autho
 | MUST
 | MUST
 | -
-| Not supported
+| Experimental
 
 | https://datatracker.ietf.org/doc/html/rfc9207[OAuth 2.0 Authorization Server Issuer Identification (RFC 9207)]
 | SHOULD
@@ -69,16 +69,18 @@ According to the https://modelcontextprotocol.io/specification/draft/basic/autho
 | SHOULD
 | Supported
 
-| https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-00[OAuth Client ID Metadata Document (Internet Draft)]
+| https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-01[OAuth Client ID Metadata Document (Internet Draft)]
 | SHOULD
 | SHOULD
 | -
 | -
-| Supported
+| Experimental
 
 |======
 
-WARNING: The OAuth Client ID Metadata Document support in {project_name} is an experimental feature. It may introduce breaking changes in future versions of {project_name}.
+WARNING: The OAuth Client ID Metadata Document support in {project_name} is an experimental feature. It may introduce breaking changes in future versions of {project_name}. To enable it, start {project_name} with `--features=cimd`.
+
+WARNING: The Resource Indicators for OAuth 2.0 support in {project_name} is an experimental feature. It may introduce breaking changes in future versions of {project_name}. To enable it, start {project_name} with `--features=resource-indicators`.
 
 The MCP specification adopts https://datatracker.ietf.org/doc/html/rfc9728[OAuth 2.0 Protected Resource Metadata (RFC 9728)]. The standard is for an MCP server and not for an authorization server like {project_name}. Therefore, it is not included in the above table.
 
@@ -96,13 +98,13 @@ According to these criteria, the following table shows which MCP version {projec
 | Supported
 
 | https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization[2025-06-18]
-| Partially Supported without Resource Indicators for OAuth 2.0
+| Experimental
 
 | https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization[2025-11-25]
-| Partially Supported without Resource Indicators for OAuth 2.0
+| Experimental
 
 | https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization[2026-07-28]
-| Partially Supported without Resource Indicators for OAuth 2.0
+| Experimental
 
 |===
 
@@ -122,16 +124,20 @@ To gain security benefit, the MCP specification requires an access token to be b
 
 * An MCP server MUST validate that tokens presented to them were specifically issued for their use.
 
-The MCP specification does not describe how to do this binding. One method for the binding is to set a value of `resource` parameter to an `aud` claim in an access token. However, {project_name} cannot recognize `resource` parameter.
+The MCP specification does not describe how to do this binding. One method for the binding is to set a value of `resource` parameter to an `aud` claim in an access token.
 
-The Keycloak community is planning to support Resource Indicators for OAuth 2.0 (RFC 8707) to {project_name} to make {project_name} recognize and process the `resource` parameter as the MCP specification expects. Until this support is completed, you can use OAuth 2.0's `scope` parameter instead of the `resource` parameter. To show the binding, please consider the following situation:
+{project_name} supports Resource Indicators for OAuth 2.0 (RFC 8707) as an experimental feature. If the feature is disabled, {project_name} does not recognize the `resource` parameter. In this case, you can use OAuth 2.0's `scope` parameter instead of the `resource` parameter. If the feature is enabled, {project_name} recognizes and processes the `resource` parameter as the MCP specification expects.
+
+===== Without Resource Indicators for OAuth 2.0
+
+To show the binding, please consider the following situation:
 
 * An MCP server's URL is `+https://example.com/mcp+`
-* The MCP supports the following three scopes: `mcp:tools`, `mcp:prompts` and  `mcp:resources`.
+* The MCP server supports the following three scopes: `mcp:tools`, `mcp:prompts` and `mcp:resources`.
 * To get an access token for accessing the MCP server, an MCP client sends to {project_name} an authorization request whose `resource` parameter value is `+https://example.com/mcp+` and `scope` parameter includes any combination of the three scopes.
-* We want {project_name} to issue an access token whose `aud` claim's value is MCP server's URL, namely `+https://example.com/mcp+`.
+* {project_name} needs to issue an access token whose `aud` claim's value is the MCP server's URL, namely `+https://example.com/mcp+`.
 
-To make {project_name} issue such the access token, we could configure {project_name} as follows:
+To make {project_name} issue such an access token, you can configure {project_name} as follows:
 
 * Add a client scope `mcp:tools` whose type is `Optional`.
 * Add to the client scope a new `Audience` mapper whose `Included Custom Audience` field is `+https://example.com/mcp+`.
@@ -142,7 +148,7 @@ To make {project_name} issue such the access token, we could configure {project_
 
 Please note that the client scope's `Included Custom Audience` field needs to be the same as the authorization request's `resource` parameter value and the MCP server's URL.
 
-With the configuration, if the MCP client send to {project_name} an authorization request whose `resource` parameter value is `+https://example.com/mcp+` and `scope` parameter includes `mcp:resources`, `mcp:tools` and `mcp:prompts`, {project_name} can issue the following access token:
+With the configuration, if the MCP client sends to {project_name} an authorization request whose `resource` parameter value is `+https://example.com/mcp+` and `scope` parameter includes `mcp:resources`, `mcp:tools` and `mcp:prompts`, {project_name} can issue the following access token:
 
 ```json
 {
@@ -153,9 +159,23 @@ With the configuration, if the MCP client send to {project_name} an authorizatio
 }
 ```
 
+===== With Resource Indicators for OAuth 2.0
+
+To make {project_name} process the `resource` parameter, start {project_name} with the `resource-indicators` feature enabled:
+
+```bash
+bin/kc.[sh|bat] start --features=resource-indicators
+```
+
+With the feature enabled, when an authorization request or a token request includes the `resource` parameter, {project_name} checks whether the value of the `resource` parameter is configured as a resource URI for the resource server client. If it is, {project_name} issues the access token whose `aud` claim includes only the value of the `resource` parameter. If it is not, {project_name} rejects the request with the `invalid_target` error. Also, the `resource` parameter value of a token request must match the one of the original authorization request.
+
+Therefore, configure the MCP server as a client in {project_name} and set its `resource_url` client attribute to the MCP server's URL, for example through the Admin REST API or realm import. You also need to configure the MCP client as an RP with an `Audience` mapper whose *Included Client Audience* targets the MCP server client.
+
+If you use OAuth Client ID Metadata Document, you do not need to configure the `Audience` mapper by yourself. Instead, you set the MCP server's URL to the *Resource indicator allow list* option of the `client-id-metadata-document` executor. See <<Setting up the client profile for OAuth Client ID Metadata Document>> for details.
+
 === MCP Inspector integration
 
-If you want to use https://github.com/modelcontextprotocol/inspector[MCP Inspector], an official debugging tools for MCP server, with {project_name} as an authorization server, you need to do an appropriate setup regarding CORS on {project_name}'s' client registration endpoint because MCP Inspector executes JavaScript downloaded from the MCP Inspector's backend server to register an MCP client dynamically to {project_name}.
+If you want to use https://github.com/modelcontextprotocol/inspector[MCP Inspector], an official debugging tool for MCP servers, with {project_name} as an authorization server, you need to do an appropriate setup regarding CORS on {project_name}'s client registration endpoint because MCP Inspector executes JavaScript downloaded from the MCP Inspector's backend server to register an MCP client dynamically to {project_name}.
 
 You need to do an appropriate setup for Client Registration's anonymous access policies as follows:
 
@@ -173,13 +193,11 @@ According to https://modelcontextprotocol.io/specification/2025-11-25/basic/auth
 * Pre-registration: When client and server have an existing relationship
 * Dynamic Client Registration: For backwards compatibility or specific requirements
 
-{project_name} supports OAuth Client ID Metadata Document. To use Client ID Metadata Documents, you need to enable the feature and set up a client policy so that {project_name} processes the `client_id` parameter formatted as a URL and fetches the client metadata from that URL.
-
-WARNING: The OAuth Client ID Metadata Document support is an experimental feature in {project_name}. As such, it may introduce breaking changes in future versions of {project_name}. To enable it, start {project_name} with `--features=cimd`.
+{project_name} supports OAuth Client ID Metadata Document. To use Client ID Metadata Documents, you need to enable the experimental `cimd` feature (see <<Standards Compliance MCP requires>>) and set up a client policy so that {project_name} processes the `client_id` parameter formatted as a URL and fetches the client metadata from that URL.
 
 ===== Setting up the client profile for OAuth Client ID Metadata Document
 
-To process an authorization request whose `client_id` metadata is a URL pointing to a Client ID Metadata Document, you need to create the profile including `client-id-metadata-document` executor.
+To process an authorization request whose `client_id` parameter is a URL pointing to a Client ID Metadata Document, you need to create the profile including `client-id-metadata-document` executor.
 
 To configure the executor, create a client policy profile in the {project_name} Admin Console:
 
@@ -193,7 +211,9 @@ To configure the executor, create a client policy profile in the {project_name} 
 * *Trusted domains*: A list of domain patterns (wildcard) that the executor accepts for the Client ID URL and Client Metadata URL properties. For example, use `*.example.org` to accept any subdomain of `example.org`. If empty, all domains are denied.
 * *Restrict same domain*: If `ON`, the executor verifies that the Client ID URL and Redirect URI in an authorization request, as well as URL-valued properties of the client metadata, are all under the same trusted domain.
 * *Required properties*: A list of client metadata properties that must be present in the Client ID Metadata Document. If the fetched document does not include all the listed properties, the request is rejected.
-* *Only Allow Confidential Client*: If `ON`, the executor only accepts a Client Metadata Document representing a confidential client. In this case, the client metadata must include either a `jwks` or `jwks_uri` property and must use `private_key_jwt` or `tls_client_auth` as the token endpoint authentication method.
+* *Only Allow Confidential Client*: If `ON`, the executor only accepts a Client ID Metadata Document representing a confidential client. In this case, the client metadata must include either a `jwks` or `jwks_uri` property and must use `private_key_jwt` or `tls_client_auth` as the token endpoint authentication method.
+* *Accept Public Client with Confidential-only Grant Types*: If `ON`, the executor accepts a Client ID Metadata Document representing a public client even if it includes grant types that can be used only by a confidential client (e.g., `urn:ietf:params:oauth:grant-type:jwt-bearer`). The executor excludes such grant types from the client metadata. If `OFF`, the executor rejects such a Client ID Metadata Document.
+* *Resource indicator allow list*: A list of values of the `resource` parameter that the executor accepts (e.g., `+https://example.com/mcp+`). This option is only effective if the `resource-indicators` feature is enabled. If the `resource` parameter value of an authorization request is not included in this list, the executor rejects the request. If the authorization request does not include the `resource` parameter, the executor does not enforce this list. If the list is empty, no `resource` parameter value is accepted. For an accepted `resource` parameter value, the executor adds to the client an `Audience` mapper whose `Included Custom Audience` field is the value so that the `aud` claim of an access token includes it.
 +
 . Click *Save*.
 
@@ -295,15 +315,33 @@ bin/kc.[sh|bat] start --features=cimd
 
 With this configuration, when VS Code desktop sends an authorization request, {project_name} recognizes the `client_id` as a URL on `vscode.dev`, fetches the Client ID Metadata Document, and uses a localhost callback to complete the OAuth flow.
 
-=== Claude Code desktop integration
+==== Using Resource Indicators for OAuth 2.0 with VS Code desktop
 
-https://claude.com/product/claude-code/[Claude Code] desktop is an MCP client that supports OAuth Client ID Metadata Document. When Claude Code desktop connects to an MCP server that requires authorization, it sends an authorization request with a `client_id` parameter that is an `https` URL hosted on `claude.ai` (e.g., `+https://claude.ai/oauth/claude-code-client-metadata+`). {project_name} fetches the Client ID Metadata Document from this URL and uses the metadata to process the request.
+VS Code desktop includes the `resource` parameter whose value is the MCP server's URL in an authorization request and a token request. The above configuration works without Resource Indicators for OAuth 2.0. If you want {project_name} to process the `resource` parameter and bind an access token to the MCP server, do the following in addition to the above configuration:
 
-Claude Code desktop uses localhost callbacks for the OAuth redirect. It starts a local HTTP server and uses a redirect URI such as `+http://localhost:<port>/callback+`. Because the redirect URI is on `localhost` rather than on the `claude.ai` domain, the *Restrict same domain* option in the client profile executor must be set to `OFF`.
+. Start {project_name} with both the `cimd` and `resource-indicators` features enabled:
++
+```bash
+bin/kc.[sh|bat] start --features=cimd,resource-indicators
+```
++
+. In the `vscode-cimd-profile` client profile, configure the `client-id-metadata-document` executor with the following option:
++
+* *Resource indicator allow list*: The URL of the MCP server (e.g., `+https://example.com/mcp+`)
++
+. Click *Save*.
 
-To configure {project_name} for Claude Code desktop's MCP client, follow the steps below.
+With this configuration, {project_name} issues an access token whose `aud` claim is the MCP server's URL specified by the `resource` parameter.
 
-NOTE: Claude Code desktop is a public client that uses PKCE (Proof Key for Code Exchange) for OAuth. It does not use a client secret.
+=== Claude Code integration
+
+https://claude.com/product/claude-code/[Claude Code] is an MCP client that supports OAuth Client ID Metadata Document. When Claude Code connects to an MCP server that requires authorization, it sends an authorization request with a `client_id` parameter that is an `https` URL hosted on `claude.ai` (e.g., `+https://claude.ai/oauth/claude-code-client-metadata+`). {project_name} fetches the Client ID Metadata Document from this URL and uses the metadata to process the request.
+
+Claude Code uses localhost callbacks for the OAuth redirect. It starts a local HTTP server and uses a redirect URI such as `+http://localhost:<port>/callback+`. Because the redirect URI is on `localhost` rather than on the `claude.ai` domain, the *Restrict same domain* option in the client profile executor must be set to `OFF`.
+
+To configure {project_name} for Claude Code's MCP client, follow the steps below.
+
+NOTE: Claude Code is a public client that uses PKCE (Proof Key for Code Exchange) for OAuth. It does not use a client secret.
 
 ==== Starting {project_name} with the CIMD feature
 
@@ -313,7 +351,7 @@ Start {project_name} with the `cimd` feature flag enabled:
 bin/kc.[sh|bat] start --features=cimd
 ```
 
-==== Setting up the client profile for Claude Code desktop
+==== Setting up the client profile for Claude Code
 
 . Navigate to *Realm Settings* -> *Client Policies* -> *Profiles* tab.
 . Click *Create client profile*.
@@ -323,12 +361,12 @@ bin/kc.[sh|bat] start --features=cimd
 +
 * *Allow http scheme*: `OFF`
 * *Trusted domains*: `claude.ai`, `localhost`, `127.0.0.1`
-* *Restrict same domain*: `OFF` (Claude Code desktop uses a localhost redirect URI such as `+http://localhost:<port>/callback+`, which is not on the same domain as `claude.ai`)
-* *Only Allow Confidential Client*: `OFF` (Claude Code desktop is a public client)
+* *Restrict same domain*: `OFF` (Claude Code uses a localhost redirect URI such as `+http://localhost:<port>/callback+`, which is not on the same domain as `claude.ai`)
+* *Only Allow Confidential Client*: `OFF` (Claude Code is a public client)
 +
 . Click *Save*.
 
-==== Setting up the client policy for Claude Code desktop
+==== Setting up the client policy for Claude Code
 
 . Navigate to *Realm Settings* -> *Client Policies* -> *Policies* tab.
 . Click *Create client policy*.
@@ -343,6 +381,107 @@ bin/kc.[sh|bat] start --features=cimd
 . Under *Associated client profiles*, add the `claude-code-cimd-profile` profile created in the previous step.
 . Click *Save*.
 
-With this configuration, when Claude Code desktop sends an authorization request, {project_name} recognizes the `client_id` as a URL on `claude.ai`, fetches the Client ID Metadata Document, and uses a localhost callback to complete the OAuth flow.
+With this configuration, when Claude Code sends an authorization request, {project_name} recognizes the `client_id` as a URL on `claude.ai`, fetches the Client ID Metadata Document, and uses a localhost callback to complete the OAuth flow.
+
+==== Using Resource Indicators for OAuth 2.0 with Claude Code
+
+Claude Code includes the `resource` parameter whose value is the MCP server's URL in an authorization request and a token request. The above configuration works without Resource Indicators for OAuth 2.0. If you want {project_name} to process the `resource` parameter and bind an access token to the MCP server, do the following in addition to the above configuration:
+
+. Start {project_name} with both the `cimd` and `resource-indicators` features enabled:
++
+```bash
+bin/kc.[sh|bat] start --features=cimd,resource-indicators
+```
++
+. In the `claude-code-cimd-profile` client profile, configure the `client-id-metadata-document` executor with the following option:
++
+* *Resource indicator allow list*: The URL of the MCP server (e.g., `+https://example.com/mcp+`)
++
+. Click *Save*.
+
+With this configuration, {project_name} issues an access token whose `aud` claim is the MCP server's URL specified by the `resource` parameter.
+
+=== Claude Desktop integration
+
+https://claude.ai/download[Claude Desktop] is an MCP client that supports OAuth Client ID Metadata Document. When Claude Desktop connects to an MCP server that requires authorization, it sends an authorization request with a `client_id` parameter that is an `https` URL hosted on `claude.ai` (e.g., `+https://claude.ai/oauth/mcp-oauth-client-metadata+`). {project_name} fetches the Client ID Metadata Document from this URL and uses the metadata to process the request.
+
+Unlike Claude Code, Claude Desktop does not use localhost callbacks. It uses a redirect URI on the `claude.ai` domain such as `+https://claude.ai/api/mcp/auth_callback+`. Therefore, the *Restrict same domain* option in the client profile executor can be set to `ON`.
+
+NOTE: Claude Desktop is a public client that uses PKCE (Proof Key for Code Exchange) for OAuth. It does not use a client secret.
+
+WARNING: Claude Desktop's Client ID Metadata Document includes the `urn:ietf:params:oauth:grant-type:jwt-bearer` grant type in the `grant_types` property although Claude Desktop is a public client. Because {project_name} does not allow a public client to use the JWT Authorization Grant, the *Accept Public Client with Confidential-only Grant Types* option in the client profile executor must be set to `ON`. With the option `ON`, {project_name} excludes the grant type from the client metadata. As a result, Claude Desktop cannot use the JWT Authorization Grant with {project_name}.
+
+To configure {project_name} for Claude Desktop's MCP client, follow the steps below.
+
+==== Starting {project_name} with the CIMD feature
+
+Start {project_name} with the `cimd` feature flag enabled:
+
+```bash
+bin/kc.[sh|bat] start --features=cimd
+```
+
+==== Setting up the client profile for Claude Desktop
+
+. Navigate to *Realm Settings* -> *Client Policies* -> *Profiles* tab.
+. Click *Create client profile*.
+. Give the profile a name such as `claude-desktop-cimd-profile` and click *Save*.
+. Click *Add executor* and select `client-id-metadata-document` from the list.
+. Configure the executor with the following options:
++
+* *Allow http scheme*: `OFF`
+* *Trusted domains*: `claude.ai`
+* *Restrict same domain*: `ON`
+* *Only Allow Confidential Client*: `OFF` (Claude Desktop is a public client)
+* *Accept Public Client with Confidential-only Grant Types*: `ON` (Claude Desktop's client metadata includes the `urn:ietf:params:oauth:grant-type:jwt-bearer` grant type)
++
+. Click *Save*.
+
+==== Setting up the client policy for Claude Desktop
+
+. Navigate to *Realm Settings* -> *Client Policies* -> *Policies* tab.
+. Click *Create client policy*.
+. Give the policy a name such as `claude-desktop-cimd-policy` and click *Save*.
+. Under *Conditions*, click *Add condition* and select `client-id-uri` from the list.
+. Configure the condition with the following options:
++
+* *URI scheme*: `https`
+* *Trusted domains*: `claude.ai`
++
+. Click *Save*.
+. Under *Associated client profiles*, add the `claude-desktop-cimd-profile` profile created in the previous step.
+. Click *Save*.
+
+With this configuration, when Claude Desktop sends an authorization request, {project_name} recognizes the `client_id` as a URL on `claude.ai`, fetches the Client ID Metadata Document, and completes the OAuth flow with the redirect URI on `claude.ai`.
+
+NOTE: Both Claude Code and Claude Desktop use a `client_id` URL on `claude.ai`, so both client policies shown in this guide match the authorization requests from both of them, and both client profiles are applied. As a result, the Claude Code profile rejects Claude Desktop, and the Claude Desktop profile rejects Claude Code. If you want to use both of them, use a single client policy and a single client profile whose executor options satisfy both of them: *Trusted domains*: `claude.ai`, `localhost`, `127.0.0.1`, *Restrict same domain*: `OFF` and *Accept Public Client with Confidential-only Grant Types*: `ON`.
+
+==== Using Resource Indicators for OAuth 2.0 with Claude Desktop
+
+Claude Desktop includes the `resource` parameter whose value is the MCP server's URL in an authorization request and a token request. The above configuration works without Resource Indicators for OAuth 2.0. If you want {project_name} to process the `resource` parameter and bind an access token to the MCP server, do the following in addition to the above configuration:
+
+. Start {project_name} with both the `cimd` and `resource-indicators` features enabled:
++
+```bash
+bin/kc.[sh|bat] start --features=cimd,resource-indicators
+```
++
+. In the `claude-desktop-cimd-profile` client profile, configure the `client-id-metadata-document` executor with the following option:
++
+* *Resource indicator allow list*: The URL of the MCP server (e.g., `+https://example.com/mcp+`)
++
+. Click *Save*.
+
+With this configuration, {project_name} issues an access token whose `aud` claim is the MCP server's URL specified by the `resource` parameter.
+
+If you use a single client profile for both Claude Code and Claude Desktop as described in the note above, configure the *Resource indicator allow list* option in that client profile instead.
+
+=== ChatGPT integration
+
+https://chatgpt.com/[ChatGPT] is an MCP client that supports OAuth Client ID Metadata Document. However, {project_name} does not support ChatGPT's Client ID Metadata Document.
+
+ChatGPT's Client ID Metadata Document does not include the `token_endpoint_auth_method` property. Instead, it includes the `token_endpoint_auth_methods_supported` property defined in https://openid.net/specs/openid-connect-rp-metadata-choices-1_0.html[OpenID Connect Relying Party Metadata Choices 1.0], which lists the token endpoint authentication methods ChatGPT supports (e.g., `none` and `private_key_jwt`). {project_name} does not support OpenID Connect Relying Party Metadata Choices 1.0. Therefore, {project_name} rejects ChatGPT's Client ID Metadata Document.
+
+Implementing this workaround requires a custom client-policy executor that parses `token_endpoint_auth_methods_supported`, selects a supported method (`private_key_jwt` preferably, otherwise `none`), and sets it as `token_endpoint_auth_method` before the standard CIMD validation runs. The `cimd-provider-name` setting cannot perform this normalization because a selected CIMD provider's create/update hooks receive the metadata only after the built-in executor has parsed and validated it.
 
 </@tmpl.guide>
