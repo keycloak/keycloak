@@ -124,10 +124,11 @@ public class ManagedOrganization extends ManagedTestResource {
      * The pending invitation for the given email address.
      *
      * @param email the email address the invitation was sent to
-     * @return the invitation, or <code>null</code> if the email address was not invited
+     * @return the invitation, or <code>null</code> if the email address has no pending invitation
      */
     public OrganizationInvitationRepresentation getInvitation(String email) {
-        List<OrganizationInvitationRepresentation> invitations = organizationResource.invitations().list(null, email, null, null);
+        List<OrganizationInvitationRepresentation> invitations = organizationResource.invitations()
+                .list(OrganizationInvitationRepresentation.Status.PENDING.name(), email, null, null);
         return invitations.isEmpty() ? null : invitations.get(0);
     }
 
