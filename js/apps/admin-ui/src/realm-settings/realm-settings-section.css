@@ -1,50 +1,3 @@
-.pf-v6-c-card.pf-m-flat.kc-login-screen,
-.pf-v6-c-card.pf-m-flat.kc-email-settings,
-.pf-v6-c-card.pf-m-flat.kc-user-info-settings,
-.pf-v6-c-card.pf-m-flat.kc-email-template,
-.pf-v6-c-card.pf-m-flat.kc-email-connection,
-.pf-v6-c-card.pf-m-flat.kc-message-bundles,
-.pf-v6-c-card.pf-m-flat.kc-sso-session-template,
-.pf-v6-c-card.pf-m-flat.kc-client-session-template,
-.pf-v6-c-card.pf-m-flat.kc-offline-session-template,
-.pf-v6-c-card.pf-m-flat.kc-login-settings-template {
-  border: none;
-  margin-top: 0px;
-  margin-bottom: 0px;
-  padding-bottom: var(--pf-t--global--spacer--sm);
-}
-
-article.pf-v6-c-card.pf-m-flat.kc-email-template
-  > .pf-v6-c-card__header.kc-form-panel__header,
-article.pf-v6-c-card.pf-m-flat.kc-email-connection
-  > .pf-v6-c-card__header.kc-form-panel__header {
-  margin-top: 0px;
-  margin-bottom: 0px;
-  padding-left: 0px;
-  padding-bottom: 0px;
-}
-
-.kc-login-screen > div.pf-v6-c-card__header.kc-form-panel__header,
-.kc-email-settings > div.pf-v6-c-card__header.kc-form-panel__header,
-.kc-email-template > div.pf-v6-c-card__header.kc-form-panel__header,
-.kc-user-info-settings > div.pf-v6-c-card__header.kc-form-panel__header {
-  padding-bottom: 0px;
-  padding-left: 0px;
-  padding-top: 0px;
-}
-
-.kc-email-settings > div.pf-v6-c-card__body.kc-form-panel__body,
-.kc-email-template > div.pf-v6-c-card__body.kc-form-panel__body,
-.kc-login-screen > div.pf-v6-c-card__body.kc-form-panel__body,
-.kc-user-info-settings > div.pf-v6-c-card__body.kc-form-panel__body {
-  padding-left: 0px;
-  padding-bottom: var(--pf-t--global--spacer--2xl);
-}
-
-button.kc-certificate.pf-v6-c-button.pf-m-secondary {
-  margin-left: var(--pf-t--global--spacer--md);
-}
-
 .pf-v6-c-data-list__item-row.test {
   font-weight: bold;
 }
@@ -91,7 +44,9 @@ div#offline-session-max-label > .pf-v6-c-form__group-label {
   padding-bottom: var(--pf-t--global--spacer--lg);
 }
 
-.kc-message-bundles > .pf-v6-c-card__body.kc-form-panel__body > div.tableBorder {
+.kc-message-bundles
+  > .pf-v6-c-card__body.kc-form-panel__body
+  > div.tableBorder {
   border-style: solid;
   border-width: 1px;
   border-color: var(--pf-t--global--border--color--default);

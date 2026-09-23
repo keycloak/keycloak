@@ -52,10 +52,7 @@ export const RealmSettingsLoginTab = ({
 
   return (
     <PageSection hasBodyWrapper={false}>
-      <FormPanel
-        className="kc-login-screen"
-        title={t("loginScreenCustomization")}
-      >
+      <FormPanel title={t("loginScreenCustomization")}>
         <FormAccess isHorizontal role="manage-realm">
           <FormGroup
             label={t("registrationAllowed")}
@@ -170,7 +167,7 @@ export const RealmSettingsLoginTab = ({
           )}
         </FormAccess>
       </FormPanel>
-      <FormPanel className="kc-email-settings" title={t("emailSettings")}>
+      <FormPanel title={t("emailSettings")}>
         <FormAccess isHorizontal role="manage-realm">
           <FormGroup
             label={t("registrationEmailAsUsername")}
@@ -283,10 +280,7 @@ export const RealmSettingsLoginTab = ({
           </FormGroup>
         </FormAccess>
       </FormPanel>
-      <FormPanel
-        className="kc-user-info-settings"
-        title={t("userInfoSettings")}
-      >
+      <FormPanel title={t("userInfoSettings")}>
         <FormAccess isHorizontal role="manage-realm">
           <FormGroup
             label={t("editUsernameAllowed")}
