@@ -110,8 +110,23 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     }
 
     @Test
+    public void loginWithCertExtendedKeyUsage() throws Exception {
+        x509BrowserLogin(createLoginSubjectEmailWithExtendedKeyUsage("1.3.6.1.5.5.7.3.2"), userId, "test-user@localhost", "test-user@localhost");
+    }
+
+    @Test
     public void loginWithNonSupportedCertExtendedKeyUsage() throws Exception {
-        x509BrowserLogin(createLoginSubjectEmailWithExtendedKeyUsage("serverAuth"), userId, "test-user@localhost", "test-user@localhost");
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", createLoginSubjectEmailWithExtendedKeyUsage("1.3.6.1.5.5.7.3.1").getConfig());
+        String cfgId = createConfig(browserExecution.getId(), cfg);
+        Assertions.assertNotNull(cfgId);
+
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+
+        // Verify there is an error message
+        Assertions.assertNotNull(loginPage.getError());
+
+        assertThat(loginPage.getError(), containsString("Certificate validation's failed."));
     }
 
     @Test

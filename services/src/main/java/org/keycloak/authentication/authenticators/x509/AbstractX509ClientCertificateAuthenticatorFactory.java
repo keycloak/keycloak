@@ -26,6 +26,7 @@ import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import static java.util.Arrays.asList;
 
@@ -101,6 +102,8 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
             CERTIFICATE_POLICY_MODE_ALL,
             CERTIFICATE_POLICY_MODE_ANY
     };
+
+    private boolean legacyCriticalBehavior;
 
     protected static final List<ProviderConfigProperty> configProperties;
     static {
@@ -308,6 +311,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
 
     @Override
     public void init(Config.Scope config) {
+        this.legacyCriticalBehavior = config.getBoolean("legacyCriticalBehavior", Boolean.FALSE);
     }
 
     @Override
@@ -318,4 +322,19 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
     public void close() {
     }
 
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("legacyCriticalBehavior")
+                .type("boolean")
+                .helpText("Boolean to enable legacy critical behavior in the Key Usage and Extended Key Usage validations. This option is deprecated.")
+                .defaultValue("false")
+                .add()
+                .build();
+    }
+
+    public boolean getLegacyCriticalBehavior() {
+        return legacyCriticalBehavior;
+    }
 }

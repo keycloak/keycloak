@@ -45,6 +45,10 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
 
     private final static Logger logger = Logger.getLogger(ValidateX509CertificateUsername.class);
 
+    public ValidateX509CertificateUsername(boolean legacyCriticalBehavior) {
+        super(legacyCriticalBehavior);
+    }
+
     @Override
     public void authenticate(AuthenticationFlowContext context) {
 
@@ -83,8 +87,8 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
             validator.validateTrust()
                     .validateCASubjectDN()
                     .validateTimestamps()
-                    .validateKeyUsage()
-                    .validateExtendedKeyUsage()
+                    .validateKeyUsage(getLegacyCriticalBehavior())
+                    .validateExtendedKeyUsage(getLegacyCriticalBehavior())
                     .validatePolicy()
                     .checkRevocationStatus();
         } catch(Exception e) {

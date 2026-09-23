@@ -51,6 +51,10 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
 
     private final static Logger logger = Logger.getLogger(X509ClientCertificateAuthenticator.class);
 
+    public X509ClientCertificateAuthenticator(boolean legacyCriticalBehavior) {
+        super(legacyCriticalBehavior);
+    }
+
     @Override
     public void close() {
 
@@ -97,8 +101,8 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
                 validator.validateTrust()
                          .validateCASubjectDN()
                          .validateTimestamps()
-                         .validateKeyUsage()
-                         .validateExtendedKeyUsage()
+                         .validateKeyUsage(getLegacyCriticalBehavior())
+                         .validateExtendedKeyUsage(getLegacyCriticalBehavior())
                          .validatePolicy()
                          .checkRevocationStatus();
             } catch(Exception e) {
