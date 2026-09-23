@@ -46,6 +46,21 @@ Please see link:https://www.keycloak.org/server/reverseproxy[Using a reverse pro
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
+=== Secrets referenced by OIDC Client CRs now require a label
+// https://github.com/keycloak/keycloak/issues/52320
+
+Kubernetes Secrets referenced via `spec.client.auth.secretRef` in a `KeycloakOIDCClient` CR must now carry the label `operator.keycloak.org/kind: KeycloakOIDCClient`.
+Without this label the operator treats the Secret as missing and reports a `HasErrors` status condition on the CR, even if the Secret exists.
+
+This change prevents arbitrary Secrets in the namespace from being read by the operator.
+
+If you already have Secrets used by OIDC Client CRs, add the required label before upgrading:
+
+[source,bash]
+----
+kubectl label secret <secret-name> operator.keycloak.org/kind=KeycloakOIDCClient
+----
+
 === `NO_PROXY` entries with leading dots or spaces after commas now parsed correctly
 // https://github.com/keycloak/keycloak/issues/52706
 

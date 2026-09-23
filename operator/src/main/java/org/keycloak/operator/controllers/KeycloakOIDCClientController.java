@@ -19,11 +19,13 @@ package org.keycloak.operator.controllers;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClient;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation.Auth;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.fabric8.kubernetes.client.ResourceNotFoundException;
@@ -57,9 +59,11 @@ public class KeycloakOIDCClientController extends KeycloakClientBaseController<K
                 Secret secret = context.getClient().resources(Secret.class)
                         .inNamespace(namespace).withName(secretSelector.getName()).get();
 
-                if (secret == null) {
+                String kind = HasMetadata.getKind(KeycloakOIDCClient.class);
+                
+                if (secret == null || !kind.equals(secret.getMetadata().getLabels().get(Constants.KEYCLOAK_KIND_ANNOTATION))) {
                     if (!optional) {
-                        throw new ResourceNotFoundException(String.format("Secret %s/%s not found", namespace, secretSelector.getName()));
+                        throw new ResourceNotFoundException(String.format("Secret %s/%s not found with %s=%s label", namespace, secretSelector.getName(), Constants.KEYCLOAK_KIND_ANNOTATION, kind));
                     }
                 } else {
                     String value = secret.getData().get(secretSelector.getKey());
