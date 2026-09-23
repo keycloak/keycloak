@@ -71,6 +71,16 @@ kc.[sh|bat] start --spi-connections-jpa--quarkus--migration-export=<path>/<file.
 
 After the changes have been written to the file, the server exits.
 
+For an empty database the script also creates the Liquibase `DATABASECHANGELOG` table, which it records the applied
+changesets in. It does not create the `DATABASECHANGELOGLOCK` table: {project_name} creates that one itself on
+startup, so it is missing from a database that was only ever set up by running the script.
+
+Keep this in mind when the database user is not allowed to create tables. Even with the manual strategy,
+{project_name} creates both Liquibase bookkeeping tables, `DATABASECHANGELOG` and `DATABASECHANGELOGLOCK`, on the
+database it is started against. Have an administrator create them up front, both on the database used to generate
+the script and on the database the script is applied to. When they already exist, the generated script contains no
+`CREATE TABLE` for them, so it can also be applied to the database it was generated from.
+
 For further details on how to run the statements in the file against the database, see the documentation for your relational database.
 
 Once you have run the statements, you can start the new {project_name} version.
