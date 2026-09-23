@@ -50,7 +50,6 @@ import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
-import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -298,15 +297,8 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testGetAllDisabledOrganization() {
-        String brokerAlias = organizationName + "-identity-provider";
-        OrganizationRepresentation orgRep = createOrganization(realm, organizationName,
-                createRealOrgBroker(brokerAlias, providerRealm), organizationName + ".org");
-        OrganizationResource organization = realm.admin().organizations().get(orgRep.getId());
-
-        OrganizationIdentityProviderLinkRepresentation link = new OrganizationIdentityProviderLinkRepresentation();
-        link.setAutoMembership(true);
-        link.setMembershipType("MANAGED");
-        organization.identityProviders().get(brokerAlias).update(link).close();
+        OrganizationResource organization = createOrganizationWithBroker(providerRealm, true, MembershipType.MANAGED);
+        OrganizationRepresentation orgRep = organization.toRepresentation();
 
         // add some unmanaged members to the organization.
         for (int i = 0; i < 5; i++) {
@@ -365,15 +357,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testGetAllDisabledOrganizationProvider() throws IOException {
-        String brokerAlias = organizationName + "-identity-provider";
-        OrganizationRepresentation orgRep = createOrganization(realm, organizationName,
-                createRealOrgBroker(brokerAlias, providerRealm), organizationName + ".org");
-        OrganizationResource organization = realm.admin().organizations().get(orgRep.getId());
-
-        OrganizationIdentityProviderLinkRepresentation link = new OrganizationIdentityProviderLinkRepresentation();
-        link.setAutoMembership(true);
-        link.setMembershipType("MANAGED");
-        organization.identityProviders().get(brokerAlias).update(link).close();
+        OrganizationResource organization = createOrganizationWithBroker(providerRealm, true, MembershipType.MANAGED);
 
         // add some unmanaged members to the organization.
         for (int i = 0; i < 5; i++) {

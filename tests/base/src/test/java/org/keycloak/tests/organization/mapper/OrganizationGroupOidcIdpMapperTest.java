@@ -37,6 +37,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -45,6 +46,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.IdentityProviderMapperBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.ui.annotations.InjectPage;
@@ -65,6 +67,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest
@@ -238,45 +241,17 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testUserAddedToOrganizationGroupViaMapper() {
-        // Create organization with real broker
-        String idpAlias = organizationName + "-identity-provider";
-        OrganizationRepresentation orgRep = createOrganization(realm, organizationName,
-                createRealOrgBroker(idpAlias, providerRealm), organizationName + ".org");
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
-        GroupRepresentation orgGroup = new GroupRepresentation();
-        orgGroup.setName("mapper-test-group");
-        String groupId;
-        try (Response response = orgResource.groups().addTopLevelGroup(orgGroup)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            groupId = ApiUtil.getCreatedId(response);
-        }
-
-        String groupPath = orgResource.groups().group(groupId).toRepresentation(false).getPath();
-
-        // Add hardcoded group mapper to the organization IdP
-        IdentityProviderRepresentation idp = orgResource.identityProviders().get(idpAlias).toRepresentation();
-
-        IdentityProviderMapperRepresentation mapper = new IdentityProviderMapperRepresentation();
-        mapper.setName("org-group-mapper");
-        mapper.setIdentityProviderMapper(HardcodedGroupMapper.PROVIDER_ID);
-        mapper.setIdentityProviderAlias(idp.getAlias());
-        mapper.setConfig(Map.of(
-                IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.FORCE.toString(),
-                ConfigConstants.GROUP, groupPath,
-                ConfigConstants.GROUP_TYPE, GroupModel.Type.ORGANIZATION.name(),
-                ConfigConstants.ORGANIZATION_ID, orgRep.getId()));
-
-        try (Response response = realm.admin().identityProviders().get(idp.getAlias()).addMapper(mapper)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-        }
+        OrganizationResource orgResource = createOrganizationWithBroker(providerRealm, true, MembershipType.UNMANAGED);
+        String groupId = addHardcodedOrganizationGroupMapper(orgResource, IdentityProviderMapperSyncMode.FORCE);
 
         // Authenticate via IdP - user should be added to org group
-        assertBrokerRegistration(orgResource, aliceFromProviderRealm.getUsername(), aliceFromProviderRealm.getEmail(),
+        UserRepresentation user = loginViaBroker(aliceFromProviderRealm.getEmail(), aliceFromProviderRealm.getUsername(),
+                aliceFromProviderRealm.getPassword(), aliceFromProviderRealm.getEmail(),
                 oauth, loginUsernamePage, loginPage, loginUpdateProfilePage, providerRealm);
+        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertIsMember(user.getEmail(), orgResource);
 
         // Verify user is member of the organization group
-        UserRepresentation user = getUserRepresentation(aliceFromProviderRealm.getEmail());
         assertNotNull(user);
 
         List<MemberRepresentation> groupMembers = orgResource.groups().group(groupId).getMembers(null, null, false);
@@ -287,46 +262,20 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
     @Test
     public void testUserNotAddedToGroupAfterIdpUnlinkedFromOrganization() {
         String idpAlias = organizationName + "-identity-provider";
-        OrganizationRepresentation orgRep = createOrganization(realm, organizationName,
-                createRealOrgBroker(idpAlias, providerRealm), organizationName + ".org");
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
-        GroupRepresentation orgGroup = new GroupRepresentation();
-        orgGroup.setName("unlink-test-group");
-        String groupId;
-        try (Response response = orgResource.groups().addTopLevelGroup(orgGroup)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            groupId = ApiUtil.getCreatedId(response);
-        }
-
-        String groupPath = orgResource.groups().group(groupId).toRepresentation(false).getPath();
-
-        // Add a HardcodedGroupMapper pointing to the org group
-        IdentityProviderRepresentation idp = orgResource.identityProviders().get(idpAlias).toRepresentation();
-
-        IdentityProviderMapperRepresentation mapper = new IdentityProviderMapperRepresentation();
-        mapper.setName("unlink-test-mapper");
-        mapper.setIdentityProviderMapper(HardcodedGroupMapper.PROVIDER_ID);
-        mapper.setIdentityProviderAlias(idp.getAlias());
-        mapper.setConfig(Map.of(
-                IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.FORCE.toString(),
-                ConfigConstants.GROUP, groupPath,
-                ConfigConstants.GROUP_TYPE, GroupModel.Type.ORGANIZATION.name(),
-                ConfigConstants.ORGANIZATION_ID, orgRep.getId()));
-
-        try (Response response = realm.admin().identityProviders().get(idp.getAlias()).addMapper(mapper)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-        }
+        OrganizationResource orgResource = createOrganizationWithBroker(providerRealm, true, MembershipType.UNMANAGED);
+        String groupId = addHardcodedOrganizationGroupMapper(orgResource, IdentityProviderMapperSyncMode.FORCE);
 
         // First login: user IS added to the org group while IdP is still linked
-        assertBrokerRegistration(orgResource, aliceFromProviderRealm.getUsername(), aliceFromProviderRealm.getEmail(),
+        UserRepresentation user = loginViaBroker(aliceFromProviderRealm.getEmail(), aliceFromProviderRealm.getUsername(),
+                aliceFromProviderRealm.getPassword(), aliceFromProviderRealm.getEmail(),
                 oauth, loginUsernamePage, loginPage, loginUpdateProfilePage, providerRealm);
+        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertIsMember(user.getEmail(), orgResource);
 
         List<MemberRepresentation> groupMembers = orgResource.groups().group(groupId).getMembers(null, null, false);
         assertThat(groupMembers, hasSize(1));
 
         // Log out from both realms
-        UserRepresentation user = getUserRepresentation(aliceFromProviderRealm.getEmail());
         realm.admin().users().get(user.getId()).logout();
         providerRealm.admin().logoutAll();
 
@@ -400,39 +349,16 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
     @Test
     public void testHardcodedGroupMapperDoesNotAssignOrganizationGroupMembershipWhenOrganizationIsDisabled() {
         String idpAlias = organizationName + "-identity-provider";
-        OrganizationRepresentation orgRep = createOrganization(realm, organizationName,
-                createRealOrgBroker(idpAlias, providerRealm), organizationName + ".org");
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
-        GroupRepresentation orgGroup = new GroupRepresentation();
-        orgGroup.setName("disabled-org-test-group");
-        String groupId;
-        try (Response response = orgResource.groups().addTopLevelGroup(orgGroup)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            groupId = ApiUtil.getCreatedId(response);
-        }
-
-        String groupPath = orgResource.groups().group(groupId).toRepresentation(false).getPath();
-
-        IdentityProviderRepresentation idp = orgResource.identityProviders().get(idpAlias).toRepresentation();
-
-        IdentityProviderMapperRepresentation mapper = new IdentityProviderMapperRepresentation();
-        mapper.setName("disabled-org-test-mapper");
-        mapper.setIdentityProviderMapper(HardcodedGroupMapper.PROVIDER_ID);
-        mapper.setIdentityProviderAlias(idp.getAlias());
-        mapper.setConfig(Map.of(
-                IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.IMPORT.toString(),
-                ConfigConstants.GROUP, groupPath,
-                ConfigConstants.GROUP_TYPE, GroupModel.Type.ORGANIZATION.name(),
-                ConfigConstants.ORGANIZATION_ID, orgRep.getId()));
-
-        try (Response response = realm.admin().identityProviders().get(idp.getAlias()).addMapper(mapper)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-        }
+        OrganizationResource orgResource = createOrganizationWithBroker(providerRealm, true, MembershipType.UNMANAGED);
+        OrganizationRepresentation orgRep = orgResource.toRepresentation();
+        String groupId = addHardcodedOrganizationGroupMapper(orgResource, IdentityProviderMapperSyncMode.IMPORT);
 
         // First login: org is enabled, user IS added to org group
-        assertBrokerRegistration(orgResource, aliceFromProviderRealm.getUsername(), aliceFromProviderRealm.getEmail(),
+        UserRepresentation user = loginViaBroker(aliceFromProviderRealm.getEmail(), aliceFromProviderRealm.getUsername(),
+                aliceFromProviderRealm.getPassword(), aliceFromProviderRealm.getEmail(),
                 oauth, loginUsernamePage, loginPage, loginUpdateProfilePage, providerRealm);
+        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertIsMember(user.getEmail(), orgResource);
 
         List<MemberRepresentation> groupMembers = orgResource.groups().group(groupId).getMembers(null, null, false);
         assertThat(groupMembers, hasSize(1));
@@ -454,11 +380,6 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testOrganizationGroupMapperResolvesConfiguredOrganization() {
-        String idpAlias = organizationName + "-identity-provider";
-        OrganizationRepresentation orgRep = createOrganization(realm, organizationName,
-                createRealOrgBroker(idpAlias, providerRealm), organizationName + ".org");
-        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
-
         // Link the very same IdP to a second organization
         String otherOrgId;
         try (Response response = realm.admin().organizations().create(createRepresentation("otherorg", "otherorg.org"))) {
@@ -470,6 +391,11 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
                 r.organizations().get(otherOrgId).delete().close();
             } catch (NotFoundException ignored) {}
         });
+        String idpAlias = organizationName + "-identity-provider";
+        OrganizationRepresentation orgRep = createOrganization(realm, organizationName,
+                createRealOrgBroker(idpAlias, providerRealm), organizationName + ".org");
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+
         OrganizationResource otherOrgResource = realm.admin().organizations().get(otherOrgId);
         otherOrgResource.identityProviders().addIdentityProvider(idpAlias).close();
 
@@ -491,6 +417,15 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
         String groupPath = orgResource.groups().group(groupId).toRepresentation(false).getPath();
         assertEquals(groupPath, otherOrgResource.groups().group(otherGroupId).toRepresentation(false).getPath());
 
+        // Establish membership in both organizations before running their group mappers.
+        UserRepresentation user = assertBrokerRegistration(orgResource, aliceFromProviderRealm.getUsername(),
+                aliceFromProviderRealm.getEmail(), oauth, loginUsernamePage, loginPage, loginUpdateProfilePage, providerRealm);
+        try (Response response = otherOrgResource.members().addMember(user.getId())) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+        }
+        realm.admin().users().get(user.getId()).logout();
+        providerRealm.admin().logoutAll();
+
         // One mapper per organization, both pointing at that same path
         for (Map.Entry<String, String> entry : Map.of("mapper-for-org", orgRep.getId(), "mapper-for-other-org", otherOrgId).entrySet()) {
             IdentityProviderMapperRepresentation mapper = new IdentityProviderMapperRepresentation();
@@ -511,8 +446,7 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
         assertBrokerRegistration(orgResource, aliceFromProviderRealm.getUsername(), aliceFromProviderRealm.getEmail(),
                 oauth, loginUsernamePage, loginPage, loginUpdateProfilePage, providerRealm);
 
-        UserRepresentation user = getUserRepresentation(aliceFromProviderRealm.getEmail());
-        assertNotNull(user);
+        assertIsMember(user.getEmail(), otherOrgResource);
 
         // Each mapper joins the group of the organization it names, not of an arbitrary linked one
         List<MemberRepresentation> groupMembers = orgResource.groups().group(groupId).getMembers(null, null, false);
@@ -522,6 +456,42 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
         groupMembers = otherOrgResource.groups().group(otherGroupId).getMembers(null, null, false);
         assertThat(groupMembers, hasSize(1));
         assertThat(groupMembers.get(0).getId(), is(user.getId()));
+    }
+
+    @Test
+    public void testOrganizationGroupMapperDoesNotAssignNonMemberOnFirstLogin() {
+        OrganizationResource organization = createOrganizationWithBroker(providerRealm, false, MembershipType.UNMANAGED);
+        String groupId = addHardcodedOrganizationGroupMapper(organization, IdentityProviderMapperSyncMode.FORCE);
+
+        UserRepresentation user = loginViaBroker(aliceFromProviderRealm.getEmail(), aliceFromProviderRealm.getUsername(),
+                aliceFromProviderRealm.getPassword(), aliceFromProviderRealm.getEmail(),
+                oauth, loginUsernamePage, loginPage, loginUpdateProfilePage, providerRealm);
+        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertThrows(NotFoundException.class, () -> organization.members().member(user.getId()).toRepresentation());
+
+        assertThat(organization.groups().group(groupId).getMembers(null, null, false), hasSize(0));
+    }
+
+    @Test
+    public void testOrganizationGroupMapperDoesNotAssignNonMemberOnSubsequentLogin() {
+        OrganizationResource organization = createOrganizationWithBroker(providerRealm, false, MembershipType.UNMANAGED);
+        UserRepresentation user = loginViaBroker(aliceFromProviderRealm.getEmail(), aliceFromProviderRealm.getUsername(),
+                aliceFromProviderRealm.getPassword(), aliceFromProviderRealm.getEmail(),
+                oauth, loginUsernamePage, loginPage, loginUpdateProfilePage, providerRealm);
+        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertThrows(NotFoundException.class, () -> organization.members().member(user.getId()).toRepresentation());
+        realm.admin().users().get(user.getId()).logout();
+        providerRealm.admin().logoutAll();
+
+        // Add the mapper after registration to exercise FORCE sync independently of first-login import.
+        String groupId = addHardcodedOrganizationGroupMapper(organization, IdentityProviderMapperSyncMode.FORCE);
+        loginViaBroker(aliceFromProviderRealm.getEmail(), aliceFromProviderRealm.getUsername(),
+                aliceFromProviderRealm.getPassword(), aliceFromProviderRealm.getEmail(),
+                oauth, loginUsernamePage, loginPage, loginUpdateProfilePage, providerRealm);
+        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertThrows(NotFoundException.class, () -> organization.members().member(user.getId()).toRepresentation());
+
+        assertThat(organization.groups().group(groupId).getMembers(null, null, false), hasSize(0));
     }
 
     @Test
@@ -591,5 +561,30 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
 
         IdentityProviderMapperRepresentation updated = realm.admin().identityProviders().get(idpAlias).getMapperById(mapperId);
         assertThat(updated.getConfig().get(ConfigConstants.ORGANIZATION_ID), nullValue());
+    }
+
+    private String addHardcodedOrganizationGroupMapper(OrganizationResource organization, IdentityProviderMapperSyncMode syncMode) {
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("mapper-test-group");
+        String groupId;
+        try (Response response = organization.groups().addTopLevelGroup(group)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            groupId = ApiUtil.getCreatedId(response);
+        }
+
+        String idpAlias = organizationName + "-identity-provider";
+        IdentityProviderMapperRepresentation mapper = IdentityProviderMapperBuilder.create()
+                .name("org-group-mapper")
+                .identityProviderMapper(HardcodedGroupMapper.PROVIDER_ID)
+                .identityProviderAlias(idpAlias)
+                .attribute(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
+                .attribute(ConfigConstants.GROUP, organization.groups().group(groupId).toRepresentation(false).getPath())
+                .attribute(ConfigConstants.GROUP_TYPE, GroupModel.Type.ORGANIZATION.name())
+                .attribute(ConfigConstants.ORGANIZATION_ID, organization.toRepresentation().getId())
+                .build();
+        try (Response response = realm.admin().identityProviders().get(idpAlias).addMapper(mapper)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+        }
+        return groupId;
     }
 }
