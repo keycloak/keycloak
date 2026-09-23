@@ -36,6 +36,8 @@ import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.event.SsfEvent;
+import org.keycloak.ssf.stream.DeliveryMethod;
+import org.keycloak.ssf.stream.DeliveryMethodFamily;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.subject.ComplexSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
@@ -415,8 +417,19 @@ public class SsfAdminResource {
         // StreamConfig); narrowing here keeps that wire shape untouched.
         rep.setLastVerifiedAt(toIntegerOrNull(
                 readEpochSecondsAttribute(client, ClientStreamStore.SSF_LAST_VERIFIED_AT_KEY)));
-        rep.setLastPollCompletedAt(readEpochSecondsAttribute(client, ClientStreamStore.SSF_STREAM_LAST_POLL_COMPLETED_AT_KEY));
+        // POLL-only runtime state. Gating on the *current* delivery
+        // family (not just on the attribute being present) means a stamp
+        // that leaked onto a PUSH stream through the poll/update race
+        // (see SsfStreamPollResource) is never surfaced.
+        if (isPollDelivery(streamConfig)) {
+            rep.setLastPollCompletedAt(readEpochSecondsAttribute(client, ClientStreamStore.SSF_STREAM_LAST_POLL_COMPLETED_AT_KEY));
+        }
         return rep;
+    }
+
+    protected static boolean isPollDelivery(StreamConfig streamConfig) {
+        return streamConfig.getDelivery() != null
+                && DeliveryMethod.familyOfUri(streamConfig.getDelivery().getMethod()) == DeliveryMethodFamily.POLL;
     }
 
     /**

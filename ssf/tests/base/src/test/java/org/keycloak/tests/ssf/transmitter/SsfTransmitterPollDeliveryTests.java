@@ -686,14 +686,40 @@ public class SsfTransmitterPollDeliveryTests {
         Assertions.assertFalse(getStreamViaAdmin(RECEIVER_POLL).has("lastPollCompletedAt"),
                 "switching the stream away from POLL delivery must clear lastPollCompletedAt");
 
-        // PUSH → POLL: nothing has polled since the switch, so the stream
-        // must report "never polled" rather than the pre-switch stamp.
+        // Simulate a poll that raced the switch and committed its stamp
+        // onto the now-PUSH stream. The admin API must not surface it
+        // while the stream is on PUSH ...
+        setClientAttribute(RECEIVER_POLL, ClientStreamStore.SSF_STREAM_LAST_POLL_COMPLETED_AT_KEY, "1760000000");
+        Assertions.assertFalse(getStreamViaAdmin(RECEIVER_POLL).has("lastPollCompletedAt"),
+                "a PUSH stream must never report lastPollCompletedAt, even if the attribute is present");
+
+        // ... and PUSH → POLL must start the new POLL era at "never
+        // polled" rather than resurfacing the leaked stamp.
         StreamDeliveryConfig pollAgain = new StreamDeliveryConfig();
         pollAgain.setMethod(Ssf.DELIVERY_METHOD_POLL_URI);
         patchStreamDelivery(token, stream.getStreamId(), pollAgain);
 
         Assertions.assertFalse(getStreamViaAdmin(RECEIVER_POLL).has("lastPollCompletedAt"),
-                "a stream switched back to POLL must not resurface the stamp from its previous POLL era");
+                "a stream switched back to POLL must not resurface a stamp from before the switch");
+    }
+
+    @Test
+    public void streamCreate_clearsStaleRuntimeStamps() throws Exception {
+
+        // A poll (or verification) in flight while the previous stream
+        // was deleted can commit its stamp after the delete. The successor
+        // stream must not inherit either stamp, so create clears them.
+        setClientAttribute(RECEIVER_POLL, ClientStreamStore.SSF_STREAM_LAST_POLL_COMPLETED_AT_KEY, "1760000000");
+        setClientAttribute(RECEIVER_POLL, ClientStreamStore.SSF_LAST_VERIFIED_AT_KEY, "1760000000");
+
+        String token = obtainReceiverToken(RECEIVER_POLL, RECEIVER_POLL_SECRET);
+        createPollStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        JsonNode created = getStreamViaAdmin(RECEIVER_POLL);
+        Assertions.assertFalse(created.has("lastPollCompletedAt"),
+                "a freshly created stream must not report a lastPollCompletedAt left behind on the client");
+        Assertions.assertFalse(created.has("lastVerifiedAt"),
+                "a freshly created stream must not report a lastVerifiedAt left behind on the client");
     }
 
     @Test
@@ -868,6 +894,18 @@ public class SsfTransmitterPollDeliveryTests {
                     () -> "CC grant for client '" + clientId + "' should succeed");
             return response.asJson().get("access_token").asText();
         }
+    }
+
+    /**
+     * Writes a client attribute directly through the admin clients API,
+     * bypassing the SSF stream APIs — used to plant server-owned runtime
+     * state the way a raced request or an import would.
+     */
+    protected void setClientAttribute(String clientId, String key, String value) {
+        ClientResource clientResource = realm.admin().clients().get(findClientByClientId(clientId).getId());
+        ClientRepresentation rep = clientResource.toRepresentation();
+        rep.getAttributes().put(key, value);
+        clientResource.update(rep);
     }
 
     protected ClientRepresentation findClientByClientId(String clientId) {

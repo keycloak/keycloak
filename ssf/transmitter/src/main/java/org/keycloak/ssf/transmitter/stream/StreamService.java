@@ -218,6 +218,13 @@ public class StreamService {
 
         streamConfig.setStatus(StreamStatusValue.enabled);
 
+        // Per-stream runtime stamps belong to the previous stream on this
+        // receiver, if any. deleteStream already clears them, but a poll
+        // that was in flight while the old stream was deleted can commit
+        // its stamp afterwards (see SsfStreamPollResource); clearing again
+        // here keeps the new stream from inheriting it.
+        clearStreamRuntimeStamps(receiverClient);
+
         // Store the stream configuration
         streamStore.saveStream(streamConfig);
 
@@ -1166,10 +1173,16 @@ public class StreamService {
             return;
         }
 
-        // The last-poll stamp is POLL-only runtime state. Clearing it
-        // here (rather than on PUSH → POLL) means the stream never
-        // carries a stamp from an earlier POLL era across a PUSH stint.
-        if (newMethod.family() != DeliveryMethodFamily.POLL) {
+        // The last-poll stamp is POLL-only runtime state and belongs to
+        // the delivery era that just ended. Clear it on every family
+        // change, in both directions: leaving POLL drops the stamp with
+        // the era, and entering POLL removes anything that leaked onto
+        // the PUSH stream through the poll/update race (see
+        // SsfStreamPollResource), so the new POLL era starts at
+        // "never polled". A same-family switch (POLL ↔ RISC POLL) keeps
+        // the stamp: the receiver kept polling the same URL.
+        DeliveryMethodFamily previousFamily = DeliveryMethod.familyOfUri(previousDeliveryMethodUri);
+        if (newMethod.family() != previousFamily) {
             receiverClient.removeAttribute(ClientStreamStore.SSF_STREAM_LAST_POLL_COMPLETED_AT_KEY);
         }
 
@@ -1190,6 +1203,17 @@ public class StreamService {
                     migrated, previousDeliveryMethodUri, newMethodUri,
                     realm.getName(), receiverClient.getClientId(), streamConfig.getStreamId());
         }
+    }
+
+    /**
+     * Removes the per-stream runtime stamps ({@code lastPollCompletedAt},
+     * {@code lastVerifiedAt}) from the receiver client. Called on stream
+     * create so a successor stream starts clean even if a request that
+     * raced the previous stream's delete committed a stamp afterwards.
+     */
+    protected void clearStreamRuntimeStamps(ClientModel receiverClient) {
+        receiverClient.removeAttribute(ClientStreamStore.SSF_STREAM_LAST_POLL_COMPLETED_AT_KEY);
+        receiverClient.removeAttribute(ClientStreamStore.SSF_LAST_VERIFIED_AT_KEY);
     }
 
     /**

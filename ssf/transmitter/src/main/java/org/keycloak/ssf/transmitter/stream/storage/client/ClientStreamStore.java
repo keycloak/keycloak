@@ -211,12 +211,14 @@ public class ClientStreamStore implements SsfStreamStore {
      * {@link org.keycloak.ssf.transmitter.support.SsfActivityTracker#stampPollCompleted}
      * — so a busy poller doesn't trigger a client-cache invalidation per
      * request. Server-owned runtime state: never accepted from the admin
-     * or receiver stream APIs, cleared on stream delete and whenever the
-     * stream's delivery method leaves the POLL family (see
-     * {@code StreamService.handleDeliveryMethodChange}), so a stream
-     * switched POLL → PUSH → POLL reports "never polled" rather than a
-     * stamp from its previous POLL era. Surfaced on the admin Stream tab
-     * so operators can spot receivers that stopped polling.
+     * or receiver stream APIs. Self-healing lifecycle: cleared on stream
+     * delete, on stream create and on every delivery-family change (see
+     * {@code StreamService}), and only surfaced by the admin API while
+     * the stream is on POLL delivery — so a stream switched
+     * POLL → PUSH → POLL reports "never polled", and a stamp written by a
+     * poll that raced a delete or method switch is neither shown nor
+     * inherited. Surfaced on the admin Stream tab so operators can spot
+     * receivers that stopped polling.
      */
     public static final String SSF_STREAM_LAST_POLL_COMPLETED_AT_KEY = "ssf.stream.lastPollCompletedAt";
     /**

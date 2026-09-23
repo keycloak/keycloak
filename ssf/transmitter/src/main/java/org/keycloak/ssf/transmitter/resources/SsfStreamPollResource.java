@@ -169,6 +169,17 @@ public class SsfStreamPollResource {
         //    second transaction per poll and lose atomicity with the
         //    outbox row transitions. Write-coalesced — see
         //    SsfActivityTracker.
+        //
+        //    Lifecycle race: a stream delete or POLL → PUSH switch that
+        //    commits between the POLL-family check above and this write
+        //    (a few ms) would leave the stamp on a client that no longer
+        //    has a POLL stream. Client attributes have no compare-and-set
+        //    and re-reading here would only see this transaction's own
+        //    snapshot, so the write can't be made conditional. Instead
+        //    the state is self-healing: stream create and every delivery
+        //    family change clear the stamp, and the admin representation
+        //    only exposes it for POLL streams — a leaked stamp is never
+        //    shown and never inherited.
         SsfActivityTracker.stampPollCompleted(callerClient);
 
         return Response.ok(response).build();
@@ -180,14 +191,8 @@ public class SsfStreamPollResource {
      * RISC POLL). Missing or unknown methods count as not-poll.
      */
     protected boolean isPollDelivery(StreamConfig stream) {
-        if (stream.getDelivery() == null || stream.getDelivery().getMethod() == null) {
-            return false;
-        }
-        try {
-            return DeliveryMethod.valueOfUri(stream.getDelivery().getMethod()).family() == DeliveryMethodFamily.POLL;
-        } catch (IllegalArgumentException unknownMethod) {
-            return false;
-        }
+        return stream.getDelivery() != null
+                && DeliveryMethod.familyOfUri(stream.getDelivery().getMethod()) == DeliveryMethodFamily.POLL;
     }
 
     protected Response invalidRequest(String message) {
