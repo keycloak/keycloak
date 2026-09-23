@@ -59,18 +59,18 @@ public class UsernameScopeType implements ParameterizedScopeTypeProvider {
     }
 
     @Override
-    public void validateParameterWithUser(@Nonnull UserModel currentUser, @Nonnull ClientScopeModel scope, @Nonnull String parameter) throws InvalidScopeParameterException {
+    public void validateParameterWithUser(@Nonnull UserModel currentUser, @Nonnull ClientScopeModel scope, @Nonnull String parameter,
+            AuthenticatedClientSessionModel clientSession) throws InvalidScopeParameterException {
         UserModel targetUser = resolveUser(scope, parameter);
         if (targetUser.getId().equals(currentUser.getId())) {
             throw new InvalidScopeParameterException("User cannot target themselves");
         }
-        verifyPinnedIdentity(parameter, targetUser.getId());
+        verifyPinnedIdentity(clientSession, parameter, targetUser.getId());
     }
 
-    protected void verifyPinnedIdentity(String parameterValue, String resolvedId) throws InvalidScopeParameterException {
-        AuthenticatedClientSessionModel clientSession = ParameterizedScopeTypeProvider.resolveClientSessionFromContext(session, session.getContext().getClient());
+    protected void verifyPinnedIdentity(AuthenticatedClientSessionModel clientSession, String parameterValue, String resolvedId) throws InvalidScopeParameterException {
         if (clientSession == null) {
-            logger.warn("Cannot verify pinned identity: client session not found in context");
+            logger.debug("Cannot verify pinned identity: no client session yet (e.g. consent screen preview)");
             return;
         }
         String noteKey = PINNED_IDENTITY_NOTE_PREFIX + getTypeName() + "." + parameterValue;

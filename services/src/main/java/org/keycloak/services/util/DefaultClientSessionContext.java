@@ -100,16 +100,15 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     public static DefaultClientSessionContext fromClientSessionAndScopeParameter(AuthenticatedClientSessionModel clientSession, String scopeParam, KeycloakSession session) {
         UserSessionModel userSession = clientSession.getUserSession();
-        // parameterized scope validation (e.g. identity pinning) relies on the user session being available in the context
-        session.getContext().setUserSession(userSession);
         UserModel user = Optional.ofNullable(userSession).map(UserSessionModel::getUser).orElse(null);
-        Stream<ClientScopeModel> requestedScopes;
+        Set<ClientScopeModel> requestedScopes;
         if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
-            requestedScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, clientSession.getClient(), user, scopeParam);
+            requestedScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, clientSession.getClient(), user, clientSession, scopeParam)
+                    .collect(Collectors.toSet());
         } else {
-            requestedScopes = TokenManager.getRequestedClientScopes(session, scopeParam, clientSession.getClient(), user);
+            requestedScopes = TokenManager.getRequestedClientScopes(session, scopeParam, clientSession.getClient(), user).collect(Collectors.toSet());
         }
-        return new DefaultClientSessionContext(clientSession, requestedScopes.collect(Collectors.toSet()), null, scopeParam, session);
+        return new DefaultClientSessionContext(clientSession, requestedScopes, null, scopeParam, session);
     }
 
 
@@ -237,7 +236,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
      * @return see description
      */
     private String buildScopesStringFromAuthorizationRequest(boolean ignoreIncludeInTokenScope) {
-        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getClient(), clientSession.getUserSession().getUser(), requestedScopeString).getAuthorizationDetailEntries().stream()
+        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getClient(), clientSession.getUserSession().getUser(), clientSession, requestedScopeString).getAuthorizationDetailEntries().stream()
                 .filter(authorizationDetails -> authorizationDetails.getSource().equals(AuthorizationRequestSource.SCOPE))
                 .filter(authorizationDetails -> authorizationDetails.getClientScope().isIncludeInTokenScope() || ignoreIncludeInTokenScope)
                 .filter(authorizationDetails -> isClientScopePermittedForUser(authorizationDetails.getClientScope()))

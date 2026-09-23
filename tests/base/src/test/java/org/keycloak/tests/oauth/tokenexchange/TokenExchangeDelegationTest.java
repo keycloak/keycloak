@@ -564,6 +564,50 @@ public class TokenExchangeDelegationTest {
     }
 
     @Test
+    public void delegationDroppedOnCrossClientIntrospectionAfterTargetUserRecreated() {
+        String tempUsername = "temp-delegate-introspect";
+        String tempUserId = createUser(tempUsername);
+        ScopePermissionRepresentation oldPermission = addDelegationPermission(tempUserId, "Temp Delegate Policy Introspect");
+
+        // login with delegation to the temp user and accept consent
+        final String scope = OIDCLoginProtocolFactory.USER_DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + tempUsername;
+        AccessTokenResponse res = loginWithDelegation(scope, grants ->
+                MatcherAssert.assertThat(grants, Matchers.hasItem(Matchers.containsString("Delegate token"))));
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), tempUserId);
+
+        // remove stale permission, delete the temp user and recreate with the same username (new UUID)
+        ClientResource adminPerms = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
+        adminPerms.authorization().permissions().scope().findById(oldPermission.getId()).remove();
+        realm.admin().users().get(tempUserId).remove();
+        recreateUserWithDelegation(tempUsername);
+
+        // a different client (not the one the token was issued to) introspects the already-issued access token;
+        // identity pinning must be enforced using the token's own client session, not the introspecting client
+        createIntrospectingClient("cross-client-introspector", "cross-client-secret");
+        IntrospectionResponse introspectRes;
+        try {
+            introspectRes = oauth.client("cross-client-introspector", "cross-client-secret")
+                    .doIntrospectionAccessTokenRequest(res.getAccessToken());
+        } finally {
+            oauth.client("test-app", "test-secret");
+        }
+        Assertions.assertTrue(introspectRes.isSuccess());
+        try {
+            // introspection's "scope" field is copied verbatim from the original token and isn't re-validated;
+            // may_act is added by a mapper driven by the freshly re-resolved scopes, so it reflects the pin check
+            TokenMetadataRepresentation rep = introspectRes.asTokenMetadata();
+            assertMayActNotPresent(rep);
+        } catch (IOException e) {
+            Assertions.fail(e);
+        }
+
+        LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
+        Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
+    }
+
+    @Test
     public void cibaDelegationNoDelegatePermission() throws Exception {
 
         // request delegation with a user that has no delegate permission
@@ -930,6 +974,21 @@ public class TokenExchangeDelegationTest {
         realm.cleanup().add(r -> r.users().search(username).stream()
                 .findFirst().ifPresent(u -> r.users().get(u.getId()).remove()));
         return userId;
+    }
+
+    private String createIntrospectingClient(String clientId, String secret) {
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId(clientId);
+        clientRep.setSecret(secret);
+        clientRep.setEnabled(true);
+        clientRep.setPublicClient(false);
+        clientRep.setAttributes(Map.of(OIDCConfigAttributes.ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK, "true"));
+        String clientUuid;
+        try (Response response = realm.admin().clients().create(clientRep)) {
+            clientUuid = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clients().get(clientUuid).remove());
+        return clientUuid;
     }
 
     private void assertExchangeError(AccessTokenResponse tokenExchangeRes, String error, String reason) {

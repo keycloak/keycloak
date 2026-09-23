@@ -4,12 +4,10 @@ import jakarta.annotation.Nonnull;
 
 import org.keycloak.Config;
 import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 
@@ -42,20 +40,6 @@ public interface ParameterizedScopeTypeProvider extends Provider, ProviderFactor
                 .filter(k -> k.startsWith(PINNED_IDENTITY_NOTE_PREFIX))
                 .toList()
                 .forEach(clientSession::removeNote);
-    }
-
-    /**
-     * Resolves the client session that carries pinned identity notes (see {@link #clearPinnedIdentities}) from the
-     * user session already attached to the request context.
-     *
-     * @return the client session, or {@code null} if no user session (or matching client session) is in context yet
-     */
-    static AuthenticatedClientSessionModel resolveClientSessionFromContext(KeycloakSession session, ClientModel client) {
-        UserSessionModel userSession = session.getContext().getUserSession();
-        if (userSession == null || client == null) {
-            return null;
-        }
-        return userSession.getAuthenticatedClientSessionByClient(client.getId());
     }
 
     /**
@@ -96,6 +80,19 @@ public interface ParameterizedScopeTypeProvider extends Provider, ProviderFactor
      */
     default void validateParameterWithUser(@Nonnull UserModel currentUser, @Nonnull ClientScopeModel scope, @Nonnull String parameter) throws InvalidScopeParameterException {
         validateParameter(scope, parameter);
+    }
+
+    /**
+     * Same as {@link #validateParameterWithUser(UserModel, ClientScopeModel, String)}, but also given the client
+     * session scopes are being resolved for, when one already exists (e.g. {@code null} before any client/user
+     * session exists, such as a consent screen preview). Needed for validations with side effects tied to that
+     * client session (e.g. identity pinning).
+     *
+     * @param clientSession the client session scopes are being resolved for, or {@code null}
+     */
+    default void validateParameterWithUser(@Nonnull UserModel currentUser, @Nonnull ClientScopeModel scope, @Nonnull String parameter,
+            AuthenticatedClientSessionModel clientSession) throws InvalidScopeParameterException {
+        validateParameterWithUser(currentUser, scope, parameter);
     }
 
     @Override

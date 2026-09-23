@@ -27,7 +27,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.rar.AuthorizationRequestParserProvider;
 import org.keycloak.protocol.oidc.rar.parsers.ClientScopeAuthorizationRequestParserProviderFactory;
-import org.keycloak.protocol.oidc.scope.ParameterizedScopeTypeProvider;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.rar.AuthorizationRequestSource;
@@ -64,12 +63,23 @@ public class AuthorizationContextUtil {
      * @return an {@link AuthorizationRequestContext} with scope entries
      */
     public static AuthorizationRequestContext getAuthorizationRequestContextFromScopes(KeycloakSession session, ClientModel client, UserModel user, String scope) {
+        return getAuthorizationRequestContextFromScopes(session, client, user, null, scope);
+    }
+
+    /**
+     * Same as {@link #getAuthorizationRequestContextFromScopes(KeycloakSession, ClientModel, UserModel, String)}, but
+     * also given the client session scopes are being resolved for, when one already exists (e.g. {@code null} before
+     * any client/user session exists, such as a consent screen preview). Needed for validations with side effects
+     * tied to that client session (e.g. identity pinning), and to scope the cache below so a pre-session resolution
+     * can't be reused by a later, authoritative one that does have a client session.
+     */
+    public static AuthorizationRequestContext getAuthorizationRequestContextFromScopes(KeycloakSession session, ClientModel client, UserModel user,
+            AuthenticatedClientSessionModel clientSession, String scope) {
         if (!Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
             throw new RuntimeException("The Parameterized Scopes feature is not enabled and the AuthorizationRequestContext hasn't been generated");
         }
 
-        // client session id avoids reusing a pre-session resolution (e.g. consent screen preview) for identity pinning
-        String cacheKey = getCacheKey(client, user, resolveClientSessionId(session, client), scope);
+        String cacheKey = getCacheKey(client, user, clientSession != null ? clientSession.getId() : null, scope);
         AuthorizationRequestContext cached = session.getAttribute(cacheKey, AuthorizationRequestContext.class);
         if (cached != null) {
             return copyContext(cached);
@@ -83,7 +93,7 @@ public class AuthorizationContextUtil {
                     ClientScopeAuthorizationRequestParserProviderFactory.CLIENT_SCOPE_PARSER_ID));
         }
 
-        AuthorizationRequestContext result = clientScopeParser.parseScopes(user, client, scope);
+        AuthorizationRequestContext result = clientScopeParser.parseScopes(user, client, clientSession, scope);
         session.setAttribute(cacheKey, result);
         return copyContext(result);
     }
@@ -95,11 +105,6 @@ public class AuthorizationContextUtil {
     private static String getCacheKey(ClientModel client, UserModel user, String clientSessionId, String scope) {
         return CACHE_KEY_PREFIX + client.getId() + ":" + (user != null ? user.getId() : "")
                 + ":" + (clientSessionId != null ? clientSessionId : "") + ":" + scope;
-    }
-
-    private static String resolveClientSessionId(KeycloakSession session, ClientModel client) {
-        AuthenticatedClientSessionModel clientSession = ParameterizedScopeTypeProvider.resolveClientSessionFromContext(session, client);
-        return clientSession != null ? clientSession.getId() : null;
     }
 
     /**
@@ -115,7 +120,17 @@ public class AuthorizationContextUtil {
     }
 
     public static AuthorizationRequestContext getAuthorizationRequestContextFromScopesWithClient(KeycloakSession session, ClientModel client, UserModel user, String scope) {
-        AuthorizationRequestContext authorizationRequestContext = getAuthorizationRequestContextFromScopes(session, client, user, scope);
+        return getAuthorizationRequestContextFromScopesWithClient(session, client, user, null, scope);
+    }
+
+    /**
+     * Same as {@link #getAuthorizationRequestContextFromScopesWithClient(KeycloakSession, ClientModel, UserModel, String)},
+     * but also given the client session. See
+     * {@link #getAuthorizationRequestContextFromScopes(KeycloakSession, ClientModel, UserModel, AuthenticatedClientSessionModel, String)}.
+     */
+    public static AuthorizationRequestContext getAuthorizationRequestContextFromScopesWithClient(KeycloakSession session, ClientModel client, UserModel user,
+            AuthenticatedClientSessionModel clientSession, String scope) {
+        AuthorizationRequestContext authorizationRequestContext = getAuthorizationRequestContextFromScopes(session, client, user, clientSession, scope);
         authorizationRequestContext.getAuthorizationDetailEntries().add(new AuthorizationDetails(client));
         return authorizationRequestContext;
     }
@@ -147,7 +162,17 @@ public class AuthorizationContextUtil {
     }
 
     public static Stream<ClientScopeModel> getClientScopesStreamFromAuthorizationRequestContextWithClient(KeycloakSession session, ClientModel client, UserModel user, String scope) {
-        return getAuthorizationRequestContextFromScopesWithClient(session, client, user, scope).getAuthorizationDetailEntries().stream()
+        return getClientScopesStreamFromAuthorizationRequestContextWithClient(session, client, user, null, scope);
+    }
+
+    /**
+     * Same as {@link #getClientScopesStreamFromAuthorizationRequestContextWithClient(KeycloakSession, ClientModel, UserModel, String)},
+     * but also given the client session. See
+     * {@link #getAuthorizationRequestContextFromScopes(KeycloakSession, ClientModel, UserModel, AuthenticatedClientSessionModel, String)}.
+     */
+    public static Stream<ClientScopeModel> getClientScopesStreamFromAuthorizationRequestContextWithClient(KeycloakSession session, ClientModel client, UserModel user,
+            AuthenticatedClientSessionModel clientSession, String scope) {
+        return getAuthorizationRequestContextFromScopesWithClient(session, client, user, clientSession, scope).getAuthorizationDetailEntries().stream()
                 .filter(authorizationDetails -> authorizationDetails.getSource() == AuthorizationRequestSource.SCOPE)
                 .map(AuthorizationDetails::getClientScope);
     }
