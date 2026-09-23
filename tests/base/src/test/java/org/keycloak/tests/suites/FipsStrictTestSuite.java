@@ -20,6 +20,8 @@ import org.keycloak.tests.forms.LoginSSLTest;
 import org.keycloak.tests.forms.LoginTest;
 import org.keycloak.tests.keys.JavaKeystoreKeyProviderTest;
 import org.keycloak.tests.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest;
+import org.keycloak.tests.x509.X509BrowserLoginTest;
+import org.keycloak.tests.x509.X509DirectGrantTest;
 
 import org.junit.platform.suite.api.AfterSuite;
 import org.junit.platform.suite.api.BeforeSuite;
@@ -38,7 +40,9 @@ import org.junit.platform.suite.api.Suite;
         KcAdmTest.class,
         KcAdmCreateTest.class,
         KcRegTest.class,
-        KcRegCreateTest.class
+        KcRegCreateTest.class,
+        X509BrowserLoginTest.class,
+        X509DirectGrantTest.class,
 })
 public class FipsStrictTestSuite {
 
