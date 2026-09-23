@@ -1083,15 +1083,18 @@ public final class KeycloakModelUtils {
      *       {@link #getOrganizationForIdpMapper(KeycloakSession, IdentityProviderMapperModel, IdentityProviderModel)}</li>
      *   <li>{@code "REALM"} or missing — searches realm groups</li>
      * </ul>
+     * Organization groups are resolved only for users who are members of the target organization.
      *
      * @param session the Keycloak session
      * @param realm the realm
+     * @param user the user whose group membership is being mapped
      * @param mapperModel the mapper model configuration containing the group path and group type
      * @param context the brokered identity context containing the IdP configuration
      * @return the group if found and valid, null otherwise (mapper should be skipped)
      */
     public static GroupModel getGroupForIdpMapper(KeycloakSession session,
                                                    RealmModel realm,
+                                                   UserModel user,
                                                    IdentityProviderMapperModel mapperModel,
                                                    BrokeredIdentityContext context) {
         String groupPath = mapperModel.getConfig().get(ConfigConstants.GROUP);
@@ -1110,7 +1113,7 @@ public final class KeycloakModelUtils {
 
         if (groupType == GroupModel.Type.ORGANIZATION) {
             OrganizationModel organization = getOrganizationForIdpMapper(session, mapperModel, context.getIdpConfig());
-            if (organization == null) {
+            if (organization == null || user == null || !organization.isMember(user)) {
                 return null;
             }
             group = findGroupByPath(session, realm, organization, groupPath);
