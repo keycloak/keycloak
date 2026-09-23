@@ -46,6 +46,7 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.page.LoginUpdateProfilePage;
 import org.keycloak.testframework.ui.page.LoginUsernamePage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
@@ -92,6 +93,9 @@ public class OrganizationPostBrokerMembershipTest {
 
     @InjectPage
     LoginUsernamePage loginUsernamePage;
+
+    @InjectPage
+    LoginUpdateProfilePage updateProfilePage;
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
@@ -393,6 +397,104 @@ public class OrganizationPostBrokerMembershipTest {
         assertIsMemberWithType(userId, orgDomainless.getId(), MembershipType.UNMANAGED);
     }
 
+    // ==================== Domain without IdP routing ====================
+
+    /**
+     * Domain exists in the org but has no linked IdP (IDP_ID=null). The IdP IS linked to the
+     * org with AM=true. User enters an email matching the domain, manually selects the IdP,
+     * and authenticates. The domain gate should still pass (it checks domain ownership, not
+     * domain-to-IdP routing), so the user should become an org member.
+     */
+    @Test
+    public void testDomainWithoutIdpRoutingStillGrantsMembership() {
+        setupBroker(IDP_ALIAS);
+        createProviderUser("alice", "alice@acme.com", "password");
+        OrganizationRepresentation orgA = createOrg("org-a", "acme.com");
+        linkIdpToOrg(orgA.getId(), IDP_ALIAS, true, "UNMANAGED");
+        // deliberately NOT calling setDomainRouting — domain.identityProviderAlias stays null
+
+        String userId = loginViaBrokerManualSelection("alice@acme.com", IDP_ALIAS, "alice", "password");
+
+        assertIsMemberWithType(userId, orgA.getId(), MembershipType.UNMANAGED);
+    }
+
+    /**
+     * Same setup as above but with MT=MANAGED. Verifies the membership type from the
+     * per-association link is respected even when the domain has no IdP routing.
+     */
+    @Test
+    public void testDomainWithoutIdpRoutingManagedMembership() {
+        setupBroker(IDP_ALIAS);
+        createProviderUser("bob", "bob@acme.com", "password");
+        OrganizationRepresentation orgA = createOrg("org-a", "acme.com");
+        linkIdpToOrg(orgA.getId(), IDP_ALIAS, true, "MANAGED");
+
+        String userId = loginViaBrokerManualSelection("bob@acme.com", IDP_ALIAS, "bob", "password");
+
+        assertIsMemberWithType(userId, orgA.getId(), MembershipType.MANAGED);
+    }
+
+    /**
+     * Domain has no IdP routing. User manually selects the IdP but changes their email on the
+     * update profile page to a domain NOT owned by the org. Since the domain has no IdP link,
+     * the OrganizationMemberValidator does not enforce email restrictions. The domain gate in
+     * IdpAddOrganizationMemberAuthenticator should then FAIL (email doesn't match org domain),
+     * so the user should NOT become a member.
+     */
+    @Test
+    public void testDomainWithoutIdpRoutingEmailChangedNoMembership() {
+        setupBroker(IDP_ALIAS);
+        // create provider user without last name so the first-broker-login flow
+        // shows the update profile page (idp-review-profile is in "missing" mode)
+        UserRepresentation carol = UserBuilder.create()
+                .username("carol")
+                .password("password")
+                .email("carol@acme.com")
+                .emailVerified(true)
+                .firstName("Carol")
+                .enabled(true)
+                .build();
+        try (Response response = providerRealm.admin().users().create(carol)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            String carolId = ApiUtil.getCreatedId(response);
+            providerRealm.cleanup().add(r -> {
+                try { r.users().get(carolId).remove(); } catch (Exception ignored) {}
+            });
+        }
+
+        OrganizationRepresentation orgA = createOrg("org-a", "acme.com");
+        linkIdpToOrg(orgA.getId(), IDP_ALIAS, true, "UNMANAGED");
+
+        oAuth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly("carol@acme.com");
+        loginUsernamePage.submit();
+
+        assertTrue(loginUsernamePage.isSocialButtonPresent(IDP_ALIAS),
+                "IdP button should be visible for manual selection");
+        loginUsernamePage.clickSocial(IDP_ALIAS);
+
+        loginPage.fillLogin("carol", "password");
+        loginPage.submit();
+
+        // on the update profile page, change email to a non-matching domain
+        updateProfilePage.prepareUpdate()
+                .email("carol@different.org")
+                .firstName("Carol")
+                .lastName("User")
+                .submit();
+
+        String email = "carol@different.org";
+        List<UserRepresentation> users = consumerRealm.admin().users().searchByEmail(email, true);
+        assertEquals(1, users.size(), "Federated user should be created in consumer realm");
+
+        String userId = users.get(0).getId();
+        consumerRealm.cleanup().add(r -> {
+            try { r.users().get(userId).remove(); } catch (Exception ignored) {}
+        });
+
+        assertIsNotMember(userId, orgA.getId());
+    }
+
     // ==================== Infrastructure helpers ====================
 
     private void setupBroker(String alias) {
@@ -514,6 +616,31 @@ public class OrganizationPostBrokerMembershipTest {
             try {
                 r.users().get(userId).remove();
             } catch (Exception ignored) {}
+        });
+        return userId;
+    }
+
+    private String loginViaBrokerManualSelection(String email, String idpAlias, String username, String password) {
+        oAuth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(email);
+        loginUsernamePage.submit();
+
+        assertTrue(loginUsernamePage.isSocialButtonPresent(idpAlias),
+                "IdP button should be visible for manual selection (domain has no routing)");
+        loginUsernamePage.clickSocial(idpAlias);
+
+        assertTrue(Objects.requireNonNull(driver.getCurrentUrl()).contains("/realms/" + providerRealm.getName() + "/"),
+                "Should be on provider realm login page");
+
+        loginPage.fillLogin(username, password);
+        loginPage.submit();
+
+        List<UserRepresentation> users = consumerRealm.admin().users().searchByEmail(email, true);
+        assertEquals(1, users.size(), "Federated user should be created in consumer realm");
+
+        String userId = users.get(0).getId();
+        consumerRealm.cleanup().add(r -> {
+            try { r.users().get(userId).remove(); } catch (Exception ignored) {}
         });
         return userId;
     }
