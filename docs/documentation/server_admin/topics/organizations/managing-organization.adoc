@@ -41,7 +41,7 @@ Name::
 A user-friendly name for the organization. The name is unique within a realm.
 
 Alias::
-An alias for this organization, used to reference the organization internally. The alias is unique within a realm and must be URL-friendly, so characters not usually allowed in URLs will not be allowed in the alias. If not set, {project_name} will attempt to use the name as the alias. If the name is not URL-friendly, you will get an error and will be asked to specify an alias. Once defined, the alias cannot be changed afterwards.
+An alias for this organization, used to reference the organization internally. The alias is unique within a realm. ASCII spaces, control characters, and backslashes are not allowed. The alias `*` is reserved for requesting all organizations, but `*` can occur within an alias such as `acme*corp`. Characters such as `/` and `:` are allowed. Unicode characters and double quotes remain accepted for backward compatibility, although they are outside the OAuth 2.0 scope-token character range. Encode aliases appropriately when including them in URLs. If not set, {project_name} will attempt to use the name as the alias. If the name contains forbidden characters, you will get an error and will be asked to specify an alias. Once defined, the alias cannot be changed afterwards.
 
 Redirect URL::
 After completing registration or accepting an invitation to the organization sent via email, the user is automatically redirected to the specified redirect url. If left empty, the user will be redirected to the account console by default.

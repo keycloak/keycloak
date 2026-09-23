@@ -389,28 +389,6 @@ public enum OrganizationScope {
             return null;
         }
 
-        if (session.getAttributeOrDefault(UNSUPPORTED_ORGANIZATION_SCOPES_ATTRIBUTE, Set.of()).contains(scope)) {
-            // scope already processed and does not support mapping organizations
-            return null;
-        }
-
-        Set<ClientScopeModel> organizationScopes = session.getAttributeOrDefault(ORGANIZATION_SCOPES_SESSION_ATTRIBUTE, Set.of());
-        ClientScopeModel cachedScope = null;
-
-        for (ClientScopeModel candidate : organizationScopes) {
-            boolean matches = scope.equals(candidate.getName()) || scope.startsWith(candidate.getName() + VALUE_SEPARATOR);
-
-            // prefer the longest matching cached name, consistent with resolveParameterizedClientScope below
-            if (matches && (cachedScope == null || candidate.getName().length() > cachedScope.getName().length())) {
-                cachedScope = candidate;
-            }
-        }
-
-        if (cachedScope != null) {
-            // scope already processed and supports organizations
-            return cachedScope;
-        }
-
         ClientScopeModel clientScope = getClientScope(client, scope);
 
         if (clientScope == null) {
@@ -422,6 +400,21 @@ public enum OrganizationScope {
 
         if (clientScope != null) {
             scope = clientScope.getName();
+
+            // Resolve the actual scope before consulting the cache: a cached shorter prefix
+            // must not shadow a longer assigned scope, even if it has no organization mapper.
+            if (session.getAttributeOrDefault(UNSUPPORTED_ORGANIZATION_SCOPES_ATTRIBUTE, Set.of()).contains(scope)) {
+                return null;
+            }
+
+            Set<ClientScopeModel> organizationScopes = session.getAttributeOrDefault(ORGANIZATION_SCOPES_SESSION_ATTRIBUTE, Set.of());
+
+            for (ClientScopeModel candidate : organizationScopes) {
+                if (scope.equals(candidate.getName())) {
+                    return candidate;
+                }
+            }
+
             Stream<String> mappers = clientScope.getProtocolMappersStream().map(ProtocolMapperModel::getProtocolMapper);
 
             if (mappers.noneMatch(OrganizationMembershipMapper.PROVIDER_ID::equals)) {

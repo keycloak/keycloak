@@ -11,6 +11,14 @@ The listing endpoints for default and optional client scopes now return an empty
 
 If you have delegated administrators that assign client scopes using Fine-Grained Admin Permissions, ensure they also have the `manage-clients` realm admin role or a type-level `manage` permission on the Clients resource type.
 
+=== Organization alias validation
+
+Organization alias validation now also applies during realm import and creation through the organization provider.
+Aliases containing ASCII spaces, control characters, or backslashes, or consisting solely of `*`, are rejected.
+Whitespace-only aliases no longer default to the organization name; omitted, null, and empty aliases still do.
+Unicode characters and double quotes remain supported, and existing stored aliases are unchanged.
+Before importing an existing realm, check for rejected alias values and update any application references if aliases must change.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

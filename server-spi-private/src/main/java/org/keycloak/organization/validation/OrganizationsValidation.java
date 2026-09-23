@@ -22,8 +22,9 @@ import org.keycloak.validate.BuiltinValidators;
 
 public class OrganizationsValidation {
 
-    // RFC 6749, Section 3.3: scope-token = 1*( %x21 / %x23-5B / %x5D-7E )
-    private static final Pattern ALIAS_INVALID_CHARS_PATTERN = Pattern.compile("[^\\x21\\x23-\\x5B\\x5D-\\x7E]");
+    // Allow OAuth scope characters and retain previously accepted Unicode and double quotes.
+    // Spaces delimit scopes; control characters and backslashes are not valid in aliases.
+    private static final Pattern ALIAS_INVALID_CHARS_PATTERN = Pattern.compile("[\\p{Cc} \\\\]");
 
     // reserved by OrganizationScope.ALL to request access to every organization a user belongs to;
     // it cannot also be used as a literal alias value
