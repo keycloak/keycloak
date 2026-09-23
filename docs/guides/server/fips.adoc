@@ -126,7 +126,7 @@ When starting the server, you can check that the startup log contains `KC` provi
 
 [source]
 ----
-FIPS1402Provider created: KC(BCFIPS version 2.0102 Approved Mode, FIPS-JVM: enabled)
+FIPS1402Provider created: KC(BCFIPS version 2.0103 Approved Mode, FIPS-JVM: enabled)
 ----
 
 === Cryptography restrictions in strict mode
