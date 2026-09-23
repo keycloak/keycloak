@@ -1137,6 +1137,11 @@ public class StreamService {
      *         to POLL become available to the receiver's next poll;
      *         POLL rows retargeted to PUSH are picked up by the
      *         drainer on its next tick.</li>
+     *     <li>When the new method leaves the POLL family, drop the
+     *         {@code ssf.stream.lastPollCompletedAt} stamp. It belongs
+     *         to the stream's previous POLL era; keeping it would make
+     *         a later PUSH → POLL switch show a stale "Last poll" on
+     *         the admin Stream tab where "Never polled" is the truth.</li>
      * </ul>
      *
      * <p>No-op when the URI hasn't changed.
@@ -1160,6 +1165,14 @@ public class StreamService {
         if (newMethod == null) {
             return;
         }
+
+        // The last-poll stamp is POLL-only runtime state. Clearing it
+        // here (rather than on PUSH → POLL) means the stream never
+        // carries a stamp from an earlier POLL era across a PUSH stint.
+        if (newMethod.family() != DeliveryMethodFamily.POLL) {
+            receiverClient.removeAttribute(ClientStreamStore.SSF_STREAM_LAST_POLL_COMPLETED_AT_KEY);
+        }
+
         // In the generic outbox the delivery method is encoded by the
         // entryKind (ssf-push vs ssf-poll) rather than a column on the
         // row. Migrating the queued backlog therefore translates to

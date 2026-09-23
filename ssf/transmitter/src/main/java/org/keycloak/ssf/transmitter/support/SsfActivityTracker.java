@@ -43,15 +43,20 @@ public final class SsfActivityTracker {
 
     /**
      * Persist the last-poll-completed timestamp only when the stored
-     * value is older than this many seconds. 60s caps a greedy poller
-     * at roughly one client-cache invalidation per minute while
-     * keeping the admin-facing "last poll" reading accurate to within a
-     * minute — plenty to tell a live receiver from a dead one. A future
-     * min-poll-interval check that rejects without stamping and always
-     * stamps on accepted polls can at most <em>under</em>-enforce by
-     * this granularity, never over-enforce.
+     * value is older than this many seconds. Deliberately equal to
+     * {@link #STAMP_GRANULARITY_SECONDS}: every poll already stamps the
+     * activity timeslot (via {@code SsfAuthUtil.canRead}) on the same
+     * request, and both writes land on the same client entity — so with
+     * matching granularity they coalesce onto the same requests and a
+     * steadily polling receiver causes no additional client-cache
+     * invalidations beyond the ones the activity stamp already costs. A
+     * "last poll" reading accurate to within 5 minutes is plenty to
+     * tell a live receiver from a dead one. A future min-poll-interval
+     * check that rejects without stamping and always stamps on accepted
+     * polls can at most <em>under</em>-enforce by this granularity,
+     * never over-enforce.
      */
-    public static final long POLL_STAMP_GRANULARITY_SECONDS = 60L;
+    public static final long POLL_STAMP_GRANULARITY_SECONDS = STAMP_GRANULARITY_SECONDS;
 
     private SsfActivityTracker() {
     }
@@ -83,7 +88,14 @@ public final class SsfActivityTracker {
      * Stamps the current time (epoch seconds) into {@code attributeKey}
      * on {@code client} unless the stored value is younger than
      * {@code granularitySeconds}. No-op on a {@code null} client. A
-     * malformed stored value is overwritten.
+     * malformed stored value is overwritten, and so is a value that
+     * lies in the future: the coalescing window only applies to a
+     * stored value in the past ({@code 0 <= age < granularity}). Without
+     * the lower bound a future-dated value — a backward clock step on
+     * the node (NTP correction, VM migration, host resume), or a value
+     * written through the plain client-attributes API / a realm
+     * import — would make {@code age} negative on every call and freeze
+     * the stamp until wall-clock time caught up with it.
      */
     static void stamp(ClientModel client, String attributeKey, long granularitySeconds) {
         if (client == null) {
@@ -94,10 +106,15 @@ public final class SsfActivityTracker {
         if (existing != null && !existing.isBlank()) {
             try {
                 long stored = Long.parseLong(existing.trim());
-                if (now - stored < granularitySeconds) {
+                long age = now - stored;
+                if (age >= 0 && age < granularitySeconds) {
                     log.tracef("Skipping %s stamp for client %s: stored=%d is within %ds of now=%d",
                             attributeKey, client.getClientId(), stored, granularitySeconds, now);
                     return;
+                }
+                if (age < 0) {
+                    log.debugf("Stored %s=%d on client %s lies in the future (now=%d); treating as stale",
+                            attributeKey, stored, client.getClientId(), now);
                 }
             } catch (NumberFormatException ignored) {
                 // Malformed attribute — fall through and overwrite.

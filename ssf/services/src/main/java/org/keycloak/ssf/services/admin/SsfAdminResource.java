@@ -420,11 +420,6 @@ public class SsfAdminResource {
     }
 
     /**
-     * Reads an epoch-seconds client attribute, returning {@code null} when
-     * absent, blank or malformed. Defensive: a bad timestamp attribute
-     * must not fail the whole admin GET for the stream.
-     */
-    /**
      * Narrows to {@link Integer} only when the value fits; out-of-range
      * values become {@code null} (omitted from the response) rather than
      * wrapping, matching the previous {@code Integer.valueOf} behaviour.
@@ -436,6 +431,11 @@ public class SsfAdminResource {
         return value.intValue();
     }
 
+    /**
+     * Reads an epoch-seconds client attribute, returning {@code null} when
+     * absent, blank or malformed. Defensive: a bad timestamp attribute
+     * must not fail the whole admin GET for the stream.
+     */
     protected static Long readEpochSecondsAttribute(ClientModel client, String key) {
         String raw = client.getAttribute(key);
         if (raw == null || raw.isBlank()) {
