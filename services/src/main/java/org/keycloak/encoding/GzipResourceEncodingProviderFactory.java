@@ -2,6 +2,7 @@ package org.keycloak.encoding;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -80,6 +81,17 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
                 } catch (IOException e) {
                     logger.warn("Failed to delete gzip cache directory", e);
                 }
+            }
+        }
+
+        if (dir.exists()) {
+            // The previous cache could not be fully deleted, so it might still contain stale entries. Use a fresh
+            // directory instead, which is removed together with the rest of the cache on the next startup.
+            try {
+                dir = Files.createTempDirectory(cacheRoot.toPath(), Version.RESOURCES_VERSION + "-").toFile();
+            } catch (IOException e) {
+                logger.warn("Failed to create gzip cache directory in " + cacheRoot.getAbsolutePath(), e);
+                return null;
             }
         }
 

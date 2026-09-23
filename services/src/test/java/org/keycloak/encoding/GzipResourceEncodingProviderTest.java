@@ -21,9 +21,19 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
+import org.keycloak.common.Version;
+
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -73,6 +83,26 @@ public class GzipResourceEncodingProviderTest {
 
         // a new factory simulates a restart after the theme resource was deleted
         assertNull(newProvider().getEncodedStream(() -> null, "login", "mytheme", "css", "test-cache.css"));
+    }
+
+    @Test
+    public void staleResourceIsNotServedWhenCacheCannotBeCleared() throws IOException {
+        assertEquals("VERSION-ONE", encode(newProvider(), "VERSION-ONE"));
+
+        // make the cached resource undeletable, so clearing the cache on restart fails
+        Path cssDir = Paths.get(System.getProperty(KC_TMPDIR), "kc-gzip-cache", Version.RESOURCES_VERSION, "login", "mytheme", "css");
+        Assume.assumeTrue(Files.getFileStore(cssDir).supportsFileAttributeView(PosixFileAttributeView.class));
+        Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(cssDir);
+        Files.setPosixFilePermissions(cssDir, PosixFilePermissions.fromString("r-xr-xr-x"));
+        try {
+            // e.g. when running as root, the file can still be deleted
+            Assume.assumeFalse(Files.isWritable(cssDir));
+
+            // a new factory simulates a restart after the theme resource was changed
+            assertEquals("VERSION-TWO", encode(newProvider(), "VERSION-TWO"));
+        } finally {
+            Files.setPosixFilePermissions(cssDir, permissions);
+        }
     }
 
     private static ResourceEncodingProvider newProvider() {
