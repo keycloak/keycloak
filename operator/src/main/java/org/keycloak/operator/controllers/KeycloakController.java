@@ -218,7 +218,7 @@ public class KeycloakController implements Reconciler<Keycloak> {
     }
 
     public void updateStatus(Keycloak keycloakCR, StatefulSet existingDeployment, KeycloakStatusAggregator status, Context<Keycloak> context) {
-        status.apply(b -> b.withSelector(Utils.toSelectorString(Utils.allInstanceLabels(keycloakCR))));
+        status.apply(b -> b.withSelector(Utils.toSelectorString(Utils.serverSelectorLabels(keycloakCR))));
         validatePodTemplate(keycloakCR, status, context);
         if (existingDeployment == null) {
             status.addNotReadyMessage("No existing StatefulSet found, waiting for creating a new one");
@@ -311,7 +311,7 @@ public class KeycloakController implements Reconciler<Keycloak> {
     private void checkForPodErrors(KeycloakStatusAggregator status, Keycloak keycloak, StatefulSet existingDeployment, Context<Keycloak> context) {
         context.getClient().pods().inNamespace(existingDeployment.getMetadata().getNamespace())
                 .withLabel("controller-revision-hash", existingDeployment.getStatus().getUpdateRevision())
-                .withLabels(Utils.allInstanceLabels(keycloak))
+                .withLabels(Utils.serverSelectorLabels(keycloak))
                 .list().getItems().stream()
                 .filter(p -> !Readiness.isPodReady(p)
                         && Optional.ofNullable(p.getStatus()).map(PodStatus::getContainerStatuses).isPresent())

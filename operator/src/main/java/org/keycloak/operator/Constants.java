@@ -34,9 +34,13 @@ public final class Constants {
     public static final String NAME = "keycloak";
     public static final String PLURAL_NAME = "keycloaks";
     public static final String INSTANCE_LABEL = "app.kubernetes.io/instance";
+    public static final String NAME_LABEL = "app.kubernetes.io/name";
+    public static final String PART_OF_LABEL = "app.kubernetes.io/part-of";
     public static final String MANAGED_BY_LABEL = "app.kubernetes.io/managed-by";
     public static final String MANAGED_BY_VALUE = "keycloak-operator";
     public static final String COMPONENT_LABEL = "app.kubernetes.io/component";
+    public static final String SERVER_COMPONENT = "server";
+    public static final String COMMAND_COMPONENT = "command";
     public static final String KEYCLOAK_PAUSE_ANNOTATION = "operator.keycloak.org/pause";
     public static final String KEYCLOAK_MIGRATING_ANNOTATION = "operator.keycloak.org/migrating";
     public static final String KEYCLOAK_RECREATE_UPDATE_ANNOTATION = "operator.keycloak.org/recreate-update";

@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.keycloak.operator.Config;
+import org.keycloak.operator.Constants;
 import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
@@ -58,6 +59,8 @@ import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeyc
 @KubernetesDependent
 public class KeycloakRealmImportJobDependentResource extends KubernetesDependentResource<Job, KeycloakRealmImport> implements Creator<Job, KeycloakRealmImport>, GarbageCollected<KeycloakRealmImport> {
 
+    public static final String JOB_NAME = "keycloak-realm-import";
+    
     KeycloakRealmImportJobDependentResource() {
         super(Job.class);
     }
@@ -80,9 +83,12 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
         keycloakPodTemplate.getSpec().getVolumes().add(buildSecretVolume(volumeName, secretName));
 
         var labels = keycloakPodTemplate.getMetadata().getLabels();
+        labels.remove(Constants.NAME_LABEL);
+        labels.remove(Constants.PART_OF_LABEL);
 
         // The Job should not be selected with app=keycloak
-        labels.put("app", "keycloak-realm-import");
+        labels.put(Constants.APP_LABEL, JOB_NAME);
+        // the component is wrong, but we don't have to worry about that if/until we get rid of the app label 
 
         var kc = ContextUtils.getKeycloak(context);
         handleJobScheduling(kc, Optional.ofNullable(kc.getSpec().getImportSpec()).map(ImportSpec::getSchedulingSpec), keycloakPodTemplate.getSpec());
@@ -133,7 +139,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
                 .withNamespace(primary.getMetadata().getNamespace())
                 // this is labeling the instance as the realm import, not the keycloak
                 .addToLabels(labels)
-                .addToLabels(Utils.allInstanceLabels(primary))
+                .addToLabels(Utils.addJobLabels(Utils.allInstanceLabels(primary), JOB_NAME))
                 .endMetadata()
                 .withNewSpec()
                 .withTemplate(keycloakPodTemplate)

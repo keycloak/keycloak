@@ -278,7 +278,7 @@ public class KeycloakDeploymentDependentResource extends VersionTolerantCRUDKube
     }
 
     private boolean hasExpectedMatchLabels(StatefulSet statefulSet, Keycloak keycloak) {
-        return Optional.ofNullable(statefulSet).map(s -> Utils.allInstanceLabels(keycloak).equals(s.getSpec().getSelector().getMatchLabels())).orElse(true);
+        return Optional.ofNullable(statefulSet).map(s -> Utils.serverSelectorLabels(keycloak).equals(s.getSpec().getSelector().getMatchLabels())).orElse(true);
     }
 
     static Optional<PodTemplateSpec> getPodTemplateSpec(Keycloak keycloakCR) {
@@ -286,13 +286,14 @@ public class KeycloakDeploymentDependentResource extends VersionTolerantCRUDKube
     }
 
     private StatefulSet createBaseDeployment(Keycloak keycloakCR, Context<Keycloak> context, Config operatorConfig) {
-        Map<String, String> labels = Utils.allInstanceLabels(keycloakCR);
-        labels.put("app.kubernetes.io/component", "server");
-        Map<String, String> schedulingLabels = new LinkedHashMap<>(labels);
+        Map<String, String> podLabels = Utils.allInstanceLabels(keycloakCR);
+        podLabels.put(Constants.COMPONENT_LABEL, Constants.SERVER_COMPONENT);
         if (operatorConfig.keycloak().podLabels() != null) {
-            labels.putAll(operatorConfig.keycloak().podLabels());
+            podLabels.putAll(operatorConfig.keycloak().podLabels());
         }
-
+        
+        Map<String, String> schedulingLabels = Utils.serverSelectorLabels(keycloakCR);
+        
         /* Create a builder for the statefulset, note that the pod template spec is used as the basis
          * over that some values are forced, others will let the template override, others merge
          */
@@ -302,14 +303,15 @@ public class KeycloakDeploymentDependentResource extends VersionTolerantCRUDKube
                     .withName(getName(keycloakCR))
                     .withNamespace(keycloakCR.getMetadata().getNamespace())
                     .withLabels(Utils.allInstanceLabels(keycloakCR))
+                    .addToLabels(Constants.COMPONENT_LABEL, Constants.SERVER_COMPONENT)
                     .addToAnnotations(Constants.KEYCLOAK_MIGRATING_ANNOTATION, Boolean.FALSE.toString())
                 .endMetadata()
                 .withNewSpec()
                     .withNewSelector()
-                        .withMatchLabels(Utils.allInstanceLabels(keycloakCR))
+                        .withMatchLabels(Utils.serverSelectorLabels(keycloakCR))
                     .endSelector()
                     .withNewTemplateLike(getPodTemplateSpec(keycloakCR).orElseGet(PodTemplateSpec::new))
-                        .editOrNewMetadata().addToLabels(labels).endMetadata()
+                        .editOrNewMetadata().addToLabels(podLabels).endMetadata()
                         .editOrNewSpec().withImagePullSecrets(keycloakCR.getSpec().getImagePullSecrets()).endSpec()
                     .endTemplate()
                     .withReplicas(keycloakCR.getSpec().getInstances())

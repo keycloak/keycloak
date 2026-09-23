@@ -69,9 +69,38 @@ public final class Utils {
                 .collect(Collectors.joining(","));
     }
 
+    /**
+     * Get all instance labels - should not be used for match selectors as
+     * the secondary labels may change from release to release.
+     */
     public static Map<String, String> allInstanceLabels(HasMetadata primary) {
+        return allInstanceLabels(primary, true);
+    }
+    
+    public static Map<String, String> allInstanceLabels(HasMetadata primary, boolean includeSecondary) {
         var labels = new LinkedHashMap<>(Constants.DEFAULT_LABELS);
         labels.put(Constants.INSTANCE_LABEL, primary.getMetadata().getName());
+        if (includeSecondary) {
+            labels.put(Constants.NAME_LABEL, Constants.NAME);
+            labels.put(Constants.PART_OF_LABEL, Constants.NAME);    
+        }
+        return labels;
+    }
+    
+    /**
+     * Per instance selector labels - should remain stable across releases
+     */
+    public static Map<String, String> serverSelectorLabels(HasMetadata primary) {
+        var labels = allInstanceLabels(primary, false);
+        labels.put(Constants.INSTANCE_LABEL, primary.getMetadata().getName());
+        labels.put(Constants.COMPONENT_LABEL, Constants.SERVER_COMPONENT);
+        return labels;
+    }
+    
+    public static Map<String, String> addJobLabels(Map<String, String> labels, String jobName) {
+        labels.put(Constants.NAME_LABEL, jobName);
+        labels.put(Constants.PART_OF_LABEL, Constants.NAME);
+        labels.put(Constants.COMPONENT_LABEL, Constants.COMMAND_COMPONENT);
         return labels;
     }
 

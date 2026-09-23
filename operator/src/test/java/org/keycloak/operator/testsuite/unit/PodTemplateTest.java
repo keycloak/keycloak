@@ -128,7 +128,7 @@ public class PodTemplateTest {
         var kc = createKeycloak(podTemplate, additionalSpec);
 
         existingDeployment = new StatefulSetBuilder(existingDeployment).editOrNewMetadata().endMetadata().editOrNewSpec().editOrNewSelector()
-                .withMatchLabels(Utils.allInstanceLabels(kc))
+                .withMatchLabels(Utils.serverSelectorLabels(kc))
                 .endSelector().endSpec().build();
 
         //noinspection unchecked
@@ -578,6 +578,14 @@ public class PodTemplateTest {
                   topologyKey: "kubernetes.io/hostname"
                   whenUnsatisfiable: "ScheduleAnyway"
                 """);
+        
+        var podTemplateMetadata = podTemplate.getMetadata();
+        assertEquals(
+                Map.of("app", "keycloak", "app.kubernetes.io/managed-by", "keycloak-operator",
+                        "app.kubernetes.io/instance", "instance", "app.kubernetes.io/component", "server",
+                        "testLabelWithExpression", "my-value", "test.label", "foobar",
+                        "app.kubernetes.io/name", "keycloak", "app.kubernetes.io/part-of", "keycloak"),
+                podTemplateMetadata.getLabels());
     }
 
     @Test

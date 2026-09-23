@@ -44,7 +44,7 @@ public class KeycloakDiscoveryServiceDependentResource extends VersionTolerantCR
               .withProtocol("TCP")
               .withPort(Constants.KEYCLOAK_DISCOVERY_SERVICE_PORT)
               .endPort()
-              .withSelector(Utils.allInstanceLabels(keycloak))
+              .withSelector(Utils.serverSelectorLabels(keycloak))
               .withClusterIP("None")
               .withPublishNotReadyAddresses(Boolean.TRUE)
               .build();
