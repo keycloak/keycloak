@@ -33,7 +33,8 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
             dir = initCacheDir();
         }
 
-        return new GzipResourceEncodingProvider(dir);
+        // without a cache directory, no provider is returned, so the resource is served without encoding
+        return dir != null ? new GzipResourceEncodingProvider(dir) : null;
     }
 
     @Override

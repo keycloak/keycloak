@@ -105,6 +105,23 @@ public class GzipResourceEncodingProviderTest {
         }
     }
 
+    @Test
+    public void noProviderWhenCacheDirectoryCannotBeCreated() throws IOException {
+        Path tmpDir = Paths.get(System.getProperty(KC_TMPDIR));
+        Assume.assumeTrue(Files.getFileStore(tmpDir).supportsFileAttributeView(PosixFileAttributeView.class));
+        Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(tmpDir);
+        Files.setPosixFilePermissions(tmpDir, PosixFilePermissions.fromString("r-xr-xr-x"));
+        try {
+            // e.g. when running as root, the directory can still be created
+            Assume.assumeFalse(Files.isWritable(tmpDir));
+
+            // no provider means the resource is served without encoding, rather than not at all
+            assertNull(newProvider());
+        } finally {
+            Files.setPosixFilePermissions(tmpDir, permissions);
+        }
+    }
+
     private static ResourceEncodingProvider newProvider() {
         return new GzipResourceEncodingProviderFactory().create(null);
     }
