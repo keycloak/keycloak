@@ -27,9 +27,11 @@ import org.keycloak.models.UserModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleMapperConfig;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.LDAPRule;
@@ -196,6 +198,103 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
 
             } finally {
                 appRealm.removeClient(rolesClient.getId());
+            }
+        });
+    }
+
+    @Test
+    public void test04DropOnlyRolesOwnedByThisRealmMapper() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+            LDAPTestUtils.updateConfigOptions(mapperModel,
+                    RoleMapperConfig.USE_REALM_ROLES_MAPPING, "true",
+                    RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "false");
+            realm.updateComponent(mapperModel);
+            RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+            RoleModel localRole = realm.addRole("local-role-remains");
+            RoleModel otherMapperRole = realm.addRole("other-mapper-role-remains");
+            otherMapperRole.setSingleAttribute("kc.ldap.role.provider.id", ctx.getLdapModel().getId());
+            otherMapperRole.setSingleAttribute("kc.ldap.role.mapper.id", "a-different-mapper");
+
+            LDAPObject ldapRole = mapper.createLDAPRole("deleted-ldap-realm-role");
+            try {
+                mapper.syncDataFromFederationProviderToKeycloak(realm);
+                RoleModel managedRole = realm.getRole("deleted-ldap-realm-role");
+                Assertions.assertNotNull(managedRole);
+                Assertions.assertEquals(mapperModel.getId(), managedRole.getFirstAttribute("kc.ldap.role.mapper.id"));
+
+                ctx.getLdapProvider().getLdapIdentityStore().remove(ldapRole);
+                mapper.syncDataFromFederationProviderToKeycloak(realm);
+                Assertions.assertNotNull(realm.getRole("deleted-ldap-realm-role")); // default off
+
+                LDAPTestUtils.updateConfigOptions(mapperModel, RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "true");
+                realm.updateComponent(mapperModel);
+                mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+                Assertions.assertEquals(1, mapper.syncDataFromFederationProviderToKeycloak(realm).getRemoved());
+                Assertions.assertNull(realm.getRole("deleted-ldap-realm-role"));
+                Assertions.assertNotNull(realm.getRole(localRole.getName()));
+                Assertions.assertNotNull(realm.getRole(otherMapperRole.getName()));
+            } finally {
+                try (LDAPQuery query = mapper.createRoleQuery(false)) {
+                    query.getResultList().stream()
+                            .filter(role -> "deleted-ldap-realm-role".equals(role.getAttributeAsString("cn")))
+                            .forEach(role -> ctx.getLdapProvider().getLdapIdentityStore().remove(role));
+                }
+                RoleModel remaining = realm.getRole("deleted-ldap-realm-role");
+                if (remaining != null) {
+                    realm.removeRole(remaining);
+                }
+                realm.removeRole(localRole);
+                realm.removeRole(otherMapperRole);
+                LDAPTestUtils.updateConfigOptions(mapperModel, RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "false");
+                realm.updateComponent(mapperModel);
+            }
+        });
+    }
+
+    @Test
+    public void test05DropClientRoleWithoutAdoptingExistingRole() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+            ClientModel client = session.clients().addClient(realm, "role-cleanup-client");
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+            RoleModel localRole = client.addRole("local-role-collision");
+
+            try {
+                LDAPTestUtils.updateConfigOptions(mapperModel,
+                        RoleMapperConfig.USE_REALM_ROLES_MAPPING, "false",
+                        RoleMapperConfig.CLIENT_ID, client.getClientId(),
+                        RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "true");
+                realm.updateComponent(mapperModel);
+                RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+                LDAPObject ldapRole = mapper.createLDAPRole("deleted-ldap-client-role");
+                LDAPObject collidingRole = mapper.createLDAPRole("local-role-collision");
+                try {
+                    mapper.syncDataFromFederationProviderToKeycloak(realm);
+                    Assertions.assertNull(localRole.getFirstAttribute("kc.ldap.role.mapper.id"));
+                    Assertions.assertNotNull(client.getRole("deleted-ldap-client-role"));
+                    ctx.getLdapProvider().getLdapIdentityStore().remove(ldapRole);
+                    ctx.getLdapProvider().getLdapIdentityStore().remove(collidingRole);
+                    Assertions.assertEquals(1, mapper.syncDataFromFederationProviderToKeycloak(realm).getRemoved());
+                    Assertions.assertNull(client.getRole("deleted-ldap-client-role"));
+                    Assertions.assertNotNull(client.getRole("local-role-collision"));
+                } finally {
+                    try (LDAPQuery query = mapper.createRoleQuery(false)) {
+                        query.getResultList().stream()
+                                .filter(role -> "deleted-ldap-client-role".equals(role.getAttributeAsString("cn"))
+                                        || "local-role-collision".equals(role.getAttributeAsString("cn")))
+                                .forEach(role -> ctx.getLdapProvider().getLdapIdentityStore().remove(role));
+                    }
+                }
+            } finally {
+                realm.removeClient(client.getId());
+                LDAPTestUtils.updateConfigOptions(mapperModel,
+                        RoleMapperConfig.USE_REALM_ROLES_MAPPING, "true",
+                        RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "false");
+                realm.updateComponent(mapperModel);
             }
         });
     }

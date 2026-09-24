@@ -60,6 +60,8 @@ import org.jboss.logging.Logger;
 public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements CommonLDAPGroupMapper {
 
     private static final Logger logger = Logger.getLogger(RoleLDAPStorageMapper.class);
+    private static final String LDAP_ROLE_PROVIDER_ID = "kc.ldap.role.provider.id";
+    private static final String LDAP_ROLE_MAPPER_ID = "kc.ldap.role.mapper.id";
 
     private final RoleMapperConfig config;
     private final RoleLDAPStorageMapperFactory factory;
@@ -105,6 +107,7 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
 
                 if (role == null) {
                     role = roleContainer.addRole(roleName);
+                    markRoleAsManaged(role);
                 }
 
                 logger.debugf("Granting role [%s] to user [%s] during import from LDAP", roleName, user.getUsername());
@@ -125,7 +128,7 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
 
             @Override
             public String getStatus() {
-                return String.format("%d imported roles, %d roles already exists in Keycloak", getAdded(), getUpdated());
+                return String.format("%d imported roles, %d roles already exist in Keycloak, %d roles removed", getAdded(), getUpdated(), getRemoved());
             }
 
         };
@@ -140,23 +143,54 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
 
         // Send LDAP query to load all roles
         try (LDAPQuery ldapRoleQuery = createRoleQuery(false)) {
+            ldapRoleQuery.setRequireCompleteResults(config.isDropNonExistingRolesDuringSync());
             List<LDAPObject> ldapRoles = LDAPUtils.loadAllLDAPObjects(ldapRoleQuery, ldapProvider);
 
             String rolesRdnAttr = config.getRoleNameLdapAttribute();
+            Set<String> ldapRoleNames = new HashSet<>();
             for (LDAPObject ldapRole : ldapRoles) {
                 String roleName = ldapRole.getAttributeAsString(rolesRdnAttr);
+                if (roleName == null || roleName.isBlank()) {
+                    throw new ModelException("LDAP role has no value for attribute " + rolesRdnAttr);
+                }
+                ldapRoleNames.add(roleName);
 
                 if (roleContainer.getRole(roleName) == null) {
                     logger.debugf("Syncing role [%s] from LDAP to keycloak DB", roleName);
-                    roleContainer.addRole(roleName);
+                    markRoleAsManaged(roleContainer.addRole(roleName));
                     syncResult.increaseAdded();
                 } else {
                     syncResult.increaseUpdated();
                 }
             }
 
+            if (config.isDropNonExistingRolesDuringSync()) {
+                // Collect first: removing a role while traversing a role stream can invalidate it.
+                List<RoleModel> removedRoles = roleContainer.getRolesStream()
+                        .filter(this::isManagedByThisMapper)
+                        .filter(role -> !ldapRoleNames.contains(role.getName()))
+                        .collect(Collectors.toList());
+                for (RoleModel role : removedRoles) {
+                    logger.debugf("Removing role [%s] no longer present in LDAP for mapper [%s]", role.getName(), mapperModel.getName());
+                    if (!roleContainer.removeRole(role)) {
+                        throw new ModelException("Could not remove LDAP-managed role " + role.getName());
+                    }
+                    syncResult.increaseRemoved();
+                }
+            }
+
             return syncResult;
         }
+    }
+
+    private void markRoleAsManaged(RoleModel role) {
+        role.setSingleAttribute(LDAP_ROLE_PROVIDER_ID, ldapProvider.getModel().getId());
+        role.setSingleAttribute(LDAP_ROLE_MAPPER_ID, mapperModel.getId());
+    }
+
+    private boolean isManagedByThisMapper(RoleModel role) {
+        return Objects.equals(ldapProvider.getModel().getId(), role.getFirstAttribute(LDAP_ROLE_PROVIDER_ID))
+                && Objects.equals(mapperModel.getId(), role.getFirstAttribute(LDAP_ROLE_MAPPER_ID));
     }
 
 
@@ -435,6 +469,7 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
                         if (modelRole == null) {
                             // Add role to local DB
                             modelRole = roleContainer.addRole(roleName);
+                            markRoleAsManaged(modelRole);
                         }
                         return modelRole;
                     }).collect(Collectors.toSet());
