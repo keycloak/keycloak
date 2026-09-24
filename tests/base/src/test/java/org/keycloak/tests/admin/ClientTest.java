@@ -51,7 +51,9 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.CibaConfig;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -83,6 +85,8 @@ import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
@@ -147,6 +151,9 @@ public class ClientTest {
     @InjectAdminEvents(realmRef = "default")
     AdminEvents adminEvents;
 
+    @InjectRunOnServer(realmRef = "default")
+    RunOnServerClient runOnServer;
+
     @Test
     public void getClients() {
         Assert.assertNames(managedRealm.admin().clients().findAll(), "account", "account-console", "realm-management", "security-admin-console", "broker", "test-app", Constants.ADMIN_CLI_CLIENT_ID);
@@ -157,6 +164,28 @@ public class ClientTest {
         assertTrue(managedRealm.admin().clients().findAll().stream().filter(client -> client.getAttributes().get(Constants.REALM_CLIENT).equals("true"))
                 .map(ClientRepresentation::getClientId)
                 .allMatch(clientId -> clientId.equals(Constants.REALM_MANAGEMENT_CLIENT_ID) || clientId.equals(Constants.BROKER_SERVICE_CLIENT_ID) || clientId.endsWith("-realm")));
+    }
+
+    @Test
+    public void realmClientAttributeIsNotPersistedOnUpdate() {
+        ClientRepresentation client = createClient();
+        ClientResource clientResource = managedRealm.admin().clients().get(client.getId());
+
+        ClientRepresentation stored = clientResource.toRepresentation();
+        assertThat(stored.getAttributes(), Matchers.hasEntry(Constants.REALM_CLIENT, "false"));
+
+        // write the representation straight back, changing nothing
+        clientResource.update(stored);
+        adminEvents.poll();
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName("default");
+            ClientModel clientModel = realm.getClientByClientId("my-app");
+            Assertions.assertFalse(clientModel.getAttributes().containsKey(Constants.REALM_CLIENT));
+        });
+
+        // the attribute is still computed for every read
+        assertThat(clientResource.toRepresentation().getAttributes(), Matchers.hasEntry(Constants.REALM_CLIENT, "false"));
     }
 
     private ClientRepresentation createClient() {

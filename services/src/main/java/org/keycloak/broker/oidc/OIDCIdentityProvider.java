@@ -545,7 +545,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         int authTimeInt = authTime == null ? 0 : Integer.parseInt(authTime);
         int maxAgeInt = Integer.parseInt(maxAge);
 
-        if (authTimeInt + maxAgeInt < Time.currentTime()) {
+        if ((long) authTimeInt + maxAgeInt < Time.currentTime()) {
             logger.debugf("Invalid auth_time claim. User not re-authenticated by the target OP.");
             return true;
         }

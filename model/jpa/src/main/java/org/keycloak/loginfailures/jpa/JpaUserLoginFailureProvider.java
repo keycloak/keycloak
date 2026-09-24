@@ -25,17 +25,19 @@ import java.util.Set;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserLoginFailureProvider;
+import org.keycloak.models.utils.LoginFailureUtils;
 
 public class JpaUserLoginFailureProvider implements UserLoginFailureProvider {
 
     private final KeycloakSession session;
     private final Set<LoginFailureKey> notInDatabaseCache = new HashSet<>();
-    private final Map<LoginFailureKey, UserLoginFailureModel> entityInSession = new HashMap();
+    private final Map<LoginFailureKey, UserLoginFailureModel> entityInSession = new HashMap<>();
 
     public JpaUserLoginFailureProvider(KeycloakSession session) {
         this.session = session;
@@ -61,22 +63,59 @@ public class JpaUserLoginFailureProvider implements UserLoginFailureProvider {
             notInDatabaseCache.add(key);
             return null;
         }
+        if (isExpired(realm, entity)) {
+            // leave the clean-up to the background task to avoid concurrent updates to the database
+            notInDatabaseCache.add(key);
+            return null;
+        }
         model = new UserLoginFailureAdapter(em, entity);
         entityInSession.put(key, model);
         return model;
     }
 
+    private boolean isExpired(RealmModel realm, LoginFailureEntity entity) {
+        if (entity.getLastFailure() == 0) {
+            // Entry was cleared after a successful login — treat as expired, matching Infinispan TTL=0 behavior.
+            return true;
+        }
+
+        long expireMs = LoginFailureUtils.computeExpirationCutOffTimestampMillis(realm, Time.currentTimeMillis());
+        return expireMs != -1 && entity.getLastFailure() < expireMs;
+    }
+
+    @Override
+    public void updateWithLatestRealmSettings(RealmModel realm) {
+        if (!realm.isBruteForceProtected()) {
+            removeAllUserLoginFailures(realm);
+        }
+    }
+
     @Override
     public UserLoginFailureModel addUserLoginFailure(RealmModel realm, String userId) {
         var em = getEntityManager();
-        em.createNamedQuery("insertLoginFailure")
-                .setParameter("realmId", realm.getId())
-                .setParameter("userId", userId)
-                .executeUpdate();
         var key = new LoginFailureKey(realm.getId(), userId);
         notInDatabaseCache.remove(key);
-        var entity = em.find(LoginFailureEntity.class, key);
+        // INSERT ON CONFLICT DO NOTHING does not lock the conflicting row, so a concurrent DELETE
+        // could remove it between the INSERT and the subsequent find. Retry if this happens.
+        LoginFailureEntity entity;
+        boolean inserted;
+        for (;;) {
+            int rows = em.createNamedQuery("insertLoginFailure")
+                    .setParameter("realmId", realm.getId())
+                    .setParameter("userId", userId)
+                    .executeUpdate();
+            inserted = rows > 0;
+            entity = inserted
+                    ? em.find(LoginFailureEntity.class, key)
+                    : em.find(LoginFailureEntity.class, key, LockModeType.PESSIMISTIC_WRITE);
+            if (entity != null) {
+                break;
+            }
+        }
         UserLoginFailureModel model = new UserLoginFailureAdapter(em, entity);
+        if (!inserted && isExpired(realm, entity)) {
+            model.clearPrimaryAndSecondaryAuthFailures();
+        }
         entityInSession.put(key, model);
         return model;
     }

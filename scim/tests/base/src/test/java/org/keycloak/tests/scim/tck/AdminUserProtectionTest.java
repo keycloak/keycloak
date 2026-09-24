@@ -59,7 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-@KeycloakIntegrationTest(config = ScimServerConfig.class)
+@KeycloakIntegrationTest
 public class AdminUserProtectionTest {
 
     @InjectRealm(config = AdminUserProtectionRealmConfig.class)

@@ -49,6 +49,7 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.JWTAuthorizationGrantContext;
+import org.keycloak.services.clientpolicy.context.JWTAuthorizationGrantResponseContext;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.IdentityBrokerService;
@@ -56,6 +57,12 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
+
+    @Override
+    public boolean isConfidentialOnlyGrantType() {
+        // According to Section 2.1 of RFC 7523, the client authentication is optional. But keycloak requires client authentication for this grant type.
+        return true;
+    }
 
     @Override
     public Response process(Context context) {
@@ -184,7 +191,8 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             event.session(userSession);
             ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, userSession,
                     authSession, authorizationGrantContext.getRestrictedScopes(), false);
-            TokenManager.AccessTokenResponseBuilder responseBuilder = createTokenResponseBuilder(user, userSession, clientSessionCtx, scopeParam, null);
+            TokenManager.AccessTokenResponseBuilder responseBuilder = createTokenResponseBuilder(user, userSession, clientSessionCtx, scopeParam,
+                    accessTokenResponseBuilder -> new JWTAuthorizationGrantResponseContext(formParams, clientSessionCtx, accessTokenResponseBuilder));
             if (jwtAuthorizationGrantProvider.isLimitAccessTokenExpiration()) {
                 if (authorizationGrantContext.getJWT().getExp() < responseBuilder.getAccessToken().getExp()) {
                     responseBuilder.getAccessToken().exp(authorizationGrantContext.getJWT().getExp());

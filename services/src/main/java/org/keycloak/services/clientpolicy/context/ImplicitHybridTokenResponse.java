@@ -18,25 +18,21 @@ package org.keycloak.services.clientpolicy.context;
 
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ImplicitHybridTokenResponse implements ClientPolicyContext {
+public class ImplicitHybridTokenResponse extends AbstractClientSessionCtxTokenResponseContext {
 
     private final AuthenticationSessionModel authSession;
-    private final ClientSessionContext clientSessionCtx;
-    private final TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder;
 
     public ImplicitHybridTokenResponse(AuthenticationSessionModel authSession,
             ClientSessionContext clientSessionCtx,
             TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder) {
+        super(clientSessionCtx, accessTokenResponseBuilder);
         this.authSession = authSession;
-        this.clientSessionCtx = clientSessionCtx;
-        this.accessTokenResponseBuilder = accessTokenResponseBuilder;
     }
 
     @Override
@@ -44,17 +40,7 @@ public class ImplicitHybridTokenResponse implements ClientPolicyContext {
         return ClientPolicyEvent.IMPLICIT_HYBRID_TOKEN_RESPONSE;
     }
 
-
     public AuthenticationSessionModel getAuthenticationSession() {
         return authSession;
     }
-
-    public TokenManager.AccessTokenResponseBuilder getAccessTokenResponseBuilder() {
-        return accessTokenResponseBuilder;
-    }
-
-    public ClientSessionContext getClientSessionContext() {
-        return clientSessionCtx;
-    }
-
 }

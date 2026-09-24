@@ -1,11 +1,13 @@
 package org.keycloak.testsuite.util.userprofile;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.Set;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
@@ -34,28 +36,34 @@ public class UserProfileUtil {
 
     public static UPConfig setUserProfileConfiguration(RealmResource testRealm, String configuration) {
         try {
-            UPConfig config = configuration == null ? null : JsonSerialization.readValue(configuration, UPConfig.class);
-
-            if (config != null) {
-                UPAttribute username = config.getAttribute(UserModel.USERNAME);
-
-                if (username == null) {
-                    config.addOrReplaceAttribute(new UPAttribute(UserModel.USERNAME));
-                }
-
-                UPAttribute email = config.getAttribute(UserModel.EMAIL);
-
-                if (email == null) {
-                    config.addOrReplaceAttribute(new UPAttribute(UserModel.EMAIL, new UPAttributePermissions(Set.of(ROLE_USER, ROLE_ADMIN), Set.of(ROLE_USER, ROLE_ADMIN)), new UPAttributeRequired(Set.of(ROLE_USER), Set.of())));
-                }
-            }
-
-            testRealm.users().userProfile().update(config);
-
-            return config;
+            return updateUserProfileConfiguration(testRealm, configuration == null ? null : JsonSerialization.readValue(configuration, UPConfig.class));
         } catch (IOException ioe) {
             throw new RuntimeException("Failed to read configuration", ioe);
         }
+    }
+
+    public static UPConfig updateUserProfileConfiguration(RealmResource testRealm, UPConfig config) {
+        if (config != null) {
+            UPAttribute username = config.getAttribute(UserModel.USERNAME);
+
+            if (username == null) {
+                config.addOrReplaceAttribute(new UPAttribute(UserModel.USERNAME));
+            }
+
+            UPAttribute email = config.getAttribute(UserModel.EMAIL);
+
+            if (email == null) {
+                config.addOrReplaceAttribute(new UPAttribute(UserModel.EMAIL, new UPAttributePermissions(Set.of(ROLE_USER, ROLE_ADMIN), Set.of(ROLE_USER, ROLE_ADMIN)), new UPAttributeRequired(Set.of(ROLE_USER), Set.of())));
+            }
+        }
+
+        testRealm.users().userProfile().update(config);
+
+        return config;
+    }
+
+    public static Optional<UserRepresentation> getUserByUsername(RealmResource testRealm, String username) {
+        return testRealm.users().search(username, true).stream().findFirst();
     }
 
     public static UPConfig enableUnmanagedAttributes(UserProfileResource upResource) {

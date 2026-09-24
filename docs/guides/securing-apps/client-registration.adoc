@@ -185,6 +185,8 @@ String registrationAccessToken = client.getRegistrationAccessToken();
 [[_client_registration_policies]]
 == Client Registration Policies
 
+WARNING: Client Registration Policies apply to requests made through the Client Registration Service. They are not executed for arbitrary Admin REST API requests.
+
 NOTE: The current plans are for the Client Registration Policies to be removed in favor of the Client Policies described in the link:{adminguide_link}#_client_policies[{adminguide_name}].
 Client Policies are more flexible and support more use case.
 For example the case of enforcing client URIs like the JWKS to link:{adminguide_link}#ssrf[prevent SSRF attacks] allowing only trusted patterns or domains.

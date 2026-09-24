@@ -396,7 +396,7 @@
                         <configuration>
                             <executable>${basedir}/scripts/post-process-helm-chart.sh</executable>
                             <arguments>
-                                <argument>${project.build.directory}/helm/kubernetes/keycloak-operator</argument>
+                                <argument>${project.build.directory}/helm/kubernetes/keycloak-operator-helm</argument>
                             </arguments>
                         </configuration>
                     </execution>

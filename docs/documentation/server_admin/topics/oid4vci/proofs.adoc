@@ -1,7 +1,57 @@
 [[_oid4vci_proofs]]
 === Proof Types and Key Binding in OID4VCI
 
-This section documents the proof types supported by OpenID for Verifiable Credential Issuance (OID4VCI), how to configure trusted attester keys, and how key binding works in the resulting credentials.
+A credential proof in OID4VCI is a cryptographic proof-of-possession that a wallet sends to an issuer ({project_name}) to show it controls the private key meant to be
+bound to the new credential.
+
+Purposes of the proof are:
+
+* **Anti-replay** - the nonce in the proof prevents a captured credential request from being replayed
+* **Key binding** - the public proof key embedded in the VC ties the credential to the Wallet's key pair. When credential is later presented by the wallet to the
+credential verifier, verifier is able to cryptographically verify issuer as well as holder/wallet. Verifying of the holder is possible in case that key binding was used.
+
+[[_oid4vci_proofs_use_cases]]
+==== Example use cases
+
+===== Use Case 1: Credential request without proof
+
+.Credential request without proof
+image::images/oid4vci/proof_part1-no-proof.drawio.svg[Credential request without proof]
+
+. Wallet sends credential request without a `proofs` parameter
+. Issuer/{project_name} issues the credential but has no key to bind (for instance, in case of SD-JWT credential format, there is no `cnf` claim)
+. Wallet creates the "verifiable credential presentation" and sends it to the verifier. However that presentation does not have key binding (for instance, in case of SD-JWT credential format, presentation ends with `~`)
+. Verifier is able to verify issuer signature and eventually disclosed claims digests. However verifier cannot verify holder key binding and hence cannot distinguish the presenter from anyone else who stole the credential.
+Risk is, that credential can be replayed or transferred to a different party.
+
+===== Use Case 2: Credential request with non-attested proof
+
+.Credential request with proof
+image::images/oid4vci/proof_part2-jwt-proof.drawio.svg[Credential request with proof]
+
+. Wallet fetches `c_nonce` from Issuer's nonce endpoint
+. Wallet generates a key pair before credential request (if it does not have existing key pair already). Wallet signs `openid4vci-proof+jwt` (in case that `jwt` proof was used, which is most typical for this use case). JWT header carries public proof key inline (typically in `jwk` claim). The proofs is sent within credential request to the issuer ({project_name})
+. Issuer validates proof JWT, extracts public key, embeds into the credential (for instance, in issued SD-JWT format, it is embedded into `cnf.jwk` claim)
+. At presentation, Wallet appends a Key-Binding JWT signed with private proof key.
+. Thanks to the key binding, verifier is able to verify Key-Binding JWT signature against `cnf.jwk` from issuer signed JWT. This allows to prevent bearer/replay attacks, which is main benefit against use case 1. For more details, see the <<_oid4vci_proofs_key_binding, Key Binding section>>
+
+===== Use Case 3: Credential request with attested proof
+
+Attestation is additional (optional) part of credential proof to add additional security. The purpose is to ensure that the proof key lives in a trusted environment (e.g. hardware secure element). It includes another entity called **Attester**. Attester is an external, trusted party. It participates in the creation of attested credential proofs for the credential wallets.
+Attester has trust relationship with the issuer ({project_name}) as issuer should be able to verify attestation.
+
+.Credential request with attested proof
+image::images/oid4vci/proof_part3-attested-proof.drawio.svg[Credential request with attested proof]
+
+. Wallet sends its public proof key to the Attester
+. Attester checks the key is in a trusted environment (e.g. hardware-backed). Then issues key-attestation JWT signed by attestation private key
+. Wallet either sends the key-attestation JWT as an `attestation` proof, or embeds it in the `key_attestation` header of a separate `jwt` proof.
+. Issuer validates the attestation JWT against the Attester's public key (registered in Trusted Key IDP); for a `jwt` proof, it also validates the enclosing proof JWT. The public key (or certificate) of the Attester must be configured in {project_name} to establish trust.
+. Issuer issues the credential including key-binding and returns to the wallet. It includes the wallet/holder key for the key binding (not the attestation key or attestation certificate)
+. Same like step 4 for use case 2
+. Same like step 5 for use case 2
+
+The following sections document the proof types supported by OpenID for Verifiable Credential Issuance (OID4VCI), how to configure trusted attester keys, and how key binding works in the resulting credentials.
 
 ==== Supported Proof Types
 
@@ -15,17 +65,42 @@ This section documents the proof types supported by OpenID for Verifiable Creden
 
 | JWT Proof
 | `jwt`
-| A signed JWT containing holder binding information. The key used to sign the JWT becomes the holder binding key in the credential.
+| A signed JWT containing holder binding information. The key used to sign the JWT becomes the holder binding key in the credential. Supported for both <<_oid4vci_proofs_use_cases,use case 2 and use case 3>>.
 
 | Attestation Proof
 | `attestation`
-| Proof containing key attestations from a trusted attestation authority.
+| Proof containing key attestations from a trusted attestation authority. Supported for <<_oid4vci_proofs_use_cases,use case 3>>.
 |===
 
 When a credential requires cryptographic holder binding, the client must provide a proof of an appropriate type. The issuer validates the proof and extracts the binding key, which is then included in the issued credential.
 
+[[_oid4vci_proofs_client_scope_config]]
+==== Client Scope Configuration for Proof Types
+
+To require key binding for a credential, configure the OID4VCI client scope with the appropriate attributes. These settings are advertised in the issuer metadata as `cryptographic_binding_methods_supported` and `proof_types_supported`, and they determine which proof types the wallet can use.
+
+.Client scope configuration for proofs
+image::images/oid4vci/proof_client_scope_config.png[Client scope configuration for proofs]
+
+Most relevant options of the client scope related to proofs and key binding:
+
+* **Cryptographic binding required** - When OFF, proofs are not required in credential request and key binding will not be used for verifiable credentials. This is <<_oid4vci_proofs_use_cases, use case 1 from examples above>>.
+When this is ON, proofs are required in credential request and key binding will be used as specified in the <<_oid4vci_proofs_use_cases, use cases 2 and 3 from examples above>>.
+If **Cryptographic binding required** is not enabled, the issuer metadata omits `cryptographic_binding_methods_supported` and `proof_types_supported`.
+
+* **Supported proof types** - The attribute accepts a comma-separated list of supported proof types, currently `jwt` and `attestation`.
+
+* **Cryptographic binding methods** - Comma separated list of key binding methods. Typical value is `jwk` for the supported credential formats like SD-JWT format, but might be different according to what particular format supports.
+
+* **Key attestations required** - If ON, then proofs must be always attested as specified in the <<_oid4vci_proofs_use_cases, use case 3 above>>
+
+* **Key storage resistance levels** and **User authentication resistance levels** - If this is configured, the corresponding values must be included in the attestation proofs. Those will be included in the OID4VCI credential metadata. Details about this are in the https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#appendix-D.2[section D.2 of the OID4VCI specification].
+
+NOTE: The `proof_signing_alg_values_supported` values in the metadata are automatically included in the issuer metadata based on the realm's supported asymmetric signing algorithms.
+
 ==== Configuring Trusted Attesters
 
+This is needed to be configured for the <<_oid4vci_proofs_use_cases, use case 3 from examples above>>.
 {project_name} supports JWT proofs that can optionally include key attestations, and the `attestation` proof type. To validate these attestations, configure the trusted attester keys through trust-material identity providers and link those identity providers to the OID4VCI client.
 
 Trusted attester keys are configured per client because different wallets can rely on different attestation authorities. The former realm-level options **Trusted Key IDs** and **Trusted Keys (JSON)** are no longer used for OID4VCI proof validation.
@@ -118,7 +193,7 @@ Do not place public Web PKI roots or the general {project_name} TLS truststore i
 
 ==== Creating and Sending JWT Proofs
 
-JWT proofs are the most common proof type. To create a JWT proof:
+JWT proofs are the most common proof type. They support the <<_oid4vci_proofs_use_cases, use cases 2 and 3 from examples above>>. The following steps describe creation of a JWT proof without attestation (use case 2):
 
 ===== 1. Obtain a Nonce
 
@@ -253,6 +328,7 @@ Include the JWT proof in the credential request:
 ==== Using Attestation Proofs
 
 Attestation proofs allow the holder to prove key ownership through an attestation authority. This is useful for hardware-backed keys or keys managed by secure enclaves.
+The example is described in the <<_oid4vci_proofs_use_cases, use case 3 from examples above>>.
 
 ===== Structure of an Attestation Proof
 
@@ -323,6 +399,7 @@ An attestation proof is a JWT containing:
 }
 ----
 
+[[_oid4vci_proofs_key_binding]]
 ==== Key Binding in Credentials
 
 The binding key from the proof is included in the issued credential to ensure the holder possesses the corresponding private key.
@@ -403,41 +480,7 @@ curl -X POST "https://localhost:8443/realms/myrealm/protocol/oid4vc/credential" 
   }'
 ----
 
-==== Client Scope Configuration for Proof Types
-
-To require key binding for a credential, configure the OID4VCI client scope with the appropriate attributes. These settings are advertised in the issuer metadata as `cryptographic_binding_methods_supported` and `proof_types_supported`, and they determine which proof types the wallet can use.
-
-[source,json]
-----
-{
-  "name": "my-vc-scope",
-  "protocol": "oid4vc",
-  "attributes": {
-    "include.in.token.scope": "true",
-    "vc.format": "jwt_vc_json",
-    "vc.credential_configuration_id": "my-credential-config",
-    "vc.binding_required": "true",
-    "vc.cryptographic_binding_methods_supported": "jwk",
-    "vc.binding_required_proof_types": "jwt,attestation",
-    "vc.credential_signing_alg": "ES256"
-  },
-  "protocolMappers": [
-    {
-      "name": "givenName",
-      "protocol": "oid4vc",
-      "protocolMapper": "oid4vc-user-attribute-mapper",
-      "config": {
-        "claim.name": "given_name",
-        "userAttribute": "firstName"
-      }
-    }
-  ]
-}
-----
-
-The `vc.binding_required_proof_types` attribute accepts a comma-separated list of supported proof types, currently `jwt` and `attestation`. If `vc.binding_required` is not enabled, the credential configuration does not require holder binding and the issuer metadata omits `cryptographic_binding_methods_supported` and `proof_types_supported`.
-
-The `proof_signing_alg_values_supported` values are automatically included in the issuer metadata based on the realm's supported asymmetric signing algorithms.
+Additional working examples on how to setup and use proofs can be seen from the https://github.com/keycloak/keycloak-playground/blob/main/fapi-playground/README.md#oid4vci-demo[Keycloak playground repository] (not officially supported repository).
 
 ==== Related Configuration
 

@@ -24,25 +24,25 @@ import org.keycloak.models.OAuth2DeviceCodeModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.services.clientpolicy.context.AbstractTokenResponseContext;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class DeviceTokenResponseContext implements ClientPolicyContext {
+public class DeviceTokenResponseContext extends AbstractTokenResponseContext implements ClientPolicyContext {
 
     private final OAuth2DeviceCodeModel deviceCodeModel;
     private final MultivaluedMap<String, String> requestParameters;
     private final AuthenticatedClientSessionModel clientSession;
-    private final TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder;
 
     public DeviceTokenResponseContext(OAuth2DeviceCodeModel deviceCodeModel,
             MultivaluedMap<String, String> requestParameters,
             AuthenticatedClientSessionModel clientSession,
             TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder) {
+        super(accessTokenResponseBuilder);
         this.deviceCodeModel = deviceCodeModel;
         this.requestParameters = requestParameters;
         this.clientSession = clientSession;
-        this.accessTokenResponseBuilder = accessTokenResponseBuilder;
     }
 
     @Override
@@ -58,10 +58,7 @@ public class DeviceTokenResponseContext implements ClientPolicyContext {
         return requestParameters;
     }
 
-    public TokenManager.AccessTokenResponseBuilder getAccessTokenResponseBuilder() {
-        return accessTokenResponseBuilder;
-    }
-
+    @Override
     public AuthenticatedClientSessionModel getClientSession() {
         return clientSession;
     }

@@ -28,9 +28,15 @@ const isEmptyValue = (value: unknown) =>
   value === undefined ||
   (typeof value === "string" && value.trim() === "");
 
-/** Prune known optional OID4VC attributes from the payload when they are empty. */
+/**
+ * Normalize known optional OID4VC attributes when they are empty.
+ *
+ * On create, empty values are omitted so backend defaults can be applied.
+ * On edit, empty values are sent as null so the backend receives an explicit clear signal.
+ */
 export const removeEmptyOid4vcAttributes = (
   values: ClientScopeDefaultOptionalType,
+  isEdit = false,
 ): ClientScopeDefaultOptionalType => {
   const fieldNames = OID4VC_ATTRIBUTE_KEYS.map((attr) =>
     convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
@@ -40,16 +46,22 @@ export const removeEmptyOid4vcAttributes = (
 
   /* Shallow copies are sufficient while OID4VC attributes stay flat; if we add
      nested objects under attributes.vc.* we should switch to a deep clone here. */
-  const cleanedValues = { ...values } as Record<string, unknown>;
-  const hadAttributes = Boolean(cleanedValues.attributes);
-  const cleanedAttributes = {
-    ...(cleanedValues.attributes as Record<string, unknown> | undefined),
+  const cleanedValues: ClientScopeDefaultOptionalType = { ...values };
+  const hadAttributes = cleanedValues.attributes !== undefined;
+  const cleanedAttributes: NonNullable<
+    ClientScopeDefaultOptionalType["attributes"]
+  > = {
+    ...cleanedValues.attributes,
   };
 
   for (const fieldName of fieldNames) {
     const attrKey = fieldName.replace(/^attributes\./, "");
     if (isEmptyValue(cleanedAttributes[attrKey])) {
-      delete cleanedAttributes[attrKey];
+      if (isEdit) {
+        cleanedAttributes[attrKey] = null;
+      } else {
+        delete cleanedAttributes[attrKey];
+      }
     }
   }
 
@@ -61,5 +73,5 @@ export const removeEmptyOid4vcAttributes = (
     cleanedValues.attributes = cleanedAttributes;
   }
 
-  return cleanedValues as unknown as ClientScopeDefaultOptionalType;
+  return cleanedValues;
 };

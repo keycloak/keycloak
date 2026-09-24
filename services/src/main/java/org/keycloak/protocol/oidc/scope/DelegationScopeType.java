@@ -18,6 +18,7 @@ package org.keycloak.protocol.oidc.scope;
 
 import jakarta.annotation.Nonnull;
 
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -62,8 +63,13 @@ public class DelegationScopeType extends UsernameScopeType {
     }
 
     @Override
-    public void validateParameterWithUser(@Nonnull UserModel currentUser, @Nonnull ClientScopeModel scope, @Nonnull String parameter) throws InvalidScopeParameterException {
+    public void validateParameterWithUser(@Nonnull UserModel currentUser, @Nonnull ClientScopeModel scope, @Nonnull String parameter,
+            AuthenticatedClientSessionModel clientSession) throws InvalidScopeParameterException {
         UserModel targetUser = resolveUser(scope, parameter);
+        if (targetUser.getServiceAccountClientLink() != null) {
+            throw new InvalidScopeParameterException(
+                    String.format("User '%s' is a service account. Use 'delegation:client:<client-id>' scope for client/service-account delegation", parameter));
+        }
         if (targetUser.getId().equals(currentUser.getId())) {
             throw new InvalidScopeParameterException("User cannot target themselves");
         }
@@ -73,6 +79,7 @@ public class DelegationScopeType extends UsernameScopeType {
             throw new InvalidScopeParameterException(String.format("Administrator '%s' is not allowed to delegate as user '%s' in realm '%s'",
                     targetUser.getUsername(), currentUser.getUsername(), realm.getName()));
         }
+        verifyPinnedIdentity(clientSession, parameter, targetUser.getId());
     }
 
 }

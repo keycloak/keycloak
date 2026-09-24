@@ -685,7 +685,7 @@ jobs:
       - id: azure-init
         name: Initialize Azure environment
         run: |
-          AZURE_REGION=westeurope
+          AZURE_REGION=uksouth
           echo "AZURE Region: ${AZURE_REGION}"
 
           AZURE_CLUSTER_NAME="gh-action-$(git rev-parse --short HEAD)-${{ github.run_id }}-${{ github.run_attempt }}"
@@ -711,7 +711,7 @@ jobs:
         env:
           AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Login to Azure
-        uses: azure/login@f5d393ae46f8fde4be8b75f32e3fc50e654ad0ca # v3.0.1
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
@@ -846,7 +846,7 @@ jobs:
     name: Store IT
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 85
     strategy:
       matrix:
         db: [postgres, mysql, oracle, mssql, mariadb]
@@ -1181,7 +1181,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - build
-    timeout-minutes: 45
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -1289,7 +1289,7 @@ jobs:
       - conditional
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - id: integration-test-setup
         name: Integration test setup

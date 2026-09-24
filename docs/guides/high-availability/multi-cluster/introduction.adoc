@@ -6,6 +6,8 @@
 title="Multi-cluster deployments (v1)"
 summary="Connect multiple {project_name} deployments in independent {kubernetes} clusters" >
 
+WARNING: Multi-cluster v1 (the `multi-site` feature) is deprecated and will be removed in a future release. Use <@links.ha id="multi-cluster-v2-introduction" /> instead, which simplifies the deployment architecture by removing the external {jdgserver_name} cluster. See <@links.ha id="multi-cluster-v2-migrate-from-v1-to-v2" /> for migration instructions.
+
 {project_name} supports deployments that consist of multiple {project_name} instances that connect to each other using its embedded Infinispan caches. Load balancers can distribute the load evenly across those instances.
 Those setups are intended for transparent networks, see <@links.ha id="single-cluster-introduction" /> for more details.
 

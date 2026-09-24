@@ -46,6 +46,7 @@
         <systemrules.version>1.19.0</systemrules.version>
         <common.resources>${basedir}/../../servers/auth-server/common</common.resources>
         <auth.server.ipv6>false</auth.server.ipv6>
+        <junit5.version>5.10.3</junit5.version>
     </properties>
     
     <dependencies>
@@ -111,13 +112,13 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <version>5.10.3</version>
+            <version>${junit5.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>
-            <version>5.10.3</version>
+            <version>${junit5.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

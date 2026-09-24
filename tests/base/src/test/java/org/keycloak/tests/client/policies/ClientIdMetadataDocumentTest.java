@@ -6,8 +6,11 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.condition.ClientIdUriSchemeCondition;
@@ -16,9 +19,11 @@ import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.AbstractClientIdM
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutor;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactory;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactoryProviderConfig;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
@@ -82,6 +87,7 @@ public class ClientIdMetadataDocumentTest {
     private static final String REDIRECT_URI = "http://localhost:8500/";
     private static final String JWKS_URI = "http://localhost:8500/idp/jwks";
     private static final String LOGO_URI = "http://localhost:8500/logo.png";
+    private static final String RESOURCE = "https://mcp.example.com/api";
     private static final int CIMD_EXECUTOR_MIN_CACHE_TIME_SEC = 300;
 
     @InjectRealm
@@ -229,6 +235,102 @@ public class ClientIdMetadataDocumentTest {
 
         // delete the persisted client
         logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testResourceIndicatorPermissiveModeWithoutResourceParam() throws Exception {
+        // Resource Indicators feature is enabled (server config), allow list is vacant, client not yet registered,
+        // authorization request does not include the resource parameter -> CIMD should not enforce anything.
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        String code = loginUserAndGetCode(true);
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(signedJwt).send();
+        AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+        String[] audience = accessToken.getAudience();
+        Assertions.assertFalse(audience != null && Arrays.asList(audience).contains(RESOURCE));
+
+        logoutAndDelete(findByClientIdByAdmin().getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testResourceIndicatorRejectedWhenAllowListVacant() throws Exception {
+        // Resource Indicators feature is enabled (server config), allow list is vacant, client not yet registered,
+        // authorization request includes the resource parameter -> invalid_target.
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        oauth.client(CLIENT_ID);
+        oauth.redirectUri(REDIRECT_URI);
+        oauth.loginForm().codeChallenge(null).resource(RESOURCE).open();
+        errorPage.assertCurrent();
+        Assertions.assertEquals(ResourceIndicatorConstants.ERROR_INVALID_RESOURCE, errorPage.getError());
+    }
+
+    @Test
+    public void testResourceIndicatorAllowedForNewClientAssignsAudienceMapper() throws Exception {
+        // allow list includes the resource, client not yet registered -> client gets registered
+        // and an audience mapper for the resource is attached to the client.
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        String code = loginUserAndGetCode(true, RESOURCE);
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).resource(RESOURCE).signedJwt(signedJwt).send();
+        AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+        MatcherAssert.assertThat(Arrays.asList(accessToken.getAudience()), Matchers.hasItem(RESOURCE));
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(hasResourceIndicatorAudienceMapper(clientRepresentation.getId(), RESOURCE));
+
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testResourceIndicatorRejectedWhenNotInAllowList() throws Exception {
+        // allow list does not include the resource requested, client not yet registered -> invalid_target
+        // and no audience mapper is assigned to the newly registered client.
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of("https://mcp.example.com/other-api"));
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        oauth.client(CLIENT_ID);
+        oauth.redirectUri(REDIRECT_URI);
+        oauth.loginForm().codeChallenge(null).resource(RESOURCE).open();
+        errorPage.assertCurrent();
+        Assertions.assertEquals(ResourceIndicatorConstants.ERROR_INVALID_RESOURCE, errorPage.getError());
+    }
+
+    @Test
+    public void testResourceIndicatorRemovedFromClientWhenNoLongerAllowListed() throws Exception {
+        // 1. allow list includes the resource -> client registers and gets the audience mapper assigned.
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(conditionConfig, executorConfig);
+
+        String code = loginUserAndGetCode(true, RESOURCE);
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).resource(RESOURCE).signedJwt(signedJwt).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+        logout(tokenResponse.getIdToken());
+
+        // 2. remove the resource from the allow list -> the client's own cache is still valid (NO_UPDATE),
+        // but the resource indicator is still enforced on every authorization request.
+        executorConfig.setResourceIndicatorAllowList(List.of());
+        updatePolicy(conditionConfig, executorConfig);
+
+        oauth.client(CLIENT_ID);
+        oauth.redirectUri(REDIRECT_URI);
+        oauth.loginForm().codeChallenge(null).resource(RESOURCE).open();
+        errorPage.assertCurrent();
+        Assertions.assertEquals(ResourceIndicatorConstants.ERROR_INVALID_RESOURCE, errorPage.getError());
+
+        // the audience mapper got synchronized (removed) to keep it aligned with the allow list.
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertFalse(hasResourceIndicatorAudienceMapper(clientRepresentation.getId(), RESOURCE));
+
+        deleteClientByAdmin(clientRepresentation.getId());
     }
 
     @Test
@@ -930,6 +1032,149 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setTokenEndpointAuthMethod(OIDCLoginProtocol.PRIVATE_KEY_JWT);
         cimd.getRepresentation().setJwksUri(null);
         assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_CONFIDENTIAL_CLIENT_JWKS);
+
+        // Client Metadata Validation:
+        // either jwks or jwks_uri is required. (both jwks and jwks_uri are set)
+        cimd.getRepresentation().setJwksUri(JWKS_URI);
+        cimd.getRepresentation().setJwks(new JSONWebKeySet());
+        assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_CONFIDENTIAL_CLIENT_JWKS);
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorAcceptPublicClientWithConfidentialOnlyGrantTypes() throws Exception {
+        // register profiles
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        executorConfig.setAllowHttpScheme(true);
+        executorConfig.setAcceptPublicClientWithConfidentialClientOnlyGrant(true);
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        updatePolicy(conditionConfig, executorConfig);
+
+        // set Client Metadata for a public client with confidential-only grant types
+        setCimdPublicClient();
+        cimd.getRepresentation().setGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.CLIENT_CREDENTIALS,
+                OAuth2Constants.CIBA_GRANT_TYPE,
+                OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE,
+                OAuth2Constants.JWT_AUTHORIZATION_GRANT
+        ));
+
+        // send an authorization request
+        String code = loginUserAndGetCode(true);
+
+        // get an access token
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // check the persisted client settings
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(clientRepresentation.isPublicClient());
+
+        // Verify confidential-only grant types were removed
+        Map<String, String> attrs = clientRepresentation.getAttributes();
+        Assertions.assertFalse(clientRepresentation.isServiceAccountsEnabled());
+        Assertions.assertNotEquals(Boolean.TRUE, clientRepresentation.getAuthorizationServicesEnabled());
+        Assertions.assertNotEquals("true", attrs.get(CibaConfig.OIDC_CIBA_GRANT_ENABLED));
+        Assertions.assertNotEquals("true", attrs.get(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED));
+        Assertions.assertNotEquals("true", attrs.get(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED));
+
+        // Verify public grant types were kept
+        Assertions.assertTrue(clientRepresentation.isStandardFlowEnabled()); // authorization_code kept
+        Assertions.assertEquals("true", attrs.get(OIDCConfigAttributes.USE_REFRESH_TOKEN)); // refresh_token kept
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorRejectPublicClientWithConfidentialOnlyGrantTypesByDefault() throws Exception {
+        // register profiles without setting acceptPublicClientWithConfidentialClientOnlyGrant (default: false)
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        executorConfig.setAllowHttpScheme(true);
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        // acceptPublicClientWithConfidentialClientOnlyGrant is not set, so default value (false) is applied
+        updatePolicy(conditionConfig, executorConfig);
+
+        // set Client Metadata for a public client with tokenEndpointAuthMethod = "none"
+        // and grant types including jwt authorization grant
+        cimd.getRepresentation().setTokenEndpointAuthMethod("none");
+        cimd.getRepresentation().setJwksUri(null);
+        cimd.getRepresentation().setGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.JWT_AUTHORIZATION_GRANT
+        ));
+
+        // registration should fail because a public client cannot have
+        // confidential-only grant types when acceptPublicClientWithConfidentialClientOnlyGrant is false
+        assertLoginAndError("invalid request");
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorAcceptPublicClientWithConfidentialOnlyGrantTypesOnRegisterAndRefetch() throws Exception {
+        // register profiles
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        executorConfig.setAllowHttpScheme(true);
+        executorConfig.setAcceptPublicClientWithConfidentialClientOnlyGrant(true);
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        updatePolicy(conditionConfig, executorConfig);
+
+        cimd.getRepresentation().setTokenEndpointAuthMethod("none");
+        cimd.getRepresentation().setJwksUri(null);
+        cimd.getRepresentation().setGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.JWT_AUTHORIZATION_GRANT
+        ));
+
+        // send an authorization request (first registration)
+        String code = loginUserAndGetCode(true);
+
+        // get an access token
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // check the persisted client settings after first registration
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Map<String, String> attrs = clientRepresentation.getAttributes();
+        Assertions.assertTrue(clientRepresentation.isPublicClient());
+        Assertions.assertTrue(clientRepresentation.isStandardFlowEnabled());
+        Assertions.assertEquals("true", attrs.get(OIDCConfigAttributes.USE_REFRESH_TOKEN));
+        // Verify JWT Authorization Grant was removed
+        Assertions.assertNotEquals("true", attrs.get(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED));
+
+        // logout
+        logout(tokenResponse.getIdToken());
+
+        // move the time ahead so that the client metadata cache expires
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        // do authorization code flow again, forcing a re-fetch of CIMD
+        code = loginUserAndGetCode(false);
+        tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // check the persisted client settings after re-fetch
+        clientRepresentation = findByClientIdByAdmin();
+        attrs = clientRepresentation.getAttributes();
+        Assertions.assertTrue(clientRepresentation.isPublicClient());
+        Assertions.assertTrue(clientRepresentation.isStandardFlowEnabled());
+        Assertions.assertEquals("true", attrs.get(OIDCConfigAttributes.USE_REFRESH_TOKEN));
+        // Verify JWT Authorization Grant is still removed after re-fetch
+        Assertions.assertNotEquals("true", attrs.get(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED));
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
     }
 
     @Test
@@ -988,9 +1233,13 @@ public class ClientIdMetadataDocumentTest {
     }
 
     private String loginUserAndGetCode(boolean isGrantRequred) {
+        return loginUserAndGetCode(isGrantRequred, null);
+    }
+
+    private String loginUserAndGetCode(boolean isGrantRequred, String resource) {
         oauth.client(CLIENT_ID);
         oauth.redirectUri(REDIRECT_URI);
-        oauth.loginForm().codeChallenge(null).open();
+        oauth.loginForm().codeChallenge(null).resource(resource).open();
         oauth.fillLoginForm(user.getUsername(), user.getPassword());
 
         if (isGrantRequred) {
@@ -1129,6 +1378,12 @@ public class ClientIdMetadataDocumentTest {
         return clients.iterator().next();
     }
 
+    private boolean hasResourceIndicatorAudienceMapper(String clientId, String resource) {
+        return realm.admin().clients().get(clientId).getProtocolMappers().getMappers().stream()
+                .filter(m -> AudienceProtocolMapper.PROVIDER_ID.equals(m.getProtocolMapper()))
+                .anyMatch(m -> resource.equals(m.getConfig().get(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE)));
+    }
+
     private void deleteClientByAdmin(String id) {
         realm.admin().clients().get(id).remove();
     }
@@ -1145,7 +1400,7 @@ public class ClientIdMetadataDocumentTest {
     public static class CimdServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.CIMD);
+            return config.features(Profile.Feature.CIMD, Profile.Feature.RESOURCE_INDICATORS);
         }
     }
 

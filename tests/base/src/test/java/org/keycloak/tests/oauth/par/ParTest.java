@@ -20,23 +20,32 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.ParConfig;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.client.policies.AbstractClientPoliciesTest;
+import org.keycloak.tests.common.TestRealmUserConfig;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.ParResponse;
 
 import org.junit.jupiter.api.Test;
+
+import static org.keycloak.models.ParConfig.DEFAULT_PAR_REQUEST_URI_LIFESPAN;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -63,6 +72,12 @@ public class ParTest extends AbstractClientPoliciesTest {
 
     @InjectWebDriver
     ManagedWebDriver driver;
+
+    @InjectUser(config = TestRealmUserConfig.class)
+    protected ManagedUser user;
+
+    @InjectTimeOffSet(enableForCaches = true)
+    TimeOffSet timeOffSet;
 
     @InjectOAuthClient(lifecycle = LifeCycle.METHOD)
     OAuthClient oauth;
@@ -107,6 +122,41 @@ public class ParTest extends AbstractClientPoliciesTest {
         oauth.loginForm().requestUri(requestUri).open();
         assertThat(driver.getCurrentUrl(), startsWith(realmA.getBaseUrl() + "/login-actions/authenticate"));
         loginPage.assertCurrent();
+    }
+
+    // PAR object needs to be valid for the time of PAR lifespan together with the authenticationSession time as
+    // (See https://github.com/keycloak/keycloak/issues/48072 for the details)
+    @Test
+    public void requestUriLifetimeDoesNotLimitAuthenticationSessionLength() {
+        String origRedirectUri = oauth.getRedirectUri();
+
+        // Pushed Authorization Request
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
+        assertEquals(201, pResp.getStatusCode());
+        String requestUri = pResp.getRequestUri();
+        assertEquals(DEFAULT_PAR_REQUEST_URI_LIFESPAN, pResp.getExpiresIn()); // This time is still just requestUri lifespan (60 seconds). Attempt to use PAR after longer time tested elsewhere (in testFailureParExpired())
+
+        // Authorization Request with request_uri of PAR
+        // remove parameters as query strings of uri
+        oauth.redirectUri(null);
+        oauth.scope(null);
+        oauth.responseType(null);
+        String state = "testSuccessfulSinglePar";
+        oauth.loginForm().requestUri(requestUri).state(state).open();
+        loginPage.assertCurrent();
+
+        // make sure interactive login waits longer than requestUriLifespan
+        timeOffSet.set(DEFAULT_PAR_REQUEST_URI_LIFESPAN * 2);
+
+        oauth.fillLoginForm("test-user@localhost", "password");
+        AuthorizationEndpointResponse loginResponse = oauth.parseLoginResponse();
+        assertEquals(state, loginResponse.getState());
+        String code = loginResponse.getCode();
+
+        // For this test it's enough to check that Code2Token succeeds
+        oauth.redirectUri(origRedirectUri); // get tokens, it needed. https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        assertEquals(200, res.getStatusCode());
     }
 
     /**

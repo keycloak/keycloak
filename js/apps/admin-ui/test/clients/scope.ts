@@ -10,6 +10,24 @@ export async function goToClientScopeEvaluateTab(page: Page) {
   await page.getByTestId("clientScopesEvaluateTab").click();
 }
 
+export async function goToEffectiveRoleScopeMappingsTab(page: Page) {
+  await page.getByTestId("effective-role-scope-mappings-tab").click();
+}
+
+export async function assertEffectiveRoleScopeMapping(
+  page: Page,
+  roleName: string,
+  exists = true,
+) {
+  const table = page.getByTestId("effective-role-scope-mappings");
+  const row = table.getByRole("row", { name: roleName });
+  if (exists) {
+    await expect(row.first()).toBeVisible();
+  } else {
+    await expect(row).toHaveCount(0);
+  }
+}
+
 export async function clickAddClientScope(page: Page) {
   const toolbar = page.getByTestId("table-toolbar");
   const addClientScopeAction = toolbar
@@ -51,6 +69,10 @@ export async function assertHasAccessTokenGenerated(
   username: string,
 ) {
   await goToGenerateAccessTokenTab(page);
+  await assertAccessTokenContent(page, username);
+}
+
+export async function assertAccessTokenContent(page: Page, username: string) {
   await expect(page.getByLabel("generatedAccessToken")).toContainText(
     formatUsername(username),
   );

@@ -1,20 +1,3 @@
-/*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.keycloak.tests.oid4vc.issuance.signing;
 
 import java.security.KeyPair;
@@ -28,6 +11,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.UUID;
 
@@ -58,7 +42,6 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
-import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
@@ -422,7 +405,13 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
             }
             List<String> disclosed = Arrays.asList(splittedSdToken).subList(1, splittedSdToken.length);
             int numSds = sds != null ? sds.size() : 0;
-            assertEquals(disclosed.size() + (decoys == 0 ? decoys + SdJwt.DEFAULT_NUMBER_OF_DECOYS : decoys),
+            // The _sd array holds one digest per undisclosed claim and per decoy; disclosures
+            // of array elements are anchored inside the visible arrays instead.
+            long wholeClaimDisclosures = disclosed.stream()
+                    .map(OID4VCTest::decodeDisclosure)
+                    .filter(node -> node.size() == 3)
+                    .count();
+            assertEquals(wholeClaimDisclosures + (decoys == 0 ? SdJwt.DEFAULT_NUMBER_OF_DECOYS : decoys),
                     numSds,
                     "All undisclosed claims and decoys should be provided.");
             verifyDisclosures(sds, disclosed);
@@ -435,15 +424,16 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
 
     private static void verifyDisclosures(List<String> undisclosed, List<String> disclosedList) {
         disclosedList.stream()
-                .map(disclosed -> new String(Base64.getUrlDecoder().decode(disclosed)))
-                .map(disclosedString -> {
-                    try {
-                        return JsonSerialization.mapper.readValue(disclosedString, List.class);
-                    } catch (JsonProcessingException e) {
-                        throw new RuntimeException(e);
+                .map(OID4VCTest::decodeDisclosure)
+                .map(dl -> {
+                    if (dl.size() == 2) {
+                        // [salt, value]: disclosure of a single array element; its digest
+                        // is anchored in the visible array, not in the _sd array.
+                        return null;
                     }
+                    return new DisclosedClaim(dl.get(0).asText(), dl.get(1).asText(), dl.get(2));
                 })
-                .map(dl -> new DisclosedClaim((String) dl.get(0), (String) dl.get(1), dl.get(2)))
+                .filter(Objects::nonNull)
                 .forEach(dc -> assertTrue(undisclosed.contains(dc.getHash()), "Every disclosure claim should be provided in the undisclosures."));
     }
 

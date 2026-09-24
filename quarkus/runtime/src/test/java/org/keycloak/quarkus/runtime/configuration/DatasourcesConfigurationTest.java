@@ -6,13 +6,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import org.keycloak.config.database.Database;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers;
 
 import io.smallrye.config.Expressions;
 import io.smallrye.config.SmallRyeConfig;
 import org.h2.jdbcx.JdbcDataSource;
-import org.hibernate.dialect.H2Dialect;
 import org.hibernate.dialect.MariaDBDialect;
 import org.hibernate.dialect.PostgreSQLDialect;
 import org.junit.Test;
@@ -102,14 +102,14 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
     public void defaults() {
         ConfigArgsConfigSource.setCliArgs("--db-kind-store=dev-file");
         initConfig();
-        assertConfig("db-dialect-store", H2Dialect.class.getName());
+        assertConfig("db-dialect-store", "org.keycloak.connections.jpa.dialect.KeycloakH2Dialect");
         // XA datasource is the default
         assertExternalConfig("quarkus.datasource.\"store\".jdbc.driver", JdbcDataSource.class.getName());
         onAfter();
 
         ConfigArgsConfigSource.setCliArgs("--db-kind-store=dev-mem");
         initConfig();
-        assertConfig("db-dialect-store", H2Dialect.class.getName());
+        assertConfig("db-dialect-store", "org.keycloak.connections.jpa.dialect.KeycloakH2Dialect");
         assertExternalConfig("quarkus.datasource.\"store\".jdbc.url", "jdbc:h2:mem:keycloakdb-store;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0");
         assertExternalConfig("quarkus.datasource.\"store\".db-kind", "h2");
         onAfter();
@@ -214,7 +214,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs("--db-kind-realms=mssql", "--db-url-host-realms=myhost", "--db-url-database-realms=kcdb", "--db-url-port-realms=1234", "--db-url-properties-realms=?foo=bar");
         initConfig();
 
-        assertConfig("db-dialect-realms", "org.hibernate.dialect.SQLServerDialect");
+        assertConfig("db-dialect-realms", "org.keycloak.connections.jpa.dialect.KeycloakSQLServerDialect");
         assertExternalConfig(Map.of(
                 "quarkus.datasource.\"realms\".jdbc.url", "jdbc:sqlserver://myhost:1234;databaseName=kcdb?foo=bar",
                 "quarkus.datasource.\"realms\".db-kind", "mssql"
@@ -242,7 +242,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
 
         initConfig();
 
-        assertConfig("db-dialect-clients", H2Dialect.class.getName());
+        assertConfig("db-dialect-clients", "org.keycloak.connections.jpa.dialect.KeycloakH2Dialect");
         assertExternalConfig(Map.of(
                 "quarkus.datasource.\"clients\".jdbc.url", "jdbc:h2:file:test-dir/data/h2-clients/keycloakdb-clients;;test=test;test1=test1;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0",
                 "quarkus.datasource.\"clients\".jdbc.transactions", "xa"
@@ -790,5 +790,77 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         // The raw password should be preserved exactly as-is, with no expression evaluation
         assertEquals("p@ss$$w0rd${special}", config.getConfigValue("kc.db-password").getValue());
         assertEquals("p@ss$$w0rd${special}", config.getConfigValue("quarkus.datasource.password").getValue());
+    }
+
+    @Test
+    public void defaultPersistenceUnitHibernateMappings() {
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-log-slow-queries-threshold=5000", "--db-debug-jpql=true");
+        initConfig();
+
+        assertExternalConfig("quarkus.hibernate-orm.dialect", PostgreSQLDialect.class.getName());
+        assertExternalConfig("quarkus.hibernate-orm.log.queries-slower-than-ms", "5000");
+        assertExternalConfig("quarkus.hibernate-orm.unsupported-properties.\"hibernate.use_sql_comments\"", "true");
+
+        onAfter();
+
+        ConfigArgsConfigSource.setCliArgs("--db=postgres");
+        initConfig();
+
+        assertExternalConfig("quarkus.hibernate-orm.dialect", PostgreSQLDialect.class.getName());
+        assertExternalConfig("quarkus.hibernate-orm.log.queries-slower-than-ms", "10000");
+        assertExternalConfigNull("quarkus.hibernate-orm.unsupported-properties.\"hibernate.use_sql_comments\"");
+    }
+
+    @Test
+    public void namedQueriesMappedForVendorSpecificDbKind() {
+        ConfigArgsConfigSource.setCliArgs("--db=mariadb");
+        SmallRyeConfig config = createConfig();
+        String namedQuery = config.getConfigValue(
+                "quarkus.hibernate-orm.unsupported-properties.\"kc.query.deleteExpiredClientSessions[native]\"").getValue();
+        assertTrue("Expected the mariadb-specific named-query SQL, but was: " + namedQuery,
+                namedQuery != null && namedQuery.contains("OFFLINE_CLIENT_SESSION"));
+    }
+
+    @Test
+    public void namedQueryKeysAreEnumeratedForVendorSpecificDbKind() {
+        String bracketedKey = "quarkus.hibernate-orm.unsupported-properties.\"kc.query.deleteExpiredClientSessions[native]\"";
+
+        ConfigArgsConfigSource.setCliArgs("--db=mariadb");
+        SmallRyeConfig mariadb = createConfig();
+        assertTrue("Vendor-specific named-query key must be enumerated for mariadb (Quarkus' map would miss it otherwise)",
+                StreamSupport.stream(mariadb.getPropertyNames().spliterator(), false).anyMatch(bracketedKey::equals));
+
+        onAfter();
+
+        ConfigArgsConfigSource.setCliArgs("--db=postgres");
+        SmallRyeConfig postgres = createConfig();
+        assertTrue("Named-query key must not be enumerated for a db kind without vendor-specific queries",
+                StreamSupport.stream(postgres.getPropertyNames().spliterator(), false).noneMatch(bracketedKey::equals));
+    }
+
+    @Test
+    public void dialectMappedForAllSupportedDbKinds() {
+        for (String alias : Database.getDatabaseAliases()) {
+            String expectedDialect = Database.getDialect(alias).orElse(null);
+            if (expectedDialect == null) {
+                continue;
+            }
+            ConfigArgsConfigSource.setCliArgs("--db=" + alias);
+            initConfig();
+            assertExternalConfig("quarkus.hibernate-orm.dialect", expectedDialect);
+            onAfter();
+        }
+    }
+
+    @Test
+    public void originalDbMappingsUnaffectedByNewHibernateMappers() {
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-kind-user-store=mariadb",
+                "--db-url-full-user-store=jdbc:mariadb://localhost/keycloak");
+        initConfig();
+
+        assertExternalConfig("quarkus.datasource.db-kind", "postgresql");
+        assertConfig("db-dialect", PostgreSQLDialect.class.getName());
+        assertConfig("db-dialect-user-store", MariaDBDialect.class.getName());
+        assertExternalConfig("quarkus.hibernate-orm.dialect", PostgreSQLDialect.class.getName());
     }
 }

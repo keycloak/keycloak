@@ -191,6 +191,8 @@ Take extra precautions to ensure that the client address is properly set by your
 If these headers are incorrectly configured, rogue clients can inject false values and trick {project_name} into thinking the client is connecting from a different IP address than the actual one.
 This precaution is especially critical if you do any deny or allow listing of IP addresses.
 
+Similarly, if your deployment uses fully dynamic URLs (`--hostname-strict=false`), rogue clients can forge the request's host headers. This exposes {project_name} to Host header injection, allowing attackers to manipulate dynamically generated URLs.
+
 NOTE: When using the `xforwarded` setting, the `X-Forwarded-Port` takes precedence over any port included in the `X-Forwarded-Host`.
 
 NOTE: If the TLS connection is terminated at the reverse proxy (edge termination), enabling HTTP through the `http-enabled` setting is required.
@@ -225,7 +227,7 @@ This assessment depends on your trust boundaries and security trade-offs and is 
 
 |`Forwarded`, `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, `X-Forwarded-Port`, `X-Forwarded-Prefix`
 |Proxy identity
-|Clients can spoof their IP address, protocol, or host, affecting access control and audit logging.
+|Clients can spoof their IP address, protocol, or host, affecting access control and audit logging. Forging the host allows Host header injection, enabling attackers to manipulate dynamically generated URLs.
 *Overwrite* these headers rather than stripping them.
 
 |`X-Original-Forwarded-For`

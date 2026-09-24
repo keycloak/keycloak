@@ -1,3 +1,4 @@
+import OrganizationDomainRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationDomainRepresentation";
 import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import {
   FormErrorText,
@@ -16,24 +17,32 @@ import { MultiLineInput } from "../components/multi-line-input/MultiLineInput";
 export type OrganizationFormType = AttributeForm &
   Omit<OrganizationRepresentation, "domains" | "attributes"> & {
     domains?: string[];
+    serverDomains?: OrganizationDomainRepresentation[];
   };
 
 export const convertToOrg = (
   org: OrganizationFormType,
-): OrganizationRepresentation => ({
-  ...org,
-  domains: org.domains
-    ?.filter((d) => d.trim() !== "")
-    .map((d) => ({ name: d.trim(), verified: false })),
-  attributes: keyValueToArray(org.attributes),
-});
+): OrganizationRepresentation => {
+  const { serverDomains, ...rest } = org;
+  return {
+    ...rest,
+    domains: org.domains
+      ? org.domains
+          .filter((d) => d.trim() !== "")
+          .map((d) => ({ name: d.trim(), verified: false }))
+      : serverDomains,
+    attributes: keyValueToArray(org.attributes),
+  };
+};
 
 type OrganizationFormProps = {
   readOnly?: boolean;
+  showDomains?: boolean;
 };
 
 export const OrganizationForm = ({
   readOnly = false,
+  showDomains = false,
 }: OrganizationFormProps) => {
   const { t } = useTranslation();
   const {
@@ -61,26 +70,28 @@ export const OrganizationForm = ({
         labelIcon={t("organizationAliasHelp")}
         isDisabled={readOnly}
       />
-      <FormGroup
-        label={t("domain")}
-        fieldId="domain"
-        labelIcon={
-          <HelpItem
-            helpText={t("organizationDomainHelp")}
-            fieldLabelId="domain"
+      {showDomains && (
+        <FormGroup
+          label={t("domain")}
+          fieldId="domain"
+          labelIcon={
+            <HelpItem
+              helpText={t("organizationDomainHelp")}
+              fieldLabelId="domain"
+            />
+          }
+        >
+          <MultiLineInput
+            id="domain"
+            name="domains"
+            aria-label={t("domain")}
+            addButtonLabel="addDomain"
           />
-        }
-      >
-        <MultiLineInput
-          id="domain"
-          name="domains"
-          aria-label={t("domain")}
-          addButtonLabel="addDomain"
-        />
-        {errors["domains"]?.message && (
-          <FormErrorText message={errors["domains"].message.toString()} />
-        )}
-      </FormGroup>
+          {errors["domains"]?.message && (
+            <FormErrorText message={errors["domains"].message.toString()} />
+          )}
+        </FormGroup>
+      )}
       <TextControl
         label={t("redirectUrl")}
         name="redirectUrl"

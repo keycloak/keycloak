@@ -5,6 +5,9 @@
 If metrics from multiple clusters are being collected, this tag helps identify where they belong to.
 
 `node=<node>`:: The name of the node reporting the metric.
+By default, this is a random name generated on each start.
+To assign a stable name, set `+--cache-embedded-node-name+` as described in <@links.server id="caching" anchor="cluster-identification"/>.
+The {project_name} Operator sets this to the pod name automatically.
 ====
 
 [WARNING]

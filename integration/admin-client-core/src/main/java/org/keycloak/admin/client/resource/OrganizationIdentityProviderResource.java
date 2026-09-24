@@ -19,9 +19,11 @@ package org.keycloak.admin.client.resource;
 
 import java.util.List;
 
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
@@ -30,12 +32,17 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 
 public interface OrganizationIdentityProviderResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     IdentityProviderRepresentation toRepresentation();
+
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response update(OrganizationIdentityProviderLinkRepresentation rep);
 
     @DELETE
     Response delete();

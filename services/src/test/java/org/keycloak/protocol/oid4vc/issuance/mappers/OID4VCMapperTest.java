@@ -18,42 +18,42 @@ public class OID4VCMapperTest {
     @Test
     public void shouldUseNamespaceClaimPathForMdoc() {
         OID4VCStaticClaimMapper mapper = new OID4VCStaticClaimMapper();
-        mapper.setMapperModel(createStaticClaimMapperModel("given_name", "John", "org.iso.18013.5.1"), VCFormat.MSO_MDOC);
+        mapper.setMapperModel(createStaticClaimMapperModel("given_name", "John", "org.example.credential"), VCFormat.MSO_MDOC);
 
         Map<String, Object> claims = new HashMap<>();
         mapper.setClaim(claims, null);
 
-        assertEquals(List.of("org.iso.18013.5.1", "given_name"), mapper.getMetadataAttributePath());
+        assertEquals(List.of("org.example.credential", "given_name"), mapper.getMetadataAttributePath());
         assertEquals(Map.of("given_name", "John"), claims);
 
         Map<String, Object> prefixedClaims = new HashMap<>();
         mapper.setClaimWithMetadataPrefix(claims, prefixedClaims);
-        assertEquals(Map.of("org.iso.18013.5.1", Map.of("given_name", "John")), prefixedClaims);
+        assertEquals(Map.of("org.example.credential", Map.of("given_name", "John")), prefixedClaims);
     }
 
     @Test
     public void shouldCreateNestedMdocClaimPaths() {
         OID4VCStaticClaimMapper mapper = new OID4VCStaticClaimMapper();
-        mapper.setMapperModel(createStaticClaimMapperModel("address.street", "Main Street", "org.iso.18013.5.1"), VCFormat.MSO_MDOC);
+        mapper.setMapperModel(createStaticClaimMapperModel("address.street", "Main Street", "org.example.credential"), VCFormat.MSO_MDOC);
 
         Map<String, Object> claims = new HashMap<>();
         mapper.setClaim(claims, null);
 
-        assertEquals(List.of("org.iso.18013.5.1", "address", "street"), mapper.getMetadataAttributePath());
+        assertEquals(List.of("org.example.credential", "address", "street"), mapper.getMetadataAttributePath());
         assertEquals(Map.of("address.street", "Main Street"), claims);
 
         Map<String, Object> prefixedClaims = new HashMap<>();
         mapper.setClaimWithMetadataPrefix(claims, prefixedClaims);
-        assertEquals(Map.of("org.iso.18013.5.1", Map.of("address", Map.of("street", "Main Street"))), prefixedClaims);
+        assertEquals(Map.of("org.example.credential", Map.of("address", Map.of("street", "Main Street"))), prefixedClaims);
     }
 
     @Test
     public void shouldKeepMdocClaimPathsSeparateWhenLeafNamesMatch() {
         OID4VCStaticClaimMapper addressMapper = new OID4VCStaticClaimMapper();
-        addressMapper.setMapperModel(createStaticClaimMapperModel("address.street", "Main Street", "org.iso.18013.5.1"), VCFormat.MSO_MDOC);
+        addressMapper.setMapperModel(createStaticClaimMapperModel("address.street", "Main Street", "org.example.credential"), VCFormat.MSO_MDOC);
 
         OID4VCStaticClaimMapper employerMapper = new OID4VCStaticClaimMapper();
-        employerMapper.setMapperModel(createStaticClaimMapperModel("employer.street", "Work Street", "org.iso.18013.5.1"), VCFormat.MSO_MDOC);
+        employerMapper.setMapperModel(createStaticClaimMapperModel("employer.street", "Work Street", "org.example.credential"), VCFormat.MSO_MDOC);
 
         Map<String, Object> claims = new HashMap<>();
         addressMapper.setClaim(claims, null);
@@ -63,7 +63,7 @@ public class OID4VCMapperTest {
         addressMapper.setClaimWithMetadataPrefix(claims, prefixedClaims);
         employerMapper.setClaimWithMetadataPrefix(claims, prefixedClaims);
 
-        assertEquals(Map.of("org.iso.18013.5.1", Map.of(
+        assertEquals(Map.of("org.example.credential", Map.of(
                 "address", Map.of("street", "Main Street"),
                 "employer", Map.of("street", "Work Street")
         )), prefixedClaims);
@@ -140,7 +140,7 @@ public class OID4VCMapperTest {
     public void shouldAcceptMdocClaimMapperWithNamespace() throws ProtocolMapperConfigException {
         OID4VCStaticClaimMapper mapper = new OID4VCStaticClaimMapper();
 
-        mapper.validateMdocNamespace(VCFormat.MSO_MDOC, createStaticClaimMapperModel("given_name", "John", "org.iso.18013.5.1"));
+        mapper.validateMdocNamespace(VCFormat.MSO_MDOC, createStaticClaimMapperModel("given_name", "John", "org.example.credential"));
     }
 
     @Test

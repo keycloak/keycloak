@@ -17,12 +17,8 @@
 
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.SignatureException;
+import java.security.GeneralSecurityException;
 import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -30,6 +26,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
@@ -143,11 +140,8 @@ public class SdJwtCredentialSigner extends AbstractCredentialSigner<String> {
 
     private boolean isSelfSigned(X509Certificate cert) throws CredentialSignerException {
         try {
-            cert.verify(cert.getPublicKey());
-            return true;
-        } catch (SignatureException | InvalidKeyException e) {
-            return false;
-        } catch (CertificateException | NoSuchAlgorithmException | NoSuchProviderException e) {
+            return CertificateUtils.isSelfSigned(cert);
+        } catch (GeneralSecurityException e) {
             throw new CredentialSignerException("HAIP-6.1.1 violation: failed to verify whether certificate is self-signed.", e);
         }
     }

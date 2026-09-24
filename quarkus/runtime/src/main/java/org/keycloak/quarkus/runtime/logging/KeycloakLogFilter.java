@@ -18,7 +18,9 @@
 package org.keycloak.quarkus.runtime.logging;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Filter;
@@ -26,14 +28,22 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
+import org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory;
 
 import io.quarkus.bootstrap.logging.InitialConfigurator;
 import io.quarkus.logging.LoggingFilter;
+import io.smallrye.config.SmallRyeConfigBuilder;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.infinispan.commons.jdkspecific.ThreadCreator;
 import org.jboss.logging.Logger;
 import org.jboss.logmanager.ExtLogRecord;
@@ -51,6 +61,10 @@ public abstract class KeycloakLogFilter implements Filter {
     // avoid logging ISPN000312 for sessions, offlineSessions, clientSessions and offlineClientSessions caches only.
     private static final Pattern ISPN000312_PATTERN = Pattern.compile(
             "^\\[Context=(" + String.join("|", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME) + ")] ISPN000312: .*");
+    // prefix of a Quarkus Hibernate ORM property in application properties
+    private static final String QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX = "quarkus.hibernate-orm.unsupported-properties.";
+
+    private static volatile Set<String> keycloakDefaultUnsupportedProperties = null;
 
     // Use this thread pool to asynchronously log from virtual threads, which could otherwise be pinned and lead to deadlocks.
     // A single thread ensures that all log entries appear in the correct order.
@@ -65,6 +79,35 @@ public abstract class KeycloakLogFilter implements Filter {
         } else {
             executor = null;
         }
+    }
+
+    public static Set<String> collectAllDefaultUnsupportedHibernateProperties() {
+        Stream<String> properties = new DatabasePropertyMappers().getPropertyMappers().stream().map(PropertyMapper::getTo);
+        Config config = new SmallRyeConfigBuilder()
+                .addDefaultSources() // adds also application.properties
+                .build();
+        for (ConfigSource configSource : config.getConfigSources()) {
+            if (configSource.getName() != null && configSource.getName().contains("application.properties")) {
+                Set<String> configSourcePropertyNames = configSource.getPropertyNames();
+                if (configSourcePropertyNames != null) {
+                    properties = Stream.concat(properties, configSourcePropertyNames.stream());
+                }
+            }
+        }
+        return properties
+                .filter(Objects::nonNull)
+                .filter(p -> p.startsWith(QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX))
+                .map(p -> {
+                    if (p.startsWith(QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX + "\"")) {
+                        return p.substring(QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX.length() + 1, p.length() - 1);
+                    }
+                    return p.substring(QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX.length());
+                })
+                .collect(Collectors.toUnmodifiableSet());
+    }
+
+    public static void setKeycloakDefaultUnsupportedProperties(Set<String> keycloakDefaultUnsupportedProperties) {
+        KeycloakLogFilter.keycloakDefaultUnsupportedProperties = Set.copyOf(keycloakDefaultUnsupportedProperties);
     }
 
     protected abstract Class<? extends Handler> getHandlerClass();
@@ -104,11 +147,71 @@ public abstract class KeycloakLogFilter implements Filter {
             }
         }
 
+        // Suppress the Hibernate ORM "unsupported properties" WARN(s) that FastBootHibernatePersistenceProvider emits
+        // for the default persistence unit; see isDefaultPersistenceUnitUnsupportedPropertiesWarning.
+        if (isDefaultPersistenceUnitUnsupportedPropertiesWarning(record)) {
+            return false;
+        }
+
+        // ISPN000208 "No live owners found for segments" fires during state transfer when a node is the sole
+        // remaining owner after another node departed. The data is safe (this node has it), but the message
+        // is logged at ERROR and alarms users. With numOwners>=2 enforced by Keycloak, a single node
+        // departure always leaves at least one live owner, so this is expected during rolling restarts.
+        // https://github.com/keycloak/keycloak/issues/52088
+        if (Objects.equals(record.getLevel(), Level.SEVERE) && record.getLoggerName().equals("org.infinispan.CLUSTER") && record.getMessage().startsWith("ISPN000208")) {
+            return false;
+        }
+
+        // HHH100503 "JDBC batch still contained JDBC statements on release" is logged at INFO after a
+        // constraint violation that Keycloak already handles. Logged too loudly for a normal occurrence.
+        // TODO: Remove this suppression once Hibernate addresses HHH-20861 by no longer logging
+        // HHH100503 at INFO for this handled condition, or otherwise changes the upstream behavior
+        // so this message is no longer emitted in normal operation.
+        // https://hibernate.atlassian.net/browse/HHH-20861
+        if (Objects.equals(record.getLevel(), Level.INFO) && record.getLoggerName().equals("org.hibernate.orm.jdbc.batch") && record.getMessage().startsWith("HHH100503:")) {
+            return false;
+        }
+
         if (executor != null && ThreadCreator.isVirtual(Thread.currentThread())) {
             executor.submit(new RecordLogger(ExtLogRecord.wrap(record), this));
             return false;
         }
 
+        return true;
+    }
+
+    boolean isDefaultPersistenceUnitUnsupportedPropertiesWarning(LogRecord record) {
+        if (!Objects.equals(record.getLevel(), Level.WARNING)
+                || !"io.quarkus.hibernate.orm.runtime.FastBootHibernatePersistenceProvider".equals(record.getLoggerName())) {
+            return false;
+        }
+        String message = record.getMessage();
+        if (message == null || !message.startsWith("Persistence-unit [") || !message.contains("unsupported properties")) {
+            return false;
+        }
+        Object[] parameters = record.getParameters();
+        if (parameters == null || parameters.length < 2 || !"<default>".equals(String.valueOf(parameters[0]))) {
+            return false;
+        }
+        return isOnlyKeycloakContributed(parameters[1]);
+    }
+
+    private boolean isOnlyKeycloakContributed(Object keys) {
+        if (!(keys instanceof Collection<?> collection) || collection.isEmpty()) {
+            return false;
+        }
+        for (Object key : collection) {
+            String name = String.valueOf(key);
+
+            if (keycloakDefaultUnsupportedProperties == null) {
+                keycloakDefaultUnsupportedProperties = collectAllDefaultUnsupportedHibernateProperties();
+            }
+
+            if (!keycloakDefaultUnsupportedProperties.contains(name)
+                    && !name.startsWith(QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX)) {
+                return false;
+            }
+        }
         return true;
     }
 

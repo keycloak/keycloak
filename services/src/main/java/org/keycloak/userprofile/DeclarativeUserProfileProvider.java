@@ -78,8 +78,8 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
      * @param configuredScopes to be evaluated
      */
     private static boolean requestedScopePredicate(AttributeContext context, Set<String> configuredScopes) {
-        // any attribute is enabled and available when managing through the User Admin API
-        if (UserProfileContext.USER_API.equals(context.getContext())) {
+        // any attribute is enabled and available when managing through an admin context
+        if (context.getContext().isAdminContext()) {
             return true;
         }
 

@@ -103,6 +103,8 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
+import org.keycloak.protocol.oidc.verifier.TokenVerifierProvider;
+import org.keycloak.protocol.oidc.verifier.TokenVerifierProviderManager;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
@@ -1564,9 +1566,12 @@ public class AuthenticationManager {
                 verifier.audience(checkAudience);
             }
 
-            // Check token revocation in case of access token
+            // Check token revocation and additional verifiers in case of access token
             if (checkTokenType) {
                 verifier.withChecks(new TokenManager.TokenRevocationCheck(session));
+
+                TokenVerifierProvider.TokenVerifierProviderContext ctx = new TokenVerifierProvider.TokenVerifierProviderContext(verifier, session, realm, uriInfo);
+                new TokenVerifierProviderManager().additionalAccessTokenVerifications(ctx);
             }
 
             String kid = verifier.getHeader().getKeyId();

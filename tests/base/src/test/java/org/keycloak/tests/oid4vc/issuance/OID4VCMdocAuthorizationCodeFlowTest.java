@@ -23,10 +23,19 @@ import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.oid4vc.OID4VCMdocTestBase;
 
+import org.junit.jupiter.api.BeforeEach;
+
 import static org.keycloak.tests.oid4vc.OID4VCMdocTestBase.assertMdocCredentialStructure;
 
 @KeycloakIntegrationTest(config = OID4VCMdocTestBase.VCTestServerWithMdocEnabled.class)
 public class OID4VCMdocAuthorizationCodeFlowTest extends OID4VCAuthorizationCodeFlowTestBase {
+
+    @Override
+    @BeforeEach
+    protected void beforeEachBase() {
+        super.beforeEachBase();
+        ensureMdocCompliantSigningConfiguration();
+    }
 
     @Override
     protected String getCredentialFormat() {
@@ -36,12 +45,12 @@ public class OID4VCMdocAuthorizationCodeFlowTest extends OID4VCAuthorizationCode
     @Override
     protected CredentialScopeRepresentation getCredentialScope() {
         ensureEcSigningKeyProvider("mdoc-issuer-key", "P-256", "ES256", 200);
-        return mdocTypeCredentialScope;
+        return requireExistingCredentialScope(mdocTypeCredentialScopeName);
     }
 
     @Override
     protected List<Object> getExpectedClaimPath() {
-        return List.of("org.iso.18013.5.1", "family_name");
+        return List.of("org.example.credential", "family_name");
     }
 
     @Override

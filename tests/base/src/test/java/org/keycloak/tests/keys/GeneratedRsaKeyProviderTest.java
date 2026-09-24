@@ -51,7 +51,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @KeycloakIntegrationTest
-@DatabaseTest
 public class GeneratedRsaKeyProviderTest {
 
     @InjectRealm
@@ -98,6 +97,7 @@ public class GeneratedRsaKeyProviderTest {
     }
 
     @Test
+    @DatabaseTest
     public void largeKeysizeForSig() throws Exception {
         largeKeysize(GeneratedRsaKeyProviderFactory.ID, KeyUse.SIG);
     }
@@ -141,6 +141,7 @@ public class GeneratedRsaKeyProviderTest {
     }
 
     @Test
+    @DatabaseTest
     public void updatePriorityForEnc() throws Exception {
         updatePriority(GeneratedRsaEncKeyProviderFactory.ID, KeyUse.ENC);
     }
@@ -177,6 +178,7 @@ public class GeneratedRsaKeyProviderTest {
     }
 
     @Test
+    @DatabaseTest
     public void updateKeysizeForSig() throws Exception {
         updateKeysize(GeneratedRsaKeyProviderFactory.ID, KeyUse.SIG);
     }

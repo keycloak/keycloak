@@ -681,19 +681,20 @@ public class SamlService extends AuthorizationEndpointBase {
                         logoutRequest = it.next().beforeProcessingLogoutRequest(logoutRequest, userSession, clientSession);
                     }
 
+                    EventBuilder logoutEvent = event.clone()
+                            .event(EventType.LOGOUT)
+                            .detail(Details.AUTH_METHOD, userSession.getAuthMethod())
+                            .client(session.getContext().getClient())
+                            .user(userSession.getUser())
+                            .session(userSession)
+                            .detail(Details.USERNAME, userSession.getLoginUsername())
+                            .detail(Details.RESPONSE_MODE, getBindingType());
                     try {
-                        event.event(EventType.LOGOUT)
-                                .detail(Details.AUTH_METHOD, userSession.getAuthMethod())
-                                .client(session.getContext().getClient())
-                                .user(userSession.getUser())
-                                .session(userSession)
-                                .detail(Details.USERNAME, userSession.getLoginUsername())
-                                .detail(Details.RESPONSE_MODE, getBindingType());
                         authManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, true);
-                        event.success();
+                        logoutEvent.success();
                     } catch (Exception e) {
                         logger.warn("Failure with backchannel logout", e);
-                        event.error("Failure with backchannel logout");
+                        logoutEvent.error("Failure with backchannel logout");
                     }
 
                 }
@@ -1495,7 +1496,7 @@ public class SamlService extends AuthorizationEndpointBase {
                     }
 
                     if (logger.isTraceEnabled()) {
-                        logger.tracef("Resolved object: %s" + DocumentUtil.asString(samlDoc.getSamlDocument()));
+                        logger.tracef("Resolved object: %s", DocumentUtil.asString(samlDoc.getSamlDocument()));
                     }
 
                     ArtifactResponseType art = (ArtifactResponseType) samlDoc.getSamlObject();

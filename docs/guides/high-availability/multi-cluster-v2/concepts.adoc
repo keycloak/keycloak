@@ -5,8 +5,7 @@
 title="Concepts for multi-cluster deployments (v2)"
 summary="Understand multi-cluster deployment with synchronous replication without an external {jdgserver_name} cluster."
 tileVisible="false"
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
+>
 
 This topic describes a highly available multi-cluster setup and the behavior to expect.
 It outlines the requirements of the high availability architecture and describes the benefits and tradeoffs.
@@ -19,7 +18,7 @@ Use this setup to provide {project_name} deployments that are able to tolerate c
 Multiple {project_name} clusters share a synchronously replicated database.
 
 Unlike the standard <@links.ha id="multi-cluster-concepts" />, this setup does not require an external {jdgserver_name} cluster.
-This simplifies the deployment architecture and removes the need for an external monitoring solution that reconfigures the external {jdgserver_name} on failover. It also eliminates operational procedures on failback.
+This simplifies the deployment architecture and removes the need for an external monitoring solution that reconfigures the external {jdgserver_name} on failover. It also reduces operational procedures on failback.
 
 == Deployment, data storage and caching
 
@@ -61,8 +60,9 @@ When planning for large batch updates of realm data, consider shutting down all 
 
 Invalidation messages are queued for up to 60 seconds, which is in line with the cluster membership mechanism, which updates its information in the database every 30–45 seconds.
 
-To handle edge cases and to avoid permanently out-of-sync caches, any cached realm information expires by default after one hour.
-The data is then fetched again from the database on the next call that requires it.
+When a {project_name} instance temporarily loses its database connection, it may miss cache invalidation messages sent by other clusters during the outage.
+Once the database connection is restored, all local caches are cleared automatically to ensure consistency.
+As an additional safeguard, any cached realm information expires by default after one hour so that stale entries do not persist indefinitely.
 
 == Causes of data and service loss
 
@@ -74,6 +74,7 @@ While this setup aims for high availability, the following situations can still 
 
 * Degraded setups can lead to service or data loss if additional components fail.
 Monitoring is necessary to detect degraded setups.
+Without monitoring, a degraded state may go unnoticed until a subsequent failure causes a full outage or data loss.
 
 == Failures which this setup can survive
 
@@ -114,6 +115,11 @@ Some requests might receive an error message until the load balancer detects the
 
 The statement "`No data loss`" depends on the setup not being degraded from previous failures, which includes completing any pending manual operations to resynchronize the state between the sites.
 
+For performance, {project_name} uses optimized database commit for ephemeral data such as sessions and events when supported by the configured database.
+On a database crash, in-flight session data within a sub-second window may be lost, requiring affected users to re-authenticate.
+Persistent data such as users, realms, and credentials always uses durable commit and is not affected.
+To disable the optimization, set `--spi-connections-jpa--quarkus--async-commit=false`.
+
 To restore the service, restart any failed {project_name} node and restore its database connectivity. No other recovery operations are necessary for {project_name}.
 A standard load balancer configuration should detect the active {project_name} nodes automatically and route traffic to them.
 Recovery operations on the database side might depend on the database vendor.
@@ -133,6 +139,7 @@ It also ensures that the next request will not return stale data, independent of
 Why is a low-latency network between sites needed?::
 Synchronous replication defers the response to the caller until the data is received at the other site.
 A low latency is necessary as each request can potentially involve multiple interactions between the sites when data is updated, which would amplify the latency.
+See the <@links.ha id="multi-cluster-v2-introduction" anchor="multi-cluster-v2-infrastructure-requirements" /> for specific latency thresholds.
 
 Is a synchronous cluster less stable than an asynchronous cluster?::
 An asynchronous setup would handle network failures between the sites gracefully, while the synchronous setup would delay requests and throw errors to the caller where the asynchronous setup would have deferred the writes to the database on the other site.
