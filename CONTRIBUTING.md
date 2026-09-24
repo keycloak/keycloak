@@ -66,8 +66,6 @@ Pick the right type:
 - **Enhancement Request** -- an improvement to an existing feature
 - **Feature Request** -- a new capability that does not exist today
 
-If you prefer the GitHub CLI, use `gh issue create --template "<template name>"` for a guided experience.
-
 ### Implementing
 
 Details for building from source and working with the codebase are provided in the 
