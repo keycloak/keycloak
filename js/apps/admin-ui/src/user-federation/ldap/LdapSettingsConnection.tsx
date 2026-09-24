@@ -15,11 +15,12 @@ import {
   Switch,
 } from "@patternfly/react-core";
 import { get, isEqual } from "lodash-es";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Controller,
   FormProvider,
   UseFormReturn,
+  useFormState,
   useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -97,30 +98,23 @@ export const LdapSettingsConnection = ({
     name: "config.bindDn.0",
   });
 
-  // Track the initial connection URL and bind DN so we can detect changes in edit mode.
-  // When either changes, the bind credential field is cleared to prevent previously
-  // stored credentials from being silently sent to a different server.
-  const initialUrlRef = useRef<string | null>(null);
-  const initialBindDnRef = useRef<string | null>(null);
+  const { dirtyFields } = useFormState({
+    control: form.control,
+    name: ["config.connectionUrl.0", "config.bindDn.0"],
+  });
+
+  // When connection URL or bind DN is modified in edit mode, clear the bind credential
+  // field to prevent previously stored credentials from being silently sent to a different server.
   useEffect(() => {
     if (!edit) return;
 
-    if (initialUrlRef.current === null) {
-      if (connectionUrl) {
-        initialUrlRef.current = connectionUrl;
-      }
-    } else if (connectionUrl !== initialUrlRef.current) {
-      form.setValue("config.bindCredential.0", "");
-    }
+    const isUrlDirty = !!get(dirtyFields, "config.connectionUrl.0");
+    const isBindDnDirty = !!get(dirtyFields, "config.bindDn.0");
 
-    if (initialBindDnRef.current === null) {
-      if (bindDn) {
-        initialBindDnRef.current = bindDn;
-      }
-    } else if (bindDn !== initialBindDnRef.current) {
+    if (isUrlDirty || isBindDnDirty) {
       form.setValue("config.bindCredential.0", "");
     }
-  }, [connectionUrl, bindDn, edit, form]);
+  }, [connectionUrl, bindDn, dirtyFields, edit, form]);
 
   const ldapBindType = useWatch({
     control: form.control,

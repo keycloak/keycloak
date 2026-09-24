@@ -225,6 +225,39 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
                     cfg.get(LDAPConstants.USE_TRUSTSTORE_SPI), cfg.get(LDAPConstants.CONNECTION_TIMEOUT),
                     cfg.get(LDAPConstants.START_TLS), cfg.get(LDAPConstants.AUTH_TYPE), ldapModelId));
             assertStatus(response, 400);
+
+            // test providing the explicit password when modifying the connection URL works
+            response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION,
+                    "ldap://localhost:10389", cfg.get(LDAPConstants.BIND_DN), cfg.get(LDAPConstants.BIND_CREDENTIAL),
+                    "false", cfg.get(LDAPConstants.CONNECTION_TIMEOUT),
+                    cfg.get(LDAPConstants.START_TLS), cfg.get(LDAPConstants.AUTH_TYPE), ldapModelId));
+            assertStatus(response, 204);
+        } finally {
+            adminClient.realm(REALM_NAME).components().removeComponent(ldapModelId);
+        }
+    }
+
+    @Test
+    public void testTestAuthenticationRejectsUrlChangeWithPlaceholderCredential() {
+        Map<String, String> cfg = ldapRule.getConfig();
+        cfg.put(LDAPConstants.CONNECTION_URL, "ldap://localhost:10389");
+        String ldapModelId = runOnServerAdminClientTest.fetchString(LdapHelper.createLDAPProvider(cfg, false)).replace("\"", "");
+        try {
+            // testing authentication with changed URL and placeholder credential should be rejected
+            Response response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(
+                    LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://anotherhost:10389",
+                    cfg.get(LDAPConstants.BIND_DN), ComponentRepresentation.SECRET_VALUE,
+                    cfg.get(LDAPConstants.USE_TRUSTSTORE_SPI), cfg.get(LDAPConstants.CONNECTION_TIMEOUT),
+                    cfg.get(LDAPConstants.START_TLS), cfg.get(LDAPConstants.AUTH_TYPE), ldapModelId));
+            assertStatus(response, 400);
+
+            // testing authentication with changed Bind DN and placeholder credential should be rejected
+            response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(
+                    LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, cfg.get(LDAPConstants.CONNECTION_URL),
+                    "uid=anotheradmin,ou=system", ComponentRepresentation.SECRET_VALUE,
+                    cfg.get(LDAPConstants.USE_TRUSTSTORE_SPI), cfg.get(LDAPConstants.CONNECTION_TIMEOUT),
+                    cfg.get(LDAPConstants.START_TLS), cfg.get(LDAPConstants.AUTH_TYPE), ldapModelId));
+            assertStatus(response, 400);
         } finally {
             adminClient.realm(REALM_NAME).components().removeComponent(ldapModelId);
         }
@@ -241,6 +274,11 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
             // changing URL while credential is the sentinel should be rejected
             rep.getConfig().putSingle(LDAPConstants.CONNECTION_URL, "ldap://anotherhost:10389");
             rep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, ComponentRepresentation.SECRET_VALUE);
+            Assertions.assertThrows(BadRequestException.class, () ->
+                    realm.components().component(ldapModelId).update(rep));
+
+            // changing URL while credential is omitted should also be rejected
+            rep.getConfig().remove(LDAPConstants.BIND_CREDENTIAL);
             Assertions.assertThrows(BadRequestException.class, () ->
                     realm.components().component(ldapModelId).update(rep));
 
@@ -267,6 +305,11 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
             // changing bind DN while credential is the sentinel should be rejected
             rep.getConfig().putSingle(LDAPConstants.BIND_DN, "uid=anotheradmin,ou=system");
             rep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, ComponentRepresentation.SECRET_VALUE);
+            Assertions.assertThrows(BadRequestException.class, () ->
+                    realm.components().component(ldapModelId).update(rep));
+
+            // changing bind DN while credential is omitted should also be rejected
+            rep.getConfig().remove(LDAPConstants.BIND_CREDENTIAL);
             Assertions.assertThrows(BadRequestException.class, () ->
                     realm.components().component(ldapModelId).update(rep));
 

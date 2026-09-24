@@ -64,6 +64,7 @@ import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
+import org.keycloak.storage.ldap.idm.store.ldap.LDAPUtil;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
@@ -337,7 +338,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             config.setId(KeycloakModelUtils.generateShortId());
         } else {
             // Updating an existing LDAP provider - check if the connection URL changed while
-            // the bind credential was not re-entered (auto-preserved via SECRET_VALUE placeholder).
+            // the bind credential was not re-entered (auto-preserved via SECRET_VALUE placeholder or omitted).
             // This prevents credentials from being silently sent to a different server.
             validateBindCredentialOnUrlChange(session, realm, config, cfg);
         }
@@ -364,7 +365,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
         String oldUrl = oldComponent.getConfig().getFirst(LDAPConstants.CONNECTION_URL);
         String newUrl = config.getConfig().getFirst(LDAPConstants.CONNECTION_URL);
-        if (!connectionUrlsMatch(oldUrl, newUrl)) {
+        if (!LDAPUtil.checkLdapConnectionUrlsMatch(oldUrl, newUrl)) {
             throw new ComponentValidationException("ldapErrorCredentialReentryRequiredOnUrlChange");
         }
 
@@ -374,30 +375,6 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                             newBindDn == null ? null : newBindDn.toLowerCase(Locale.ROOT))) {
             throw new ComponentValidationException("ldapErrorCredentialReentryRequiredOnUrlChange");
         }
-    }
-
-    /**
-     * Compares two LDAP connection URL strings, which may contain multiple space-separated URIs.
-     * Uses URI-based comparison to handle equivalent but textually different representations.
-     */
-    private static boolean connectionUrlsMatch(String url1, String url2) {
-        if (Objects.equals(url1, url2)) {
-            return true;
-        }
-        if (url1 == null || url2 == null) {
-            return false;
-        }
-        String[] urls1 = url1.trim().split(" ");
-        String[] urls2 = url2.trim().split(" ");
-        if (urls1.length != urls2.length) {
-            return false;
-        }
-        for (int i = 0; i < urls1.length; i++) {
-            if (!Objects.equals(URI.create(urls1[i]), URI.create(urls2[i]))) {
-                return false;
-            }
-        }
-        return true;
     }
 
     @Override

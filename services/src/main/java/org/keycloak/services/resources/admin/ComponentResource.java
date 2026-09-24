@@ -80,9 +80,9 @@ public class ComponentResource {
 
     /**
      * Session attribute key used to record which config fields in an update request contained the
-     * {@link ComponentRepresentation#SECRET_VALUE} placeholder instead of an actual value. This allows
-     * downstream validation (e.g. in provider factories) to distinguish auto-preserved secrets from
-     * explicitly re-entered ones.
+     * {@link ComponentRepresentation#SECRET_VALUE} placeholder or were omitted instead of being explicitly
+     * re-entered. This allows downstream validation (e.g. in provider factories) to distinguish
+     * auto-preserved secrets from explicitly re-entered ones.
      */
     public static final String SECRET_PLACEHOLDER_FIELDS_ATTR = "component.update.secretPlaceholderFields";
 
@@ -194,18 +194,23 @@ public class ComponentResource {
                 throw new NotFoundException("Could not find component");
             }
             rejectInternalComponent(model.getProviderType(), model.getProviderId());
-            // Record which config fields have the SECRET_VALUE placeholder before merging,
+            // Record which config fields have the SECRET_VALUE placeholder or are omitted/empty before merging,
             // so downstream validation can detect auto-preserved (not re-entered) secrets.
-            if (rep.getConfig() != null) {
-                Set<String> secretPlaceholderFields = new HashSet<>();
-                for (Map.Entry<String, List<String>> entry : rep.getConfig().entrySet()) {
-                    if (entry.getValue() != null && entry.getValue().contains(ComponentRepresentation.SECRET_VALUE)) {
-                        secretPlaceholderFields.add(entry.getKey());
+            Set<String> secretPlaceholderFields = new HashSet<>();
+            if (model.getConfig() != null) {
+                for (String key : model.getConfig().keySet()) {
+                    if (rep.getConfig() == null || !rep.getConfig().containsKey(key)) {
+                        secretPlaceholderFields.add(key);
+                    } else {
+                        List<String> values = rep.getConfig().get(key);
+                        if (values == null || values.isEmpty() || values.contains(ComponentRepresentation.SECRET_VALUE)) {
+                            secretPlaceholderFields.add(key);
+                        }
                     }
                 }
-                if (!secretPlaceholderFields.isEmpty()) {
-                    session.setAttribute(SECRET_PLACEHOLDER_FIELDS_ATTR, secretPlaceholderFields);
-                }
+            }
+            if (!secretPlaceholderFields.isEmpty()) {
+                session.setAttribute(SECRET_PLACEHOLDER_FIELDS_ATTR, secretPlaceholderFields);
             }
             RepresentationToModel.updateComponent(session, rep, model, false);
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
