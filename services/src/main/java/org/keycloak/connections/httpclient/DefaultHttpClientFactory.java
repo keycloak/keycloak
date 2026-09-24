@@ -21,8 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.Config;
@@ -81,7 +80,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     private static final long RELOADED_CLIENT_CLOSE_DELAY_MILLIS = 60000L;
 
     private final ReloadableCloseableHttpClient httpClient = new ReloadableCloseableHttpClient();
-    private volatile ScheduledExecutorService reloadExecutor;
+    private volatile ScheduledThreadPoolExecutor reloadExecutor;
     private Config.Scope config;
 
     private BasicResponseHandler stringResponseHandler;
@@ -170,15 +169,16 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
 
         }
         if (reloadExecutor != null) {
-            for (Runnable task : reloadExecutor.shutdownNow()) {
+            for (Runnable task : reloadExecutor.getQueue().toArray(new Runnable[0])) {
                 task.run();
             }
+            reloadExecutor.shutdownNow();
         }
     }
 
     private void scheduleClose(CloseableHttpClient client) {
         if (reloadExecutor == null) {
-            reloadExecutor = Executors.newSingleThreadScheduledExecutor(runnable -> {
+            reloadExecutor = new ScheduledThreadPoolExecutor(1, runnable -> {
                 Thread thread = new Thread(runnable, "keycloak-httpclient-reload");
                 thread.setDaemon(true);
                 return thread;
