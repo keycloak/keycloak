@@ -18,8 +18,6 @@ jobs:
         run: |
           BRANCHES=($(gh api --cache 1h --paginate /repos/${{ github.repository }}/branches -q '.[] | .name | select(startswith("release"))' | sort -V -r))
           LATEST_REL_BRANCH=$(echo ${BRANCHES[0]} | sed 's|release/||') 
-          TAGS=($(gh api --cache 1h /repos/${{ github.repository }}/tags --paginate -q ".[] | .name | select(startswith(\"$LATEST_REL_BRANCH\"))" | sort -V -r))
-          LATEST_TAG=$(echo ${TAGS[0]}) 
           
           REFS='['
           REFS+="\"refs/heads/main\""
@@ -28,10 +26,6 @@ jobs:
               REFS+="\"refs/heads/$BRANCH\""
           done
 
-          if [ "$LATEST_TAG" != "" ]; then 
-            REFS+=", \"refs/tags/$LATEST_TAG\""
-          fi
-          
           REFS+=']'
 
           echo "refs=$REFS" >> "$GITHUB_OUTPUT"
@@ -54,21 +48,24 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ matrix.ref }}
-      - name: Get head commit
-        run: echo "CURRENT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
-      - name: Trivy setup
-        uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
-        with:
-          cache: true
-          version: v0.70.0 # There's an issue in v0.71.0 that makes it not work with Keycloak
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+
+      - name: Setup Java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: 'temurin'
           java-version: '25'
           cache: 'maven'
-      - name: Resolve Maven dependencies
-        run: |
-          ./mvnw dependency:tree -DskipTestsuite -DexcludeGroupIds=org.keycloak
+      - name: Setup Trivy
+        uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
+        with:
+          cache: true
+          version: v0.70.0 # There's an issue in v0.71.0 that makes it not work with Keycloak
+      - name: Setup SNYK
+        uses: snyk/actions/setup@9adf32b1121593767fc3c057af55b55db032dc04
+
+      - name: Build Keycloak
+        uses: ./.github/actions/build-keycloak
+
       - name: Trivy scan
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -79,23 +76,25 @@ jobs:
           output: 'trivy-report.json'
           scanners: 'vuln'          
           skip-setup-trivy: true
-      - name: Convert to sarif
+
+      - name: SNYK scan
         run: |
-          trivy convert --format sarif -o trivy-report.sarif --scanners vuln trivy-report.json
-      - name: Upload report
-        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
-        with:
-          sarif_file: 'trivy-report.sarif'
-          category: 'dependencies'
-          ref: ${{ matrix.ref }}
-          sha: ${{ env.CURRENT_SHA }}
-      - run: echo "TRIVY_ARTIFACT_NAME=$(echo 'trivy-report-${{ matrix.ref }}' | sed 's|/|_|g')" >> $GITHUB_ENV
+          snyk test --policy-path=.github/snyk/.snyk --json-file-output=snyk-report.json quarkus/deployment/ && ecode=$? || ecode=$? 
+          if [ "$ecode" -gt 1 ]; then
+            exit $ecode
+          fi
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_PAT }}
+
+      - run: echo "REPORT_NAME=$(echo 'reports-${{ matrix.ref }}' | sed 's|/|_|g')" >> $GITHUB_ENV
 
       - name: Upload Report to Run
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ${{ env.TRIVY_ARTIFACT_NAME }}
-          path: trivy-report.json
+          name: ${{ env.REPORT_NAME }}
+          path: |
+            snyk-report.json
+            trivy-report.json
           retention-days: 7
 
   parse-reports:
@@ -114,26 +113,13 @@ jobs:
       - name: Download report artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          path: /tmp/trivy-logs
-          pattern: trivy-report-*
+          path: /tmp/reports
+          pattern: reports-*
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: 'temurin'
           java-version: '25'
       - name: List artifacts
-        run: tree /tmp/trivy-logs
+        run: tree /tmp/reports
       - name: Parse reports
-        run: ./mvnw -f misc/vuln-to-issues package exec:java -Dexec.mainClass="org.keycloak.misc.TrivyReportParser"
-      - name: Set issue type
-        run: |
-          gh issue list \
-            --label source/scan-dependencies \
-            --label kind/cve \
-            --state all \
-            --limit 500 \
-            --search "no:type" \
-            --json number \
-            --jq '.[].number' \
-          | while read -r issue_number; do
-              gh issue edit "$issue_number" --type cve
-            done
+        run: ./mvnw -f misc/vuln-to-issues package exec:java -Dexec.mainClass=org.keycloak.misc.vulns.Main -Dexec.args="/tmp/reports/"
