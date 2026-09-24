@@ -185,10 +185,10 @@ NOTE: Both the _Audience_ and _Audience Resolve_ protocol mappers add the audien
 [[_audience_disabled_clients]]
 == Disabled clients and the audience
 
-A client that is disabled is never added to the `aud` claim of a token:
+A client that is disabled or removed is never added to the `aud` claim of a token:
 
-* The client roles of a disabled client are never added to the token, not even by the _Hardcoded Role_ and _Role Name_ protocol mappers.
-Because such roles are not present, the _Audience Resolve_ protocol mapper does not resolve the disabled client as an audience.
+* The client roles of a disabled or removed client are never added to the token, not even by the _Hardcoded Role_ and _Role Name_ protocol mappers.
+Because such roles are not present, the _Audience Resolve_ protocol mapper does not resolve the disabled or removed client as an audience.
 Note that this also means that those roles are not present in the `resource_access` claim of the token.
 
 * The _Audience_ protocol mapper does not add the audience when *Included Client Audience* refers to a client that is disabled or that no longer exists. The *Included Custom Audience* option is not affected,

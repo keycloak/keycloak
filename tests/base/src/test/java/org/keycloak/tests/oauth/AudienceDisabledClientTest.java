@@ -116,6 +116,21 @@ public class AudienceDisabledClientTest {
     }
 
     @Test
+    public void testHardcodedRoleMapperIgnoresRemovedClient() {
+        AccessToken token = accessToken(login());
+        assertThat(audiences(token), hasItem("role-service"));
+        assertThat(token.getResourceAccess(), hasKey("role-service"));
+
+        ClientRepresentation removed = realm.admin().clients().findByClientId("role-service").get(0);
+        realm.admin().clients().get(removed.getId()).remove();
+        realm.cleanup().add(r -> r.clients().create(removed).close());
+
+        token = accessToken(login());
+        assertThat(audiences(token), not(hasItem("role-service")));
+        assertThat(token.getResourceAccess(), not(hasKey("role-service")));
+    }
+
+    @Test
     public void testRefreshIgnoresDisabledClient() {
         AccessTokenResponse response = login();
         AccessToken token = accessToken(response);

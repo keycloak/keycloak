@@ -45,7 +45,7 @@ Please see link:https://www.keycloak.org/server/reverseproxy[Using a reverse pro
 
 === Disabled clients are no longer added to the token audience
 
-A disabled client is never added to the `aud` claim of a token, and its client roles are not present in the `resource_access` claim.
+A disabled or removed client is never added to the `aud` claim of a token, and its client roles are not present in the `resource_access` claim.
 Tokens are still issued, only without that client, so logins and refreshes keep succeeding.
 This change addresses CVE-2026-93999.
 
