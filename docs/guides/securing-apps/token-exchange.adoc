@@ -341,7 +341,41 @@ s|Subject impersonation (including direct naked impersonation)   | Not implement
 
 <#include "/templates/experimental-feature.adoc">
 
-Token exchange delegation allows a subject to pre-authorize an actor to act on their behalf, as described in the https://datatracker.ietf.org/doc/html/rfc8693#name-delegation-vs-impersonation[delegation semantics of the token exchange specification].
+Token exchange delegation allows a subject (a user) to pre-authorize an actor (an administrator or a client application) to act on their behalf, as described in the https://datatracker.ietf.org/doc/html/rfc8693#name-delegation-vs-impersonation[delegation semantics of the token exchange specification].
+
+=== Why use delegation
+
+The specification describes two ways one party can act for another. Suppose Alice, the *subject*, wants a calendar app, the *actor*, to book meetings for her:
+
+Impersonation:: The app gets a token that simply says "Alice". Her calendar service cannot tell whether Alice or the app made a booking.
+
+Delegation:: The app gets a token that says "the calendar app, acting for Alice". The calendar service sees both names, and can log or restrict what the app does on her behalf.
+
+{project_name} implements delegation, through the `may_act` and `act` claims.
+
+Handing the user's own access token to the actor, whether that actor is another user or a client application, is impersonation in effect, and it has significant drawbacks:
+
+* *No audience control.* Alice's token was issued to the app she logged in with, and its `aud` comes from that client's audience and role scope mappings. Nothing binds it to the calendar service, so the calendar app can present it to any other service that accepts it.
+* *No scope restriction.* Alice's token carries everything she is allowed to do, not just booking meetings. If the calendar app is compromised, the attacker can use it anywhere Alice's token is accepted.
+* *No audit trail.* The calendar service sees a request from Alice. It cannot tell the calendar app made it, so a misbehaving app looks exactly like her.
+* *No user consent.* Alice is never asked whether the calendar app may act for her.
+
+Delegation addresses all of these. The delegated token is issued with the audience and scopes of the requesting client, the client that performs the exchange, narrowing it to only what that client needs. In client delegation, the requesting client is the actor itself. The `act` claim provides a clear audit trail, and the user must explicitly consent to the delegation.
+
+=== Delegation types
+
+{project_name} supports two kinds of actor.
+
+[cols="3*", options="header"]
+|===
+|Aspect |Admin delegation |Client delegation
+s|Scope | `delegation:user:<username>` | `delegation:client:<client_id>`
+s|Actor | A user, typically an administrator | A client application, through its service account
+s|Use case | Administrator acts on behalf of a user | Application, such as an AI agent, acts on behalf of a user
+s|`may_act` contains | `sub` (actor user ID) | `sub` (service account user ID) and `client_id`
+|===
+
+=== Enabling delegation
 
 This feature requires the `parameterized-scopes` feature to be enabled. To enable both features, start {project_name} with:
 
@@ -350,38 +384,50 @@ This feature requires the `parameterized-scopes` feature to be enabled. To enabl
 bin/kc.[sh|bat] start --features=token-exchange-delegation,parameterized-scopes
 ----
 
-=== Admin delegation
+When the feature is enabled, the delegation client scopes (`delegation:user` and `delegation:client`) are automatically created in all realms (new and existing) as *Optional* client scopes, making them available to all clients by default. No manual client scope assignment is needed.
 
-Admin delegation allows a user (subject) to delegate their token to an administrator (actor). The client requests the `delegation:user` scope with the administrator's identifier as a parameter using the https://datatracker.ietf.org/doc/html/rfc9396[parameterized scopes] syntax.
+The client requesting a delegation scope must have *Consent required* enabled. The delegation scopes are marked as always requiring consent, and {project_name} rejects a request for such a scope from a client that does not require consent. The delegation consent is never stored permanently, so the user approves the delegation on every login session.
 
-When the feature is enabled, the `delegation:user` client scope is automatically created in all realms (new and existing) as an *Optional* client scope, making it available to all clients by default. Delegation also requires <<Granting delegation permission,granting delegation permission>>. Without a matching permission granting the `delegate` scope, the delegation scope is silently dropped from the token.
+Delegation also requires granting a delegation permission through link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 2] (FGAP V2). Without a matching permission granting the `delegate` scope, the delegation scope is silently dropped from the request and the `may_act` claim is not included in the token. The login itself still succeeds.
 
-==== Granting delegation permission
+NOTE: Delegation permissions require FGAP V2. FGAP V1 does not support delegation.
 
-Delegation permissions are managed through link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 2] (FGAP V2). Unlike impersonation, delegation does not use admin roles. Instead, you configure FGAP permissions to control which administrators can be delegated to and for which users.
+=== Granting delegation permission
 
-===== Granting delegation to all users
+Unlike impersonation, delegation does not use admin roles. Instead, you configure FGAP V2 permissions to control which actors can be delegated to and for which users.
+
+==== Granting delegation to all users
+
+This example allows the `actor-app` client, and only that client, to act on behalf of any user in the realm.
 
 . Go to *Realm Settings* -> *Admin Permissions* and enable Admin Permissions.
 . Navigate to *Admin Permissions*.
 . Create a new permission on the *Users* resource type.
 . Add the *delegate* scope.
-. Assign a policy that grants this permission.
+. Under *Enforce access to*, leave *All users* selected. Those are the users that can be acted *for*.
+. Under *Policies*, click *Create new policy*, choose *Client*, and select `actor-app`. The policy is the set of actors allowed to act, so only `actor-app` can delegate. Adding more clients to the policy widens that set.
 
-NOTE: To restrict delegation to specific users, select individual users when creating the permission. To restrict which administrators or service accounts can delegate, use a more specific policy (for example, a *User* or *Client* policy).
+If you want to restrict the permission to an administrator instead of a client, choose the *User* type for the policy in the last step, and select the administrator username.
 
-===== Granting delegation to members of a specific group
+With this in place, `scope=openid delegation:client:actor-app` succeeds for any user, while `delegation:client:some-other-app` is dropped during scope resolution.
+
+==== Granting delegation to members of a specific group
 
 . Navigate to *Admin Permissions*.
 . Create a new permission on the *Groups* resource type.
-. Select the target groups.
 . Add the *delegate-members* scope.
-. Assign a policy targeting the administrator or service account allowed to delegate.
+. Under *Enforce access to*, choose *Specific groups* and select the target groups.
+. Under *Policies*, click *Create new policy*, or assign an existing one, targeting the administrator or service account allowed to delegate.
+
+=== Admin delegation
+
+Admin delegation allows a user (subject) to delegate their token to an administrator (actor). The client requests the `delegation:user` scope with the administrator's identifier as a parameter using the link:{adminguide_link}#_parameterized_client_scopes[parameterized scopes] syntax.
 
 ==== How it works
 
-. The client requests the `delegation:user` scope with the administrator's (actor) identifier as a parameter, for example `scope=openid delegation:user:admin`.
-. {project_name} validates that the specified administrator (actor) exists and has the `delegate` permission for the user (subject) through FGAP V2.
+. The client requests the `delegation:user` scope with the administrator's (actor) username as a parameter, for example `scope=openid delegation:user:admin`.
+. {project_name} validates that the named user exists, is not a service account, and is not the user who is logging in.
+. {project_name} validates that the named administrator (actor) has the `delegate` permission for the user (subject) through FGAP V2.
 . The user (subject) is presented with a consent screen to approve the delegation.
 . If the user consents and validation passes, the issued token includes the `may_act` claim with the actor's user ID as the `sub`:
 +
@@ -399,13 +445,11 @@ NOTE: To restrict delegation to specific users, select individual users when cre
 
 The `may_act` claim declares that the specified administrator (actor) is authorized to act on behalf of the user (subject). The `sub` inside `may_act` contains the actor's user ID, consistent with {project_name}'s standard `sub` claim semantics. An external Security Token Service (STS) receiving this token can verify the delegation authorization directly from the claim without querying back to {project_name}.
 
-If the administrator (actor) does not have the delegation permission, the delegation scope is silently dropped and the `may_act` claim is not included in the token. The consent for delegation is always required and is not stored permanently - the user must approve delegation each login session.
-
-NOTE: Delegation permissions require FGAP V2. FGAP V1 does not support delegation.
+NOTE: Unlike `delegation:client`, the `delegation:user` scope does not add anything to the subject token's `aud` claim. If the administrator performs the exchange from a client other than the one the subject token was issued for, that client must still be within the subject token's audience. Add an *Audience* mapper to the subject client if that is not already the case.
 
 ==== Adding additional claims to `may_act`
 
-By default, only the actor's `sub` (user ID) is included in the `may_act` claim. Additional claims can be added by configuring extra "Parameterized Scope User Property" mappers on the `delegation:user` client scope in the Admin Console.
+By default, only the actor's `sub` (user ID) is included in the `may_act` claim. It is produced by the built-in *Parameterized Scope User Property* mapper named `may_act sub`, which resolves the scope parameter as a username and maps that user's ID into the claim. Additional claims can be added by configuring extra *Parameterized Scope User Property* mappers on the `delegation:user` client scope in the Admin Console.
 
 For example, to include the actor's username:
 
@@ -427,6 +471,196 @@ The resulting token will then include:
 ----
 
 Other useful claims to add include `may_act.email` (user attribute `email`) or `may_act.iss` (for cross-realm delegation scenarios).
+
+[[_client-delegation]]
+=== Client delegation
+
+Client delegation allows a user (subject) to delegate their token to a client application (actor), such as an AI agent or automated service. The client requests the `delegation:client` scope with the actor client's identifier as a parameter using the link:{adminguide_link}#_parameterized_client_scopes[parameterized scopes] syntax (for example, `delegation:client:actor-app`).
+
+Unlike admin delegation, which is designed for human administrators, client delegation is designed for application-to-application scenarios where a user consents to let a specific client act on their behalf. The actor client does not need any admin roles or access to the Admin REST API.
+
+==== Prerequisites
+
+The actor client (the application that will act on behalf of the user) must meet the following requirements:
+
+* It must be a *confidential* client.
+* It must have a *service account* enabled.
+* It must have *Standard Token Exchange* enabled.
+
+==== How it works
+
+. The client requests the `delegation:client` scope with the actor client's `client_id` as a parameter, for example `scope=openid delegation:client:actor-app`.
+. {project_name} validates that the named client exists, is enabled, has service accounts enabled, and that its service account user can be resolved.
+. {project_name} validates that the actor client's service account has the `delegate` permission for the user (subject) through FGAP V2.
+. The user (subject) is presented with a consent screen to approve the delegation.
+. If the user consents and validation passes, the issued token includes the `may_act` claim with the actor's service account user ID as `sub` and the client identifier as `client_id`:
++
+[source,json]
+----
+{
+  "sub": "0fa1e5d4-3c2b-4a19-8765-0123456789ab",
+  "may_act": {
+    "sub": "9b8c7d6e-5f4a-4b2c-9d0e-fedcba987654",
+    "client_id": "actor-app"
+  },
+  "scope": "openid delegation:client:actor-app",
+  ...
+}
+----
++
+The `delegation:client` scope also automatically adds the actor client to the `aud` claim of the subject's token. This is required because the standard token exchange validates that the requester client is present in the subject token's audience.
+
+. The actor client receives the subject's token (containing `may_act`) and performs a token exchange at the token endpoint, as described in <<_performing-the-delegated-exchange,Performing the delegated exchange>>.
+. The resulting delegated token is issued in a transient session (access token only, no refresh token). The token's `aud` claim and scopes are resolved from the actor client's configuration (its client scopes and role mappings), not from the original subject token. This effectively narrows the delegated token to only the audiences and permissions that the actor client is configured for. The token also contains the `act` claim identifying the actor:
++
+[source,json]
+----
+{
+  "sub": "0fa1e5d4-3c2b-4a19-8765-0123456789ab",
+  "act": {
+    "sub": "9b8c7d6e-5f4a-4b2c-9d0e-fedcba987654",
+    "client_id": "actor-app"
+  },
+  ...
+}
+----
+
+The `act` claim allows resource servers to identify both who the data belongs to (the subject, via the `sub` claim) and who is actually making the request (the actor client, via the `act` claim).
+
+==== Adding additional claims to `may_act`
+
+By default, the `may_act` claim contains the actor's `sub` (service account user ID) and `client_id`. Additional claims can be added by configuring extra mappers on the `delegation:client` client scope in the Admin Console, in the same way as for admin delegation.
+
+For example, to add a custom claim describing the actor:
+
+. Navigate to *Client scopes* -> *delegation:client* -> *Mappers* -> *Add mapper* -> *By configuration* -> *Hardcoded claim*.
+. Set *Token Claim Name* to `may_act.custom_value`.
+. Set *Claim value* to `hello`.
+. Enable the token types where the claim should be included (e.g. access token, ID token).
+
+The resulting token will then include:
+
+[source,json]
+----
+{
+  "may_act": {
+    "sub": "9b8c7d6e-5f4a-4b2c-9d0e-fedcba987654",
+    "client_id": "actor-app",
+    "custom_value": "hello"
+  },
+  ...
+}
+----
+
+NOTE: {project_name} validates only `sub`, `client_id` and `iss` inside `may_act`. Every other claim is copied unchanged into the `act` claim of the delegated token, so it serves to identify and describe the actor for the parties reading the token, never as an input to an authorization decision.
+
+NOTE: A *Hardcoded claim* is the same for every actor client, and no mapper resolves an attribute of the actor client itself. *Parameterized Scope User Property* cannot be reused here, since it treats the scope parameter as a username.
+
+[[_performing-the-delegated-exchange]]
+=== Performing the delegated exchange
+
+Once the subject's token carries a `may_act` claim, the actor performs the actual exchange at the token endpoint. This step is the same for admin delegation and client delegation. Only the contents of the `may_act` claim differ.
+
+The `actor_token` is an ordinary access token belonging to the actor. {project_name} resolves the user behind it and treats the request as client delegation when that user is a service account, and as admin delegation otherwise. For client delegation, the actor client obtains the token for its own service account with the `client_credentials` grant:
+
+[source,http]
+----
+POST /realms/myrealm/protocol/openid-connect/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials&
+client_id=actor-app&
+client_secret=XXXXX
+----
+
+For admin delegation, the actor token is the administrator's own access token, obtained through whichever flow they normally log in with.
+
+The actor then sends both tokens: the subject's token as the `subject_token` and its own token as the `actor_token`. The actor client is confidential, so it authenticates itself on this request as well. The following example uses `client_secret_post`, but the other client authentication methods work too.
+
+[source,http]
+----
+POST /realms/myrealm/protocol/openid-connect/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+grant_type=urn:ietf:params:oauth:grant-type:token-exchange&
+client_id=actor-app&
+client_secret=XXXXX&
+subject_token=eyJhbGci[...redacted...]&
+subject_token_type=urn:ietf:params:oauth:token-type:access_token&
+actor_token=eyJhbGci[...redacted...]&
+actor_token_type=urn:ietf:params:oauth:token-type:access_token
+----
+
+The delegation flow uses the following parameters:
+
+[cols="1,1,2", options="header"]
+|===
+|Parameter |Requirement |Value
+|`grant_type` |Required |`urn:ietf:params:oauth:grant-type:token-exchange`
+|`subject_token` |Required |The subject's access token, carrying the `may_act` claim
+|`subject_token_type` |Required |`urn:ietf:params:oauth:token-type:access_token`
+|`actor_token` |Required |The actor's own access token. Its presence is what selects the delegation flow
+|`actor_token_type` |Required |`urn:ietf:params:oauth:token-type:access_token`
+|`requested_token_type` |Optional |`urn:ietf:params:oauth:token-type:access_token`, which is both the default and the only supported value
+|===
+
+NOTE: Without the `actor_token` parameter, the request is handled as a standard token exchange, which rejects any subject token carrying a `may_act` or `act` claim.
+
+{project_name} then validates both tokens following the https://datatracker.ietf.org/doc/html/rfc8693#section-4.1[delegation semantics of RFC 8693]. Unless stated otherwise, a failed check returns `400 Bad Request` with the `invalid_request` error and a description of what failed.
+
+[cols="1,2", options="header"]
+|===
+|Check |Fails when
+|The actor token is valid |The `actor_token` cannot be verified, or `actor_token_type` is not an access token type
+|The requesting client is entitled to each token |For either token, the requesting client is neither the client the token was issued for nor within its audience. This check returns `403 Forbidden` with the `access_denied` error
+|The subject and the actor differ |The `actor_token` resolves to the same user as the `subject_token`
+|The subject token carries `may_act` |The claim is missing, or is not an object
+|`may_act.iss` matches the realm |The claim carries an `iss` that is not this realm's issuer
+|`may_act.sub` names the actor |The claim has no `sub`, or its `sub` is not the user resolved from the `actor_token`
+|`may_act.client_id` matches, when present |The claim's `client_id` is not the client the `actor_token` was issued for, or is not the client making the request
+|===
+
+The delegated token is issued in a transient session, so no refresh token is returned and the token carries no session identifier. It contains the `act` claim built from the subject token's `may_act` claim.
+
+=== Restricting the `may_act` claim with a client policy
+
+The delegation client scopes enforce the permission check and the user consent before adding a `may_act` claim. A claim with that name can reach a token by other routes though, such as a *Hardcoded claim* protocol mapper set directly on a client. That claim never passed either check, yet the exchange endpoint would honor it.
+
+The `may-act` client policy executor closes this gap. It re-validates any `may_act` claim it finds in a token response, whatever produced it: the issuer must match the realm, the `sub` must be an existing enabled user other than the token's own user, that user must hold the `delegate` permission, and the matching delegation scope must have been consented. Tokens without a `may_act` claim are untouched, and tokens that fail are rejected with `invalid_request`.
+
+Configure it under *Realm settings* -> *Client policies* by adding the *may-act* executor to a profile and attaching that profile to a policy. All three options are off by default:
+
+[cols="1,2", options="header"]
+|===
+|Option |Effect when switched on
+|*Reject any may_act claim* |Rejects every token carrying a `may_act` claim, for clients that must never take part in delegation
+|*Avoid permission check* |Skips the revalidation of the `delegate` FGAP permission. The `may_act` validity checks on `iss` and `sub` still apply
+|*Avoid consent check* |The user's login consent is still enforced by the normal flows. What is dropped is catching a `may_act` that a protocol mapper added without the user ever consenting to that delegation
+|===
+
+NOTE: The executor runs on the token response of every grant type, but only acts when that response carries a `may_act` claim. That is the login and refresh responses where the claim is minted, not the exchange itself, since the delegated token carries `act` and not `may_act`. Combine it with the *grant-type* condition to narrow it further.
+
+=== Troubleshooting
+
+Delegation scopes fail safe. If the actor is not authorized, the scope is dropped during scope resolution and the login still succeeds, only without a `may_act` claim in the token.
+
+[cols="1,2", options="header"]
+|===
+|Symptom |Likely cause
+|Login succeeds, but the token has no `may_act` claim |The actor lacks the `delegate` permission, the username or client ID is misspelled, or the actor client has no service account
+|The authorization request fails with `invalid_scope` |The requesting client does not have *Consent required* enabled
+|The exchange fails with `invalid_request` |The actor does not match `may_act`, or the `may_act` claim is missing or malformed in the subject token
+|The exchange fails with `access_denied` |The requesting client is outside the audience of the subject token or of the actor token
+|===
+
+A dropped scope is always logged on the server at the `WARN` level, with the reason:
+
+----
+Invalid scope parameter for 'delegation:client': Client 'actor-app' does not have service accounts enabled in realm 'myrealm'
+----
+
+Two constraints are easy to miss: `delegation:user` cannot name a service account, so use `delegation:client` for those, and neither scope can be requested twice with different values in the same request.
 
 [[_legacy-token-exchange]]
 == Legacy token exchange

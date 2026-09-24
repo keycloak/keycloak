@@ -89,6 +89,8 @@ The `delegation:user` and `delegation:client` client scopes are now auto-created
 Delegation audit events now include the client identity, and standard token exchange rejects subject tokens carrying delegation claims to prevent bypass.
 A new client policy executor allows administrators to restrict the `may_act` claim in access tokens, giving per-client control over which clients can participate in delegation.
 
+For more details, see the link:{securing_apps_token_exchange_link}#_token-exchange-delegation[Token exchange delegation] section.
+
 === Track impersonation across token lifecycle and downstream services
 // https://github.com/keycloak/keycloak/issues/51489
 
