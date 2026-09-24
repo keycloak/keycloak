@@ -75,7 +75,7 @@ public class RoleResolveUtil {
         AccessToken.Access access = rolesToken.getResourceAccess(clientId);
 
         if (access == null && createIfMissing) {
-            if (isDisabledClient(session, clientId)) {
+            if (isUnknownOrDisabledClient(session, clientId)) {
                 // Return an object detached from the token, so that the roles added by the caller are neither added
                 // to the token nor resolved as an audience
                 return new AccessToken.Access();
@@ -115,10 +115,10 @@ public class RoleResolveUtil {
         return token;
     }
 
-    private static boolean isDisabledClient(KeycloakSession session, String clientId) {
+    private static boolean isUnknownOrDisabledClient(KeycloakSession session, String clientId) {
         RealmModel realm = session.getContext().getRealm();
         ClientModel client = session.clients().getClientByClientId(realm, clientId);
-        return client != null && !client.isEnabled();
+        return client == null || !client.isEnabled();
     }
 
     private static void addToToken(AccessToken token, RoleModel role) {
