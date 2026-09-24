@@ -81,6 +81,14 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
         void setSearchSizeLimit(long limit) {
             ldapServer.setMaxSizeLimit(limit);
         }
+
+        boolean isAccessControlEnabled() {
+            return directoryService.isAccessControlEnabled();
+        }
+
+        void setAccessControlEnabled(boolean enabled) {
+            directoryService.setAccessControlEnabled(enabled);
+        }
     }
 
     @Override
@@ -330,6 +338,8 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
         Assume.assumeTrue("Requires the embedded LDAP server", ldapRule.isEmbeddedServer());
         SizeLimitedLDAPEmbeddedServer server = (SizeLimitedLDAPEmbeddedServer) ldapRule.getLdapEmbeddedServer();
         long originalLimit = server.getSearchSizeLimit();
+        boolean originalAccessControl = server.isAccessControlEnabled();
+        String originalBindDn = ldapRule.getConfig().get(LDAPConstants.BIND_DN);
 
         try {
             testingClient.server().run(session -> {
@@ -348,7 +358,15 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
                 Assertions.assertEquals(mapperModel.getId(), managedRole.getFirstAttribute("kc.ldap.role.mapper.id"));
             });
 
-            // More than one LDAP role exists. An incomplete search must fail before pruning any role.
+            // ApacheDS exempts its administrator from server size limits. Bind as the fixture's
+            // non-administrator account with access control disabled to exercise an incomplete search.
+            server.setAccessControlEnabled(false);
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                ctx.getLdapModel().getConfig().putSingle(LDAPConstants.BIND_DN, "uid=keycloak-admin,dc=keycloak,dc=org");
+                ctx.getLdapModel().getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, "secret");
+                ctx.getRealm().updateComponent(ctx.getLdapModel());
+            });
             server.setSearchSizeLimit(1);
             testingClient.server().run(session -> {
                 LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -364,23 +382,29 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
             });
         } finally {
             server.setSearchSizeLimit(originalLimit);
-            testingClient.server().run(session -> {
-                LDAPTestContext ctx = LDAPTestContext.init(session);
-                RealmModel realm = ctx.getRealm();
-                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
-                LDAPTestUtils.updateConfigOptions(mapperModel, RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "false");
-                realm.updateComponent(mapperModel);
-                RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
-                try (LDAPQuery query = mapper.createRoleQuery(false)) {
-                    query.getResultList().stream()
-                            .filter(role -> "size-limit-preserved-role".equals(role.getAttributeAsString("cn")))
-                            .forEach(role -> ctx.getLdapProvider().getLdapIdentityStore().remove(role));
-                }
-                RoleModel managedRole = realm.getRole("size-limit-preserved-role");
-                if (managedRole != null) {
-                    realm.removeRole(managedRole);
-                }
-            });
+            try {
+                testingClient.server().run(session -> {
+                    LDAPTestContext ctx = LDAPTestContext.init(session);
+                    RealmModel realm = ctx.getRealm();
+                    ctx.getLdapModel().getConfig().putSingle(LDAPConstants.BIND_DN, originalBindDn);
+                    realm.updateComponent(ctx.getLdapModel());
+                    ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+                    LDAPTestUtils.updateConfigOptions(mapperModel, RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "false");
+                    realm.updateComponent(mapperModel);
+                    RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+                    try (LDAPQuery query = mapper.createRoleQuery(false)) {
+                        query.getResultList().stream()
+                                .filter(role -> "size-limit-preserved-role".equals(role.getAttributeAsString("cn")))
+                                .forEach(role -> ctx.getLdapProvider().getLdapIdentityStore().remove(role));
+                    }
+                    RoleModel managedRole = realm.getRole("size-limit-preserved-role");
+                    if (managedRole != null) {
+                        realm.removeRole(managedRole);
+                    }
+                });
+            } finally {
+                server.setAccessControlEnabled(originalAccessControl);
+            }
         }
     }
 
