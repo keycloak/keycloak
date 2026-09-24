@@ -16,11 +16,13 @@
  */
 package org.keycloak.testsuite.federation.ldap;
 
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -36,8 +38,10 @@ import org.keycloak.storage.ldap.mappers.membership.role.RoleMapperConfig;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+import org.keycloak.util.ldap.LDAPEmbeddedServer;
 
 import org.hamcrest.Matchers;
+import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -55,7 +59,29 @@ import static org.hamcrest.Matchers.nullValue;
 public class LDAPRoleMapperTest extends AbstractLDAPTest {
 
     @ClassRule
-    public static LDAPRule ldapRule = new LDAPRule();
+    public static LDAPRule ldapRule = new LDAPRule() {
+        @Override
+        protected LDAPEmbeddedServer createServer() {
+            // Retain LDAPRule's normal embedded-server settings and expose its search limit to this test.
+            super.createServer();
+            return new SizeLimitedLDAPEmbeddedServer(defaultProperties);
+        }
+    };
+
+    private static class SizeLimitedLDAPEmbeddedServer extends LDAPEmbeddedServer {
+
+        SizeLimitedLDAPEmbeddedServer(Properties properties) {
+            super(properties);
+        }
+
+        long getSearchSizeLimit() {
+            return ldapServer.getMaxSizeLimit();
+        }
+
+        void setSearchSizeLimit(long limit) {
+            ldapServer.setMaxSizeLimit(limit);
+        }
+    }
 
     @Override
     protected LDAPRule getLDAPRule() {
@@ -297,6 +323,65 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
                 realm.updateComponent(mapperModel);
             }
         });
+    }
+
+    @Test
+    public void test06IncompleteRoleSearchDoesNotDeleteManagedRoles() {
+        Assume.assumeTrue("Requires the embedded LDAP server", ldapRule.isEmbeddedServer());
+        SizeLimitedLDAPEmbeddedServer server = (SizeLimitedLDAPEmbeddedServer) ldapRule.getLdapEmbeddedServer();
+        long originalLimit = server.getSearchSizeLimit();
+
+        try {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel realm = ctx.getRealm();
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+                LDAPTestUtils.updateConfigOptions(mapperModel,
+                        RoleMapperConfig.USE_REALM_ROLES_MAPPING, "true",
+                        RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "true");
+                realm.updateComponent(mapperModel);
+                RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+                mapper.createLDAPRole("size-limit-preserved-role");
+                mapper.syncDataFromFederationProviderToKeycloak(realm);
+                RoleModel managedRole = realm.getRole("size-limit-preserved-role");
+                Assertions.assertNotNull(managedRole);
+                Assertions.assertEquals(mapperModel.getId(), managedRole.getFirstAttribute("kc.ldap.role.mapper.id"));
+            });
+
+            // More than one LDAP role exists. An incomplete search must fail before pruning any role.
+            server.setSearchSizeLimit(1);
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel realm = ctx.getRealm();
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+                RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+
+                Assertions.assertThrows(ModelException.class, () -> mapper.syncDataFromFederationProviderToKeycloak(realm));
+                Assertions.assertNotNull(realm.getRole("size-limit-preserved-role"));
+                Assertions.assertNotNull(realm.getRole("group1"));
+                Assertions.assertNotNull(realm.getRole("group2"));
+                Assertions.assertNotNull(realm.getRole("group3"));
+            });
+        } finally {
+            server.setSearchSizeLimit(originalLimit);
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel realm = ctx.getRealm();
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+                LDAPTestUtils.updateConfigOptions(mapperModel, RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "false");
+                realm.updateComponent(mapperModel);
+                RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+                try (LDAPQuery query = mapper.createRoleQuery(false)) {
+                    query.getResultList().stream()
+                            .filter(role -> "size-limit-preserved-role".equals(role.getAttributeAsString("cn")))
+                            .forEach(role -> ctx.getLdapProvider().getLdapIdentityStore().remove(role));
+                }
+                RoleModel managedRole = realm.getRole("size-limit-preserved-role");
+                if (managedRole != null) {
+                    realm.removeRole(managedRole);
+                }
+            });
+        }
     }
 
     /**
