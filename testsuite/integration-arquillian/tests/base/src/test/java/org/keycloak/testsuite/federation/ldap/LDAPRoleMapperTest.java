@@ -427,7 +427,7 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
                 RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
                 LDAPObject ldapRole = mapper.createLDAPRole("import-owned-role");
                 LDAPObject ldapUser = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), realm,
-                        "role-import-owner", "Role", "Import", "role-import-owner@example.org", null);
+                        "role-import-owner", "Role", "Import", "role-import-owner@example.org", null, "1234");
                 mapper.addRoleMappingInLDAP("import-owned-role", ldapUser);
                 Assertions.assertNull(realm.getRole("import-owned-role"));
 
