@@ -56,7 +56,7 @@ export const ConfirmDialogModal = ({
   onConfirm,
   onCancel,
   children,
-  open = true,
+  open,
   variant = ModalVariant.small,
   toggleDialog,
   confirmButtonDisabled,
