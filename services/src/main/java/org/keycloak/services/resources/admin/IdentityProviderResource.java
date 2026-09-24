@@ -396,8 +396,11 @@ public class IdentityProviderResource {
         }
 
         IdentityProviderMapperModel model = session.identityProviders().getMapperById(id);
-        if (model == null) throw new NotFoundException("Model not found");
+        if (model == null || !identityProviderModel.getAlias().equals(model.getIdentityProviderAlias())) {
+            throw new NotFoundException("Model not found");
+        }
         model = RepresentationToModel.toModel(rep);
+        model.setId(id);
         model.setIdentityProviderAlias(identityProviderModel.getAlias());
 
         Organizations.validateGroupMapperOrganization(session, identityProviderModel, model);
