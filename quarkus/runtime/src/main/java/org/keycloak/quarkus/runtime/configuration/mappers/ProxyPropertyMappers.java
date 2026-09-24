@@ -1,7 +1,12 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.jboss.logging.Logger;
 import org.keycloak.config.Option;
 import org.keycloak.config.ProxyOptions;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
@@ -12,7 +17,9 @@ import io.smallrye.config.ConfigSourceInterceptorContext;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-final class ProxyPropertyMappers implements PropertyMapperGrouping{
+final class ProxyPropertyMappers implements PropertyMapperGrouping {
+
+    private static final Logger log = Logger.getLogger(ProxyPropertyMappers.class);
 
     @Override
     public List<PropertyMapper<?>> getPropertyMappers() {
@@ -54,6 +61,7 @@ final class ProxyPropertyMappers implements PropertyMapperGrouping{
                 fromOption(ProxyOptions.PROXY_TRUSTED_ADDRESSES)
                         .to("quarkus.http.proxy.trusted-proxies")
                         .validator(ProxyPropertyMappers::validateAddress)
+                        .transformer((value, context) -> normalizeToCidr(value))
                         .addValidateEnabled(() -> !Configuration.isBlank(ProxyOptions.PROXY_HEADERS), "proxy-headers is set")
                         .paramLabel("trusted proxies")
                         .build()
@@ -64,9 +72,33 @@ final class ProxyPropertyMappers implements PropertyMapperGrouping{
         if (Inet.parseCidrAddress(address) != null) {
             return;
         }
-        if (Inet.parseInetAddress(address) == null) {
+        InetAddress parsed = Inet.parseInetAddress(address);
+        if (parsed == null) {
             throw new PropertyException(address + " is not a valid IP address (IPv4 or IPv6) nor valid CIDR notation.");
         }
+        String cidrSuffix = parsed instanceof Inet6Address ? "/128" : "/32";
+        log.warnf("proxy-trusted-addresses value '%s' was automatically converted to '%s%s'. "
+                + "Consider updating your configuration to use CIDR notation.", address, address, cidrSuffix);
+    }
+
+    private static String normalizeToCidr(String value) {
+        if (value == null) {
+            return null;
+        }
+        return Arrays.stream(value.split(","))
+                .map(ProxyPropertyMappers::normalizeAddressToCidr)
+                .collect(Collectors.joining(","));
+    }
+
+    private static String normalizeAddressToCidr(String address) {
+        if (Inet.parseCidrAddress(address) != null) {
+            return address;
+        }
+        InetAddress parsed = Inet.parseInetAddress(address);
+        if (parsed == null) {
+            return address;
+        }
+        return address + (parsed instanceof Inet6Address ? "/128" : "/32");
     }
 
     private static String proxyEnabled(ProxyOptions.Headers testHeader, String value, ConfigSourceInterceptorContext context) {
