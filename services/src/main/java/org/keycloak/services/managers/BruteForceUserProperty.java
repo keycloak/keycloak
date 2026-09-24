@@ -100,10 +100,6 @@ public final class BruteForceUserProperty {
         return List.copyOf(keys);
     }
 
-    public static int getFailureFactor(RealmModel realm, String failureKey) {
-        return realm.getFailureFactor();
-    }
-
     /**
      * Counters that disable every identifier of this user. Property keys are omitted so a
      * locked email or phone number cannot disable login with a different identifier.
@@ -143,11 +139,11 @@ public final class BruteForceUserProperty {
         return users.isEmpty() ? null : users.values().iterator().next();
     }
 
-    public static boolean isPermanentlyLocked(RealmModel realm, UserLoginFailureModel model, String failureKey) {
+    public static boolean isPermanentlyLocked(RealmModel realm, UserLoginFailureModel model) {
         return realm.isPermanentLockout()
                 && (model.getNumTemporaryLockouts() > realm.getMaxTemporaryLockouts()
                 || (realm.getMaxTemporaryLockouts() == 0
-                && model.getNumFailures() >= getFailureFactor(realm, failureKey)));
+                && model.getNumFailures() >= realm.getFailureFactor()));
     }
 
     public static List<String> getProtectedProperties(RealmModel realm) {
@@ -207,7 +203,7 @@ public final class BruteForceUserProperty {
         for (String failureKey : getFailureKeys(realm, user)) {
             UserLoginFailureModel model = session.loginFailures().getUserLoginFailure(realm, failureKey);
             if (model != null && (currentTime < model.getFailedLoginNotBefore()
-                    || isPermanentlyLocked(realm, model, failureKey))) {
+                    || isPermanentlyLocked(realm, model))) {
                 return true;
             }
         }
@@ -226,13 +222,7 @@ public final class BruteForceUserProperty {
 
     private static Stream<UserModel> findUsersByPropertyValue(KeycloakSession session, RealmModel realm,
             String property, String value) {
-        return switch (property) {
-            case UserModel.USERNAME -> Stream.ofNullable(session.users().getUserByUsername(realm, value));
-            case UserModel.EMAIL -> session.users()
-                    .searchForUserStream(realm, Map.of(UserModel.EMAIL, value))
-                    .filter(found -> found.getEmail() != null && found.getEmail().equalsIgnoreCase(value));
-            default -> session.users().searchForUserByUserAttributeStream(realm, property, value);
-        };
+        return session.users().searchForUserByUserAttributeStream(realm, property, value);
     }
 
     private static Stream<String> values(UserModel user, String property) {

@@ -127,7 +127,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         logger.debugf("new num failures: %s", userLoginFailure.getNumFailures());
 
         long waitSeconds = 0L;
-        int failureFactor = BruteForceUserProperty.getFailureFactor(realm, failureKey);
+        int failureFactor = realm.getFailureFactor();
         if (!(realm.isPermanentLockout() && realm.getMaxTemporaryLockouts() == 0) && failureFactor > 0) {
             if (RealmRepresentation.BruteForceStrategy.MULTIPLE.equals(realm.getBruteForceStrategy())) {
                 waitSeconds = realm.getWaitIncrementSeconds() *  ((long) userLoginFailure.getNumFailures() / failureFactor);
@@ -183,7 +183,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
             return;
         }
 
-        if (BruteForceUserProperty.isPermanentlyLocked(realm, userLoginFailure, failureKey)) {
+        if (BruteForceUserProperty.isPermanentlyLocked(realm, userLoginFailure)) {
             permanentUserLockOut(session, realm, user, userLoginFailure);
         }
     }
@@ -356,7 +356,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
                     return userLoginFailure != null
                             && (userLoginFailure.getNumTemporaryLockouts() > realm.getMaxTemporaryLockouts()
                             || (realm.getMaxTemporaryLockouts() == 0
-                            && userLoginFailure.getNumFailures() >= BruteForceUserProperty.getFailureFactor(realm, failureKey)));
+                            && userLoginFailure.getNumFailures() >= realm.getFailureFactor()));
                 });
     }
 
@@ -394,7 +394,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         for (String failureKey : failureKeys) {
             UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, failureKey);
             if (userLoginFailure != null
-                    && BruteForceUserProperty.isPermanentlyLocked(realm, userLoginFailure, failureKey)) {
+                    && BruteForceUserProperty.isPermanentlyLocked(realm, userLoginFailure)) {
                 return true;
             }
         }

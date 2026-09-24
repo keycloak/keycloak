@@ -170,20 +170,11 @@ public class BruteForceUserPropertyTest {
     }
 
     @Test
-    public void propertyCountersUseTheRealmFailureFactor() {
-        RealmModel realm = realm(BruteForceLockPolicy.PROPERTIES, "email");
-        Assert.assertEquals(30, BruteForceUserProperty.getFailureFactor(realm, "user-id"));
-        Assert.assertEquals(30, BruteForceUserProperty.getFailureFactor(realm,
-                BruteForceUserProperty.propertyKey("email", "user@example.com")));
-    }
-
-    @Test
     public void permanentLockoutUsesTheRealmFailureFactor() {
         RealmModel realm = realm(BruteForceLockPolicy.PROPERTIES, "email");
         UserLoginFailureModel thirtyFailures = loginFailure(30);
 
-        Assert.assertTrue(BruteForceUserProperty.isPermanentlyLocked(realm, thirtyFailures,
-                BruteForceUserProperty.propertyKey("email", "user@example.com")));
+        Assert.assertTrue(BruteForceUserProperty.isPermanentlyLocked(realm, thirtyFailures));
     }
 
     @Test

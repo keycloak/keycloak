@@ -131,7 +131,7 @@ public class AttackDetectionResource {
             data.put("numTemporaryLockouts",
                     Math.max((int) data.get("numTemporaryLockouts"), model.getNumTemporaryLockouts()));
             failedLoginNotBefore = Math.max(failedLoginNotBefore, model.getFailedLoginNotBefore());
-            boolean keyPermanentlyLocked = BruteForceUserProperty.isPermanentlyLocked(realm, model, failureKey);
+            boolean keyPermanentlyLocked = BruteForceUserProperty.isPermanentlyLocked(realm, model);
             permanentlyLocked |= keyPermanentlyLocked;
             disabled |= Time.currentTime() < model.getFailedLoginNotBefore() || keyPermanentlyLocked;
             if (latestFailure == null || model.getLastFailure() > latestFailure.getLastFailure()) {
