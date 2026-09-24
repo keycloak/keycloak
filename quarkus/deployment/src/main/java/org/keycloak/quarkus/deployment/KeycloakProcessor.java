@@ -192,7 +192,6 @@ import org.jboss.resteasy.reactive.server.processor.scanning.MethodScanner;
 
 import static org.keycloak.config.DatabaseOptions.DB;
 import static org.keycloak.config.TruststoreOptions.TRUSTSTORE_PATHS_RELOAD_PERIOD;
-import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
 import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
 import static org.keycloak.quarkus.runtime.Providers.getProviderManager;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
