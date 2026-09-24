@@ -67,7 +67,9 @@ public class TotpUtils {
             String keyUri;
             if (session != null) {
                 String issuerName = getIssuerName(session, realm, user);
-                keyUri = realm.getOTPPolicy().getKeyURI(issuerName, user.getUsername(), totpSecret);
+                boolean useEmailAsAccountName = realm.isRegistrationEmailAsUsername() && !StringUtil.isNullOrEmpty(user.getEmail());
+                String accountName = useEmailAsAccountName ? user.getEmail() : user.getUsername();
+                keyUri = realm.getOTPPolicy().getKeyURI(issuerName, accountName, totpSecret);
             } else {
                 keyUri = realm.getOTPPolicy().getKeyURI(realm, user, totpSecret);
             }
@@ -82,7 +84,7 @@ public class TotpUtils {
     }
 
     private static String getIssuerName(KeycloakSession session, RealmModel realm, UserModel user) {
-        String displayName = realm.getDisplayName();
+        String displayName = !StringUtil.isNullOrEmpty(realm.getDisplayNameShort()) ? realm.getDisplayNameShort() : realm.getDisplayName();
         if (StringUtil.isNullOrEmpty(displayName)) {
             return realm.getName();
         }

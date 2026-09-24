@@ -147,9 +147,10 @@ public class OTPPolicy implements Serializable {
      * @return the <code>otpauth://</code> URI
      */
     public String getKeyURI(RealmModel realm, UserModel user, String secret) {
-
-        String issuerName = !StringUtil.isNullOrEmpty(realm.getDisplayName()) ? realm.getDisplayName() : realm.getName();
-        String accountName = user.getUsername();
+        String displayName = !StringUtil.isNullOrEmpty(realm.getDisplayNameShort()) ? realm.getDisplayNameShort() : realm.getDisplayName();
+        String issuerName = !StringUtil.isNullOrEmpty(displayName) ? displayName : realm.getName();
+        boolean useEmailAsAccountName = realm.isRegistrationEmailAsUsername() && !StringUtil.isNullOrEmpty(user.getEmail());
+        String accountName = useEmailAsAccountName ? user.getEmail() : user.getUsername();
 
         return getKeyURI(issuerName, accountName, secret);
     }
