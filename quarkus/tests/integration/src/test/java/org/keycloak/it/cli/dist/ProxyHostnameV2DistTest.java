@@ -79,6 +79,19 @@ public class ProxyHostnameV2DistTest {
     }
 
     @Test
+    void testTrustedProxiesWithCompressedIPv6LogsWarning(KeycloakRunner runner) {
+        CLIResult result = runner.run("start-dev", "--hostname-strict=false", "--proxy-headers=xforwarded", "--proxy-trusted-addresses=::1");
+        result.assertMessage("proxy-trusted-addresses value '::1' was automatically converted to '::1/128'");
+    }
+
+    @Test
+    @Launch({ "start-dev", "--hostname-strict=false", "--proxy-headers=xforwarded", "--proxy-trusted-addresses=127.0.0.1/32,::1/128" })
+    @TestProvider(TestRealmResourceTestProvider.class)
+    public void testProxyTrustedWithCidrNotation() {
+        given().header("X-Forwarded-Host", "test:123").when().get("http://mykeycloak.org:8080/realms/master/test-resources/trusted").then().statusCode(200);
+    }
+
+    @Test
     @Launch({ "start-dev", "--hostname-strict=false", "--proxy-headers=xforwarded", "--proxy-trusted-addresses=1.0.0.0" })
     @TestProvider(TestRealmResourceTestProvider.class)
     public void testProxyNotTrusted() {
