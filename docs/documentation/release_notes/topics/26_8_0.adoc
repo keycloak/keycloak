@@ -20,6 +20,8 @@ If you are upgrading from a previous release, https://www.keycloak.org/docs/late
 
 Brute-force detection can now maintain counters for selected built-in or custom user properties. Failed logins can increment only the submitted identifier, giving email, phone number, and custom attributes independent attempt budgets. The existing per-user behavior remains the default.
 
+Recovery authentication codes can also use an independent attempt budget, preventing recovery-code attacks from locking password authentication.
+
 == Impersonation audit improvements
 
 == Verifiable Credential Issuance promoted to preview with credential management and revocation

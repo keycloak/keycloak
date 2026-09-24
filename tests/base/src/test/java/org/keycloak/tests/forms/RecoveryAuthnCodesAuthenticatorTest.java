@@ -65,6 +65,7 @@ import org.keycloak.util.JsonSerialization;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -384,7 +385,34 @@ public class RecoveryAuthnCodesAuthenticatorTest {
     @Test
     public void test08BruteforceProtectionRecoveryAuthnCodes() {
         managedRealm.updateWithCleanup(r -> r.bruteForceProtected(true).maxSecondaryAuthFailures(100));
+        exhaustRecoveryCodeFailureBudget();
+    }
 
+    @Test
+    public void independentRecoveryCodeLockDoesNotBlockPasswordAndCanBeUnlocked() {
+        managedRealm.updateWithCleanup(r -> r.bruteForceProtected(true)
+                .bruteForceIndependentRecoveryAuthnCodes(true)
+                .maxSecondaryAuthFailures(100));
+        exhaustRecoveryCodeFailureBudget();
+
+        AccessTokenResponse passwordLogin =
+                oauth.doPasswordGrantRequest(testUser.getUsername(), testUser.getPassword());
+        Assertions.assertNotNull(passwordLogin.getAccessToken(),
+                "A recovery-code lock must not block password authentication");
+
+        Awaitility.await().untilAsserted(() -> assertEquals(Boolean.TRUE,
+                managedRealm.admin().attackDetection().bruteForceUserStatus(testUser.getId()).get("disabled")));
+
+        // The Admin Console unlock switch enables the user, which has to clear the recovery budget too.
+        UserRepresentation user = testUser.admin().toRepresentation();
+        user.setEnabled(true);
+        testUser.admin().update(user);
+
+        assertEquals(Boolean.FALSE,
+                managedRealm.admin().attackDetection().bruteForceUserStatus(testUser.getId()).get("disabled"));
+    }
+
+    private void exhaustRecoveryCodeFailureBudget() {
         List<String> generatedRecoveryAuthnCodes = createRecoveryAuthnCodesForUser();
 
         oauth.openLoginForm();
@@ -405,6 +433,32 @@ public class RecoveryAuthnCodesAuthenticatorTest {
         enterRecoveryAuthnCodePage.waitUntilReloaded();
         // Message changes after exhausting number of brute force attempts
         Assertions.assertEquals("Invalid username or password.", enterRecoveryAuthnCodePage.getFeedbackText());
+    }
+
+    @Test
+    public void successfulRecoveryAuthenticationClearsItsFailureBudget() {
+        managedRealm.updateWithCleanup(r -> r.bruteForceProtected(true)
+                .bruteForceIndependentRecoveryAuthnCodes(true)
+                .maxSecondaryAuthFailures(100));
+        List<String> generatedRecoveryAuthnCodes = createRecoveryAuthnCodesForUser();
+
+        oauth.openLoginForm();
+        oauth.fillLoginForm(testUser.getUsername(), testUser.getPassword());
+        enterRecoveryAuthnCodePage.assertCurrent();
+
+        enterRecoveryAuthnCodePage.enterRecoveryAuthnCode("not-a-recovery-code");
+        enterRecoveryAuthnCodePage.clickSignInButton();
+        enterRecoveryAuthnCodePage.waitUntilReloaded();
+        Assertions.assertEquals("Invalid recovery authentication code",
+                enterRecoveryAuthnCodePage.getFeedbackText());
+
+        int requestedCode = enterRecoveryAuthnCodePage.getRecoveryAuthnCodeToEnterNumber();
+        enterRecoveryAuthnCodePage.enterRecoveryAuthnCode(generatedRecoveryAuthnCodes.get(requestedCode));
+        enterRecoveryAuthnCodePage.clickSignInButton();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+
+        Awaitility.await().untilAsserted(() -> assertEquals(0,
+                managedRealm.admin().attackDetection().bruteForceUserStatus(testUser.getId()).get("numFailures")));
     }
 
     @Test

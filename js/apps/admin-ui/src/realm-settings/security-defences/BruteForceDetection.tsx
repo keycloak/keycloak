@@ -6,6 +6,7 @@ import {
   NumberControl,
   SelectVariant,
   SelectControl,
+  SwitchControl,
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
 import {
@@ -183,6 +184,13 @@ export const BruteForceDetection = ({
                 defaultValue: 100,
                 rules: { required: t("required"), min: 0 },
               }}
+            />
+            <SwitchControl
+              name="bruteForceIndependentRecoveryAuthnCodes"
+              label={t("bruteForceIndependentRecoveryAuthnCodes")}
+              labelIcon={t("bruteForceIndependentRecoveryAuthnCodesHelp")}
+              labelOn={t("on")}
+              labelOff={t("off")}
             />
             <SelectControl
               name="bruteForceLockPolicy"

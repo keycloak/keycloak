@@ -438,6 +438,11 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder bruteForceIndependentRecoveryAuthnCodes(boolean enabled) {
+        rep.setBruteForceIndependentRecoveryAuthnCodes(enabled);
+        return this;
+    }
+
     public RealmBuilder maxSecondaryAuthFailures(int count) {
         rep.setMaxSecondaryAuthFailures(count);
         return this;

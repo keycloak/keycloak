@@ -59,6 +59,9 @@ To configure this:
 . If the policy is not *This user only*, select one or more property ids in *Lock by user properties*.
 . Click *Save*.
 
+==== Protect recovery authentication codes independently
+Enable *Independent recovery code failures* to give recovery authentication codes their own attempt budget. Recovery code failures then use *Max login failures* without consuming the password or identifier budget. Reaching the limit blocks only recovery code authentication, so another configured authentication method remains available.
+
 ==== Lockout permanently
 {project_name} disables a user account (blocking log in attempts) until an administrator re-enables it.
 

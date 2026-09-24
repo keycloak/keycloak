@@ -106,6 +106,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.managers.BruteForceRecoveryCode;
 import org.keycloak.services.managers.BruteForceUserProperty;
 import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.managers.UserSessionManager;
@@ -200,8 +201,11 @@ public class UserResource {
             boolean wasPermanentlyLockedOut = false;
             if (rep.isEnabled() != null && rep.isEnabled()) {
                 if (!user.isEnabled() || session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)
-                        || BruteForceUserProperty.isLocked(session, realm, user)) {
-                    if (BruteForceUserProperty.removeLoginFailures(session, realm, user)) {
+                        || BruteForceUserProperty.isLocked(session, realm, user)
+                        || BruteForceRecoveryCode.isLocked(session, realm, user)) {
+                    boolean removedFailures = BruteForceUserProperty.removeLoginFailures(session, realm, user);
+                    removedFailures |= BruteForceRecoveryCode.removeLoginFailure(session, realm, user);
+                    if (removedFailures) {
                         adminEvent.clone(session).resource(ResourceType.USER_LOGIN_FAILURE)
                                 .resourcePath(session.getContext().getUri())
                                 .operation(OperationType.DELETE)

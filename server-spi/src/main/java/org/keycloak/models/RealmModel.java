@@ -240,6 +240,16 @@ public interface RealmModel extends RoleContainerModel {
         }
         setAttribute("bruteForceLockPolicy", policy.name());
     }
+    default boolean isBruteForceIndependentRecoveryAuthnCodes() {
+        return getAttribute("bruteForceIndependentRecoveryAuthnCodes", false);
+    }
+    default void setBruteForceIndependentRecoveryAuthnCodes(boolean enabled) {
+        if (!enabled) {
+            removeAttribute("bruteForceIndependentRecoveryAuthnCodes");
+            return;
+        }
+        setAttribute("bruteForceIndependentRecoveryAuthnCodes", true);
+    }
     //--- end brute force settings
 
 

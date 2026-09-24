@@ -16,7 +16,9 @@
  */
 package org.keycloak.services.resources.admin;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.DELETE;
@@ -36,6 +38,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.managers.BruteForceRecoveryCode;
 import org.keycloak.services.managers.BruteForceUserProperty;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
@@ -122,7 +125,11 @@ public class AttackDetectionResource {
         boolean disabled = isUserDisabledOrLockedByBruteForce(session, realm, user);
         boolean permanentlyLocked = session.getProvider(BruteForceProtector.class)
                 .isPermanentlyLockedOut(session, realm, user);
-        for (String failureKey : BruteForceUserProperty.getFailureKeys(realm, user)) {
+        List<String> failureKeys = new ArrayList<>(BruteForceUserProperty.getFailureKeys(realm, user));
+        if (realm.isBruteForceIndependentRecoveryAuthnCodes()) {
+            failureKeys.add(BruteForceRecoveryCode.failureKey(user));
+        }
+        for (String failureKey : failureKeys) {
             UserLoginFailureModel model = session.loginFailures().getUserLoginFailure(realm, failureKey);
             if (model == null) continue;
             data.put("numFailures", Math.max((int) data.get("numFailures"), model.getNumFailures()));
@@ -191,6 +198,9 @@ public class AttackDetectionResource {
         boolean removed = user == null
                 ? session.loginFailures().getUserLoginFailure(realm, userId) != null
                 : BruteForceUserProperty.removeLoginFailures(session, realm, user);
+        if (user != null) {
+            removed |= BruteForceRecoveryCode.removeLoginFailure(session, realm, user);
+        }
         if (removed) {
             if (user == null) {
                 session.loginFailures().removeUserLoginFailure(realm, userId);

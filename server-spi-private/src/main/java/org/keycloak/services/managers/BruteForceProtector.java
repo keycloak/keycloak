@@ -66,6 +66,14 @@ public interface BruteForceProtector extends Provider {
         return isTemporarilyDisabled(session, realm, user);
     }
 
+    /**
+     * Whether the account, submitted identifier, or current authentication channel is blocked.
+     */
+    default boolean isTemporarilyDisabled(KeycloakSession session, RealmModel realm, UserModel user,
+            String authenticationChannel, String attemptedIdentifier) {
+        return isTemporarilyDisabled(session, realm, user, attemptedIdentifier);
+    }
+
     boolean isPermanentlyLockedOut(KeycloakSession session, RealmModel realm, UserModel user);
 
     /**
@@ -74,6 +82,11 @@ public interface BruteForceProtector extends Provider {
     default boolean isPermanentlyLockedOut(KeycloakSession session, RealmModel realm, UserModel user,
             String attemptedIdentifier) {
         return isPermanentlyLockedOut(session, realm, user);
+    }
+
+    default boolean isPermanentlyLockedOut(KeycloakSession session, RealmModel realm, UserModel user,
+            String authenticationChannel, String attemptedIdentifier) {
+        return isPermanentlyLockedOut(session, realm, user, attemptedIdentifier);
     }
 
     /**

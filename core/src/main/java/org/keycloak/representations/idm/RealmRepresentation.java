@@ -103,6 +103,7 @@ public class RealmRepresentation {
     protected Integer maxSecondaryAuthFailures;
     protected List<String> bruteForceProtectedUserProperties;
     protected BruteForceLockPolicy bruteForceLockPolicy;
+    protected Boolean bruteForceIndependentRecoveryAuthnCodes;
     //--- end brute force settings
 
     @Deprecated
@@ -881,6 +882,14 @@ public class RealmRepresentation {
 
     public void setBruteForceLockPolicy(BruteForceLockPolicy bruteForceLockPolicy) {
         this.bruteForceLockPolicy = bruteForceLockPolicy;
+    }
+
+    public Boolean isBruteForceIndependentRecoveryAuthnCodes() {
+        return bruteForceIndependentRecoveryAuthnCodes;
+    }
+
+    public void setBruteForceIndependentRecoveryAuthnCodes(Boolean bruteForceIndependentRecoveryAuthnCodes) {
+        this.bruteForceIndependentRecoveryAuthnCodes = bruteForceIndependentRecoveryAuthnCodes;
     }
 
     public Boolean isEventsEnabled() {

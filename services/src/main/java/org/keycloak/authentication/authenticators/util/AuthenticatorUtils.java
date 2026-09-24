@@ -34,6 +34,7 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -57,11 +58,17 @@ public final class AuthenticatorUtils {
 
     public static String getDisabledByBruteForceEventError(BruteForceProtector protector, KeycloakSession session,
             RealmModel realm, UserModel user, String attemptedIdentifier) {
+        return getDisabledByBruteForceEventError(protector, session, realm, user, null, attemptedIdentifier);
+    }
+
+    public static String getDisabledByBruteForceEventError(BruteForceProtector protector, KeycloakSession session,
+            RealmModel realm, UserModel user, String authenticationChannel, String attemptedIdentifier) {
         if (realm.isBruteForceProtected()) {
-            if (protector.isPermanentlyLockedOut(session, realm, user, attemptedIdentifier)) {
+            if (protector.isPermanentlyLockedOut(session, realm, user, authenticationChannel, attemptedIdentifier)) {
                 return Errors.USER_DISABLED;
             }
-            else if (protector.isTemporarilyDisabled(session, realm, user, attemptedIdentifier)) {
+            else if (protector.isTemporarilyDisabled(session, realm, user, authenticationChannel,
+                    attemptedIdentifier)) {
                 return Errors.USER_TEMPORARILY_DISABLED;
             }
             return null;
@@ -74,7 +81,16 @@ public final class AuthenticatorUtils {
                 ? null
                 : authnFlowContext.getAuthenticationSession().getAuthNote(ATTEMPTED_USERNAME);
         return AuthenticatorUtils.getDisabledByBruteForceEventError(authnFlowContext.getProtector(),
-                authnFlowContext.getSession(), authnFlowContext.getRealm(), authenticatedUser, attemptedIdentifier);
+                authnFlowContext.getSession(), authnFlowContext.getRealm(), authenticatedUser,
+                getAuthenticationChannel(authnFlowContext), attemptedIdentifier);
+    }
+
+    private static String getAuthenticationChannel(AuthenticationFlowContext context) {
+        if (context.getExecution() == null) {
+            return null;
+        }
+        return AuthenticationManager.getAuthenticationCategory(context.getSession(),
+                context.getExecution().getAuthenticator());
     }
 
     /**

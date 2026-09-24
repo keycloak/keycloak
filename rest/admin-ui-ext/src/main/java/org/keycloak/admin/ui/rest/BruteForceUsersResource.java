@@ -26,6 +26,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.managers.BruteForceRecoveryCode;
 import org.keycloak.services.managers.BruteForceUserProperty;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.UserPermissionEvaluator;
@@ -197,10 +198,17 @@ public class BruteForceUsersResource {
         UserLoginFailureModel latestFailure = null;
         boolean disabled = session.getProvider(BruteForceProtector.class)
                 .isPermanentlyLockedOut(session, realm, user)
-                || BruteForceUserProperty.isLocked(session, realm, user);
+                || BruteForceUserProperty.isLocked(session, realm, user)
+                || (realm.isBruteForceIndependentRecoveryAuthnCodes()
+                && BruteForceRecoveryCode.isLocked(session, realm, user));
         data.put("disabled", disabled);
         int currentTime = Time.currentTime();
-        for (UserLoginFailureModel model : BruteForceUserProperty.getLoginFailures(session, realm, user).toList()) {
+        Stream<UserLoginFailureModel> failures = BruteForceUserProperty.getLoginFailures(session, realm, user);
+        if (realm.isBruteForceIndependentRecoveryAuthnCodes()) {
+            failures = Stream.concat(failures, Stream.ofNullable(session.loginFailures()
+                    .getUserLoginFailure(realm, BruteForceRecoveryCode.failureKey(user))));
+        }
+        for (UserLoginFailureModel model : failures.toList()) {
             data.put("numFailures", Math.max((int) data.get("numFailures"), model.getNumFailures()));
             if (latestFailure == null || model.getLastFailure() > latestFailure.getLastFailure()) {
                 latestFailure = model;
