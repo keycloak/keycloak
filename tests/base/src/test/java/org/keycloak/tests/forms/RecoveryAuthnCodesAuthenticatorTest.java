@@ -6,7 +6,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
+import org.keycloak.admin.client.resource.BearerAuthFilter;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticatorFactory;
 import org.keycloak.common.util.Time;
@@ -33,6 +40,7 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.resources.account.AccountCredentialResource;
+import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectSimpleHttp;
@@ -91,6 +99,9 @@ public class RecoveryAuthnCodesAuthenticatorTest {
 
     @InjectRealm
     ManagedRealm managedRealm;
+
+    @InjectAdminClient
+    Keycloak adminClient;
 
     @InjectUser(ref = "test-user@localhost", config = UserCredentialTestUserConf.class, lifecycle = LifeCycle.METHOD)
     ManagedUser testUser;
@@ -402,6 +413,7 @@ public class RecoveryAuthnCodesAuthenticatorTest {
 
         Awaitility.await().untilAsserted(() -> assertEquals(Boolean.TRUE,
                 managedRealm.admin().attackDetection().bruteForceUserStatus(testUser.getId()).get("disabled")));
+        Assertions.assertTrue(bruteForceUsersListDisabled(testUser.getUsername()));
 
         // The Admin Console unlock switch enables the user, which has to clear the recovery budget too.
         UserRepresentation user = testUser.admin().toRepresentation();
@@ -410,6 +422,31 @@ public class RecoveryAuthnCodesAuthenticatorTest {
 
         assertEquals(Boolean.FALSE,
                 managedRealm.admin().attackDetection().bruteForceUserStatus(testUser.getId()).get("disabled"));
+        Assertions.assertFalse(bruteForceUsersListDisabled(testUser.getUsername()));
+    }
+
+    private boolean bruteForceUsersListDisabled(String username) {
+        try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            String server = managedRealm.getBaseUrl().replace("/realms/" + managedRealm.getName(), "");
+            Response response = httpClient.target(server)
+                    .path("admin")
+                    .path("realms")
+                    .path(managedRealm.getName())
+                    .path("ui-ext")
+                    .path("brute-force-user")
+                    .queryParam("username", username)
+                    .queryParam("exact", true)
+                    .register(new BearerAuthFilter(adminClient.tokenManager()))
+                    .request(MediaType.APPLICATION_JSON)
+                    .get();
+            Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            List<Map<String, Object>> users = response.readEntity(new GenericType<>() {});
+            Assertions.assertFalse(users.isEmpty());
+            @SuppressWarnings("unchecked")
+            Map<String, Object> status = (Map<String, Object>) users.get(0).get("bruteForceStatus");
+            Assertions.assertNotNull(status);
+            return Boolean.TRUE.equals(status.get("disabled"));
+        }
     }
 
     private void exhaustRecoveryCodeFailureBudget() {
