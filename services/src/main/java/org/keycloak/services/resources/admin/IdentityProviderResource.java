@@ -337,9 +337,9 @@ public class IdentityProviderResource {
         model.setIdentityProviderAlias(identityProviderModel.getAlias());
 
         Organizations.validateGroupMapperOrganization(session, identityProviderModel, model);
+        Organizations.checkGroupMapperOrgPermission(session, model, auth);
 
         try {
-//            model = realm.addIdentityProviderMapper(model);
             model = session.identityProviders().createMapper(model);
         } catch (Exception e) {
             throw ErrorResponse.error("Failed to add mapper '" + model.getName() + "' to identity provider [" + identityProviderModel.getProviderId() + "].", Response.Status.BAD_REQUEST);
@@ -399,11 +399,15 @@ public class IdentityProviderResource {
         if (model == null || !identityProviderModel.getAlias().equals(model.getIdentityProviderAlias())) {
             throw new NotFoundException("Model not found");
         }
+        // check permission for existing model
+        Organizations.checkGroupMapperOrgPermission(session, model, auth);
+
         model = RepresentationToModel.toModel(rep);
         model.setId(id);
         model.setIdentityProviderAlias(identityProviderModel.getAlias());
 
         Organizations.validateGroupMapperOrganization(session, identityProviderModel, model);
+        Organizations.checkGroupMapperOrgPermission(session, model, auth);
 
         session.identityProviders().updateMapper(model);
         adminEvent.operation(OperationType.UPDATE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(session.getContext().getUri()).representation(rep).success();
@@ -429,6 +433,7 @@ public class IdentityProviderResource {
 
         IdentityProviderMapperModel model = session.identityProviders().getMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
+        Organizations.checkGroupMapperOrgPermission(session, model, auth);
         session.identityProviders().removeMapper(model);
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(session.getContext().getUri()).success();
 
