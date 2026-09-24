@@ -315,7 +315,7 @@ public final class CacheConfigurator {
             if (builder.clustering().hash().attributes().attribute(HashConfiguration.NUM_OWNERS).get() != 1 &&
                     builder.persistence().stores().stream().noneMatch(p -> p.attributes().attribute(AbstractStoreConfiguration.SHARED).get())
             ) {
-                logger.infof("Setting a memory limit implies to have exactly one owner. Setting num_owners=1 to avoid data loss.", name);
+                logger.infof("Setting a memory limit implies to have exactly one owner. Setting num_owners=1 for cache %s to avoid data loss.", name);
                 builder.clustering().hash().numOwners(1);
             }
             configureSessionExpirationReaper(builder);
