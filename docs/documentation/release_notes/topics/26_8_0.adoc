@@ -139,6 +139,10 @@ The SCIM (System for Cross-domain Identity Management) API provides a standards-
 In this release, the SCIM API is promoted from preview to supported. The SCIM API received extensive improvements including support for multivalued user attributes, User Profile permissions, Fine-Grained Admin Permissions in search filters, and improved performance for large user bases.
 For more details, see the link:{adminguide_link}#_managing_scim[Managing users and groups through SCIM] documentation.
 
+== Refresh token revocation configurable per client
+
+The realm settings *Revoke Refresh Token* and *Refresh Token Max Reuse* can now be overridden per client in the *Advanced settings* section of the client. This allows enabling refresh token rotation only for clients that need it, or exempting specific clients when rotation is enabled for the realm. When no client override is set, the realm setting is used.
+
 = Configuring and Running
 
 == Multi-cluster v2 (supported)
