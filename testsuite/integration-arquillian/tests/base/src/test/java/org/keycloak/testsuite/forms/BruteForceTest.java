@@ -370,6 +370,31 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         }
     }
 
+    @Test
+    public void testLockPolicyPropertiesOtpSecondaryFailuresStillLockAccount() throws Exception {
+        withSharedPropertyLockPolicy(RealmRepresentation.BruteForceLockPolicy.PROPERTIES, () -> {
+            try (RealmAttributeUpdater updater = new RealmAttributeUpdater(managedRealm.admin())
+                    .setFailureFactor(120)
+                    .setQuickLoginCheckMilliSeconds(0L)
+                    .update()) {
+                Assertions.assertTrue(managedRealm.admin().toRepresentation().getMaxSecondaryAuthFailures() > 0);
+                for (int i = 0; i <= managedRealm.admin().toRepresentation().getMaxSecondaryAuthFailures(); i++) {
+                    AccessTokenResponse response = getTestToken(getPassword("test-user@localhost"), null);
+                    Assertions.assertNull(response.getAccessToken());
+                    WaitUtils.waitForBruteForceExecutors(testingClient);
+                }
+                String totpSecret = totp.generateTOTP("totpSecret");
+                AccessTokenResponse response = getTestToken(getPassword("test-user@localhost"), totpSecret);
+                assertTokenNull(response);
+                assertUserDisabledReason(BruteForceProtector.DISABLED_BY_PERMANENT_LOCKOUT);
+            } finally {
+                UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+                user.setEnabled(true);
+                updateUser(user);
+            }
+        });
+    }
+
     private String testUserId() {
         return adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0).getId();
     }

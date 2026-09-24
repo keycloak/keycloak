@@ -126,6 +126,9 @@ public class AttackDetectionResource {
         boolean permanentlyLocked = session.getProvider(BruteForceProtector.class)
                 .isPermanentlyLockedOut(session, realm, user);
         List<String> failureKeys = new ArrayList<>(BruteForceUserProperty.getFailureKeys(realm, user));
+        if (!failureKeys.contains(user.getId())) {
+            failureKeys.add(user.getId());
+        }
         if (realm.isBruteForceIndependentRecoveryAuthnCodes()) {
             failureKeys.add(BruteForceRecoveryCode.failureKey(user));
         }

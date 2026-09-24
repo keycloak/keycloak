@@ -21,6 +21,7 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -92,7 +93,13 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
                 ? List.of(userId)
                 : BruteForceRecoveryCode.isAttempt(realm, categories)
                         ? List.of(BruteForceRecoveryCode.failureKey(user))
-                        : BruteForceUserProperty.getFailureKeysForAttempt(realm, user, attemptedIdentifier);
+                        : new ArrayList<>(BruteForceUserProperty.getFailureKeysForAttempt(realm, user, attemptedIdentifier));
+        boolean otpAttempt = user != null && categories != null && categories.contains(OTP_CATEGORY)
+                && !BruteForceRecoveryCode.isAttempt(realm, categories);
+        // OTP secondary-auth lockout is account-wide even when password is tracked per identifier.
+        if (otpAttempt && !failureKeys.contains(user.getId())) {
+            failureKeys.add(user.getId());
+        }
         for (String failureKey : failureKeys) {
             failure(session, realm, user, failureKey, remoteAddr, failureTime, categories);
         }
@@ -175,9 +182,9 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
             boolean lockoutEnabled = maxSecondaryAuthFailures > 0;
             userLoginFailure.incrementSecondaryAuthFailures();
             logger.debugv("new num secondaryAuthFailures: {0}", Integer.valueOf(userLoginFailure.getNumSecondaryAuthFailures()));
-            if (lockoutEnabled && disablesAccount
-                    && userLoginFailure.getNumSecondaryAuthFailures() > maxSecondaryAuthFailures) {
-                // permanently lock user account anyway
+            // OTP lockout disables the account even when this attempt was keyed by an identifier
+            // or recovery counter, so authenticator-app grinding cannot hop identifiers.
+            if (lockoutEnabled && userLoginFailure.getNumSecondaryAuthFailures() > maxSecondaryAuthFailures) {
                 permanentUserLockOut(session, realm, user, userLoginFailure);
             }
         }
@@ -249,7 +256,12 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         if (logger.isDebugEnabled()) {
             logger.debugv("user {0} successfully logged in:", user.getUsername());
         }
-        for (String failureKey : BruteForceUserProperty.getFailureKeysForAttempt(realm, user, attemptedIdentifier)) {
+        List<String> failureKeys = new ArrayList<>(
+                BruteForceUserProperty.getFailureKeysForAttempt(realm, user, attemptedIdentifier));
+        if (categories != null && categories.contains(OTP_CATEGORY) && !failureKeys.contains(user.getId())) {
+            failureKeys.add(user.getId());
+        }
+        for (String failureKey : failureKeys) {
             UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, failureKey);
             if (userLoginFailure != null) {
                 if (categories != null && categories.contains(OTP_CATEGORY)) {

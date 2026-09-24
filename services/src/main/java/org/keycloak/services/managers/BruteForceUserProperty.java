@@ -177,7 +177,9 @@ public final class BruteForceUserProperty {
 
     public static boolean removeLoginFailures(KeycloakSession session, RealmModel realm, UserModel user) {
         boolean removed = false;
-        for (String failureKey : getFailureKeys(realm, user)) {
+        LinkedHashSet<String> keys = new LinkedHashSet<>(getFailureKeys(realm, user));
+        keys.add(user.getId());
+        for (String failureKey : keys) {
             if (session.loginFailures().getUserLoginFailure(realm, failureKey) != null) {
                 session.loginFailures().removeUserLoginFailure(realm, failureKey);
                 removed = true;
