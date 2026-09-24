@@ -1,5 +1,6 @@
 <#import "template.ftl" as layout>
 <#import "password-commons.ftl" as passwordCommons>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('password','password-confirm'); section>
     <#if section = "header">
         ${msg("updatePasswordTitle")}
@@ -64,10 +65,10 @@
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                     <#if isAppInitiatedAction??>
-                        <input name="login" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}" />
-                        <button class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" type="submit" name="cancel-aia" value="true">${msg("doCancel")}</button>
+                        <@buttons.button name="login" label="doSubmit" fullWidth=false class=["kcButtonLargeClass"] value=msg("doSubmit") />
+                        <@buttons.button name="cancel-aia" label="doCancel" type="secondary" fullWidth=false class=["kcButtonLargeClass"] value="true" />
                     <#else>
-                        <input name="login" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}" />
+                        <@buttons.button name="login" label="doSubmit" class=["kcButtonLargeClass"] value=msg("doSubmit") />
                     </#if>
                 </div>
             </div>

@@ -1,4 +1,5 @@
 <#import "template.ftl" as layout>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout; section>
 
     <#if section = "header">
@@ -22,9 +23,9 @@
         <p class="delete-account-text">${msg("finalDeletionConfirmation")}</p>
 
       <div id="kc-form-buttons">
-            <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doConfirmDelete")}" />
+            <@buttons.button label="doConfirmDelete" fullWidth=false class=["kcButtonLargeClass"] value=msg("doConfirmDelete") />
             <#if triggered_from_aia>
-            <button class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!} kc-delete-account-cancel" type="submit" name="cancel-aia" value="true">${msg("doCancel")}</button>
+            <@buttons.button name="cancel-aia" label="doCancel" type="secondary" fullWidth=false class=["kcButtonLargeClass"] className="kc-delete-account-cancel" value="true" />
             </#if>
        </div>
     </form>

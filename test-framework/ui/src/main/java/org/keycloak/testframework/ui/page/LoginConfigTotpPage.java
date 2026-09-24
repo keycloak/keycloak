@@ -36,7 +36,7 @@ public class LoginConfigTotpPage extends AbstractLoginPage {
     @FindBy(id = "userLabel")
     private WebElement totpLabelInput;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(id = "saveTOTPBtn")
     private WebElement submitButton;
 
     @FindBy(name = "cancel-aia")

@@ -41,8 +41,7 @@
 			<#nested "beforeField" attribute>
 			<div class="${properties.kcFormGroupClass!}">
 				<div class="${properties.kcLabelWrapperClass!}">
-					<label for="${attribute.name}" class="${properties.kcLabelClass!}">${advancedMsg(attribute.displayName!'')}</label>
-					<#if attribute.required><span class="required">*</span></#if>
+					<label for="${attribute.name}" class="${properties.kcLabelClass!}">${advancedMsg(attribute.displayName!'')}<#if attribute.required> <span class="required">*</span></#if></label>
 				</div>
 				<div class="${properties.kcInputWrapperClass!}">
 					<#if attribute.annotations.inputHelperTextBefore??>

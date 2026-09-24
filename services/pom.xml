@@ -291,6 +291,18 @@
         </dependency>
     </dependencies>
     <build>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+            </testResource>
+            <testResource>
+                <directory>../themes/src/main/resources</directory>
+                <includes>
+                    <include>theme/base/login/buttons.ftl</include>
+                    <include>theme/keycloak/login/theme.properties</include>
+                </includes>
+            </testResource>
+        </testResources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
