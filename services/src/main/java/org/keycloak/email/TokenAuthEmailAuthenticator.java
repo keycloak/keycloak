@@ -1,15 +1,16 @@
 package org.keycloak.email;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import jakarta.mail.AuthenticationFailedException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.Transport;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.utils.KeycloakSessionUtil;
@@ -22,6 +23,7 @@ public class TokenAuthEmailAuthenticator implements EmailAuthenticator {
 
     private static final Logger logger = Logger.getLogger(TokenAuthEmailAuthenticator.class);
     public static final int FALLBACK_EXPIRES_AT_IN_SECONDS = 60;
+    private static final long REFRESH_BEFORE_EXPIRY_MILLIS = TimeUnit.SECONDS.toMillis(30);
 
     private final Map<String, TokenAuthEmailAuthenticator.TokenStoreEntry> tokenStore = new ConcurrentHashMap<>();
 
@@ -72,13 +74,13 @@ public class TokenAuthEmailAuthenticator implements EmailAuthenticator {
                 JsonNode response = fetchTokenViaHTTP(session, authTokenUrl, authTokenScope, authTokenClientId, authTokenClientSecret);
 
                 Optional<String> maybeToken = getAccessToken(session, response);
-                Optional<LocalDateTime> maybeExpiresAt = getExpiresIn(session, response);
+                long expiresIn = getExpiresIn(session, response);
 
                 if (maybeToken.isPresent()) {
                     String token = maybeToken.get();
                     this.tokenStore.put(session.getContext().getRealm().getId(),
                             new TokenStoreEntry(
-                                    maybeExpiresAt.orElse(LocalDateTime.now().plusSeconds(FALLBACK_EXPIRES_AT_IN_SECONDS)),
+                                    refreshTime(expiresIn),
                                     authTokenUrl,
                                     authTokenScope,
                                     authTokenClientId,
@@ -100,7 +102,14 @@ public class TokenAuthEmailAuthenticator implements EmailAuthenticator {
                 && authTokenScope != null && authTokenScope.equals(tokenStoreEntry.scope)
                 && authTokenClientId != null && authTokenClientId.equals(tokenStoreEntry.clientId)
                 && authTokenHash == tokenStoreEntry.clientSecretHash
-                && tokenStoreEntry.expiration_at.plusSeconds(30).isAfter(LocalDateTime.now());
+                && Time.currentTimeMillis() < tokenStoreEntry.refreshAt;
+    }
+
+    // Refresh a bit before the token expires, but keep short-lived tokens usable for at least half of their lifetime.
+    private static long refreshTime(long expiresInSeconds) {
+        long lifetime = TimeUnit.SECONDS.toMillis(expiresInSeconds);
+        long margin = Math.min(REFRESH_BEFORE_EXPIRY_MILLIS, lifetime / 2);
+        return Time.currentTimeMillis() + lifetime - margin;
     }
 
     private Optional<String> getAccessToken(KeycloakSession session, JsonNode response) {
@@ -112,14 +121,13 @@ public class TokenAuthEmailAuthenticator implements EmailAuthenticator {
         }
     }
 
-    private Optional<LocalDateTime> getExpiresIn(KeycloakSession session, JsonNode response) {
+    private long getExpiresIn(KeycloakSession session, JsonNode response) {
         //token-lifetime, must be given beside the token because token can be opaque (must not be a jwt token)
         if (response.has("expires_in")) {
-            String expiresIn = response.get("expires_in").asText();
-            return Optional.of(LocalDateTime.now().plusSeconds(Long.parseLong(expiresIn)));
+            return Long.parseLong(response.get("expires_in").asText());
         } else {
             logger.warnf("Got no expires_in from response for SMTP auth in realm %s, response was %s", KeycloakSessionUtil.getRealmNameFromContext(session), response.asText());
-            return Optional.of((LocalDateTime.now().plusSeconds(FALLBACK_EXPIRES_AT_IN_SECONDS)));
+            return FALLBACK_EXPIRES_AT_IN_SECONDS;
         }
     }
 
@@ -132,7 +140,7 @@ public class TokenAuthEmailAuthenticator implements EmailAuthenticator {
     }
 
     record TokenStoreEntry(
-            LocalDateTime expiration_at,
+            long refreshAt,
             String url,
             String scope,
             String clientId,
