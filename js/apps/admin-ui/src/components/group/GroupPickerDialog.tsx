@@ -116,6 +116,16 @@ export const GroupPickerDialog = ({
     resetPagination();
   };
 
+  const selectOrganization = (organization?: OrganizationRepresentation) => {
+    setOrganization(organization);
+    setFilter("");
+    setGroups([]);
+    setCount(0);
+    setSelectedRows([]);
+    setJoinedGroups([]);
+    resetToGroupRoot();
+  };
+
   useFetch(
     async () => {
       if (!isPickingOrganization) {
@@ -289,14 +299,7 @@ export const GroupPickerDialog = ({
           {organization && (
             <>
               <BreadcrumbItem key="organizations">
-                <Button
-                  variant="link"
-                  onClick={() => {
-                    setOrganization(undefined);
-                    setFilter("");
-                    resetToGroupRoot();
-                  }}
-                >
+                <Button variant="link" onClick={() => selectOrganization()}>
                   {t("organizations")}
                 </Button>
               </BreadcrumbItem>
@@ -344,11 +347,7 @@ export const GroupPickerDialog = ({
                 <OrganizationRow
                   key={organization.id}
                   organization={organization}
-                  onSelect={() => {
-                    setOrganization(organization);
-                    setFilter("");
-                    resetToGroupRoot();
-                  }}
+                  onSelect={() => selectOrganization(organization)}
                 />
               ))}
             </DataList>

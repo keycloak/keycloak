@@ -181,6 +181,8 @@ public class OrganizationsResource {
     }
 
     private IdentityProviderModel resolveIdentityProvider(String alias, String searchQuery) {
+        auth.realm().requireViewIdentityProviders();
+
         if (StringUtil.isNotBlank(searchQuery)) {
             throw ErrorResponse.error("The 'identityProvider' and 'q' parameters cannot be combined.", Response.Status.BAD_REQUEST);
         }
