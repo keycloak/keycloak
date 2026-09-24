@@ -114,6 +114,18 @@ public class RedirectUtilsTest {
     }
 
     @Test
+    public void testVerifyRedirectUriEmptyPortPathWildcardNotPortWildcard() {
+        // Path wildcard with an explicit empty port must not be treated as a port wildcard.
+        Set<String> set = Stream.of("https://example.com:/*").collect(Collectors.toSet());
+
+        Assert.assertEquals("https://example.com:/foo",
+                RedirectUtils.verifyRedirectUri(session, null, "https://example.com:/foo", set, false));
+        // Configured empty port must not match an explicit numeric port
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://example.com:443/foo", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://example.com/foo", set, false));
+    }
+
+    @Test
     public void testVerifyRedirectUriIpv6PortWildcardRequiresExplicitPort() {
         Set<String> set = Stream.of("https://[::1]:*").collect(Collectors.toSet());
 
