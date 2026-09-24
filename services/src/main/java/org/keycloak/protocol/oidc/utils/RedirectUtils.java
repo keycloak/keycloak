@@ -260,17 +260,19 @@ public class RedirectUtils {
                         idx = redirect.indexOf('#');
                     }
                     String r = idx == -1 ? redirect : redirect.substring(0, idx);
+                    // Detect port wildcards (authority ending in :*) before stripping '*'. Path wildcards
+                    // with an empty port (e.g. https://example.com:/*) also strip to an authority ending
+                    // in ':', but must compare ports normally rather than as a port wildcard.
+                    boolean portWildcard = isPortWildcard(validRedirectWildcard);
                     // strip off *
                     int length = validRedirectWildcard.length() - 1;
                     validRedirectWildcard = validRedirectWildcard.substring(0, length);
-                    if (redirectUriStartsWith(r, validRedirectWildcard)) {
+                    if (redirectUriStartsWith(r, validRedirectWildcard, portWildcard)) {
                         return validRedirectWildcard;
                     }
-                    // Port wildcards strip to an authority ending in ':'. Do not fall back to exact
-                    // equality against that prefix (it would undo the explicit-port requirement).
-                    URI wildcardPrefixUri = toUri(validRedirectWildcard);
-                    String wildcardAuthority = wildcardPrefixUri != null ? wildcardPrefixUri.getRawAuthority() : null;
-                    if (wildcardAuthority != null && wildcardAuthority.endsWith(":")) {
+                    // Port wildcards must not fall back to exact equality against the stripped prefix
+                    // (it would undo the explicit-port requirement).
+                    if (portWildcard) {
                         continue;
                     }
                     // strip off trailing '/'
@@ -319,7 +321,13 @@ public class RedirectUtils {
                 && Objects.equals(configuredUri.getRawFragment(), redirectUri.getRawFragment());
     }
 
-    private static boolean redirectUriStartsWith(String redirect, String prefix) {
+    private static boolean isPortWildcard(String validRedirectWildcard) {
+        URI uri = toUri(validRedirectWildcard);
+        String authority = uri != null ? uri.getRawAuthority() : null;
+        return authority != null && authority.endsWith(":*");
+    }
+
+    private static boolean redirectUriStartsWith(String redirect, String prefix, boolean portWildcard) {
         if (redirect.startsWith(prefix)) {
             return true;
         }
@@ -331,10 +339,8 @@ public class RedirectUtils {
         if (prefixUri == null) {
             return redirectUriStartsWithUnparseablePrefix(redirect, redirectUri, prefix);
         }
-        // Port wildcards strip to an authority ending in ':' (e.g. https://example.com:).
-        // Do not treat path prefixes that merely end with ':' the same way.
         String prefixAuthority = prefixUri.getRawAuthority();
-        if (prefixAuthority != null && prefixAuthority.endsWith(":")) {
+        if (portWildcard) {
             if (!UriUtils.schemeAndHostEqual(redirectUri, prefixUri)) {
                 return false;
             }
