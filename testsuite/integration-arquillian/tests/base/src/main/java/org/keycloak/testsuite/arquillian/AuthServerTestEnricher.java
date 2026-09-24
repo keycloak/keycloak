@@ -376,7 +376,7 @@ public class AuthServerTestEnricher {
         }
 
         // Run manual migration with the ant task
-        log.infof("Running SQL script created by liquibase during manual migration flow", sqlScriptPath);
+        log.infof("Running SQL script '%s' created by liquibase during manual migration flow", sqlScriptPath);
         String prefix = "keycloak.connectionsJpa.";
         String jdbcDriver = System.getProperty(prefix + "driver");
         String dbUrl = StringPropertyReplacer.replaceProperties(System.getProperty(prefix + "url"), SystemEnvProperties.UNFILTERED::getProperty);

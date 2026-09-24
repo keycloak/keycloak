@@ -247,7 +247,7 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
         try {
             validation = new UriValidation(redirectUri, isRedirectUriParam, configuration);
         } catch (URISyntaxException e) {
-            logger.debugv("URISyntaxException - input = {0}, errMessage = {1], errReason = {2}, redirectUri = {3}", e.getInput(), e.getMessage(), e.getReason(), redirectUri);
+            logger.debugv("URISyntaxException - input = {0}, errMessage = {1}, errReason = {2}, redirectUri = {3}", e.getInput(), e.getMessage(), e.getReason(), redirectUri);
             throw invalidRedirectUri(ERR_GENERAL);
         }
 
