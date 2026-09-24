@@ -10,6 +10,7 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.http.HttpRequest;
@@ -45,8 +46,9 @@ public class HttpBasicAuthenticator implements Authenticator {
                 final boolean valid = user.credentialManager().isValid(UserCredentialModel.password(password));
 
                 if (valid) {
-                    if (isTemporarilyDisabledByBruteForce(context, user)) {
-                        userDisabledAction(context, realm, user, Errors.USER_TEMPORARILY_DISABLED);
+                    String bruteForceError = AuthenticatorUtils.getDisabledByBruteForceEventError(context, user);
+                    if (bruteForceError != null) {
+                        userDisabledAction(context, realm, user, bruteForceError);
                     } else if (user.isEnabled()) {
                         userSuccessAction(context, user);
                     } else {
@@ -84,11 +86,6 @@ public class HttpBasicAuthenticator implements Authenticator {
         context.failure(AuthenticationFlowError.INVALID_USER, Response.status(Response.Status.UNAUTHORIZED)
                 .header(HttpHeaders.WWW_AUTHENTICATE, BASIC_PREFIX + "realm=\"" + realm.getName() + "\"")
                 .build());
-    }
-
-    private boolean isTemporarilyDisabledByBruteForce(AuthenticationFlowContext context, UserModel user) {
-        return (context.getRealm().isBruteForceProtected())
-           && (context.getProtector().isTemporarilyDisabled(context.getSession(), context.getRealm(), user));
     }
 
     private String[] getUsernameAndPassword(final HttpHeaders httpHeaders) {

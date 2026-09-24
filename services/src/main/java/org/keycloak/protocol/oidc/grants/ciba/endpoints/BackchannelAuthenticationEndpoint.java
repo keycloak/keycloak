@@ -299,7 +299,9 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
 
         BruteForceProtector protector = session.getProvider(BruteForceProtector.class);
         boolean isInvalidUser = (user == null || !user.isEnabled());
-        if (!isInvalidUser && AuthenticatorUtils.getDisabledByBruteForceEventError(protector, session, realm, user) != null) {
+        String attemptedIdentifier = LOGIN_HINT_PARAM.equals(authRequestedUserHint) ? userHint : null;
+        if (!isInvalidUser && AuthenticatorUtils.getDisabledByBruteForceEventError(
+                protector, session, realm, user, attemptedIdentifier) != null) {
             isInvalidUser = true;
         }
 
