@@ -109,6 +109,39 @@ public class RedirectUtilsTest {
                 RedirectUtils.verifyRedirectUri(session, null, "https://KEYCLOAK:443/whatever", set, false));
         // Port wildcard must not accept a host-only URI without an explicit port
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak/whatever", set, false));
+        // Exact-match fallback after startsWith must not accept host-only either
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak", set, false));
+    }
+
+    @Test
+    public void testVerifyRedirectUriIpv6PortWildcardRequiresExplicitPort() {
+        Set<String> set = Stream.of("https://[::1]:*").collect(Collectors.toSet());
+
+        Assert.assertEquals("https://[::1]:443/callback",
+                RedirectUtils.verifyRedirectUri(session, null, "https://[::1]:443/callback", set, false));
+        // Colons inside the IPv6 literal must not count as an explicit port
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://[::1]/callback", set, false));
+    }
+
+    @Test
+    public void testVerifyRedirectUriRegistryNonnumericPortsNotEqual() {
+        Set<String> set = Stream.of("https://foo:bar/path").collect(Collectors.toSet());
+
+        Assert.assertEquals("https://foo:bar/path",
+                RedirectUtils.verifyRedirectUri(session, null, "https://foo:bar/path", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://foo:baz/path", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://foo/path", set, false));
+    }
+
+    @Test
+    public void testVerifyRedirectUriAuthorityLessWildcardSchemeCaseInsensitive() {
+        Set<String> set = Stream.of("myapp:callback*", "custom1:/parent/*").collect(Collectors.toSet());
+
+        Assert.assertEquals("MYAPP:callback/next",
+                RedirectUtils.verifyRedirectUri(session, null, "MYAPP:callback/next", set, false));
+        Assert.assertEquals("CUSTOM1:/parent/child",
+                RedirectUtils.verifyRedirectUri(session, null, "CUSTOM1:/parent/child", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "MYAPP:other/next", set, false));
     }
 
     @Test

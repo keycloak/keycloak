@@ -105,6 +105,7 @@ public class UriUtils {
     /**
      * Whether the URI authority includes an explicit port separator (including an empty port).
      * Used for port-wildcard redirect prefixes such as {@code https://example.com:*}.
+     * IPv6 literals are handled so colons inside {@code [...]} are not treated as a port.
      */
     public static boolean hasExplicitPort(URI uri) {
         if (uri == null) {
@@ -113,8 +114,7 @@ public class UriUtils {
         if (uri.getPort() != -1) {
             return true;
         }
-        String hostPort = hostPortFromAuthority(uri.getRawAuthority());
-        return hostPort != null && hostPort.indexOf(':') >= 0;
+        return portSuffixFromAuthority(uri.getRawAuthority()) != null;
     }
 
     private static boolean hostsEqual(URI uriA, URI uriB) {
@@ -150,9 +150,11 @@ public class UriUtils {
         if (portA != -1 && portB != -1) {
             return portA == portB;
         }
-        Integer explicitA = portA != -1 ? Integer.valueOf(portA) : explicitPortFromAuthority(uriA.getRawAuthority());
-        Integer explicitB = portB != -1 ? Integer.valueOf(portB) : explicitPortFromAuthority(uriB.getRawAuthority());
-        return Objects.equals(explicitA, explicitB);
+        // Compare raw port suffixes so absent ports (null) differ from empty (""), and
+        // nonnumeric registry-name ports like "bar" vs "baz" are not collapsed to null.
+        String suffixA = portA != -1 ? Integer.toString(portA) : portSuffixFromAuthority(uriA.getRawAuthority());
+        String suffixB = portB != -1 ? Integer.toString(portB) : portSuffixFromAuthority(uriB.getRawAuthority());
+        return Objects.equals(suffixA, suffixB);
     }
 
     private static String userInfoFromAuthority(String authority) {
@@ -183,7 +185,12 @@ public class UriUtils {
         return colon >= 0 ? hostPort.substring(0, colon) : hostPort;
     }
 
-    private static Integer explicitPortFromAuthority(String authority) {
+    /**
+     * Port suffix from the authority, or {@code null} if there is no port separator.
+     * An empty string means an explicit empty port (authority ends with {@code :}).
+     * For IPv6, only a colon after the closing {@code ]} counts as a port separator.
+     */
+    private static String portSuffixFromAuthority(String authority) {
         String hostPort = hostPortFromAuthority(authority);
         if (hostPort == null) {
             return null;
@@ -193,25 +200,13 @@ public class UriUtils {
             if (close < 0 || close + 1 >= hostPort.length() || hostPort.charAt(close + 1) != ':') {
                 return null;
             }
-            String port = hostPort.substring(close + 2);
-            if (port.isEmpty()) {
-                return null;
-            }
-            try {
-                return Integer.parseInt(port);
-            } catch (NumberFormatException e) {
-                return null;
-            }
+            return hostPort.substring(close + 2);
         }
         int colon = hostPort.lastIndexOf(':');
-        if (colon < 0 || colon == hostPort.length() - 1) {
+        if (colon < 0) {
             return null;
         }
-        try {
-            return Integer.parseInt(hostPort.substring(colon + 1));
-        } catch (NumberFormatException e) {
-            return null;
-        }
+        return hostPort.substring(colon + 1);
     }
 
     public static String getHost(String uri) {

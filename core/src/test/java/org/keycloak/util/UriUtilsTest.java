@@ -83,6 +83,23 @@ public class UriUtilsTest {
         // Registry-name host case-insensitive; port still compared for origin equality
         assertTrue(UriUtils.originEquals("https://ALLOWED_HOST:444", "https://allowed_host:444"));
         assertFalse(UriUtils.originEquals("https://allowed_host:444", "https://allowed_host:443"));
+        // Nonnumeric registry-name ports must not collapse to "no port" and match each other
+        assertFalse(UriUtils.schemeHostAndPortEqual(URI.create("https://foo:bar/path"),
+                URI.create("https://foo:baz/path")));
+        assertTrue(UriUtils.schemeHostAndPortEqual(URI.create("https://foo:bar/path"),
+                URI.create("https://FOO:bar/path")));
+        // Empty explicit port is distinct from an absent port
+        assertFalse(UriUtils.schemeHostAndPortEqual(URI.create("https://keycloak:"),
+                URI.create("https://keycloak")));
+    }
+
+    @Test
+    public void testHasExplicitPortIgnoresIpv6LiteralColons() {
+        assertFalse(UriUtils.hasExplicitPort(URI.create("https://[::1]/callback")));
+        assertTrue(UriUtils.hasExplicitPort(URI.create("https://[::1]:443/callback")));
+        assertTrue(UriUtils.hasExplicitPort(URI.create("https://example.com:8443/callback")));
+        assertFalse(UriUtils.hasExplicitPort(URI.create("https://example.com/callback")));
+        assertTrue(UriUtils.hasExplicitPort(URI.create("https://example.com:/callback")));
     }
 
     @Test

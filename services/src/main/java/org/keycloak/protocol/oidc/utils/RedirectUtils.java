@@ -266,6 +266,13 @@ public class RedirectUtils {
                     if (redirectUriStartsWith(r, validRedirectWildcard)) {
                         return validRedirectWildcard;
                     }
+                    // Port wildcards strip to an authority ending in ':'. Do not fall back to exact
+                    // equality against that prefix (it would undo the explicit-port requirement).
+                    URI wildcardPrefixUri = toUri(validRedirectWildcard);
+                    String wildcardAuthority = wildcardPrefixUri != null ? wildcardPrefixUri.getRawAuthority() : null;
+                    if (wildcardAuthority != null && wildcardAuthority.endsWith(":")) {
+                        continue;
+                    }
                     // strip off trailing '/'
                     if (length - 1 > 0 && validRedirectWildcard.charAt(length - 1) == '/') {
                         length--;
@@ -333,6 +340,15 @@ public class RedirectUtils {
             }
             // Port wildcard requires an explicit port in the redirect (reject host-only URIs).
             if (!UriUtils.hasExplicitPort(redirectUri)) {
+                return false;
+            }
+        } else if (prefixAuthority == null && redirectUri.getRawAuthority() == null) {
+            // Authority-less (opaque or path-only): compare schemes case-insensitively here;
+            // schemeHostAndPortEqual would compare the full SSP and reject valid prefixes.
+            String redirectScheme = redirectUri.getScheme();
+            String prefixScheme = prefixUri.getScheme();
+            if (redirectScheme == null || prefixScheme == null
+                    || !redirectScheme.equalsIgnoreCase(prefixScheme)) {
                 return false;
             }
         } else if (!UriUtils.schemeHostAndPortEqual(redirectUri, prefixUri)) {
