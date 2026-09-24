@@ -100,7 +100,6 @@ public class RealmRepresentation {
     protected Long quickLoginCheckMilliSeconds;
     protected Integer maxDeltaTimeSeconds;
     protected Integer failureFactor;
-    protected Integer bruteForcePropertyFailureFactor;
     protected Integer maxSecondaryAuthFailures;
     protected List<String> bruteForceProtectedUserProperties;
     protected BruteForceLockPolicy bruteForceLockPolicy;
@@ -860,14 +859,6 @@ public class RealmRepresentation {
         this.failureFactor = failureFactor;
     }
 
-    public Integer getBruteForcePropertyFailureFactor() {
-        return bruteForcePropertyFailureFactor;
-    }
-
-    public void setBruteForcePropertyFailureFactor(Integer bruteForcePropertyFailureFactor) {
-        this.bruteForcePropertyFailureFactor = bruteForcePropertyFailureFactor;
-    }
-
     public Integer getMaxSecondaryAuthFailures() {
         return maxSecondaryAuthFailures;
     }
@@ -1597,10 +1588,9 @@ public class RealmRepresentation {
     /**
      * Controls which brute-force counters are allowed to disable login.
      * {@link #USER} locks only the account that failed. {@link #PROPERTIES} locks
-     * by the selected user properties only. {@link #ANY} locks if either the
-     * per-user counter or a selected property counter is locked.
+     * by the selected user properties only.
      */
     public enum BruteForceLockPolicy {
-        USER, PROPERTIES, ANY;
+        USER, PROPERTIES;
     }
 }

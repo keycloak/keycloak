@@ -31,24 +31,23 @@ By default, brute force detection counts failures per user id and locks only tha
 
 A failed login increments:
 
-* the per-user counter, when the lock policy is *This user only* or *User or shared properties*
-* only the selected property whose current value matches the submitted identifier, when the lock policy is *Shared properties only* or *User or shared properties*
+* the per-user counter, when the lock policy is *This user only*
+* only the selected property whose current value matches the submitted identifier, when the lock policy is *Shared properties only*
 
-*Max login failures* is the threshold for the per-user counter. *Max identifier failures* is the independent threshold for identifier counters. Reaching either threshold locks the account for every identifier.
+*Max login failures* is the threshold for the per-user counter or each identifier counter. Reaching an identifier threshold blocks only that identifier, so a locked email does not prevent login with a phone number or username.
 
-Users that share a property value (for example the same email) share that identifier counter. Administrators can unlock one property without clearing the counters for the other properties.
+Users that share a property value (for example the same email) share that identifier counter. The existing user unlock action clears all current identifier counters for that user.
 
 *Lock policy* chooses which counters increment:
 
 * *This user only* -- increment the per-user counter. Selected properties are ignored.
 * *Shared properties only* -- increment the submitted identifier. The per-user counter is used only if `id` is selected or the list is empty.
-* *User or shared properties* -- increment the per-user counter and the submitted identifier. Either threshold can lock the account.
 
 [WARNING]
 ====
 Use shared properties only when locking every user with the same value is intended. Include the identifiers users actually type (for example `username` or `email`); a custom attribute is incremented only when the login form submits that value.
 
-Property counters belong to the property value, not to an individual user. Changing a user's property does not delete the counter for the old value, and the user inherits any existing counter for the new value. Use *User or shared properties* when users must remain protected by their stable user id after a property changes.
+Property counters belong to the property value, not to an individual user. Changing a user's property does not delete the counter for the old value, and the user inherits any existing counter for the new value. Select `id` instead when protection must follow the stable user id.
 ====
 
 Locking by user property does not create separate counters for authentication methods or delivery channels. For example, email OTP and SMS OTP attempts are not counted independently.
@@ -57,7 +56,7 @@ To configure this:
 
 . Enable a brute force mode other than *Disabled*.
 . Choose a *Lock policy*.
-. If the policy is not *This user only*, select one or more property ids in *Lock by user properties* and set *Max identifier failures*.
+. If the policy is not *This user only*, select one or more property ids in *Lock by user properties*.
 . Click *Save*.
 
 ==== Lockout permanently

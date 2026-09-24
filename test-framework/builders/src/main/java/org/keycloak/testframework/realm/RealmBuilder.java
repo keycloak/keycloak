@@ -428,11 +428,6 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
-    public RealmBuilder bruteForcePropertyFailureFactor(int count) {
-        rep.setBruteForcePropertyFailureFactor(count);
-        return this;
-    }
-
     public RealmBuilder bruteForceProtectedUserProperties(String... properties) {
         rep.setBruteForceProtectedUserProperties(List.of(properties));
         return this;

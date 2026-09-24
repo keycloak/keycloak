@@ -39,8 +39,8 @@ import org.keycloak.models.UserModel;
  * Resolves brute-force failure-counter keys for a user.
  *
  * <p>The realm {@link org.keycloak.representations.idm.RealmRepresentation.BruteForceLockPolicy}
- * decides whether login is locked by the per-user id counter, by selected user properties,
- * or by either. Failed attempts increment the user-id counter and/or the submitted
+ * decides whether login is locked by the per-user id counter or by selected user properties.
+ * Failed attempts increment the user-id counter or the submitted
  * identifier's property counter. The user-id threshold disables every identifier for that
  * account. A property threshold blocks only attempts that reuse that property value, so a
  * locked email does not block a phone number or username that still has remaining attempts.
@@ -66,8 +66,7 @@ public final class BruteForceUserProperty {
     /**
      * Counters to increment for this login attempt. {@code USER} always uses the user id.
      * {@code PROPERTIES} increments only property counters whose current value matches
-     * {@code attemptedIdentifier}. {@code ANY} increments the user id and any matching
-     * property counters.
+     * {@code attemptedIdentifier}.
      */
     public static List<String> getFailureKeysForAttempt(RealmModel realm, UserModel user, String attemptedIdentifier) {
         String identifier = attemptedIdentifier == null || attemptedIdentifier.isBlank()
@@ -75,12 +74,6 @@ public final class BruteForceUserProperty {
                 : attemptedIdentifier;
         return switch (realm.getBruteForceLockPolicy()) {
             case PROPERTIES -> getMatchingPropertyKeys(realm, user, identifier);
-            case ANY -> {
-                Set<String> keys = new LinkedHashSet<>();
-                keys.add(user.getId());
-                keys.addAll(getMatchingPropertyKeys(realm, user, identifier));
-                yield List.copyOf(keys);
-            }
             case USER -> List.of(user.getId());
         };
     }
@@ -107,9 +100,6 @@ public final class BruteForceUserProperty {
     }
 
     public static int getFailureFactor(RealmModel realm, String failureKey) {
-        if (failureKey != null && failureKey.startsWith(PROPERTY_KEY_PREFIX)) {
-            return realm.getBruteForcePropertyFailureFactor();
-        }
         return realm.getFailureFactor();
     }
 
@@ -167,10 +157,6 @@ public final class BruteForceUserProperty {
                 if (properties.isEmpty()) {
                     properties.add(ID);
                 }
-            }
-            case ANY -> {
-                properties.add(ID);
-                properties.addAll(realm.getBruteForceProtectedUserProperties());
             }
             case USER -> properties.add(ID);
         }

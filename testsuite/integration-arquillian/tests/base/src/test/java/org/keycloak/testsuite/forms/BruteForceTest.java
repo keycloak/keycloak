@@ -269,7 +269,6 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testLockPolicyUserLocksOnlyTheFailedAccount() throws Exception {
         withSharedPropertyLockPolicy(RealmRepresentation.BruteForceLockPolicy.USER, () -> {
             AccessTokenResponse phoneLogin = oauth.passwordGrantRequest("+15550003", getPassword("user3")).send();
@@ -281,9 +280,6 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             String userId = testUserId();
             String user3Id = adminClient.realm("test").users().search("user3", 0, 1).get(0).getId();
             Map<String, Object> status = adminClient.realm("test").attackDetection().bruteForceUserStatus(userId);
-            Map<String, Map<String, Object>> properties =
-                    (Map<String, Map<String, Object>>) status.get("properties");
-            Assertions.assertEquals(Set.of("id"), properties.keySet());
             Assertions.assertEquals(Boolean.TRUE, status.get("disabled"));
             Assertions.assertEquals(Boolean.FALSE,
                     adminClient.realm("test").attackDetection().bruteForceUserStatus(user3Id).get("disabled"));
@@ -295,90 +291,11 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testLockPolicyPropertiesLocksSharedProperty() throws Exception {
-        withSharedPropertyLockPolicy(RealmRepresentation.BruteForceLockPolicy.PROPERTIES, () -> {
-            failLoginUntilLockout();
-
-            String userId = testUserId();
-            String user3Id = adminClient.realm("test").users().search("user3", 0, 1).get(0).getId();
-            Assertions.assertEquals(Boolean.FALSE,
-                    adminClient.realm("test").attackDetection().bruteForceUserStatus(user3Id).get("disabled"));
-
-            Map<String, Object> status = adminClient.realm("test").attackDetection().bruteForceUserStatus(userId);
-            Map<String, Map<String, Object>> properties =
-                    (Map<String, Map<String, Object>>) status.get("properties");
-            Assertions.assertEquals(Boolean.TRUE, properties.get("email").get("disabled"));
-            Assertions.assertEquals(Boolean.TRUE, properties.get("username").get("disabled"));
-            Assertions.assertEquals(Boolean.FALSE, properties.get("department").get("disabled"));
-            Assertions.assertEquals(Boolean.FALSE, properties.get("phoneNumber").get("disabled"));
-            Assertions.assertEquals(Boolean.FALSE, status.get("disabled"));
-
-            adminClient.realm("test").attackDetection().clearBruteForceForUserByProperty(userId, "email");
-            status = adminClient.realm("test").attackDetection().bruteForceUserStatus(userId);
-            properties = (Map<String, Map<String, Object>>) status.get("properties");
-            Assertions.assertEquals(Boolean.FALSE, properties.get("email").get("disabled"));
-            Assertions.assertEquals(Boolean.TRUE, properties.get("username").get("disabled"));
-            Assertions.assertEquals(Boolean.FALSE, status.get("disabled"));
-
-            adminClient.realm("test").attackDetection().clearBruteForceForUserByProperty(userId, "username");
-            loginSuccess();
-
-            AccessTokenResponse response = oauth.passwordGrantRequest("user2", getPassword("user2")).send();
-            Assertions.assertNotNull(response.getAccessToken());
-            Assertions.assertNull(response.getError());
-        });
-    }
-
-    @Test
-    @SuppressWarnings("unchecked")
-    public void testLockPolicyAnyLocksUserOrSharedProperty() throws Exception {
-        withSharedPropertyLockPolicy(RealmRepresentation.BruteForceLockPolicy.ANY, () -> {
-            failLoginUntilLockout();
-
-            String userId = testUserId();
-            String user3Id = adminClient.realm("test").users().search("user3", 0, 1).get(0).getId();
-            Assertions.assertEquals(Boolean.FALSE,
-                    adminClient.realm("test").attackDetection().bruteForceUserStatus(user3Id).get("disabled"));
-
-            Map<String, Object> status = adminClient.realm("test").attackDetection().bruteForceUserStatus(userId);
-            Map<String, Map<String, Object>> properties =
-                    (Map<String, Map<String, Object>>) status.get("properties");
-            Assertions.assertEquals(Set.of("id", "username", "email", "department", "phoneNumber"), properties.keySet());
-            Assertions.assertEquals(Boolean.TRUE, properties.get("id").get("disabled"));
-            Assertions.assertEquals(Boolean.TRUE, properties.get("username").get("disabled"));
-            Assertions.assertEquals(Boolean.TRUE, properties.get("email").get("disabled"));
-            Assertions.assertEquals(Boolean.FALSE, properties.get("department").get("disabled"));
-            Assertions.assertEquals(Boolean.TRUE, status.get("disabled"));
-
-            AccessTokenResponse response = oauth.passwordGrantRequest("user3", getPassword("user3")).send();
-            Assertions.assertNotNull(response.getAccessToken());
-            events.clear();
-            expectTemporarilyDisabled();
-
-            adminClient.realm("test").attackDetection().clearBruteForceForUserByProperty(userId, "email");
-            adminClient.realm("test").attackDetection().clearBruteForceForUserByProperty(userId, "username");
-            adminClient.realm("test").attackDetection().clearBruteForceForUserByProperty(userId, "id");
-            loginSuccess();
-        });
-    }
-
-    @Test
-    @SuppressWarnings("unchecked")
     public void testLockPolicyPropertiesDoesNotLockOtherIdentifiers() throws Exception {
         withSharedPropertyLockPolicy(RealmRepresentation.BruteForceLockPolicy.PROPERTIES, () -> {
             loginInvalidPassword("user2@localhost");
             loginInvalidPassword("user2@localhost");
             WaitUtils.waitForBruteForceExecutors(testingClient);
-
-            String user2Id = adminClient.realm("test").users().search("user2", 0, 1).get(0).getId();
-            Map<String, Object> status = adminClient.realm("test").attackDetection().bruteForceUserStatus(user2Id);
-            Map<String, Map<String, Object>> properties =
-                    (Map<String, Map<String, Object>>) status.get("properties");
-            Assertions.assertEquals(Boolean.TRUE, properties.get("email").get("disabled"));
-            Assertions.assertEquals(Boolean.FALSE, properties.get("username").get("disabled"));
-            Assertions.assertEquals(Boolean.FALSE, properties.get("phoneNumber").get("disabled"));
-            Assertions.assertEquals(Boolean.FALSE, status.get("disabled"));
 
             AccessTokenResponse byUsername = oauth.passwordGrantRequest("user2", getPassword("user2")).send();
             Assertions.assertNotNull(byUsername.getAccessToken());

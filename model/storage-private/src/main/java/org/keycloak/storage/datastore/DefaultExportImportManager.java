@@ -230,7 +230,6 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.getQuickLoginCheckMilliSeconds() != null) newRealm.setQuickLoginCheckMilliSeconds(checkNonNegativeNumber(rep.getQuickLoginCheckMilliSeconds().intValue(), "Quick login check milliseconds"));
         if (rep.getMaxDeltaTimeSeconds() != null) newRealm.setMaxDeltaTimeSeconds(checkNonNegativeNumber(rep.getMaxDeltaTimeSeconds(),"Maximum delta time seconds"));
         if (rep.getFailureFactor() != null) newRealm.setFailureFactor(checkNonNegativeNumber(rep.getFailureFactor(),"Failure factor"));
-        if (rep.getBruteForcePropertyFailureFactor() != null) newRealm.setBruteForcePropertyFailureFactor(checkNonNegativeNumber(rep.getBruteForcePropertyFailureFactor(),"Property failure factor"));
         if (rep.getMaxSecondaryAuthFailures() != null) newRealm.setMaxSecondaryAuthFailures(checkNonNegativeNumber(rep.getMaxSecondaryAuthFailures(),"Maximum secondary authentication failures"));
         if (rep.getBruteForceProtectedUserProperties() != null) newRealm.setBruteForceProtectedUserProperties(rep.getBruteForceProtectedUserProperties());
         if (rep.getBruteForceLockPolicy() != null) newRealm.setBruteForceLockPolicy(rep.getBruteForceLockPolicy());
@@ -839,7 +838,6 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.getQuickLoginCheckMilliSeconds() != null) realm.setQuickLoginCheckMilliSeconds(checkNonNegativeNumber(rep.getQuickLoginCheckMilliSeconds().intValue(), "Quick login check milliseconds"));
         if (rep.getMaxDeltaTimeSeconds() != null) realm.setMaxDeltaTimeSeconds(checkNonNegativeNumber(rep.getMaxDeltaTimeSeconds(),"Maximum delta time seconds"));
         if (rep.getFailureFactor() != null) realm.setFailureFactor(checkNonNegativeNumber(rep.getFailureFactor(),"Failure factor"));
-        if (rep.getBruteForcePropertyFailureFactor() != null) realm.setBruteForcePropertyFailureFactor(checkNonNegativeNumber(rep.getBruteForcePropertyFailureFactor(),"Property failure factor"));
         if (rep.getMaxSecondaryAuthFailures() != null) realm.setMaxSecondaryAuthFailures(checkNonNegativeNumber(rep.getMaxSecondaryAuthFailures(), "Maximum secondary authentication failures"));
         if (rep.getBruteForceProtectedUserProperties() != null) realm.setBruteForceProtectedUserProperties(rep.getBruteForceProtectedUserProperties());
         if (rep.getBruteForceLockPolicy() != null) realm.setBruteForceLockPolicy(rep.getBruteForceLockPolicy());

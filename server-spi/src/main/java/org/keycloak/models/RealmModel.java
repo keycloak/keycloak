@@ -195,7 +195,7 @@ public interface RealmModel extends RoleContainerModel {
      * User property names (user profile attribute ids such as {@code username}, {@code email},
      * or a custom attribute) that each get a dedicated brute-force failure counter.
      * Combined with {@link #getBruteForceLockPolicy()} to decide whether those
-     * counters, the per-user counter, or either may lock login.
+     * counters or the per-user counter may lock login.
      */
     default List<String> getBruteForceProtectedUserProperties() {
         String value = getAttribute("bruteForceProtectedUserProperties");
@@ -239,24 +239,6 @@ public interface RealmModel extends RoleContainerModel {
             return;
         }
         setAttribute("bruteForceLockPolicy", policy.name());
-    }
-    /**
-     * Maximum failures for a protected user-property counter before that counter locks.
-     * When unset, {@link #getFailureFactor()} is used so existing realms keep a single threshold.
-     */
-    default int getBruteForcePropertyFailureFactor() {
-        String value = getAttribute("bruteForcePropertyFailureFactor");
-        if (value == null || value.isBlank()) {
-            return getFailureFactor();
-        }
-        return Integer.parseInt(value.trim());
-    }
-    default void setBruteForcePropertyFailureFactor(Integer failureFactor) {
-        if (failureFactor == null) {
-            removeAttribute("bruteForcePropertyFailureFactor");
-            return;
-        }
-        setAttribute("bruteForcePropertyFailureFactor", Integer.toString(failureFactor));
     }
     //--- end brute force settings
 

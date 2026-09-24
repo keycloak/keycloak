@@ -4,16 +4,6 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
-=== Brute-force user status includes property counters
-
-The response from `GET /admin/realms/\{realm}/attack-detection/brute-force/users/\{userId}` now includes a `properties` object containing the status of each protected user property. With the default lock policy, this object contains the existing per-user counter under the `id` property.
-
-Clients that deserialize this response into a closed schema or compare the complete JSON object must accept the additional field. Existing top-level fields and the default per-user lock behavior are unchanged.
-
-When a lock policy other than the per-user default is enabled, a failed login increments the per-user counter and/or only the submitted identifier, depending on the policy. Identifier counters use `bruteForcePropertyFailureFactor` when set; otherwise they use `failureFactor`.
-
-`BruteForceProtector.failedLogin` and `successfulLogin` gained compatible default methods that receive the attempted identifier. Custom brute-force providers that implement only the previous signatures continue to work.
-
 === Client scope assignment now enforces client scope permissions
 
 The client scope assignment endpoints on a specific client now require the caller to have `manage` permission on client scopes, in addition to the existing `manage` permission on the target client.

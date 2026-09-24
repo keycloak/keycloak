@@ -170,19 +170,8 @@ export default function EditUser() {
 
       const isBruteForceProtected = realm.bruteForceProtected;
       const isLocked = isBruteForceProtected && attackDetection.disabled;
-      const lockedProperties = attackDetection.properties
-        ? Object.entries(attackDetection.properties)
-            .filter(([, status]) => (status as { disabled?: boolean }).disabled)
-            .map(([property]) => property)
-        : isLocked
-          ? ["id"]
-          : [];
 
-      setBruteForced({
-        isBruteForceProtected,
-        isLocked,
-        lockedProperties,
-      });
+      setBruteForced({ isBruteForceProtected, isLocked });
       setRealmHasOrganizations(organizations.length === 1);
 
       form.reset(toUserFormFields(user));

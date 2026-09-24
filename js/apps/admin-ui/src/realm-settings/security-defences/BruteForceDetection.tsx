@@ -82,7 +82,7 @@ export const BruteForceDetection = ({
   ];
 
   const bruteForceStrategyTypes = ["MULTIPLE", "LINEAR"];
-  const bruteForceLockPolicies = ["USER", "PROPERTIES", "ANY"] as const;
+  const bruteForceLockPolicies = ["USER", "PROPERTIES"] as const;
 
   const setupForm = () => {
     convertToFormValues(realm, setValue);
@@ -175,17 +175,6 @@ export const BruteForceDetection = ({
                 rules: { required: t("required"), min: 0 },
               }}
             />
-            {lockPolicy !== "USER" && (
-              <NumberControl
-                name="bruteForcePropertyFailureFactor"
-                label={t("bruteForcePropertyFailureFactor")}
-                labelIcon={t("bruteForcePropertyFailureFactorHelp")}
-                controller={{
-                  defaultValue: realm.bruteForcePropertyFailureFactor ?? realm.failureFactor ?? 0,
-                  rules: { required: t("required"), min: 0 },
-                }}
-              />
-            )}
             <NumberControl
               name="maxSecondaryAuthFailures"
               label={t("maxSecondaryAuthFailures")}

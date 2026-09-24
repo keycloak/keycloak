@@ -24,7 +24,6 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
 /**
@@ -40,11 +39,6 @@ public interface AttackDetectionResource {
     @Path("brute-force/users/{userId}")
     @DELETE
     void clearBruteForceForUser(@PathParam("userId") String userId);
-
-    @Path("brute-force/users/{userId}")
-    @DELETE
-    void clearBruteForceForUserByProperty(@PathParam("userId") String userId,
-            @QueryParam("property") String property);
 
     @Path("brute-force/users")
     @DELETE

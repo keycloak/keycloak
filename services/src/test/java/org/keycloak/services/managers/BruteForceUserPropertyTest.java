@@ -102,13 +102,11 @@ public class BruteForceUserPropertyTest {
     }
 
     @Test
-    public void userAndAnyPoliciesLockTheAccount() {
+    public void userPolicyLocksTheAccount() {
         UserModel user = user("user-id", "UserName", "User@Example.com", Map.of());
 
         Assert.assertEquals(List.of("user-id"),
                 BruteForceUserProperty.getAccountLockKeys(realm(BruteForceLockPolicy.USER, "email"), user));
-        Assert.assertEquals(List.of("user-id"),
-                BruteForceUserProperty.getAccountLockKeys(realm(BruteForceLockPolicy.ANY, "email"), user));
     }
 
     @Test
@@ -147,28 +145,6 @@ public class BruteForceUserPropertyTest {
     }
 
     @Test
-    public void anyPolicyIncludesUserIdAndConfiguredProperties() {
-        RealmModel realm = realm(BruteForceLockPolicy.ANY, "email", "id");
-        UserModel user = user("user-id", "UserName", "User@Example.com", Map.of());
-
-        Assert.assertEquals(List.of(BruteForceUserProperty.ID, "email"),
-                BruteForceUserProperty.getProtectedProperties(realm));
-        Assert.assertEquals(List.of("user-id",
-                BruteForceUserProperty.propertyKey("email", "user@example.com")),
-                BruteForceUserProperty.getFailureKeys(realm, user));
-    }
-
-    @Test
-    public void anyPolicyWithNoPropertiesUsesOnlyUserId() {
-        RealmModel realm = realm(BruteForceLockPolicy.ANY);
-        UserModel user = user("user-id", "UserName", "User@Example.com", Map.of());
-
-        Assert.assertEquals(List.of(BruteForceUserProperty.ID),
-                BruteForceUserProperty.getProtectedProperties(realm));
-        Assert.assertEquals(List.of("user-id"), BruteForceUserProperty.getFailureKeys(realm, user));
-    }
-
-    @Test
     public void attemptIncrementsOnlyTheMatchingIdentifier() {
         RealmModel realm = realm(BruteForceLockPolicy.PROPERTIES, "username", "email", "department");
         UserModel user = user("user-id", "UserName", "User@Example.com",
@@ -184,18 +160,6 @@ public class BruteForceUserPropertyTest {
     }
 
     @Test
-    public void anyPolicyAttemptIncrementsGlobalAndMatchingIdentifier() {
-        RealmModel realm = realm(BruteForceLockPolicy.ANY, "email");
-        UserModel user = user("user-id", "UserName", "User@Example.com", Map.of());
-
-        Assert.assertEquals(List.of("user-id",
-                BruteForceUserProperty.propertyKey("email", "user@example.com")),
-                BruteForceUserProperty.getFailureKeysForAttempt(realm, user, "User@Example.com"));
-        Assert.assertEquals(List.of("user-id"),
-                BruteForceUserProperty.getFailureKeysForAttempt(realm, user, "UserName"));
-    }
-
-    @Test
     public void userPolicyAttemptIgnoresTheSubmittedIdentifier() {
         RealmModel realm = realm(BruteForceLockPolicy.USER, "email");
         UserModel user = user("user-id", "UserName", "User@Example.com", Map.of());
@@ -205,28 +169,19 @@ public class BruteForceUserPropertyTest {
     }
 
     @Test
-    public void propertyFailureFactorFallsBackToFailureFactor() {
-        RealmModel realm = realm(BruteForceLockPolicy.ANY, "email");
+    public void propertyCountersUseTheRealmFailureFactor() {
+        RealmModel realm = realm(BruteForceLockPolicy.PROPERTIES, "email");
         Assert.assertEquals(30, BruteForceUserProperty.getFailureFactor(realm, "user-id"));
         Assert.assertEquals(30, BruteForceUserProperty.getFailureFactor(realm,
                 BruteForceUserProperty.propertyKey("email", "user@example.com")));
     }
 
     @Test
-    public void propertyFailureFactorIsIndependentOfTheUserFactor() {
-        RealmModel realm = realm(BruteForceLockPolicy.ANY, 30, 2, "email");
-        Assert.assertEquals(30, BruteForceUserProperty.getFailureFactor(realm, "user-id"));
-        Assert.assertEquals(2, BruteForceUserProperty.getFailureFactor(realm,
-                BruteForceUserProperty.propertyKey("email", "user@example.com")));
-    }
+    public void permanentLockoutUsesTheRealmFailureFactor() {
+        RealmModel realm = realm(BruteForceLockPolicy.PROPERTIES, "email");
+        UserLoginFailureModel thirtyFailures = loginFailure(30);
 
-    @Test
-    public void permanentLockoutUsesTheFactorForEachCounter() {
-        RealmModel realm = realm(BruteForceLockPolicy.ANY, 30, 2, "email");
-        UserLoginFailureModel twoFailures = loginFailure(2);
-
-        Assert.assertFalse(BruteForceUserProperty.isPermanentlyLocked(realm, twoFailures, "user-id"));
-        Assert.assertTrue(BruteForceUserProperty.isPermanentlyLocked(realm, twoFailures,
+        Assert.assertTrue(BruteForceUserProperty.isPermanentlyLocked(realm, thirtyFailures,
                 BruteForceUserProperty.propertyKey("email", "user@example.com")));
     }
 
@@ -268,14 +223,14 @@ public class BruteForceUserPropertyTest {
 
     @Test
     public void getsAndRemovesEveryFailureCounterForAUser() {
-        RealmModel realm = realm(BruteForceLockPolicy.ANY, "email");
+        RealmModel realm = realm(BruteForceLockPolicy.PROPERTIES, "email");
         UserModel user = user("user-id", "UserName", "User@Example.com", Map.of());
         List<String> failureKeys = BruteForceUserProperty.getFailureKeys(realm, user);
         Map<String, UserLoginFailureModel> failures = new HashMap<>();
         failureKeys.forEach(key -> failures.put(key, loginFailure(1)));
         KeycloakSession session = session(failures);
 
-        Assert.assertEquals(2, BruteForceUserProperty.getLoginFailures(session, realm, user).count());
+        Assert.assertEquals(1, BruteForceUserProperty.getLoginFailures(session, realm, user).count());
         Assert.assertTrue(BruteForceUserProperty.removeLoginFailures(session, realm, user));
         Assert.assertTrue(failures.isEmpty());
         Assert.assertFalse(BruteForceUserProperty.removeLoginFailures(session, realm, user));
@@ -313,11 +268,6 @@ public class BruteForceUserPropertyTest {
     }
 
     private static RealmModel realm(BruteForceLockPolicy policy, String... properties) {
-        return realm(policy, 30, null, properties);
-    }
-
-    private static RealmModel realm(BruteForceLockPolicy policy, int failureFactor, Integer propertyFailureFactor,
-            String... properties) {
         return (RealmModel) Proxy.newProxyInstance(
                 BruteForceUserPropertyTest.class.getClassLoader(),
                 new Class<?>[] { RealmModel.class },
@@ -329,10 +279,7 @@ public class BruteForceUserPropertyTest {
                         return policy;
                     }
                     if ("getFailureFactor".equals(method.getName())) {
-                        return failureFactor;
-                    }
-                    if ("getBruteForcePropertyFailureFactor".equals(method.getName())) {
-                        return propertyFailureFactor != null ? propertyFailureFactor : failureFactor;
+                        return 30;
                     }
                     if ("isPermanentLockout".equals(method.getName())) {
                         return true;
@@ -341,7 +288,7 @@ public class BruteForceUserPropertyTest {
                         return 0;
                     }
                     if ("getAttribute".equals(method.getName())) {
-                        return propertyFailureFactor == null ? null : Integer.toString(propertyFailureFactor);
+                        return null;
                     }
                     throw new UnsupportedOperationException(method.getName());
                 });

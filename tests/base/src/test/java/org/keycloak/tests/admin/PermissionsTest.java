@@ -115,7 +115,6 @@ public class PermissionsTest extends AbstractPermissionsTest {
         UserRepresentation user = managedRealm1.admin().users().get(userUuid).toRepresentation();
         invoke(realm -> realm.attackDetection().bruteForceUserStatus(userUuid), Resource.USER, false);
         invoke(realm -> realm.attackDetection().clearBruteForceForUser(userUuid), Resource.USER, true);
-        invoke(realm -> realm.attackDetection().clearBruteForceForUserByProperty(userUuid, "id"), Resource.USER, true);
         invoke(realm -> realm.attackDetection().clearAllBruteForce(), Resource.USER, true);
     }
 
