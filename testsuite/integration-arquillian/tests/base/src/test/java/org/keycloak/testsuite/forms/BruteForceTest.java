@@ -25,7 +25,12 @@ import java.util.Map;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.client.resource.BearerAuthFilter;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -54,11 +59,13 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import org.hamcrest.MatcherAssert;
@@ -335,6 +342,34 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         });
     }
 
+    @Test
+    public void testLockPolicyPropertiesShowsPermanentLockOnUsersList() throws Exception {
+        RealmRepresentation realm = adminClient.realm("test").toRepresentation();
+        Boolean originalPermanentLockout = realm.isPermanentLockout();
+        Integer originalMaxTemporaryLockouts = realm.getMaxTemporaryLockouts();
+        try {
+            realm.setPermanentLockout(true);
+            realm.setMaxTemporaryLockouts(0);
+            adminClient.realm("test").update(realm);
+
+            withSharedPropertyLockPolicy(RealmRepresentation.BruteForceLockPolicy.PROPERTIES, () -> {
+                loginInvalidPassword("user2@localhost");
+                loginInvalidPassword("user2@localhost");
+                WaitUtils.waitForBruteForceExecutors(testingClient);
+
+                String userId = adminClient.realm("test").users().search("user2", 0, 1).get(0).getId();
+                Map<String, Object> status = adminClient.realm("test").attackDetection().bruteForceUserStatus(userId);
+                Assertions.assertEquals(Boolean.TRUE, status.get("disabled"));
+                Assertions.assertEquals(Long.MAX_VALUE, ((Number) status.get("failedLoginNotBefore")).longValue());
+                Assertions.assertTrue(bruteForceUsersListDisabled("user2"));
+            });
+        } finally {
+            realm.setPermanentLockout(originalPermanentLockout);
+            realm.setMaxTemporaryLockouts(originalMaxTemporaryLockouts);
+            adminClient.realm("test").update(realm);
+        }
+    }
+
     private String testUserId() {
         return adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0).getId();
     }
@@ -362,6 +397,25 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             realm.setBruteForceLockPolicy(RealmRepresentation.BruteForceLockPolicy.USER);
             adminClient.realm("test").update(realm);
             clearAllUserFailures();
+        }
+    }
+
+    private boolean bruteForceUsersListDisabled(String username) {
+        try (Client client = AdminClientUtil.createResteasyClient()) {
+            Response response = client.target(OAuthClient.AUTH_SERVER_ROOT)
+                    .path("admin/realms/test/ui-ext/brute-force-user")
+                    .queryParam("username", username)
+                    .queryParam("exact", true)
+                    .register(new BearerAuthFilter(adminClient.tokenManager()))
+                    .request(MediaType.APPLICATION_JSON)
+                    .get();
+            Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            List<Map<String, Object>> users = response.readEntity(new GenericType<>() {});
+            Assertions.assertFalse(users.isEmpty());
+            @SuppressWarnings("unchecked")
+            Map<String, Object> status = (Map<String, Object>) users.get(0).get("bruteForceStatus");
+            Assertions.assertNotNull(status);
+            return Boolean.TRUE.equals(status.get("disabled"));
         }
     }
 
