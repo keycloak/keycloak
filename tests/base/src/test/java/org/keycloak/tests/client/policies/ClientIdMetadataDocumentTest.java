@@ -3,6 +3,7 @@ package org.keycloak.tests.client.policies;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.Response;
 
@@ -78,6 +79,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  *
@@ -562,8 +566,10 @@ public class ClientIdMetadataDocumentTest {
         deleteClientByAdmin(clientRepresentation.getId());
     }
 
-    @Test
-    public void testClientUpdaterSourceGroupsConditionOnCimdCreateAndUpdate() throws Exception {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("clientUpdaterSourceConditions")
+    public void testClientUpdaterSourceConditionOnCimdCreateAndUpdate(String updaterSourceConditionProviderId,
+            ClientPolicyConditionConfigurationRepresentation updaterSourceConditionConfig) throws Exception {
         // https://github.com/keycloak/keycloak/issues/52152
         ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
         ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
@@ -572,11 +578,8 @@ public class ClientIdMetadataDocumentTest {
         redirectUrisConfig.setAllowHttpScheme(false);
         redirectUrisConfig.setAllowIPv4LoopbackAddress(true);
 
-        ClientUpdaterSourceGroupsCondition.Configuration updaterSourceConditionConfig = new ClientUpdaterSourceGroupsCondition.Configuration();
-        updaterSourceConditionConfig.setGroups(List.of("topGroup"));
-
         updateCimdAndSecureRedirectUrisPolicy(conditionConfig, executorConfig, redirectUrisConfig,
-                ClientUpdaterSourceGroupsConditionFactory.PROVIDER_ID, updaterSourceConditionConfig);
+                updaterSourceConditionProviderId, updaterSourceConditionConfig);
 
         setCimdPublicClient();
         String code = loginUserAndGetCode(true);
@@ -601,43 +604,16 @@ public class ClientIdMetadataDocumentTest {
         logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
     }
 
-    @Test
-    public void testClientUpdaterSourceRolesConditionOnCimdCreateAndUpdate() throws Exception {
-        // https://github.com/keycloak/keycloak/issues/52152
-        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+    static Stream<Arguments> clientUpdaterSourceConditions() {
+        ClientUpdaterSourceGroupsCondition.Configuration groupsConditionConfig = new ClientUpdaterSourceGroupsCondition.Configuration();
+        groupsConditionConfig.setGroups(List.of("topGroup"));
 
-        SecureRedirectUrisEnforcerExecutor.Configuration redirectUrisConfig = new SecureRedirectUrisEnforcerExecutor.Configuration();
-        redirectUrisConfig.setAllowHttpScheme(false);
-        redirectUrisConfig.setAllowIPv4LoopbackAddress(true);
+        ClientUpdaterSourceRolesCondition.Configuration rolesConditionConfig = new ClientUpdaterSourceRolesCondition.Configuration();
+        rolesConditionConfig.setRoles(List.of("admin"));
 
-        ClientUpdaterSourceRolesCondition.Configuration updaterSourceConditionConfig = new ClientUpdaterSourceRolesCondition.Configuration();
-        updaterSourceConditionConfig.setRoles(List.of("admin"));
-
-        updateCimdAndSecureRedirectUrisPolicy(conditionConfig, executorConfig, redirectUrisConfig,
-                ClientUpdaterSourceRolesConditionFactory.PROVIDER_ID, updaterSourceConditionConfig);
-
-        setCimdPublicClient();
-        String code = loginUserAndGetCode(true);
-        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
-        Assertions.assertEquals(200, tokenResponse.getStatusCode());
-
-        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
-        Assertions.assertTrue(clientRepresentation.isPublicClient());
-
-        logout(tokenResponse.getIdToken());
-
-        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
-
-        cimd.getRepresentation().setLogoUri("http://localhost:8500/logo2.png");
-        code = loginUserAndGetCode(false);
-        tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
-        Assertions.assertEquals(200, tokenResponse.getStatusCode());
-
-        clientRepresentation = findByClientIdByAdmin();
-        Assertions.assertEquals("http://localhost:8500/logo2.png", clientRepresentation.getAttributes().get("logoUri"));
-
-        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+        return Stream.of(
+                Arguments.of(ClientUpdaterSourceGroupsConditionFactory.PROVIDER_ID, groupsConditionConfig),
+                Arguments.of(ClientUpdaterSourceRolesConditionFactory.PROVIDER_ID, rolesConditionConfig));
     }
 
     @Test
@@ -1391,8 +1367,8 @@ public class ClientIdMetadataDocumentTest {
             ClientIdUriSchemeCondition.Configuration conditionConfig,
             ClientIdMetadataDocumentExecutor.Configuration executorConfig,
             SecureRedirectUrisEnforcerExecutor.Configuration redirectUrisConfig,
-            String redirectUrisConditionProvider,
-            ClientPolicyConditionConfigurationRepresentation redirectUrisConditionConfig) {
+            String policyConditionProviderId,
+            ClientPolicyConditionConfigurationRepresentation policyConditionConfig) {
         realm.updateWithCleanup(r -> {
             r.resetClientProfiles()
                     .clientProfile(ClientProfileBuilder.create()
@@ -1415,7 +1391,7 @@ public class ClientIdMetadataDocumentTest {
                     .clientPolicy(ClientPolicyBuilder.create()
                     .name("redirect-uris-policy")
                     .description("SecureRedirectUris policy")
-                    .condition(redirectUrisConditionProvider, redirectUrisConditionConfig)
+                    .condition(policyConditionProviderId, policyConditionConfig)
                     .profile("redirect-uris-profile")
                     .build());
             return r;
