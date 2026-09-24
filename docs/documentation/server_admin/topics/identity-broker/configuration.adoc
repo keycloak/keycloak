@@ -52,6 +52,11 @@ Although each type of identity provider has its configuration options, all share
 |Stored Tokens Readable
 |When *ON*, users can retrieve the stored identity provider token. This action also applies to the _broker_ client-level role _read token_.
 
+|Accepts passive authentication requests
+|Specifies if the IDP accepts passive authentication requests, i.e. OIDC requests containing `prompt=none` query parameter, or SAML requests containing `IsPassive=true`. Normally, if a realm receives a passive authentication request, the realm checks if the user is authenticated and returns a `login_required` error if not. However, if {project_name} determines a default IDP for the authentication request (using either the `kc_idp_hint` query parameter or having a default IDP for the realm), it can forward the passive authentication request to the default IDP. The default IDP then checks if user is authenticated there. Because not all IDPs support this, {project_name} uses this switch to determine whether passive authentication requests can be forwarded to the IDP.
+
+If the user is unauthenticated in the IDP, the client still receives a `login_required` error. If the user is authentic in the IDP, the client can still receive an `interaction_required` error if {project_name} must display authentication pages that require user interaction. This authentication includes required actions (for example, password change), consent screens, and screens set to display by the `first broker login` flow or `post broker login` flow.
+
 |Trust Email
 |When *ON*, {project_name} trusts email addresses from the identity provider. If the realm requires email validation, users that log in from this identity provider do not need to perform the email verification process.
 If the target identity provider supports email verification and advertises this information when returning the user profile information, the email of the federated user will be (un)marked as verified.
@@ -61,7 +66,6 @@ through the broker if the sync mode is set to `FORCE`.
 
 |GUI Order
 |The sort order of the available identity providers on the login page.
-
 
 |Verify essential claim
 |When *ON*, ID tokens issued by the identity provider must have a specific claim, otherwise, the user can not authenticate through this broker
