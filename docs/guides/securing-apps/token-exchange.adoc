@@ -360,7 +360,7 @@ Handing the user's own access token to the actor, whether that actor is another 
 * *No audit trail.* The calendar service sees a request from Alice. It cannot tell the calendar app made it, so a misbehaving app looks exactly like her.
 * *No user consent.* Alice is never asked whether the calendar app may act for her.
 
-Delegation addresses all of these. The delegated token is issued with the actor's own audience and scopes, narrowing it to only what the actor needs. The `act` claim provides a clear audit trail, and the user must explicitly consent to the delegation.
+Delegation addresses all of these. The delegated token is issued with the audience and scopes of the requesting client, the client that performs the exchange, narrowing it to only what that client needs. In client delegation, the requesting client is the actor itself. The `act` claim provides a clear audit trail, and the user must explicitly consent to the delegation.
 
 === Delegation types
 
@@ -406,6 +406,8 @@ This example allows the `actor-app` client, and only that client, to act on beha
 . Add the *delegate* scope.
 . Under *Enforce access to*, leave *All users* selected. Those are the users that can be acted *for*.
 . Under *Policies*, click *Create new policy*, choose *Client*, and select `actor-app`. The policy is the set of actors allowed to act, so only `actor-app` can delegate. Adding more clients to the policy widens that set.
+
+If you want to restrict the permission to an administrator instead of a client, choose the *User* type for the policy in the last step, and select the administrator username.
 
 With this in place, `scope=openid delegation:client:actor-app` succeeds for any user, while `delegation:client:some-other-app` is dropped during scope resolution.
 
