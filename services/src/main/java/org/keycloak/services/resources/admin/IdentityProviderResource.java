@@ -567,7 +567,10 @@ public class IdentityProviderResource {
         if (groupPath == null || groupPath.trim().isEmpty()) {
             return false;
         }
-        GroupModel group = KeycloakModelUtils.findGroupByPath(session, realm, groupPath);
+        GroupModel group = GroupModel.Type.ORGANIZATION.name().equals(mapperModel.getConfig().get(ConfigConstants.GROUP_TYPE))
+          ? KeycloakModelUtils.findGroupByPath(session, realm,
+                 KeycloakModelUtils.getOrganizationForIdpMapper(session, identityProviderModel), groupPath)
+          : KeycloakModelUtils.findGroupByPath(session, realm, groupPath);
         return group != null && AdminRoles.groupHasAdminRoles(group);
     }
 
