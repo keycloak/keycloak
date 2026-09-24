@@ -63,7 +63,7 @@ While it is disabled, any mapper that would grant an administrative role or add 
 Only an administrator with the `manage-realm` permission can enable the setting.
 
 After upgrading, if you rely on identity provider mappers to assign administrative roles or to add brokered users to groups that carry administrative roles, an administrator with the `manage-realm` permission must enable *Allow granting admin roles via mappers* on each affected identity provider.
-Otherwise, those mappings stop taking effect and the affected users no longer receive the administrative roles on their next login.
+Note that this change does not remove existing role or group assignments that may have been previously granted by identity provider mappers. If such removal is needed it needs to be done explicitly.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
