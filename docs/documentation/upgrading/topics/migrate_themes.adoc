@@ -46,6 +46,25 @@ an affected message in your theme.
 
 . For changed values, check the value in the base theme to determine if you need to make changes to your custom theme.
 
+=== Migrating the identity provider link email
+
+The login templates now rely on FreeMarker auto-escaping for message summaries and headers. If a custom login theme disables auto-escaping with `?no_esc` or passes these values through `kcSanitize`, remove that handling so dynamic message text is rendered as text:
+
+[source,ftl]
+----
+${msg("${messageHeader}")}
+${message.summary}
+----
+
+The base HTML email template now renders the localized message in two parts so the confirmation link stays at the translated `{3}` position. If a custom HTML email theme uses `identityProviderLinkBodyHtml` or `identityProviderLinkBody`, update its message bundles with the translated `identityProviderLinkBodyBeforeLink` and `identityProviderLinkBodyAfterLink` keys. Split the existing `identityProviderLinkBody` value around `{3}` to create those values, keeping the text before and after the placeholder in the corresponding key. Then render the link between them:
+
+[source,ftl]
+----
+<div style="white-space: pre-line">${msg("identityProviderLinkBodyBeforeLink", identityProviderDisplayName, realmName, identityProviderContext.username!, "", linkExpiration, linkExpirationFormatter(linkExpiration))}<a href="${link}">${link}</a>${msg("identityProviderLinkBodyAfterLink", identityProviderDisplayName, realmName, identityProviderContext.username!, "", linkExpiration, linkExpirationFormatter(linkExpiration))}</div>
+----
+
+FreeMarker escapes the provider name, realm, username, URL attribute, and link label. Keep `identityProviderLinkBodyHtml` in custom English message bundles while translated bundles still define that key, so the theme verifier can validate translated HTML values. Do not use `kcSanitize` or `?no_esc` for these dynamic values.
+
 === Migrating styles
 
 You might need to update your custom styles to reflect changes made to the styles from the built-in themes. Consider using a diff tool to compare the changes to stylesheets between the old server installation and the new server installation.
