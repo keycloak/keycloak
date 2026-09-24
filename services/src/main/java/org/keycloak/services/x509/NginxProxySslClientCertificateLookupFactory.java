@@ -119,7 +119,7 @@ public class NginxProxySslClientCertificateLookupFactory extends AbstractClientC
             } else {
                 x509ClientCertificateLookup.delegate = new NginxProxySslClientCertificateLookup(sslClientCertHttpHeader,
                         sslChainHttpHeaderPrefix, certificateChainLength, intermediateCerts, trustedRootCerts,
-                        isTruststoreLoaded, certIsUrlEncoded);
+                        truststoreLoaded, certIsUrlEncoded);
             }
 
             isTruststoreLoaded = truststoreLoaded;
