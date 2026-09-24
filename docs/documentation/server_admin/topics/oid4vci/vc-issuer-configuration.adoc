@@ -88,6 +88,7 @@ image::images/oid4vci/authorization-code-flow.drawio.svg[Sequence diagram of the
 
 This flow is best suited for scenarios where the user should be in control and give explicit permission for each credential issued.
 
+[[_oid4vci_pre_authorized_code_flow]]
 ==== Pre-Authorized Code Flow
 
 The Pre-Authorized Code Flow is a non-interactive flow. The issuer creates a pre-approved credential offer, and the wallet can claim the credential without real-time user authentication. This is useful for bulk issuance, offline-capable scenarios, or when the user has already been authenticated through other means.
