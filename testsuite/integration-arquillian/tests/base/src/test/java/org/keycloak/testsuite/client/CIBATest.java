@@ -42,6 +42,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.CibaConfig;
+import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantTypeFactory;
@@ -2527,7 +2528,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     @Test
-    public void testBackchannelAuthnReqWithBruteForceProtectedUser() throws Exception {
+    public void testBackchannelAuthnReqWithBruteForceProtectedIdentifier() throws Exception {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         RealmRepresentation realmRep = null;
@@ -2554,10 +2555,14 @@ public class CIBATest extends AbstractClientPoliciesTest {
             backupRealm.setBruteForceProtected(realmRep.isBruteForceProtected());
             backupRealm.setFailureFactor(realmRep.getFailureFactor());
             backupRealm.setMaxDeltaTimeSeconds(realmRep.getMaxDeltaTimeSeconds());
+            backupRealm.setBruteForceLockPolicy(realmRep.getBruteForceLockPolicy());
+            backupRealm.setBruteForceProtectedUserProperties(realmRep.getBruteForceProtectedUserProperties());
 
             realmRep.setBruteForceProtected(true);
             realmRep.setFailureFactor(2);
             realmRep.setMaxDeltaTimeSeconds(60);
+            realmRep.setBruteForceLockPolicy(RealmRepresentation.BruteForceLockPolicy.PROPERTIES);
+            realmRep.setBruteForceProtectedUserProperties(List.of(UserModel.USERNAME));
             managedRealm.admin().update(realmRep);
 
             List<UserRepresentation> users = managedRealm.admin().users().search(username);
@@ -2602,6 +2607,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 realmRep.setBruteForceProtected(backupRealm.isBruteForceProtected());
                 realmRep.setFailureFactor(backupRealm.getFailureFactor());
                 realmRep.setMaxDeltaTimeSeconds(backupRealm.getMaxDeltaTimeSeconds());
+                realmRep.setBruteForceLockPolicy(backupRealm.getBruteForceLockPolicy());
+                realmRep.setBruteForceProtectedUserProperties(backupRealm.getBruteForceProtectedUserProperties());
                 managedRealm.admin().update(realmRep);
             }
         }

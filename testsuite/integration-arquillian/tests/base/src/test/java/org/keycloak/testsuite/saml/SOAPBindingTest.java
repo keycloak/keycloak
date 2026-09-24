@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.saml;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.xml.soap.MessageFactory;
@@ -27,9 +28,13 @@ import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.profile.ecp.SamlEcpProfileService;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.managers.DefaultBruteForceProtector;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
@@ -44,6 +49,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.Test;
 
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
+import static org.keycloak.testsuite.util.Matchers.isSamlStatusResponse;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
 import static org.keycloak.testsuite.util.SamlClient.Binding.SOAP;
@@ -60,6 +66,59 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertNotNull;
 
 public class SOAPBindingTest extends AbstractSamlTest {
+
+    @Test
+    public void soapBindingRejectsPermanentlyLockedIdentifier() {
+        RealmRepresentation realm = adminClient.realm(REALM_NAME).toRepresentation();
+        Boolean bruteForceProtected = realm.isBruteForceProtected();
+        Boolean permanentLockout = realm.isPermanentLockout();
+        Integer maxTemporaryLockouts = realm.getMaxTemporaryLockouts();
+        Integer failureFactor = realm.getFailureFactor();
+        RealmRepresentation.BruteForceLockPolicy lockPolicy = realm.getBruteForceLockPolicy();
+        List<String> protectedProperties = realm.getBruteForceProtectedUserProperties();
+
+        try {
+            realm.setBruteForceProtected(true);
+            realm.setPermanentLockout(true);
+            realm.setMaxTemporaryLockouts(0);
+            realm.setFailureFactor(2);
+            realm.setBruteForceLockPolicy(RealmRepresentation.BruteForceLockPolicy.PROPERTIES);
+            realm.setBruteForceProtectedUserProperties(List.of(UserModel.USERNAME));
+            adminClient.realm(REALM_NAME).update(realm);
+
+            String realmId = realm.getId();
+            String username = bburkeUser.getUsername();
+            String userId = adminClient.realm(REALM_NAME).users().search(username).get(0).getId();
+            testingClient.server().run(session -> {
+                RealmModel realmModel = session.realms().getRealm(realmId);
+                DefaultBruteForceProtector protector =
+                        (DefaultBruteForceProtector) session.getProvider(BruteForceProtector.class);
+                for (int i = 0; i < 2; i++) {
+                    protector.failure(session, realmModel, userId, "127.0.0.1",
+                            org.keycloak.common.util.Time.currentTimeMillis(), null, username);
+                }
+            });
+
+            SAMLDocumentHolder lockedResponse = new SamlClientBuilder()
+                    .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP,
+                            SAML_ASSERTION_CONSUMER_URL_ECP_SP, SOAP)
+                    .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                    .basicAuthentication(bburkeUser)
+                    .build()
+                    .executeAndTransform(SOAP::extractResponse);
+            assertThat(lockedResponse.getSamlObject(), isSamlStatusResponse(
+                    JBossSAMLURIConstants.STATUS_RESPONDER, JBossSAMLURIConstants.STATUS_NO_PASSIVE));
+        } finally {
+            adminClient.realm(REALM_NAME).attackDetection().clearAllBruteForce();
+            realm.setBruteForceProtected(bruteForceProtected);
+            realm.setPermanentLockout(permanentLockout);
+            realm.setMaxTemporaryLockouts(maxTemporaryLockouts);
+            realm.setFailureFactor(failureFactor);
+            realm.setBruteForceLockPolicy(lockPolicy);
+            realm.setBruteForceProtectedUserProperties(protectedProperties);
+            adminClient.realm(REALM_NAME).update(realm);
+        }
+    }
 
     @Test
     public void soapBindingAuthnWithSignatureTest() {
