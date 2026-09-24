@@ -8,6 +8,8 @@ import {
   ButtonVariant,
   Form,
   Modal,
+  ModalBody,
+  ModalHeader,
   ModalVariant,
   Tooltip,
 } from "@patternfly/react-core";
@@ -141,65 +143,70 @@ export const ExecutionConfigModal = ({
     <>
       <Tooltip content={t("settings")}>
         <Button
+          icon={<CogIcon />}
           variant="plain"
           aria-label={t("settings")}
           onClick={() => setShow(true)}
-        >
-          <CogIcon />
-        </Button>
+        />
       </Tooltip>
       {configDescription && (
         <Modal
           variant={ModalVariant.small}
           isOpen={show}
-          title={t("executionConfig", { name: configDescription.name })}
           onClose={() => setShow(false)}
+          aria-label={t("executionConfig", { name: configDescription.name })}
         >
-          <Form id="execution-config-form" onSubmit={handleSubmit(save)}>
-            <FormProvider {...form}>
-              <TextControl
-                name="alias"
-                label={t("alias")}
-                labelIcon={t("authenticationAliasHelp")}
-                rules={{ required: t("required") }}
-                isDisabled={!!config}
-              />
-              <DynamicComponents
-                stringify
-                properties={configDescription.properties || []}
-              />
-            </FormProvider>
-            <ActionGroup>
-              <Button data-testid="save" variant="primary" type="submit">
-                {t("save")}
-              </Button>
-              <Button
-                data-testid="cancel"
-                variant={ButtonVariant.link}
-                onClick={() => {
-                  setShow(false);
-                }}
-              >
-                {t("cancel")}
-              </Button>
-              {config && (
+          <ModalHeader
+            title={t("executionConfig", { name: configDescription.name })}
+          />
+          <ModalBody>
+            <Form id="execution-config-form" onSubmit={handleSubmit(save)}>
+              <FormProvider {...form}>
+                <TextControl
+                  name="alias"
+                  label={t("alias")}
+                  labelIcon={t("authenticationAliasHelp")}
+                  rules={{ required: t("required") }}
+                  isDisabled={!!config}
+                />
+                <DynamicComponents
+                  stringify
+                  properties={configDescription.properties || []}
+                />
+              </FormProvider>
+              <ActionGroup>
+                <Button data-testid="save" variant="primary" type="submit">
+                  {t("save")}
+                </Button>
                 <Button
-                  className="pf-v5-u-ml-4xl"
-                  data-testid="clear"
+                  data-testid="cancel"
                   variant={ButtonVariant.link}
-                  onClick={async () => {
-                    await adminClient.authenticationManagement.delConfig({
-                      id: config.id!,
-                    });
-                    setConfig(undefined);
+                  onClick={() => {
                     setShow(false);
                   }}
                 >
-                  {t("clear")} <TrashIcon />
+                  {t("cancel")}
                 </Button>
-              )}
-            </ActionGroup>
-          </Form>
+                {config && (
+                  <Button
+                    icon={<TrashIcon />}
+                    className="pf-v6-u-ml-4xl"
+                    data-testid="clear"
+                    variant={ButtonVariant.link}
+                    onClick={async () => {
+                      await adminClient.authenticationManagement.delConfig({
+                        id: config.id!,
+                      });
+                      setConfig(undefined);
+                      setShow(false);
+                    }}
+                  >
+                    {t("clear")}
+                  </Button>
+                )}
+              </ActionGroup>
+            </Form>
+          </ModalBody>
         </Modal>
       )}
     </>

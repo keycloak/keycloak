@@ -103,7 +103,7 @@ export const ExtendedNonDiscoverySettings = () => {
         />
         <FormGroup
           label={t("allowedClockSkew")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("allowedClockSkewHelp")}
               fieldLabelId="allowedClockSkew"

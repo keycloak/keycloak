@@ -64,7 +64,7 @@ export default function AddKubernetesConnect() {
   return (
     <>
       <ViewHeader titleKey={t("addKubernetesProvider")} />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormProvider {...form}>
           <FormAccess
             role="manage-identity-providers"

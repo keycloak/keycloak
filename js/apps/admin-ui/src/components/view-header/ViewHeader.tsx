@@ -9,8 +9,7 @@ import {
   MenuToggle,
   PageSection,
   Switch,
-  Text,
-  TextContent,
+  Content,
   Toolbar,
   ToolbarContent,
   ToolbarItem,
@@ -91,13 +90,13 @@ export const ViewHeader = ({
 
   return (
     <>
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <Level hasGutter>
           <LevelItem>
             <Level>
               <LevelItem>
-                <TextContent className="pf-v5-u-mr-sm">
-                  <Text
+                <Content className="pf-v6-u-mr-sm">
+                  <Content
                     className={className}
                     component="h1"
                     data-testid="view-header"
@@ -105,8 +104,8 @@ export const ViewHeader = ({
                     {noTranslate || !i18n.exists(titleKey)
                       ? titleKey
                       : t(titleKey)}
-                  </Text>
-                </TextContent>
+                  </Content>
+                </Content>
               </LevelItem>
               {badges && (
                 <LevelItem>
@@ -127,7 +126,7 @@ export const ViewHeader = ({
             </Level>
           </LevelItem>
           <LevelItem>
-            <Toolbar className="pf-v5-u-p-0">
+            <Toolbar className="pf-v6-u-p-0">
               <ToolbarContent>
                 {onToggle && (
                   <ToolbarItem alignSelf="center">
@@ -135,8 +134,7 @@ export const ViewHeader = ({
                       id={`${toKey(titleKey)}-switch`}
                       data-testid={`${titleKey}-switch`}
                       label={t("enabled")}
-                      labelOff={t("disabled")}
-                      className="pf-v5-u-mr-lg"
+                      className="pf-v6-u-mr-lg"
                       isDisabled={isReadOnly}
                       isChecked={isEnabled}
                       aria-label={t("enabled")}
@@ -181,8 +179,8 @@ export const ViewHeader = ({
           </LevelItem>
         </Level>
         {enabled && (
-          <TextContent id="view-header-subkey">
-            <Text>
+          <Content id="view-header-subkey">
+            <Content component="p">
               {isValidElement(subKey)
                 ? subKey
                 : subKey
@@ -193,11 +191,11 @@ export const ViewHeader = ({
                   title={t("learnMore")}
                   href={helpUrl}
                   isInline
-                  className="pf-v5-u-ml-md"
+                  className="pf-v6-u-ml-md"
                 />
               )}
-            </Text>
-          </TextContent>
+            </Content>
+          </Content>
         )}
         {lowerDropdownItems && (
           <Dropdown

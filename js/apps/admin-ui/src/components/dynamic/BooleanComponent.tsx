@@ -22,29 +22,31 @@ export const BooleanComponent = ({
       hasNoPaddingTop
       label={t(label!)}
       fieldId={name!}
-      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
+      labelHelp={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
     >
       <Controller
         name={convertToName(name!)}
         data-testid={name}
         defaultValue={isNew ? defaultValue : false}
         control={control}
-        render={({ field }) => (
-          <Switch
-            id={name!}
-            isDisabled={isDisabled}
-            label={t("on")}
-            labelOff={t("off")}
-            isChecked={
-              field.value === "true" ||
-              field.value === true ||
-              field.value?.[0] === "true"
-            }
-            onChange={(_event, value) => field.onChange("" + value)}
-            data-testid={name}
-            aria-label={t(label!)}
-          />
-        )}
+        render={({ field }) => {
+          const isChecked =
+            field.value === "true" ||
+            field.value === true ||
+            field.value?.[0] === "true";
+
+          return (
+            <Switch
+              id={name!}
+              isDisabled={isDisabled}
+              label={isChecked ? t("on") : t("off")}
+              isChecked={isChecked}
+              onChange={(_event, value) => field.onChange("" + value)}
+              data-testid={name}
+              aria-label={t(label!)}
+            />
+          );
+        }}
       />
     </FormGroup>
   );
