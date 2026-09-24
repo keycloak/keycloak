@@ -408,6 +408,113 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
         }
     }
 
+    @Test
+    public void test07ImportCreatedRoleIsOwnedAndRemoved() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "rolesMapper");
+            LDAPTestUtils.updateConfigOptions(mapperModel,
+                    RoleMapperConfig.MODE, LDAPGroupMapperMode.IMPORT.toString(),
+                    RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "true");
+            ctx.getRealm().updateComponent(mapperModel);
+        });
+
+        try {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel realm = ctx.getRealm();
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+                RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+                LDAPObject ldapRole = mapper.createLDAPRole("import-owned-role");
+                LDAPObject ldapUser = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), realm,
+                        "role-import-owner", "Role", "Import", "role-import-owner@example.org", null);
+                mapper.addRoleMappingInLDAP("import-owned-role", ldapUser);
+                Assertions.assertNull(realm.getRole("import-owned-role"));
+
+                UserModel importedUser = session.users().getUserByUsername(realm, "role-import-owner");
+                Assertions.assertNotNull(importedUser);
+                RoleModel importedRole = realm.getRole("import-owned-role");
+                Assertions.assertNotNull(importedRole);
+                Assertions.assertTrue(importedUser.hasRole(importedRole));
+                Assertions.assertEquals(ctx.getLdapModel().getId(), importedRole.getFirstAttribute("kc.ldap.role.provider.id"));
+                Assertions.assertEquals(mapperModel.getId(), importedRole.getFirstAttribute("kc.ldap.role.mapper.id"));
+
+                ctx.getLdapProvider().getLdapIdentityStore().remove(ldapRole);
+                Assertions.assertEquals(1, mapper.syncDataFromFederationProviderToKeycloak(realm).getRemoved());
+                Assertions.assertNull(realm.getRole("import-owned-role"));
+            });
+        } finally {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel realm = ctx.getRealm();
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+                LDAPTestUtils.updateConfigOptions(mapperModel,
+                        RoleMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString(),
+                        RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "false");
+                realm.updateComponent(mapperModel);
+                RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+                LDAPObject ldapRole = mapper.loadLDAPRoleByName("import-owned-role");
+                if (ldapRole != null) {
+                    ctx.getLdapProvider().getLdapIdentityStore().remove(ldapRole);
+                }
+                RoleModel role = realm.getRole("import-owned-role");
+                if (role != null) {
+                    realm.removeRole(role);
+                }
+                UserModel user = session.users().getUserByUsername(realm, "role-import-owner");
+                if (user != null) {
+                    session.users().removeUser(realm, user);
+                }
+                LDAPObject remainingUser = ctx.getLdapProvider().loadLDAPUserByUsername(realm, "role-import-owner");
+                if (remainingUser != null) {
+                    ctx.getLdapProvider().getLdapIdentityStore().remove(remainingUser);
+                }
+            });
+        }
+    }
+
+    @Test
+    public void test08LazyRoleMappingIsOwnedAndRemoved() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+            LDAPTestUtils.updateConfigOptions(mapperModel, RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "true");
+            realm.updateComponent(mapperModel);
+            RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+            try {
+                LDAPObject ldapRole = mapper.createLDAPRole("lazy-owned-role");
+                LDAPObject ldapUser = ctx.getLdapProvider().loadLDAPUserByUsername(realm, "johnkeycloak");
+                mapper.addRoleMappingInLDAP("lazy-owned-role", ldapUser);
+                Assertions.assertNull(realm.getRole("lazy-owned-role"));
+
+                UserModel john = session.users().getUserByUsername(realm, "johnkeycloak");
+                Assertions.assertNotNull(john);
+                Assertions.assertTrue(john.getRealmRoleMappingsStream()
+                        .anyMatch(role -> "lazy-owned-role".equals(role.getName())));
+                RoleModel lazyRole = realm.getRole("lazy-owned-role");
+                Assertions.assertNotNull(lazyRole);
+                Assertions.assertEquals(ctx.getLdapModel().getId(), lazyRole.getFirstAttribute("kc.ldap.role.provider.id"));
+                Assertions.assertEquals(mapperModel.getId(), lazyRole.getFirstAttribute("kc.ldap.role.mapper.id"));
+
+                ctx.getLdapProvider().getLdapIdentityStore().remove(ldapRole);
+                Assertions.assertEquals(1, mapper.syncDataFromFederationProviderToKeycloak(realm).getRemoved());
+                Assertions.assertNull(realm.getRole("lazy-owned-role"));
+            } finally {
+                LDAPTestUtils.updateConfigOptions(mapperModel, RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "false");
+                realm.updateComponent(mapperModel);
+                LDAPObject ldapRole = mapper.loadLDAPRoleByName("lazy-owned-role");
+                if (ldapRole != null) {
+                    ctx.getLdapProvider().getLdapIdentityStore().remove(ldapRole);
+                }
+                RoleModel role = realm.getRole("lazy-owned-role");
+                if (role != null) {
+                    realm.removeRole(role);
+                }
+            }
+        });
+    }
+
     /**
      * Prepare groups LDAP tests. Creates some LDAP mappers as well as some built-in Groups and users in LDAP
      */
