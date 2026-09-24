@@ -141,7 +141,9 @@ function DataTable<T>({
   const selectableRows = useMemo(
     () =>
       rows.filter(
-        (row) => "data" in row && row.disableSelection !== true,
+        (row) =>
+          "data" in row &&
+          (!("disableSelection" in row) || !row.disableSelection),
       ),
     [rows],
   );
