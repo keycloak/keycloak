@@ -309,6 +309,33 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         });
     }
 
+    @Test
+    public void testLockPolicyPropertiesUnlocksFromTheUserDetailPage() throws Exception {
+        withSharedPropertyLockPolicy(RealmRepresentation.BruteForceLockPolicy.PROPERTIES, () -> {
+            loginInvalidPassword("user2@localhost");
+            loginInvalidPassword("user2@localhost");
+            WaitUtils.waitForBruteForceExecutors(testingClient);
+            events.clear();
+
+            String userId = adminClient.realm("test").users().search("user2", 0, 1).get(0).getId();
+            Assertions.assertEquals(Boolean.TRUE,
+                    adminClient.realm("test").attackDetection().bruteForceUserStatus(userId).get("disabled"));
+            Assertions.assertNull(
+                    oauth.passwordGrantRequest("user2@localhost", getPassword("user2")).send().getAccessToken());
+
+            // The Admin Console unlock switch enables the user, which has to clear the property counter too.
+            UserRepresentation user = adminClient.realm("test").users().get(userId).toRepresentation();
+            user.setEnabled(true);
+            adminClient.realm("test").users().get(userId).update(user);
+
+            Assertions.assertEquals(Boolean.FALSE,
+                    adminClient.realm("test").attackDetection().bruteForceUserStatus(userId).get("disabled"));
+            Assertions.assertNotNull(
+                    oauth.passwordGrantRequest("user2@localhost", getPassword("user2")).send().getAccessToken());
+            events.clear();
+        });
+    }
+
     private String testUserId() {
         return adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0).getId();
     }

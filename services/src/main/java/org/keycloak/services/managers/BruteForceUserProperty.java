@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -196,38 +197,21 @@ public final class BruteForceUserProperty {
                 .filter(Objects::nonNull);
     }
 
-    public static Stream<UserLoginFailureModel> getLoginFailures(KeycloakSession session, RealmModel realm,
-            UserModel user, String property) {
-        return getFailureKeys(realm, user, property).stream()
-                .map(failureKey -> session.loginFailures().getUserLoginFailure(realm, failureKey))
-                .filter(Objects::nonNull);
-    }
-
     /**
-     * Users that currently share this user's value for {@code property}, including {@code user}.
-     * {@code id} is per-account and never shared.
+     * Whether any counter of this user currently blocks a login attempt. Unlike
+     * {@link BruteForceProtector#isTemporarilyDisabled}, this includes property counters, which
+     * block only the identifier they belong to rather than the whole account.
      */
-    public static Stream<UserModel> getUsersSharingProperty(KeycloakSession session, RealmModel realm,
-            UserModel user, String property) {
-        Map<String, UserModel> users = new LinkedHashMap<>();
-        users.put(user.getId(), user);
-        if (!ID.equals(property)) {
-            values(user, property)
-                    .filter(value -> value != null && !value.isBlank())
-                    .forEach(value -> findUsersByPropertyValue(session, realm, property, value)
-                            .forEach(found -> users.putIfAbsent(found.getId(), found)));
+    public static boolean isLocked(KeycloakSession session, RealmModel realm, UserModel user) {
+        int currentTime = Time.currentTime();
+        for (String failureKey : getFailureKeys(realm, user)) {
+            UserLoginFailureModel model = session.loginFailures().getUserLoginFailure(realm, failureKey);
+            if (model != null && (currentTime < model.getFailedLoginNotBefore()
+                    || isPermanentlyLocked(realm, model, failureKey))) {
+                return true;
+            }
         }
-        return users.values().stream();
-    }
-
-    public static boolean isLockedByRemainingCounters(KeycloakSession session, RealmModel realm, UserModel user,
-            List<String> clearedKeys) {
-        return getFailureKeys(realm, user).stream()
-                .filter(failureKey -> !clearedKeys.contains(failureKey))
-                .anyMatch(failureKey -> {
-                    UserLoginFailureModel model = session.loginFailures().getUserLoginFailure(realm, failureKey);
-                    return model != null && isPermanentlyLocked(realm, model, failureKey);
-                });
+        return false;
     }
 
     static String propertyKey(String property, String value) {

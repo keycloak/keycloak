@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
@@ -255,6 +256,29 @@ public class BruteForceUserPropertyTest {
     }
 
     @Test
+    public void unlockSeesPropertyCountersThatBlockOnlyOneIdentifier() {
+        RealmModel realm = realm(BruteForceLockPolicy.PROPERTIES, "email");
+        UserModel user = user("user-id", "UserName", "User@Example.com", Map.of());
+        String emailKey = BruteForceUserProperty.propertyKey("email", "user@example.com");
+
+        Assert.assertTrue(BruteForceUserProperty.isLocked(
+                session(Map.of(emailKey, loginFailure(1, Time.currentTime() + 60))), realm, user));
+        Assert.assertTrue(BruteForceUserProperty.isLocked(
+                session(Map.of(emailKey, loginFailure(30))), realm, user));
+    }
+
+    @Test
+    public void unlockIgnoresCountersThatNoLongerBlock() {
+        RealmModel realm = realm(BruteForceLockPolicy.PROPERTIES, "email");
+        UserModel user = user("user-id", "UserName", "User@Example.com", Map.of());
+        String emailKey = BruteForceUserProperty.propertyKey("email", "user@example.com");
+
+        Assert.assertFalse(BruteForceUserProperty.isLocked(session(Map.of()), realm, user));
+        Assert.assertFalse(BruteForceUserProperty.isLocked(
+                session(Map.of(emailKey, loginFailure(1))), realm, user));
+    }
+
+    @Test
     public void propertyKeysDoNotExposePropertyValues() {
         String key = BruteForceUserProperty.propertyKey("email", "private@example.com");
 
@@ -295,12 +319,17 @@ public class BruteForceUserPropertyTest {
     }
 
     private static UserLoginFailureModel loginFailure(int failures) {
+        return loginFailure(failures, 0);
+    }
+
+    private static UserLoginFailureModel loginFailure(int failures, int failedLoginNotBefore) {
         return (UserLoginFailureModel) Proxy.newProxyInstance(
                 BruteForceUserPropertyTest.class.getClassLoader(),
                 new Class<?>[] { UserLoginFailureModel.class },
                 (proxy, method, args) -> switch (method.getName()) {
                     case "getNumFailures" -> failures;
                     case "getNumTemporaryLockouts" -> 0;
+                    case "getFailedLoginNotBefore" -> failedLoginNotBefore;
                     default -> throw new UnsupportedOperationException(method.getName());
                 });
     }

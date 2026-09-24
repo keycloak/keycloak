@@ -199,7 +199,8 @@ public class UserResource {
             boolean wasEnabled = user.isEnabled();
             boolean wasPermanentlyLockedOut = false;
             if (rep.isEnabled() != null && rep.isEnabled()) {
-                if (!user.isEnabled() || session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
+                if (!user.isEnabled() || session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)
+                        || BruteForceUserProperty.isLocked(session, realm, user)) {
                     if (BruteForceUserProperty.removeLoginFailures(session, realm, user)) {
                         adminEvent.clone(session).resource(ResourceType.USER_LOGIN_FAILURE)
                                 .resourcePath(session.getContext().getUri())
