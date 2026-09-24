@@ -24,6 +24,9 @@ import java.util.Set;
 
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.cache.LocalCache;
+import org.keycloak.cache.LocalCacheConfiguration;
+import org.keycloak.cache.LocalCacheProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.constants.ServiceAccountConstants;
@@ -33,6 +36,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -58,6 +62,7 @@ import org.keycloak.protocol.oidc.mappers.UserRealmRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.protocol.oidc.scope.ClientDelegationScopeType;
 import org.keycloak.protocol.oidc.scope.DelegationScopeType;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.IDToken;
@@ -173,11 +178,71 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
      */
     public static final String CONFIG_ALLOW_INITIATING_IDP_LOGOUT_PARAM = "allow-initiating-idp-logout-param";
 
+    /**
+     * Config property for the max number of distinct OIDC parameter names memoized by the {@link LocalCache}
+     * backing {@link OIDCProviderConfig#getMaxLengthForTheParameter(String, boolean)}. Standard OIDC parameter
+     * names are a small, fixed set, so this is never expected to be reached in practice; it only protects against
+     * memory growth in case that method is called with arbitrary, attacker-controlled parameter names
+     * (e.g. from {@code TokenEndpoint}).
+     */
+    public static final String CONFIG_OIDC_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE = "req-params-max-length-cache-size";
+
+    public static final int DEFAULT_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE = 1000;
+
+    private Config.Scope config;
     private OIDCProviderConfig providerConfig;
+    private LocalCache<String, Integer> reqParamMaxLengthCache;
+    private LocalCache<String, Integer> tokenParamMaxLengthCache;
 
     @Override
     public void init(Config.Scope config) {
-        this.providerConfig = new OIDCProviderConfig(config);
+        this.config = config;
+        initBuiltIns();
+        if (providerConfig != null) {
+            // Hack: This is used in the old test suite in KcOidcBrokerLogoutTest when the provider is re-initialized by calling init()
+            // Remove once the old Arquillian test suite is no longer used.
+            this.providerConfig = new OIDCProviderConfig(config, reqParamMaxLengthCache, tokenParamMaxLengthCache);
+        }
+    }
+
+    /**
+     * Resolves {@link #CONFIG_OIDC_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE}, rejecting non-positive values.
+     * <p>
+     * {@link LocalCacheConfiguration} treats any {@code maxSize <= 0} as "unbounded" (see
+     * {@code DefaultLocalCacheProviderFactory}). This particular cache exists specifically to cap memory growth
+     * from arbitrary, attacker-controlled parameter names, so silently turning it unbounded on a misconfigured
+     * (zero or negative) value would defeat that protection; fall back to the default instead.
+     * <p>
+     * Package-private so it can be unit tested directly without going through the full factory lifecycle.
+     */
+    int resolveMaxLengthCacheSize(Config.Scope config) {
+        int configured = config.getInt(CONFIG_OIDC_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE, DEFAULT_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE);
+        if (configured <= 0) {
+            logger.warnf("Ignoring non-positive value '%d' for '%s', which would make the cache unbounded. Using the default of %d instead.",
+                    configured, CONFIG_OIDC_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE, DEFAULT_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE);
+            return DEFAULT_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE;
+        }
+        return configured;
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+        super.postInit(factory);
+        int maxLengthCacheSize = resolveMaxLengthCacheSize(config);
+        try (KeycloakSession session = factory.create()) {
+            LocalCacheProvider cacheProvider = session.getProvider(LocalCacheProvider.class);
+            this.reqParamMaxLengthCache = cacheProvider.create(LocalCacheConfiguration.<String, Integer>builder()
+                    .name("oidc-req-param-max-length")
+                    .maxSize(maxLengthCacheSize)
+                    .build());
+            this.tokenParamMaxLengthCache = cacheProvider.create(LocalCacheConfiguration.<String, Integer>builder()
+                    .name("oidc-token-param-max-length")
+                    .maxSize(maxLengthCacheSize)
+                    .build());
+        }
+        this.providerConfig = new OIDCProviderConfig(config, reqParamMaxLengthCache, tokenParamMaxLengthCache);
+        this.config = null;
+
         if (this.providerConfig.isAllowMultipleAudiencesForJwtClientAuthentication()) {
             logger.warnf("It is allowed to have multiple audiences for the JWT client authentication. This option is not recommended and will be removed in one of the future releases."
                     + " It is recommended to update your OAuth/OIDC clients to rather use single audience in the JWT token used for the client authentication.");
@@ -215,8 +280,24 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                     "Rely on OIDC back-channel or front-channel logout instead and disable this option: %s=false",
                     CONFIG_ALLOW_INITIATING_IDP_LOGOUT_PARAM);
         }
+    }
 
-        initBuiltIns();
+    @Override
+    public void close() {
+        super.close();
+        if (reqParamMaxLengthCache != null) {
+            reqParamMaxLengthCache.close();
+            reqParamMaxLengthCache = null;
+        }
+        if (tokenParamMaxLengthCache != null) {
+            tokenParamMaxLengthCache.close();
+            tokenParamMaxLengthCache = null;
+        }
+    }
+
+    @Override
+    public Set<Class<? extends Provider>> dependsOn() {
+        return Set.of(LocalCacheProvider.class); // for caching of getMaxLengthForTheParameter() lookups
     }
 
     @Override
@@ -764,6 +845,13 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                             "As 'token' parameter is considered a parameter containing possibly long token (for example big JWT or SAML assertion) with unbounded data (For example possibly big amount of roles inside JWT). " +
                             "Example of such parameter is for example 'subject_token' parameter case of token exchange grant.")
                     .defaultValue(DEFAULT_ADDITIONAL_REQ_TOKEN_PARAMS_FAIL_FAST)
+                    .add()
+                .property()
+                    .name(CONFIG_OIDC_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE)
+                    .type("int")
+                    .helpText("Maximum number of distinct OIDC parameter names for which the resolved max-length configuration is memoized in memory. " +
+                            "Standard OIDC parameter names are a small, fixed set, so this limit is not expected to be reached in practice.")
+                    .defaultValue(DEFAULT_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE)
                     .add()
                 .property()
                     .name(CONFIG_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK)
