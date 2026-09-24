@@ -98,16 +98,19 @@ public class NginxProxySslClientCertificateLookupFactory extends AbstractClientC
 
             final Set<X509Certificate> trustedRootCerts;
             final Set<X509Certificate> intermediateCerts;
+            final boolean truststoreLoaded;
             if (provider != null && provider.getTruststore() != null) {
                 trustedRootCerts = provider.getRootCertificates().entrySet().stream().flatMap(t -> t.getValue().stream()).collect(Collectors.toUnmodifiableSet());
                 intermediateCerts = provider.getIntermediateCertificates().entrySet().stream().flatMap(t -> t.getValue().stream()).collect(Collectors.toUnmodifiableSet());
 
                 logger.debug("Keycloak truststore loaded for NGINX x509cert-lookup provider.");
 
-                isTruststoreLoaded = true;
+                truststoreLoaded = true;
             } else {
                 trustedRootCerts = Set.of();
                 intermediateCerts = Set.of();
+
+                truststoreLoaded = false;
             }
 
             if (trustProxyVerification) {
@@ -118,6 +121,8 @@ public class NginxProxySslClientCertificateLookupFactory extends AbstractClientC
                         sslChainHttpHeaderPrefix, certificateChainLength, intermediateCerts, trustedRootCerts,
                         isTruststoreLoaded, certIsUrlEncoded);
             }
+
+            isTruststoreLoaded = truststoreLoaded;
         }
     }
 
