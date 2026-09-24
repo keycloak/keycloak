@@ -19,3 +19,10 @@ See the upgrading guide for details.
 == Credential ID in credential update events
 
 The `UPDATE_CREDENTIAL` events emitted by built-in required actions now carry the `credential_id` detail when a credential was created or updated in the {project_name} credential store, as the `REMOVE_CREDENTIAL` event already did. The detail is omitted when an external user-storage provider handles the update because there is no {project_name} credential ID to report.
+
+= Configuring and Running
+
+== Reloadable system truststore
+// https://github.com/keycloak/keycloak/issues/51680
+
+The system truststore can now be reloaded at runtime, so rotated CA certificates are picked up without restarting {project_name}. Set the new `--truststore-paths-reload-period` option to a duration and {project_name} periodically re-reads the certificates referenced by `--truststore-paths` and the automatically discovered CA certificates, and rebuilds the system truststore. Reloading is opt-in and disabled unless the option is set. For details, see <@links.server id="keycloak-truststore"/>.
