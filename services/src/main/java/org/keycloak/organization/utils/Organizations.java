@@ -123,6 +123,19 @@ public class Organizations {
         }
     }
 
+    public static void checkGroupMapperOrgPermission(KeycloakSession session, IdentityProviderMapperModel mapper, AdminPermissionEvaluator auth) {
+        Map<String, String> config = mapper.getConfig();
+        if (config == null || !Type.ORGANIZATION.name().equals(config.get(ConfigConstants.GROUP_TYPE))) {
+            return;
+        }
+
+        OrganizationProvider orgProvider = getProvider(session);
+        checkEnabled(orgProvider, auth);
+
+        OrganizationModel org = orgProvider.getById(config.get(ConfigConstants.ORGANIZATION_ID));
+        auth.orgs().requireManage(org);
+    }
+
     public static boolean canManageOrganizationGroup(KeycloakSession session, GroupModel group) {
         //  if it's not an organization group OR organizations are disabled, we don't need further checks
         if (!isOrganizationGroup(group) || !isEnabled(session)) {
