@@ -51,6 +51,20 @@ This change addresses CVE-2026-93999.
 
 For more details, see link:{adminguide_link}#_audience_disabled_clients[Disabled clients and the audience] in the {adminguide_name}.
 
+=== Identity provider mappers no longer grant administrative roles by default (CVE-2026-12388)
+// https://github.com/keycloak/keycloak/issues/50444
+
+Identity provider mappers can grant realm roles to brokered users or add them to groups.
+Previously, an administrator who only held the `manage-identity-providers` permission could configure such a mapper to grant an administrative role or to add users to a group that carries administrative roles, escalating their own privileges beyond what that permission is meant to allow.
+
+Identity providers now have an `allowAdminRoleMapping` setting that controls whether their mappers may assign administrative roles, either directly or through group membership.
+The setting defaults to `false`, including for identity providers that already exist when you upgrade.
+While it is disabled, any mapper that would grant an administrative role or add a user to a group that carries administrative roles is blocked, both when the mapper is created or updated and when a user logs in through the broker.
+Only an administrator with the `manage-realm` permission can enable the setting.
+
+After upgrading, if you rely on identity provider mappers to assign administrative roles or to add brokered users to groups that carry administrative roles, an administrator with the `manage-realm` permission must enable *Allow granting admin roles via mappers* on each affected identity provider.
+Note that this change does not remove existing role or group assignments that may have been previously granted by identity provider mappers. If such removal is needed it needs to be done explicitly.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
