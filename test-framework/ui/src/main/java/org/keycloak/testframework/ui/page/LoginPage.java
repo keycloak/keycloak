@@ -54,16 +54,6 @@ public class LoginPage extends AbstractLoginPage {
         passwordInput.sendKeys(password);
     }
 
-    public void login(String username, String password) {
-        fillLogin(username, password);
-        submit();
-    }
-
-    public void login(String password) {
-        fillPassword(password);
-        submit();
-    }
-
     public void submit() {
         submitButton.click();
     }
