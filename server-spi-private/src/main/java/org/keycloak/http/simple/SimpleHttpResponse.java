@@ -41,39 +41,34 @@ public class SimpleHttpResponse implements AutoCloseable {
         if (statusCode == -1) {
             statusCode = response.getStatusLine().getStatusCode();
 
-            InputStream is;
             HttpEntity entity = response.getEntity();
             if (entity != null) {
-                is = entity.getContent();
                 contentType = ContentType.getOrDefault(entity);
                 Charset charset = contentType.getCharset();
-                try {
-                    HeaderIterator it = response.headerIterator();
-                    while (it.hasNext()) {
-                        Header header = it.nextHeader();
-                        if (header.getName().equals("Content-Encoding") && header.getValue().equals("gzip")) {
-                            is = new GZIPInputStream(is);
-                        }
+
+                boolean gzip = false;
+                HeaderIterator it = response.headerIterator();
+                while (it.hasNext()) {
+                    Header header = it.nextHeader();
+                    if (header.getName().equals("Content-Encoding") && header.getValue().equals("gzip")) {
+                        gzip = true;
+                    }
+                }
+
+                try (InputStream entityStream = entity.getContent();
+                     InputStream decoded = gzip ? new GZIPInputStream(entityStream) : entityStream;
+                     SafeInputStream safe = new SafeInputStream(decoded, maxConsumedResponseSize);
+                     InputStreamReader reader = charset == null ? new InputStreamReader(safe, StandardCharsets.UTF_8) :
+                             new InputStreamReader(safe, charset)) {
+
+                    StringWriter writer = new StringWriter();
+
+                    char[] buffer = new char[1024 * 4];
+                    for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
+                        writer.write(buffer, 0, n);
                     }
 
-                    is = new SafeInputStream(is, maxConsumedResponseSize);
-
-                    try (InputStreamReader reader = charset == null ? new InputStreamReader(is, StandardCharsets.UTF_8) :
-                            new InputStreamReader(is, charset)) {
-
-                        StringWriter writer = new StringWriter();
-
-                        char[] buffer = new char[1024 * 4];
-                        for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
-                            writer.write(buffer, 0, n);
-                        }
-
-                        responseString = writer.toString();
-                    }
-                } finally {
-                    if (is != null) {
-                        is.close();
-                    }
+                    responseString = writer.toString();
                 }
             }
         }
