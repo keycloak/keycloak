@@ -402,7 +402,7 @@ export function KeycloakDataTable<T>({
 
   const [defaultPageSize, setDefaultPageSize] = useStoredState(
     localStorage,
-    "pageSize",
+    ariaLabelKey + ".pageSize",
     10,
   );
 
