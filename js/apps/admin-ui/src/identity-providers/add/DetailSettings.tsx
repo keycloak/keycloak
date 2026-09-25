@@ -75,6 +75,7 @@ import { OIDCAuthentication } from "./OIDCAuthentication";
 import { OIDCGeneralSettings } from "./OIDCGeneralSettings";
 import { ReqAuthnConstraints } from "./ReqAuthnConstraintsSettings";
 import { SamlGeneralSettings } from "./SamlGeneralSettings";
+import { SocialBrokerSettings } from "./SocialBrokerSettings";
 import { SpiffeSettings } from "./SpiffeSettings";
 import { AdminEvents } from "../../events/AdminEvents";
 import { UserProfileClaimsSettings } from "./OAuth2UserProfileClaimsSettings";
@@ -544,6 +545,7 @@ export default function DetailSettings() {
           {providerInfo && (
             <DynamicComponents stringify properties={providerInfo.properties} />
           )}
+          {isSocial && <SocialBrokerSettings />}
         </FormAccess>
       ),
     },
