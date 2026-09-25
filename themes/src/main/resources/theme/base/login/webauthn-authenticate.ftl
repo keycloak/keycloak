@@ -76,7 +76,7 @@
             </div>
         </div>
 
-    <script type="module">
+    <script type="module" nonce="${nonce.value}">
         <#outputformat "JavaScript">
         import { authenticateByWebAuthn } from "${url.resourcesPath}/js/webauthnAuthenticate.js";
         const authButton = document.getElementById('authenticateWebAuthnButton');
