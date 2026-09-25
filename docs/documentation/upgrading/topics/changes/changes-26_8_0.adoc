@@ -549,6 +549,14 @@ The previous default of storing login failure data only in the in-memory Infinis
 Login failures are now stored in the database by default (`login-failures:v2`).
 If you have explicitly enabled `login-failures:v1`, plan to remove this option before upgrading to a future release.
 
+=== `Use refresh tokens for client credentials grant` switch on clients is deprecated
+
+The *Use refresh tokens for client credentials grant* switch on clients is deprecated and will be removed in a future release.
+This switch was introduced solely for backwards compatibility and it is discouraged to use service accounts together with refresh tokens.
+
+Instead of using a refresh token to obtain a new access token, clients should always send a new client credentials grant request with their client credentials.
+This approach avoids the overhead of managing refresh tokens for machine-to-machine flows and aligns with the recommended practices for OAuth 2.0 service accounts.
+
 === Kerberos credential delegation is deprecated
 // https://github.com/keycloak/keycloak/issues/44062
 
