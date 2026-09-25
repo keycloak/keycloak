@@ -430,6 +430,14 @@ For details on the new configuration model, see link:{adminguide_link}#++_managi
 
 If a custom provider archive defines multiple persistence units within a single `persistence.xml` and an entity-less unit should load `META-INF/orm.xml`, explicitly declare the standard `<mapping-file>META-INF/orm.xml</mapping-file>` element in that `<persistence-unit>` to ensure its entities are properly bound and to prevent cross-unit mapping collisions.
 
+=== `phoneNumberVerified` is reset when users change their phone number
+
+When a user changes the `phoneNumber` attribute through the account console, the update profile required action, or when reviewing their profile during their first login through an identity provider, {project_name} now sets the `phoneNumberVerified` attribute to `false` if it was `true`, in the same way `emailVerified` is reset when a user changes their email.
+These two attributes are the ones mapped to the `phone_number` and `phone_number_verified` claims by the built-in *phone* client scope.
+
+Changes made by administrators, for example through the Admin REST API, and values written by identity provider mappers do not reset it.
+If the `phoneNumberVerified` attribute is declared in the user profile, make sure that only administrators can edit it.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
