@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
@@ -131,8 +132,15 @@ public class RedirectUtils {
 
             String valid = matchesRedirects(resolveValidRedirects, r, allowWildcards);
 
-            if (valid == null && "http".equals(originalRedirect.getScheme()) && LOOPBACK_INTERFACES.contains(originalRedirect.getHost())) {
-                String redirectWithDefaultPort = KeycloakUriBuilder.fromUri(originalRedirect).port(80).buildAsString();
+            String redirectHost = originalRedirect.getHost();
+            if (valid == null && "http".equalsIgnoreCase(originalRedirect.getScheme())
+                    && redirectHost != null
+                    && LOOPBACK_INTERFACES.contains(redirectHost.toLowerCase(Locale.ROOT))) {
+                // Normalize scheme so default port 80 is omitted by KeycloakUriBuilder.
+                String redirectWithDefaultPort = KeycloakUriBuilder.fromUri(originalRedirect)
+                        .scheme(originalRedirect.getScheme().toLowerCase(Locale.ROOT))
+                        .port(80)
+                        .buildAsString();
                 valid = matchesRedirects(resolveValidRedirects, redirectWithDefaultPort, allowWildcards);
             }
 
@@ -147,7 +155,7 @@ public class RedirectUtils {
             String scheme = originalRedirect.getScheme();
             if (valid != null && scheme != null) {
                 // check the scheme is valid, it should be http(s) or explicitly allowed by the validation
-                if (!valid.startsWith(scheme + ":") && !"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+                if (!schemeEqualsPrefix(valid, scheme) && !"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
                     logger.debugf("Invalid URI because scheme is not allowed: %s", redirectUri);
                     valid = null;
                 }
@@ -252,26 +260,149 @@ public class RedirectUtils {
                         idx = redirect.indexOf('#');
                     }
                     String r = idx == -1 ? redirect : redirect.substring(0, idx);
+                    // Detect port wildcards before stripping '*'. The configured string must itself
+                    // end in :* (not a later path/SSP wildcard after an authority that contains :*),
+                    // and path wildcards with an empty port (e.g. https://example.com:/*) must still
+                    // compare ports normally rather than as a port wildcard.
+                    boolean portWildcard = isPortWildcard(validRedirectWildcard);
                     // strip off *
                     int length = validRedirectWildcard.length() - 1;
                     validRedirectWildcard = validRedirectWildcard.substring(0, length);
-                    if (r.startsWith(validRedirectWildcard)) {
+                    if (redirectUriStartsWith(r, validRedirectWildcard, portWildcard)) {
                         return validRedirectWildcard;
+                    }
+                    // Port wildcards must not fall back to exact equality against the stripped prefix
+                    // (it would undo the explicit-port requirement).
+                    if (portWildcard) {
+                        continue;
                     }
                     // strip off trailing '/'
                     if (length - 1 > 0 && validRedirectWildcard.charAt(length - 1) == '/') {
                         length--;
                     }
                     validRedirectWildcard = validRedirectWildcard.substring(0, length);
-                    if (validRedirectWildcard.equals(r)) {
+                    if (redirectUriEquals(validRedirectWildcard, r)) {
                         return validRedirectWildcard;
                     }
-                } else if (validRedirect.equals(redirect)) {
+                } else if (redirectUriEquals(validRedirect, redirect)) {
                     return validRedirect;
                 }
             }
         }
         return null;
+    }
+
+    private static boolean schemeEqualsPrefix(String uri, String scheme) {
+        String prefix = scheme + ":";
+        return uri.regionMatches(true, 0, prefix, 0, prefix.length());
+    }
+
+    private static boolean redirectUriEquals(String configured, String redirect) {
+        if (configured.equals(redirect)) {
+            return true;
+        }
+        URI configuredUri = toUri(configured);
+        URI redirectUri = toUri(redirect);
+        if (configuredUri == null || redirectUri == null) {
+            return false;
+        }
+        if (!UriUtils.schemeHostAndPortEqual(configuredUri, redirectUri)) {
+            return false;
+        }
+        if (configuredUri.isOpaque() || redirectUri.isOpaque()) {
+            if (configuredUri.isOpaque() != redirectUri.isOpaque()) {
+                return false;
+            }
+            return Objects.equals(configuredUri.getRawSchemeSpecificPart(), redirectUri.getRawSchemeSpecificPart())
+                    && Objects.equals(configuredUri.getRawFragment(), redirectUri.getRawFragment());
+        }
+        return UriUtils.rawUserInfoEqual(configuredUri, redirectUri)
+                && Objects.equals(configuredUri.getRawPath(), redirectUri.getRawPath())
+                && Objects.equals(configuredUri.getRawQuery(), redirectUri.getRawQuery())
+                && Objects.equals(configuredUri.getRawFragment(), redirectUri.getRawFragment());
+    }
+
+    private static boolean isPortWildcard(String validRedirectWildcard) {
+        // Trailing wildcard must be the port wildcard (string ends with :*). An embedded
+        // :* in the authority with a later path wildcard (e.g. https://example.com:*/callback*)
+        // is not a port wildcard. Authority must also end with :* so path patterns that
+        // merely end in ":*" (e.g. https://example.com:8443/foo:*) stay path wildcards.
+        if (!validRedirectWildcard.endsWith(":*")) {
+            return false;
+        }
+        URI uri = toUri(validRedirectWildcard);
+        String authority = uri != null ? uri.getRawAuthority() : null;
+        return authority != null && authority.endsWith(":*");
+    }
+
+    private static boolean redirectUriStartsWith(String redirect, String prefix, boolean portWildcard) {
+        if (redirect.startsWith(prefix)) {
+            return true;
+        }
+        URI redirectUri = toUri(redirect);
+        if (redirectUri == null) {
+            return false;
+        }
+        URI prefixUri = toUri(prefix);
+        if (prefixUri == null) {
+            return redirectUriStartsWithUnparseablePrefix(redirect, redirectUri, prefix);
+        }
+        String prefixAuthority = prefixUri.getRawAuthority();
+        if (portWildcard) {
+            if (!UriUtils.schemeAndHostEqual(redirectUri, prefixUri)) {
+                return false;
+            }
+            // Port wildcard requires an explicit port in the redirect (reject host-only URIs).
+            if (!UriUtils.hasExplicitPort(redirectUri)) {
+                return false;
+            }
+        } else if (prefixAuthority == null && redirectUri.getRawAuthority() == null) {
+            // Authority-less (opaque or path-only): compare schemes case-insensitively here;
+            // schemeHostAndPortEqual would compare the full SSP and reject valid prefixes.
+            String redirectScheme = redirectUri.getScheme();
+            String prefixScheme = prefixUri.getScheme();
+            if (redirectScheme == null || prefixScheme == null
+                    || !redirectScheme.equalsIgnoreCase(prefixScheme)) {
+                return false;
+            }
+        } else if (!UriUtils.schemeHostAndPortEqual(redirectUri, prefixUri)) {
+            return false;
+        }
+        if (!UriUtils.rawUserInfoEqual(redirectUri, prefixUri)) {
+            return false;
+        }
+        if (redirectUri.isOpaque() || prefixUri.isOpaque()) {
+            String redirectSsp = redirectUri.getRawSchemeSpecificPart() != null ? redirectUri.getRawSchemeSpecificPart() : "";
+            String prefixSsp = prefixUri.getRawSchemeSpecificPart() != null ? prefixUri.getRawSchemeSpecificPart() : "";
+            return redirectSsp.startsWith(prefixSsp);
+        }
+        String redirectPath = redirectUri.getRawPath() != null ? redirectUri.getRawPath() : "";
+        String prefixPath = prefixUri.getRawPath() != null ? prefixUri.getRawPath() : "";
+        return redirectPath.startsWith(prefixPath);
+    }
+
+    private static boolean redirectUriStartsWithUnparseablePrefix(String redirect, URI redirectUri, String prefix) {
+        int colonIdx = prefix.indexOf(':');
+        if (colonIdx < 0) {
+            return false;
+        }
+        String prefixScheme = prefix.substring(0, colonIdx);
+        String prefixSsp = prefix.substring(colonIdx + 1);
+        String redirectScheme = redirectUri.getScheme();
+        if (redirectScheme == null || !redirectScheme.equalsIgnoreCase(prefixScheme)) {
+            return false;
+        }
+        if (redirectUri.isOpaque()) {
+            String redirectSsp = redirectUri.getRawSchemeSpecificPart() != null ? redirectUri.getRawSchemeSpecificPart() : "";
+            return redirectSsp.startsWith(prefixSsp);
+        }
+        if (prefixSsp.isEmpty()) {
+            return true;
+        }
+        if (!redirect.regionMatches(true, 0, prefix, 0, colonIdx + 1)) {
+            return false;
+        }
+        return redirect.substring(colonIdx + 1).startsWith(prefixSsp);
     }
 
     private static String checkValidRedirectWildcard(String validRedirect) {
@@ -337,6 +468,8 @@ public class RedirectUtils {
     }
 
     private static boolean isValidScheme(String url) {
-        return url != null && (url.startsWith("http://") || url.startsWith("https://"));
+        return url != null
+                && (url.regionMatches(true, 0, "http://", 0, 7)
+                || url.regionMatches(true, 0, "https://", 0, 8));
     }
 }

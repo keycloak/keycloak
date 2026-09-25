@@ -17,6 +17,8 @@
 
 package org.keycloak.util;
 
+import java.net.URI;
+
 import org.keycloak.common.util.UriUtils;
 
 import org.junit.Test;
@@ -61,6 +63,57 @@ public class UriUtilsTest {
 
     private void assertInvalid(String origin) {
         assertFalse(UriUtils.isOrigin(origin));
+    }
+
+    @Test
+    public void testOriginEqualsIgnoresSchemeAndHostCase() {
+        assertTrue(UriUtils.originEquals("https://Example.COM:8443", "https://example.com:8443"));
+        assertTrue(UriUtils.originEquals("HTTPS://EXAMPLE.COM", "https://example.com"));
+        assertFalse(UriUtils.originEquals("https://Example.COM:8443", "https://example.com:8444"));
+        assertFalse(UriUtils.originEquals("https://Example.COM:8443", "https://other.com:8443"));
+        assertFalse(UriUtils.originEquals("https://allowed_host", "https://evil_host"));
+        // Origin is scheme + host + port; user-info is not part of the origin
+        assertTrue(UriUtils.originEquals("https://Alice@allowed_host", "https://alice@ALLOWED_HOST"));
+        assertTrue(UriUtils.originEquals("https://Alice@example.com", "https://alice@example.com"));
+        // Opaque URIs with no authority must not match on scheme alone
+        assertFalse(UriUtils.schemeAndHostEqual(URI.create("mailto:alice@example.com"),
+                URI.create("mailto:bob@evil.test")));
+        assertTrue(UriUtils.schemeAndHostEqual(URI.create("mailto:alice@example.com"),
+                URI.create("MAILTO:alice@example.com")));
+        // Registry-name host case-insensitive; port still compared for origin equality
+        assertTrue(UriUtils.originEquals("https://ALLOWED_HOST:444", "https://allowed_host:444"));
+        assertFalse(UriUtils.originEquals("https://allowed_host:444", "https://allowed_host:443"));
+        // Nonnumeric registry-name ports must not collapse to "no port" and match each other
+        assertFalse(UriUtils.schemeHostAndPortEqual(URI.create("https://foo:bar/path"),
+                URI.create("https://foo:baz/path")));
+        assertTrue(UriUtils.schemeHostAndPortEqual(URI.create("https://foo:bar/path"),
+                URI.create("https://FOO:bar/path")));
+        // Empty explicit port is distinct from an absent port
+        assertFalse(UriUtils.schemeHostAndPortEqual(URI.create("https://keycloak:"),
+                URI.create("https://keycloak")));
+        // Percent-encoded '@' in the host must not be decoded into a user-info separator
+        assertFalse(UriUtils.schemeAndHostEqual(URI.create("myapp://evil%40good.com/callback"),
+                URI.create("myapp://good.com/callback")));
+        assertTrue(UriUtils.schemeAndHostEqual(URI.create("myapp://evil%40good.com/callback"),
+                URI.create("myapp://EVIL%40GOOD.COM/callback")));
+        // Without IDNA, Unicode and punycode forms are distinct hosts
+        assertFalse(UriUtils.originEquals("https://münchen.example",
+                "https://xn--mnchen-3ya.example"));
+        assertFalse(UriUtils.originEquals("https://faß.de", "https://fass.de"));
+        // Unicode case folding must not equate distinct hosts (dotless ı vs ASCII i)
+        assertFalse(UriUtils.originEquals("https://ı.com", "https://i.com"));
+        assertFalse(UriUtils.schemeAndHostEqual(URI.create("https://ı.com/callback"),
+                URI.create("https://i.com/callback")));
+        assertTrue(UriUtils.originEquals("https://Example.COM", "https://example.com"));
+    }
+
+    @Test
+    public void testHasExplicitPortIgnoresIpv6LiteralColons() {
+        assertFalse(UriUtils.hasExplicitPort(URI.create("https://[::1]/callback")));
+        assertTrue(UriUtils.hasExplicitPort(URI.create("https://[::1]:443/callback")));
+        assertTrue(UriUtils.hasExplicitPort(URI.create("https://example.com:8443/callback")));
+        assertFalse(UriUtils.hasExplicitPort(URI.create("https://example.com/callback")));
+        assertTrue(UriUtils.hasExplicitPort(URI.create("https://example.com:/callback")));
     }
 
     @Test
