@@ -291,6 +291,21 @@
         </dependency>
     </dependencies>
     <build>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+            </testResource>
+            <testResource>
+                <directory>${project.basedir}/../themes/src/main/resources/theme</directory>
+                <targetPath>sanitization-themes</targetPath>
+                <includes>
+                    <include>base/login/*.ftl</include>
+                    <include>base/email/html/*.ftl</include>
+                    <include>keycloak.v2/login/*.ftl</include>
+                </includes>
+                <filtering>false</filtering>
+            </testResource>
+        </testResources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
