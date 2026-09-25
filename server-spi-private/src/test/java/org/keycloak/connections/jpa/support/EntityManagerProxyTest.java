@@ -24,10 +24,16 @@ import java.util.Map;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.OptimisticLockException;
+
+import org.keycloak.models.ModelConcurrentModificationException;
+import org.keycloak.models.ModelException;
 
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class EntityManagerProxyTest {
@@ -55,6 +61,21 @@ public class EntityManagerProxyTest {
         proxy.close();
         // once closed, the entity manager should not be tracked
         assertTrue(proxies.isEmpty());
+    }
+
+    @Test
+    public void testOptimisticLockConvertsToConcurrentModification() {
+        OptimisticLockException cause = new OptimisticLockException("stale");
+        ModelException converted = EntityManagerProxy.convert(cause);
+        assertTrue(converted instanceof ModelConcurrentModificationException);
+        assertSame(cause, converted.getCause());
+    }
+
+    @Test
+    public void testGenericFailureStaysModelException() {
+        ModelException converted = EntityManagerProxy.convert(new RuntimeException("connection reset"));
+        assertFalse(converted instanceof ModelConcurrentModificationException);
+        assertEquals(ModelException.class, converted.getClass());
     }
 
 }
