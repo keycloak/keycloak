@@ -112,7 +112,7 @@ Some requests might receive an error message until the load balancer detects the
 .Table footnotes:
 ^1^ Tested Recovery Point Objective, assuming all parts of the setup were healthy at the time this occurred. +
 ^2^ Estimated Recovery Time. +
-^3^ The statement "No data loss" depends on the setup not being degraded from previous failures, which includes completing any pending manual operations to resynchronize the state between the sites.
+^3^ The statement "No data loss" depends on the setup not being degraded from previous failures.
 
 For performance, {project_name} uses optimized database commit for ephemeral data such as sessions and events when supported by the configured database.
 On a database crash, in-flight session data within a sub-second window may be lost, requiring affected users to re-authenticate.
