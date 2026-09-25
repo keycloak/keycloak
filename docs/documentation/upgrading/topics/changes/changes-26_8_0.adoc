@@ -295,6 +295,13 @@ On a multi-writer Galera setup, concurrent writes to the same row on different n
 
 See the link:https://www.keycloak.org/server/db#galera-cluster-considerations[Galera Cluster] section in the database configuration guide for recommended settings and limitations.
 
+=== PostgreSQL JDBC connection property defaults
+// https://github.com/keycloak/keycloak/issues/52823, https://github.com/keycloak/keycloak/issues/52825
+
+PostgreSQL connections now set `ApplicationName` to `Keycloak`, making them identifiable in `pg_stat_activity`, server logs, and monitoring tools. These new defaults also apply when using the AWS JDBC Wrapper. You can override them via `db-url` or `db-url-properties`.
+
+Additionally, `connectTimeout` is now applied when using the AWS JDBC Wrapper for Amazon Aurora PostgreSQL. Previously, it was skipped for all custom JDBC drivers; the wrapper passes this property through to the underlying PostgreSQL driver. The `targetServerType` property remains excluded when using the AWS JDBC Wrapper, as the wrapper has its own failover routing mechanism.
+
 === Asynchronous commit on MS SQL Server and Oracle databases
 // https://github.com/keycloak/keycloak/issues/52012
 
