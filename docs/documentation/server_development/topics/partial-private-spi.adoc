@@ -1,0 +1,1 @@
+NOTE: This is an internal SPI. While it was stable in the previous releases, any new release of {project_name} can change it without prior notice.
