@@ -136,6 +136,17 @@ public class RedirectUtilsTest {
     }
 
     @Test
+    public void testVerifyRedirectUriEmbeddedPortStarNotPortWildcard() {
+        // Authority contains :* but the trailing wildcard is on the path — not a port wildcard.
+        // Must not accept arbitrary ports via the port-wildcard branch.
+        Set<String> set = Stream.of("https://example.com:*/callback*").collect(Collectors.toSet());
+
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://example.com:443/callback-evil", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://example.com:443/callback", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://example.com:443/callback/next", set, false));
+    }
+
+    @Test
     public void testVerifyRedirectUriIpv6PortWildcardRequiresExplicitPort() {
         Set<String> set = Stream.of("https://[::1]:*").collect(Collectors.toSet());
 
