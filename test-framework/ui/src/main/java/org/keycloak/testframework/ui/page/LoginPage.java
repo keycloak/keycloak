@@ -122,19 +122,17 @@ public class LoginPage extends AbstractLoginPage {
     }
 
     public String getUsernameInputError() {
-        try {
-            return userNameInputError.getText();
-        } catch (NoSuchElementException e) {
-            return null;
-        }
+        String error = FieldErrorText.readNow(driver, "input-error-username");
+        return error.isBlank() ? null : error;
     }
 
     public Optional<String> getPasswordInputError() {
-        try {
-            return Optional.of(passwordInputError.getText());
-        } catch (NoSuchElementException e) {
-            return Optional.empty();
-        }
+        String error = FieldErrorText.readNow(driver, "input-error-password");
+        return error.isBlank() ? Optional.empty() : Optional.of(error);
+    }
+
+    public String waitForPasswordInputError() {
+        return FieldErrorText.read(driver, "input-error-password");
     }
 
     public boolean isRememberMeCheckboxPresent() {

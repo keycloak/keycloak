@@ -393,7 +393,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
             // incorrect password (password of different user)
             loginPage.fillPassword("invalid-password");
             loginPage.submit();
-            Assertions.assertEquals("Invalid username or password.", loginPage.getPasswordInputError().orElse(null));
+            Assertions.assertEquals("Invalid username or password.", loginPage.waitForPasswordInputError());
 
             // Check that passkeys elements still available for this user
             MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
@@ -422,7 +422,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
             // incorrect password (password of different user)
             loginPage.fillPassword("invalid-password");
             loginPage.submit();
-            Assertions.assertEquals("Invalid username or password.", loginPage.getPasswordInputError().orElse(null));
+            Assertions.assertEquals("Invalid username or password.", loginPage.waitForPasswordInputError());
 
             events.clear();
 
