@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
@@ -83,7 +84,9 @@ import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkus.logging.Log;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.util.PublicSuffixMatcherLoader;
 
 import static org.keycloak.operator.crds.v2beta1.CRDUtils.isTlsConfigured;
 
@@ -334,7 +337,8 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
 
         // create a custom client if using https/mtls
         if (adminUrl.startsWith(HTTPS)) {
-            restEasyClient = createRestEasyClient(client, keycloak, restEasyClient);
+            String serviceHostname = URI.create(adminUrl).getHost();
+            restEasyClient = createRestEasyClient(client, keycloak, serviceHostname, restEasyClient);
         }
 
         return KeycloakBuilder.builder()
@@ -350,7 +354,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
                 .build();
     }
 
-    private static Client createRestEasyClient(KubernetesClient client, Keycloak keycloak, Client restEasyClient) {
+    private static Client createRestEasyClient(KubernetesClient client, Keycloak keycloak, String serviceHostname, Client restEasyClient) {
         // add server cert trust
         String tlsSecretName = keycloak.getSpec().getHttpSpec().getTlsSecret();
         Secret tlsSecret = client.resources(Secret.class)
@@ -369,15 +373,14 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
             KeyManager[] keyManagers = createKeyManagers(client, keycloak);
 
             sslContext.init(keyManagers, tmf.getTrustManagers(), null);
-            
+
             ClientBuilder clientBuilder = ResteasyClientClassicProvider.createClientBuilder().sslContext(sslContext);
 
-            // because we trust only the server cert, disable hostname verification
-            // - only if the tlsSecret is compromised and traffic to the service hostname can be hijacked,
-            // would this be a problem
-            //
-            // TODO: could warn if a ca cert is set as the server certificate
-            clientBuilder.hostnameVerifier(NoopHostnameVerifier.INSTANCE);
+            // Only disable hostname verification when the cert does not cover the service hostname
+            // (TLS passthrough case where the cert carries an external name) and it's a leaf cert
+            if (disableHostnameVerification(serviceHostname, tlsSecretName, cert)) {
+                clientBuilder.hostnameVerifier(NoopHostnameVerifier.INSTANCE);
+            }
 
             restEasyClient = clientBuilder.build();
         } catch (CertificateException | NoSuchAlgorithmException | KeyStoreException | IOException
@@ -385,6 +388,18 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
             throw new RuntimeException(e);
         }
         return restEasyClient;
+    }
+
+    static boolean disableHostnameVerification(String serviceHostname, String tlsSecretName, X509Certificate cert) {
+        if (!certCoversHostname(cert, serviceHostname)) {
+            if (cert.getBasicConstraints() < 0) {
+                Log.debugf("Server certificate in secret '%s' does not cover service hostname '%s'; disabling hostname verification", tlsSecretName, serviceHostname);
+                return true;
+            }
+            throw new RuntimeException("Cannot safely connect to the admin TLS via the service hostname. The server TLS certificate in secret '" + tlsSecretName
+                    + "' does not match the service hostname yet it is a CA certificate, not a leaf (end-entity) certificate.");
+        }
+        return false;
     }
 
     private static KeyManager[] createKeyManagers(KubernetesClient client, Keycloak keycloak)
@@ -415,6 +430,15 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(store, null);
         return kmf.getKeyManagers();
+    }
+
+    static boolean certCoversHostname(X509Certificate cert, String hostname) {
+        try {
+            new DefaultHostnameVerifier(PublicSuffixMatcherLoader.getDefault()).verify(hostname, cert);
+            return true;
+        } catch (javax.net.ssl.SSLException e) {
+            return false;
+        }
     }
 
     private static String getAdminUrl(Keycloak keycloak, KubernetesClient client, String addressOverride) {

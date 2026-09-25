@@ -111,7 +111,7 @@ For development purposes, you can enter this command to obtain a self-signed cer
 
 [source,bash]
 ----
-openssl req -subj '/CN=test.keycloak.org/O=Test Keycloak./C=US' -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out certificate.pem
+openssl req -subj '/CN=test.keycloak.org/O=Test Keycloak./C=US' -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -addext "basicConstraints=critical,CA:FALSE" -out certificate.pem
 ----
 
 You should install it in the cluster namespace as a Secret by entering this command:
