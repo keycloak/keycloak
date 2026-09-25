@@ -205,6 +205,127 @@ public class DefaultHttpClientFactoryTest {
             }
         }
 
+        @Test
+        public void createHttpClientWithCustomKeyManagersInheritsServerSettings() throws Exception {
+            // The per-IdP mTLS path (tls_client_auth) builds a dedicated client via createHttpClient(keyManagers).
+            // It must inherit the server-wide settings: here we verify the disabled-by-default redirect handling
+            // is still applied (i.e. the builder configuration ran) and the client is usable.
+            HttpClientProvider provider = createDefaultProvider();
+            javax.net.ssl.KeyManagerFactory kmf =
+                    javax.net.ssl.KeyManagerFactory.getInstance(javax.net.ssl.KeyManagerFactory.getDefaultAlgorithm());
+            java.security.KeyStore ks = java.security.KeyStore.getInstance(java.security.KeyStore.getDefaultType());
+            ks.load(null, null);
+            kmf.init(ks, new char[0]);
+
+            try (CloseableHttpClient httpClient = provider.createHttpClient(kmf.getKeyManagers());
+                    CloseableHttpResponse res = httpClient.execute(new HttpGet("http://localhost:8280/redirect"))) {
+                // redirects disabled by default -> the 302 is returned as-is instead of being followed
+                Assert.assertEquals(302, res.getStatusLine().getStatusCode());
+            }
+        }
+
+        @Test
+        public void trustConfigWarningLoggedOncePerFactoryAcrossMtlsBuilds() {
+            // The insecure trust configuration ("TruststoreProvider is disabled") is a server-wide state that
+            // must remain visible even in an mTLS-only deployment where the shared client may never be built.
+            // It is therefore logged once on the FIRST client build of any kind (shared or dedicated), and must
+            // NOT be re-emitted on subsequent per-request mTLS builds (log flooding).
+            HttpClientProvider provider = createDefaultProvider();
+
+            java.util.logging.Logger julLogger =
+                    java.util.logging.Logger.getLogger(DefaultHttpClientFactory.class.getName());
+            java.util.List<String> warnings = new java.util.concurrent.CopyOnWriteArrayList<>();
+            java.util.logging.Handler handler = new java.util.logging.Handler() {
+                @Override public void publish(java.util.logging.LogRecord record) {
+                    if (record.getLevel().intValue() >= java.util.logging.Level.WARNING.intValue()) {
+                        warnings.add(record.getMessage());
+                    }
+                }
+                @Override public void flush() { }
+                @Override public void close() { }
+            };
+            julLogger.addHandler(handler);
+            julLogger.setLevel(java.util.logging.Level.ALL);
+            try {
+                javax.net.ssl.KeyManager[] keyManagers = defaultKeyManagers();
+                // Two mTLS client builds, as would happen across two backchannel requests, with no shared client
+                // ever built (mTLS-only deployment).
+                provider.createHttpClient(keyManagers).close();
+                provider.createHttpClient(keyManagers).close();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            } finally {
+                julLogger.removeHandler(handler);
+            }
+
+            long truststoreWarnings = warnings.stream()
+                    .filter(m -> m != null && m.contains("TruststoreProvider is disabled"))
+                    .count();
+            assertEquals("trust-config warning must be logged exactly once per factory, even for an mTLS-only "
+                    + "deployment, and not repeated per mTLS request", 1, truststoreWarnings);
+        }
+
+        @Test
+        public void mtlsClientSkipsGlobalClientKeystore() throws Exception {
+            // The per-IdP mTLS path (tls_client_auth) supplies custom key managers. HttpClientBuilder.resolveSslContext
+            // then takes the key-managers branch and never reads the server-wide client keystore, so loading that
+            // keystore on every backchannel request is not only wasted per-request I/O but also fails a request that
+            // would otherwise succeed on the custom key material when the global keystore is unusable. Configure an
+            // unusable global client-keystore and assert that an mTLS client (key managers supplied) still builds,
+            // while the shared non-mTLS client (no key managers) still loads the keystore and fails as before.
+            Map<String, String> values = new HashMap<>();
+            values.put("client-keystore", "/nonexistent/does-not-exist.jks");
+            values.put("client-keystore-password", "changeit");
+            DefaultHttpClientFactory localFactory = new DefaultHttpClientFactory();
+            localFactory.init(ScopeUtil.createScope(values));
+            KeycloakSession localSession = new ResteasyKeycloakSession(new ResteasyKeycloakSessionFactory());
+
+            // mTLS client build must succeed: the unusable global keystore is skipped when key managers are present.
+            try (CloseableHttpClient mtlsClient = localFactory.buildHttpClient(localSession, defaultKeyManagers())) {
+                Assert.assertNotNull(mtlsClient);
+            }
+
+            // Sanity check that the keystore really is unusable: the non-mTLS path still loads it and fails.
+            Assert.assertThrows(RuntimeException.class,
+                    () -> localFactory.buildHttpClient(localSession, null));
+        }
+
+        @Test
+        public void mtlsClientBuildableThroughRealEntryPointWhenGlobalKeystoreUnusable() throws Exception {
+            // Regression for the real runtime entry point: create(session).createHttpClient(keyManagers).
+            // The dedicated per-IdP mTLS client supplies its own key material and never needs the server-wide
+            // client keystore. So create() must NOT eagerly build the shared client (which loads that keystore)
+            // just to hand out the provider; otherwise an unusable global keystore fails create() before the
+            // mTLS overload is ever reachable. Shared-client init is deferred to the first shared-client use.
+            Map<String, String> values = new HashMap<>();
+            values.put("client-keystore", "/nonexistent/does-not-exist.jks");
+            values.put("client-keystore-password", "changeit");
+            DefaultHttpClientFactory localFactory = new DefaultHttpClientFactory();
+            localFactory.init(ScopeUtil.createScope(values));
+            KeycloakSession localSession = new ResteasyKeycloakSession(new ResteasyKeycloakSessionFactory());
+
+            // create() must not throw even though the global keystore is unusable: no shared client is built yet.
+            HttpClientProvider provider = localFactory.create(localSession);
+
+            // The dedicated mTLS client builds from the supplied key material, skipping the global keystore.
+            try (CloseableHttpClient mtlsClient = provider.createHttpClient(defaultKeyManagers())) {
+                Assert.assertNotNull(mtlsClient);
+            }
+
+            // The shared (non-mTLS) client still loads the keystore lazily on first use and surfaces the failure,
+            // so a genuinely broken global keystore is not silently swallowed.
+            Assert.assertThrows(RuntimeException.class, provider::getHttpClient);
+        }
+
+        private static javax.net.ssl.KeyManager[] defaultKeyManagers() throws Exception {
+            javax.net.ssl.KeyManagerFactory kmf =
+                    javax.net.ssl.KeyManagerFactory.getInstance(javax.net.ssl.KeyManagerFactory.getDefaultAlgorithm());
+            java.security.KeyStore ks = java.security.KeyStore.getInstance(java.security.KeyStore.getDefaultType());
+            ks.load(null, null);
+            kmf.init(ks, new char[0]);
+            return kmf.getKeyManagers();
+        }
+
 	private Optional<String> getTestURL() {
 		try {
 			// Convert domain name to ip to make request by ip
