@@ -258,7 +258,7 @@ public final class CRAssert {
 
     private static void assertPodSelectorAndPolicy(Keycloak keycloak, NetworkPolicy networkPolicy) {
         assertNotNull(networkPolicy, "Expects a network policy");
-        assertEquals(Utils.allInstanceLabels(keycloak), networkPolicy.getSpec().getPodSelector().getMatchLabels(), "Expects same pod match labels");
+        assertEquals(Utils.serverSelectorLabels(keycloak), networkPolicy.getSpec().getPodSelector().getMatchLabels(), "Expects same pod match labels");
         assertTrue(networkPolicy.getSpec().getPolicyTypes().contains("Ingress"), "Expect ingress polity type present");
     }
 
@@ -280,7 +280,7 @@ public final class CRAssert {
 
         var from = rule.get().getFrom();
         assertEquals(1, from.size(), "Incorrect 'from' list size");
-        assertEquals(Utils.allInstanceLabels(keycloak), from.get(0).getPodSelector().getMatchLabels());
+        assertEquals(Utils.serverSelectorLabels(keycloak), from.get(0).getPodSelector().getMatchLabels());
 
         var ports = portAndProtocol(rule.get());
         assertEquals(Map.of(

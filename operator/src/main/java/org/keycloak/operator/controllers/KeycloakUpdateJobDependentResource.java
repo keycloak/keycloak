@@ -91,7 +91,7 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     @Override
     public Job desired(Keycloak primary, Context<Keycloak> context) {
         var builder = new JobBuilder();
-        builder.withMetadata(createMetadata(jobName(primary), primary));
+        builder.withMetadata(createMetadata(jobName(primary), primary, true));
         var specBuilder = builder.withNewSpec();
         addPodSpecTemplate(specBuilder, primary, context);
         // we don't need retries; we use exit code != 1 to signal the update decision.
@@ -116,22 +116,25 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
         return keycloak.getMetadata().getName() + "-update-pod";
     }
 
-    private static ObjectMeta createMetadata(String name, Keycloak keycloak) {
+    private static ObjectMeta createMetadata(String name, Keycloak keycloak, boolean job) {
         var labels = new HashMap<String ,String>();
         var optionalSpec = Optional.ofNullable(keycloak.getSpec().getUpdateSpec());
         optionalSpec.map(UpdateSpec::getLabels).ifPresent(labels::putAll);
+        labels.putAll(getLabels(keycloak));
+        if (job) {
+            Utils.addJobLabels(labels, APP_LABEL_VALUE);
+        }
         var builder = new ObjectMetaBuilder();
         builder.withName(name)
                 .withNamespace(keycloak.getMetadata().getNamespace())
                 .addToLabels(labels)
-                .addToLabels(getLabels(keycloak))
                 .withAnnotations(Map.of(KEYCLOAK_CR_HASH_ANNOTATION, keycloakHash(keycloak)));
         return builder.build();
     }
 
     private void addPodSpecTemplate(JobSpecFluent<?> builder, Keycloak keycloak, Context<Keycloak> context) {
         var podTemplate = builder.withNewTemplate();
-        podTemplate.withMetadata(createMetadata(podName(keycloak), keycloak));
+        podTemplate.withMetadata(createMetadata(podName(keycloak), keycloak, false));
         PodSpec podSpec = createPodSpec(context);
         KeycloakRealmImportJobDependentResource.handleJobScheduling(
                 keycloak,
@@ -233,7 +236,7 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     }
 
     private static Map<String, String> getLabels(HasMetadata keycloak) {
-        var labels = Utils.allInstanceLabels(keycloak);
+        var labels = Utils.allInstanceLabels(keycloak, false);
         labels.put(Constants.APP_LABEL, APP_LABEL_VALUE);
         return labels;
     }

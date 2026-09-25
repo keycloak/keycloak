@@ -246,9 +246,9 @@ public class PodTemplateTest extends BaseOperatorTest {
 
         // create a dummy StatefulSet representing the 26.0 state that we'll be forced to delete
         StatefulSet statefulSet = new StatefulSetBuilder().withMetadata(kc.getMetadata()).editMetadata()
-                .addToLabels(Utils.allInstanceLabels(kc)).endMetadata().withNewSpec().withNewSelector()
-                .withMatchLabels(Utils.allInstanceLabels(kc)).endSelector().withReplicas(0)
-                .withNewTemplate().withNewMetadata().withLabels(Utils.allInstanceLabels(kc)).endMetadata()
+                .addToLabels(Utils.serverSelectorLabels(kc)).endMetadata().withNewSpec().withNewSelector()
+                .withMatchLabels(Utils.serverSelectorLabels(kc)).endSelector().withReplicas(0)
+                .withNewTemplate().withNewMetadata().withLabels(Utils.serverSelectorLabels(kc)).endMetadata()
                 .withNewSpec().addNewContainer().withName("pause").withImage("registry.k8s.io/pause:3.1")
                 .endContainer().endSpec().endTemplate().endSpec().build();
         var ss = k8sclient.resource(statefulSet).create();
