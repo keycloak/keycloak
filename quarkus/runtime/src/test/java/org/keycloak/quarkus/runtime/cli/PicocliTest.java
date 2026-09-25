@@ -500,6 +500,14 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--foobar'"));
     }
+    
+    @Test
+    public void failIfAutoBuildFalseUsedForFirstStartup() {
+        putEnvVar("KC_AUTO_BUILD", "false");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("The 'auto-build' option was disabled for first ever server start."));
+    }
 
     @Test
     public void failIfOptimizedUsedForFirstStartupExport() {
@@ -639,6 +647,71 @@ public class PicocliTest extends AbstractConfigurationTest {
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("WARNING: --optimized is deprecated, please see the documentation for the usage of the 'auto-build' configuration option instead."));
+    }
+    
+    @Test
+    public void startAutoBuildTrueOptionSucceeds() {
+        build("build", "--db=dev-file");
+        putEnvVar("KC_AUTO_BUILD", "true");
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("WARNING: --optimized is deprecated, please see the documentation for the usage of the 'auto-build' configuration option instead."));
+    }
+    
+    @Test
+    public void startAutoBuildOptionInvalid() {
+        build("build", "--db=dev-file");
+        putEnvVar("KC_AUTO_BUILD", "truest");
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getErrString(), nonRunningPicocli.getErrString().contains("The `auto-build` option may only be `true` or `false`"));
+    }
+    
+    @Test
+    public void startAutoBuildOptionFalseDetectsChange() {
+        build("build", "--db=oracle");
+        putEnvVar("KC_AUTO_BUILD", "false");
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--http-enabled=true", "--hostname-strict=false", "--db=dev-file");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+    }
+    
+    @Test
+    public void startAutoBuildOptionFalseRetainsFeatures() {
+        build("build", "--db=oracle", "--features=opentelemetry-metrics");
+        putEnvVar("KC_AUTO_BUILD", "false");
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--http-enabled=true", "--hostname-strict=false");
+        // no rebuild
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("Reusing the current build as the `auto-build` option is `false` and no build options were changed."));
+    }
+    
+    @Test
+    public void startAutoBuildOptionDetectsBuild() {
+        var nonRunningPicocli = build("build", "--db=oracle");
+        var buildProps = (Map)nonRunningPicocli.getBuildProps();
+        
+        onAfter();
+        buildProps.remove(Configuration.KC_OPTIMIZED);
+        addPersistedConfigValues(buildProps);
+        putEnvVar("KC_AUTO_BUILD", "false");
+
+        nonRunningPicocli = pseudoLaunch("start", "--http-enabled=true", "--hostname-strict=false");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getErrString().contains("but the current build is not from the `build` command"));
+    }
+    
+    @Test
+    public void startAutoBuilOptionStartDevIgnored() {
+        build("build", "--db=oracle");
+        putEnvVar("KC_AUTO_BUILD", "false");
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--http-enabled=true", "--hostname-strict=false");
+        assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
     }
 
     @Test
@@ -794,7 +867,7 @@ public class PicocliTest extends AbstractConfigurationTest {
             // after the build truncate - like docker or a zip
             Files.setLastModifiedTime(path, FileTime.fromMillis(Files.getLastModifiedTime(path).toMillis() / 1000 * 1000));
             
-Environment.setHomeDir(tmp);
+            Environment.setHomeDir(tmp);
             nonRunningPicocli = pseudoLaunch("start", "--http-enabled=true", "--hostname-strict=false", "--db=dev-file");
             
             // start with no other changes should be fine

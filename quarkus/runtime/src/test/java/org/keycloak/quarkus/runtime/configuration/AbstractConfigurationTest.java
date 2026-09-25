@@ -141,7 +141,7 @@ public abstract class AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs(args);
         var config = createConfig();
         PropertyMappers.reset();
-        PropertyMappers.sanitizeDisabledMappers(new Start());
+        PropertyMappers.sanitizeDisabledMappers(new Start(), Environment.isRebuildCheck());
         return config;
     }
 

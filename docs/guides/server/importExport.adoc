@@ -37,14 +37,6 @@ When using the `export` and the `import` commands below, {project_name} needs to
 As described in <@links.server id="configuration"/> that information can be provided as command line parameters, environment variables or a configuration file.
 Use the `--help` command line option for each command to see the available options.
 
-Some of the configuration options are build time configuration options.
-As default, {project_name} will re-build automatically for the `export` and `import` commands if it detects a change of a build time parameter.
-
-If you have built an optimized version of {project_name} with the `build` command as outlined in <@links.server id="configuration"/>, use the command line option `--optimized` to have {project_name} skip the build check for a faster startup time.
-When doing this, remove the build time options from the command line and keep only the runtime options.
-
-NOTE: if you do not use `--optimized` keep in mind that an `import` or `export` command may implicitly create or update an optimized build for you - if you are running the command from the same machine as a server instance, this may impact the next start of your server.
-
 === Exporting a Realm to a Directory
 
 To export a realm, you can use the `export` command. Your {project_name} server instance must not be started when invoking this command.
