@@ -9,6 +9,7 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.oauth",
         "org.keycloak.tests.organization",
         "org.keycloak.tests.oid4vc",
+        "org.keycloak.tests.oidc",
         "org.keycloak.tests.policy",
         "org.keycloak.tests.providers",
         "org.keycloak.tests.saml",
