@@ -11,6 +11,6 @@ mvn clean install -am -pl docs/guides -DskipTests
 After that, you will have the following artifacts:
 
 - `docs/guides/target/generated-guides`: pure asciidoc generated versions of the guides
-- `docs/guides/target/generated-docs/<operator|server|migration|getting-started|admin-api>/index.html`: all guides in a single html file generated with asciidoc maven plugins. 
+- `docs/guides/target/generated-docs/<operator|server|getting-started|admin-api>/index.html`: all guides in a single html file generated with asciidoc maven plugins. 
 
 _Note:_ The layout primarily serves as an example for now and is not how we will eventually present the documentation.
