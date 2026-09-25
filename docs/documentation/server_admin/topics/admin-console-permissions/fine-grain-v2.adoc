@@ -225,6 +225,12 @@ set of management operations:
 
 Creating new organizations requires `manage` permission on all organizations (the resource type level), not just on a specific organization.
 
+To apply a permission to particular organizations, select *Specific Organizations* when creating the permission and pick them from the list.
+With *All Organizations*, the permission applies to every organization in the realm.
+
+A realm administrator who only has permissions on specific organizations also needs the `query-organizations` role to see and list them in the administration console.
+For more details on these roles, see <<_realm_access_control, Accessing a Realm administration console as a Realm Administrator>>.
+
 ==== Enabling admin permissions to a realm
 
 To enable fine-grained admin permissions in a realm, follow these steps:
