@@ -1,9 +1,10 @@
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import {
   NumberControl,
   SelectControl,
   SelectControlOption,
 } from "@keycloak/keycloak-ui-shared";
-import { UseFormReturn, useWatch } from "react-hook-form";
+import { UseFormReturn, UseFormSetValue, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormAccess } from "../../components/form/FormAccess";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
@@ -14,6 +15,34 @@ export type SettingsCacheProps = {
   showSectionDescription?: boolean;
   unWrap?: boolean;
 };
+
+const CACHE_CONFIG_KEYS = [
+  "cachePolicy",
+  "evictionDay",
+  "evictionHour",
+  "evictionMinute",
+  "maxLifespan",
+];
+
+/**
+ * Restores the multivalued shape of the config entries rendered by this
+ * component. They are addressed with an array index (`config.maxLifespan[0]`),
+ * which only resolves correctly as long as the form holds the raw
+ * ComponentRepresentation. Screens that load a component through
+ * `convertToFormValues()` need to call this, as that unwraps single valued
+ * entries into plain strings, against which the index would resolve to the
+ * first character of the value instead.
+ */
+export const setupCacheForm = (
+  component: ComponentRepresentation,
+  setValue: UseFormSetValue<ComponentRepresentation>,
+) =>
+  CACHE_CONFIG_KEYS.forEach((key) => {
+    const value = component.config?.[key];
+    if (value !== undefined) {
+      setValue(`config.${key}`, Array.isArray(value) ? value : [value]);
+    }
+  });
 
 const getValue = (value: string | string[] | undefined) => {
   if (Array.isArray(value)) {
