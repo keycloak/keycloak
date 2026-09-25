@@ -5,7 +5,14 @@ import { MultiLineInput } from "../multi-line-input/MultiLineInput";
 import type { ComponentProps } from "./components";
 
 function convertDefaultValue(formValue?: any): string[] {
-  return formValue && Array.isArray(formValue) ? formValue : [formValue];
+  if (Array.isArray(formValue)) {
+    const values = formValue.filter(
+      (value) => value !== null && value !== undefined,
+    );
+    return values.length > 0 ? values : [""];
+  }
+
+  return formValue !== null && formValue !== undefined ? [formValue] : [""];
 }
 
 export const MultiValuedStringComponent = ({
