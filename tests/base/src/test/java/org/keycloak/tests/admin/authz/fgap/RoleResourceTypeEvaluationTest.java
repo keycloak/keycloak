@@ -688,6 +688,115 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
                 clientMappings.containsKey("secret-client"), equalTo(false));
     }
 
+    /**
+     * Regression test for https://github.com/keycloak/keycloak/issues/52399
+     *
+     * A narrow admin that holds FGAP view-users but NOT view-realm must not see
+     * any realm-level role mappings on a target user's /role-mappings/realm or
+     * /role-mappings/realm/composite endpoints.
+     *
+     * Previously only the combined /role-mappings endpoint applied the canView()
+     * filter; the two /realm siblings returned all realm roles regardless of FGAP
+     * policy, leaking role names the caller had no permission to see.
+     */
+    @Test
+    public void testRealmRoleMappingsFilterHiddenRoles() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+
+        // Create a realm role and assign it to a target user
+        RoleRepresentation realmRole = new RoleRepresentation();
+        realmRole.setName("SECRET_REALM_ROLE");
+        realm.admin().roles().create(realmRole);
+        realmRole = realm.admin().roles().get("SECRET_REALM_ROLE").toRepresentation();
+        realm.cleanup().add(r -> r.roles().get("SECRET_REALM_ROLE").remove());
+
+        UserRepresentation targetUser = createUser("targetUserRoleFilter");
+        realm.admin().users().get(targetUser.getId()).roles().realmLevel().add(List.of(realmRole));
+
+        // Create a client role on a visible client and assign it too (gives the narrow
+        // admin something to see, so the user lookup itself is not forbidden)
+        ClientRepresentation visibleClient = new ClientRepresentation();
+        visibleClient.setClientId("visible-client-realm-test");
+        try (Response response = realm.admin().clients().create(visibleClient)) {
+            visibleClient.setId(ApiUtil.getCreatedId(response));
+        }
+        RoleRepresentation clientRole = new RoleRepresentation();
+        clientRole.setName("VISIBLE_CLIENT_ROLE");
+        realm.admin().clients().get(visibleClient.getId()).roles().create(clientRole);
+        clientRole = realm.admin().clients().get(visibleClient.getId()).roles().get("VISIBLE_CLIENT_ROLE").toRepresentation();
+        realm.admin().users().get(targetUser.getId()).roles().clientLevel(visibleClient.getId()).add(List.of(clientRole));
+
+        // FGAP policy: narrow admin can view the target user and the visible client,
+        // but has NO view-realm and therefore canView(realmRole) == false.
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,
+                "Only My Admin Policy (realm role filter)", myadmin.getId());
+        createPermission(adminPermissionsClient, targetUser.getId(),
+                AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        createPermission(adminPermissionsClient, visibleClient.getId(),
+                AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, Set.of(VIEW), policy);
+
+        // Grant myadmin manage-realm so auth.roles().canView(realmRole) returns true.
+        // The /realm and /realm/composite endpoints must expose SECRET_REALM_ROLE consistently
+        // with the combined /role-mappings endpoint — all three must apply the same canView()
+        // filter. Before the fix, /realm and /realm/composite bypassed canView() entirely.
+        String realmMgmtClientId = realm.admin().clients().findByClientId("realm-management").get(0).getId();
+        RoleRepresentation manageRealmRole = realm.admin().clients().get(realmMgmtClientId).roles()
+                .get(org.keycloak.models.AdminRoles.MANAGE_REALM).toRepresentation();
+        realm.admin().users().get(myadmin.getId()).roles().clientLevel(realmMgmtClientId).add(List.of(manageRealmRole));
+        realmAdminClient.tokenManager().grantToken();
+
+        Set<String> roleNames;
+
+        // Phase 1 — with manage-realm: all three endpoints must expose SECRET_REALM_ROLE
+        // (canView(realmRole) == true, so the fix's filter passes for all roles)
+        roleNames = realmAdminClient.realm(realm.getName())
+                .users().get(targetUser.getId()).roles().realmLevel().listAll()
+                .stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+        assertThat("SECRET_REALM_ROLE must appear in /role-mappings/realm (manage-realm granted)",
+                roleNames, hasItem("SECRET_REALM_ROLE"));
+
+        roleNames = realmAdminClient.realm(realm.getName())
+                .users().get(targetUser.getId()).roles().realmLevel().listEffective()
+                .stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+        assertThat("SECRET_REALM_ROLE must appear in /role-mappings/realm/composite (manage-realm granted)",
+                roleNames, hasItem("SECRET_REALM_ROLE"));
+
+        MappingsRepresentation allMappings = realmAdminClient.realm(realm.getName())
+                .users().get(targetUser.getId()).roles().getAll();
+        Set<String> combinedRealmRoles = allMappings.getRealmMappings() == null
+                ? Set.of()
+                : allMappings.getRealmMappings().stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+        assertThat("SECRET_REALM_ROLE must appear in combined /role-mappings (manage-realm granted)",
+                combinedRealmRoles, hasItem("SECRET_REALM_ROLE"));
+
+        // Phase 2 — revoke manage-realm: canView(realmRole) == false
+        // Combined /role-mappings must hide SECRET_REALM_ROLE (always did).
+        // Fixed /role-mappings/realm and /realm/composite must also hide it.
+        // Vulnerable /realm and /realm/composite would return all roles unfiltered.
+        realm.admin().users().get(myadmin.getId()).roles().clientLevel(realmMgmtClientId).remove(List.of(manageRealmRole));
+        realmAdminClient.tokenManager().grantToken();
+
+        roleNames = realmAdminClient.realm(realm.getName())
+                .users().get(targetUser.getId()).roles().realmLevel().listAll()
+                .stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+        assertThat("SECRET_REALM_ROLE must NOT appear in /role-mappings/realm (manage-realm revoked, canView=false)",
+                roleNames, not(hasItem("SECRET_REALM_ROLE")));
+
+        roleNames = realmAdminClient.realm(realm.getName())
+                .users().get(targetUser.getId()).roles().realmLevel().listEffective()
+                .stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+        assertThat("SECRET_REALM_ROLE must NOT appear in /role-mappings/realm/composite (manage-realm revoked, canView=false)",
+                roleNames, not(hasItem("SECRET_REALM_ROLE")));
+
+        MappingsRepresentation allMappingsNoRealm = realmAdminClient.realm(realm.getName())
+                .users().get(targetUser.getId()).roles().getAll();
+        Set<String> combinedRealmRolesNoRealm = allMappingsNoRealm.getRealmMappings() == null
+                ? Set.of()
+                : allMappingsNoRealm.getRealmMappings().stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+        assertThat("SECRET_REALM_ROLE must NOT appear in combined /role-mappings (manage-realm revoked, canView=false)",
+                combinedRealmRolesNoRealm, not(hasItem("SECRET_REALM_ROLE")));
+    }
+
     private String getUiExtEndpoint(Client httpClient, String baseUrl, String realmName, String subPath, BearerAuthFilter bearerAuth) {
         WebTarget target = httpClient.target(baseUrl)
                 .path("admin").path("realms").path(realmName)
