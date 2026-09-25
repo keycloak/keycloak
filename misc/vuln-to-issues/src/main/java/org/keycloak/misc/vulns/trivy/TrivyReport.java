@@ -1,4 +1,4 @@
-package org.keycloak.misc;
+package org.keycloak.misc.vulns.trivy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -32,7 +32,15 @@ public record TrivyReport(
             @JsonProperty("InstalledVersion") String installedVersion,
             @JsonProperty("FixedVersion") String fixedVersion,
             @JsonProperty("Status") String status,
-            @JsonProperty("Severity") String severity) {
+            @JsonProperty("Severity") String severity,
+            @JsonProperty("Title") String title,
+            @JsonProperty("PkgIdentifier") PkgIdentifier pkgIdentifier) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record PkgIdentifier(
+            @JsonProperty("PURL") String pUrl
+    ) {
     }
 
 }
