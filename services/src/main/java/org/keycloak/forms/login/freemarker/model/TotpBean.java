@@ -44,6 +44,7 @@ public class TotpBean {
     private final String totpSecret;
     private final String totpSecretEncoded;
     private final String totpSecretQrCode;
+    private final String totpSecretKeyUri;
     private final boolean enabled;
     private UriBuilder uriBuilder;
     private final List<CredentialModel> otpCredentials;
@@ -73,6 +74,7 @@ public class TotpBean {
         }
         this.totpSecretEncoded = TotpUtils.encode(totpSecret);
         this.totpSecretQrCode = TotpUtils.qrCode(session, totpSecret, realm, user);
+        this.totpSecretKeyUri = TotpUtils.keyUri(session, totpSecret, realm, user);
 
         OTPPolicy otpPolicy = realm.getOTPPolicy();
         this.supportedApplications = session.getAllProviders(OTPApplicationProvider.class).stream()
@@ -95,6 +97,10 @@ public class TotpBean {
 
     public String getTotpSecretQrCode() {
         return totpSecretQrCode;
+    }
+
+    public String getTotpSecretKeyUri() {
+        return totpSecretKeyUri;
     }
 
     public String getManualUrl() {
