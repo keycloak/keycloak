@@ -37,6 +37,7 @@ public final class Constants {
     public static final String MANAGED_BY_LABEL = "app.kubernetes.io/managed-by";
     public static final String MANAGED_BY_VALUE = "keycloak-operator";
     public static final String COMPONENT_LABEL = "app.kubernetes.io/component";
+    public static final String KEYCLOAK_KIND_ANNOTATION = "operator.keycloak.org/kind";
     public static final String KEYCLOAK_PAUSE_ANNOTATION = "operator.keycloak.org/pause";
     public static final String KEYCLOAK_PAUSED_ANNOTATION = "operator.keycloak.org/paused";
     public static final String KEYCLOAK_MIGRATING_ANNOTATION = "operator.keycloak.org/migrating";

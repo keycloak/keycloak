@@ -125,6 +125,8 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: my-app-credentials
+  labels:
+    operator.keycloak.org/kind: KeycloakOIDCClient <1> 
 stringData:
   client-secret-key: "my-secret"
 ----
@@ -142,11 +144,12 @@ spec:
     auth:
       method: client-secret
       secretRef:
-        name: my-app-credentials # <1>
-        key: client-secret-key # <2>
+        name: my-app-credentials # <2>
+        key: client-secret-key # <3>
 ----
-<1> Name of the Kubernetes Secret in the same namespace.
-<2> Key within the Secret that holds the client secret value.
+<1> Required label for the Secret to be usable by an KeycloakOIDCClient 
+<2> Name of the Kubernetes Secret in the same namespace.
+<3> Key within the Secret that holds the client secret value.
 
 If the referenced Secret does not exist, the CR will report a `HasErrors` status condition.
 When the value in the Kubernetes Secret changes, the operator detects the change within its polling interval and updates the client on the {project_name} server.
@@ -204,7 +207,7 @@ If the Keycloak CR is deleted before the client CR, the operator cannot reach th
 
 [WARNING]
 ====
-Anyone with the ability to create or edit KeycloakOIDCClient or KeycloakSAMLClient CRs should be a namespace-level admin.
+Anyone with the ability to create or edit KeycloakOIDCClient or KeycloakSAMLClient CRs will have the full ability to create or edit clients that the admin credentials provide.
 ====
 
 </@tmpl.guide>
