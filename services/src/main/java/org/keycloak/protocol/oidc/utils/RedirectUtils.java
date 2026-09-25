@@ -260,9 +260,10 @@ public class RedirectUtils {
                         idx = redirect.indexOf('#');
                     }
                     String r = idx == -1 ? redirect : redirect.substring(0, idx);
-                    // Detect port wildcards (authority ending in :*) before stripping '*'. Path wildcards
-                    // with an empty port (e.g. https://example.com:/*) also strip to an authority ending
-                    // in ':', but must compare ports normally rather than as a port wildcard.
+                    // Detect port wildcards before stripping '*'. The configured string must itself
+                    // end in :* (not a later path/SSP wildcard after an authority that contains :*),
+                    // and path wildcards with an empty port (e.g. https://example.com:/*) must still
+                    // compare ports normally rather than as a port wildcard.
                     boolean portWildcard = isPortWildcard(validRedirectWildcard);
                     // strip off *
                     int length = validRedirectWildcard.length() - 1;
@@ -322,6 +323,13 @@ public class RedirectUtils {
     }
 
     private static boolean isPortWildcard(String validRedirectWildcard) {
+        // Trailing wildcard must be the port wildcard (string ends with :*). An embedded
+        // :* in the authority with a later path wildcard (e.g. https://example.com:*/callback*)
+        // is not a port wildcard. Authority must also end with :* so path patterns that
+        // merely end in ":*" (e.g. https://example.com:8443/foo:*) stay path wildcards.
+        if (!validRedirectWildcard.endsWith(":*")) {
+            return false;
+        }
         URI uri = toUri(validRedirectWildcard);
         String authority = uri != null ? uri.getRawAuthority() : null;
         return authority != null && authority.endsWith(":*");
