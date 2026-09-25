@@ -69,6 +69,18 @@ If you already have Secrets used by OIDC Client CRs, add the required label befo
 kubectl label secret <secret-name> operator.keycloak.org/kind=KeycloakOIDCClient
 ----
 
+=== Identity provider clock skew now applies to token expiration
+
+Allowed clock skew configured on an OpenID Connect identity provider is now applied to the `exp`
+claim as well as the `nbf` claim when {project_name} validates a federated ID token.
+Previously the configured skew was used only for not-before checks, so tokens whose expiration equaled
+the authentication time (for example some Microsoft Entra ID tokens issued with `max_age=0`)
+could be rejected as no longer valid even when a positive clock skew was set.
+
+The default skew remains zero. Operators who need tolerance for near-expiry federated tokens must set
+Allowed clock skew on the identity provider. `TokenVerifier` and other callers of
+`JsonWebToken.isActive()` with no arguments still do not grant extra lifetime after `exp`.
+
 === `NO_PROXY` entries with leading dots or spaces after commas now parsed correctly
 // https://github.com/keycloak/keycloak/issues/52706
 
