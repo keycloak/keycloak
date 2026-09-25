@@ -112,7 +112,9 @@ public abstract class AbstractIdentityProviderMapper implements IdentityProvider
         }
         IdentityProviderModel idp = session.identityProviders().getByAlias(mapperModel.getIdentityProviderAlias());
         if (idp == null) {
-            return true;
+            LOG.warnf("Identity provider '%s' referenced by mapper '%s' in realm '%s' could not be resolved; denying admin role mapping.",
+                    mapperModel.getIdentityProviderAlias(), mapperModel.getName(), realm.getName());
+            return false;
         }
         if (!idp.isAllowAdminRoleMapping()) {
             LOG.warnf("Mapper '%s' on identity provider '%s' in realm '%s' attempted to grant admin role '%s' but '%s' is disabled.",
@@ -128,7 +130,9 @@ public abstract class AbstractIdentityProviderMapper implements IdentityProvider
         }
         IdentityProviderModel idp = session.identityProviders().getByAlias(mapperModel.getIdentityProviderAlias());
         if (idp == null) {
-            return true;
+            LOG.warnf("Identity provider '%s' referenced by mapper '%s' in realm '%s' could not be resolved; denying admin group mapping.",
+                    mapperModel.getIdentityProviderAlias(), mapperModel.getName(), realm.getName());
+            return false;
         }
         if (!idp.isAllowAdminRoleMapping()) {
             LOG.warnf("Mapper '%s' on identity provider '%s' in realm '%s' attempted to add the user to group '%s' which grants admin roles but '%s' is disabled.",
