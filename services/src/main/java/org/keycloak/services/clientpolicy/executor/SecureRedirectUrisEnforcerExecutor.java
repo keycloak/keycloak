@@ -214,16 +214,17 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
         }
     }
 
-    private void verifyRedirectUris(ClientCRUDContext context) throws ClientPolicyException {
-        ClientRepresentation client = context.getProposedClientRepresentation();
-        if (isAuthFlowWithRedirectEnabled(client)) {
-            List<String> redirectUris = client.getRedirectUris();
+    void verifyRedirectUris(ClientCRUDContext context) throws ClientPolicyException {
+        ClientRepresentation proposed = context.getProposedClientRepresentation();
+        if (isAuthFlowWithRedirectEnabled(proposed)) {
+            List<String> redirectUris = proposed.getRedirectUris();
             if (redirectUris == null || redirectUris.isEmpty()) {
                 throw invalidRedirectUri(ERR_GENERAL);
             }
-            verifyRedirectUris(client.getRootUrl(), redirectUris);
-            verifyPostLogoutRedirectUriUpdate(client);
+            verifyRedirectUris(proposed.getRootUrl(), redirectUris);
         }
+        // Always validate post-logout URIs — flows being disabled is irrelevant
+        verifyPostLogoutRedirectUriUpdate(proposed, context.getTargetClient());
     }
 
     private static boolean isAuthFlowWithRedirectEnabled(ClientModel client) {
@@ -234,13 +235,27 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
         return (client.isStandardFlowEnabled() == null || client.isStandardFlowEnabled() == Boolean.TRUE) || client.isImplicitFlowEnabled() == Boolean.TRUE;
     }
 
-    private void verifyPostLogoutRedirectUriUpdate(ClientRepresentation client) throws ClientPolicyException {
+    private void verifyPostLogoutRedirectUriUpdate(ClientRepresentation client, ClientModel stored) throws ClientPolicyException {
         List<String> postLogoutRedirectUris = OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getPostLogoutRedirectUris();
-        if (postLogoutRedirectUris == null || postLogoutRedirectUris.isEmpty()) {
+
+        // If using stored URIs, use stored rootUrl too so relative paths resolve against the original base.
+
+        if ((postLogoutRedirectUris == null || postLogoutRedirectUris.isEmpty()) && stored != null) {
+            postLogoutRedirectUris = OIDCAdvancedConfigWrapper.fromClientModel(stored).getPostLogoutRedirectUris();
+        }
+
+        if (postLogoutRedirectUris == null) {
             return;
         }
+
+        // blank uris are dropped before the client is persisted, so there is nothing to validate for them
+        postLogoutRedirectUris = postLogoutRedirectUris.stream().filter(uri -> uri != null && !uri.isBlank()).toList();
+        if (postLogoutRedirectUris.isEmpty()) {
+            return;
+        }
+        String rootUrl = client.getRootUrl() != null || stored == null ? client.getRootUrl() : stored.getRootUrl();
         logger.tracef("Verifying post-logout redirect uris. Target client: %s, Effective post-logout uris: %s", client.getClientId(), postLogoutRedirectUris);
-        verifyRedirectUris(client.getRootUrl(), postLogoutRedirectUris);
+        verifyRedirectUris(rootUrl, postLogoutRedirectUris);
     }
 
     void verifyRedirectUris(String rootUri, List<String> redirectUris) throws ClientPolicyException {
