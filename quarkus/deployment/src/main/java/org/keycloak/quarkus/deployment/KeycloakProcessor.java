@@ -1033,6 +1033,26 @@ class KeycloakProcessor {
                 return chainCustomizers;
             }
         }));
+
+        suppressIndexWrapperVoidWarning();
+    }
+
+    /**
+     * A workaround for <a href="https://github.com/quarkusio/quarkus/issues/56942">a Quarkus regression</a>
+     */
+    private static void suppressIndexWrapperVoidWarning() {
+        java.util.logging.Logger logger = java.util.logging.Logger.getLogger("io.quarkus.deployment.index.IndexWrapper");
+        java.util.logging.Filter existing = logger.getFilter();
+        logger.setFilter(record -> {
+            if (existing != null && !existing.isLoggable(record)) {
+                return false;
+            }
+            Object[] params = record.getParameters();
+            // compare by intValue: jboss-logmanager uses its own Level.WARN instance
+            return !(record.getLevel().intValue() == java.util.logging.Level.WARNING.intValue()
+                    && params != null && params.length > 0 && "void".equals(String.valueOf(params[0]))
+                    && record.getMessage() != null && record.getMessage().startsWith("Failed to index "));
+        });
     }
 
     @Consume(ProfileBuildItem.class)
