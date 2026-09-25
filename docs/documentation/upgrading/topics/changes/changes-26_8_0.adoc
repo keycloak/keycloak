@@ -51,6 +51,14 @@ This change addresses CVE-2026-93999.
 
 For more details, see link:{adminguide_link}#_audience_disabled_clients[Disabled clients and the audience] in the {adminguide_name}.
 
+=== Organization alias validation
+
+Organization alias validation now also applies during realm import and creation through the organization provider.
+Aliases containing ASCII spaces, control characters, or backslashes, or consisting solely of `*`, are rejected.
+Whitespace-only aliases no longer default to the organization name; omitted, null, and empty aliases still do.
+Unicode characters and double quotes remain supported, and existing stored aliases are unchanged.
+Before importing an existing realm, check for rejected alias values and update any application references if aliases must change.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
