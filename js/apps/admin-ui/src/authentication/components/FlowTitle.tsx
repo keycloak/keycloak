@@ -2,7 +2,6 @@ import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { Label } from "@patternfly/react-core";
 import {
   CodeBranchIcon,
-  MapMarkerIcon,
   ProcessAutomationIcon,
   TaskIcon,
 } from "@patternfly/react-icons";
@@ -26,8 +25,6 @@ const FlowIcon = ({ type }: { type: FlowType }) => {
       return <CodeBranchIcon />;
     case "execution":
       return <ProcessAutomationIcon />;
-    case "step":
-      return <MapMarkerIcon />;
     default:
       return undefined;
   }
@@ -41,8 +38,6 @@ function mapTypeToColor(type: FlowType) {
       return "green";
     case "execution":
       return "blue";
-    case "step":
-      return "cyan";
     default:
       return "grey";
   }
