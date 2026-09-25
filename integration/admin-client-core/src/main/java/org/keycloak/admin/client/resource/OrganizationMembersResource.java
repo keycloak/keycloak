@@ -194,6 +194,14 @@ public interface OrganizationMembersResource {
                         @FormParam("lastName") String lastName);
 
     @POST
+    @Path("invite-user")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    Response inviteUser(@FormParam("email") String email,
+                        @FormParam("firstName") String firstName,
+                        @FormParam("lastName") String lastName,
+                        @QueryParam("client_id") String clientId);
+
+    @POST
     @Path("invite-existing-user")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     Response inviteExistingUser(@FormParam("id") String id);

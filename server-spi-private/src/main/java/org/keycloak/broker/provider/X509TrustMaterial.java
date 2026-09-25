@@ -22,22 +22,20 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * X.509 trust material and validation policy exposed by a trust-material identity provider.
+ * X.509 trust material and validation policy exposed by a trust material identity provider.
  *
- * @param trustAnchors             self-signed CA roots for one trust domain
- * @param allowedExtendedKeyUsages extended-key-usage OIDs accepted for end-entity certificates
+ * @param trustAnchors              self signed CA roots for one trust domain
+ * @param requiredExtendedKeyUsages extended key usage OIDs of which the end entity certificate must
+ *                                  contain at least one, an empty list imposes no restriction
  */
 public record X509TrustMaterial(Set<X509Certificate> trustAnchors,
-                                List<String> allowedExtendedKeyUsages) {
+                                List<String> requiredExtendedKeyUsages) {
 
     public X509TrustMaterial {
         trustAnchors = Set.copyOf(trustAnchors);
-        allowedExtendedKeyUsages = List.copyOf(allowedExtendedKeyUsages);
+        requiredExtendedKeyUsages = List.copyOf(requiredExtendedKeyUsages);
         if (trustAnchors.isEmpty()) {
             throw new IllegalArgumentException("At least one X.509 trust anchor is required");
-        }
-        if (allowedExtendedKeyUsages.isEmpty()) {
-            throw new IllegalArgumentException("At least one attestation extended key usage is required");
         }
         trustAnchors.forEach(X509TrustMaterial::validateTrustAnchor);
     }

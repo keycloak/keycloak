@@ -15,8 +15,8 @@ import java.util.regex.Pattern;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
-import org.keycloak.services.client.query.FieldResolver;
 import org.keycloak.services.client.scim.BaseClientModelSchema;
+import org.keycloak.services.client.scim.ClientResourceTypeProvider;
 import org.keycloak.services.client.scim.OIDCClientModelSchema;
 import org.keycloak.services.client.scim.SAMLClientModelSchema;
 
@@ -404,7 +404,7 @@ final class JavaDocExampleGenerator {
             String match = null;
             for (DocProperty nested : nestedSchema.properties()) {
                 String dotPath = prop.name() + "." + nested.name();
-                if (FieldResolver.isKnownField(dotPath)) {
+                if (ClientResourceTypeProvider.isKnownField(dotPath)) {
                     match = dotPath;
                     break;
                 }

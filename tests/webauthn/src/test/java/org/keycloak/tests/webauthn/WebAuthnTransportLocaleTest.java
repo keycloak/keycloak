@@ -28,7 +28,11 @@ import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.tests.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.keycloak.tests.webauthn.page.WebAuthnLoginPage;
 
@@ -56,6 +60,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class WebAuthnTransportLocaleTest extends AbstractWebAuthnVirtualTest {
 
     private static final Logger log = LoggerFactory.getLogger(WebAuthnTransportLocaleTest.class);
+
+    @InjectRealm(ref = "webauthn", config = WebAuthnTransportLocaleRealmConfig.class)
+    protected ManagedRealm managedRealm;
 
     @BeforeEach
     public void setupLocale() {
@@ -281,5 +288,20 @@ public class WebAuthnTransportLocaleTest extends AbstractWebAuthnVirtualTest {
 
     private void setUpWebAuthnFlow() {
         managedRealm.updateWithCleanup(r -> r.browserFlow("browser-webauthn"));
+    }
+
+    private static class WebAuthnTransportLocaleRealmConfig extends WebAuthnRealmConfig {
+
+        @Override
+        public RealmBuilder configure(RealmBuilder builder) {
+            super.configure(builder);
+            return builder.users(
+                    UserBuilder.create(USERNAME)
+                            .password(PASSWORD)
+                            .name("WebAuthn", "User")
+                            .email("webauthn-user@localhost")
+                            .emailVerified(true)
+            );
+        }
     }
 }

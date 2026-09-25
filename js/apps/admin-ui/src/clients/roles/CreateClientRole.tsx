@@ -41,7 +41,7 @@ export default function CreateClientRole() {
       }))!;
 
       addAlert(t("roleCreated"), AlertVariant.success);
-      navigate(
+      void navigate(
         toClientRole({
           realm,
           clientId: clientId!,

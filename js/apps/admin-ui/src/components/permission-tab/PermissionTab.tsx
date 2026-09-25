@@ -222,7 +222,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                             {
                               title: t("edit"),
                               onClick() {
-                                navigate(
+                                void navigate(
                                   toPermissionDetails({
                                     realm,
                                     id: realmId,

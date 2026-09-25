@@ -69,7 +69,7 @@
                     <exclusions>
                         <exclusion>
                             <groupId>org.keycloak</groupId>
-                            <artifactId>keycloak-admin-client-tests</artifactId>
+                            <artifactId>keycloak-admin-client-internal</artifactId>
                         </exclusion>
                     </exclusions>
                 </dependency>
@@ -81,7 +81,7 @@
                     <exclusions>
                         <exclusion>
                             <groupId>org.keycloak</groupId>
-                            <artifactId>keycloak-admin-client-tests</artifactId>
+                            <artifactId>keycloak-admin-client-internal</artifactId>
                         </exclusion>
                     </exclusions>
                 </dependency>

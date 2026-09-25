@@ -75,7 +75,7 @@ jobs:
 
   external-links:
     name: External links check
-    if: ${{ needs.conditional.outputs.documentation == 'true' }}
+    if: ${{ needs.conditional.outputs.documentation == 'true' && github.repository	== 'keycloak/keycloak' }}
     runs-on: ubuntu-latest
     needs: conditional
     steps:

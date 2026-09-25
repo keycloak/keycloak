@@ -137,7 +137,7 @@ export default function ClientProfileForm() {
         AlertVariant.success,
       );
 
-      navigate(toClientProfile({ realm, profileName: form.name }));
+      void navigate(toClientProfile({ realm, profileName: form.name }));
     } catch (error) {
       addError(
         editMode ? "updateClientProfileError" : "createClientProfileError",
@@ -169,7 +169,7 @@ export default function ClientProfileForm() {
             profiles: [...(profiles!.profiles || []), getValues()],
           });
           addAlert(t("deleteExecutorSuccess"), AlertVariant.success);
-          navigate(toClientProfile({ realm, profileName }));
+          void navigate(toClientProfile({ realm, profileName }));
         } catch (error) {
           addError("deleteExecutorError", error);
         }
@@ -177,7 +177,7 @@ export default function ClientProfileForm() {
         try {
           await adminClient.clientPolicies.createProfiles(profiles);
           addAlert(t("deleteClientSuccess"), AlertVariant.success);
-          navigate(toClientPolicies({ realm, tab: "profiles" }));
+          void navigate(toClientPolicies({ realm, tab: "profiles" }));
         } catch (error) {
           addError("deleteClientError", error);
         }

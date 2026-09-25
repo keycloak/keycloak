@@ -118,7 +118,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             if (inputData.containsKey("tryAnotherWay")) {
                 logger.trace("User clicked on link 'Try Another Way'");
 
-                processor.getAuthenticationSession().setAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED, "true");
+                processor.getAuthenticationSession().setAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED, model.getId());
                 return createSelectAuthenticatorsScreen(model);
             }
 
@@ -262,15 +262,17 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     @Override
     public Response processFlow() {
         logger.debugf("processFlow: %s", flow.getAlias());
-
-        if (Boolean.parseBoolean(processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED))) {
-            logger.tracef("Refreshed page on authentication selector screen");
+        String selector = processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED);
+        if (selector != null) {
             String lastExecutionId = processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
-            if (lastExecutionId != null) {
+            if (selector.equalsIgnoreCase(lastExecutionId)) {
+                logger.tracef("Refreshed page on authentication selector screen");
                 AuthenticationExecutionModel executionModel = processor.getRealm().getAuthenticationExecutionById(lastExecutionId);
                 if (executionModel != null) {
                     return createSelectAuthenticatorsScreen(executionModel);
                 }
+            } else {
+                processor.getAuthenticationSession().removeAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED);
             }
         }
 
@@ -453,7 +455,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 //move to next
                 return null;
             }
-            model = finalSelectionOptions.get(0).getAuthenticationExecution();
+            model = resolveSelectedExecution(finalSelectionOptions);
             factory = (AuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, model.getAuthenticator());
             if (factory == null) {
                 throw new RuntimeException("Unable to find factory for AuthenticatorFactory: " + model.getAuthenticator() + " did you forget to declare it in a META-INF/services file?");
@@ -523,6 +525,14 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         return AuthenticationSelectionResolver.createAuthenticationSelectionList(processor, model);
     }
 
+    private AuthenticationExecutionModel resolveSelectedExecution(List<AuthenticationSelectionOption> selectionOptions) {
+        String currentExecutionId = processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
+        return selectionOptions.stream()
+                .filter(option -> Objects.equals(option.getAuthExecId(), currentExecutionId))
+                .map(AuthenticationSelectionOption::getAuthenticationExecution)
+                .findFirst()
+                .orElseGet(() -> selectionOptions.get(0).getAuthenticationExecution());
+    }
 
     public Response processResult(AuthenticationProcessor.Result result, boolean isAction) {
         AuthenticationExecutionModel execution = result.getExecution();

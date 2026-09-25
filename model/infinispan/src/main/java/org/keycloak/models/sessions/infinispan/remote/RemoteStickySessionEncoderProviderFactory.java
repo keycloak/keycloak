@@ -101,6 +101,9 @@ public class RemoteStickySessionEncoderProviderFactory implements StickySessionE
     public void setShouldAttachRoute(boolean shouldAttachRoute) {
         this.shouldAttachRoute = shouldAttachRoute;
         log.debugf("Should attach route to the sticky session cookie: %b", shouldAttachRoute);
+        if (shouldAttachRoute) {
+            log.warn("The option `shouldAttachRoute` is deprecated and will be removed in a future release. Disable it by setting `spi-sticky-session-encoder--remote--should-attach-route` to `false`");
+        }
     }
 
     @Override

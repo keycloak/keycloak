@@ -39,6 +39,7 @@ import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
 import org.keycloak.models.KeycloakSession;
 
 import org.hibernate.dialect.Dialect;
+import org.hibernate.dialect.MySQLDialect;
 import org.hibernate.engine.jdbc.env.spi.IdentifierHelper;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.internal.SessionFactoryImpl;
@@ -58,6 +59,17 @@ public class JpaUtils {
     public static final String QUERY_JPQL_SUFFIX = "[jpql]";
     private static final Logger logger = Logger.getLogger(JpaUtils.class);
 
+    /**
+     * MySQL/MariaDB drivers default to CLIENT_FOUND_ROWS, which makes ON DUPLICATE KEY UPDATE
+     * return 1 for rows that were matched but not changed. Hibernate translates the HQL
+     * {@code on conflict ... do update ... where} clause into a CASE self-assignment, so a
+     * no-op update on an active row is indistinguishable from a successful insert (both return 1).
+     */
+    public static boolean isUpsertRowCountUnreliable(EntityManager em) {
+        return em.getEntityManagerFactory().unwrap(SessionFactoryImplementor.class)
+                .getJdbcServices().getDialect() instanceof MySQLDialect;
+    }
+
     public static String getTableNameForNativeQuery(String tableName, EntityManager em) {
         final Dialect dialect = em.getEntityManagerFactory().unwrap(SessionFactoryImpl.class).getJdbcServices().getDialect();
         IdentifierHelper identifierHelper = em.getEntityManagerFactory().unwrap(SessionFactoryImpl.class).getJdbcServices().getJdbcEnvironment().getIdentifierHelper();
@@ -69,6 +81,10 @@ public class JpaUtils {
         return descriptors.stream().map(descriptor -> (ParsedPersistenceXmlDescriptor) descriptor).collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated this method should not be used in production and will be removed together with legacy testsuite
+     */
+    @Deprecated(forRemoval = true)
     public static EntityManagerFactory createEntityManagerFactory(KeycloakSession session, String unitName, Map<String, Object> properties, boolean jta) {
         PersistenceUnitTransactionType txType = jta ? PersistenceUnitTransactionType.JTA : PersistenceUnitTransactionType.RESOURCE_LOCAL;
         PersistenceXmlParser parser = PersistenceXmlParser.create(properties);
@@ -104,7 +120,9 @@ public class JpaUtils {
      *
      * @param session the keycloak session
      * @return a list of all provided entities (can be an empty list)
+     * @deprecated this method should not be used in production and will be removed together with legacy testsuite
      */
+    @Deprecated(forRemoval = true)
     public static List<Class<?>> getProvidedEntities(KeycloakSession session) {
         List<Class<?>> providedEntityClasses = new ArrayList<>();
         // Get all configured entity providers.

@@ -114,4 +114,10 @@ class QueryParseUtilsTest {
         var ctx = QueryParseUtils.parse("unknownField pr");
         assertThrows(ClientQueryException.class, () -> QueryParseUtils.validate(ctx));
     }
+    
+    @Test
+    void validateWebOriginsNotSearchable() {
+        var ctx = QueryParseUtils.parse("webOrigins eq \"origin\"");
+        assertThrows(ClientQueryException.class, () -> QueryParseUtils.validate(ctx));
+    }
 }

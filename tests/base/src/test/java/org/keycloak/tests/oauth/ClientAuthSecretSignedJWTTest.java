@@ -71,7 +71,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@KeycloakIntegrationTest(config = ClientSecretRotationUtils.ClientSecretRotationServerConfig.class)
+@KeycloakIntegrationTest
 public class ClientAuthSecretSignedJWTTest {
 
     private static final String CLIENT_SECRET = "atleast-14chars-password";

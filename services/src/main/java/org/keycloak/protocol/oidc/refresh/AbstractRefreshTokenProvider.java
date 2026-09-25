@@ -41,6 +41,7 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
@@ -69,7 +70,7 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
         if (realm.isRevokeRefreshToken()) {
             // If refresh tokens are revoked, we need to serialize all requests to avoid wrong conclusions.
             // This needs to be called before we load the user session from the database or the cache
-            createTemporaryExclusiveLockForTokenRefreshOperation(session, oldRefreshToken, tokenManager);
+            createTemporaryExclusiveLockForTokenRefreshOperation(session, realm, oldRefreshToken, tokenManager);
         }
 
         event.session(oldRefreshToken.getSessionState())
@@ -121,6 +122,17 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
             clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, oldRefreshToken.getNonce());
         }
         clientSessionCtx.setAttribute(Constants.GRANT_TYPE, OAuth2Constants.REFRESH_TOKEN);
+        clientSessionCtx.setAttribute(DefaultClientSessionContext.ORIGINAL_REFRESH_TOKEN_SCOPE, oldRefreshToken.getScope());
+
+        final Collection<String> requestedAud = (Collection<String>) oldRefreshToken.getOtherClaims().get(Constants.REQUESTED_AUDIENCE);
+        if (requestedAud != null) {
+            clientSessionCtx.setAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS,
+                    requestedAud.stream()
+                            .map(clientId -> session.clients().getClientByClientId(realm, clientId))
+                            .filter(Objects::nonNull)
+                            .filter(ClientModel::isEnabled)
+                            .toArray(ClientModel[]::new));
+        }
 
         // recreate token.
         AccessToken newToken = tokenManager.createClientAccessToken(session, realm, authorizedClient, user, userSession, clientSessionCtx, userSession.isOffline());
@@ -140,15 +152,6 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
 
         if (oldRefreshToken.getAuthorization() != null) {
             newToken.setAuthorization(oldRefreshToken.getAuthorization());
-        }
-
-        final Collection<String> requestedAud = (Collection<String>) oldRefreshToken.getOtherClaims().get(Constants.REQUESTED_AUDIENCE);
-        if (requestedAud != null) {
-            validation.clientSessionCtx.setAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS,
-                    requestedAud.stream()
-                            .map(clientId -> session.clients().getClientByClientId(realm, clientId))
-                            .filter(Objects::nonNull)
-                            .toArray(ClientModel[]::new));
         }
 
         validation.clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, ctx.resourceParameter());
@@ -173,8 +176,7 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
             responseBuilder.getRefreshToken().setAuthorization(newToken.getAuthorization());
         }
 
-        String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
-        if (TokenUtil.isOIDCRequest(scopeParam)) {
+        if (TokenUtil.isOIDCRequest(oldRefreshToken.getScope())) {
             responseBuilder.generateIDToken().generateAccessTokenHash();
         }
 
@@ -228,8 +230,20 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
         };
     }
 
-    private void createTemporaryExclusiveLockForTokenRefreshOperation(KeycloakSession session, RefreshToken refreshToken, TokenManager tokenManager) {
-        String lockId = "refreshLock:" + refreshToken.getSessionId() + ":" + tokenManager.getReuseIdKey(refreshToken);
+    /**
+     * Id of the lock which serializes the refreshes contending on the same rotation state. It has to be derived from
+     * the same identity that the rotation state itself is keyed by, otherwise the read-modify-write of that state is
+     * not atomic.
+     * <p>
+     * By default that is the user session plus the reuse id, as every token of a refresh token family shares the user
+     * session which holds the rotation state.
+     */
+    protected String getRefreshTokenLockId(RealmModel realm, RefreshToken refreshToken, TokenManager tokenManager) {
+        return "refreshLock:" + refreshToken.getSessionId() + ":" + tokenManager.getReuseIdKey(refreshToken);
+    }
+
+    private void createTemporaryExclusiveLockForTokenRefreshOperation(KeycloakSession session, RealmModel realm, RefreshToken refreshToken, TokenManager tokenManager) {
+        String lockId = getRefreshTokenLockId(realm, refreshToken, tokenManager);
         Retry.executeWithBackoff((int iteration) -> {
             // This assumes that 60 seconds is the maximum time this operation will take
             if (!session.singleUseObjects().putIfAbsent(lockId, 60)) {
@@ -251,7 +265,8 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
                     KeycloakModelUtils.runJobInTransaction(factory, s -> s.singleUseObjects().remove(lockId));
                 }
             });
-        }, Duration.of(10, ChronoUnit.SECONDS), 10);
+        // 12s allows 2 retries given the 5s remote-timeout on the actionTokens cache (CacheConfigurator).
+        }, Duration.of(12, ChronoUnit.SECONDS), 10);
     }
 
     /**
@@ -264,8 +279,8 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
         event.detail(Details.AGE_OF_REFRESH_TOKEN, Long.toString(ageOfRefreshToken));
     }
 
-    private void validateTokenReuseForRefresh(KeycloakSession session, RealmModel realm, RefreshToken refreshToken,
-                                              TokenManager.TokenValidation validation, TokenManager tokenManager) throws OAuthErrorException {
+    protected void validateTokenReuseForRefresh(KeycloakSession session, RealmModel realm, RefreshToken refreshToken,
+                                                TokenManager.TokenValidation validation, TokenManager tokenManager) throws OAuthErrorException {
         if (realm.isRevokeRefreshToken()) {
             AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
             try {

@@ -4,7 +4,7 @@
 = Managing groups
 [role="_abstract"]
 
-The SCIM `/Groups` endpoint allows you to create, read, update, and delete group resources in {project_name}. Group resources
+The SCIM `/Groups` endpoint allows you to create, read, update, and delete realm group resources in {project_name}. Group resources
 conform to the `urn:ietf:params:scim:schemas:core:2.0:Group` schema as defined in RFC 7643.
 
 == Group attributes
@@ -44,7 +44,7 @@ curl -X POST http://localhost:8080/realms/myrealm/scim/v2/Groups \
 
 A successful response returns the created group with a `201 Created` status.
 
-IMPORTANT: Group members cannot be specified during group creation. Attempting to include members in the `POST`
+NOTE: Group members cannot be specified during group creation. Attempting to include members in the `POST`
 request results in a `400 Bad Request` error. Use the `PATCH` method to add members after creating the group.
 
 If a group with the same `displayName` already exists, the API returns a `409 Conflict` response with
@@ -91,7 +91,7 @@ curl -X PUT http://localhost:8080/realms/myrealm/scim/v2/Groups/{id} \
   }'
 ----
 
-IMPORTANT: Group members cannot be modified through `PUT` requests. Attempting to include members in the `PUT`
+NOTE: Group members cannot be modified through `PUT` requests. Attempting to include members in the `PUT`
 request results in a `400 Bad Request` error. Use the `PATCH` method to manage group members.
 
 == Partially updating a group
@@ -186,6 +186,15 @@ curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Groups/{groupId} \
     ]
   }'
 ----
+
+=== Filtering limitations in PATCH operations
+
+Filtering in PATCH remove operations is supported only for multivalued attributes (such as `members`).
+For complex multivalued attributes like `members`, only the `value` sub-attribute (the unique identifier) is supported for filtering. You can use the `eq` (equal) comparison operator optionally combined with the `or` logical operator.
+
+NOTE: The `and` operator is not supported for any multivalued attributes because a single value cannot satisfy two conditions simultaneously. For example, `members[value eq "user1-id" and value eq "user2-id"]` is logically impossible since one member ID cannot equal two different IDs at the same time. Use `or` to match multiple values instead: `members[value eq "user1-id" or value eq "user2-id"]`.
+
+All other comparison operators and sub-attributes are not supported.
 
 === Querying members
 

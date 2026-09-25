@@ -44,8 +44,10 @@ import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SAML2LoginResponseBuilder;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
+import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
@@ -65,6 +67,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.junit.Before;
 import org.junit.Test;
+import org.w3c.dom.Document;
 
 import static org.keycloak.protocol.saml.profile.ecp.SamlEcpProfileService.AUTHN_REQUEST_CANNOT_BE_PROCESSED;
 import static org.keycloak.testsuite.util.Matchers.isSamlLogoutRequest;
@@ -470,6 +473,96 @@ public class LogoutTest extends AbstractSamlTest {
         assertThat(samlResponse.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
         assertThat(((StatusResponseType) samlResponse.getSamlObject()).getDestination(), is("http://url"));
         assertLogoutEvent(SAML_CLIENT_ID_SALES_POST2);
+    }
+
+    @Test
+    public void testPostBindingUnsignedLogoutResponseRejected() throws IOException {
+
+        try(Closeable salesSig = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST_SIG)
+                .setFrontchannelLogout(true)
+                .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "http://url")
+                .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "")
+                .update())
+        {
+            prepareLogIntoTwoAppsSig()
+                    // Initiate SLO from the signed client — Keycloak sends a LogoutRequest to sales-post-sig#
+                    .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, POST)
+                    .nameId(nameIdRef::get)
+                    .sessionIndex(sessionIndexRef::get)
+                    .build()
+
+                    // SP (sales-post-sig) receives the LogoutRequest and sends back an UNSIGNED LogoutResponse
+                    .processSamlResponse(POST)
+                    .transformDocument(doc -> {
+                        SAML2Object so = (SAML2Object) SAMLParser.getInstance().parse(new DOMSource(doc));
+                        assertThat(so, isSamlLogoutRequest("http://url"));
+
+                        // Build an unsigned LogoutResponse — no signDocument() call
+                        return new SAML2LogoutResponseBuilder()
+                                .destination(getAuthServerSamlEndpoint(REALM_NAME).toString())
+                                .issuer(SAML_CLIENT_ID_SALES_POST_SIG)
+                                .logoutRequestID(((LogoutRequestType) so).getID())
+                                .buildDocument();
+                    })
+                    .targetAttributeSamlResponse()
+                    .targetUri(getAuthServerSamlEndpoint(REALM_NAME))
+                    .build()
+
+                    // Must be rejected: client requires a signature but none was provided
+                    .doNotFollowRedirects()
+                    .assertResponse(LogoutTest::assertBadRequest)
+                    .execute();
+        }
+    }
+
+    @Test
+    public void testPostBindingSignedLogoutResponseAccepted() throws IOException {
+        try(Closeable salesSig = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST_SIG)
+                .setFrontchannelLogout(true)
+                .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "http://url")
+                .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "")
+                .update())
+        {
+            SAMLDocumentHolder samlResponse =  prepareLogIntoTwoAppsSig()
+                    // Initiate SLO from the signed client — Keycloak sends a LogoutRequest to sales-post-sig#
+                    .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, POST)
+                    .nameId(nameIdRef::get)
+                    .sessionIndex(sessionIndexRef::get)
+                    .build()
+
+
+                    // SP sends a properly signed LogoutResponse
+                    .processSamlResponse(POST)
+                    .transformDocument(doc -> {
+                        SAML2Object so = (SAML2Object) SAMLParser.getInstance().parse(new DOMSource(doc));
+                        assertThat(so, isSamlLogoutRequest("http://url"));
+
+                        Document responseDoc = new SAML2LogoutResponseBuilder()
+                                .destination(getAuthServerSamlEndpoint(REALM_NAME).toString())
+                                .issuer(SAML_CLIENT_ID_SALES_POST_SIG)
+                                .logoutRequestID(((LogoutRequestType) so).getID())
+                                .buildDocument();
+
+                        // Sign the response document with the SP's key
+                        new BaseSAML2BindingBuilder()
+                                .signWith(
+                                        SAML_CLIENT_ID_SALES_POST_SIG,
+                                        SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY_PK,
+                                        SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY_PK)
+                                .signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
+                                .signDocument(responseDoc);
+
+                        return responseDoc;
+                    })
+                    .targetAttributeSamlResponse()
+                    .targetUri(getAuthServerSamlEndpoint(REALM_NAME))
+                    .build()
+
+                    .getSamlResponse(POST);
+
+            // SLO should complete successfully
+            assertThat(samlResponse.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        }
     }
 
     @Test

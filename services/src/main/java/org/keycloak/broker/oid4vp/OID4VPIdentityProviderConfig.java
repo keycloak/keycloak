@@ -25,6 +25,7 @@ public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
 
     public static final String DCQL_QUERY = "dcqlQuery";
     public static final String TRUSTED_ISSUER_JWKS = "trustedIssuerJwks";
+    public static final String TRUST_MATERIAL_IDPS = "trustMaterialIdps";
     public static final String PRINCIPAL_ATTRIBUTE = "principalAttribute";
     public static final String WALLET_SCHEME = "walletScheme";
     public static final String SIGNING_KEY_ID = "signingKeyId";
@@ -54,6 +55,14 @@ public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
 
     public void setTrustedIssuerJwks(String trustedIssuerJwks) {
         getConfig().put(TRUSTED_ISSUER_JWKS, trustedIssuerJwks);
+    }
+
+    public String getTrustMaterialIdps() {
+        return getConfig().get(TRUST_MATERIAL_IDPS);
+    }
+
+    public void setTrustMaterialIdps(String trustMaterialIdps) {
+        getConfig().put(TRUST_MATERIAL_IDPS, trustMaterialIdps);
     }
 
     public String getPrincipalAttribute() {
@@ -91,6 +100,10 @@ public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
         String responseMode = getConfig().get(RESPONSE_MODE);
         if (StringUtil.isNotBlank(responseMode)) {
             ResponseMode.from(responseMode);
+        }
+        if (StringUtil.isBlank(getTrustedIssuerJwks()) && StringUtil.isBlank(getTrustMaterialIdps())) {
+            throw new IllegalArgumentException(
+                    "Either a trusted issuer JWKS or trust material identity provider aliases are required");
         }
     }
 

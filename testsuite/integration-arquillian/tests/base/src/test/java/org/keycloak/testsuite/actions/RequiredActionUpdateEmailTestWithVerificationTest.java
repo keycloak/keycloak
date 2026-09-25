@@ -430,7 +430,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 		driver.navigate().to(confirmationLink);
 
 		errorPage.assertCurrent();
-		assertEquals("Email already exists.", errorPage.getError());
+		assertEquals("This email is already associated with an existing account.", errorPage.getError());
 		assertTrue(ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
 	}
 

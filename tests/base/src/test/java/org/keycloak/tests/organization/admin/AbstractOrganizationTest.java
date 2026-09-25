@@ -31,8 +31,6 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.OrganizationModel;
-import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
@@ -41,7 +39,9 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
@@ -112,13 +112,21 @@ public abstract class AbstractOrganizationTest {
             id = ApiUtil.getCreatedId(response);
         }
 
-        if (orgDomains != null && orgDomains.length > 0) {
-            broker.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomains[0]);
-            broker.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
-        }
         managedRealm.admin().identityProviders().create(broker).close();
-
         managedRealm.admin().organizations().get(id).identityProviders().addIdentityProvider(broker.getAlias()).close();
+
+        if (orgDomains != null && orgDomains.length > 0) {
+            org = managedRealm.admin().organizations().get(id).toRepresentation();
+            org.getDomains().stream()
+                    .filter(d -> d.getName().equals(orgDomains[0]))
+                    .findFirst()
+                    .ifPresent(d -> {
+                        d.setIdentityProviderAlias(broker.getAlias());
+                        d.setAutoRedirect(true);
+                    });
+            managedRealm.admin().organizations().get(id).update(org).close();
+        }
+
         org = managedRealm.admin().organizations().get(id).toRepresentation();
 
         String orgId = id;
@@ -136,6 +144,22 @@ public abstract class AbstractOrganizationTest {
         });
 
         return org;
+    }
+
+    /** Creates an organization with a real OIDC broker and the requested membership policy. */
+    protected OrganizationResource createOrganizationWithBroker(ManagedRealm providerRealm, boolean autoMembership,
+            MembershipType membershipType) {
+        String idpAlias = organizationName + "-identity-provider";
+        OrganizationRepresentation org = createOrganization(realm, organizationName,
+                createRealOrgBroker(idpAlias, providerRealm), organizationName + ".org");
+        OrganizationResource organization = realm.admin().organizations().get(org.getId());
+        OrganizationIdentityProviderLinkRepresentation link = new OrganizationIdentityProviderLinkRepresentation();
+        link.setAutoMembership(autoMembership);
+        link.setMembershipType(membershipType.name());
+        try (Response response = organization.identityProviders().get(idpAlias).update(link)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        return organization;
     }
 
     protected OrganizationRepresentation createRepresentation(String name, String... orgDomains) {
@@ -274,15 +298,15 @@ public abstract class AbstractOrganizationTest {
     /**
      * Performs identity-first login through a broker: enters email on the consumer realm login page,
      * follows the redirect to the provider realm, fills credentials, and optionally handles first-time
-     * login profile update. Registers cleanup for the federated user created in the consumer realm.
+     * login profile update. Returns the federated user in the consumer realm and registers its cleanup.
      */
-    protected void loginViaBroker(String email, String username, String password,
+    protected UserRepresentation loginViaBroker(String email, String username, String password,
             OAuthClient oauth, LoginUsernamePage loginUsernamePage, LoginPage loginPage,
             ManagedRealm providerRealm) {
-        loginViaBroker(email, username, password, null, oauth, loginUsernamePage, loginPage, null, providerRealm);
+        return loginViaBroker(email, username, password, null, oauth, loginUsernamePage, loginPage, null, providerRealm);
     }
 
-    protected void loginViaBroker(String email, String username, String password,
+    protected UserRepresentation loginViaBroker(String email, String username, String password,
             String updateEmail, OAuthClient oauth, LoginUsernamePage loginUsernamePage,
             LoginPage loginPage, LoginUpdateProfilePage loginUpdateProfilePage,
             ManagedRealm providerRealm) {
@@ -313,20 +337,22 @@ public abstract class AbstractOrganizationTest {
                 r.users().get(userId).remove();
             } catch (NotFoundException ignored) {}
         });
+        return users.get(0);
     }
 
     /**
      * Performs broker registration and verifies the user becomes an organization member.
      * Equivalent to the old AbstractOrganizationTest.assertBrokerRegistration().
      */
-    protected void assertBrokerRegistration(OrganizationResource organization,
+    protected UserRepresentation assertBrokerRegistration(OrganizationResource organization,
             String username, String email,
             OAuthClient oauth, LoginUsernamePage loginUsernamePage, LoginPage loginPage,
             LoginUpdateProfilePage loginUpdateProfilePage, ManagedRealm providerRealm) {
-        loginViaBroker(email, username, "password", email,
+        UserRepresentation user = loginViaBroker(email, username, "password", email,
                 oauth, loginUsernamePage, loginPage, loginUpdateProfilePage, providerRealm);
 
         assertIsMember(email, organization);
+        return user;
     }
 
     protected void assertIsMember(String userEmail, OrganizationResource organization) {
@@ -365,9 +391,7 @@ public abstract class AbstractOrganizationTest {
                 "tokenUrl", providerBaseUrl + "/protocol/openid-connect/token",
                 "userInfoUrl", providerBaseUrl + "/protocol/openid-connect/userinfo",
                 "defaultScope", "email profile",
-                "syncMode", "IMPORT",
-                OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomain,
-                IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString()
+                "syncMode", "IMPORT"
         ));
 
         consumerRealm.admin().identityProviders().create(idp).close();

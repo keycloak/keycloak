@@ -99,7 +99,7 @@ public class AuthenticationProcessor {
     public static final String BROKER_USER_ID = "broker.user.id";
     public static final String FORWARDED_PASSIVE_LOGIN = "forwarded.passive.login";
 
-    // Boolean flag, which is true when authentication-selector screen should be rendered (typically displayed when user clicked on 'try another way' link)
+    // Flag with the model id when authentication-selector screen should be rendered (typically displayed when user clicked on 'try another way' link)
     public static final String AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED = "auth.selector.screen.rendered";
 
     // Boolean note in the client session indicating it was first created for offline session

@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -1028,19 +1029,35 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     * Validates and retrieves the organization for an Identity Provider mapper.
+     * Validates and retrieves the organization targeted by an Identity Provider mapper.
+     * <p />
+     * The target organization is the one recorded in the mapper configuration under
+     * {@link ConfigConstants#ORGANIZATION_ID}. An identity provider can be linked to several organizations, so the
+     * mapper itself states which one it applies to; to map groups of several organizations, add one mapper per
+     * organization.
+     * <p />
      * This performs all necessary checks to ensure the IdP-organization relationship is valid:
+     * - The mapper records a target organization
+     * - The identity provider is still linked to that organization
      * - Organizations feature is enabled
      * - Organization exists and is enabled
-     * - Bidirectional link exists (organization still has this IdP)
      *
      * @param session the Keycloak session
+     * @param mapperModel the mapper model configuration recording the target organization
      * @param idpModel the identity provider model
      * @return the validated organization if all checks pass, null otherwise
      */
-    public static OrganizationModel getOrganizationForIdpMapper(KeycloakSession session, IdentityProviderModel idpModel) {
-        String idpOrgId = idpModel.getOrganizationId();
+    public static OrganizationModel getOrganizationForIdpMapper(KeycloakSession session, IdentityProviderMapperModel mapperModel, IdentityProviderModel idpModel) {
+        Map<String, String> config = mapperModel.getConfig();
+        String idpOrgId = config == null ? null : config.get(ConfigConstants.ORGANIZATION_ID);
+
         if (idpOrgId == null) {
+            logger.warnf("Mapper '%s' does not reference the organization it applies to.", mapperModel.getName());
+            return null;
+        }
+
+        if (!idpModel.isLinkedToOrganization(idpOrgId)) {
+            logger.warnf("IdP '%s' is not linked to organization '%s' referenced by mapper '%s'.", idpModel.getAlias(), idpOrgId, mapperModel.getName());
             return null;
         }
 
@@ -1048,12 +1065,12 @@ public final class KeycloakModelUtils {
         if (orgProvider != null && orgProvider.isEnabled()) {
             OrganizationModel organization = orgProvider.getById(idpOrgId);
 
-            if (organization != null && organization.isEnabled() && organization.getIdentityProviders().anyMatch(idp -> idp.getAlias().equals(idpModel.getAlias()))) {
+            if (organization != null && organization.isEnabled()) {
                 return organization;
             }
         }
 
-        logger.warnf("Cannot obtain organization '%s' linked to IdP '%s'", idpModel.getAlias(), idpOrgId);
+        logger.warnf("Cannot obtain organization '%s' linked to IdP '%s'", idpOrgId, idpModel.getAlias());
 
         return null;
     }
@@ -1062,18 +1079,22 @@ public final class KeycloakModelUtils {
      * Retrieves and validates a group for use in an Identity Provider mapper.
      * The lookup strategy is determined by the {@code groupType} config value:
      * <ul>
-     *   <li>{@code "ORGANIZATION"} — searches within the organization groups linked to the IdP</li>
+     *   <li>{@code "ORGANIZATION"} — searches within the groups of the organization recorded on the mapper, see
+     *       {@link #getOrganizationForIdpMapper(KeycloakSession, IdentityProviderMapperModel, IdentityProviderModel)}</li>
      *   <li>{@code "REALM"} or missing — searches realm groups</li>
      * </ul>
+     * Organization groups are resolved only for users who are members of the target organization.
      *
      * @param session the Keycloak session
      * @param realm the realm
+     * @param user the user whose group membership is being mapped
      * @param mapperModel the mapper model configuration containing the group path and group type
      * @param context the brokered identity context containing the IdP configuration
      * @return the group if found and valid, null otherwise (mapper should be skipped)
      */
     public static GroupModel getGroupForIdpMapper(KeycloakSession session,
                                                    RealmModel realm,
+                                                   UserModel user,
                                                    IdentityProviderMapperModel mapperModel,
                                                    BrokeredIdentityContext context) {
         String groupPath = mapperModel.getConfig().get(ConfigConstants.GROUP);
@@ -1091,10 +1112,11 @@ public final class KeycloakModelUtils {
         }
 
         if (groupType == GroupModel.Type.ORGANIZATION) {
-            OrganizationModel organization = getOrganizationForIdpMapper(session, context.getIdpConfig());
-            if (organization != null) {
-                group = findGroupByPath(session, realm, organization, groupPath);
+            OrganizationModel organization = getOrganizationForIdpMapper(session, mapperModel, context.getIdpConfig());
+            if (organization == null || user == null || !organization.isMember(user)) {
+                return null;
             }
+            group = findGroupByPath(session, realm, organization, groupPath);
         } else {
             // GroupModel.Type.REALM or null → search realm groups
             group = findGroupByPath(session, realm, groupPath);

@@ -155,7 +155,7 @@ export default function GroupsSection({ orgId }: { orgId?: string } = {}) {
         toggleDialog={toggleDeleteOpen}
         selectedRows={[currentGroup()!]}
         refresh={() => {
-          navigate(toGroups({ realm, orgId }));
+          void navigate(toGroups({ realm, orgId }));
           refresh();
         }}
       />

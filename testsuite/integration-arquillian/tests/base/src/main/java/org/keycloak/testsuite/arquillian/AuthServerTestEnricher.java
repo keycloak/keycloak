@@ -56,7 +56,7 @@ import org.keycloak.testsuite.util.VaultUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.apache.commons.io.filefilter.WildcardFileFilter;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
@@ -376,7 +376,7 @@ public class AuthServerTestEnricher {
         }
 
         // Run manual migration with the ant task
-        log.infof("Running SQL script created by liquibase during manual migration flow", sqlScriptPath);
+        log.infof("Running SQL script '%s' created by liquibase during manual migration flow", sqlScriptPath);
         String prefix = "keycloak.connectionsJpa.";
         String jdbcDriver = System.getProperty(prefix + "driver");
         String dbUrl = StringPropertyReplacer.replaceProperties(System.getProperty(prefix + "url"), SystemEnvProperties.UNFILTERED::getProperty);

@@ -53,7 +53,7 @@ public class LoginUpdateProfilePage extends AbstractPage {
     @FindBy(name = "department")
     private WebElement departmentInput;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
 
     @FindBy(name = "cancel-aia")

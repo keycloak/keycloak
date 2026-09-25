@@ -34,6 +34,28 @@ public class ResourceLoaderTest {
     }
 
     @Test
+    public void testGetResource() {
+        String parent = "dummy-resources/parent";
+        ClassLoader classLoader = ResourceLoader.class.getClassLoader();
+
+        assertGetResource(classLoader, parent, "myresource.css", true, true);
+        assertGetResource(classLoader, parent, NONE + "forbidden.css", false, true);
+        assertGetResource(classLoader, parent, "one/" + NONE + NONE + "forbidden.css", false, true);
+    }
+
+    private void assertGetResource(ClassLoader classLoader, String parent, String resource, boolean expectValid, boolean expectResourceToExist) {
+        if (expectValid) {
+            Assert.assertNotNull(ResourceLoader.getResource(classLoader, parent, resource));
+        } else {
+            Assert.assertNull(ResourceLoader.getResource(classLoader, parent, resource));
+        }
+
+        if (expectResourceToExist) {
+            Assert.assertNotNull(classLoader.getResource(parent + "/" + resource));
+        }
+    }
+
+    @Test
     public void testFiles() throws IOException {
         Path tempDirectory = Files.createTempDirectory("safepath-test");
 

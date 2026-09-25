@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.JwkParsingUtils;
@@ -33,13 +34,15 @@ import org.keycloak.sdjwt.vp.TrustedSdJwtIssuerResolver;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * Bridges a {@link TrustMaterialIdentityProvider} to a {@link TrustedSdJwtIssuerResolver}: it reads
- * the issuer key hints (kid, alg, iss) from the credential's issuer signed JWT and looks up the
- * matching trusted keys.
+ * Bridges a {@link TrustMaterialIdentityProvider} to a {@link TrustedSdJwtIssuerResolver}. When the
+ * provider exposes X.509 trust anchors, chain validation is mandated as required by HAIP 6.1.1: the
+ * x5c header of the credential's issuer signed JWT must validate against the anchors and the chain
+ * leaf key verifies the signature, a credential without an x5c header is rejected. Only providers
+ * without X.509 trust anchors fall back to looking up the trusted keys by the issuer key hints
+ * (kid, alg, iss).
  *
- * TODO: This needs to be changed to either use the x5c-Header and do a Chain-Validation against
- * a pre-configured cert / ETSI trust list (enforced in HAIP) OR look up the
- * JWKS dynamically from .well-known/jwt-vc-issuer endpoint of the issuer in the credential
+ * TODO: Support looking up the JWKS dynamically from the .well-known/jwt-vc-issuer endpoint of the
+ * issuer in the credential.
  */
 public class TrustMaterialSdJwtIssuerResolver implements TrustedSdJwtIssuerResolver {
 
@@ -58,6 +61,12 @@ public class TrustMaterialSdJwtIssuerResolver implements TrustedSdJwtIssuerResol
                 .algorithm(header.getRawAlgorithm())
                 .issuer(issuer != null && issuer.isTextual() ? issuer.textValue() : null)
                 .build();
+
+        JWK leafKey = trustMaterial.validateX509Chain(request, header.getX5c(), header.getRawAlgorithm());
+        if (leafKey != null) {
+            return new StaticTrustedSdJwtIssuer(List.of(JwkParsingUtils.convertJwkToVerifierContext(leafKey)));
+        }
+
         List<SignatureVerifierContext> verifiers = trustMaterial.resolveKeys(request)
                 .map(JwkParsingUtils::convertJwkToVerifierContext)
                 .collect(Collectors.toList());

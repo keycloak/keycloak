@@ -75,6 +75,15 @@ public interface OrganizationGroupsResource {
             @QueryParam("subGroupsCount") boolean subGroupsCount
     );
 
+    @GET
+    @Path("group-by-path/{path: .*}")
+    @Produces(MediaType.APPLICATION_JSON)
+    GroupRepresentation getGroupByPath(
+            @PathParam("path") String path,
+            @QueryParam("briefRepresentation") boolean briefRepresentation,
+            @QueryParam("subGroupsCount") boolean subGroupsCount
+    );
+
     @Path("{group-id}")
     OrganizationGroupResource group(@PathParam("group-id") String groupId);
 }

@@ -89,6 +89,7 @@ import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveAllUserLoginFailuresEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
 import org.keycloak.models.sessions.infinispan.stream.AuthClientSessionSetMapper;
+import org.keycloak.models.sessions.infinispan.stream.AuthenticatedUserAuthSessionPredicate;
 import org.keycloak.models.sessions.infinispan.stream.ClientSessionFilterByUser;
 import org.keycloak.models.sessions.infinispan.stream.CollectionToStreamMapper;
 import org.keycloak.models.sessions.infinispan.stream.GroupAndCountCollectorSupplier;
@@ -174,6 +175,7 @@ import org.infinispan.protostream.types.java.CommonTypes;
                 RemoveUserSessionsEvent.class,
 
                 // models.sessions.infinispan.stream package
+                AuthenticatedUserAuthSessionPredicate.class,
                 SessionPredicate.class,
                 SessionWrapperPredicate.class,
                 UserSessionPredicate.class,

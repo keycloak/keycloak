@@ -231,11 +231,17 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.roles().requireView(role);
 
-        if (search == null && first == null && max == null) {
-            return role.getCompositesStream().map(ModelToRepresentation::toBriefRepresentation);
+        Stream<RoleModel> composites = role.getCompositesStream(search, null, null)
+                .filter(r -> auth.roles().canView(r));
+
+        if (first != null && first > 0) {
+            composites = composites.skip(first);
+        }
+        if (max != null && max >= 0) {
+            composites = composites.limit(max);
         }
 
-        return role.getCompositesStream(search, first, max).map(ModelToRepresentation::toBriefRepresentation);
+        return composites.map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
@@ -257,7 +263,7 @@ public class RoleByIdResource extends RoleResource {
     public Stream<RoleRepresentation> getRealmRoleComposites(final @PathParam("role-id") String id) {
         RoleModel role = getRoleModel(id);
         auth.roles().requireView(role);
-        return getRealmRoleComposites(role);
+        return getRealmRoleComposites(auth, role);
     }
 
     /**
@@ -287,7 +293,7 @@ public class RoleByIdResource extends RoleResource {
         if (clientModel == null) {
             throw new NotFoundException("Could not find client");
         }
-        return getClientRoleComposites(clientModel, role);
+        return getClientRoleComposites(auth, clientModel, role);
     }
 
     /**

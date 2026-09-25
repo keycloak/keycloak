@@ -48,13 +48,23 @@ import org.hibernate.annotations.DynamicUpdate;
                         " WHERE sess.realmId = :realmId AND sess.timestamp < :timestamp"
         ),
         @NamedQuery(
+            name = "deleteRootAuthSessionsByUser",
+            query = "DELETE FROM RootAuthenticationSessionEntity sess" +
+                " WHERE sess.realmId = :realmId" +
+                " AND (:rootSessionIdToKeep IS NULL OR sess.id <> :rootSessionIdToKeep)" +
+                " AND EXISTS (" +
+                " SELECT auth.tabId FROM AuthenticationSessionEntity auth" +
+                " WHERE auth.rootAuthenticationSession = sess AND auth.authUserId = :userId" +
+                " )"
+        ),
+        @NamedQuery(
                 name = "deleteExpiredRootAuthSessionByIds",
                 query = "DELETE FROM RootAuthenticationSessionEntity e WHERE e.id IN :ids AND e.timestamp < :timestamp"
         ),
         @NamedQuery(
                 name = "insertRootAuthSessionIfAbsent",
                 query = "insert into RootAuthenticationSessionEntity (id, realmId, timestamp, version) values (:id, :realmId, :timestamp, 0)" +
-                        " on conflict do nothing"
+                        " on conflict (id) do nothing"
         )
 })
 @Entity

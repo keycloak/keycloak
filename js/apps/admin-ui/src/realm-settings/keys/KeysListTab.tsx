@@ -246,7 +246,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
             instructions={t("noKeysDescription")}
             primaryActionText={t("addProvider")}
             onPrimaryAction={() =>
-              navigate(toKeysTab({ realm, tab: "providers" }))
+              void navigate(toKeysTab({ realm, tab: "providers" }))
             }
           />
         }

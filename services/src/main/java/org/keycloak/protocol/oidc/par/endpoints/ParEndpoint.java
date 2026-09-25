@@ -33,6 +33,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -40,6 +41,7 @@ import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
@@ -63,6 +65,7 @@ public class ParEndpoint extends AbstractParEndpoint {
 
     public static final String PAR_CREATED_TIME = "par.created.time";
     public static final String PAR_DPOP_PROOF_JKT = "par.dpop.proof.jkt";
+    public static final String PAR_CLIENT_ID = "par.client.id";
     public static final String REQUEST_URI_PREFIX = "urn:ietf:params:oauth:request_uri:";
     public static final int REQUEST_URI_PREFIX_LENGTH = REQUEST_URI_PREFIX.length();
     public static final String CACHE_KEY_PREFIX = "par:";
@@ -175,7 +178,9 @@ public class ParEndpoint extends AbstractParEndpoint {
 
         flattenDecodedFormParametersToParamsMap(decodedFormParameters, params);
 
-        params.put(PAR_CREATED_TIME, String.valueOf(System.currentTimeMillis()));
+        params.put(PAR_CREATED_TIME, String.valueOf(Time.currentTimeMillis()));
+        // Store the client_id so the authorization endpoint can verify the PAR was issued for that client
+        params.put(PAR_CLIENT_ID, client.getClientId());
         // If DPoP Proof exists, its public key needs to be matched with the one with Token Request afterward
         DPoP dpop = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
         if (dpop != null) {
@@ -183,7 +188,10 @@ public class ParEndpoint extends AbstractParEndpoint {
         }
 
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-        singleUseStore.put(CACHE_KEY_PREFIX + key, expiresIn, params);
+        //  PAR object needs to be valid for the time of PAR lifespan together with the authenticationSession time
+        //  (See https://github.com/keycloak/keycloak/issues/48072 for the details)
+        long storeLifespan = (long) expiresIn + SessionExpiration.getAuthSessionLifespan(realm);
+        singleUseStore.put(buildCacheKey(realm.getId(), key), storeLifespan, params);
 
         ParResponse parResponse = new ParResponse(requestUri, expiresIn);
 
@@ -191,6 +199,14 @@ public class ParEndpoint extends AbstractParEndpoint {
         return cors.add(Response.status(Response.Status.CREATED)
                 .entity(parResponse)
                 .type(MediaType.APPLICATION_JSON_TYPE));
+    }
+
+    /**
+     * Builds the realm-scoped cache key for a PAR entry. The realm ID is included so that a
+     * {@code request_uri} issued in one realm cannot be consumed by the authorization endpoint of another realm.
+     */
+    public static String buildCacheKey(String realmId, String key) {
+        return CACHE_KEY_PREFIX + realmId + ":" + key;
     }
 
     /**

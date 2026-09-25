@@ -797,7 +797,7 @@ public abstract class StandardTokenExchangeV2Test extends AbstractClientPolicies
 
             oauth.client("requester-client", "secret");
             response = oauth.doRefreshTokenRequest(response.getRefreshToken());
-            AccessToken exchangedToken = assertAudiencesAndScopes(response, List.of("requester-client", "target-client1"), List.of("default-scope1", "optional-scope2"));
+            AccessToken exchangedToken = assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
             EventAssertion.assertSuccess(events.poll()).type(EventType.REFRESH_TOKEN)
                     .details(Details.TOKEN_ID, exchangedToken.getId())
                     .hasTokenId(Details.REFRESH_TOKEN_ID)
@@ -807,7 +807,7 @@ public abstract class StandardTokenExchangeV2Test extends AbstractClientPolicies
 
             oauth.client("requester-client", "secret");
             response = oauth.doRefreshTokenRequest(response.getRefreshToken());
-            exchangedToken = assertAudiencesAndScopes(response, List.of("requester-client", "target-client1"), List.of("default-scope1", "optional-scope2"));
+            exchangedToken = assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
             EventAssertion.assertSuccess(events.poll()).type(EventType.REFRESH_TOKEN)
                     .details(Details.TOKEN_ID, exchangedToken.getId())
                     .hasTokenId(Details.REFRESH_TOKEN_ID)

@@ -19,9 +19,11 @@ package org.keycloak.admin.client.resource;
 
 import java.util.List;
 
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
@@ -30,6 +32,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 
 public interface OrganizationMemberResource {
@@ -40,6 +43,18 @@ public interface OrganizationMemberResource {
 
     @DELETE
     Response delete();
+
+    /**
+     * Updates the membership type of this member.
+     *
+     * @param membershipType the new membership type
+     * @since Keycloak server 26.8.0
+     * @return response
+     */
+    @Path("membership-type")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response updateMembershipType(MembershipType membershipType);
 
     /**
      * Returns the organizations associated with the user

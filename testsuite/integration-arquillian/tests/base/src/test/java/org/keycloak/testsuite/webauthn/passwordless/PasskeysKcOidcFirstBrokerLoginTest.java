@@ -150,7 +150,7 @@ public class PasskeysKcOidcFirstBrokerLoginTest extends AbstractInitializedBaseB
         Assertions.assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
 
         Assertions.assertThrows(NoSuchElementException.class, () -> loginPage.findSocialButton(bc.getIDPAlias()));
-        Assertions.assertThrows(NoSuchElementException.class, () -> loginPage.clickRegister());
+        Assertions.assertFalse(loginPage.isRegisterLinkPresent());
         loginPage.assertCurrent();
 
         loginPage.login(bc.getUserPassword());
@@ -178,7 +178,7 @@ public class PasskeysKcOidcFirstBrokerLoginTest extends AbstractInitializedBaseB
         Assertions.assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
 
         Assertions.assertThrows(NoSuchElementException.class, () -> loginPage.findSocialButton(bc.getIDPAlias()));
-        Assertions.assertThrows(NoSuchElementException.class, () -> loginPage.clickRegister());
+        Assertions.assertFalse(loginPage.isRegisterLinkPresent());
         loginPage.assertCurrent();
 
         loginPage.login(generatePassword()); // invalid password

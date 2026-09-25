@@ -118,7 +118,9 @@ export default function AttributesGroupForm() {
           addError(t("errorSavingTranslations"), error);
         }
       }
-      navigate(toUserProfile({ realm: realmName, tab: "attributes-group" }));
+      void navigate(
+        toUserProfile({ realm: realmName, tab: "attributes-group" }),
+      );
     }
   };
 

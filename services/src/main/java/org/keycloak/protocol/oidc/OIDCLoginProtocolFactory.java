@@ -24,6 +24,9 @@ import java.util.Set;
 
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.cache.LocalCache;
+import org.keycloak.cache.LocalCacheConfiguration;
+import org.keycloak.cache.LocalCacheProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.constants.ServiceAccountConstants;
@@ -33,6 +36,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -46,6 +50,9 @@ import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.AllowedWebOriginsProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.AudienceResolveProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.FullNameMapper;
+import org.keycloak.protocol.oidc.mappers.ParameterizedScopeAudienceMapper;
+import org.keycloak.protocol.oidc.mappers.ParameterizedScopeClientSubMapper;
+import org.keycloak.protocol.oidc.mappers.ParameterizedScopeMapper;
 import org.keycloak.protocol.oidc.mappers.ParameterizedScopeUserPropertyMapper;
 import org.keycloak.protocol.oidc.mappers.SubMapper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
@@ -53,7 +60,9 @@ import org.keycloak.protocol.oidc.mappers.UserClientRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
 import org.keycloak.protocol.oidc.mappers.UserRealmRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
+import org.keycloak.protocol.oidc.scope.ClientDelegationScopeType;
 import org.keycloak.protocol.oidc.scope.DelegationScopeType;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.IDToken;
@@ -112,6 +121,9 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String ALLOWED_WEB_ORIGINS = "allowed web origins";
     public static final String ACR = "acr loa level";
     public static final String DELEGATION_MAY_ACT_SUB = "may_act sub";
+    public static final String CLIENT_DELEGATION_MAY_ACT_SUB = "client may_act sub";
+    public static final String CLIENT_DELEGATION_MAY_ACT_CLIENT_ID = "client may_act client_id";
+    public static final String CLIENT_DELEGATION_AUDIENCE = "client delegation audience";
     public static final String ORGANIZATION = "organization";
     // microprofile-jwt claims
     public static final String UPN = "upn";
@@ -122,7 +134,8 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String MICROPROFILE_JWT_SCOPE = "microprofile-jwt";
     public static final String ACR_SCOPE = "acr";
     public static final String BASIC_SCOPE = "basic";
-    public static final String DELEGATION_SCOPE = "delegation";
+    public static final String USER_DELEGATION_SCOPE = "delegation:user";
+    public static final String CLIENT_DELEGATION_SCOPE = "delegation:client";
 
     public static final String PROFILE_SCOPE_CONSENT_TEXT = "${profileScopeConsentText}";
     public static final String EMAIL_SCOPE_CONSENT_TEXT = "${emailScopeConsentText}";
@@ -146,15 +159,90 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
      */
     public static final String CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION = "allow-multiple-audiences-for-jwt-client-authentication";
 
+    /**
+     * @deprecated To be removed in Keycloak 27
+     */
+    public static final String CONFIG_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS = "allow-oidc-params-in-redirect-uris";
+
     public static final String CONFIG_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK = "allow-token-introspection-without-audience-check";
 
     public static final String CONFIG_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN = "allow-userinfo-with-lightweight-access-token";
 
+    /**
+     * @deprecated To be removed in Keycloak 27
+     */
+    public static final String CONFIG_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING = "allow-client-initiated-account-linking";
+
+    /**
+     * @deprecated To be removed in Keycloak 27
+     */
+    public static final String CONFIG_ALLOW_INITIATING_IDP_LOGOUT_PARAM = "allow-initiating-idp-logout-param";
+
+    /**
+     * Config property for the max number of distinct OIDC parameter names memoized by the {@link LocalCache}
+     * backing {@link OIDCProviderConfig#getMaxLengthForTheParameter(String, boolean)}. Standard OIDC parameter
+     * names are a small, fixed set, so this is never expected to be reached in practice; it only protects against
+     * memory growth in case that method is called with arbitrary, attacker-controlled parameter names
+     * (e.g. from {@code TokenEndpoint}).
+     */
+    public static final String CONFIG_OIDC_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE = "req-params-max-length-cache-size";
+
+    public static final int DEFAULT_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE = 1000;
+
+    private Config.Scope config;
     private OIDCProviderConfig providerConfig;
+    private LocalCache<String, Integer> reqParamMaxLengthCache;
+    private LocalCache<String, Integer> tokenParamMaxLengthCache;
 
     @Override
     public void init(Config.Scope config) {
-        this.providerConfig = new OIDCProviderConfig(config);
+        this.config = config;
+        initBuiltIns();
+        if (providerConfig != null) {
+            // Hack: This is used in the old test suite in KcOidcBrokerLogoutTest when the provider is re-initialized by calling init()
+            // Remove once the old Arquillian test suite is no longer used.
+            this.providerConfig = new OIDCProviderConfig(config, reqParamMaxLengthCache, tokenParamMaxLengthCache);
+        }
+    }
+
+    /**
+     * Resolves {@link #CONFIG_OIDC_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE}, rejecting non-positive values.
+     * <p>
+     * {@link LocalCacheConfiguration} treats any {@code maxSize <= 0} as "unbounded" (see
+     * {@code DefaultLocalCacheProviderFactory}). This particular cache exists specifically to cap memory growth
+     * from arbitrary, attacker-controlled parameter names, so silently turning it unbounded on a misconfigured
+     * (zero or negative) value would defeat that protection; fall back to the default instead.
+     * <p>
+     * Package-private so it can be unit tested directly without going through the full factory lifecycle.
+     */
+    int resolveMaxLengthCacheSize(Config.Scope config) {
+        int configured = config.getInt(CONFIG_OIDC_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE, DEFAULT_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE);
+        if (configured <= 0) {
+            logger.warnf("Ignoring non-positive value '%d' for '%s', which would make the cache unbounded. Using the default of %d instead.",
+                    configured, CONFIG_OIDC_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE, DEFAULT_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE);
+            return DEFAULT_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE;
+        }
+        return configured;
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+        super.postInit(factory);
+        int maxLengthCacheSize = resolveMaxLengthCacheSize(config);
+        try (KeycloakSession session = factory.create()) {
+            LocalCacheProvider cacheProvider = session.getProvider(LocalCacheProvider.class);
+            this.reqParamMaxLengthCache = cacheProvider.create(LocalCacheConfiguration.<String, Integer>builder()
+                    .name("oidc-req-param-max-length")
+                    .maxSize(maxLengthCacheSize)
+                    .build());
+            this.tokenParamMaxLengthCache = cacheProvider.create(LocalCacheConfiguration.<String, Integer>builder()
+                    .name("oidc-token-param-max-length")
+                    .maxSize(maxLengthCacheSize)
+                    .build());
+        }
+        this.providerConfig = new OIDCProviderConfig(config, reqParamMaxLengthCache, tokenParamMaxLengthCache);
+        this.config = null;
+
         if (this.providerConfig.isAllowMultipleAudiencesForJwtClientAuthentication()) {
             logger.warnf("It is allowed to have multiple audiences for the JWT client authentication. This option is not recommended and will be removed in one of the future releases."
                     + " It is recommended to update your OAuth/OIDC clients to rather use single audience in the JWT token used for the client authentication.");
@@ -174,7 +262,42 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                     CONFIG_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN);
         }
 
-        initBuiltIns();
+        if (this.providerConfig.isAllowClientInitiatedAccountLinking()) {
+            logger.warnf("Legacy client-initiated account linking endpoint is enabled. This endpoint is deprecated" +
+                    "Migrate to Application Initiated Actions (AIA) with kc_action=idp_link and disable this option: %s=false",
+                    CONFIG_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING);
+        }
+
+        if (this.providerConfig.isAllowOidcParamsInRedirectUris()) {
+            logger.warnf("OIDC parameters (e.g. 'state') are allowed in post_logout_redirect_uri and in redirect_uri. " +
+                            "This is deprecated and will be rejected in Keycloak 27. " +
+                            "Disable this option: %s=false",
+                    CONFIG_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS);
+        }
+
+        if (this.providerConfig.isAllowInitiatingIdpLogoutParam()) {
+            logger.warnf("Legacy 'initiating_idp' logout parameter is enabled. " +
+                    "Rely on OIDC back-channel or front-channel logout instead and disable this option: %s=false",
+                    CONFIG_ALLOW_INITIATING_IDP_LOGOUT_PARAM);
+        }
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        if (reqParamMaxLengthCache != null) {
+            reqParamMaxLengthCache.close();
+            reqParamMaxLengthCache = null;
+        }
+        if (tokenParamMaxLengthCache != null) {
+            tokenParamMaxLengthCache.close();
+            tokenParamMaxLengthCache = null;
+        }
+    }
+
+    @Override
+    public Set<Class<? extends Provider>> dependsOn() {
+        return Set.of(LocalCacheProvider.class); // for caching of getMaxLengthForTheParameter() lookups
     }
 
     @Override
@@ -279,6 +402,18 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             model = ParameterizedScopeUserPropertyMapper.create(
                     DELEGATION_MAY_ACT_SUB, "id", MAY_ACT + "." + SUBJECT, "String", true, true, true);
             builtins.put(DELEGATION_MAY_ACT_SUB, model);
+
+            model = ParameterizedScopeClientSubMapper.create(
+                    CLIENT_DELEGATION_MAY_ACT_SUB, MAY_ACT + "." + SUBJECT, "String", true, true, true);
+            builtins.put(CLIENT_DELEGATION_MAY_ACT_SUB, model);
+
+            model = ParameterizedScopeMapper.create(
+                    CLIENT_DELEGATION_MAY_ACT_CLIENT_ID, MAY_ACT + ".client_id", "String", true, true, true);
+            builtins.put(CLIENT_DELEGATION_MAY_ACT_CLIENT_ID, model);
+
+            model = ParameterizedScopeAudienceMapper.createClaimMapper(
+                    CLIENT_DELEGATION_AUDIENCE, true, false, true);
+            builtins.put(CLIENT_DELEGATION_AUDIENCE, model);
         }
 
         model = UserSessionNoteMapper.createClaimMapper(IDToken.AUTH_TIME, AuthenticationManager.AUTH_TIME,
@@ -381,16 +516,11 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         }
 
         if (Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_DELEGATION)) {
-            ClientScopeModel delegationScope = newRealm.addClientScope(DELEGATION_SCOPE);
-            delegationScope.setDescription("OpenID Connect scope for token exchange delegation");
-            delegationScope.setIsParameterizedScope(true);
-            delegationScope.setDisplayOnConsentScreen(true);
-            delegationScope.setAttribute(ClientScopeModel.IS_ALWAYS_CONSENT, Boolean.TRUE.toString());
-            delegationScope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, DelegationScopeType.TYPE);
-            delegationScope.setIncludeInTokenScope(true);
-            delegationScope.setProtocol(getId());
-            delegationScope.setConsentScreenText("${delegationScopeConsentText}");
-            delegationScope.addProtocolMapper(builtins.get(DELEGATION_MAY_ACT_SUB));
+            // FGAP guards delegation permission evaluation, so both scopes are optional by default for new realms
+            ClientScopeModel userDelegationScope = addUserDelegationClientScope(newRealm);
+            newRealm.addDefaultClientScope(userDelegationScope, false);
+            ClientScopeModel clientDelegationScope = addClientDelegationClientScope(newRealm);
+            newRealm.addDefaultClientScope(clientDelegationScope, false);
         }
     }
 
@@ -539,6 +669,52 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     }
 
 
+    public ClientScopeModel addUserDelegationClientScope(RealmModel newRealm) {
+        ClientScopeModel delegationScope = KeycloakModelUtils.getClientScopeByName(newRealm, USER_DELEGATION_SCOPE);
+        if (delegationScope == null) {
+            delegationScope = newRealm.addClientScope(USER_DELEGATION_SCOPE);
+            delegationScope.setDescription("OpenID Connect scope for token exchange delegation");
+            delegationScope.setIsParameterizedScope(true);
+            delegationScope.setDisplayOnConsentScreen(true);
+            delegationScope.setAttribute(ClientScopeModel.IS_ALWAYS_CONSENT, Boolean.TRUE.toString());
+            delegationScope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, DelegationScopeType.TYPE);
+            delegationScope.setIncludeInTokenScope(true);
+            delegationScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            delegationScope.setConsentScreenText("${userDelegationScopeConsentText}");
+            delegationScope.addProtocolMapper(builtins.get(DELEGATION_MAY_ACT_SUB));
+
+            logger.debugf("Client scope '%s' created in the realm '%s'.", USER_DELEGATION_SCOPE, newRealm.getName());
+        } else {
+            logger.debugf("Client scope '%s' already exists in realm '%s'. Skip creating it.", USER_DELEGATION_SCOPE, newRealm.getName());
+        }
+
+        return delegationScope;
+    }
+
+    public ClientScopeModel addClientDelegationClientScope(RealmModel newRealm) {
+        ClientScopeModel clientDelegationScope = KeycloakModelUtils.getClientScopeByName(newRealm, CLIENT_DELEGATION_SCOPE);
+        if (clientDelegationScope == null) {
+            clientDelegationScope = newRealm.addClientScope(CLIENT_DELEGATION_SCOPE);
+            clientDelegationScope.setDescription("OpenID Connect scope for agent/client token exchange delegation");
+            clientDelegationScope.setIsParameterizedScope(true);
+            clientDelegationScope.setDisplayOnConsentScreen(true);
+            clientDelegationScope.setAttribute(ClientScopeModel.IS_ALWAYS_CONSENT, Boolean.TRUE.toString());
+            clientDelegationScope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, ClientDelegationScopeType.TYPE);
+            clientDelegationScope.setIncludeInTokenScope(true);
+            clientDelegationScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            clientDelegationScope.setConsentScreenText("${clientDelegationScopeConsentText}");
+            clientDelegationScope.addProtocolMapper(builtins.get(CLIENT_DELEGATION_MAY_ACT_SUB));
+            clientDelegationScope.addProtocolMapper(builtins.get(CLIENT_DELEGATION_MAY_ACT_CLIENT_ID));
+            clientDelegationScope.addProtocolMapper(builtins.get(CLIENT_DELEGATION_AUDIENCE));
+
+            logger.debugf("Client scope '%s' created in the realm '%s'.", CLIENT_DELEGATION_SCOPE, newRealm.getName());
+        } else {
+            logger.debugf("Client scope '%s' already exists in realm '%s'. Skip creating it.", CLIENT_DELEGATION_SCOPE, newRealm.getName());
+        }
+
+        return clientDelegationScope;
+    }
+
     @Override
     protected void addDefaults(ClientModel client) {
     }
@@ -671,6 +847,13 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                     .defaultValue(DEFAULT_ADDITIONAL_REQ_TOKEN_PARAMS_FAIL_FAST)
                     .add()
                 .property()
+                    .name(CONFIG_OIDC_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE)
+                    .type("int")
+                    .helpText("Maximum number of distinct OIDC parameter names for which the resolved max-length configuration is memoized in memory. " +
+                            "Standard OIDC parameter names are a small, fixed set, so this limit is not expected to be reached in practice.")
+                    .defaultValue(DEFAULT_REQ_PARAMS_MAX_LENGTH_CACHE_SIZE)
+                    .add()
+                .property()
                     .name(CONFIG_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK)
                     .type("boolean")
                     .helpText("Allows token introspection without audience validation for any client. This option is deprecated and will be removed in some future release.")
@@ -681,6 +864,24 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                     .type("boolean")
                     .helpText("Allows lightweight access tokens to be used with the UserInfo endpoint. This option is deprecated and will be removed in some future release.")
                     .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN)
+                    .add()
+                .property()
+                    .name(CONFIG_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING)
+                    .type("boolean")
+                    .helpText("Allows the deprecated client-initiated account linking endpoint (/broker/{provider}/link). This endpoint will be removed in a future release. Use AIA with kc_action=idp_link instead.")
+                    .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING)
+                    .add()
+                .property()
+                    .name(CONFIG_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS)
+                    .type("boolean")
+                    .helpText("Allows OIDC parameters (state, code, etc.) in post_logout_redirect_uri and in redirect_uri. Deprecated: will be removed in Keycloak 27.")
+                    .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS)
+                    .add()
+                .property()
+                    .name(CONFIG_ALLOW_INITIATING_IDP_LOGOUT_PARAM)
+                    .type("boolean")
+                    .helpText("Allows the deprecated 'initiating_idp' logout parameter, which suppresses the upstream identity provider logout during RP-initiated logout. This option will be removed in a future release. Rely on OIDC back-channel or front-channel logout instead.")
+                    .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_INITIATING_IDP_LOGOUT_PARAM)
                     .add()
                 .build();
     }

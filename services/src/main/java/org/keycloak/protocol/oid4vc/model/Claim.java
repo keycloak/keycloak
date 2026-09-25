@@ -73,7 +73,15 @@ public class Claim {
             OID4VCMapper mapper = (OID4VCMapper) protocolMapperImpl;
             mapper.setMapperModel(protocolMapper, credentialFormat);
 
+            if (!mapper.supportsCredentialFormat(credentialFormat)) {
+                return Optional.empty();
+            }
+
             if (!mapper.includeInMetadata()) {
+                return Optional.empty();
+            }
+
+            if (!mapper.passesMappingGuards()) {
                 return Optional.empty();
             }
 

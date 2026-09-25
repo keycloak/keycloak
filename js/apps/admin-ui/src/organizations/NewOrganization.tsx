@@ -30,7 +30,7 @@ export default function NewOrganization() {
       const organization = convertToOrg(org);
       const { id } = await adminClient.organizations.create(organization);
       addAlert(t("organizationSaveSuccess"));
-      navigate(toEditOrganization({ realm, id, tab: "settings" }));
+      void navigate(toEditOrganization({ realm, id, tab: "settings" }));
     } catch (error) {
       addError("organizationSaveError", error);
     }
@@ -42,7 +42,7 @@ export default function NewOrganization() {
       <PageSection variant="light">
         <FormAccess role="anyone" onSubmit={handleSubmit(save)} isHorizontal>
           <FormProvider {...form}>
-            <OrganizationForm />
+            <OrganizationForm showDomains />
             <ActionGroup>
               <FormSubmitButton
                 formState={formState}

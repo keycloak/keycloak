@@ -58,7 +58,7 @@ export default function CreateInitialAccessToken() {
           toggleDialog={() => {
             setToken("");
             addAlert(t("tokenSaveSuccess"), AlertVariant.success);
-            navigate(toClients({ realm, tab: "initial-access-token" }));
+            void navigate(toClients({ realm, tab: "initial-access-token" }));
           }}
         />
       )}

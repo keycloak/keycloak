@@ -78,7 +78,7 @@ const GroupTreeContextMenu = ({
           id={group.id}
           rename={group}
           refresh={() => {
-            navigate(toGroups({ realm, orgId }));
+            void navigate(toGroups({ realm, orgId }));
             refresh();
           }}
           handleModalToggle={toggleRenameOpen}
@@ -99,7 +99,7 @@ const GroupTreeContextMenu = ({
         toggleDialog={toggleDeleteOpen}
         selectedRows={[group]}
         refresh={() => {
-          navigate(toGroups({ realm, orgId }));
+          void navigate(toGroups({ realm, orgId }));
           refresh();
         }}
       />
@@ -360,7 +360,7 @@ export const GroupTree = ({
     } else if (!subGroups.every(({ id }) => path.find((t) => t.id === id))) {
       clear();
     }
-    navigate(
+    void navigate(
       toGroups({
         realm,
         id: path.map((g) => g.id).join("/"),

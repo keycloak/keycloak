@@ -199,15 +199,25 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
                 && (!client.isUseMetadataDescriptorUrl() || client.getMetadataDescriptorUrl() != null)) {
             CertificateRepresentation info = KeycloakModelUtils.generateKeyPairCertificate(newClient.getClientId());
             client.setClientSigningCertificate(info.getCertificate());
-            client.setClientSigningPrivateKey(info.getPrivateKey());
-
         }
+
+        stripPrivateKeys(newClient, clientRep);
 
         if (clientRep.isFrontchannelLogout() == null) {
             newClient.setFrontchannelLogout(true);
         }
 
         client.setArtifactBindingIdentifierFrom(clientRep.getClientId());
+    }
+
+    private static void stripPrivateKeys(ClientModel model, ClientRepresentation rep) {
+        model.removeAttribute(SamlConfigAttributes.SAML_SIGNING_PRIVATE_KEY);
+        model.removeAttribute(SamlConfigAttributes.SAML_ENCRYPTION_PRIVATE_KEY_ATTRIBUTE);
+
+        if (rep.getAttributes() != null) {
+            rep.getAttributes().remove(SamlConfigAttributes.SAML_SIGNING_PRIVATE_KEY);
+            rep.getAttributes().remove(SamlConfigAttributes.SAML_ENCRYPTION_PRIVATE_KEY_ATTRIBUTE);
+        }
     }
 
     /**

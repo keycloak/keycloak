@@ -34,7 +34,7 @@ import {
 } from "../routes/EditMapper";
 import { toIdentityProvider } from "../routes/IdentityProvider";
 import { AddMapperForm } from "./AddMapperForm";
-import { GroupResourceContext } from "../../context/group-resource/GroupResourceContext";
+import { IdentityProviderContextProvider } from "../../context/identity-provider/IdentityProviderContext";
 
 export type IdPMapperRepresentationWithAttributes =
   IdentityProviderMapperRepresentation & AttributeForm;
@@ -99,7 +99,7 @@ export default function AddMapper() {
         });
 
         addAlert(t("mapperCreateSuccess"), AlertVariant.success);
-        navigate(
+        void navigate(
           toIdentityProviderEditMapper({
             realm,
             alias,
@@ -127,7 +127,7 @@ export default function AddMapper() {
           id: id!,
         });
         addAlert(t("deleteMapperSuccess"), AlertVariant.success);
-        navigate(
+        void navigate(
           toIdentityProvider({ providerId, alias, tab: "mappers", realm }),
         );
       } catch (error) {
@@ -225,15 +225,9 @@ export default function AddMapper() {
                 updateMapperType={setCurrentMapper}
                 mapperType={currentMapper}
               />
-              <GroupResourceContext
-                value={
-                  idp?.organizationId
-                    ? adminClient.organizations.groups(idp.organizationId)
-                    : adminClient.groups
-                }
-              >
+              <IdentityProviderContextProvider value={idp}>
                 <DynamicComponents properties={currentMapper.properties!} />
-              </GroupResourceContext>
+              </IdentityProviderContextProvider>
             </>
           )}
         </FormProvider>

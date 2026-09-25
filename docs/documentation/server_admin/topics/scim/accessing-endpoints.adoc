@@ -27,11 +27,22 @@ This client obtains access tokens using the client credentials grant.
 The service account associated with the client must be granted the appropriate realm management roles to access
 SCIM resources. The required roles depend on the operations the client needs to perform.
 
+WARNING: The *Full Scope Allowed* switch is deprecated and will be removed in a future release. Do not enable it on
+the SCIM client. Instead, explicitly configure the required role scope mappings as described below. See
+<<_role_scope_mappings, Role scope mappings>> for details.
+
 .Procedure
 . Click *Clients* in the menu, then select the client you created.
+. Click the *Client scopes* tab, select the dedicated client scope for the client (for example, `scim-client-dedicated`), then click the *Scope* tab.
+. Set *Full Scope Allowed* to *Off*.
+. Click *Assign role*, then filter by clients and select the `realm-management` client.
+. Assign the required roles based on the operations the client needs to perform. This adds the roles to the client's role scope mappings.
 . Click the *Service account roles* tab.
 . Click *Assign role*, then filter by clients and select the `realm-management` client.
-. Assign the required roles based on the operations the client needs to perform.
+. Assign the same roles assigned in the previous step.
+
+Roles included in the access token are the intersection of the client's role scope mappings and the service account's
+assigned roles. Both steps above are required. For more details, see <<_service_accounts,Using a service account>>.
 
 The SCIM API relies on the same <<_admin_permissions,permission model>> as the {project_name} Admin REST API. If a service account
 already has the admin roles needed to manage users and groups through the Admin API, no additional configuration is

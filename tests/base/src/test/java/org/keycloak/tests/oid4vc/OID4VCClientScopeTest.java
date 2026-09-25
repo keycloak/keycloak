@@ -38,6 +38,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
+import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -50,6 +51,9 @@ import org.junit.Assert;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY;
+import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_JWK;
+import static org.keycloak.OID4VCConstants.FORMAT_SD_JWT_VC;
 import static org.keycloak.VCFormat.JWT_VC;
 import static org.keycloak.VCFormat.SD_JWT_VC;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
@@ -76,6 +80,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_EXPIRY_IN_SECO
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_INCLUDE_IN_METADATA;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_ISSUER_DID;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SUPPORTED_TYPES;
@@ -107,9 +112,8 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
 
         String clientScopeId = null;
         ClientScopesResource clientScopes = testRealm.admin().clientScopes();
-        try (Response response = clientScopes.create(clientScope)) {
-            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
-            clientScopeId = ApiUtil.getCreatedId(response);
+        try {
+            clientScopeId = assertClientScopeCreateSuccess(clientScope);
 
             clientScope = clientScopes.get(clientScopeId).toRepresentation();
             assertNotNull(clientScope);
@@ -208,12 +212,8 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
         scope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
         String scopeId = null;
-        try (Response response = clientScopes.create(scope)) {
-            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
-            scopeId = ApiUtil.getCreatedId(response);
-        }
-
         try {
+            scopeId = assertClientScopeCreateSuccess(scope);
             ClientScopeResource scopeResource = clientScopes.get(scopeId);
             ClientScopeRepresentation update = scopeResource.toRepresentation();
             update.setProtocol(OID4VC_PROTOCOL);
@@ -223,8 +223,170 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
             assertEquals(OID4VC_PROTOCOL, updatedScope.getProtocol());
             assertEquals(updatedScope.getName(), updatedScope.getAttributes().get(VC_CONFIGURATION_ID));
         } finally {
-            clientScopes.get(scopeId).remove();
+            if (scopeId != null) {
+                clientScopes.get(scopeId).remove();
+            }
         }
+    }
+
+    /**
+     * Issue #52421 - Case 1: binding_required=true but binding methods is null/blank should be rejected.
+     */
+    @Test
+    public void testBindingRequiredWithNullBindingMethodsRejected() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("issue-52421-null-binding-methods");
+        scope.setBindingRequired(true);
+        // leave vc.cryptographic_binding_methods_supported absent (null)
+        // leave vc.binding_required_proof_types absent (null)
+
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains(VC_CRYPTOGRAPHIC_BINDING_METHODS));
+    }
+
+    /**
+     * Issue #52421 - Case 2: binding_required=true but binding methods contains only invalid values should be rejected.
+     */
+    @Test
+    public void testBindingRequiredWithInvalidBindingMethodsRejected() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("issue-52421-invalid-binding-methods");
+        scope.setBindingRequired(true);
+        scope.setCryptographicBindingMethods("incorrect-value");
+        // leave vc.binding_required_proof_types absent so we catch the binding method error first
+
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains(VC_CRYPTOGRAPHIC_BINDING_METHODS));
+    }
+
+    /**
+     * Issue #52421 - Case 3: binding_required=true, invalid binding method for the proof type
+     */
+    @Test
+    public void testBindingRequiredWithValidProofTypeButInvalidBindingMethodRejected() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("issue-52421-null-proof-types");
+        scope.setFormat(FORMAT_SD_JWT_VC);
+        scope.setBindingRequired(true);
+        scope.setCryptographicBindingMethods(CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY); // This binding method is supported just for the "mdoc" format, but not for "sd-jwt"
+        scope.setRequiredProofTypes(ProofType.JWT);
+
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains(VC_CRYPTOGRAPHIC_BINDING_METHODS));
+    }
+
+    /**
+     * Issue #52421 - Case 4: binding_required=true, valid binding method, but proof types contains invalid values should be rejected.
+     */
+    @Test
+    public void testBindingRequiredWithInvalidProofTypesRejected() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("issue-52421-invalid-proof-types");
+        scope.setBindingRequired(true);
+        scope.setCryptographicBindingMethods(CRYPTOGRAPHIC_BINDING_METHOD_JWK);
+        scope.setRequiredProofTypes("jwt,incorrect-value");
+
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains(VC_BINDING_REQUIRED_PROOF_TYPES));
+    }
+
+    /**
+     * Issue #52421 - Valid case: binding_required=true with valid binding methods and proof types should succeed.
+     */
+    @Test
+    public void testBindingRequiredWithValidConfigAccepted() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("issue-52421-valid-binding");
+        scope.setBindingRequired(true);
+        scope.setCryptographicBindingMethods(CRYPTOGRAPHIC_BINDING_METHOD_JWK);
+        scope.setRequiredProofTypes(ProofType.JWT);
+
+        ClientScopesResource clientScopes = testRealm.admin().clientScopes();
+        String scopeId = null;
+        try {
+            scopeId = assertClientScopeCreateSuccess(scope);
+        } finally {
+            if (scopeId != null) {
+                clientScopes.get(scopeId).remove();
+            }
+        }
+    }
+
+    /**
+     * Issue #52421 - binding_required=false , but cryptographic-binding-methods and proofTypes provided. Should be still rejected
+     */
+    @Test
+    public void testBindingNotRequiredInvalidBindingMethodsAndProofType() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("issue-52421-no-binding");
+        scope.setBindingRequired(false);
+        scope.setCryptographicBindingMethods("incorrect-value");
+        scope.setRequiredProofTypes("incorrect-value");
+
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains(VC_CRYPTOGRAPHIC_BINDING_METHODS));
+    }
+
+    @Test
+    public void testIncludeInTokenScopeMustBeEnabled() {
+        ClientScopesResource clientScopes = testRealm.admin().clientScopes();
+
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("scope-with-disabled-iits");
+        scope.setIncludeInTokenScope(false);
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains("include in token scope"));
+
+        // Successful create of client-scope with attribute filled
+        scope = new CredentialScopeRepresentation("scope-with-enabled-iits");
+        scope.setIncludeInTokenScope(true);
+        String scopeId = null;
+        try {
+            scopeId = assertClientScopeCreateSuccess(scope);
+            assertIncludeInTokenScopeEnabled(scopeId);
+        } finally {
+            if (scopeId != null) {
+                clientScopes.get(scopeId).remove();
+            }
+        }
+
+        // Successful create of client-scope with attribute filled. Should fallback to default value
+        scopeId = null;
+        scope = new CredentialScopeRepresentation("scope-with-unset-iits");
+        scope.getAttributes().remove(INCLUDE_IN_TOKEN_SCOPE);
+        try {
+            scopeId = assertClientScopeCreateSuccess(scope);
+            CredentialScopeRepresentation foundScope = assertIncludeInTokenScopeEnabled(scopeId);
+
+            // Successful update without attribute filled. Should still have original value
+            foundScope.getAttributes().remove(INCLUDE_IN_TOKEN_SCOPE);
+            clientScopes.get(scopeId).update(foundScope);
+            foundScope = assertIncludeInTokenScopeEnabled(scopeId);
+
+            // Failed to update to false. Should still have original value
+            foundScope.setIncludeInTokenScope(false);
+            try {
+                clientScopes.get(scopeId).update(foundScope);
+                Assert.fail("Not expected to update client scope");
+            } catch (BadRequestException bre) {
+                // expected
+            }
+            assertIncludeInTokenScopeEnabled(scopeId);
+        } finally {
+            if (scopeId != null) {
+                clientScopes.get(scopeId).remove();
+            }
+        }
+    }
+
+    private CredentialScopeRepresentation assertIncludeInTokenScopeEnabled(String scopeId) {
+        ClientScopeRepresentation clientScopeRep = testRealm.admin().clientScopes().get(scopeId).toRepresentation();
+        CredentialScopeRepresentation asCredScope = new CredentialScopeRepresentation(clientScopeRep);
+        assertTrue(asCredScope.isIncludeInTokenScope());
+        return asCredScope;
+    }
+
+    @Test
+    public void testCredentialFormatWithoutBuilderRejected() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("issue-52515-unsupported-format");
+        scope.setFormat("unsupported-format");
+
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains("No credential builder found"), error);
+        assertTrue(error.contains("unsupported-format"), error);
     }
 
     private String createCredentialScope(ClientScopesResource clientScopes, String name,
@@ -237,6 +399,29 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
         }
     }
 
+    /**
+     * Assert creation of client scopes
+     *
+     * @return ID of newly created client scope
+     */
+    private String assertClientScopeCreateSuccess(ClientScopeRepresentation scope) {
+        ClientScopesResource clientScopes = testRealm.admin().clientScopes();
+        try (Response response = clientScopes.create(scope)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            return ApiUtil.getCreatedId(response);
+        }
+    }
+
+    // Assert that creation of clientScope fails. Return the error message returned by the server
+    private String assertClientScopeCreateFailure(CredentialScopeRepresentation scope) {
+        ClientScopesResource clientScopes = testRealm.admin().clientScopes();
+        try (Response response = clientScopes.create(scope)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus(),
+                    "Should reject invalid OID4VC client scope configuration");
+            return response.readEntity(String.class);
+        }
+    }
+
     @DisplayName("Verify CRUD of clientScope when OID4VCI is disabled for the realm")
     @Test
     public void testCreateCredentialScopeForDisabledRealm() {
@@ -244,16 +429,13 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
         ClientScopesResource clientScopes = testRealm.admin().clientScopes();
         try {
             // Create clientScope1 successfully
-            String clientScopeId;
             ClientScopeRepresentation clientScopeRep = new ClientScopeRepresentation();
             clientScopeRep.setName("test-client-scope1");
             clientScopeRep.setDescription("test-client-scope-description");
             clientScopeRep.setProtocol(OID4VC_PROTOCOL);
             clientScopeRep.setAttributes(Map.of("test-attribute", "test-value"));
-            try (Response response = clientScopes.create(clientScopeRep)) {
-                assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
-                clientScopeId = ApiUtil.getCreatedId(response);
-            }
+
+            String clientScopeId = assertClientScopeCreateSuccess(clientScopeRep);
 
             // Disable OID4VCI for the realm
             realm.setVerifiableCredentialsEnabled(false);
@@ -320,7 +502,7 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
                 assertEquals(VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT, attrs.remove(VC_BUILD_CONFIG_HASH_ALGORITHM));
                 assertEquals(String.valueOf(VC_EXPIRY_IN_SECONDS_DEFAULT), attrs.remove(VC_EXPIRY_IN_SECONDS));
                 assertEquals(CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT, attrs.remove(VC_CRYPTOGRAPHIC_BINDING_METHODS));
-                assertEquals("jwt,attestation", attrs.remove(VC_BINDING_REQUIRED_PROOF_TYPES));
+                assertEquals("attestation,jwt", attrs.remove(VC_BINDING_REQUIRED_PROOF_TYPES));
                 assertEquals("oid4vc_natural_person", attrs.remove(VC_SUPPORTED_TYPES));
                 assertEquals("oid4vc_natural_person", attrs.remove(VC_CONTEXTS));
                 assertEquals("oid4vc_natural_person", attrs.remove(VCT));
@@ -407,6 +589,34 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
     }
 
     /**
+     * Test that optional OID4VCI attributes can be unset through the admin client-scope update path.
+     */
+    @Test
+    public void testUnsetOptionalOid4vciAttributeOnUpdate() {
+        ClientScopesResource clientScopes = testRealm.admin().clientScopes();
+        String issuerDid = "did:example:123";
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("test-unset-issuer-did");
+        scope.setIssuerDid(issuerDid);
+
+        String scopeId = null;
+        try {
+            scopeId = assertClientScopeCreateSuccess(scope);
+            ClientScopeResource scopeResource = clientScopes.get(scopeId);
+            assertEquals(issuerDid, scopeResource.toRepresentation().getAttributes().get(VC_ISSUER_DID));
+
+            CredentialScopeRepresentation update = new CredentialScopeRepresentation(scopeResource.toRepresentation());
+            update.getAttributes().put(VC_ISSUER_DID, "");
+            scopeResource.update(update);
+
+            assertNull(scopeResource.toRepresentation().getAttributes().get(VC_ISSUER_DID));
+        } finally {
+            if (scopeId != null) {
+                clientScopes.get(scopeId).remove();
+            }
+        }
+    }
+
+    /**
      * Test that creating a client scope with invalid refresh interval is rejected
      */
     @Test
@@ -419,15 +629,9 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
         ClientScopesResource clientScopes = testRealm.admin().clientScopes();
 
         // When/Then: creating the scope should fail
-        try (Response response = clientScopes.create(scope)) {
-            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus(),
-                    "Should reject client scope when refresh interval exceeds lifetime");
-
-            // Verify error message mentions the problem
-            String body = response.readEntity(String.class);
-            assertTrue(body.contains("refresh interval") && body.contains("exceed"),
-                    "Error message should explain the validation failure");
-        }
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains("refresh interval") && error.contains("exceed"),
+                "Error message should explain the validation failure");
     }
 
     /**

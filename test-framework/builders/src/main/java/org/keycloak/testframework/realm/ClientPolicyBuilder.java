@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.keycloak.json.KeycloakJsonMapperFactory;
 import org.keycloak.json.RawJsonValue;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
@@ -13,9 +14,7 @@ import org.keycloak.services.clientpolicy.condition.ClientAccessTypeCondition;
 import org.keycloak.services.clientpolicy.condition.ClientScopesCondition;
 import org.keycloak.services.clientpolicy.condition.GrantTypeCondition;
 import org.keycloak.services.clientpolicy.condition.IdentityProviderCondition;
-import org.keycloak.util.JsonSerialization;
 
-import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  *
@@ -95,7 +94,8 @@ public class ClientPolicyBuilder extends Builder<ClientPolicyRepresentation> {
             config = new ClientPolicyConditionConfigurationRepresentation();
         }
         try {
-            condition.setConfiguration(RawJsonValue.of(JsonSerialization.mapper.readValue(JsonSerialization.mapper.writeValueAsBytes(config), JsonNode.class)));
+            var mapper = KeycloakJsonMapperFactory.mapper();
+            condition.setConfiguration(mapper.readValue(mapper.writeValueAsBytes(config), RawJsonValue.class));
         } catch(IOException e) {
             throw new IllegalArgumentException("Invalid configuration", e);
         }

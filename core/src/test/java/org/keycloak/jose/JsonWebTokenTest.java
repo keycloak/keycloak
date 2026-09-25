@@ -240,4 +240,53 @@ public class JsonWebTokenTest {
         Assert.assertEquals(role1Set, at.getResourceAccess().get("client1").getRoles());
     }
 
+    @Test
+    public void testResourceAccessMergeWithUnconvertibleClaim() throws IOException {
+        // Regression test for GH issue #52087: a User Attribute protocol mapper can inject a
+        // JSON *string* value directly under "resource_access.<client-id>". That value cannot be
+        // converted to Access (writeValueAsString wraps it in quotes, readValue fails with
+        // IOException). Previously the raw claim was unconditionally removed, leaving an empty
+        // "resource_access": {} in the token. The raw claim must be preserved when nothing
+        // could be merged.
+
+        // All entries unconvertible -> original claim must be kept
+        AccessToken at = new AccessToken();
+        Map<String, Object> map = new HashMap<>();
+        map.put("client1", "{\"roles\":[\"role1\"]}");
+        at.getOtherClaims().put(RESOURCE_ACCESS, map);
+        TokenUtil.convertTokenRolesFromOtherClaims(at);
+        Assert.assertEquals(0, at.getResourceAccess().size());
+        Assert.assertNotNull(at.getOtherClaims().get(RESOURCE_ACCESS));
+        // The serialized token still carries the original content
+        String json = JsonSerialization.writeValueAsString(at);
+        assertTrue(json.contains("role1"));
+
+        // Mixed: one convertible entry, one unconvertible -> raw claim consumed, convertible entry merged
+        at = new AccessToken();
+        Map<String, Object> mixedMap = new HashMap<>();
+        Set<String> role1Set = new HashSet<>(Collections.singleton("role1"));
+        Map<String, Object> map1 = new HashMap<>();
+        map1.put(ROLES, role1Set);
+        mixedMap.put("client1", map1);
+        mixedMap.put("client2", "{\"roles\":[\"role2\"]}");
+        at.getOtherClaims().put(RESOURCE_ACCESS, mixedMap);
+        TokenUtil.convertTokenRolesFromOtherClaims(at);
+        Assert.assertEquals(1, at.getResourceAccess().size());
+        Assert.assertEquals(role1Set, at.getResourceAccess().get("client1").getRoles());
+        Assert.assertNull(at.getOtherClaims().get(RESOURCE_ACCESS));
+
+        // Unconvertible entry with an existing typed resourceAccess -> nothing lost, claim kept
+        at = new AccessToken();
+        Map<String, AccessToken.Access> accessMap = new HashMap<>();
+        AccessToken.Access access1 = new AccessToken.Access();
+        access1.roles(role1Set);
+        accessMap.put("client2", access1);
+        at.setResourceAccess(accessMap);
+        at.getOtherClaims().put(RESOURCE_ACCESS, map);
+        TokenUtil.convertTokenRolesFromOtherClaims(at);
+        Assert.assertEquals(1, at.getResourceAccess().size());
+        Assert.assertEquals(role1Set, at.getResourceAccess().get("client2").getRoles());
+        Assert.assertNotNull(at.getOtherClaims().get(RESOURCE_ACCESS));
+    }
+
 }

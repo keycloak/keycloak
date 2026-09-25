@@ -8,13 +8,16 @@ import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.VerificationException;
 import org.keycloak.cookie.CookieType;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -151,6 +154,75 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
         oauth.openLoginForm();
 
         waitForPage(driver, "sign in to provider", true);
+    }
+
+    @Test
+    public void logoutWithForgedInitiatingIdpStillLogsOutOfIdpByDefault() {
+        driver.navigate().to(getLoginUrl(getConsumerRoot(), bc.consumerRealmName(), "broker-app"));
+        logInWithBroker(bc);
+        updateAccountInformation();
+
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.realm(bc.consumerRealmName())
+                .client("broker-app", "broker-app-secret")
+                .redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app")
+                .doAccessTokenRequest(code);
+        assertEquals(200, response.getStatusCode());
+
+        // Forge the 'initiating_idp' with the actual broker alias
+        logoutFromRealm(
+                getConsumerRoot(),
+                bc.consumerRealmName(),
+                bc.getIDPAlias(),
+                response.getIdToken(),
+                "broker-app",
+                getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app"
+        );
+
+        // The upstream identity provider logout must still be performed, so the user has to sign in again
+        oauth.client("account");
+        oauth.redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/account");
+        oauth.realm(REALM_PROV_NAME);
+        oauth.openLoginForm();
+
+        waitForPage(driver, "sign in to provider", true);
+    }
+
+    @Test
+    public void logoutWithInitiatingIdpSuppressesIdpLogoutWhenOptionEnabled() {
+        setAllowInitiatingIdpLogoutParam(true);
+        try {
+            driver.navigate().to(getLoginUrl(getConsumerRoot(), bc.consumerRealmName(), "broker-app"));
+            logInWithBroker(bc);
+            updateAccountInformation();
+
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse response = oauth.realm(bc.consumerRealmName())
+                    .client("broker-app", "broker-app-secret")
+                    .redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app")
+                    .doAccessTokenRequest(code);
+            assertEquals(200, response.getStatusCode());
+
+            logoutFromRealm(
+                    getConsumerRoot(),
+                    bc.consumerRealmName(),
+                    bc.getIDPAlias(),
+                    response.getIdToken(),
+                    "broker-app",
+                    getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app"
+            );
+
+            // The upstream identity provider session is kept alive, so re-authentication is silent
+            logInAsUserInIDPWithReAuthenticate();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+        } finally {
+            setAllowInitiatingIdpLogoutParam(false);
+        }
+    }
+
+    private void setAllowInitiatingIdpLogoutParam(boolean allow) {
+        runOnServerMaster.run(RunHelpers.setSystemPropertyOnServer("oidc.allow-initiating-idp-logout-param", String.valueOf(allow)));
+        runOnServerMaster.run(RunHelpers.reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc."));
     }
 
     @Test

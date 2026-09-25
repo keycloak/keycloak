@@ -10,6 +10,11 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.admin.ServerInfoTest;
 import org.keycloak.tests.admin.client.CredentialsTest;
+import org.keycloak.tests.cli.AbstractCliTest;
+import org.keycloak.tests.cli.admin.KcAdmCreateTest;
+import org.keycloak.tests.cli.admin.KcAdmTest;
+import org.keycloak.tests.cli.registration.KcRegCreateTest;
+import org.keycloak.tests.cli.registration.KcRegTest;
 import org.keycloak.tests.client.MutualTLSClientTest;
 import org.keycloak.tests.forms.LoginSSLTest;
 import org.keycloak.tests.forms.LoginTest;
@@ -29,7 +34,11 @@ import org.junit.platform.suite.api.Suite;
         OID4VCSdJwtIssuingEndpointTest.class,
         MutualTLSClientTest.class,
         LoginTest.class,
-        LoginSSLTest.class
+        LoginSSLTest.class,
+        KcAdmTest.class,
+        KcAdmCreateTest.class,
+        KcRegTest.class,
+        KcRegCreateTest.class
 })
 public class FipsStrictTestSuite {
 
@@ -39,6 +48,8 @@ public class FipsStrictTestSuite {
                 .registerServerConfig(FipsStrictServerConfig.class)
                 .registerSupplierConfig("certificates", FipsStrictCertificatesConfig.class)
                 .registerSupplierConfig("crypto", "fips", FipsMode.STRICT.name());
+        // the cli tests spawn kcadm/kcreg as external processes, so point them at the FIPS-enabled client tools
+        AbstractCliTest.useFipsClientTools();
     }
 
     @AfterSuite

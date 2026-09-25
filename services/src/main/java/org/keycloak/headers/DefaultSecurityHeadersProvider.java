@@ -142,10 +142,7 @@ public class DefaultSecurityHeadersProvider implements SecurityHeadersProvider {
     }
 
     private void addHeader(BrowserSecurityHeaders header, MultivaluedMap<String, Object> headers) {
-        String value = headerValues.getOrDefault(header.getKey(), header.getDefaultValue());
-        if (value != null && !value.isEmpty()) {
-            headers.putSingle(header.getHeaderName(), value);
-        }
+        SecurityHeadersUtils.addHeader(header, headerValues, (headerName, value) -> headers.putSingle(headerName, value));
     }
 
     /**

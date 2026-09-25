@@ -20,12 +20,15 @@ package org.keycloak.protocol.oid4vc.issuance.mappers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
+
+import static org.keycloak.OID4VCConstants.RESERVED_CLAIM_NAMES;
 
 /**
  * Allows to add statically configured claims to the credential subject
@@ -61,6 +64,13 @@ public class OID4VCStaticClaimMapper extends OID4VCMapper {
         return CONFIG_PROPERTIES;
     }
 
+    @Override
+    protected Set<String> getAllowedReservedClaims() {
+        // The value is an admin-configured static value, so targeting a reserved claim is a deliberate,
+        // issuer-controlled configuration and must be allowed.
+        return RESERVED_CLAIM_NAMES;
+    }
+
     public void setClaim(VerifiableCredential verifiableCredential,
                          UserSessionModel userSessionModel) {
         // nothing to do for the mapper.
@@ -68,11 +78,10 @@ public class OID4VCStaticClaimMapper extends OID4VCMapper {
 
     @Override
     public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
-        List<String> attributePath = getMetadataAttributePath();
-        if (attributePath.isEmpty()) {
+        String propertyName = getClaimName();
+        if (propertyName == null) {
             return;
         }
-        String propertyName = attributePath.get(attributePath.size() - 1);
         String staticValue = mapperModel.getConfig().get(STATIC_CLAIM_KEY);
         claims.put(propertyName, staticValue);
     }

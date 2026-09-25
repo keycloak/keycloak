@@ -38,6 +38,8 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.services.Urls;
 
+import static org.keycloak.protocol.oidc.utils.RedirectUtils.FORBIDDEN_OIDC_PARAMS;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -56,6 +58,12 @@ public abstract class OIDCRedirectUriBuilder {
 
     public static OIDCRedirectUriBuilder fromUri(String baseUri, OIDCResponseMode responseMode, KeycloakSession session, AuthenticatedClientSessionModel clientSession) {
         KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(baseUri);
+
+        //Strip forbidden OIDC params from both query and fragment
+        for (String param : FORBIDDEN_OIDC_PARAMS) {
+            uriBuilder.removeQueryParamByDecodedName(param);
+            uriBuilder.removeFragmentParamByDecodedName(param);
+        }
 
         switch (responseMode) {
             case QUERY: return new QueryRedirectUriBuilder(uriBuilder);
@@ -83,6 +91,7 @@ public abstract class OIDCRedirectUriBuilder {
 
         @Override
         public OIDCRedirectUriBuilder addParam(String paramName, String paramValue) {
+            uriBuilder.removeQueryParamByDecodedName(paramName);
             uriBuilder.queryParam(paramName, paramValue);
             return this;
         }
@@ -116,9 +125,22 @@ public abstract class OIDCRedirectUriBuilder {
             if (fragment == null) {
                 fragment = new StringBuilder(param);
             } else {
+                removeFragmentParamByDecodedName(paramName);
                 fragment.append("&").append(param);
             }
             return this;
+        }
+
+        private void removeFragmentParamByDecodedName(String name) {
+            StringBuilder cleaned = new StringBuilder();
+            for (String param : fragment.toString().split("&")) {
+                int eqPos = param.indexOf('=');
+                String rawName = eqPos >= 0 ? param.substring(0, eqPos) : param;
+                if (name.equals(Encode.decode(rawName))) continue;
+                if (!cleaned.isEmpty()) cleaned.append("&");
+                cleaned.append(param);
+            }
+            fragment = cleaned;
         }
 
         @Override
@@ -241,6 +263,7 @@ public abstract class OIDCRedirectUriBuilder {
         }
 
         private Response buildQueryResponse() {
+            uriBuilder.removeQueryParamByDecodedName(OAuth2Constants.RESPONSE);
             uriBuilder.queryParam(OAuth2Constants.RESPONSE, session.tokens().encodeAndEncrypt(responseJWT));
             URI redirectUri = uriBuilder.build();
             Response.ResponseBuilder location = Response.status(302).location(redirectUri);

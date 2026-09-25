@@ -21,6 +21,7 @@ package org.keycloak.testsuite.pages;
 import org.keycloak.testsuite.util.UIUtils;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -51,5 +52,13 @@ public class LogoutConfirmPage extends LanguageComboboxAwarePage {
 
     public void clickBackToApplicationLink() {
         UIUtils.clickLink(backToApplicationLink);
+    }
+
+    public boolean isBackToApplicationLinkPresent() {
+        try {
+            return backToApplicationLink.isDisplayed();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
     }
 }

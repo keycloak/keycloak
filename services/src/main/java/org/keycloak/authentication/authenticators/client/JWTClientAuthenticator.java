@@ -205,6 +205,11 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     }
 
     @Override
+    public boolean supportsClientAssertion() {
+        return true;
+    }
+
+    @Override
     public Set<String> getProtocolAuthenticatorMethods(String loginProtocol) {
         if (loginProtocol.equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
             Set<String> results = new HashSet<>();

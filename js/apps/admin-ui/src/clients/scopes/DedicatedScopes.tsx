@@ -55,7 +55,7 @@ export default function DedicatedScopes() {
   ): Promise<void> => {
     if (!Array.isArray(mappers)) {
       const mapper = mappers as ProtocolMapperTypeRepresentation;
-      navigate(
+      void navigate(
         toMapper({
           realm,
           id: client.id!,

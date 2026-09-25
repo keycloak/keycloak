@@ -55,8 +55,8 @@ import jakarta.ws.rs.client.WebTarget;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.api.AdminApi;
 import org.keycloak.admin.api.client.ClientApi;
-import org.keycloak.admin.client.ClientBuilderWrapper;
 import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.admin.client.spi.ResteasyClientClassicProvider;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
@@ -369,8 +369,8 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
             KeyManager[] keyManagers = createKeyManagers(client, keycloak);
 
             sslContext.init(keyManagers, tmf.getTrustManagers(), null);
-
-            ClientBuilder clientBuilder = ClientBuilderWrapper.create(sslContext, false);
+            
+            ClientBuilder clientBuilder = ResteasyClientClassicProvider.createClientBuilder().sslContext(sslContext);
 
             // because we trust only the server cert, disable hostname verification
             // - only if the tlsSecret is compromised and traffic to the service hostname can be hijacked,

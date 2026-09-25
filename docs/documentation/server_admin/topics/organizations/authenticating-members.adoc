@@ -12,7 +12,7 @@ When a realm is created, the authentication flows are automatically updated to e
 * *first broker login*
 
 The main change to the *browser* flow is that it defaults to an identity-first login so that users are identified before prompting for their credentials.
-Concerning the first broker login flow, the main change is automatically adding the users as organization members once they authenticate through the identity provider associated with an organization and successfully complete the flow.
+Concerning the first broker login flow, the main change is the ability to automatically add users as organization members once they authenticate through an identity provider associated with an organization and successfully complete the flow. Whether a user is actually added depends on the per-association configuration of the identity provider link -- specifically the auto-membership and membership type settings (see <<_managing_identity_provider_,Managing identity providers>>) -- and the domain gate, which checks that the user's email domain is claimed by the organization.
 
 The choice to use an identity-first login or not depends on the existence of an organization in a realm.
 If no organizations exist, the user follows the usual steps to authenticate using the username and password,
@@ -36,7 +36,7 @@ In addition to identifying the user once the username is provided, the identity-
 * Deciding if the authentication flow should continue or not if an account already exists for the username provided
 * Deciding how the user should be authenticated depending on how the domains and the identity providers are configured to an organization
 and the set of credentials configured to the user account.
-* Seamlessly authenticating users through an identity provider associated with an organization if the email domain matches the domain set to the identity provider
+* Seamlessly authenticating users through an identity provider when the user's email domain matches a domain configured with identity provider routing and auto-redirect enabled.
 
 The identity-first login provides the same capabilities that are provided by the usual login page with the username and
 password fields. Users can still self-register by clicking the register link or choose any identity or social
@@ -64,11 +64,71 @@ the identity provider link at the identity-first login page to automatically cre
 once they authenticate through the identity provider.
 For more details, see <<_managing_identity_provider_,Managing identity providers>>.
 
-In a similar situation to the previous section, the organization may have an identity provider set with one of the organization domains.
-In this situation, the user is redirected to the identity provider if that user's email matches a specific domain from the organization.
+In a similar situation to the previous section, the organization may have a domain configured to route to an identity provider
+with auto-redirect enabled.
+In this situation, the user is redirected to the identity provider if that user's email matches the domain.
 Once the flow completes, an account is created and the user joins the organization. In case the user has any first-factor credentials
 configured (e.g.: password, passwordless, kerberos) to the account, the user is not automatically redirected to the identity provider but asked to authenticate using their
 credentials.
+
+== How organization membership is determined during broker login
+
+When a user authenticates through an identity provider that is linked to one or more organizations, the system determines
+whether the user should be added as a member of an organization. This process involves several checks that run as part of
+the first broker login flow.
+
+=== Step 1: Invitation check
+
+If the user is following an invitation link, the invitation determines which organization the user joins. The user is
+added as an unmanaged member of the invited organization regardless of any identity provider link settings or domain
+configuration. No further checks are performed.
+
+=== Step 2: Organization resolution
+
+The system determines which organization is the target of this login:
+
+. *Auth session note*: If the identity-first login resolved an organization from the user's email domain, that organization is used.
+. *Email domain match*: The user's email domain is matched against domains owned by organizations linked to this identity provider. Since each domain belongs to exactly one organization, this always identifies a single organization.
+. *Single organization fallback*: If only one organization is linked to this identity provider, it is selected automatically.
+. *No match*: If no organization can be determined, no membership is added.
+
+=== Step 3: Resolved-organization gate
+
+If organization resolution identified a specific organization, only that organization is evaluated for membership.
+This prevents membership in other organizations when the user's login was initiated through a specific organization's domain.
+
+If no organization was resolved (for example, during an IdP-initiated login via `kc_idp_hint`), all organizations
+linked to the identity provider are evaluated.
+
+=== Step 4: Per-association and domain gate checks
+
+For each candidate organization:
+
+. *Auto membership disabled*: If the identity provider link has auto membership set to disabled for this organization, the organization is skipped.
+. *Auto membership enabled*:
+* If the organization has no domains (domain-less organization), the domain gate is skipped and the user is added. This is useful for organizations that are domain-agnostic.
+* If the organization has domains, the user's email domain must match at least one domain owned by the organization. If there is no match, the organization is skipped.
+
+=== Step 5: Member assignment
+
+If all checks pass:
+
+* If the user is already a member of the organization, they are not re-added and their membership type is not changed.
+* If the user is new to the organization, they are added with the membership type configured on the identity provider link (managed or unmanaged).
+
+=== Login flow variations
+
+SP-initiated login (email entered on login page)::
+The identity-first login resolves a specific organization from the user's email domain. The resolved-organization gate
+limits membership evaluation to that single organization. This is the most common flow.
+
+IdP-initiated login (`kc_idp_hint`, no email entered)::
+No organization is pre-resolved. The post-broker membership step evaluates all organizations linked to the identity provider.
+The domain gate still prevents cross-organization membership -- users are only added to organizations whose domains match their email.
+
+Invitation flow::
+The invitation bypasses the entire auto-membership algorithm. The user is added to the invited organization as an
+unmanaged member, regardless of identity provider link settings or domain configuration.
 
 == Configuring existing authentication flows
 
@@ -123,4 +183,3 @@ To enable this behavior, you need to enable the `Requires user membership` setti
 If enabled, and after the user provides the username or email in the identity-first login page, the server will
 try to resolve a organization where the user is a member by looking at any existing membership or based on the semantics of the <<_mapping_organization_claims_,organization>> scope,
 if requested by the client. If not a member of an organization, an error page will be shown.
-

@@ -18,16 +18,20 @@
 package org.keycloak.protocol.oid4vc;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.Config;
 import org.keycloak.VCFormat;
+import org.keycloak.common.Profile;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
@@ -45,10 +49,12 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCSubjectIdMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCUserAttributeMapper;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
-import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -61,7 +67,9 @@ import org.keycloak.utils.StringUtil;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
+import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY;
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
+import static org.keycloak.VCFormat.MSO_MDOC;
 import static org.keycloak.VCFormat.SD_JWT_VC;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.models.ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE;
@@ -106,6 +114,12 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
     public static final String CREDENTIAL_TYPE_NATURAL_PERSON = "natural_person";
     public static final String NATURAL_PERSON_SCOPE_CONSENT_TEXT = "${naturalPersonScopeConsentText}";
 
+    /**
+     * mDoc namespace of the example natural person scope. Following the EUDI PID convention, the same value is used
+     * as the doctype of the issued credential.
+     */
+    public static final String NATURAL_PERSON_MDOC_NAMESPACE = "com.example.natural_person";
+
 	private final Map<String, ProtocolMapperModel> builtins = new HashMap<>();
 
 	@Override
@@ -139,10 +153,16 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 	}
 
     @Override
-    public void createDefaultClientScopes(RealmModel newRealm, boolean addScopesToExistingClients) {
+    public void createDefaultClientScopes(KeycloakSession session, RealmModel newRealm, boolean addScopesToExistingClients) {
         LOGGER.debugf("Create default scopes for realm %s", newRealm.getName());
 
-        for (String format : VCFormat.SUPPORTED_FORMATS) {
+        List<String> formats = new ArrayList<>(Arrays.asList(VCFormat.SUPPORTED_FORMATS));
+        if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_MDOC)) {
+            formats.add(MSO_MDOC);
+        }
+
+        for (String format : formats) {
+            boolean isMdoc = MSO_MDOC.equals(format);
             String scopeName = CREDENTIAL_TYPE_NATURAL_PERSON + VCFormat.getScopeSuffix(format);
             ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(newRealm, scopeName);
             if (clientScope == null) {
@@ -152,16 +172,20 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
                 clientScope.setDisplayOnConsentScreen(true);
                 clientScope.setConsentScreenText(NATURAL_PERSON_SCOPE_CONSENT_TEXT);
                 clientScope.setProtocol(OID4VC_PROTOCOL);
-                clientScope.addProtocolMapper(builtins.get(SUBJECT_ID_MAPPER));
-                clientScope.addProtocolMapper(builtins.get(EMAIL_MAPPER));
-                clientScope.addProtocolMapper(builtins.get(FIRST_NAME_MAPPER));
-                clientScope.addProtocolMapper(builtins.get(LAST_NAME_MAPPER));
+                for (String mapperName : List.of(SUBJECT_ID_MAPPER, EMAIL_MAPPER, FIRST_NAME_MAPPER, LAST_NAME_MAPPER)) {
+                    ProtocolMapperModel mapper = builtins.get(mapperName);
+                    clientScope.addProtocolMapper(isMdoc ? withMdocNamespace(mapper) : mapper);
+                }
 
                 ClientScopeRepresentation clientScopeRep = ModelToRepresentation.toRepresentation(clientScope);
+                Set<String> allowedProofTypes = session.listProviderIds(ProofValidator.class);
                 clientScopeRep.setAttributes(new HashMap<>(Map.of(
                         VC_BINDING_REQUIRED, "true",
-                        VC_BINDING_REQUIRED_PROOF_TYPES, ProofType.JWT + "," + ProofType.ATTESTATION
+                        VC_BINDING_REQUIRED_PROOF_TYPES, String.join(",", allowedProofTypes)
                 )));
+                if (isMdoc) {
+                    clientScopeRep.getAttributes().put(VCT, NATURAL_PERSON_MDOC_NAMESPACE);
+                }
 
                 try {
                     DisplayObject display = new DisplayObject();
@@ -179,6 +203,21 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         }
     }
 
+    /**
+     * The builtin mapper models are shared between all default scopes, so the mdoc variant gets a copy with the
+     * example namespace instead of a mutated shared instance.
+     */
+    private static ProtocolMapperModel withMdocNamespace(ProtocolMapperModel mapper) {
+        ProtocolMapperModel copy = new ProtocolMapperModel();
+        copy.setName(mapper.getName());
+        copy.setProtocol(mapper.getProtocol());
+        copy.setProtocolMapper(mapper.getProtocolMapper());
+        Map<String, String> config = new HashMap<>(mapper.getConfig());
+        config.put(OID4VCMapper.MDOC_NAMESPACE, NATURAL_PERSON_MDOC_NAMESPACE);
+        copy.setConfig(config);
+        return copy;
+    }
+
     @Override
     public void setupClientDefaults(ClientRepresentation rep, ClientModel newClient) {
         //no-op
@@ -191,11 +230,16 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         if (clientScope.getAttributes() == null) {
             clientScope.setAttributes(new HashMap<>());
         }
-        
-        clientScope.getAttributes().computeIfAbsent(VC_FORMAT, k -> VCFormat.getFromScope(scopeName));
+
+        clientScope.getAttributes().computeIfAbsent(VC_FORMAT, k -> getFormatFromScope(scopeName));
         String format = clientScope.getAttributes().get(VC_FORMAT);
 
         int idx = scopeName.lastIndexOf(VCFormat.getScopeSuffix(format));
+        if (idx < 0 && MSO_MDOC.equals(VCFormat.getFromScope(scopeName))) {
+            // the mdoc format of this scope was downgraded because the feature is disabled, still strip the mdoc
+            // suffix from the name when deriving the credential type
+            idx = scopeName.lastIndexOf(VCFormat.getScopeSuffix(MSO_MDOC));
+        }
         String credentialType = idx > 0 ? scopeName.substring(0, idx) : scopeName;
 
         // Note, there is no sensible default for the Issuer's DID unless we generate a did:key:* from the signing key
@@ -208,7 +252,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         clientScope.getAttributes().putIfAbsent(VC_SUPPORTED_TYPES, credentialType);
         clientScope.getAttributes().putIfAbsent(VC_CONTEXTS, credentialType);
         clientScope.getAttributes().putIfAbsent(VCT, credentialType);
-        clientScope.getAttributes().putIfAbsent(VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+        clientScope.getAttributes().putIfAbsent(VC_CRYPTOGRAPHIC_BINDING_METHODS, getDefaultCryptographicBindingMethod(format));
         clientScope.getAttributes().putIfAbsent(VC_BUILD_CONFIG_HASH_ALGORITHM, VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT);
         clientScope.getAttributes().putIfAbsent(VC_BUILD_CONFIG_TOKEN_JWS_TYPE, getDefaultTokenJwsTypeForFormat(format));
         clientScope.getAttributes().putIfAbsent(VC_EXPIRY_IN_SECONDS, String.valueOf(VC_EXPIRY_IN_SECONDS_DEFAULT));
@@ -217,6 +261,18 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
             clientScope.getAttributes().putIfAbsent(VC_SD_JWT_NUMBER_OF_DECOYS, String.valueOf(VC_SD_JWT_NUMBER_OF_DECOYS_DEFAULT));
             clientScope.getAttributes().putIfAbsent(VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS, VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS_DEFAULT);
         }
+    }
+
+    private static String getFormatFromScope(String scopeName) {
+        String format = VCFormat.getFromScope(scopeName);
+        if (MSO_MDOC.equals(format) && !Profile.isFeatureEnabled(Profile.Feature.OID4VC_MDOC)) {
+            return SD_JWT_VC;
+        }
+        return format;
+    }
+
+    private static String getDefaultCryptographicBindingMethod(String format) {
+        return MSO_MDOC.equals(format) ? CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY : CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT;
     }
 
     @Override
@@ -230,8 +286,10 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
                     Response.Status.BAD_REQUEST);
         }
 
+        validateIncludedInTokenScope(clientScope);
         validateOID4VCIRefreshInterval(clientScope);
         validateCredentialConfigurationId(session, clientScope);
+        validateBindingConfiguration(session, clientScope);
     }
 
     @Override
@@ -341,6 +399,17 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         return StringUtil.isBlank(configuredId) ? scopeName : configuredId;
     }
 
+    private void validateIncludedInTokenScope(ClientScopeRepresentation clientScope) {
+        if (clientScope.getAttributes() == null) {
+            return;
+        }
+
+        String includeInTokenScope = clientScope.getAttributes().get(INCLUDE_IN_TOKEN_SCOPE);
+        if (includeInTokenScope != null && !Boolean.parseBoolean(includeInTokenScope)) {
+            throw ErrorResponse.error("OID4VCI client scope must always have 'include in token scope' enabled", Response.Status.BAD_REQUEST);
+        }
+    }
+
     /**
      * Validates that the refresh interval does not exceed the credential lifetime.
      *
@@ -381,5 +450,71 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
                             refreshInterval, expiry),
                     Response.Status.BAD_REQUEST);
         }
+    }
+
+    /**
+     * Validate "Cryptographic binding methods supported" and proof-types
+     *
+     * @param session Keycloak session
+     * @param clientScope the client scope representation to validate
+     * @throws ErrorResponseException if the credential format has no builder, binding is required and not provided,
+     * or the binding or proof-type configuration is invalid
+     */
+    private void validateBindingConfiguration(KeycloakSession session, ClientScopeRepresentation clientScope) throws ErrorResponseException {
+        if (clientScope.getAttributes() == null) {
+            return;
+        }
+
+        boolean bindingRequired = Boolean.parseBoolean(clientScope.getAttributes().get(VC_BINDING_REQUIRED));
+        String format = Objects.requireNonNullElseGet(
+                clientScope.getAttributes().get(VC_FORMAT),
+                () -> getFormatFromScope(clientScope.getName()));
+
+        CredentialBuilder credentialBuilder = session.getProvider(CredentialBuilder.class, format);
+        if (credentialBuilder == null) {
+            throw ErrorResponse.error(
+                    String.format("No credential builder found for format '%s' of credential scope '%s'", format, clientScope.getName()),
+                    Response.Status.BAD_REQUEST);
+        }
+
+        Set<String> allowedBindingMethods = credentialBuilder.getSupportedBindingMethods();
+
+        String bindingMethodsAttr = clientScope.getAttributes().get(VC_CRYPTOGRAPHIC_BINDING_METHODS);
+        if (bindingRequired || !StringUtil.isBlank(bindingMethodsAttr)) {
+            List<String> effectiveBindingMethods = parseCommaSeparated(bindingMethodsAttr);
+
+            if (effectiveBindingMethods.isEmpty() || !allowedBindingMethods.containsAll(effectiveBindingMethods)) {
+                throw ErrorResponse.error(
+                        String.format("When vc.binding_required is true, vc.cryptographic_binding_methods_supported must " +
+                                        "contain at least one valid value. Supported values for format '%s': %s",
+                                format, allowedBindingMethods),
+                        Response.Status.BAD_REQUEST);
+            }
+        }
+
+        Set<String> allowedProofTypes = session.listProviderIds(ProofValidator.class);
+
+        String proofTypesAttr = clientScope.getAttributes().get(VC_BINDING_REQUIRED_PROOF_TYPES);
+        if (bindingRequired || !StringUtil.isBlank(proofTypesAttr)) {
+            List<String> effectiveProofTypes = parseCommaSeparated(proofTypesAttr);
+
+            if (effectiveProofTypes.isEmpty() || !allowedProofTypes.containsAll(effectiveProofTypes)) {
+                throw ErrorResponse.error(
+                        String.format("When vc.binding_required is true, vc.binding_required_proof_types must " +
+                                        "contain at least one valid value. Supported values: %s",
+                                allowedProofTypes),
+                        Response.Status.BAD_REQUEST);
+            }
+        }
+    }
+
+    private static List<String> parseCommaSeparated(String value) {
+        if (StringUtil.isBlank(value)) {
+            return List.of();
+        }
+        return Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
     }
 }

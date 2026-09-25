@@ -65,7 +65,7 @@ If login requests contain the Assertion Consumer Service URL then those login re
 
 *Force POST Binding*:: By default, {project_name} responds using the initial SAML binding of the original request. By enabling *Force POST Binding*, {project_name} responds using the SAML POST binding even if the original request used the redirect binding.
 
-*Force artifact binding*:: If enabled, response messages are returned to the client through the SAML ARTIFACT binding system.       
+*Force artifact binding*:: If enabled, response messages are returned to the client through the SAML ARTIFACT binding system.
 
 *Include AuthnStatement*:: SAML login responses may specify the  authentication method used, such as password, as well as timestamps of the login and the session expiration.
 *Include AuthnStatement* is enabled by default, so that the *AuthnStatement* element will be included in login responses. Setting this to OFF prevents clients from determining the maximum session length, which can create client sessions that do not expire.
@@ -147,7 +147,9 @@ If the option *Use metadata descriptor URL* is enabled in the *Signature and Enc
 
 *Encrypt Assertions*:: Encrypts the assertions in SAML documents with the specified client public key. Default algorithms used for encryption are configured with security in mind. If you need a different configuration, the encryption details can be modified in the *Settings* tab, section *Signature and Encryption*. The encryption options are only visible when this *Encrypt Assertions* option is enabled.
 +
-The key used to encrypt the assertions is controlled in the same way as in the case of *Client Signature Required*. If *Use metadata descriptor URL* is enabled, the key is doenloaded and cached by {project_name}. If that option is disabled, you need to import or generate the key when activating the *Encrypt Assertions* option.
+The key used to encrypt the assertions is controlled in the same way as in the case of *Client Signature Required*. If *Use metadata descriptor URL* is enabled, the key is downloaded and cached by {project_name}. If that option is disabled, you need to import or generate the key when activating the *Encrypt Assertions* option.
+
+NOTE: Generating of keys is deprecated. The recommended approach is to generate key pairs externally and upload only the certificate to {project_name}. When keys are generated in {project_name}, only the certificate is stored on the server. The private key is included in the downloaded file and is not retained by {project_name}. Clients should save the private key securely.
 
 == Advanced tab
 

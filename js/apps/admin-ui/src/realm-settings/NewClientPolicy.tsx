@@ -217,7 +217,9 @@ export default function NewClientPolicy() {
       setPolicies(updatedPolicies ?? []);
       setAllPolicies([...(globalPolicies ?? []), ...(updatedPolicies ?? [])]);
       setCurrentPolicy(createdPolicy);
-      navigate(toEditClientPolicy({ realm, policyName: createdPolicy.name! }));
+      void navigate(
+        toEditClientPolicy({ realm, policyName: createdPolicy.name! }),
+      );
       setShowAddConditionsAndProfilesForm(true);
     } catch (error) {
       addError("createClientPolicyError", error);
@@ -241,7 +243,7 @@ export default function NewClientPolicy() {
           policies: updatedPolicies,
         });
         addAlert(t("deleteClientPolicySuccess"), AlertVariant.success);
-        navigate(
+        void navigate(
           toClientPolicies({
             realm,
             tab: "policies",
@@ -269,7 +271,7 @@ export default function NewClientPolicy() {
               policies: policies,
             });
             addAlert(t("deleteConditionSuccess"), AlertVariant.success);
-            navigate(
+            void navigate(
               toEditClientPolicy({ realm, policyName: formValues.name! }),
             );
           } catch (error) {
@@ -285,7 +287,7 @@ export default function NewClientPolicy() {
               policies: updatedPolicies,
             });
             addAlert(t("deleteClientSuccess"), AlertVariant.success);
-            navigate(
+            void navigate(
               toClientPolicies({
                 realm,
                 tab: "policies",
@@ -315,7 +317,9 @@ export default function NewClientPolicy() {
           });
           addAlert(t("deleteClientPolicyProfileSuccess"), AlertVariant.success);
           form.setValue("profiles", currentPolicy?.profiles || []);
-          navigate(toEditClientPolicy({ realm, policyName: formValues.name! }));
+          void navigate(
+            toEditClientPolicy({ realm, policyName: formValues.name! }),
+          );
         } catch (error) {
           addError("deleteClientPolicyProfileError", error);
         }
@@ -329,7 +333,7 @@ export default function NewClientPolicy() {
             policies: updatedPolicies,
           });
           addAlert(t("deleteClientSuccess"), AlertVariant.success);
-          navigate(
+          void navigate(
             toClientPolicies({
               realm,
               tab: "policies",
@@ -390,7 +394,9 @@ export default function NewClientPolicy() {
       setAllPolicies(allClientPolicies);
       setCurrentPolicy(createdPolicy);
       form.setValue("profiles", createdPolicy.profiles);
-      navigate(toEditClientPolicy({ realm, policyName: formValues.name! }));
+      void navigate(
+        toEditClientPolicy({ realm, policyName: formValues.name! }),
+      );
       addAlert(t("addClientProfileSuccess"), AlertVariant.success);
     } catch (error) {
       addError("addClientProfileError", error);
@@ -534,7 +540,7 @@ export default function NewClientPolicy() {
                   (showAddConditionsAndProfilesForm || policyName) &&
                   !isGlobalPolicy
                     ? reset()
-                    : navigate(
+                    : void navigate(
                         toClientPolicies({
                           realm,
                           tab: "policies",

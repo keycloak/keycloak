@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.model.session;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -31,6 +32,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -185,6 +187,55 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
     }
 
     @Test
+    public void testRemoveRootAuthenticationSessionsByAuthenticatedUser() {
+        AtomicReference<String> user1Id = new AtomicReference<>();
+        List<String> user1RootIds = new ArrayList<>();
+        AtomicReference<String> user2RootId = new AtomicReference<>();
+        AtomicReference<String> anonymousRootId = new AtomicReference<>();
+
+        withRealm(realmId, (session, realm) -> {
+            UserModel user1 = session.users().addUser(realm, "user1");
+            UserModel user2 = session.users().addUser(realm, "user2");
+            user1Id.set(user1.getId());
+            ClientModel client = realm.getClientByClientId("test-app");
+
+            // two separate in-progress authentication sessions authenticated as user1 (e.g. two devices)
+            for (int i = 0; i < 2; i++) {
+                RootAuthenticationSessionModel root = session.authenticationSessions().createRootAuthenticationSession(realm);
+                root.createAuthenticationSession(client).setAuthenticatedUser(user1);
+                user1RootIds.add(root.getId());
+            }
+            // one authenticated as user2
+            RootAuthenticationSessionModel root2 = session.authenticationSessions().createRootAuthenticationSession(realm);
+            root2.createAuthenticationSession(client).setAuthenticatedUser(user2);
+            user2RootId.set(root2.getId());
+
+            // one without an authenticated user (credentials not verified yet)
+            RootAuthenticationSessionModel anon = session.authenticationSessions().createRootAuthenticationSession(realm);
+            anon.createAuthenticationSession(client);
+            anonymousRootId.set(anon.getId());
+            return null;
+        });
+
+        // emulate "logout other sessions": remove all of user1's in-progress sessions except the current one
+        String currentRootId = user1RootIds.get(0);
+        withRealm(realmId, (session, realm) -> {
+            UserModel user1 = session.users().getUserById(realm, user1Id.get());
+            session.authenticationSessions().removeRootAuthenticationSessionsByAuthenticatedUser(realm, user1, currentRootId);
+            return null;
+        });
+
+        // the current session survives; the other user1 session is gone; other users are untouched
+        withRealm(realmId, (session, realm) -> {
+            assertThat(session.authenticationSessions().getRootAuthenticationSession(realm, currentRootId), Matchers.notNullValue());
+            assertThat(session.authenticationSessions().getRootAuthenticationSession(realm, user1RootIds.get(1)), Matchers.nullValue());
+            assertThat(session.authenticationSessions().getRootAuthenticationSession(realm, user2RootId.get()), Matchers.notNullValue());
+            assertThat(session.authenticationSessions().getRootAuthenticationSession(realm, anonymousRootId.get()), Matchers.notNullValue());
+            return null;
+        });
+    }
+
+    @Test
     public void testRemoveExpiredAuthSessions() {
         AtomicReference<String> rootAuthSessionId = new AtomicReference<>();
         withRealm(realmId, (session, realm) -> {
@@ -287,6 +338,42 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
         withRealm(realmId, (session, realm) -> {
             RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, rootId);
             assertNull(rootAuthSession);
+            return null;
+        });
+    }
+
+    @Test
+    public void testRemoveAbsentTabId() {
+        AtomicReference<String> rootAuthSessionId = new AtomicReference<>();
+        List<String> tabIds = withRealm(realmId, (session, realm) -> {
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);
+            rootAuthSessionId.set(rootAuthSession.getId());
+            ClientModel client = realm.getClientByClientId("test-app");
+            return IntStream.range(0, 3)
+                    .mapToObj(i -> rootAuthSession.createAuthenticationSession(client))
+                    .map(AuthenticationSessionModel::getTabId)
+                    .collect(Collectors.toList());
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, rootAuthSessionId.get());
+
+            // removing a tab ID that was never added must not throw
+            rootAuthSession.removeAuthenticationSessionByTabId("nonexistent-tab-id");
+
+            // all original sessions must still be present
+            assertThat(rootAuthSession.getAuthenticationSessions(), Matchers.aMapWithSize(3));
+
+            // remove a real tab, then remove it again (double-remove)
+            rootAuthSession.removeAuthenticationSessionByTabId(tabIds.get(0));
+            rootAuthSession.removeAuthenticationSessionByTabId(tabIds.get(0));
+
+            // remaining sessions are intact
+            assertThat(rootAuthSession.getAuthenticationSessions(), Matchers.aMapWithSize(2));
+            ClientModel client = realm.getClientByClientId("test-app");
+            Assert.assertNotNull(rootAuthSession.getAuthenticationSession(client, tabIds.get(1)));
+            Assert.assertNotNull(rootAuthSession.getAuthenticationSession(client, tabIds.get(2)));
+
             return null;
         });
     }

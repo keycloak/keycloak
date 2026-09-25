@@ -270,6 +270,19 @@ public class SamlService extends AuthorizationEndpointBase {
             }
 
             session.getContext().setClient(client);
+
+            SamlClient samlClient = new SamlClient(client);
+            try {
+                if(samlClient.requiresClientSignature()) {
+                    verifyResponseSignature(holder,client);
+                }
+            } catch (VerificationException e) {
+                SamlService.logger.error("LogoutResponse signature validation failed");
+                SamlService.logger.debug("LogoutResponse signature validation failed", e);
+                event.error(Errors.INVALID_SIGNATURE);
+                return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
+            }
+
             logger.debug("logout response");
             Response response = authManager.browserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
             event.success();
@@ -437,6 +450,8 @@ public class SamlService extends AuthorizationEndpointBase {
         protected abstract String encodeSamlDocument(Document samlDocument) throws ProcessingException;
 
         protected abstract void verifySignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException;
+
+        protected abstract void verifyResponseSignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException;
 
         protected abstract boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder);
 
@@ -666,19 +681,20 @@ public class SamlService extends AuthorizationEndpointBase {
                         logoutRequest = it.next().beforeProcessingLogoutRequest(logoutRequest, userSession, clientSession);
                     }
 
+                    EventBuilder logoutEvent = event.clone()
+                            .event(EventType.LOGOUT)
+                            .detail(Details.AUTH_METHOD, userSession.getAuthMethod())
+                            .client(session.getContext().getClient())
+                            .user(userSession.getUser())
+                            .session(userSession)
+                            .detail(Details.USERNAME, userSession.getLoginUsername())
+                            .detail(Details.RESPONSE_MODE, getBindingType());
                     try {
-                        event.event(EventType.LOGOUT)
-                                .detail(Details.AUTH_METHOD, userSession.getAuthMethod())
-                                .client(session.getContext().getClient())
-                                .user(userSession.getUser())
-                                .session(userSession)
-                                .detail(Details.USERNAME, userSession.getLoginUsername())
-                                .detail(Details.RESPONSE_MODE, getBindingType());
                         authManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, true);
-                        event.success();
+                        logoutEvent.success();
                     } catch (Exception e) {
                         logger.warn("Failure with backchannel logout", e);
-                        event.error("Failure with backchannel logout");
+                        logoutEvent.error("Failure with backchannel logout");
                     }
 
                 }
@@ -839,6 +855,11 @@ public class SamlService extends AuthorizationEndpointBase {
         }
 
         @Override
+        protected void verifyResponseSignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException {
+            SamlProtocolUtils.verifyDocumentSignature(session, client, documentHolder.getSamlDocument());
+        }
+
+        @Override
         protected boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder) {
             Document signedDoc = documentHolder.getSamlDocument();
             NodeList nl = signedDoc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
@@ -882,6 +903,12 @@ public class SamlService extends AuthorizationEndpointBase {
         protected void verifySignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException {
             KeyLocator clientKeyLocator = SamlProtocolUtils.createKeyLocatorForClient(session, client, KeyUse.SIG);
             SamlProtocolUtils.verifyRedirectSignature(documentHolder, clientKeyLocator, session.getContext().getUri(), GeneralConstants.SAML_REQUEST_KEY);
+        }
+
+        @Override
+        protected void verifyResponseSignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException {
+            KeyLocator clientKeyLocator = SamlProtocolUtils.createKeyLocatorForClient(session, client, KeyUse.SIG);
+            SamlProtocolUtils.verifyRedirectSignature(documentHolder, clientKeyLocator, session.getContext().getUri(), GeneralConstants.SAML_RESPONSE_KEY);
         }
 
         @Override
@@ -1469,7 +1496,7 @@ public class SamlService extends AuthorizationEndpointBase {
                     }
 
                     if (logger.isTraceEnabled()) {
-                        logger.tracef("Resolved object: %s" + DocumentUtil.asString(samlDoc.getSamlDocument()));
+                        logger.tracef("Resolved object: %s", DocumentUtil.asString(samlDoc.getSamlDocument()));
                     }
 
                     ArtifactResponseType art = (ArtifactResponseType) samlDoc.getSamlObject();

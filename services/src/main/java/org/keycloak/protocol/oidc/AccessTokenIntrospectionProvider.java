@@ -41,6 +41,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.verifier.TokenVerifierProvider;
+import org.keycloak.protocol.oidc.verifier.TokenVerifierProviderManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.util.DefaultClientSessionContext;
@@ -123,20 +125,19 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
 
                 tokenMetadata.put(OAuth2Constants.TOKEN_TYPE, transformedToken.getType());
                 tokenMetadata.put("active", true);
-                eventBuilder.success();
-            } else {
-                tokenMetadata = JsonSerialization.createObjectNode();
-                logger.debug("Keycloak token introspection return false");
-                tokenMetadata.put("active", false);
-            }
 
-            // if consumer requests application/jwt return a JWT representation of the introspection contents in an jwt field
-            if (transformedToken != null) {
+                // if consumer requests application/jwt return a JWT representation of the introspection contents in an jwt field
                 boolean isJwtRequest = org.keycloak.utils.MediaType.APPLICATION_JWT.equals(session.getContext().getRequestHeaders().getHeaderString(HttpHeaders.ACCEPT));
                 if (isJwtRequest && Boolean.parseBoolean(authenticatedClient.getAttribute(Constants.SUPPORT_JWT_CLAIM_IN_INTROSPECTION_RESPONSE_ENABLED))) {
                     // consumers can use this to convert an opaque token into an JWT based token
                     tokenMetadata.put("jwt", session.tokens().encode(transformedToken));
                 }
+
+                eventBuilder.success();
+            } else {
+                tokenMetadata = JsonSerialization.createObjectNode();
+                logger.debug("Keycloak token introspection return false");
+                tokenMetadata.put("active", false);
             }
 
             return Response.ok(JsonSerialization.writeValueAsBytes(tokenMetadata)).type(MediaType.APPLICATION_JSON_TYPE).build();
@@ -291,9 +292,11 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
             } else {
 
                 try {
-                    TokenVerifier.createWithoutSignature(token)
-                            .withChecks(TokenManager.NotBeforeCheck.forModel(realm), TokenManager.NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE, new TokenManager.TokenRevocationCheck(session))
-                            .verify();
+                    TokenVerifier<T> verifier = TokenVerifier.createWithoutSignature(token)
+                            .withChecks(TokenManager.NotBeforeCheck.forModel(realm), TokenManager.NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE, new TokenManager.TokenRevocationCheck(session));
+                    addAdditionalVerifications(verifier);
+
+                    verifier.verify();
                     this.client = client;
                     return true;
                 } catch (VerificationException e) {
@@ -304,6 +307,12 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
                 }
             }
         }
+    }
+
+    // Note: This might be possibly removed once option for skip-audience-check for introspection is removed from client and server options
+    protected void addAdditionalVerifications(TokenVerifier<T> verifier) {
+        TokenVerifierProvider.TokenVerifierProviderContext ctx = new TokenVerifierProvider.TokenVerifierProviderContext((TokenVerifier<AccessToken>) verifier, session, realm, session.getContext().getUri());
+        new TokenVerifierProviderManager().additionalAccessTokenVerifications(ctx);
     }
 
     protected boolean verifyAudience() {

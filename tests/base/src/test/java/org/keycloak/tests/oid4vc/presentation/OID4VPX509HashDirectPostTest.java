@@ -18,11 +18,15 @@
 package org.keycloak.tests.oid4vc.presentation;
 
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OID4VCConstants;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.oid4vp.OID4VPIdentityProviderConfig;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
@@ -32,6 +36,12 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderSyncMode;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
@@ -47,6 +57,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SIGNING_ALG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -65,6 +76,9 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
                 OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS, realmSigningJwks(),
                 OID4VPIdentityProviderConfig.DCQL_QUERY, dcqlQuery(),
                 OID4VPIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "email"));
+        createCompletionHolder("bob");
+        createCompletionHolder("carol");
+        createCompletionHolder("dave");
     }
 
     @Test
@@ -243,18 +257,151 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
     }
 
     @Test
-    public void directPostRejectsNonScalarPrincipal() throws Exception {
-        // address is an object claim, so configuring it as the principal must be rejected rather than
-        // mapped onto an empty user id.
+    public void completeAuthRejectsNonScalarPrincipal() throws Exception {
+        // address is an object claim, so configuring it as the principal must fail the login rather
+        // than map onto an empty user id. The principal is resolved when the browser completes the
+        // login, so the wallet post succeeds and the browser sees the error page.
         updatePrincipalAttribute("address");
         OID4VCTestContext credential = issueCredential();
         JsonNode request = requestObject();
 
         Oid4vpDirectPostResponse response = wallet.directPost(request, wallet.present(credential, request));
-        assertEquals(400, response.getStatusCode());
-        assertEquals("access_denied", response.getError());
-        assertTrue(response.getErrorDescription().contains("principal attribute"),
-                "Expected a principal attribute error, was: " + response.getErrorDescription());
+        assertEquals(200, response.getStatusCode());
+
+        driver.open(response.getRedirectUri());
+        assertTrue(driver.driver().getPageSource().contains("kc-error-message"),
+                "Expected the login error page, was: " + driver.driver().getCurrentUrl());
+    }
+
+    @Test
+    public void credentialClaimsAreMappedOnCompletedLogin() throws Exception {
+        OID4VCTestContext credential = issueCredential("bob");
+        UserRepresentation holder = deleteHolder("bob");
+        String street = holder.getAttributes().get("address_street_address").get(0);
+        String locality = holder.getAttributes().get("address_locality").get(0);
+
+        UserRepresentation user = completeFirstLogin(credential, holder);
+
+        assertEquals(holder.getEmail(), user.getEmail());
+        assertEquals(holder.getFirstName(), user.getFirstName());
+        assertEquals(holder.getLastName(), user.getLastName());
+        assertEquals(List.of(locality), user.getAttributes().get("locality"));
+        JsonNode address = JsonSerialization.readValue(user.getAttributes().get("addressJson").get(0), JsonNode.class);
+        assertEquals(street, address.path("street_address").asText());
+        assertEquals(locality, address.path("locality").asText());
+        assertEquals(sdJwtTypeCredentialVct, accessTokenClaim(VCT_TOKEN_CLAIM));
+
+        endBrowserSession(user.getId());
+    }
+
+    @Test
+    public void forceSyncModeHealsTamperedClaimsOnRelogin() throws Exception {
+        OID4VCTestContext credential = issueCredential("carol");
+        UserRepresentation holder = deleteHolder("carol");
+        String street = holder.getAttributes().get("address_street_address").get(0);
+        String locality = holder.getAttributes().get("address_locality").get(0);
+        UserRepresentation user = completeFirstLogin(credential, holder);
+
+        tamperMappedValues(user, holder.getEmail());
+        relogin(credential, user);
+
+        UserRepresentation healed = federatedUser(holder.getEmail());
+        assertEquals(holder.getFirstName(), healed.getFirstName());
+        assertEquals(List.of(locality), healed.getAttributes().get("locality"));
+        JsonNode healedAddress = JsonSerialization.readValue(healed.getAttributes().get("addressJson").get(0), JsonNode.class);
+        assertEquals(street, healedAddress.path("street_address").asText());
+
+        endBrowserSession(healed.getId());
+    }
+
+    // The session note is per login state, so it must survive an existing user login whose IMPORT
+    // sync mode skips the user updates.
+    @Test
+    public void importSyncModeKeepsSessionNoteButSkipsUserUpdatesOnRelogin() throws Exception {
+        OID4VCTestContext credential = issueCredential("dave");
+        UserRepresentation holder = deleteHolder("dave");
+        UserRepresentation user = completeFirstLogin(credential, holder);
+
+        updateIdpSyncMode(IdentityProviderSyncMode.IMPORT);
+        try {
+            tamperMappedValues(user, holder.getEmail());
+            relogin(credential, user);
+
+            assertEquals(sdJwtTypeCredentialVct, accessTokenClaim(VCT_TOKEN_CLAIM));
+            UserRepresentation untouched = federatedUser(holder.getEmail());
+            assertEquals("Tampered", untouched.getFirstName());
+            assertNull(untouched.getAttributes().get("addressJson"));
+            endBrowserSession(untouched.getId());
+        } finally {
+            updateIdpSyncMode(IdentityProviderSyncMode.FORCE);
+        }
+    }
+
+    // The mapped claims originate from the holder user, so its representation is kept as the
+    // expectation. The holder is deleted because the first broker login would otherwise stop at
+    // the duplicate user check instead of creating the account.
+    private UserRepresentation deleteHolder(String username) {
+        UserRepresentation holder = testRealm.admin().users()
+                .get(requireExistingUser(username).getId()).toRepresentation();
+        deleteRealmUser(holder);
+        return holder;
+    }
+
+    private UserRepresentation completeFirstLogin(OID4VCTestContext credential, UserRepresentation holder) throws Exception {
+        JsonNode request = requestObject();
+        driver.open(wallet.directPost(request, wallet.present(credential, request)).getRedirectUri());
+        assertLoginCompleted();
+        return federatedUser(holder.getEmail());
+    }
+
+    private void updateIdpSyncMode(IdentityProviderSyncMode syncMode) {
+        IdentityProviderResource idp = testRealm.admin().identityProviders().get(IDP_ALIAS);
+        IdentityProviderRepresentation rep = idp.toRepresentation();
+        rep.getConfig().put(IdentityProviderModel.SYNC_MODE, syncMode.name());
+        idp.update(rep);
+    }
+
+    // Dedicated credential holder per completed login test: completing a broker login for a
+    // holder changes how every later wallet login of that holder behaves, so the shared users stay
+    // untouched and the tests are order independent. Same profile shape as the shared users.
+    private void createCompletionHolder(String username) {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername(username);
+        user.setEnabled(true);
+        user.setEmail(username + "@email.cz");
+        user.setEmailVerified(true);
+        user.setFirstName("Bob");
+        user.setLastName("Baumeister");
+        user.setAttributes(Map.of(
+                "address_street_address", List.of("221B Baker Street"),
+                "address_locality", List.of("London")));
+        CredentialRepresentation password = new CredentialRepresentation();
+        password.setType(CredentialRepresentation.PASSWORD);
+        password.setValue(TEST_PASSWORD);
+        password.setTemporary(false);
+        user.setCredentials(List.of(password));
+        String id;
+        try (Response response = testRealm.admin().users().create(user)) {
+            assertEquals(201, response.getStatus(), "Failed to create the completion holder");
+            String location = response.getHeaderString("Location");
+            id = location.substring(location.lastIndexOf('/') + 1);
+        }
+        UserVerifiableCredentialRepresentation grant = new UserVerifiableCredentialRepresentation();
+        grant.setCredentialScopeName(sdJwtTypeCredentialScopeName);
+        testRealm.admin().users().get(id).verifiableCredentials().createCredential(grant);
+    }
+
+    private void tamperMappedValues(UserRepresentation user, String username) {
+        user.setFirstName("Tampered");
+        Map<String, List<String>> attributes = new HashMap<>(user.getAttributes());
+        attributes.remove("addressJson");
+        attributes.put("locality", List.of("Nowhere"));
+        user.setAttributes(attributes);
+        testRealm.admin().users().get(user.getId()).update(user);
+
+        UserRepresentation tampered = federatedUser(username);
+        assertEquals("Tampered", tampered.getFirstName());
+        assertNull(tampered.getAttributes().get("addressJson"));
     }
 
     private void assertLoginRejected() {

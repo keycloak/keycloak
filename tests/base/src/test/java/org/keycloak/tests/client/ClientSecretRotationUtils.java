@@ -19,7 +19,6 @@ package org.keycloak.tests.client;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
@@ -28,9 +27,6 @@ import org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorF
 import org.keycloak.testframework.realm.ClientPolicyBuilder;
 import org.keycloak.testframework.realm.ClientProfileBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.server.KeycloakServerConfig;
-import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
-
 /**
  *
  * @author rmartinc
@@ -43,14 +39,6 @@ public class ClientSecretRotationUtils {
     public static final int DEFAULT_EXPIRATION_PERIOD = Long.valueOf(TimeUnit.HOURS.toSeconds(1)).intValue();
     public static final int DEFAULT_ROTATED_EXPIRATION_PERIOD = Long.valueOf(TimeUnit.MINUTES.toSeconds(10)).intValue();
     public static final int DEFAULT_REMAIN_EXPIRATION_PERIOD = Long.valueOf(TimeUnit.MINUTES.toSeconds(30)).intValue();
-
-    public static class ClientSecretRotationServerConfig implements KeycloakServerConfig {
-
-        @Override
-        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.CLIENT_SECRET_ROTATION);
-        }
-    }
 
     private ClientSecretRotationUtils() {
         // utility class

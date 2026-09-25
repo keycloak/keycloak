@@ -38,6 +38,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.ObjectUtil;
@@ -424,6 +425,8 @@ public class OrganizationGroupResource {
             } catch (ModelException me) {
                 throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
             }
+        } else {
+            throw ErrorResponse.error("User not a member", Status.BAD_REQUEST);
         }
     }
 }

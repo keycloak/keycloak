@@ -250,6 +250,9 @@ public final class Constants {
     // Provider ID of the openid-connect protocol
     public static final String OIDC_PROTOCOL = "openid-connect";
 
+    // Default login protocol
+    public static final String DEFAULT_PROTOCOL = OIDC_PROTOCOL;
+
     // Internal note for storing authorization details response in client session context
     public static final String AUTHORIZATION_DETAILS_RESPONSE = "authorization_details_response";
 
@@ -259,4 +262,7 @@ public final class Constants {
     // This attribute can be used in a realm import definition to signal that default client scopes should be created in addition to the client scopes defined by the realm import definition.
     // When this attribute is omitted or set to false, the default client scopes are not created if at least one other client scope is defined by the realm import definition.
     public static final String CREATE_DEFAULT_CLIENT_SCOPES = "CreateDefaultClientScopes";
+
+    // Suffix for "private key" client attribute. The attribute of this name should not be persisted to the DB and should not be displayed in admin events
+    public static final String PRIVATE_KEY_ATTR_SUFFIX = "private.key";
 }

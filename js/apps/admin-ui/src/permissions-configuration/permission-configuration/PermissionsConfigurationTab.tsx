@@ -150,7 +150,7 @@ export const PermissionsConfigurationTab = ({
             <NewPermissionConfigurationDialog
               resourceTypes={resourceTypes}
               onSelect={(resourceType) =>
-                navigate(
+                void navigate(
                   toCreatePermissionConfiguration({
                     realm,
                     permissionClientId: clientId,
@@ -186,7 +186,7 @@ export const PermissionsConfigurationTab = ({
                     key="confirm"
                     variant="primary"
                     onSelect={(resourceType) =>
-                      navigate(
+                      void navigate(
                         toCreatePermissionConfiguration({
                           realm,
                           permissionClientId: clientId,
@@ -328,7 +328,7 @@ export const PermissionsConfigurationTab = ({
             <NewPermissionConfigurationDialog
               resourceTypes={resourceTypes}
               onSelect={(resourceType) =>
-                navigate(
+                void navigate(
                   toCreatePermissionConfiguration({
                     realm,
                     permissionClientId: clientId,

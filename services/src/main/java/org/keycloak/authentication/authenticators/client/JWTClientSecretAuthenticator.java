@@ -187,6 +187,11 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
     }
 
     @Override
+    public boolean supportsClientAssertion() {
+        return true;
+    }
+
+    @Override
     public String getId() {
         return PROVIDER_ID;
     }

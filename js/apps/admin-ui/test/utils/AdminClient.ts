@@ -283,6 +283,71 @@ class AdminClient {
     });
   }
 
+  async addRealmScopeMappingsToClientScope(
+    clientScopeName: string,
+    roleNames: string[],
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    const scope = await this.#client.clientScopes.findOneByName({
+      name: clientScopeName,
+      realm,
+    });
+    if (!scope?.id) {
+      throw new Error(`Client scope not found: ${clientScopeName}`);
+    }
+    const roles = await Promise.all(
+      roleNames.map(async (name) => {
+        const role = await this.#client.roles.findOneByName({ name, realm });
+        if (!role) {
+          throw new Error(`Realm role not found: ${name}`);
+        }
+        return role;
+      }),
+    );
+    await this.#client.clientScopes.addRealmScopeMappings(
+      { id: scope.id, realm },
+      roles,
+    );
+  }
+
+  async addClientScopeMappingsToClientScope(
+    clientScopeName: string,
+    clientId: string,
+    roleNames: string[],
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    const scope = await this.#client.clientScopes.findOneByName({
+      name: clientScopeName,
+      realm,
+    });
+    if (!scope?.id) {
+      throw new Error(`Client scope not found: ${clientScopeName}`);
+    }
+    const client = await this.getClient(clientId, realm);
+    if (!client?.id) {
+      throw new Error(`Client not found: ${clientId}`);
+    }
+    const roles = await Promise.all(
+      roleNames.map(async (roleName) => {
+        const role = await this.#client.clients.findRole({
+          id: client.id!,
+          roleName,
+          realm,
+        });
+        if (!role) {
+          throw new Error(`Client role not found: ${clientId}/${roleName}`);
+        }
+        return role;
+      }),
+    );
+    await this.#client.clientScopes.addClientScopeMappings(
+      { id: scope.id, client: client.id, realm },
+      roles,
+    );
+  }
+
   async createClientPolicy(
     name: string,
     description: string,
@@ -336,6 +401,7 @@ class AdminClient {
     idpDisplayName: string,
     alias: string,
     realm: string = this.#client.realmName,
+    config: Record<string, string> = {},
   ) {
     await this.#login();
     const identityProviders =
@@ -346,6 +412,7 @@ class AdminClient {
       providerId: idp?.id!,
       displayName: idpDisplayName,
       alias: alias,
+      config,
     });
   }
 
@@ -386,6 +453,17 @@ class AdminClient {
       { realm, selectedLocale: locale, key: key },
       value,
     );
+  }
+
+  async getLocalizationTexts(
+    locale: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    return await this.#client.realms.getRealmLocalizationTexts({
+      realm,
+      selectedLocale: locale,
+    });
   }
 
   async removeAllLocalizationTexts() {
@@ -450,6 +528,18 @@ class AdminClient {
     await this.#withRealm(realm, async () => {
       const orgId = await this.#findOrgId(orgName);
       await this.#client.organizations.addMember({ orgId, userId });
+    });
+  }
+
+  async linkIdpToOrganization(
+    orgName: string,
+    alias: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    await this.#withRealm(realm, async () => {
+      const orgId = await this.#findOrgId(orgName);
+      await this.#client.organizations.linkIdp({ orgId, alias });
     });
   }
 

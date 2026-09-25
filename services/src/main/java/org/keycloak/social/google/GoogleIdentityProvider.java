@@ -34,6 +34,8 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.JsonWebToken;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 
 
 /**
@@ -98,7 +100,10 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
 
     @Override
     protected BrokeredIdentityContext exchangeExternalImpl(EventBuilder event, MultivaluedMap<String, String> params) {
-        return exchangeExternalUserInfoValidationOnly(event, params);
+        BrokeredIdentityContext context = exchangeExternalUserInfoValidationOnly(event, params);
+        JsonNode profile = (JsonNode) context.getContextData().get(USER_INFO);
+        validateHostedDomain(getJsonProperty(profile, OIDC_PARAMETER_HOSTED_DOMAINS));
+        return context;
     }
 
     @Override
@@ -121,23 +126,19 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     @Override
     protected JsonWebToken validateToken(final String encodedToken, final boolean ignoreAudience) {
         JsonWebToken token = super.validateToken(encodedToken, ignoreAudience);
-        String hostedDomain = ((GoogleIdentityProviderConfig) getConfig()).getHostedDomain();
-        boolean anyHostedDomain = hostedDomain == null || "*".equals(hostedDomain);
-
-        if (anyHostedDomain) {
-            return token;
-        }
-
         Object receivedHdParam = token.getOtherClaims().get(OIDC_PARAMETER_HOSTED_DOMAINS);
+        validateHostedDomain(receivedHdParam != null ? receivedHdParam.toString() : null);
+        return token;
+    }
 
-        if (receivedHdParam == null) {
-            throw new IdentityBrokerException("Identity token does not contain hosted domain parameter.");
+    private void validateHostedDomain(String receivedHd) {
+        String hostedDomain = ((GoogleIdentityProviderConfig) getConfig()).getHostedDomain();
+        if (hostedDomain == null || "*".equals(hostedDomain)) {
+            return;
         }
-
-        if (List.of(hostedDomain.split(",")).contains(receivedHdParam))  {
-            return token;
+        if (receivedHd != null && List.of(hostedDomain.split(",")).contains(receivedHd)) {
+            return;
         }
-
         throw new IdentityBrokerException("Hosted domain does not match.");
     }
 

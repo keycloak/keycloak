@@ -80,8 +80,9 @@ import org.keycloak.testsuite.util.TestEventsLogger;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.apache.commons.configuration2.io.FileHandler;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -701,7 +702,9 @@ public abstract class AbstractKeycloakTest {
     }
 
     private void loadConstantsProperties() throws ConfigurationException {
-        constantsProperties = new PropertiesConfiguration(System.getProperty("testsuite.constants"));
+        constantsProperties = new PropertiesConfiguration();
+        FileHandler fh = new FileHandler(constantsProperties);
+        fh.load(System.getProperty("testsuite.constants"));
         constantsProperties.setThrowExceptionOnMissing(true);
     }
 

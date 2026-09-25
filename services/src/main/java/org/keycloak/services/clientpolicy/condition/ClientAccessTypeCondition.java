@@ -71,12 +71,14 @@ public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProv
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
-        if (context instanceof ClientModelContext) {
+        if (context.getEvent() == REGISTER) {
+            if (isProposedClientAccessTypeMatched((ClientCRUDContext) context)) return ClientPolicyVote.YES;
+            return ClientPolicyVote.NO;
+        } else if (context instanceof ClientModelContext) {
             ClientModel client = ((ClientModelContext) context).getClient();
             if (isClientAccessTypeMatched(client)) return ClientPolicyVote.YES;
-            return ClientPolicyVote.NO;
-        } else if (context.getEvent() == REGISTER) {
-            if (isProposedClientAccessTypeMatched((ClientCRUDContext)context)) return ClientPolicyVote.YES;
+            // In case that there is an attempt to update the client to the target access type, condition should be also evaluated to success
+            if (context instanceof ClientCRUDContext && isProposedClientAccessTypeMatched((ClientCRUDContext) context)) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
         } else {
             return ClientPolicyVote.ABSTAIN;
