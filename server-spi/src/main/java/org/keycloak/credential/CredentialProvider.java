@@ -38,6 +38,14 @@ public interface CredentialProvider<T extends CredentialModel> extends Provider 
 
     boolean deleteCredential(RealmModel realm, UserModel user, String credentialId);
 
+    /**
+     * Converts a stored credential model into this provider's own credential type. Implementations that build a
+     * new model instance (rather than returning {@code model} itself) are responsible for copying over any
+     * base {@link CredentialModel} fields they want preserved, such as {@link CredentialModel#getPriority()} —
+     * this is not done automatically, and no field copied here is enforced by this interface.
+     *
+     * @param model stored credential retrieved from the DB
+     */
     T getCredentialFromModel(CredentialModel model);
 
     /**
@@ -52,6 +60,7 @@ public interface CredentialProvider<T extends CredentialModel> extends Provider 
     default T getCredentialForPresentationFromModel(CredentialModel model) {
         T presentationModel = getCredentialFromModel(model);
         presentationModel.setFederationLink(model.getFederationLink());
+        presentationModel.setPriority(model.getPriority());
         return presentationModel;
     }
 
