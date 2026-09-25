@@ -37,6 +37,13 @@ type UserSelectProps = Omit<ComponentProps, "convertToName"> & {
 const USER_SEARCH_LIMIT = 20;
 const SHOW_MORE = "show-more";
 
+// The search also matches email and first/last name, so show them alongside
+// the username to explain why a user was matched.
+const describeUser = ({ firstName, lastName, email }: UserRepresentation) =>
+  [[firstName, lastName].filter(Boolean).join(" "), email]
+    .filter(Boolean)
+    .join(" · ") || undefined;
+
 export const UserSelect = ({
   name,
   label,
@@ -102,7 +109,7 @@ export const UserSelect = ({
   useFetch(
     () =>
       adminClient.users.find({
-        username: search,
+        search,
         first,
         max: USER_SEARCH_LIMIT + 1,
       }),
@@ -155,6 +162,7 @@ export const UserSelect = ({
         key={option.id}
         value={option.id}
         selected={values?.includes(option.id!)}
+        description={describeUser(option)}
       >
         {option.username}
       </SelectOption>
@@ -164,7 +172,17 @@ export const UserSelect = ({
     <FormGroup
       label={t(label!)}
       isRequired={isRequired}
-      labelIcon={<HelpItem helpText={helpText!} fieldLabelId={t(label!)} />}
+      labelIcon={
+        <HelpItem
+          helpText={
+            <>
+              <p>{helpText}</p>
+              <p className="pf-v5-u-mt-sm">{t("userSelectSearchHelp")}</p>
+            </>
+          }
+          fieldLabelId={t(label!)}
+        />
+      }
       fieldId={name!}
     >
       <Controller
