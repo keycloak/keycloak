@@ -55,8 +55,8 @@ public abstract class AbstractClaimToGroupMapper extends AbstractClaimMapper {
         }
 
         String groupId = group.getId();
-        if (!context.hasMapperAssignedGroup(groupId)) {
-            if (applies(mapperModel, context) && isAdminGroupJoinAllowed(session, realm, group, mapperModel)) {
+        if (!context.hasMapperAssignedGroup(groupId) && isAdminGroupJoinAllowed(session, realm, group, mapperModel)) {
+            if (applies(mapperModel, context)) {
                 context.addMapperAssignedGroup(groupId);
                 user.joinGroup(group);
             } else {
