@@ -111,26 +111,26 @@ Here is an example. Running `+update-ca-trust+` in a former build stage, then co
 
 [source, dockerfile]
 ----
-FROM registry.access.redhat.com/ubi9 AS ubi-micro-build
+FROM registry.access.redhat.com/hi/openjdk:21-builder AS build
 COPY mycertificate.crt /etc/pki/ca-trust/source/anchors/mycertificate.crt
 RUN update-ca-trust
 
 FROM quay.io/keycloak/keycloak
-COPY --from=ubi-micro-build /etc/pki /etc/pki
+COPY --from=build /etc/pki /etc/pki
 ----
 
 It is possible to install new RPMs if absolutely required, following this two-stage pattern established by ubi-micro:
 
 [source, dockerfile]
 ----
-FROM registry.access.redhat.com/ubi9 AS ubi-micro-build
+FROM registry.access.redhat.com/hi/openjdk:21-builder AS build
 RUN mkdir -p /mnt/rootfs
-RUN dnf install --installroot /mnt/rootfs <package names go here> --releasever 9 --setopt install_weak_deps=false --nodocs -y && \
+RUN dnf install --installroot /mnt/rootfs <package names go here> --use-host-config --setopt install_weak_deps=false --nodocs -y && \
     dnf --installroot /mnt/rootfs clean all && \
     rpm --root /mnt/rootfs -e --nodeps setup
 
 FROM quay.io/keycloak/keycloak
-COPY --from=ubi-micro-build /mnt/rootfs /
+COPY --from=build /mnt/rootfs /
 ----
 
 This approach uses a chroot, `+/mnt/rootfs+`, so that only the packages you specify and their dependencies are installed, and so can be easily copied into the second stage without guesswork.
