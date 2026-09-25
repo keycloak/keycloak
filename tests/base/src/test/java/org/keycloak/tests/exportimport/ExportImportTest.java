@@ -54,6 +54,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -386,6 +387,35 @@ public class ExportImportTest {
             });
             assertThat(e.getMessage(), Matchers.containsString("File name / realm name mismatch."));
         } finally {
+            FileUtils.deleteQuietly(dest);
+        }
+    }
+
+    @Test
+    public void testDirImportMigrationWithUsersFile() throws IOException {
+        String realmName = "dir-import-migration";
+        runOnServerMaster.run(ExportImportHelper.setProvider(DirExportProviderFactory.PROVIDER_ID));
+        runOnServerMaster.run(ExportImportHelper.setRealmName(null));
+
+        String targetDirPath = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","") + File.separator + "dirImportMigration";
+        File dest = new File(targetDirPath);
+        try {
+            FileUtils.deleteQuietly(dest);
+            // the realm is from a version older than 24.0.0, so MigrateTo24_0_0 runs after the users file is imported
+            FileUtils.copyURLToFile(ExportImportTest.class.getResource(realmName + "-realm.json"), new File(dest, realmName + "-realm.json"));
+            FileUtils.copyURLToFile(ExportImportTest.class.getResource(realmName + "-users-0.json"), new File(dest, realmName + "-users-0.json"));
+
+            runOnServerMaster.run(ExportImportHelper.setDir(targetDirPath));
+            runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
+            runOnServerMaster.run(ExportImportHelper.runImport());
+
+            RealmResource realmRes = adminClient.realm(realmName);
+            assertThat(realmRes.users().searchByUsername("alice", true), hasSize(1));
+            // set by MigrateTo24_0_0, so it is missing if the migration failed
+            assertThat(realmRes.users().userProfile().getConfiguration().getUnmanagedAttributePolicy(),
+                    is(UnmanagedAttributePolicy.ENABLED));
+        } finally {
+            removeRealm(realmName);
             FileUtils.deleteQuietly(dest);
         }
     }
