@@ -2,7 +2,7 @@ import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import type { Page } from "@playwright/test";
 import { selectItem } from "../utils/form.ts";
 import { confirmModal } from "../utils/modal.ts";
-import { clickRowKebabItem } from "../utils/table.ts";
+import { clickRowKebabItem, clickSelectRow } from "../utils/table.ts";
 
 type PermissionForm = PolicyRepresentation & {
   enforcementMode?: "allResources" | "specificResources";
@@ -49,6 +49,25 @@ export async function removeGroup(page: Page, groupName: string) {
   await page
     .getByRole("row", { name: `/${groupName}` })
     .getByRole("button")
+    .click();
+}
+
+export async function pickOrganization(page: Page, organizationName: string) {
+  await page.getByTestId("select-organization-button").click();
+  const modal = page.getByTestId("select-organization-modal");
+  await modal.locator("table tbody").waitFor();
+  await clickSelectRow(page, "Organizations", organizationName);
+  await page.getByTestId("confirm").click();
+  await modal.waitFor({ state: "hidden" });
+}
+
+export async function removeOrganization(
+  page: Page,
+  organizationName: string,
+) {
+  await page
+    .getByRole("row", { name: organizationName })
+    .getByRole("button", { name: "Remove" })
     .click();
 }
 

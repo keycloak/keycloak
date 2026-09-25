@@ -7,6 +7,7 @@ import { GroupSelect } from "./GroupSelect";
 import { UserSelect } from "../../components/users/UserSelect";
 import { RoleSelect } from "./RoleSelect";
 import { ClientSelectComponent } from "./ClientSelectComponent";
+import { OrganizationSelect } from "./OrganizationSelect";
 
 type ResourceTypeProps = {
   withEnforceAccessTo?: boolean;
@@ -20,6 +21,7 @@ export const COMPONENTS: {
   clients: ClientSelectComponent,
   groups: GroupSelect,
   roles: RoleSelect,
+  organizations: OrganizationSelect,
 } as const;
 
 export const isValidComponentType = (value: string) => value in COMPONENTS;

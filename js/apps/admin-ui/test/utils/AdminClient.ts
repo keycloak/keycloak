@@ -488,6 +488,18 @@ class AdminClient {
     await this.#client.organizations.create(org);
   }
 
+  async findOrganizationId(
+    name: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    const found = await this.#client.organizations.find({
+      search: name,
+      realm,
+    });
+    return found[0].id!;
+  }
+
   async deleteOrganization(
     name: string,
     realm: string = this.#client.realmName,
