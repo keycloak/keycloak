@@ -133,15 +133,19 @@ public class DefaultTokenManager implements TokenManager {
             try {
                 Optional<KeyWrapper> activeKey;
                 String kid = joseToken.getHeader().getKeyId();
+                String keyManagementAlgorithm = joseToken.getHeader().getRawAlgorithm();
                 Stream<KeyWrapper> keys = session.keys().getKeysStream(session.getContext().getRealm());
 
                 if (kid == null) {
-                    activeKey = keys.filter(k -> KeyUse.ENC.equals(k.getUse()) && k.getPublicKey() != null)
+                    activeKey = keys.filter(k -> KeyUse.ENC.equals(k.getUse()) && k.getPublicKey() != null
+                                    && matchesKeyManagementAlgorithm(k, keyManagementAlgorithm))
                             .sorted(Comparator.comparingLong(KeyWrapper::getProviderPriority).reversed())
                             .findFirst();
                 } else {
                     activeKey = keys
-                            .filter(k -> KeyUse.ENC.equals(k.getUse()) && k.getKid().equals(kid)).findAny();
+                            .filter(k -> KeyUse.ENC.equals(k.getUse()) && k.getKid().equals(kid)
+                                    && matchesKeyManagementAlgorithm(k, keyManagementAlgorithm))
+                            .findAny();
                 }
 
                 JWE jwe = JWE.class.cast(joseToken);
@@ -173,6 +177,20 @@ public class DefaultTokenManager implements TokenManager {
         }
 
         return verifyJWS(client, clazz, (JWSInput) joseToken, allowNoneAlgorithm);
+    }
+
+    /**
+     * Verifies that the JWE key-management algorithm declared in the JWE header matches the algorithm
+     * provisioned for the decryption key. This prevents an attacker from forcing the realm's encryption
+     * key into a weaker key-management algorithm (e.g. RSA1_5) than the operator configured for the key.
+     *
+     * @param key the candidate decryption key
+     * @param headerAlgorithm the key-management algorithm ("alg") from the JWE header
+     * @return {@code true} when the key carries no configured algorithm or the algorithms match
+     */
+    private boolean matchesKeyManagementAlgorithm(KeyWrapper key, String headerAlgorithm) {
+        String keyAlgorithm = key.getAlgorithm();
+        return keyAlgorithm == null || keyAlgorithm.equals(headerAlgorithm);
     }
 
     private <T> T verifyJWS(ClientModel client, Class<T> clazz, JWSInput jws, boolean allowNoneAlgorithm) {
