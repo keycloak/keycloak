@@ -1,6 +1,9 @@
 package org.keycloak.protocol.docker;
 
+import java.util.List;
+
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
@@ -49,21 +52,43 @@ public class DockerEndpoint extends AuthorizationEndpointBase {
     public Response build() {
         ProfileHelper.requireFeature(Profile.Feature.DOCKER);
 
-        final MultivaluedMap<String, String> params = session.getContext().getUri().getQueryParameters();
+        final MultivaluedMap<String, String> rawParams = session.getContext().getUri().getQueryParameters();
 
-        account = params.getFirst(DockerAuthV2Protocol.ACCOUNT_PARAM);
+        account = rawParams.getFirst(DockerAuthV2Protocol.ACCOUNT_PARAM);
         if (account == null) {
             logger.debug("Account parameter not provided by docker auth.  This is techincally required, but not actually used since " +
                     "username is provided by Basic auth header.");
         }
-        service = params.getFirst(DockerAuthV2Protocol.SERVICE_PARAM);
-        scope = params.getFirst(DockerAuthV2Protocol.SCOPE_PARAM);
+        service = rawParams.getFirst(DockerAuthV2Protocol.SERVICE_PARAM);
+
+        // The Docker registry v2 token spec requires clients to send one 'scope' query parameter per
+        // resource (e.g. both 'repository:foo:pull' and 'repository:foo:pull,push' on a push). Merge
+        // all scope values into a single space-separated value so the duplicity check in the parser
+        // does not reject a legitimate docker push request.
+        List<String> scopeValues = rawParams.get(DockerAuthV2Protocol.SCOPE_PARAM);
+        scope = scopeValues == null ? null : String.join(" ", scopeValues);
+
+        final MultivaluedMap<String, String> params;
+        if (scopeValues != null && scopeValues.size() > 1) {
+            params = new MultivaluedHashMap<>(rawParams);
+            params.putSingle(DockerAuthV2Protocol.SCOPE_PARAM, scope);
+        } else {
+            params = rawParams;
+        }
 
         checkSsl();
         checkRealm();
         checkService();
 
         final AuthorizationEndpointRequest authRequest = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params, AuthorizationEndpointRequestParserProcessor.EndpointType.DOCKER_ENDPOINT);
+
+        if (authRequest.getInvalidRequestMessage() != null) {
+            event.detail(Details.REASON, authRequest.getInvalidRequestMessage());
+            event.error(Errors.INVALID_REQUEST);
+
+            throw new ErrorResponseException("invalid_request", authRequest.getInvalidRequestMessage(), Response.Status.BAD_REQUEST);
+        }
+
         authenticationSession = createAuthenticationSession(client, authRequest.getState());
 
         updateAuthenticationSession();
