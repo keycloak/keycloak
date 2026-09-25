@@ -1,4 +1,5 @@
 <#import "template.ftl" as layout>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('totp'); section>
     <#if section="header">
         ${msg("doLogIn")}
@@ -23,7 +24,7 @@
 
                     <div class="${properties.kcFormGroupClass!}">
                         <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                            <input id="kc-otp-reset-form-submit" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}"/>
+                            <@buttons.button id="kc-otp-reset-form-submit" label="doSubmit" class=["kcButtonLargeClass"] value=msg("doSubmit") />
                         </div>
                     </div>
                 </div>

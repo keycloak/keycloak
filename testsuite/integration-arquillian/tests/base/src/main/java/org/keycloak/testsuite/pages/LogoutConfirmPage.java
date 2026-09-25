@@ -31,7 +31,7 @@ import org.openqa.selenium.support.FindBy;
  */
 public class LogoutConfirmPage extends LanguageComboboxAwarePage {
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(id = "kc-logout")
     private WebElement confirmLogoutButton;
 
     @FindBy(linkText = "« Back to Application")
@@ -47,7 +47,7 @@ public class LogoutConfirmPage extends LanguageComboboxAwarePage {
     }
 
     public void confirmLogout(WebDriver driver) {
-        UIUtils.clickLink(driver.findElement(By.cssSelector("input[type=\"submit\"]")));
+        UIUtils.clickLink(driver.findElement(By.id("kc-logout")));
     }
 
     public void clickBackToApplicationLink() {

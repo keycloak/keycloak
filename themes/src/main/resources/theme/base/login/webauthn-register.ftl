@@ -1,5 +1,6 @@
 <#import "template.ftl" as layout>
 <#import "password-commons.ftl" as passwordCommons>
+<#import "buttons.ftl" as buttons>
 
 <@layout.registrationLayout; section>
     <#if section = "title">
@@ -50,17 +51,14 @@
             </#outputformat>
         </script>
 
-        <input type="submit"
-               class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-               id="registerWebAuthn" value="${msg("doRegisterSecurityKey")}"/>
+        <@buttons.button id="registerWebAuthn" label="doRegisterSecurityKey" class=["kcButtonLargeClass"]
+            value=msg("doRegisterSecurityKey") />
 
         <#if !isSetRetry?has_content && isAppInitiatedAction?has_content>
             <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-webauthn-settings-form"
                   method="post">
-                <button type="submit"
-                        class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                        id="cancelWebAuthnAIA" name="cancel-aia" value="true">${msg("doCancel")}
-                </button>
+                <@buttons.button id="cancelWebAuthnAIA" name="cancel-aia" label="doCancel" type="secondary"
+                    class=["kcButtonLargeClass"] value="true" />
             </form>
         </#if>
 
