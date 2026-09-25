@@ -29,6 +29,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
 import org.keycloak.models.sessions.infinispan.transaction.DatabaseUpdate;
 import org.keycloak.models.sessions.infinispan.transaction.NonBlockingTransaction;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
@@ -47,6 +48,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
     private final String cacheName;
     private final CacheHolder<K, V> cacheHolder;
     private final CacheHolder<K, V> offlineCacheHolder;
+    private final Cache<String, SingleUseObjectValueEntity> tombstoneBackupCache;
 
     public PersistentSessionsChangelogBasedTransaction(KeycloakSession session,
                                                        String cacheName,
@@ -56,6 +58,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         this.cacheName = cacheName;
         this.cacheHolder = cacheHolder;
         this.offlineCacheHolder = offlineCacheHolder;
+        this.tombstoneBackupCache = cacheHolder != null && cacheHolder.cache() != null ? SessionTombstoneBackup.getBackupCache(session) : null;
     }
 
     public Cache<K, SessionEntityWrapper<V>> getCache(boolean offline) {
@@ -83,7 +86,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         SessionUpdatesList<V> myUpdates = getUpdates(offline).get(key);
         if (myUpdates == null) {
             SessionEntityWrapper<V> wrappedEntity = getCache(offline).get(key);
-            if (wrappedEntity == null) {
+            if (wrappedEntity == null || wrappedEntity.isTombstone()) {
                 return null;
             }
             wrappedEntity.getEntity().setOffline(offline);
@@ -172,7 +175,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                 var c = isOffline ? offlineCacheHolder : cacheHolder;
                 if (c.cache() != null) {
                     // Update cache. It is non-blocking.
-                    InfinispanChangesUtils.runOperationInCluster(c, entry.getKey(), merged, entry.getValue().getEntityWrapper(), stage, LOG);
+                    InfinispanChangesUtils.runOperationInCluster(c, entry.getKey(), merged, entry.getValue().getEntityWrapper(), stage, LOG, tombstoneBackupCache);
                 }
 
                 if (persister == null) {
@@ -221,7 +224,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
     private void lookupAndAndExecuteTask(K key, PersistentSessionUpdateTask<V> task) {
         // Lookup entity from cache
         SessionEntityWrapper<V> wrappedEntity = getCache(task.isOffline()).get(key);
-        if (wrappedEntity == null) {
+        if (wrappedEntity == null || wrappedEntity.isTombstone()) {
             LOG.tracef("Not present cache item for key %s", key);
             return;
         }
@@ -301,6 +304,11 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             // exists in transaction, avoid import operation
             return updatesList.getEntityWrapper();
         }
+        if (tombstoneBackupCache != null
+                && SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, getCache(offline).getName(), key, session)) {
+            LOG.debugf("Session %s was recently deleted (backup tombstone found), skipping import", key);
+            return session.asTombstone();
+        }
         SessionEntityWrapper<V> existing = null;
         try {
             if (getCache(offline) != null) {
@@ -311,9 +319,41 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             LOG.debugf(exception, "Failed to import session %s", session);
         }
         if (existing == null) {
-            // keep track of the imported session for updates
+            if (tombstoneBackupCache != null
+                    && SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, getCache(offline).getName(), key, session)) {
+                LOG.debugf("Session %s was recently deleted (backup tombstone found), skipping import", key);
+                try {
+                    getCache(offline).put(key, session.asTombstone(), SessionTombstoneBackup.TOMBSTONE_LIFESPAN_MS, TimeUnit.MILLISECONDS);
+                } catch (RuntimeException exception) {
+                    LOG.debugf(exception, "Failed to write tombstone for session %s", key);
+                }
+                return session.asTombstone();
+            }
             updates.put(key, new SessionUpdatesList<>(realmModel, session));
             return null;
+        }
+        if (existing.isTombstoneBlockingImportOf(session)) {
+            LOG.debugf("Session %s was recently deleted (tombstone found), skipping import", key);
+            return existing;
+        }
+        if (existing.isTombstone()) {
+            // Tombstone exists but doesn't apply to this entity (e.g., new client session with different timestamp).
+            // Overwrite the tombstone with the new session only if it hasn't changed.
+            try {
+                if (!getCache(offline).replace(key, existing, session, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS)) {
+                    return session.asTombstone();
+                }
+            } catch (RuntimeException exception) {
+                LOG.debugf(exception, "Failed to overwrite tombstone for session %s", session);
+                return session.asTombstone();
+            }
+            updates.put(key, new SessionUpdatesList<>(realmModel, session));
+            return null;
+        }
+        if (tombstoneBackupCache != null
+                && SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, getCache(offline).getName(), key, session)) {
+            LOG.debugf("Session %s was recently deleted (backup tombstone found), skipping import", key);
+            return session.asTombstone();
         }
         updates.put(key, new SessionUpdatesList<>(realmModel, existing));
         return existing;
@@ -354,14 +394,28 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                 //nothing to import, already expired
                 return;
             }
+            String cName = cache.getName();
+            if (SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, cName, key, session)) {
+                return;
+            }
             var future = cache.putIfAbsentAsync(key, session, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS)
                     .exceptionally(throwable -> {
                         // If the import fails, the transaction can continue with the data from the database.
                         LOG.debugf(throwable, "Failed to import session %s", session);
                         return null;
                     });
-            // write result into concurrent hash map because the consumer is invoked in a different thread each time.
-            stage.dependsOn(future.thenAccept(existing -> allSessions.put(key, existing == null ? session : existing)));
+            stage.dependsOn(future.thenAccept(existing -> {
+                if (existing != null && existing.isTombstoneBlockingImportOf(session)) {
+                    return;
+                }
+                if (SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, cName, key, session)) {
+                    if (existing == null) {
+                        cache.put(key, session.asTombstone(), SessionTombstoneBackup.TOMBSTONE_LIFESPAN_MS, TimeUnit.MILLISECONDS);
+                    }
+                    return;
+                }
+                allSessions.put(key, existing == null || existing.isTombstone() ? session : existing);
+            }));
         });
 
         CompletionStages.join(stage.freeze());

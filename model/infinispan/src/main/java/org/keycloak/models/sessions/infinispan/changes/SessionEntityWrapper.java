@@ -39,6 +39,9 @@ import org.infinispan.protostream.annotations.ProtoTypeId;
 @ProtoTypeId(Marshalling.SESSION_ENTITY_WRAPPER)
 public class SessionEntityWrapper<S extends SessionEntity> {
 
+    private static final String TOMBSTONE_KEY = "tombstone";
+    private static final String TOMBSTONE_TIMESTAMP_KEY = "tombstone_ts";
+
     private final UUID version;
     private final S entity;
     private final Map<String, String> localMetadata;
@@ -110,6 +113,45 @@ public class SessionEntityWrapper<S extends SessionEntity> {
             return new SessionEntityWrapper<>(entity);
         }
         return new SessionEntityWrapper<>(version, localMetadata, entity);
+    }
+
+    /**
+     * @return {@code true} if this wrapper is a tombstone marking a recently deleted session.
+     */
+    public boolean isTombstone() {
+        return localMetadata != null && localMetadata.containsKey(TOMBSTONE_KEY);
+    }
+
+    /**
+     * Checks whether this tombstone should block the import of {@code candidate}. For client sessions,
+     * a tombstone only blocks an import when the candidate has the same started-at timestamp as the
+     * deleted session — a different value indicates a genuinely new session that should be allowed.
+     */
+    public boolean isTombstoneBlockingImportOf(SessionEntityWrapper<S> candidate) {
+        if (!isTombstone()) {
+            return false;
+        }
+        String tombstoneStarted = localMetadata.get(TOMBSTONE_TIMESTAMP_KEY);
+        if (tombstoneStarted != null && candidate != null
+                && candidate.getEntity() instanceof AuthenticatedClientSessionEntity clientSession) {
+            return tombstoneStarted.equals(String.valueOf(clientSession.getStarted()));
+        }
+        return true;
+    }
+
+    /**
+     * Creates a tombstone wrapper from this wrapper's entity. A tombstone occupies the cache slot
+     * to prevent concurrent readers from resurrecting a deleted session via {@code putIfAbsent}.
+     * For client sessions, the started-at timestamp is stored so that genuinely new sessions
+     * can still be imported (they will have a different started-at value).
+     */
+    public SessionEntityWrapper<S> asTombstone() {
+        Map<String, String> meta = new ConcurrentHashMap<>();
+        meta.put(TOMBSTONE_KEY, "true");
+        if (entity instanceof AuthenticatedClientSessionEntity clientSession) {
+            meta.put(TOMBSTONE_TIMESTAMP_KEY, String.valueOf(clientSession.getStarted()));
+        }
+        return new SessionEntityWrapper<>(meta, entity);
     }
 
     public ClientModel getClientIfNeeded(RealmModel realm) {

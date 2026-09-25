@@ -54,6 +54,11 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
                 wrappedEntity = cache.get(key);
             }
 
+            if (wrappedEntity != null && wrappedEntity.isTombstone()) {
+                LOG.debugf("user-session tombstone found in cache for sessionId=%s offline=%s, session was recently deleted", key, offline);
+                return null;
+            }
+
             if (wrappedEntity == null) {
                 LOG.debugf("user-session not found in cache for sessionId=%s offline=%s, loading from persister", key, offline);
                 wrappedEntity = getSessionEntityFromPersister(realm, key, userSession, offline);
