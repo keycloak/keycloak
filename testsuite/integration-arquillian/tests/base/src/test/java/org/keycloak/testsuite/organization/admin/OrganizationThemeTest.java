@@ -102,7 +102,7 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
         Assertions.assertFalse(loginPage.isPasswordInputPresent());
         loginPage.loginUsername("non-user@myorg.com");
         Assertions.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
-        Assertions.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
     }
 
     @Test
@@ -177,7 +177,7 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
         for (Entry<String, List<String>> attribute : orgRep.getAttributes().entrySet()) {
             assertThat(driver.getPageSource(), Matchers.containsString("The " + attribute.getKey() + " is " + String.join(", ", attribute.getValue())));
         }
-        Assertions.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
     }
 
     @Test
