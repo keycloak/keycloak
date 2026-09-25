@@ -53,7 +53,7 @@ using ROSA HCP.
 [#multi-cluster-supported-configuration]
 == Supported Configuration
 
- The following environment is used for regular functional, failure, and performance validation.It is an engineering reference environment, not a prescribed or certified HA architecture.
+The following environment is used for regular functional, failure, and performance validation. It is an engineering reference environment, not a prescribed or certified HA architecture.
 <@profile.ifProduct>
 It is not the only environment in which the documented Red Hat build of Keycloak HA capabilities can be used.
 </@profile.ifProduct>
