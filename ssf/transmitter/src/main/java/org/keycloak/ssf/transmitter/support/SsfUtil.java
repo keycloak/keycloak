@@ -28,7 +28,7 @@ public class SsfUtil {
 
         String frontendUrl = realm.getAttribute("frontendUrl");
         if (frontendUrl != null && !frontendUrl.isBlank())  {
-            return frontendUrl;
+            return appendRealmPath(frontendUrl, realm.getName());
         }
 
         String hostnameUrl = System.getenv().get("KC_HOSTNAME_URL");
