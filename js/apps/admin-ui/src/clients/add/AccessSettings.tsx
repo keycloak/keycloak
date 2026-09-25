@@ -5,6 +5,7 @@ import { TextControl } from "@keycloak/keycloak-ui-shared";
 import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
 import { FormAccess } from "../../components/form/FormAccess";
 import { useAccess } from "../../context/access/Access";
+import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { FormFields } from "../ClientDetails";
 import type { ClientSettingsProps } from "../ClientSettings";
 import { LoginSettings } from "./LoginSettings";
@@ -19,6 +20,8 @@ export const AccessSettings = ({
 
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-clients") || client.access?.configure;
+
+  const isFeatureEnabled = useIsFeatureEnabled();
 
   const protocol = watch("protocol");
 
@@ -37,6 +40,15 @@ export const AccessSettings = ({
           labelIcon={t("adminURLHelp")}
         />
       )}
+      {protocol === "openid-connect" &&
+        isFeatureEnabled(Feature.ResourceIndicators) && (
+          <TextControl
+            type="url"
+            name="attributes.resource_url"
+            label={t("resourceUrl")}
+            labelIcon={t("resourceUrlHelp")}
+          />
+        )}
       {client.bearerOnly && (
         <FixedButtonsGroup
           name="settings"
