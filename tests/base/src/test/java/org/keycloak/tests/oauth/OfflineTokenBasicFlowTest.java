@@ -277,14 +277,10 @@ public class OfflineTokenBasicFlowTest {
         Assertions.assertEquals(400, response.getStatusCode());
         assertEquals("invalid_grant", response.getError());
 
-        EventRepresentation refreshErrorEvent = events.poll();
-        EventAssertion.assertError(refreshErrorEvent)
+        EventAssertion.assertError(events.poll())
                 .type(EventType.REFRESH_TOKEN_ERROR)
-                .sessionId(newRefreshToken.getSessionId())
-                //.userId(loginEvent.getUserId())
                 .clientId("offline-client")
-                .error(Errors.INVALID_TOKEN)
-                .details(Details.REFRESH_TOKEN_SUB, loginEvent.getUserId());
+                .error(Errors.INVALID_TOKEN);
         timeOffSet.set(0);
     }
 

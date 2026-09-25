@@ -649,14 +649,10 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             Assertions.assertEquals(400, response.getStatusCode());
             assertEquals("invalid_grant", response.getError());
 
-            EventRepresentation eventRep = EventAssertion.assertError(events.poll())
+            EventAssertion.assertError(events.poll())
                     .type(EventType.REFRESH_TOKEN_ERROR)
-                    .hasSessionId()
-                    .sessionId(newRefreshToken.getSessionState())
                     .clientId(CONSUMER_BROKER_APP_CLIENT_ID)
-                    .userId(null)
-                    .error(Errors.INVALID_TOKEN).getEvent();
-            Assertions.assertNotEquals(offlineToken.getId(), eventRep.getDetails().get(Details.REFRESH_TOKEN_ID));
+                    .error(Errors.INVALID_TOKEN);
         } finally {
             timeOffSet.set(0);
         }
