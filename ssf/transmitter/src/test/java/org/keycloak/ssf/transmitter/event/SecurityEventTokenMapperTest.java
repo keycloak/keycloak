@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.keycloak.common.Profile;
@@ -21,6 +22,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.ssf.event.InitiatingEntity;
+import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.event.risc.RiscAccountDisabled;
 import org.keycloak.ssf.event.risc.RiscAccountEnabled;
 import org.keycloak.ssf.event.risc.RiscAccountPurged;
@@ -31,6 +33,7 @@ import org.keycloak.ssf.transmitter.subject.PurgedUserSnapshot;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -358,6 +361,82 @@ class SecurityEventTokenMapperTest {
         adminEvent.setDetails(new HashMap<>());
 
         assertFalse(mapper.canConvert(adminEvent));
+    }
+
+    // ----- txn: the originating event id (issue #48896) -----
+
+    @Test
+    void txn_userEvent_isTheEventId() {
+        Event event = new Event();
+        event.setId("evt-42");
+        event.setType(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT);
+        event.setUserId(USER_ID);
+
+        SsfSecurityEventToken token = mapper.toSecurityEventToken(event, streamConfig());
+
+        assertNotNull(token);
+        assertEquals("evt-42", token.getTxn(),
+                "txn must be the user event id so the SET can be traced back to the event log");
+    }
+
+    @Test
+    void txn_userEvent_sharedAcrossStreams() {
+        Event event = new Event();
+        event.setId("evt-42");
+        event.setType(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT);
+        event.setUserId(USER_ID);
+
+        SsfSecurityEventToken first = mapper.toSecurityEventToken(event, streamConfig());
+        SsfSecurityEventToken second = mapper.toSecurityEventToken(event, streamConfig());
+
+        assertEquals(first.getTxn(), second.getTxn(),
+                "SETs fanned out to several streams for one event must share the txn");
+        assertNotNull(first.getJti());
+        assertFalse(first.getJti().equals(second.getJti()), "jti stays unique per SET");
+    }
+
+    @Test
+    void txn_adminEvent_isTheAdminEventId() {
+        AdminEvent adminEvent = adminUserUpdateEvent("true", "false");
+        adminEvent.setId("admin-evt-7");
+
+        SsfSecurityEventToken token = mapper.toSecurityEventToken(adminEvent, streamConfig());
+
+        assertNotNull(token);
+        assertEquals("admin-evt-7", token.getTxn(),
+                "txn must be the admin event id when the SET is derived from an admin action");
+    }
+
+    @Test
+    void txn_adminLogoutAllSessions_isTheAdminEventIdAndAdminInitiated() {
+        AdminEvent adminEvent = new AdminEvent();
+        adminEvent.setId("admin-evt-logout");
+        adminEvent.setResourceType(ResourceType.USER);
+        adminEvent.setOperationType(OperationType.ACTION);
+        adminEvent.setResourcePath("users/" + USER_ID + "/logout");
+
+        SsfSecurityEventToken token = mapper.toSecurityEventToken(adminEvent, streamConfig());
+
+        assertNotNull(token);
+        assertEquals("admin-evt-logout", token.getTxn());
+        Object payload = token.getEvents().get(CaepSessionRevoked.TYPE);
+        assertTrue(payload instanceof CaepSessionRevoked);
+        assertEquals(InitiatingEntity.ADMIN, ((CaepSessionRevoked) payload).getInitiatingEntity(),
+                "an admin logout-all is admin-initiated");
+    }
+
+    @Test
+    void txn_eventWithoutId_fallsBackToRandomUuid() {
+        Event event = new Event();
+        event.setType(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT);
+        event.setUserId(USER_ID);
+
+        SsfSecurityEventToken first = mapper.toSecurityEventToken(event, streamConfig());
+        SsfSecurityEventToken second = mapper.toSecurityEventToken(event, streamConfig());
+
+        assertNotNull(first.getTxn());
+        assertDoesNotThrow(() -> UUID.fromString(first.getTxn()), "fallback txn is a UUID");
+        assertFalse(first.getTxn().equals(second.getTxn()), "without an event id each SET gets its own txn");
     }
 
     private StreamConfig streamConfig() {
