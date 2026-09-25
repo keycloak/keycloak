@@ -18,6 +18,7 @@ package org.keycloak.services.resources.admin;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -77,11 +78,13 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientUnregisterContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdatedContext;
 import org.keycloak.services.clientpolicy.context.AdminClientViewContext;
+import org.keycloak.services.clientpolicy.context.ClientNodeRegistrationContext;
 import org.keycloak.services.clientpolicy.context.ClientSecretRotationContext;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
@@ -664,15 +667,24 @@ public class ClientResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
     @Operation( summary = "Register a cluster node with the client Manually register cluster node to this client - usually it’s not needed to call this directly as adapter should handle by sending registration request to Keycloak")
     @APIResponse(responseCode = "204", description = "No Content")
+    @APIResponse(responseCode = "400", description = "Bad Request - node hostname is missing, contains reserved characters, or is rejected by client policy")
     public void registerNode(Map<String, String> formParams) {
         auth.clients().requireConfigure(client);
 
         String node = formParams.get("node");
-        if (node == null) {
-            throw new BadRequestException("Node not found in params");
+        if (node == null || node.isBlank()) {
+            throw new BadRequestException("Node hostname is missing or blank");
         }
 
         ReservedCharValidator.validate(node);
+
+        try {
+            session.clientPolicy().triggerOnEvent(
+                    new ClientNodeRegistrationContext(client, List.of(node),
+                            ClientPolicyEvent.REGISTER_NODE));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
 
         logger.debugf("Register node: %s", node);
         client.registerNode(node, Time.currentTime());
@@ -860,6 +872,20 @@ public class ClientResource {
 
         if ((rep.isBearerOnly() != null && rep.isBearerOnly()) || (rep.isPublicClient() != null && rep.isPublicClient())) {
             rep.setAuthorizationServicesEnabled(false);
+        }
+        
+        try {
+            if (rep.getRegisteredNodes() != null && !rep.getRegisteredNodes().isEmpty()) {
+                session.clientPolicy().triggerOnEvent(
+                        new ClientNodeRegistrationContext(client,
+                                List.copyOf(rep.getRegisteredNodes().keySet()),
+                                ClientPolicyEvent.REGISTER_NODE));
+            }
+        } catch (ClientPolicyException e) {
+            throw new ErrorResponseException(
+                    e.getError(),
+                    e.getErrorDetail(),
+                    Response.Status.BAD_REQUEST);
         }
 
         RepresentationToModel.updateClient(rep, client, session);
