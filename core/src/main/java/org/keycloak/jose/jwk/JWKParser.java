@@ -93,8 +93,8 @@ public class JWKParser {
 
         /* Try retrieving the necessary fields */
         String crv = jwk.path(ECPublicJWK.CRV).asText(null);
-        String xStr = jwk.get(ECPublicJWK.X).asText(null);
-        String yStr = jwk.get(ECPublicJWK.Y).asText(null);
+        String xStr = jwk.path(ECPublicJWK.X).asText(null);
+        String yStr = jwk.path(ECPublicJWK.Y).asText(null);
 
         /* Check if the retrieving of necessary fields success */
         if (crv == null || xStr == null || yStr == null) {
