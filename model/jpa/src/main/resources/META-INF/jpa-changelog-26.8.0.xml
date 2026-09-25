@@ -75,40 +75,32 @@
     </changeSet>
 
     <changeSet id="26.8.0-51851-add-bucketed-expiration-idx-created" author="keycloak">
+        <!-- No INCLUDE: most sessions expire by idle timeout before reaching their max
+             lifespan, so only a few rows ever match this query. -->
         <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_CREATED">
             <column name="REALM_ID" type="VARCHAR(36)"/>
             <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
             <column name="REMEMBER_ME" type="BOOLEAN"/>
             <column name="SESSION_BUCKET" type="SMALLINT"/>
             <column name="CREATED_ON" type="INT"/>
-            <column name="USER_SESSION_ID" type="VARCHAR(36)"/>
-            <column name="USER_ID" type="VARCHAR(255)"/>
         </createIndex>
-        <!-- On databases that support INCLUDE, move USER_SESSION_ID and USER_ID out of the
-             B-tree key into leaf-only storage, reducing key size and page contention. -->
-        <modifySql dbms="postgresql">
-            <replace replace=", USER_SESSION_ID, USER_ID)" with=") INCLUDE (USER_SESSION_ID, USER_ID)"/>
-        </modifySql>
         <modifySql dbms="mssql">
-            <replace replace=", USER_SESSION_ID, USER_ID)" with=") INCLUDE (USER_SESSION_ID, USER_ID) WITH (OPTIMIZE_FOR_SEQUENTIAL_KEY = ON)"/>
+            <append value=" WITH (OPTIMIZE_FOR_SEQUENTIAL_KEY = ON)"/>
         </modifySql>
     </changeSet>
 
     <changeSet id="26.8.0-51900-51851-add-bucketed-and-coarse-expiration-idx-last-refresh" author="keycloak">
+        <!-- No INCLUDE here: the expiration query also selects LAST_SESSION_REFRESH for exact-check,
+             which forces a table lookup anyway. -->
         <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_LAST_REFRESH">
             <column name="REALM_ID" type="VARCHAR(36)"/>
             <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
             <column name="REMEMBER_ME" type="BOOLEAN"/>
             <column name="SESSION_BUCKET" type="SMALLINT"/>
             <column name="LAST_SESSION_REFRESH_COARSE" type="BIGINT"/>
-            <column name="USER_SESSION_ID" type="VARCHAR(36)"/>
-            <column name="USER_ID" type="VARCHAR(255)"/>
         </createIndex>
-        <modifySql dbms="postgresql">
-            <replace replace=", USER_SESSION_ID, USER_ID)" with=") INCLUDE (USER_SESSION_ID, USER_ID)"/>
-        </modifySql>
         <modifySql dbms="mssql">
-            <replace replace=", USER_SESSION_ID, USER_ID)" with=") INCLUDE (USER_SESSION_ID, USER_ID) WITH (OPTIMIZE_FOR_SEQUENTIAL_KEY = ON)"/>
+            <append value=" WITH (OPTIMIZE_FOR_SEQUENTIAL_KEY = ON)"/>
         </modifySql>
     </changeSet>
 
@@ -212,18 +204,16 @@
     </changeSet>
 
     <changeSet id="26.8.0-53211-add-bucketed-root-auth-session-idx" author="keycloak">
+        <!-- No INCLUDE here: the expiration query also selects TIMESTAMP for exact-check,
+             and TIMESTAMP changes on every auth step — including it would cause leaf updates
+             on every step, defeating the coarse-grained optimization. -->
         <createIndex tableName="ROOT_AUTH_SESSION" indexName="IDX_ROOT_AUTH_SESSION_REALM">
             <column name="REALM_ID" type="VARCHAR(36)"/>
             <column name="SESSION_BUCKET" type="SMALLINT"/>
             <column name="TIMESTAMP_COARSE" type="BIGINT"/>
-            <column name="ID" type="VARCHAR(36)"/>
-            <column name="TIMESTAMP" type="BIGINT"/>
         </createIndex>
-        <modifySql dbms="postgresql">
-            <replace replace=", ID, TIMESTAMP)" with=") INCLUDE (ID, TIMESTAMP)"/>
-        </modifySql>
         <modifySql dbms="mssql">
-            <replace replace=", ID, TIMESTAMP)" with=") INCLUDE (ID, TIMESTAMP) WITH (OPTIMIZE_FOR_SEQUENTIAL_KEY = ON)"/>
+            <append value=" WITH (OPTIMIZE_FOR_SEQUENTIAL_KEY = ON)"/>
         </modifySql>
     </changeSet>
 

@@ -30,7 +30,7 @@ import org.jboss.logging.Logger;
 
 import static org.keycloak.authentication.jpa.RootAuthenticationSessionEntity.SESSION_BUCKET_COUNT;
 
-enum AuthenticationSessionExpirationAction implements ExpirationAction {
+public enum AuthenticationSessionExpirationAction implements ExpirationAction {
     INSTANCE;
 
     private static final Logger logger = Logger.getLogger(AuthenticationSessionExpirationAction.class);
@@ -47,7 +47,9 @@ enum AuthenticationSessionExpirationAction implements ExpirationAction {
         var em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
 
         boolean hasMore = false;
-        for (int bucket = 0; bucket < SESSION_BUCKET_COUNT; bucket++) {
+        int remaining = maxRemoval;
+        for (int bucket = 0; bucket < SESSION_BUCKET_COUNT && remaining > 0; bucket++) {
+            int bucketLimit = remaining;
             List<String> expiredIds = new ArrayList<>();
             List<String> nearMissIds = new ArrayList<>();
 
@@ -55,7 +57,7 @@ enum AuthenticationSessionExpirationAction implements ExpirationAction {
                     .setParameter("realmId", realmId)
                     .setParameter("sessionBucket", bucket)
                     .setParameter("timestampCoarse", (long) olderTimestamp)
-                    .setMaxResults(maxRemoval)
+                    .setMaxResults(bucketLimit)
                     .getResultList();
 
             for (Object[] row : rows) {
@@ -74,6 +76,7 @@ enum AuthenticationSessionExpirationAction implements ExpirationAction {
                         .setParameter("timestamp", (long) olderTimestamp)
                         .executeUpdate();
                 removeCount.accept(removed);
+                remaining -= removed;
             }
 
             if (!nearMissIds.isEmpty()) {
@@ -83,7 +86,7 @@ enum AuthenticationSessionExpirationAction implements ExpirationAction {
                 logger.debugf("Set coarse to exact for %d near-miss auth sessions in realm %s bucket %d", (Object) updated, realmId, bucket);
             }
 
-            if (rows.size() >= maxRemoval) {
+            if (rows.size() >= bucketLimit) {
                 hasMore = true;
             }
         }
