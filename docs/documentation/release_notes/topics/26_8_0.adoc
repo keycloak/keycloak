@@ -112,6 +112,19 @@ The claim is always present and cannot be disabled.
 
 = Administration
 
+== Declarative client management with Admin API v2 (preview)
+// https://github.com/keycloak/keycloak/issues/53212
+
+The Client Admin API v2, introduced as an experimental feature in {project_name} 26.7, has been promoted to preview.
+It can now be enabled with `--features=preview` or `--features=client-admin-api:v2`.
+
+The API provides strict validation, declarative configuration, and an accurate OpenAPI specification for managing OIDC and SAML clients.
+It can be consumed through a Java client, an auto-generated JavaScript client, and a CLI, and the {project_name} Operator uses it to manage clients declaratively via the `KeycloakOIDCClient` and `KeycloakSAMLClient` custom resources.
+
+The Operator's `KeycloakOIDCClient` and `KeycloakSAMLClient` custom resources were also promoted to Preview.
+
+For more details, see the https://www.keycloak.org/admin-api/admin-api-v2[Admin API v2] guide and the https://www.keycloak.org/operator/managing-clients[Managing Keycloak Clients] operator guide. Feedback is welcome!
+
 == Client Secret Rotation (supported)
 // https://github.com/keycloak/keycloak/issues/16738
 
