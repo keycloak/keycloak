@@ -24,16 +24,12 @@ import org.keycloak.quarkus.runtime.cli.PropertyException;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
-import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
-
 @Command(name = Start.NAME,
         header = "Start the server.",
         description = {
                 "%nUse this command to run the server in production."
         },
-        footer = "%nBy default, this command tries to update the server configuration by running a '" + Build.NAME + "' before starting the server. You can disable this behavior by using the '" + OPTIMIZED_BUILD_OPTION_LONG + "' option:%n%n"
-                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} '" + OPTIMIZED_BUILD_OPTION_LONG + "'%n%n"
-                + "By doing that, the server should start faster based on any previous configuration you have set when manually running the '" + Build.NAME + "' command.")
+        footer = "%nThis command will run a '" + Build.NAME + "' if needed before starting the server. You can disable this behavior by setting the `auto-build` configuration option to `false`")
 public final class Start extends AbstractAutoBuildCommand {
 
     public static final String NAME = "start";
