@@ -60,6 +60,13 @@ class SsfUtilIssuerUrlTest {
     }
 
     @Test
+    void frontendUrl_realmNameWithSpaces_encodesRealmPath() {
+        KeycloakSession session = sessionWithFrontendUrl("my realm", "https://example.com");
+        assertEquals("https://example.com/realms/my%20realm", SsfUtil.getIssuerUrl(session),
+                "realm names with spaces must be percent-encoded in the issuer URL");
+    }
+
+    @Test
     void frontendUrl_blank_fallsThrough() {
         // A blank frontendUrl must not be used — the method should fall through
         // to the next branch. In a plain unit test the env/config fallbacks are

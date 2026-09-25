@@ -3,6 +3,8 @@ package org.keycloak.ssf.transmitter.support;
 import java.time.Duration;
 import java.util.Map;
 
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.Config;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.ResourceType;
@@ -55,10 +57,7 @@ public class SsfUtil {
     }
 
     private static String appendRealmPath(String baseUrl, String realmName) {
-        if (!baseUrl.endsWith("/")) {
-            baseUrl += "/";
-        }
-        return baseUrl + "realms/" + realmName;
+        return UriBuilder.fromUri(baseUrl).path("realms").path("{realm}").build(realmName).toString();
     }
 
     /**

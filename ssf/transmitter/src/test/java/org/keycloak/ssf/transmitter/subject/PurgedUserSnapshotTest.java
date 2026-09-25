@@ -51,10 +51,13 @@ import static org.mockito.Mockito.verify;
  * the snapshot before the live lookup for purge events, so the two have to agree on
  * what {@code sub} means.
  *
- * <p>The realm here carries a {@code frontendUrl} attribute, which makes the
- * transmitter's issuer differ from the realm issuer — the configuration that would
- * break if the gate were written against {@code SubjectUserLookup.isRealmIssuer}
- * instead of the transmitter's own issuer.
+ * <p>The realm here carries a {@code frontendUrl} attribute. Since the transmitter
+ * appends {@code /realms/{realm}} to that value, its issuer is identical to the
+ * realm's OIDC issuer in this configuration — the gate must still be written
+ * against {@link org.keycloak.ssf.transmitter.support.SsfUtil#getIssuerUrl} rather
+ * than {@code SubjectUserLookup.isRealmIssuer}, because the two can still diverge
+ * when neither a {@code frontendUrl} nor a frontend hostname is configured and the
+ * fallback resolves the base URI without the {@code FRONTEND} url type.
  */
 class PurgedUserSnapshotTest {
 
