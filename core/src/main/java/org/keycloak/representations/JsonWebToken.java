@@ -85,7 +85,16 @@ public class JsonWebToken implements Serializable, Token {
 
     @JsonIgnore
     public boolean isExpired() {
-        return exp != null && exp != 0 && Time.currentTime() > exp;
+        return isExpired(0);
+    }
+
+    /**
+     * Returns {@code true} when {@code exp} is present, non-zero, and earlier than
+     * {@code Time.currentTime() - allowedTimeSkew}.
+     */
+    @JsonIgnore
+    public boolean isExpired(long allowedTimeSkew) {
+        return exp != null && exp != 0 && Time.currentTime() - allowedTimeSkew > exp;
     }
 
     public Long getNbf() {
@@ -118,12 +127,17 @@ public class JsonWebToken implements Serializable, Token {
      */
     @JsonIgnore
     public boolean isActive() {
-        return isActive(10);
+        return !isExpired() && isNotBefore(10);
     }
 
+    /**
+     * Tests that the token is not expired and is not-before.
+     * Unlike {@link #isActive()}, this overload applies {@code allowedTimeSkew}
+     * to both {@code exp} and {@code nbf}.
+     */
     @JsonIgnore
     public boolean isActive(int allowedTimeSkew) {
-        return !isExpired() && isNotBefore(allowedTimeSkew);
+        return !isExpired(allowedTimeSkew) && isNotBefore(allowedTimeSkew);
     }
 
     /**
