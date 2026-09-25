@@ -188,6 +188,7 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyCreateTimeout");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAvoidSameAuthenticatorRegister");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAcceptableAaguids");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyHints");
 
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyRpEntityNamePasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicySignatureAlgorithmsPasswordless");
@@ -200,6 +201,7 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyCreateTimeoutPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAvoidSameAuthenticatorRegisterPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAcceptableAaguidsPasswordless");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyHintsPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyPasskeysEnabledPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyMediationPasswordless");
 
@@ -603,6 +605,7 @@ public class ModelToRepresentation {
         rep.setWebAuthnPolicyAvoidSameAuthenticatorRegister(webAuthnPolicy.isAvoidSameAuthenticatorRegister());
         rep.setWebAuthnPolicyAcceptableAaguids(webAuthnPolicy.getAcceptableAaguids());
         rep.setWebAuthnPolicyExtraOrigins(webAuthnPolicy.getExtraOrigins());
+        rep.setWebAuthnPolicyHints(webAuthnPolicy.getHints());
 
         webAuthnPolicy = realm.getWebAuthnPolicyPasswordless();
         rep.setWebAuthnPolicyPasswordlessRpEntityName(webAuthnPolicy.getRpEntityName());
@@ -617,6 +620,7 @@ public class ModelToRepresentation {
         rep.setWebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister(webAuthnPolicy.isAvoidSameAuthenticatorRegister());
         rep.setWebAuthnPolicyPasswordlessAcceptableAaguids(webAuthnPolicy.getAcceptableAaguids());
         rep.setWebAuthnPolicyPasswordlessExtraOrigins(webAuthnPolicy.getExtraOrigins());
+        rep.setWebAuthnPolicyPasswordlessHints(webAuthnPolicy.getHints());
         rep.setWebAuthnPolicyPasswordlessPasskeysEnabled(webAuthnPolicy.isPasskeysEnabled());
         rep.setWebAuthnPolicyPasswordlessMediation(webAuthnPolicy.getMediation());
 

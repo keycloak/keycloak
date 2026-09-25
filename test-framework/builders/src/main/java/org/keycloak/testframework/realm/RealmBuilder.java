@@ -613,6 +613,16 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder webAuthnPolicyHints(List<String> hints) {
+        rep.setWebAuthnPolicyHints(hints);
+        return this;
+    }
+
+    public RealmBuilder webAuthnPolicyPasswordlessHints(List<String> hints) {
+        rep.setWebAuthnPolicyPasswordlessHints(hints);
+        return this;
+    }
+
     public RealmBuilder webAuthnPolicyPasswordlessRpId(String rpId) {
         rep.setWebAuthnPolicyPasswordlessRpId(rpId);
         return this;

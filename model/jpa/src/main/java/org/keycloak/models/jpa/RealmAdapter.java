@@ -1129,6 +1129,12 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
                 : defaultConfig.getExtraOrigins();
         policy.setExtraOrigins(extraOrigins);
 
+        String hintsString = getAttribute(RealmAttributes.WEBAUTHN_POLICY_HINTS + attributePrefix);
+        List<String> hints = (hintsString != null && !hintsString.isEmpty())
+                ? Arrays.asList(hintsString.split(","))
+                : defaultConfig.getHints();
+        policy.setHints(hints);
+
         String passkeysEnabledString = getAttribute(RealmAttributes.WEBAUTHN_POLICY_PASSKEYS_ENABLED + attributePrefix);
         Boolean passKeysEnabled = (passkeysEnabledString != null)
                 ? Boolean.valueOf(passkeysEnabledString)
@@ -1194,6 +1200,14 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
             setAttribute(RealmAttributes.WEBAUTHN_POLICY_EXTRA_ORIGINS + attributePrefix, extraOriginsString);
         } else {
             removeAttribute(RealmAttributes.WEBAUTHN_POLICY_EXTRA_ORIGINS + attributePrefix);
+        }
+
+        List<String> hints = policy.getHints();
+        if (hints != null && !hints.isEmpty()) {
+            String hintsString = String.join(",", hints);
+            setAttribute(RealmAttributes.WEBAUTHN_POLICY_HINTS + attributePrefix, hintsString);
+        } else {
+            removeAttribute(RealmAttributes.WEBAUTHN_POLICY_HINTS + attributePrefix);
         }
 
         Boolean passkeysEnabled = policy.isPasskeysEnabled();

@@ -39,6 +39,7 @@
                     requireResidentKey : ${requireResidentKey?c},
                     residentKey : ${residentKey?c},
                     userVerificationRequirement : ${userVerificationRequirement?c},
+                    hints : [<#list (hints![]) as hint>${hint?c}<#sep>, </#sep></#list>],
                     createTimeout : ${createTimeout?c},
                     excludeCredentialIds : ${excludeCredentialIds?c},
                     initLabel : ${msg("webauthn-registration-init-label")?c},

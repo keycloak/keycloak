@@ -1403,7 +1403,21 @@ public class DefaultExportImportManager implements ExportImportManager {
         }
         webAuthnPolicy.setExtraOrigins(webAuthnPolicyExtraOrigins);
 
+        List<String> webAuthnPolicyHints = rep.getWebAuthnPolicyHints();
+        if (webAuthnPolicyHints == null) {
+            webAuthnPolicyHints = defaultConfig.getHints();
+        }
+        webAuthnPolicy.setHints(validateWebAuthnPolicyHints(webAuthnPolicyHints));
+
         return webAuthnPolicy;
+    }
+
+    // hints are stored as a comma separated attribute, so a value containing a comma would be read back as two hints
+    private static List<String> validateWebAuthnPolicyHints(List<String> hints) {
+        if (hints != null && hints.stream().anyMatch(hint -> hint != null && hint.contains(","))) {
+            throw new ModelException("WebAuthn policy hint must not contain a comma");
+        }
+        return hints;
     }
 
 
@@ -1474,6 +1488,12 @@ public class DefaultExportImportManager implements ExportImportManager {
             webAuthnPolicyExtraOrigins = defaultConfig.getExtraOrigins();
         }
         webAuthnPolicy.setExtraOrigins(webAuthnPolicyExtraOrigins);
+
+        List<String> webAuthnPolicyHints = rep.getWebAuthnPolicyPasswordlessHints();
+        if (webAuthnPolicyHints == null) {
+            webAuthnPolicyHints = defaultConfig.getHints();
+        }
+        webAuthnPolicy.setHints(validateWebAuthnPolicyHints(webAuthnPolicyHints));
 
         Boolean webAuthnPolicyPasswordlessPasskeysEnabled = rep.getWebAuthnPolicyPasswordlessPasskeysEnabled();
         if (webAuthnPolicyPasswordlessPasskeysEnabled == null) {
