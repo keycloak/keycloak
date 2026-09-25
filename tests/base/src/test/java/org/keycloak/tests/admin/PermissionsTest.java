@@ -40,6 +40,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -51,6 +52,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.CredentialBuilder;
 import org.keycloak.testframework.realm.FederatedIdentityBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RoleBuilder;
@@ -387,6 +389,9 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.groups().group(group.getId()).roles().realmLevel().listAvailable(), Resource.USER, false);
         invoke(realm -> realm.groups().group(group.getId()).roles().realmLevel().add(List.of()), Resource.USER, true);
         invoke(realm -> realm.groups().group(group.getId()).roles().realmLevel().remove(List.of()), Resource.USER, true);
+        invoke(realm -> realm.groups().group(group.getId()).roles().clientLevel(realmAccessClient.getId()).listAll(), Resource.USER, false);
+        invoke(realm -> realm.groups().group(group.getId()).roles().clientLevel(realmAccessClient.getId()).listEffective(), Resource.USER, false);
+        invoke(realm -> realm.groups().group(group.getId()).roles().clientLevel(realmAccessClient.getId()).listAvailable(), Resource.USER, false);
         invoke(realm -> realm.groups().group(group.getId()).roles().clientLevel(realmAccessClient.getId()).add(List.of()), Resource.USER, true);
         invoke(realm -> realm.groups().group(group.getId()).roles().clientLevel(realmAccessClient.getId()).remove(List.of()), Resource.USER, true);
         invoke(realm -> {
@@ -462,6 +467,12 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.users().get(user.getId()).roles().realmLevel().remove(List.of()), Resource.USER, true);
 
         ClientRepresentation realmAccessClient = managedRealm1.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        invoke(realm -> realm.users().get(user.getId()).roles().clientLevel(realmAccessClient.getId()).listAll(),
+                Resource.USER, false);
+        invoke(realm -> realm.users().get(user.getId()).roles().clientLevel(realmAccessClient.getId()).listAvailable(),
+                Resource.USER, false);
+        invoke(realm -> realm.users().get(user.getId()).roles().clientLevel(realmAccessClient.getId()).listEffective(),
+                Resource.USER, false);
         invoke(realm -> realm.users().get(user.getId()).roles().clientLevel(realmAccessClient.getId()).add(List.of()),
                 Resource.USER, true);
         invoke(realm -> realm.users().get(user.getId()).roles().clientLevel(realmAccessClient.getId()).remove(List.of()),
@@ -494,6 +505,81 @@ public class PermissionsTest extends AbstractPermissionsTest {
             invoke(realm -> realm.users().userProfile().getConfiguration(), clients.get(role), true);
             invoke(realm -> realm.users().userProfile().getMetadata(), clients.get(role), true);
         }
+    }
+
+    /**
+     * Viewing a role mapping requires being able to map the role or to view its container, not {@code view-realm}.
+     * A {@code manage-users} admin can map non-admin realm roles, so it sees the realm role mapping on a user. A
+     * {@code view-users}-only admin can neither map the role nor view the realm, so the realm mapping is filtered out.
+     */
+    @Test
+    public void realmRoleMappingsVisibleWithManageUsers() {
+        String roleName = "role-mapping-visibility";
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName(roleName);
+        managedRealm1.admin().roles().create(role);
+        managedRealm1.cleanup().add(r -> r.roles().deleteRole(roleName));
+
+        String userUuid = ApiUtil.getCreatedId(managedRealm1.admin().users()
+                .create(UserBuilder.create().username("role-mapping-target").enabled(true).build()));
+        managedRealm1.cleanup().add(r -> r.users().delete(userUuid).close());
+
+        managedRealm1.admin().users().get(userUuid).roles().realmLevel()
+                .add(List.of(managedRealm1.admin().roles().get(roleName).toRepresentation()));
+
+        MappingsRepresentation mappings = clients.get(AdminRoles.MANAGE_USERS).realm(REALM_NAME)
+                .users().get(userUuid).roles().getAll();
+
+        assertThat(mappings.getRealmMappings(), Matchers.notNullValue());
+        assertThat(mappings.getRealmMappings().stream().map(RoleRepresentation::getName).toList(),
+                Matchers.hasItem(roleName));
+
+        MappingsRepresentation viewOnlyMappings = clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME)
+                .users().get(userUuid).roles().getAll();
+
+        List<String> viewOnlyRealmMappings = viewOnlyMappings.getRealmMappings() == null ? List.of()
+                : viewOnlyMappings.getRealmMappings().stream().map(RoleRepresentation::getName).toList();
+        assertThat(viewOnlyRealmMappings, Matchers.not(Matchers.hasItem(roleName)));
+    }
+
+    /**
+     * Viewing a client role mapping requires being able to map the role or to view its client container. A
+     * {@code manage-users} admin can map the client role, so it sees the mapping on a group. A {@code view-users}-only
+     * admin can neither map the role nor view the client, so the client mapping is filtered out.
+     */
+    @Test
+    public void groupClientRolesVisibleWithManageUsers() {
+        String clientId = "group-client-roles";
+        String roleName = "group-client-role";
+
+        String clientUuid = ApiUtil.getCreatedId(managedRealm1.admin().clients()
+                .create(ClientBuilder.create().clientId(clientId).build()));
+        managedRealm1.cleanup().add(r -> r.clients().get(clientUuid).remove());
+
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName(roleName);
+        managedRealm1.admin().clients().get(clientUuid).roles().create(role);
+
+        String groupUuid = ApiUtil.getCreatedId(managedRealm1.admin().groups()
+                .add(GroupBuilder.create().name("client-role-group").build()));
+        managedRealm1.cleanup().add(r -> r.groups().group(groupUuid).remove());
+
+        managedRealm1.admin().groups().group(groupUuid).roles().clientLevel(clientUuid)
+                .add(List.of(managedRealm1.admin().clients().get(clientUuid).roles().get(roleName).toRepresentation()));
+
+        GroupRepresentation group = clients.get(AdminRoles.MANAGE_USERS).realm(REALM_NAME)
+                .groups().group(groupUuid).toRepresentation();
+
+        assertThat(group.getClientRoles(), Matchers.notNullValue());
+        assertThat(group.getClientRoles().get(clientId), Matchers.hasItem(roleName));
+
+        GroupRepresentation viewOnlyGroup = clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME)
+                .groups().group(groupUuid).toRepresentation();
+
+        Map<String, List<String>> viewOnlyClientRoles = viewOnlyGroup.getClientRoles();
+        List<String> viewOnlyGroupClientRoles = viewOnlyClientRoles == null ? List.of()
+                : viewOnlyClientRoles.getOrDefault(clientId, List.of());
+        assertThat(viewOnlyGroupClientRoles, Matchers.not(Matchers.hasItem(roleName)));
     }
 
     @Test
