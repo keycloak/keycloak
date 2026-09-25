@@ -139,6 +139,10 @@ The SCIM (System for Cross-domain Identity Management) API provides a standards-
 In this release, the SCIM API is promoted from preview to supported. The SCIM API received extensive improvements including support for multivalued user attributes, User Profile permissions, Fine-Grained Admin Permissions in search filters, and improved performance for large user bases.
 For more details, see the link:{adminguide_link}#_managing_scim[Managing users and groups through SCIM] documentation.
 
+== Roles granted with organization invitations
+
+When inviting a user to an organization through the Admin REST API, you can now select realm roles and client roles for the invitation. The roles are granted together with the membership when the invitee joins, whether they accept the invitation through the invitation link, the registration flow, or an identity provider. For details, see the link:{adminguide_link}#_organization_invitation_roles[{adminguide_name}].
+
 = Configuring and Running
 
 == Multi-cluster v2 (supported)

@@ -36,6 +36,7 @@ import org.keycloak.models.OrganizationInvitationModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.organization.InvitationManager;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.MembershipType;
@@ -66,8 +67,16 @@ public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthentica
             // user accepts an invitation.
             OrganizationModel invited = provider.getById(invitation.getOrgId());
 
+            InvitationManager invitationManager = provider.getInvitationManager();
             provider.addMember(invited, user);
-            provider.getInvitationManager().remove(invitation.getId());
+
+            // only a registration link carries an invitation into this flow, and it holds no user id, so the roles
+            // were authorized for whoever registers. An invitation naming a user grants them to that user only.
+            if (invitation.getUserId() == null || invitation.getUserId().equals(user.getId())) {
+                Organizations.grantInvitationRoles(context.getRealm(), user, invitationManager.getById(invitation.getId()));
+            }
+
+            invitationManager.remove(invitation.getId());
             context.getAuthenticationSession().setRedirectUri(invitation.getRedirectUri());
 
             context.getEvent().clone()

@@ -1,5 +1,7 @@
 package org.keycloak.representations.idm;
 
+import java.util.List;
+
 /**
  * Representation of an organization invitation.
  */
@@ -18,6 +20,7 @@ public class OrganizationInvitationRepresentation {
     private int sentDate;
     private int expiresAt;
     private Status status;
+    private List<RoleRepresentation> roles;
     @Deprecated
     private String inviteLink;
 
@@ -86,6 +89,14 @@ public class OrganizationInvitationRepresentation {
 
     public void setStatus(Status status) {
         this.status = status;
+    }
+
+    public List<RoleRepresentation> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(List<RoleRepresentation> roles) {
+        this.roles = roles;
     }
 
     /**
