@@ -39,6 +39,7 @@ import {
   goToPoliciesTab,
   goToRequiredActions,
   goToWebAuthnTab,
+  openExecutionConfig,
 } from "./flow.ts";
 
 test.describe("Authentication flows", () => {
@@ -161,6 +162,31 @@ test.describe("Authentication flow details", () => {
     await clickDeleteRow(page, name);
     await confirmModal(page);
     await assertRowExists(page, "Cookie", false);
+  });
+
+  test("clears an execution config", async ({ page }) => {
+    await using testBed = await createTestBed();
+
+    await adminClient.copyFlow("browser", flowName, testBed.realm);
+    await login(page, { to: toAuthentication({ realm: testBed.realm }) });
+
+    await clickTableRowItem(page, flowName);
+
+    const name = "Identity Provider Redirector";
+    await openExecutionConfig(page, name);
+    await page.getByTestId("alias").fill("redirector-config");
+    await page.getByTestId("default.reference.value").fill("reference");
+    await page.getByTestId("save").click();
+    await assertNotificationMessage(page, "Successfully saved the config");
+
+    await openExecutionConfig(page, name);
+    await page.getByTestId("clear").click();
+
+    await openExecutionConfig(page, name);
+    await expect(page.getByTestId("alias")).toHaveValue("");
+    await expect(page.getByTestId("alias")).toBeEnabled();
+    await expect(page.getByTestId("default.reference.value")).toHaveValue("");
+    await expect(page.getByTestId("clear")).toBeHidden();
   });
 
   test("sets as default in action menu", async ({ page }) => {
