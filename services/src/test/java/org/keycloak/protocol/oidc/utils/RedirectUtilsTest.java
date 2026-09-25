@@ -66,6 +66,16 @@ public class RedirectUtilsTest {
     }
 
     @Test
+    public void testVerifyRedirectUriPercentEncodedAtNotUserInfo() {
+        Set<String> set = Stream.of("myapp://good.com/callback").collect(Collectors.toSet());
+
+        // Decoded authority would turn evil%40good.com into userinfo+host; raw split must reject it
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "myapp://evil%40good.com/callback", set, false));
+        Assert.assertEquals("myapp://GOOD.com/callback",
+                RedirectUtils.verifyRedirectUri(session, null, "myapp://GOOD.com/callback", set, false));
+    }
+
+    @Test
     public void testVerifyRedirectUriOpaqueSchemeSpecificPartCaseSensitive() {
         Set<String> set = Stream.of("myapp:callback", "myapp:callback*").collect(Collectors.toSet());
 
