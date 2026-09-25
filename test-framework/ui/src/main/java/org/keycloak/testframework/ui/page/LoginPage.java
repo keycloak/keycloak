@@ -96,6 +96,10 @@ public class LoginPage extends AbstractLoginPage {
         registerLink.click();
     }
 
+    public boolean isRegisterLinkPresent() {
+        return !driver.driver().findElements(By.linkText("Register")).isEmpty();
+    }
+
     public void resetPassword() {
         resetPasswordLink.click();
     }

@@ -111,11 +111,9 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        Assertions.assertTrue(loginPage.isUsernameInputPresent());
-        // registration link shown
+        Assertions.assertFalse(loginPage.isUsernameInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
         Assertions.assertTrue(loginPage.isRegisterLinkPresent());
-        // no need for password because the user does not exist
-        Assertions.assertFalse(loginPage.isPasswordInputPresent());
         Assertions.assertFalse(loginPage.isSocialButtonPresent(idpRep.getAlias()));
     }
 
@@ -129,9 +127,9 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        Assertions.assertEquals("Your email domain matches an organization but you don't have an account yet.", loginPage.getError());
-        Assertions.assertTrue(loginPage.isUsernameInputPresent());
-        Assertions.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertFalse(loginPage.isUsernameInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
+        // the public broker is still shown because admins control its visibility
         Assertions.assertTrue(loginPage.isSocialButtonPresent(idpRep.getAlias()));
 
         // no self-registration link because the user should register through the broker
@@ -145,9 +143,8 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
-        Assertions.assertTrue(loginPage.isUsernameInputPresent());
-        Assertions.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertFalse(loginPage.isUsernameInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
         // self-registration link shown because there is no public broker and user can choose to register
         Assertions.assertTrue(loginPage.isRegisterLinkPresent());
     }
@@ -833,14 +830,12 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage(bc.getUserEmail(), false, idp.getAlias(), false, false);
 
-        Assertions.assertFalse(loginPage.isPasswordInputPresent());
-        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
         Assertions.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
 
         openIdentityFirstLoginPage(bc.getUserEmail(), false, idp.getAlias(), false, false);
 
-        Assertions.assertFalse(loginPage.isPasswordInputPresent());
-        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
         Assertions.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
     }
 
@@ -1019,14 +1014,12 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         oauth.realm(bc.consumerRealmName());
         oauth.openLoginForm();
         loginPage.loginUsername("user@org-0.org");
-        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
         Assertions.assertTrue(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
         Assertions.assertFalse(loginPage.isSocialButtonPresent(org1Broker.getAlias()));
 
         oauth.realm(bc.consumerRealmName());
         oauth.openLoginForm();
         loginPage.loginUsername("user@org-1.org");
-        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
         Assertions.assertTrue(loginPage.isSocialButtonPresent(org1Broker.getAlias()));
         Assertions.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
     }
