@@ -1,4 +1,5 @@
-import { Page, expect } from "@playwright/test";
+import { expect } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 export async function goToAttributesTab(page: Page) {
   await page.getByTestId("attributesTab").click();
