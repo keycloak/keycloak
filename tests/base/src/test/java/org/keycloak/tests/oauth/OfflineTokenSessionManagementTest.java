@@ -67,7 +67,6 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
@@ -224,7 +223,6 @@ public class OfflineTokenSessionManagementTest {
                 .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE);
 
         assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
-        assertNull(offlineToken.getExp());
 
         String offlineUserSessionId = runOnServer.fetch(session -> {
             return session.sessions().getOfflineUserSession(session.getContext().getRealm(), offlineToken.getSessionId()).getId();
@@ -266,7 +264,6 @@ public class OfflineTokenSessionManagementTest {
                 .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE);
 
         assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken2.getType());
-        Assertions.assertNull(offlineToken.getExp());
 
         // Assert session changed
         assertNotEquals(offlineToken.getSessionId(), offlineToken2.getSessionId());

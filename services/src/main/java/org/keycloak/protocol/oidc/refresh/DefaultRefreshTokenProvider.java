@@ -58,9 +58,7 @@ public class DefaultRefreshTokenProvider extends AbstractRefreshTokenProvider im
         userSession.setLastSessionRefresh(refreshToken.getIat().intValue());
         if (initialRefreshTokenCtx.offlineTokenRequested()) {
             refreshToken.type(TokenUtil.TOKEN_TYPE_OFFLINE);
-            if (userSession.getRealm().isOfflineSessionMaxLifespanEnabled()) {
-                refreshToken.exp(getExpiration(clientSessionCtx, userSession,true));
-            }
+            refreshToken.exp(getExpiration(clientSessionCtx, userSession, true));
             responseBuilder.createOrUpdateOfflineSession();
         } else {
             refreshToken.exp(getExpiration(clientSessionCtx, userSession, false));

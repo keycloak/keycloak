@@ -67,6 +67,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.tests.utils.Assert.assertExpiration;
 import static org.keycloak.tests.utils.admin.AdminApiUtil.findRealmRoleByName;
 import static org.keycloak.tests.utils.admin.AdminApiUtil.findUserByUsername;
 import static org.keycloak.tests.utils.admin.AdminApiUtil.findUserByUsernameId;
@@ -251,7 +252,7 @@ public class OfflineTokenBasicFlowTest {
                 .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE);
 
         assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
-        Assertions.assertNull(offlineToken.getExp());
+        assertExpiration(tokenResponse.getRefreshExpiresIn(), Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
 
         AccessTokenContext ctx = runOnServer.fetch(session -> {
             return session.getProvider(TokenContextEncoderProvider.class)
@@ -338,7 +339,6 @@ public class OfflineTokenBasicFlowTest {
                 .details(Details.CODE_ID, codeId)
                 .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE);
         assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineRefreshToken.getType());
-        Assertions.assertNull(offlineRefreshToken.getExp());
         assertTrue(offlineTokenResponse.getScope().contains(OAuth2Constants.OFFLINE_ACCESS));
 
         // check both sessions are created
@@ -400,7 +400,6 @@ public class OfflineTokenBasicFlowTest {
                 .details(Details.USERNAME, "test-user@localhost");
 
         Assertions.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
-        Assertions.assertNull(offlineToken.getExp());
 
         // check only the offline session is created
         checkNumberOfSessions(userId, "offline-client", offlineToken.getSessionId(), 0, 1);
@@ -438,7 +437,6 @@ public class OfflineTokenBasicFlowTest {
                 .details(Details.USERNAME, "test-user@localhost");
 
         Assertions.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
-        Assertions.assertNull(offlineToken.getExp());
 
         String offlineTokenString2 = testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionId(), userId);
         RefreshToken offlineToken2 = oauth.parseRefreshToken(offlineTokenString2);
@@ -498,7 +496,7 @@ public class OfflineTokenBasicFlowTest {
                 .details(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client");
 
         Assertions.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
-        Assertions.assertNull(offlineToken.getExp());
+        Assertions.assertNotNull(offlineToken.getExp());
 
         // check only the offline session is created
         checkNumberOfSessions(serviceAccountUserId, "offline-client", offlineToken.getSessionId(), 0, 1);
@@ -857,7 +855,6 @@ public class OfflineTokenBasicFlowTest {
                 .details(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client");
 
         Assertions.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
-        Assertions.assertNull(offlineToken.getExp());
 
         testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionId(), serviceAccountUserId);
 
@@ -933,7 +930,6 @@ public class OfflineTokenBasicFlowTest {
                     .details(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client");
 
             Assertions.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
-            Assertions.assertNull(offlineToken.getExp());
         } finally {
             //  remove the phone scope
             offlineClientResource.removeOptionalClientScope(phoneScope.getId());

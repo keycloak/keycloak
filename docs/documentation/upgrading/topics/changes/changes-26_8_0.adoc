@@ -69,6 +69,15 @@ If you already have Secrets used by OIDC Client CRs, add the required label befo
 kubectl label secret <secret-name> operator.keycloak.org/kind=KeycloakOIDCClient
 ----
 
+=== Offline tokens now include expiration based on idle timeout
+// https://github.com/keycloak/keycloak/issues/48063
+
+When *Offline Session Max Limited* is disabled (the default), offline refresh tokens previously had no `exp` claim and the token response returned `refresh_expires_in: 0`.
+The server still enforced the *Offline Session Idle* timeout and rejected refresh attempts after that window with `invalid_grant`.
+
+Offline refresh tokens now always include an `exp` claim, and `refresh_expires_in` in the token response reflects the offline session idle timeout. Refresh tokens are no longer valid for the session once the `exp` time arrives.
+This allows clients to proactively refresh before the idle window closes instead of encountering unexpected `invalid_grant` errors.
+
 === `NO_PROXY` entries with leading dots or spaces after commas now parsed correctly
 // https://github.com/keycloak/keycloak/issues/52706
 
