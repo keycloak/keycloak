@@ -221,6 +221,24 @@ New identity provider links created after upgrading default to the Unmanaged mem
 
 For setup instructions and common configuration patterns, see link:{adminguide_link}#common-organization-setup-recipes_server_administration_guide[Common setup recipes] in the {adminguide_name}. For migration details, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
+= Simplified optimized startup configuration
+
+The `--optimized` flag on the `start` command is deprecated. In its place, set `auto-build=false` in `conf/keycloak.conf` or `KC_AUTO_BUILD=false` as an environment variable. The effect is identical — {project_name} will not automatically perform builds at startup — but the setting is now persistent and does not need to be passed on every command invocation.
+
+For container images the recommended pattern is:
+
+[source,dockerfile]
+----
+# set build time options via environment variables or the config file
+RUN /opt/keycloak/bin/kc.sh build
+...
+
+# then set the auto-build option in the final build phase so that start commands using this image don't rebuild
+ENV KC_AUTO_BUILD=false
+----
+
+For details and migration steps, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
 = Themes
 
 == Redesigned identity provider buttons on the login page

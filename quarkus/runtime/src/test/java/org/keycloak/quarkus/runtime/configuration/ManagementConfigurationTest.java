@@ -18,6 +18,7 @@ package org.keycloak.quarkus.runtime.configuration;
 
 import java.util.Map;
 
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.ManagementPropertyMappers;
@@ -238,7 +239,7 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
         ));
 
         initConfig();
-        PropertyMappers.sanitizeDisabledMappers(new Build());
+        PropertyMappers.sanitizeDisabledMappers(new Build(), Environment.isRebuildCheck());
 
         assertConfig(Map.of(
                 "https-certificate-file", "/some/path/srv.crt.pem",
@@ -403,7 +404,7 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
                 "KC_HTTP_MANAGEMENT_SCHEME", "http"
         ));
         initConfig();
-        PropertyMappers.sanitizeDisabledMappers(new Build());
+        PropertyMappers.sanitizeDisabledMappers(new Build(), Environment.isRebuildCheck());
         assertExternalConfigNull("quarkus.management.tls-configuration-name");
     }
 

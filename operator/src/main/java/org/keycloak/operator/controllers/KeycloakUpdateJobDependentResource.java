@@ -37,6 +37,7 @@ import org.keycloak.operator.crds.v2beta1.deployment.KeycloakSpecBuilder;
 import org.keycloak.operator.crds.v2beta1.deployment.spec.UpdateSpec;
 
 import io.fabric8.kubernetes.api.model.ContainerFluent;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -194,6 +195,8 @@ public class KeycloakUpdateJobDependentResource extends VersionTolerantCRUDKuber
     private static void configureContainer(ContainerFluent<?> containerBuilder, String name, List<String> args) {
         containerBuilder.withName(name);
         containerBuilder.withArgs(replaceStartWithUpdateCommand(containerBuilder.getArgs(), args));
+        containerBuilder.removeMatchingFromEnv(builder -> Constants.KC_AUTO_BUILD.equals(builder.getName()));
+        containerBuilder.addToEnv(new EnvVar(Constants.KC_AUTO_BUILD, "true", null));
 
         var volumeMounts = containerBuilder.buildVolumeMounts();
         if (volumeMounts != null) {

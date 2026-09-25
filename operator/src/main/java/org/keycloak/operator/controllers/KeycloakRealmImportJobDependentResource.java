@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.keycloak.operator.Config;
+import org.keycloak.operator.Constants;
 import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
@@ -33,6 +34,7 @@ import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImportSpec;
 import org.keycloak.operator.crds.v2beta1.realmimport.Placeholder;
 
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
@@ -157,6 +159,8 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
 
         var commandArgs = List.of("--verbose", "import", "--file=" + importMntPath + keycloakRealmImport.getRealmName() + "-realm.json", "--override=false");
 
+        keycloakContainer.getEnv().removeIf(env -> Constants.KC_AUTO_BUILD.equals(env.getName()));
+        keycloakContainer.getEnv().add(new EnvVar(Constants.KC_AUTO_BUILD, "true", null));
         keycloakContainer.setCommand(command);
         keycloakContainer.setArgs(commandArgs);
         var volumeMount = new VolumeMountBuilder()

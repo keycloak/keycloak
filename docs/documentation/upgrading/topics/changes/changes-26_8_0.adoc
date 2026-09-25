@@ -548,3 +548,43 @@ If you have explicitly enabled `login-failures:v1`, plan to remove this option b
 
 Kerberos credential delegation (the `gss delegation credential` protocol mapper) is now deprecated for security reasons and will be removed in a future release.
 
+=== `--optimized` startup flag deprecated in favour of `auto-build` configuration option
+
+The `--optimized` flag on the `start` and other commands is deprecated and will be removed in a future release.
+
+Previously, you would run a `build` followed by `start --optimized` to tell {project_name} to use the current build at startup:
+
+[source,bash]
+----
+bin/kc.[sh|bat] build --db=postgres
+bin/kc.[sh|bat] start --optimized
+----
+
+The preferred approach is now to set the `auto-build` option to `false` in your configuration file or via the `KC_AUTO_BUILD` environment variable. This has the same effect — {project_name} will reuse the current build — but the setting is persistent and does not need to be repeated on every invocation:
+
+[source]
+----
+# conf/keycloak.conf
+db=postgres
+auto-build=false
+----
+
+Or equivalently via an environment variable:
+
+[source,bash]
+----
+export KC_AUTO_BUILD=false
+----
+
+When using a container image, set it in your Containerfile:
+
+[source,dockerfile]
+----
+# set build time options via environment variables or the config file
+RUN /opt/keycloak/bin/kc.sh build
+...
+
+# then set the auto-build option in the final build phase so that start commands using this image don't rebuild
+ENV KC_AUTO_BUILD=false
+----
+
