@@ -53,7 +53,13 @@ using ROSA HCP.
 [#multi-cluster-supported-configuration]
 == Supported Configuration
 
-The following configurations are supported:
+ The following environment is used for regular functional, failure, and performance validation.It is an engineering reference environment, not a prescribed or certified HA architecture.
+<@profile.ifProduct>
+It is not the only environment in which the documented Red Hat build of Keycloak HA capabilities can be used.
+</@profile.ifProduct>
+<@profile.ifCommunity>
+It is not the only environment in which the documented {project_name} HA capabilities can be used.
+</@profile.ifCommunity>
 
 * Two {kubernetes} single-AZ clusters, in the same AWS Region
 ** Provisioned with https://www.redhat.com/en/technologies/cloud-computing/openshift/aws[Red Hat OpenShift Service on AWS] (ROSA),
