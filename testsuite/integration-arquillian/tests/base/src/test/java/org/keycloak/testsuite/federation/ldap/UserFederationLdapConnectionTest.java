@@ -326,6 +326,53 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
     }
 
     @Test
+    public void testUpdateComponentAllowsUrlChangeWhenBothAnonymousAndNoCredentialStored() {
+        // When both old and new auth type are AUTH_TYPE_NONE and no credential is stored,
+        // there is nothing to protect and a URL change must be allowed.
+        Map<String, String> cfg = new java.util.HashMap<>(ldapRule.getConfig());
+        cfg.put(LDAPConstants.CONNECTION_URL, "ldap://localhost:10389");
+        cfg.put(LDAPConstants.AUTH_TYPE, LDAPConstants.AUTH_TYPE_NONE);
+        cfg.remove(LDAPConstants.BIND_CREDENTIAL);  // no credential stored
+        String ldapModelId = runOnServerAdminClientTest.fetchString(LdapHelper.createLDAPProvider(cfg, false)).replace("\"", "");
+        try {
+            ComponentRepresentation rep = realm.components().component(ldapModelId).toRepresentation();
+
+            // URL change with placeholder credential when no credential is stored should be allowed
+            rep.getConfig().putSingle(LDAPConstants.CONNECTION_URL, "ldap://anotherhost:10389");
+            rep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, ComponentRepresentation.SECRET_VALUE);
+            realm.components().component(ldapModelId).update(rep);
+        } finally {
+            adminClient.realm(REALM_NAME).components().removeComponent(ldapModelId);
+        }
+    }
+
+    @Test
+    public void testUpdateComponentRejectsUrlChangeWhenCredentialStoredUnderNoneAuthType() {
+        // A component using AUTH_TYPE_NONE can still carry a stored bind credential in its config.
+        // Changing the URL while leaving that credential as a placeholder must be rejected —
+        // auth type alone is not sufficient to determine whether a credential is at risk.
+        Map<String, String> cfg = new java.util.HashMap<>(ldapRule.getConfig());  // copy — includes a real bindCredential
+        cfg.put(LDAPConstants.CONNECTION_URL, "ldap://localhost:10389");
+        cfg.put(LDAPConstants.AUTH_TYPE, LDAPConstants.AUTH_TYPE_NONE);
+        String ldapModelId = runOnServerAdminClientTest.fetchString(LdapHelper.createLDAPProvider(cfg, false)).replace("\"", "");
+        try {
+            ComponentRepresentation rep = realm.components().component(ldapModelId).toRepresentation();
+
+            // Changing URL while credential is the placeholder must be rejected even under auth=none.
+            rep.getConfig().putSingle(LDAPConstants.CONNECTION_URL, "ldap://anotherhost:10389");
+            rep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, ComponentRepresentation.SECRET_VALUE);
+            Assertions.assertThrows(BadRequestException.class, () ->
+                    realm.components().component(ldapModelId).update(rep));
+
+            // Supplying an explicit credential must allow the URL change.
+            rep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, "secret");
+            realm.components().component(ldapModelId).update(rep);
+        } finally {
+            adminClient.realm(REALM_NAME).components().removeComponent(ldapModelId);
+        }
+    }
+
+    @Test
     public void testLdapCapabilities() {
 
         // Query the rootDSE success

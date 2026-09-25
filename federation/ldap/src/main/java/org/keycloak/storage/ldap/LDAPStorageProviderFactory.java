@@ -347,7 +347,18 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     @SuppressWarnings("unchecked")
     private void validateBindCredentialOnUrlChange(KeycloakSession session, RealmModel realm,
                                                    ComponentModel config, LDAPConfig cfg) {
-        if (LDAPConstants.AUTH_TYPE_NONE.equals(cfg.getAuthType())) {
+        ComponentModel oldComponent = realm.getComponent(config.getId());
+        if (oldComponent == null) {
+            return;
+        }
+
+        // Skip only when both sides use anonymous auth AND the old component has no stored credential.
+        // AUTH_TYPE_NONE alone is not enough: a component can carry a credential in its config even
+        // when auth type is none, which could be silently reused after a URL change + auth-type switch.
+        LDAPConfig oldCfg = new LDAPConfig(oldComponent.getConfig());
+        boolean bothAnonymous = LDAPConstants.AUTH_TYPE_NONE.equals(cfg.getAuthType())
+                && LDAPConstants.AUTH_TYPE_NONE.equals(oldCfg.getAuthType());
+        if (bothAnonymous && oldComponent.getConfig().getFirst(LDAPConstants.BIND_CREDENTIAL) == null) {
             return;
         }
 
@@ -355,11 +366,6 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 ComponentResource.SECRET_PLACEHOLDER_FIELDS_ATTR, Set.class);
         if (secretPlaceholderFields == null || !secretPlaceholderFields.contains(LDAPConstants.BIND_CREDENTIAL)) {
             // Bind credential was explicitly provided (not a SECRET_VALUE placeholder), no risk.
-            return;
-        }
-
-        ComponentModel oldComponent = realm.getComponent(config.getId());
-        if (oldComponent == null) {
             return;
         }
 
