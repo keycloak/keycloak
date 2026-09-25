@@ -71,8 +71,16 @@ The experimental Shared Signals Framework (SSF) support now emits RISC `account-
 
 For more details, see the link:{securing_apps_base_link}/ssf-support[Shared Signals Framework] guide.
 
-// TODO: Review feature status before publishing — token-exchange-delegation is experimental
-== Token exchange delegation with consent, FGAP authorization, and audit trail (experimental)
+== Parameterized (formerly dynamic) scopes preview support (preview)
+// https://github.com/keycloak/keycloak/issues/46523
+
+Parameterized scopes (formerly known as dynamic scopes) allow clients to pass a parameter value along with the scope name in an OAuth 2.0 authorization request. This is especially useful when a scope represents an entity with a large or dynamic set of values (for example a project name like `project:12345`), preventing the need to pre-define countless individual client scopes in {project_name}.
+
+Parameterized scopes have officially moved from experimental to preview status.
+
+For more details about the feature, see the link:{adminguide_link}#_parameterized_client_scopes[{adminguide_name}].
+
+== Token exchange delegation with consent, FGAP authorization, and audit trail (preview)
 // https://github.com/keycloak/keycloak/issues/38279
 // https://github.com/keycloak/keycloak/issues/51305
 // https://github.com/keycloak/keycloak/issues/51481
@@ -88,6 +96,8 @@ Unlike admin-user delegation, client delegation does not grant Admin API access 
 The `delegation:user` and `delegation:client` client scopes are now auto-created as Optional scopes in all realms, and delegation authorization is controlled exclusively through Fine-Grained Admin Permissions V2 using the `delegate` and `delegate-members` scopes.
 Delegation audit events now include the client identity, and standard token exchange rejects subject tokens carrying delegation claims to prevent bypass.
 A new client policy executor allows administrators to restrict the `may_act` claim in access tokens, giving per-client control over which clients can participate in delegation.
+
+Token exchange delegation support status is now preview.
 
 For more details, see the link:{securing_apps_token_exchange_link}#_token-exchange-delegation[Token exchange delegation] section.
 

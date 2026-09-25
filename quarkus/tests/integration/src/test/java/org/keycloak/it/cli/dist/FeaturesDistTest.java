@@ -72,10 +72,10 @@ public class FeaturesDistTest {
     }
 
     @Test
-    @Launch({StartDev.NAME, "--features=preview", "--features-disabled=token-exchange"})
+    @Launch({StartDev.NAME, "--features=preview", "--features-disabled=scripts"})
     public void testPreviewFeatureDisabledInPreviewMode(CLIResult cliResult) {
         cliResult.assertStartedDevMode();
-        cliResult.assertNoMessage("token-exchange");
+        cliResult.assertNoMessage("scripts");
     }
 
     @Test
