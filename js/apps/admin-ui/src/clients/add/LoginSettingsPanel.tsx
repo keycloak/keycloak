@@ -30,7 +30,10 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         }}
         options={[
           { key: "", value: t("choose") },
-          ...loginThemes.map(({ name }) => ({ key: name, value: name })),
+          ...loginThemes.map(({ name, renderedName }) => ({
+            key: name,
+            value: renderedName || name,
+          })),
         ]}
       />
       <DefaultSwitchControl
