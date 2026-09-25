@@ -53,7 +53,7 @@ public class LoadPersistentSessionsCommand extends AbstractCommand {
 
         while (!finished.get()) {
             if (i % 16 == 0) {
-                log.infof("Starting iteration: %s . lastCreatedOn: %d, lastSessionId: %s", i, lastSessionId.get());
+                log.infof("Starting iteration: %s . lastSessionId: %s", i, lastSessionId.get());
             }
 
             i = i + workersCount;
