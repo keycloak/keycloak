@@ -213,34 +213,42 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
      * @param session    The session to import.
      * @param lifespan   How long the session stays cached until it is expired and removed.
      * @param maxIdle    How long the session can be idle (without reading or writing) before being removed.
-     * @return The existing cached session. If it returns {@code null}, it means the {@code session} used in the
-     * parameters was cached.
+     * @return The existing cached session, or a tombstone if the import was blocked. If it returns {@code null},
+     * it means the {@code session} used in the parameters was cached.
      */
-    public V importSession(RealmModel realmModel, K key, SessionEntityWrapper<V> session, long lifespan, long maxIdle) {
+    public SessionEntityWrapper<V> importSession(RealmModel realmModel, K key, SessionEntityWrapper<V> session, long lifespan, long maxIdle) {
         SessionUpdatesList<V> updatesList = updates.get(key);
         if (updatesList != null) {
             // exists in transaction, avoid cache operation
-            return updatesList.getEntityWrapper().getEntity();
+            return updatesList.getEntityWrapper();
+        }
+        if (SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, cacheHolder.cache().getName(), key, session)) {
+            return session.asTombstone();
         }
         SessionEntityWrapper<V> existing = cacheHolder.cache().putIfAbsent(key, session, computeLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS, computeMaxIdle(maxIdle, lifespan), TimeUnit.MILLISECONDS);
         if (existing == null) {
             if (SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, cacheHolder.cache().getName(), key, session)) {
-                cacheHolder.cache().remove(key);
-                return session.getEntity();
+                cacheHolder.cache().put(key, session.asTombstone(), SessionTombstoneBackup.TOMBSTONE_LIFESPAN_MS, TimeUnit.MILLISECONDS);
+                return session.asTombstone();
             }
             updates.put(key, new SessionUpdatesList<>(realmModel, session));
             return null;
         }
         if (existing.isTombstoneBlockingImportOf(session)) {
-            return existing.getEntity();
+            return existing;
         }
         if (existing.isTombstone()) {
-            cacheHolder.cache().put(key, session, computeLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS, computeMaxIdle(maxIdle, lifespan), TimeUnit.MILLISECONDS);
+            if (!cacheHolder.cache().replace(key, existing, session, computeLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS, computeMaxIdle(maxIdle, lifespan), TimeUnit.MILLISECONDS)) {
+                return session.asTombstone();
+            }
             updates.put(key, new SessionUpdatesList<>(realmModel, session));
             return null;
         }
+        if (SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, cacheHolder.cache().getName(), key, session)) {
+            return session.asTombstone();
+        }
         updates.put(key, new SessionUpdatesList<>(realmModel, existing));
-        return existing.getEntity();
+        return existing;
     }
 
     /**
@@ -280,15 +288,19 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
                 //nothing to import, already expired
                 return;
             }
-            var future = cacheHolder.cache().putIfAbsentAsync(key, session, computeLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS, computeMaxIdle(maxIdle, lifespan), TimeUnit.MILLISECONDS);
-            // write result into concurrent hash map because the consumer is invoked in a different thread each time.
             String cacheName = cacheHolder.cache().getName();
+            if (SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, cacheName, key, session)) {
+                return;
+            }
+            var future = cacheHolder.cache().putIfAbsentAsync(key, session, computeLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS, computeMaxIdle(maxIdle, lifespan), TimeUnit.MILLISECONDS);
             stage.dependsOn(future.thenAccept(existing -> {
                 if (existing != null && existing.isTombstoneBlockingImportOf(session)) {
                     return;
                 }
-                if (existing == null && SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, cacheName, key, session)) {
-                    cacheHolder.cache().remove(key);
+                if (SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, cacheName, key, session)) {
+                    if (existing == null) {
+                        cacheHolder.cache().put(key, session.asTombstone(), SessionTombstoneBackup.TOMBSTONE_LIFESPAN_MS, TimeUnit.MILLISECONDS);
+                    }
                     return;
                 }
                 allSessions.put(key, existing == null || existing.isTombstone() ? session : existing);

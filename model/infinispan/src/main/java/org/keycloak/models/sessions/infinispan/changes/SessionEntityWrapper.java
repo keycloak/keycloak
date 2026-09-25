@@ -124,17 +124,17 @@ public class SessionEntityWrapper<S extends SessionEntity> {
 
     /**
      * Checks whether this tombstone should block the import of {@code candidate}. For client sessions,
-     * a tombstone only blocks an import when the candidate has the same creation timestamp as the
-     * deleted session — a different timestamp indicates a genuinely new session that should be allowed.
+     * a tombstone only blocks an import when the candidate has the same started-at timestamp as the
+     * deleted session — a different value indicates a genuinely new session that should be allowed.
      */
     public boolean isTombstoneBlockingImportOf(SessionEntityWrapper<S> candidate) {
         if (!isTombstone()) {
             return false;
         }
-        String tombstoneTimestamp = localMetadata.get(TOMBSTONE_TIMESTAMP_KEY);
-        if (tombstoneTimestamp != null && candidate != null
+        String tombstoneStarted = localMetadata.get(TOMBSTONE_TIMESTAMP_KEY);
+        if (tombstoneStarted != null && candidate != null
                 && candidate.getEntity() instanceof AuthenticatedClientSessionEntity clientSession) {
-            return tombstoneTimestamp.equals(String.valueOf(clientSession.getTimestamp()));
+            return tombstoneStarted.equals(String.valueOf(clientSession.getStarted()));
         }
         return true;
     }
@@ -142,14 +142,14 @@ public class SessionEntityWrapper<S extends SessionEntity> {
     /**
      * Creates a tombstone wrapper from this wrapper's entity. A tombstone occupies the cache slot
      * to prevent concurrent readers from resurrecting a deleted session via {@code putIfAbsent}.
-     * For client sessions, the creation timestamp is stored so that genuinely new sessions with a
-     * different timestamp can still be imported.
+     * For client sessions, the started-at timestamp is stored so that genuinely new sessions
+     * can still be imported (they will have a different started-at value).
      */
     public SessionEntityWrapper<S> asTombstone() {
         Map<String, String> meta = new ConcurrentHashMap<>();
         meta.put(TOMBSTONE_KEY, "true");
         if (entity instanceof AuthenticatedClientSessionEntity clientSession) {
-            meta.put(TOMBSTONE_TIMESTAMP_KEY, String.valueOf(clientSession.getTimestamp()));
+            meta.put(TOMBSTONE_TIMESTAMP_KEY, String.valueOf(clientSession.getStarted()));
         }
         return new SessionEntityWrapper<>(meta, entity);
     }

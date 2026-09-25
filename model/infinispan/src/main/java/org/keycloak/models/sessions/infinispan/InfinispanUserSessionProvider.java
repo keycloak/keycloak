@@ -294,17 +294,17 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
             return null;
         }
 
-        UserSessionEntity existing = getTransaction(true)
+        SessionEntityWrapper<UserSessionEntity> existing = getTransaction(true)
                 .importSession(realm, userSessionEntityToImport.getId(), new SessionEntityWrapper<>(userSessionEntityToImport),
                         lifespan, maxIdle);
 
         if (existing != null) {
-            if (getTransaction(true).get(userSessionEntityToImport.getId()) == null) {
+            if (existing.isTombstone()) {
                 log.debugf("User-session was recently deleted (tombstone found) for sessionId=%s offline=true", sessionId);
                 return null;
             }
             log.debugf("The user-session already imported by another transaction for sessionId=%s offline=true", sessionId);
-            return existing;
+            return existing.getEntity();
         }
 
         // we need to import the client sessions too.

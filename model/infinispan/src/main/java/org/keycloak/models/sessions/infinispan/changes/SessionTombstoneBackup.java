@@ -71,10 +71,10 @@ public final class SessionTombstoneBackup {
         if (marker == null) {
             return false;
         }
-        String tombstoneTimestamp = marker.getNote(TIMESTAMP_NOTE);
-        if (tombstoneTimestamp != null && candidate != null
+        String tombstoneStarted = marker.getNote(TIMESTAMP_NOTE);
+        if (tombstoneStarted != null && candidate != null
                 && candidate.getEntity() instanceof AuthenticatedClientSessionEntity clientSession) {
-            return tombstoneTimestamp.equals(String.valueOf(clientSession.getTimestamp()));
+            return tombstoneStarted.equals(String.valueOf(clientSession.getStarted()));
         }
         return true;
     }
@@ -90,7 +90,7 @@ public final class SessionTombstoneBackup {
 
     private static <V extends SessionEntity> Map<String, String> buildNotes(SessionEntityWrapper<V> sessionWrapper) {
         if (sessionWrapper.getEntity() instanceof AuthenticatedClientSessionEntity clientSession) {
-            return Map.of(TIMESTAMP_NOTE, String.valueOf(clientSession.getTimestamp()));
+            return Map.of(TIMESTAMP_NOTE, String.valueOf(clientSession.getStarted()));
         }
         return Map.of();
     }

@@ -175,6 +175,7 @@ public class SessionTombstoneConcurrencyTest {
 
             if (!errors.isEmpty()) {
                 errors.forEach(e -> LOG.error("Thread error", e));
+                assertTrue(errors.isEmpty(), "Unexpected errors in worker threads");
             }
 
             // 5. Wait briefly for async cache operations to settle
@@ -257,23 +258,24 @@ public class SessionTombstoneConcurrencyTest {
             var clientModel = realmModel.getClientByClientId("tombstone-test-client");
             String clientUUID = clientModel.getId();
 
-            // Look up the client session to get the timestamp
+            // Look up the client session to get the started-at timestamp
             var userSession = session.sessions().getUserSession(realmModel, sessionId);
             assertNotNull(userSession, "User session should exist");
             var clientSession = session.sessions().getClientSession(userSession, clientModel, false);
             assertNotNull(clientSession, "Client session should exist");
-            int timestamp = clientSession.getTimestamp();
+            int started = clientSession.getStarted();
 
-            // Create tombstone with matching timestamp so isTombstoneBlockingImportOf() returns true
+            // Create tombstone with matching started-at so isTombstoneBlockingImportOf() returns true
             AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity();
-            entity.setTimestamp(timestamp);
+            entity.setTimestamp(started);
+            entity.getNotes().put(org.keycloak.models.AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(started));
             SessionEntityWrapper<AuthenticatedClientSessionEntity> tombstone = new SessionEntityWrapper<>(entity).asTombstone();
 
             EmbeddedClientSessionKey key = new EmbeddedClientSessionKey(sessionId, clientUUID);
             Cache<EmbeddedClientSessionKey, SessionEntityWrapper<AuthenticatedClientSessionEntity>> cache =
                     session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
             cache.put(key, tombstone, 30, TimeUnit.SECONDS);
-            LOG.debugf("Injected tombstone for client session %s/%s with timestamp %d", sessionId, clientUUID, timestamp);
+            LOG.debugf("Injected tombstone for client session %s/%s with started=%d", sessionId, clientUUID, started);
         });
 
         // Refresh should fail: the tombstone in the client session cache triggers a DB load,

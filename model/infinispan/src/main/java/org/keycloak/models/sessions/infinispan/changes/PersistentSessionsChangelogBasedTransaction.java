@@ -304,6 +304,11 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             // exists in transaction, avoid import operation
             return updatesList.getEntityWrapper();
         }
+        if (tombstoneBackupCache != null
+                && SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, getCache(offline).getName(), key, session)) {
+            LOG.debugf("Session %s was recently deleted (backup tombstone found), skipping import", key);
+            return session.asTombstone();
+        }
         SessionEntityWrapper<V> existing = null;
         try {
             if (getCache(offline) != null) {
@@ -318,9 +323,9 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                     && SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, getCache(offline).getName(), key, session)) {
                 LOG.debugf("Session %s was recently deleted (backup tombstone found), skipping import", key);
                 try {
-                    getCache(offline).remove(key);
+                    getCache(offline).put(key, session.asTombstone(), SessionTombstoneBackup.TOMBSTONE_LIFESPAN_MS, TimeUnit.MILLISECONDS);
                 } catch (RuntimeException exception) {
-                    LOG.debugf(exception, "Failed to remove resurrected session %s", key);
+                    LOG.debugf(exception, "Failed to write tombstone for session %s", key);
                 }
                 return session.asTombstone();
             }
@@ -333,14 +338,22 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         }
         if (existing.isTombstone()) {
             // Tombstone exists but doesn't apply to this entity (e.g., new client session with different timestamp).
-            // Overwrite the tombstone with the new session.
+            // Overwrite the tombstone with the new session only if it hasn't changed.
             try {
-                getCache(offline).put(key, session, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS);
+                if (!getCache(offline).replace(key, existing, session, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS)) {
+                    return session.asTombstone();
+                }
             } catch (RuntimeException exception) {
                 LOG.debugf(exception, "Failed to overwrite tombstone for session %s", session);
+                return session.asTombstone();
             }
             updates.put(key, new SessionUpdatesList<>(realmModel, session));
             return null;
+        }
+        if (tombstoneBackupCache != null
+                && SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, getCache(offline).getName(), key, session)) {
+            LOG.debugf("Session %s was recently deleted (backup tombstone found), skipping import", key);
+            return session.asTombstone();
         }
         updates.put(key, new SessionUpdatesList<>(realmModel, existing));
         return existing;
@@ -381,19 +394,24 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                 //nothing to import, already expired
                 return;
             }
+            String cName = cache.getName();
+            if (SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, cName, key, session)) {
+                return;
+            }
             var future = cache.putIfAbsentAsync(key, session, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS)
                     .exceptionally(throwable -> {
                         // If the import fails, the transaction can continue with the data from the database.
                         LOG.debugf(throwable, "Failed to import session %s", session);
                         return null;
                     });
-            String cName = cache.getName();
             stage.dependsOn(future.thenAccept(existing -> {
                 if (existing != null && existing.isTombstoneBlockingImportOf(session)) {
                     return;
                 }
-                if (existing == null && SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, cName, key, session)) {
-                    cache.remove(key);
+                if (SessionTombstoneBackup.isBlockingImport(tombstoneBackupCache, cName, key, session)) {
+                    if (existing == null) {
+                        cache.put(key, session.asTombstone(), SessionTombstoneBackup.TOMBSTONE_LIFESPAN_MS, TimeUnit.MILLISECONDS);
+                    }
                     return;
                 }
                 allSessions.put(key, existing == null || existing.isTombstone() ? session : existing);
