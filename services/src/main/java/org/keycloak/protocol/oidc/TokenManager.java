@@ -1662,7 +1662,7 @@ public class TokenManager {
                             oidcIdp.validateToken(encodedLogoutToken);
                             return true;
                         } catch (IdentityBrokerException e) {
-                            logger.debugf("LogoutToken verification with identity provider failed", e.getMessage());
+                            logger.debugf(e, "LogoutToken verification with identity provider failed");
                             return false;
                         }
                     });
@@ -1685,7 +1685,7 @@ public class TokenManager {
                     })
                     .filter(Objects::nonNull);
         } catch (IdentityBrokerException e) {
-            logger.warnf("LogoutToken verification with identity provider failed", e.getMessage());
+            logger.warnf(e, "LogoutToken verification with identity provider failed");
         }
         return Stream.empty();
     }
