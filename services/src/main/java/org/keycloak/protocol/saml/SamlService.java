@@ -47,6 +47,7 @@ import jakarta.ws.rs.container.AsyncResponse;
 import jakarta.ws.rs.container.Suspended;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.broker.saml.SAMLDataMarshaller;
@@ -160,6 +161,11 @@ public class SamlService extends AuthorizationEndpointBase {
 
     protected static final Logger logger = Logger.getLogger(SamlService.class);
     public static final String ARTIFACT_RESOLUTION_SERVICE_PATH = "resolve";
+
+    private static boolean documentContainsUnencryptedSignature(SAMLDocumentHolder documentHolder) {
+        NodeList nl = documentHolder.getSamlDocument().getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
+        return nl != null && nl.getLength() > 0;
+    }
 
     private final DestinationValidator destinationValidator;
     private final long maxInflatingSize;
@@ -861,9 +867,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
         @Override
         protected boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder) {
-            Document signedDoc = documentHolder.getSamlDocument();
-            NodeList nl = signedDoc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
-            return nl != null && nl.getLength() > 0;
+            return documentContainsUnencryptedSignature(documentHolder);
         }
 
         @Override
@@ -1244,6 +1248,18 @@ public class SamlService extends AuthorizationEndpointBase {
         String artifact = artifactResolveMessage.getArtifact(); // Artifact from resolve request
         if (artifact == null) {
             logger.errorf("Artifact to resolve was null");
+            return emptyArtifactResponseMessage(artifactResolveMessage, null, JBossSAMLURIConstants.STATUS_REQUEST_DENIED.getUri());
+        }
+
+        URI expectedDestination = UriBuilder.fromUri(Urls.samlRequestEndpoint(session.getContext().getUri().getBaseUri(), realm.getName()))
+                .path(ARTIFACT_RESOLUTION_SERVICE_PATH).build();
+        // Destination may be omitted, but not on a signed message, consistent with the other request and response paths
+        if (artifactResolveMessage.getDestination() == null && documentContainsUnencryptedSignature(artifactResolveHolder)) {
+            logger.errorf("Signed ArtifactResolve message has no destination, expected %s", expectedDestination);
+            return emptyArtifactResponseMessage(artifactResolveMessage, null, JBossSAMLURIConstants.STATUS_REQUEST_DENIED.getUri());
+        }
+        if (!destinationValidator.validate(expectedDestination, artifactResolveMessage.getDestination())) {
+            logger.errorf("Invalid destination %s in ArtifactResolve message, expected %s", artifactResolveMessage.getDestination(), expectedDestination);
             return emptyArtifactResponseMessage(artifactResolveMessage, null, JBossSAMLURIConstants.STATUS_REQUEST_DENIED.getUri());
         }
 
