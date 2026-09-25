@@ -583,6 +583,8 @@ describe("Clients", () => {
       expect(mapper.config!["access.token.claim"]).to.eq("true");
 
       mapper.config = { "access.token.claim": "false" };
+      mapper.name = "updated-mapper-name";
+      dummyMapper.name = mapper.name;
 
       await kcAdminClient.clients.updateProtocolMapper(
         { id: id!, mapperId: mapper.id! },
@@ -592,10 +594,46 @@ describe("Clients", () => {
       const updatedMapper =
         (await kcAdminClient.clients.findProtocolMapperByName({
           id: id!,
-          name: dummyMapper.name!,
+          name: "updated-mapper-name",
         }))!;
 
       expect(updatedMapper.config!["access.token.claim"]).to.eq("false");
+    });
+
+    it("reject duplicate protocol mapper name on update", async () => {
+      const { id } = currentClient;
+      dummyMapper.name = "first-mapper";
+      await kcAdminClient.clients.addProtocolMapper({ id: id! }, dummyMapper);
+
+      await kcAdminClient.clients.addProtocolMapper(
+        { id: id! },
+        { ...dummyMapper, name: "second-mapper" },
+      );
+
+      const mapper = (await kcAdminClient.clients.findProtocolMapperByName({
+        id: id!,
+        name: "second-mapper",
+      }))!;
+
+      mapper.name = "first-mapper";
+
+      let failed = false;
+
+      try {
+        await kcAdminClient.clients.updateProtocolMapper(
+          { id: id!, mapperId: mapper.id! },
+          mapper,
+        );
+      } catch {
+        failed = true;
+      }
+
+      await kcAdminClient.clients.delProtocolMapper({
+        id: id!,
+        mapperId: mapper.id!,
+      });
+
+      expect(failed).to.be.true;
     });
 
     it("delete protocol mapper", async () => {
