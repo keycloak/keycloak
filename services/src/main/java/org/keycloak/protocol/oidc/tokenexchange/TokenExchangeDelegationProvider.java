@@ -182,7 +182,13 @@ public class TokenExchangeDelegationProvider extends StandardTokenExchangeProvid
         }
 
         Object clientIdObject = mayActMap.get(OAuth2Constants.CLIENT_ID);
-        if (clientIdObject instanceof String clientId) {
+        // an absent client_id means no client binding, but a present one must be a string to be checked
+        if (clientIdObject != null) {
+            if (!(clientIdObject instanceof String clientId)) {
+                event.detail(Details.REASON, "Invalid may_act claim in the subject_token");
+                event.error(Errors.INVALID_TOKEN);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid may_act claim in the subject_token", Response.Status.BAD_REQUEST);
+            }
             if (!clientId.equals(actorAccessToken.getIssuedFor())) {
                 event.detail(Details.REASON, "Actor token client does not match the client_id in the may_act claim");
                 event.error(Errors.INVALID_TOKEN);
