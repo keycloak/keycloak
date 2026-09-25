@@ -1,9 +1,9 @@
-FROM registry.access.redhat.com/ubi9 AS ubi-micro-build
+FROM registry.access.redhat.com/ubi9@sha256:1b99266db480e8aa6dfda6900697a07ec99334095b4f87d1687edfc06c965132 AS ubi-micro-build
 
 ADD target/ubi-null.sh /tmp/
 RUN bash /tmp/ubi-null.sh java-25-openjdk-headless glibc-langpack-en
 
-FROM registry.access.redhat.com/ubi9-micro
+FROM registry.access.redhat.com/ubi9-micro@sha256:b498b3ea26111ab4b81d65139f2ebd2ef9a2abb7a4588b7fdcc54889f95e9caa
 ENV LANG=en_US.UTF-8
 
 COPY --from=ubi-micro-build /tmp/null/rootfs/ /
