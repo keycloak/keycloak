@@ -294,8 +294,8 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         assertThrows(ForbiddenException.class,
             () -> getClientApi(noAccessAdminClient, getRealmName(), "does-not-exist").patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(noAccessPatch))));
 
-        // view-clients: manage is checked before view, so forbidden
-        assertThrows(ForbiddenException.class,
+        // view-clients: not existing - should get 404
+        assertThrows(NotFoundException.class,
             () -> getClientApi(viewClientsAdminClient, getRealmName(), "does-not-exist").patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(noAccessPatch))));
         
         // manage should see 404
@@ -340,6 +340,11 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         // no-access: not existing - should get 403 (lacks canList, prevents ID phishing)
         try (var response = getClientApi(noAccessAdminClient, getRealmName(), "does-not-exist").deleteClient()) {
             assertEquals(403, response.getStatus(), "Expected 403 Forbidden");
+        }
+
+        // view-clients: not existing - should get 404
+        try (var response = getClientApi(viewClientsAdminClient, getRealmName(), "does-not-exist").deleteClient()) {
+            assertEquals(404, response.getStatus());
         }
 
         // manage-clients: not existing - should get 404
