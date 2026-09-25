@@ -84,13 +84,13 @@ Without monitoring, a degraded state may go unnoticed until a subsequent failure
 
 | Database node
 | If the writer instance fails, the database can promote a reader instance in the same or other site to be the new writer.
-| No data loss
+| No data loss^3^
 | Seconds to minutes (depending on the database)
 
 | {project_name} node
 | Multiple {project_name} instances run in each site.
 If one instance fails, some incoming requests might receive an error message or be delayed for some seconds until the load balancer takes the node out of rotation.
-| No data loss
+| No data loss^3^
 | Seconds to minutes (depending on the load balancer)
 
 | Database connectivity loss
@@ -98,13 +98,13 @@ If one instance fails, some incoming requests might receive an error message or 
 Some requests might receive an error message or be delayed for a few seconds.
 Manual operations might be necessary depending on the database.
 {project_name} instances that have access to a writable database instance will continue to serve traffic, while other nodes will mark themselves as not ready to the load balancer.
-| No data loss
+| No data loss^3^
 | Seconds to minutes (depending on the database and load balancer)
 
 | Site failure
 | If none of the {project_name} nodes are available, the load balancer will detect the outage and redirect the traffic to the other site.
 Some requests might receive an error message until the load balancer detects the failure.
-| No data loss
+| No data loss^3^
 | Seconds to minutes (depending on the load balancer)
 
 |===
@@ -112,13 +112,12 @@ Some requests might receive an error message until the load balancer detects the
 .Table footnotes:
 ^1^ Tested Recovery Point Objective, assuming all parts of the setup were healthy at the time this occurred. +
 ^2^ Estimated Recovery Time. +
-
-The statement "`No data loss`" depends on the setup not being degraded from previous failures, which includes completing any pending manual operations to resynchronize the state between the sites.
+^3^ The statement "No data loss" depends on the setup not being degraded from previous failures.
 
 For performance, {project_name} uses optimized database commit for ephemeral data such as sessions and events when supported by the configured database.
 On a database crash, in-flight session data within a sub-second window may be lost, requiring affected users to re-authenticate.
 Persistent data such as users, realms, and credentials always uses durable commit and is not affected.
-To disable the optimization, set `--spi-connections-jpa--quarkus--async-commit=false`.
+To disable the optimization, set `+--spi-connections-jpa--quarkus--async-commit=false+`.
 
 To restore the service, restart any failed {project_name} node and restore its database connectivity. No other recovery operations are necessary for {project_name}.
 A standard load balancer configuration should detect the active {project_name} nodes automatically and route traffic to them.
