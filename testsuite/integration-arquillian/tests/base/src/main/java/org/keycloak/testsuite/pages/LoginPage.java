@@ -60,9 +60,6 @@ public class LoginPage extends LanguageComboboxAwarePage {
     @FindBy(id = "rememberMe")
     private WebElement rememberMe;
 
-    @FindBy(id = "reset-login")
-    protected WebElement resetLoginButton;
-
     @FindBy(name = "login")
     protected WebElement submitButton;
 
@@ -157,10 +154,6 @@ public class LoginPage extends LanguageComboboxAwarePage {
         return !driver.findElements(By.id("username")).isEmpty();
     }
 
-    public boolean isAttemptedUsernameInputPresent() {
-        return !driver.findElements(By.id("kc-attempted-username")).isEmpty();
-    }
-
     public boolean isEmailInputPresent() {
         return !driver.findElements(By.id("email")).isEmpty();
     }
@@ -183,10 +176,6 @@ public class LoginPage extends LanguageComboboxAwarePage {
 
     public void cancel() {
         cancelButton.click();
-    }
-
-    public void resetLogin() {
-        resetLoginButton.click();
     }
 
     public String getInputError() {

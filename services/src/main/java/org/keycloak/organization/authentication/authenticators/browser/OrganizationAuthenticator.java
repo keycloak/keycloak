@@ -63,8 +63,6 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.Booleans;
 
-import org.jboss.logging.Logger;
-
 import static org.keycloak.authentication.AuthenticatorUtil.isSSOAuthentication;
 import static org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator.USER_SET_BEFORE_USERNAME_PASSWORD_AUTH;
 import static org.keycloak.models.utils.KeycloakModelUtils.findUserByNameOrEmail;
@@ -75,8 +73,6 @@ import static org.keycloak.organization.utils.Organizations.resolveHomeBroker;
 import static org.keycloak.utils.StringUtil.isBlank;
 
 public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
-
-    private static final Logger logger = Logger.getLogger(OrganizationAuthenticator.class);
 
     private final KeycloakSession session;
     private final WebAuthnConditionalUIAuthenticator webauthnAuth;
@@ -141,9 +137,32 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         }
 
         if (user == null && isBlank(username)) {
+            AuthenticationSessionModel authSession = context.getAuthenticationSession();
+            boolean isHiddenUsername = Boolean.parseBoolean(authSession.getAuthNote(AbstractUsernameFormAuthenticator.USERNAME_HIDDEN));
+
+            if (isHiddenUsername) {
+                AuthenticatorUtils.dummyHash(context);
+                context.getEvent().error(Errors.USER_NOT_FOUND);
+
+                if (webauthnAuth.isPasskeysEnabled()) {
+                    webauthnAuth.fillContextForm(context);
+                }
+
+                OrganizationModel organization = Organizations.resolveOrganization(session);
+                Function<LoginFormsProvider, Response> errorForm = form -> {
+                    form.addError(new FormMessage(Validation.FIELD_PASSWORD, Messages.INVALID_USER));
+                    return form.createLoginUsernamePassword();
+                };
+                Response challengeResponse = organization == null
+                        ? createLoginForm(context, errorForm)
+                        : errorForm.apply(createUnknownUserForm(context, organization, context.getRealm()));
+                context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
+                return;
+            }
+
             initialChallenge(context, form -> {
-                form.addError(new FormMessage(Validation.FIELD_PASSWORD, Messages.INVALID_USER));
-                return form.createLoginUsernamePassword();
+                form.addError(new FormMessage(UserModel.USERNAME, Messages.INVALID_USERNAME));
+                return form.createLoginUsername();
             });
             return;
         }
@@ -197,15 +216,11 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         }
 
         if (tryRedirectBroker(context, organization, user, username, domain)) {
-            logger.debugf("Organization authenticator: auto-redirected to broker for organization %s (user known=%s)",
-                    organization.getAlias(), user != null);
             return;
         }
 
         if (user == null) {
-            logger.debugf("Organization authenticator: unknown user for organization %s, delegating to generic challenge", organization.getAlias());
             unknownUserChallenge(context, organization, realm, username);
-
             return;
         }
 
@@ -339,9 +354,6 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return true;
         }
 
-        logger.debugf("Organization authenticator: domain %s matched organization %s but no auto-redirect idp configured (idpAlias=%s, autoRedirect=%s)",
-                domain, organization.getAlias(), idpAlias, matching.isAutoRedirect());
-
         return false;
     }
 
@@ -367,7 +379,25 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
     private void unknownUserChallenge(AuthenticationFlowContext context, OrganizationModel organization, RealmModel realm, String username) {
         // the user does not exist and is authenticating in the scope of the organization, show the identity-first login page and the
         // public organization brokers for selection
-        LoginFormsProvider form = context.form()
+        LoginFormsProvider form = createUnknownUserForm(context, organization, realm);
+
+        // user is null, setup webauthn data if enabled
+        if (webauthnAuth.isPasskeysEnabled()) {
+            webauthnAuth.fillContextForm(context);
+        }
+
+        if (username != null) {
+            AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
+            authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
+            authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.USERNAME_HIDDEN, Boolean.TRUE.toString());
+            context.challenge(form.createLoginUsernamePassword());
+        } else {
+            context.challenge(form.createLoginUsername());
+        }
+    }
+
+    private LoginFormsProvider createUnknownUserForm(AuthenticationFlowContext context, OrganizationModel organization, RealmModel realm) {
+        return context.form()
                 .setAttributeMapper(attributes -> {
                     if (hasPublicBrokers(organization)) {
                         attributes.computeIfPresent("social",
@@ -389,19 +419,6 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
                     return attributes;
                 });
-
-        // user is null, setup webauthn data if enabled
-        if (webauthnAuth.isPasskeysEnabled()) {
-            webauthnAuth.fillContextForm(context);
-        }
-
-        if (username != null) {
-            AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
-            authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
-            authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.USERNAME_HIDDEN, Boolean.TRUE.toString());
-        }
-
-        context.challenge(form.createLoginUsernamePassword());
     }
 
     private void initialChallenge(AuthenticationFlowContext context) {
