@@ -87,11 +87,11 @@ public class Profile {
 
         SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
 
-        PARAMETERIZED_SCOPES("Parameterized OAuth 2.0 client scopes", Type.EXPERIMENTAL),
+        PARAMETERIZED_SCOPES("Parameterized OAuth 2.0 client scopes", Type.PREVIEW),
 
         TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW, 1, true, null, null),
         TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
-        TOKEN_EXCHANGE_DELEGATION("Token Exchange Delegation", Type.EXPERIMENTAL, Feature.PARAMETERIZED_SCOPES, Feature.TOKEN_EXCHANGE_STANDARD_V2),
+        TOKEN_EXCHANGE_DELEGATION("Token Exchange Delegation", Type.PREVIEW, Feature.PARAMETERIZED_SCOPES, Feature.TOKEN_EXCHANGE_STANDARD_V2),
 
         JWT_AUTHORIZATION_GRANT("JWT Profile for Oauth 2.0 Authorization Grant", Type.DEFAULT),
 
