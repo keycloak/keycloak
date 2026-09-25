@@ -91,17 +91,15 @@ public class UriUtilsTest {
         // Empty explicit port is distinct from an absent port
         assertFalse(UriUtils.schemeHostAndPortEqual(URI.create("https://keycloak:"),
                 URI.create("https://keycloak")));
-        // IDNA: Unicode, percent-encoded, and punycode forms of the same hostname
-        assertTrue(UriUtils.originEquals("https://münchen.example",
-                "https://xn--mnchen-3ya.example"));
-        assertTrue(UriUtils.originEquals("https://MÜNCHEN.example",
-                "https://xn--mnchen-3ya.example"));
-        assertTrue(UriUtils.originEquals("https://m%C3%BCnchen.example",
-                "https://xn--mnchen-3ya.example"));
-        assertTrue(UriUtils.schemeAndHostEqual(URI.create("https://münchen.example/callback"),
-                URI.create("https://xn--mnchen-3ya.example/callback")));
+        // Percent-encoded '@' in the host must not be decoded into a user-info separator
+        assertFalse(UriUtils.schemeAndHostEqual(URI.create("myapp://evil%40good.com/callback"),
+                URI.create("myapp://good.com/callback")));
+        assertTrue(UriUtils.schemeAndHostEqual(URI.create("myapp://evil%40good.com/callback"),
+                URI.create("myapp://EVIL%40GOOD.COM/callback")));
+        // Without IDNA, Unicode and punycode forms are distinct hosts
         assertFalse(UriUtils.originEquals("https://münchen.example",
-                "https://muenchen.example"));
+                "https://xn--mnchen-3ya.example"));
+        assertFalse(UriUtils.originEquals("https://faß.de", "https://fass.de"));
     }
 
     @Test

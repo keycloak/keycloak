@@ -18,7 +18,6 @@
 package org.keycloak.common.util;
 
 import java.io.UnsupportedEncodingException;
-import java.net.IDN;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -122,7 +121,7 @@ public class UriUtils {
         String hostA = resolveHost(uriA);
         String hostB = resolveHost(uriB);
         if (hostA != null && hostB != null) {
-            return asciiHost(hostA).equalsIgnoreCase(asciiHost(hostB));
+            return hostA.equalsIgnoreCase(hostB);
         }
         if (hostA != null || hostB != null) {
             return false;
@@ -137,33 +136,22 @@ public class UriUtils {
 
     /**
      * Host for comparison: {@link URI#getHost()} when present, otherwise the host
-     * portion of the decoded authority. Java leaves {@code getHost()} null for
-     * Unicode domain names and some registry-names (e.g. underscores); those still
-     * appear in {@link URI#getAuthority()}.
+     * portion of the raw authority. Java leaves {@code getHost()} null for some
+     * registry-names (e.g. underscores) and Unicode labels; those still appear in
+     * {@link URI#getRawAuthority()}. The raw form is split on literal delimiters
+     * first so percent-encoded {@code @} / {@code :} are not reinterpreted as
+     * user-info or port separators (e.g. {@code evil%40good.com} stays one host).
      */
     private static String resolveHost(URI uri) {
         String host = uri.getHost();
         if (host != null) {
             return host;
         }
-        String authority = uri.getAuthority();
+        String authority = uri.getRawAuthority();
         if (authority == null) {
             return null;
         }
         return hostFromHostPort(hostPortFromAuthority(authority));
-    }
-
-    /**
-     * Normalize a host to ASCII via IDNA/punycode so Unicode and {@code xn--}
-     * forms compare equal. Falls back to the input when the label is not a valid
-     * IDN (keeps registry-names such as underscores working).
-     */
-    private static String asciiHost(String host) {
-        try {
-            return IDN.toASCII(host);
-        } catch (IllegalArgumentException e) {
-            return host;
-        }
     }
 
     private static boolean portsEqual(URI uriA, URI uriB) {

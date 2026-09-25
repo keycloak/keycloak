@@ -53,7 +53,7 @@ For more details, see link:{adminguide_link}#_audience_disabled_clients[Disabled
 
 === Redirect URI and web origin hostnames compared case-insensitively
 
-Valid redirect URIs and web origins now compare the URI scheme and hostname case-insensitively. This follows link:https://datatracker.ietf.org/doc/html/rfc3986#section-3.2.2[RFC 3986], which defines hostnames as case-insensitive, and replaces the exact string matching for scheme and hostname introduced in {project_name} 23.0.2. Hostnames are normalized with IDNA (punycode) before comparison, so Unicode and `xn--` forms of the same name match.
+Valid redirect URIs and web origins now compare the URI scheme and hostname case-insensitively. This follows link:https://datatracker.ietf.org/doc/html/rfc3986#section-3.2.2[RFC 3986], which defines hostnames as case-insensitive, and replaces the exact string matching for scheme and hostname introduced in {project_name} 23.0.2.
 
 For redirect URIs, path, query, fragment, and user-info remain case-sensitive. For example, a client configured with `https://Example.COM/callback` now accepts `https://example.com/callback` and `HTTPS://example.com/callback`, but still rejects `https://example.com/Callback`.
 
