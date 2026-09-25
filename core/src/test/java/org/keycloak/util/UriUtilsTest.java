@@ -91,6 +91,17 @@ public class UriUtilsTest {
         // Empty explicit port is distinct from an absent port
         assertFalse(UriUtils.schemeHostAndPortEqual(URI.create("https://keycloak:"),
                 URI.create("https://keycloak")));
+        // IDNA: Unicode, percent-encoded, and punycode forms of the same hostname
+        assertTrue(UriUtils.originEquals("https://münchen.example",
+                "https://xn--mnchen-3ya.example"));
+        assertTrue(UriUtils.originEquals("https://MÜNCHEN.example",
+                "https://xn--mnchen-3ya.example"));
+        assertTrue(UriUtils.originEquals("https://m%C3%BCnchen.example",
+                "https://xn--mnchen-3ya.example"));
+        assertTrue(UriUtils.schemeAndHostEqual(URI.create("https://münchen.example/callback"),
+                URI.create("https://xn--mnchen-3ya.example/callback")));
+        assertFalse(UriUtils.originEquals("https://münchen.example",
+                "https://muenchen.example"));
     }
 
     @Test

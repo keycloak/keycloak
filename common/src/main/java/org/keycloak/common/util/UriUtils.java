@@ -18,6 +18,7 @@
 package org.keycloak.common.util;
 
 import java.io.UnsupportedEncodingException;
+import java.net.IDN;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -118,30 +119,51 @@ public class UriUtils {
     }
 
     private static boolean hostsEqual(URI uriA, URI uriB) {
-        String hostA = uriA.getHost();
-        String hostB = uriB.getHost();
+        String hostA = resolveHost(uriA);
+        String hostB = resolveHost(uriB);
         if (hostA != null && hostB != null) {
-            return hostA.equalsIgnoreCase(hostB);
+            return asciiHost(hostA).equalsIgnoreCase(asciiHost(hostB));
         }
         if (hostA != null || hostB != null) {
             return false;
         }
-        // Both hosts null: either opaque/no-authority, or a registry-name authority
-        // (e.g. underscores) where Java leaves getHost() null.
-        String authorityA = uriA.getRawAuthority();
-        String authorityB = uriB.getRawAuthority();
-        if (authorityA == null && authorityB == null) {
-            // Opaque URIs (e.g. mailto:) have no authority; compare the scheme-specific part
-            // so distinct targets are not treated as equal by scheme alone.
+        // Neither URI has an authority (opaque URIs such as mailto:). Compare the
+        // scheme-specific part so distinct targets are not equal by scheme alone.
+        if (uriA.getRawAuthority() == null && uriB.getRawAuthority() == null) {
             return Objects.equals(uriA.getRawSchemeSpecificPart(), uriB.getRawSchemeSpecificPart());
         }
-        if (authorityA == null || authorityB == null) {
-            return false;
+        return false;
+    }
+
+    /**
+     * Host for comparison: {@link URI#getHost()} when present, otherwise the host
+     * portion of the decoded authority. Java leaves {@code getHost()} null for
+     * Unicode domain names and some registry-names (e.g. underscores); those still
+     * appear in {@link URI#getAuthority()}.
+     */
+    private static String resolveHost(URI uri) {
+        String host = uri.getHost();
+        if (host != null) {
+            return host;
         }
-        // Origin is scheme + host + port only; user-info is not compared here.
-        String hostOnlyA = hostFromHostPort(hostPortFromAuthority(authorityA));
-        String hostOnlyB = hostFromHostPort(hostPortFromAuthority(authorityB));
-        return hostOnlyA.equalsIgnoreCase(hostOnlyB);
+        String authority = uri.getAuthority();
+        if (authority == null) {
+            return null;
+        }
+        return hostFromHostPort(hostPortFromAuthority(authority));
+    }
+
+    /**
+     * Normalize a host to ASCII via IDNA/punycode so Unicode and {@code xn--}
+     * forms compare equal. Falls back to the input when the label is not a valid
+     * IDN (keeps registry-names such as underscores working).
+     */
+    private static String asciiHost(String host) {
+        try {
+            return IDN.toASCII(host);
+        } catch (IllegalArgumentException e) {
+            return host;
+        }
     }
 
     private static boolean portsEqual(URI uriA, URI uriB) {
