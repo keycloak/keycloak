@@ -9,11 +9,7 @@ import type { AppRouteObject } from "../../routes";
  * are deep-linkable from URLs and bookmarkable per section.
  */
 export type SsfClientTab =
-  | "receiver"
-  | "stream"
-  | "subjects"
-  | "event-search"
-  | "emit-events";
+  "receiver" | "stream" | "subjects" | "event-search" | "emit-events";
 
 export type ClientSsfTabParams = {
   realm: string;
