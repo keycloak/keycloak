@@ -94,7 +94,7 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
                     public void filterWrite(NextFilter nextFilter, IoSession session, WriteRequest request) throws Exception {
                         if (omitPagingResponseControl && request.getMessage() instanceof SearchResultDone done
                                 && done.hasControl(PagedResults.OID)) {
-                            done.removeControl(PagedResults.OID);
+                            done.removeControl(done.getControl(PagedResults.OID));
                             omittedPagingResponses.incrementAndGet();
                         }
                         nextFilter.filterWrite(session, request);
