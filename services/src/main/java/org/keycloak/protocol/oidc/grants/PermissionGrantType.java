@@ -20,7 +20,6 @@ package org.keycloak.protocol.oidc.grants;
 import java.util.List;
 import java.util.Set;
 
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
@@ -37,6 +36,7 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.BearerCredentialsMissingException;
 
 /**
  * User-Managed Access (UMA) 2.0 Grant for OAuth 2.0 Authorization
@@ -53,10 +53,10 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
         event.detail(Details.AUTH_METHOD, "oauth_credentials");
 
         String accessTokenString = null;
-        String authorizationHeader = headers.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-
-        if (authorizationHeader != null && authorizationHeader.toLowerCase().startsWith("bearer")) {
-            accessTokenString = new AppAuthManager().extractAuthorizationHeaderToken(headers);
+        try {
+            accessTokenString = AppAuthManager.extractAuthorizationHeaderToken(headers);
+        } catch (BearerCredentialsMissingException e) {
+            // no bearer credentials, continue with accessTokenString=null
         }
 
         // we allow public clients to authenticate using a bearer token, where the token should be a valid access token.

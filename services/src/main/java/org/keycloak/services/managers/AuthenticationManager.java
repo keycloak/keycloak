@@ -73,6 +73,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.exceptions.TokenNotActiveException;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.jose.jws.crypto.HashUtils;
@@ -1554,6 +1555,18 @@ public class AuthenticationManager {
     public static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, boolean checkTokenType,
                                                  String checkAudience, boolean isCookie, String tokenString, HttpHeaders headers, Consumer<TokenVerifier<AccessToken>> verifierConsumer) {
         try {
+            return verifyIdentityTokenOrThrow(session, realm, uriInfo, connection, checkActive, checkTokenType, checkAudience, isCookie, tokenString, headers, verifierConsumer);
+        } catch (VerificationException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Like {@link #verifyIdentityToken}, but throws instead of returning null when authentication fails.
+     */
+    static AuthResult verifyIdentityTokenOrThrow(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, boolean checkTokenType,
+                                                String checkAudience, boolean isCookie, String tokenString, HttpHeaders headers, Consumer<TokenVerifier<AccessToken>> verifierConsumer) throws VerificationException {
+        try {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class)
               .withDefaultChecks()
               .realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()))
@@ -1579,8 +1592,7 @@ public class AuthenticationManager {
 
             SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm);
             if (signatureProvider == null) {
-                logger.debugf("Invalid algorithm '%s' in the access token", algorithm);
-                return null;
+                throw new VerificationException("Invalid algorithm '" + algorithm + "' in the access token");
             }
 
             SignatureVerifierContext signatureVerifier = signatureProvider.verifier(kid);
@@ -1589,7 +1601,7 @@ public class AuthenticationManager {
             AccessToken token = verifier.verify().getToken();
             if (checkActive && (!token.isActive() || token.getIat() < realm.getNotBefore())) {
                 logger.debugf("Identity cookie expired. Token expiration: %d, Current Time: %d. token issued at: %d, realm not before: %d", token.getExp(), Time.currentTime(), token.getIat(), realm.getNotBefore());
-                return null;
+                throw new TokenNotActiveException(token, "Token is not active");
             }
 
             KeycloakContext context = session.getContext();
@@ -1615,27 +1627,27 @@ public class AuthenticationManager {
             if (isCookie) {
                 UserSessionUtil.UserSessionValidationResult validationResult = UserSessionUtil.findValidSessionForIdentityCookie(session, realm, token, invalidUserSessionCallback);
                 if (validationResult.getError() != null) {
-                    return null;
+                    throw new VerificationException("Invalid user session: " + validationResult.getError());
                 }
                 userSession = validationResult.getUserSession();
             } else {
                 client = realm.getClientByClientId(token.getIssuedFor());
                 if (client == null) {
-                    return null;
+                    throw new InvalidBearerTokenException(token, "Client not found");
                 }
                 UserSessionUtil.UserSessionValidationResult validationResult = UserSessionUtil.findValidSessionForAccessToken(session, realm, token, client, invalidUserSessionCallback);
                 if (validationResult.getError() != null) {
-                    return null;
+                    throw new VerificationException("Invalid user session: " + validationResult.getError());
                 }
                 userSession = validationResult.getUserSession();
                 if (!isClientValid(userSession, client, token)) {
-                    return null;
+                    throw new VerificationException("Client not valid");
                 }
             }
 
             UserModel user = userSession.getUser();
             if (!TokenManager.isUserValid(session, realm, token, user)) {
-                return null;
+                throw new VerificationException("User not valid");
             }
 
             if (!isCookie) {
@@ -1647,8 +1659,8 @@ public class AuthenticationManager {
             return new AuthResult(user, userSession, token, client);
         } catch (VerificationException e) {
             logger.debugf("Failed to verify identity token: %s", e.getMessage());
+            throw e;
         }
-        return null;
     }
 
     // Verify client and whether clientSession exists

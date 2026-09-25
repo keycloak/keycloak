@@ -436,6 +436,8 @@ public class TokenVerifier<T extends JsonWebToken> {
                 if (!verifier.verify(jws.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8), jws.getSignature())) {
                     throw new TokenSignatureInvalidException(token, "Invalid token signature");
                 }
+            } catch (VerificationException e) {
+                throw e;
             } catch (Exception e) {
                 throw new VerificationException(e);
             }
