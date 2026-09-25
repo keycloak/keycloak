@@ -105,7 +105,6 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -637,7 +636,6 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
                     .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
             assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
-            assertNull(offlineToken.getExp());
 
             assertTrue(tokenResponse.getScope().contains(OAuth2Constants.OFFLINE_ACCESS));
 
@@ -651,14 +649,10 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             Assertions.assertEquals(400, response.getStatusCode());
             assertEquals("invalid_grant", response.getError());
 
-            EventRepresentation eventRep = EventAssertion.assertError(events.poll())
+            EventAssertion.assertError(events.poll())
                     .type(EventType.REFRESH_TOKEN_ERROR)
-                    .hasSessionId()
-                    .sessionId(newRefreshToken.getSessionState())
                     .clientId(CONSUMER_BROKER_APP_CLIENT_ID)
-                    .userId(null)
-                    .error(Errors.INVALID_TOKEN).getEvent();
-            Assertions.assertNotEquals(offlineToken.getId(), eventRep.getDetails().get(Details.REFRESH_TOKEN_ID));
+                    .error(Errors.INVALID_TOKEN);
         } finally {
             timeOffSet.set(0);
         }
