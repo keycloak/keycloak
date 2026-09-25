@@ -319,7 +319,7 @@ spec:
     type: Route
   configMapName: "cluster-config"
   image: quay.io/infinispan/server:16.0.14
-  version: 16.0.14
+  version: 16.0.15
   configListener:
     enabled: false
   container:
