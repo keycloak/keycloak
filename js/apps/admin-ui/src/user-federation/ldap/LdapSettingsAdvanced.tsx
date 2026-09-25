@@ -123,6 +123,36 @@ export const LdapSettingsAdvanced = ({
         </FormGroup>
 
         <FormGroup
+          label={t("validateUserProfile")}
+          labelIcon={
+            <HelpItem
+              helpText={t("validateUserProfileHelp")}
+              fieldLabelId="validateUserProfile"
+            />
+          }
+          fieldId="kc-validate-user-profile"
+          hasNoPaddingTop
+        >
+          <Controller
+            name="config.validateUserProfile"
+            defaultValue={["false"]}
+            control={form.control}
+            render={({ field }) => (
+              <Switch
+                id={"kc-validate-user-profile"}
+                data-testid="validate-user-profile"
+                isDisabled={false}
+                onChange={(_event, value) => field.onChange([`${value}`])}
+                isChecked={field.value[0] === "true"}
+                label={t("on")}
+                labelOff={t("off")}
+                aria-label={t("validateUserProfile")}
+              />
+            )}
+          ></Controller>
+        </FormGroup>
+
+        <FormGroup
           label={t("enableLdapPasswordPolicy")}
           labelIcon={
             <HelpItem

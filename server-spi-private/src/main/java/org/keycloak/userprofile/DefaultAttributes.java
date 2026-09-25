@@ -182,7 +182,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
                     continue;
                 }
 
-                if (user != null && metadata.isReadOnly(attributeContext)) {
+                if (user != null && metadata.isReadOnly(attributeContext) && metadata.isReadOnlyBypassAllowed(attributeContext)) {
                     List<String> value = user.getAttributeStream(name).filter(StringUtil::isNotBlank).collect(Collectors.toList());
                     List<String> newValue = attribute.getValue().stream().filter(StringUtil::isNotBlank).collect(Collectors.toList());
                     if (CollectionUtil.collectionEquals(value, newValue)) {

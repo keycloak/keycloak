@@ -237,6 +237,11 @@ public class FullNameLDAPStorageMapper extends AbstractLDAPStorageMapper {
         return new HashSet<>(List.of(UserModel.FIRST_NAME, UserModel.LAST_NAME));
     }
 
+    @Override
+    public boolean isUserAttributeReadOnly(String attrName) {
+        return isReadOnly();
+    }
+
     protected String getLdapFullNameAttrName() {
         String ldapFullNameAttrName = mapperModel.getConfig().getFirst(LDAP_FULL_NAME_ATTRIBUTE);
         return ldapFullNameAttrName == null ? LDAPConstants.CN : ldapFullNameAttrName;
