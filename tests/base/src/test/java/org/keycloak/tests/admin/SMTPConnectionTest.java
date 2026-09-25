@@ -33,6 +33,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.email.EmailSenderProvider;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -49,6 +50,8 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.server.KeycloakUrls;
 
 import org.junit.jupiter.api.Assertions;
@@ -84,6 +87,9 @@ public class SMTPConnectionTest {
 
     @InjectKeycloakUrls
     KeycloakUrls keycloakUrls;
+
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
 
     @Test
     @Order(1)
@@ -247,6 +253,42 @@ public class SMTPConnectionTest {
     }
 
     @Test
+    @Order(10)
+    public void testWithTokenAuthRefreshesTokenBeforeItExpires() throws Exception {
+        // 120-second token: refreshed 30 seconds before it expires
+        assertTokenReusedThenRefreshed("test-smtp-client-IV", 60, 100);
+    }
+
+    @Test
+    @Order(11)
+    public void testWithTokenAuthRefreshesShortLivedTokenHalfwayThroughItsLifetime() throws Exception {
+        // 40-second token: refreshed after 20 seconds, a 30-second margin would already refresh it after 10
+        assertTokenReusedThenRefreshed("test-smtp-client-V", 15, 25);
+    }
+
+    private void assertTokenReusedThenRefreshed(String clientId, int reusedAfterSeconds, int refreshedAfterSeconds) throws Exception {
+        final var realm = adminClient.realms().realm(managedRealm.getName());
+        mailServer.credentials("admin@localhost", token -> true);
+        final var settings = settings("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
+                "admin@localhost", keycloakUrls.getToken(managedRealm.getName()), clientId, "secret", "basic");
+
+        assertStatus(realm.testSMTPConnection(settings), 204);
+        assertMailReceived();
+        assertClientLoginEventsCountAndClear(realm, clientId, 1);
+
+        timeOffSet.set(reusedAfterSeconds);
+        assertStatus(realm.testSMTPConnection(settings), 204);
+        assertMailReceived();
+        assertEventsEmpty(realm);
+
+        timeOffSet.set(refreshedAfterSeconds);
+        assertStatus(realm.testSMTPConnection(settings), 204);
+        assertMailReceived();
+        assertClientLoginEventsCountAndClear(realm, clientId, 1);
+        assertEventsEmpty(realm);
+    }
+
+    @Test
     @Order(9)
     public void testAllowUTF8() throws Exception {
         // utf8 on from not allowed if allowutf8 not enabled
@@ -406,6 +448,14 @@ public class SMTPConnectionTest {
             realm.clients(ClientBuilder.create("test-smtp-client-III")
                     .secret("secret")
                     .serviceAccountsEnabled(true));
+            realm.clients(ClientBuilder.create("test-smtp-client-IV")
+                    .secret("secret")
+                    .serviceAccountsEnabled(true)
+                    .attribute(OIDCConfigAttributes.ACCESS_TOKEN_LIFESPAN, "120"));
+            realm.clients(ClientBuilder.create("test-smtp-client-V")
+                    .secret("secret")
+                    .serviceAccountsEnabled(true)
+                    .attribute(OIDCConfigAttributes.ACCESS_TOKEN_LIFESPAN, "40"));
 
             realm.users(UserBuilder.create("myadmin")
                     .name("My", "Admin")
