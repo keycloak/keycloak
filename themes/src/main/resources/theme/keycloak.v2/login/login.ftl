@@ -25,6 +25,7 @@
                             </#if>
                         </@field.password>
                     <#else>
+                        <input type="text" autocomplete="username" value="${auth.attemptedUsername!''}" hidden readonly>
                         <@field.password name="password" label=msg("password") forgotPassword=realm.resetPasswordAllowed autofocus=usernameHidden?? autocomplete="current-password">
                             <#if realm.rememberMe && !usernameHidden??>
                                 <@field.checkbox name="rememberMe" label=msg("rememberMe") value=login.rememberMe?? />
