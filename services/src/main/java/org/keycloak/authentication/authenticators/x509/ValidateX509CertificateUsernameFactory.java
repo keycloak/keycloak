@@ -31,7 +31,6 @@ import org.keycloak.models.KeycloakSession;
 public class ValidateX509CertificateUsernameFactory extends AbstractX509ClientCertificateAuthenticatorFactory {
 
     public static final String PROVIDER_ID = "direct-grant-auth-x509-username";
-    public static final ValidateX509CertificateUsername SINGLETON = new ValidateX509CertificateUsername();
 
     @Override
     public String getHelpText() {
@@ -53,7 +52,7 @@ public class ValidateX509CertificateUsernameFactory extends AbstractX509ClientCe
 
     @Override
     public Authenticator create(KeycloakSession session) {
-        return SINGLETON;
+        return new ValidateX509CertificateUsername(getLegacyCriticalBehavior());
     }
 
     @Override

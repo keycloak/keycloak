@@ -30,9 +30,6 @@ import org.keycloak.models.KeycloakSession;
 public class X509ClientCertificateAuthenticatorFactory  extends AbstractX509ClientCertificateAuthenticatorFactory {
 
     public static final String PROVIDER_ID = "auth-x509-client-username-form";
-    public static final X509ClientCertificateAuthenticator SINGLETON =
-            new X509ClientCertificateAuthenticator();
-
 
     @Override
     public String getHelpText() {
@@ -52,7 +49,7 @@ public class X509ClientCertificateAuthenticatorFactory  extends AbstractX509Clie
 
     @Override
     public Authenticator create(KeycloakSession session) {
-        return SINGLETON;
+        return new X509ClientCertificateAuthenticator(getLegacyCriticalBehavior());
     }
 
     @Override

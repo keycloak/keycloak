@@ -132,6 +132,14 @@ public class ManagedCertificates {
     }
 
     /**
+     * Return the client keystore
+     * @return The client keystore
+     */
+    public KeyStore getClientKeyStore() {
+        return clientKeyStore;
+    }
+
+    /**
      * Creates a SSL context configured with passed client keystore and trustore files
      * obtained from the classpath.
      *
