@@ -3,6 +3,7 @@ package org.keycloak.tests.client.policies;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.Response;
 
@@ -31,6 +32,10 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceGroupsCondition;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceGroupsConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesCondition;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesConditionFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.RejectImplicitGrantExecutor;
@@ -74,6 +79,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  *
@@ -556,6 +564,56 @@ public class ClientIdMetadataDocumentTest {
 
         // cleanup
         deleteClientByAdmin(clientRepresentation.getId());
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("clientUpdaterSourceConditions")
+    public void testClientUpdaterSourceConditionOnCimdCreateAndUpdate(String updaterSourceConditionProviderId,
+            ClientPolicyConditionConfigurationRepresentation updaterSourceConditionConfig) throws Exception {
+        // https://github.com/keycloak/keycloak/issues/52152
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+
+        SecureRedirectUrisEnforcerExecutor.Configuration redirectUrisConfig = new SecureRedirectUrisEnforcerExecutor.Configuration();
+        redirectUrisConfig.setAllowHttpScheme(false);
+        redirectUrisConfig.setAllowIPv4LoopbackAddress(true);
+
+        updateCimdAndSecureRedirectUrisPolicy(conditionConfig, executorConfig, redirectUrisConfig,
+                updaterSourceConditionProviderId, updaterSourceConditionConfig);
+
+        setCimdPublicClient();
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(clientRepresentation.isPublicClient());
+
+        logout(tokenResponse.getIdToken());
+
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        cimd.getRepresentation().setLogoUri("http://localhost:8500/logo2.png");
+        code = loginUserAndGetCode(false);
+        tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertEquals("http://localhost:8500/logo2.png", clientRepresentation.getAttributes().get("logoUri"));
+
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    static Stream<Arguments> clientUpdaterSourceConditions() {
+        ClientUpdaterSourceGroupsCondition.Configuration groupsConditionConfig = new ClientUpdaterSourceGroupsCondition.Configuration();
+        groupsConditionConfig.setGroups(List.of("topGroup"));
+
+        ClientUpdaterSourceRolesCondition.Configuration rolesConditionConfig = new ClientUpdaterSourceRolesCondition.Configuration();
+        rolesConditionConfig.setRoles(List.of("admin"));
+
+        return Stream.of(
+                Arguments.of(ClientUpdaterSourceGroupsConditionFactory.PROVIDER_ID, groupsConditionConfig),
+                Arguments.of(ClientUpdaterSourceRolesConditionFactory.PROVIDER_ID, rolesConditionConfig));
     }
 
     @Test
@@ -1302,6 +1360,15 @@ public class ClientIdMetadataDocumentTest {
             ClientIdUriSchemeCondition.Configuration conditionConfig,
             ClientIdMetadataDocumentExecutor.Configuration executorConfig,
             SecureRedirectUrisEnforcerExecutor.Configuration redirectUrisConfig) {
+        updateCimdAndSecureRedirectUrisPolicy(conditionConfig, executorConfig, redirectUrisConfig, AnyClientConditionFactory.PROVIDER_ID, null);
+    }
+
+    private void updateCimdAndSecureRedirectUrisPolicy(
+            ClientIdUriSchemeCondition.Configuration conditionConfig,
+            ClientIdMetadataDocumentExecutor.Configuration executorConfig,
+            SecureRedirectUrisEnforcerExecutor.Configuration redirectUrisConfig,
+            String policyConditionProviderId,
+            ClientPolicyConditionConfigurationRepresentation policyConditionConfig) {
         realm.updateWithCleanup(r -> {
             r.resetClientProfiles()
                     .clientProfile(ClientProfileBuilder.create()
@@ -1323,8 +1390,8 @@ public class ClientIdMetadataDocumentTest {
                     .build())
                     .clientPolicy(ClientPolicyBuilder.create()
                     .name("redirect-uris-policy")
-                    .description("SecureRedirectUris policy for all clients")
-                    .condition(AnyClientConditionFactory.PROVIDER_ID, null)
+                    .description("SecureRedirectUris policy")
+                    .condition(policyConditionProviderId, policyConditionConfig)
                     .profile("redirect-uris-profile")
                     .build());
             return r;
