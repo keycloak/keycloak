@@ -365,13 +365,11 @@ export default function DetailSettings() {
       tab,
     });
 
-  const useTab = (tab: IdentityProviderTab) => useRoutableTab(toTab(tab));
-
-  const settingsTab = useTab("settings");
-  const mappersTab = useTab("mappers");
-  const organizationsTab = useTab("organizations");
-  const permissionsTab = useTab("permissions");
-  const eventsTab = useTab("events");
+  const settingsTab = useRoutableTab(toTab("settings"));
+  const mappersTab = useRoutableTab(toTab("mappers"));
+  const organizationsTab = useRoutableTab(toTab("organizations"));
+  const permissionsTab = useRoutableTab(toTab("permissions"));
+  const eventsTab = useRoutableTab(toTab("events"));
 
   const save = async (savedProvider?: IdentityProviderRepresentation) => {
     const p = convertFormValuesToObject<IdentityProviderRepresentation>(

@@ -16,11 +16,11 @@ export const ClientRegistration = () => {
   const { t } = useTranslation();
   const { realm } = useRealm();
 
-  const useTab = (subTab: ClientRegistrationTab) =>
-    useRoutableTab(toClientRegistration({ realm, subTab }));
+  const subTab = (subTab: ClientRegistrationTab) =>
+    toClientRegistration({ realm, subTab });
 
-  const anonymousTab = useTab("anonymous");
-  const authenticatedTab = useTab("authenticated");
+  const anonymousTab = useRoutableTab(subTab("anonymous"));
+  const authenticatedTab = useRoutableTab(subTab("authenticated"));
 
   return (
     <RoutableTabs
