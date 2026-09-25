@@ -100,6 +100,11 @@ public class UriUtilsTest {
         assertFalse(UriUtils.originEquals("https://münchen.example",
                 "https://xn--mnchen-3ya.example"));
         assertFalse(UriUtils.originEquals("https://faß.de", "https://fass.de"));
+        // Unicode case folding must not equate distinct hosts (dotless ı vs ASCII i)
+        assertFalse(UriUtils.originEquals("https://ı.com", "https://i.com"));
+        assertFalse(UriUtils.schemeAndHostEqual(URI.create("https://ı.com/callback"),
+                URI.create("https://i.com/callback")));
+        assertTrue(UriUtils.originEquals("https://Example.COM", "https://example.com"));
     }
 
     @Test

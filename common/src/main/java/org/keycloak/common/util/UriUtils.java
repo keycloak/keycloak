@@ -121,7 +121,8 @@ public class UriUtils {
         String hostA = resolveHost(uriA);
         String hostB = resolveHost(uriB);
         if (hostA != null && hostB != null) {
-            return hostA.equalsIgnoreCase(hostB);
+            // ASCII-only: String.equalsIgnoreCase also folds Unicode (e.g. ı ↔ i).
+            return asciiEqualsIgnoreCase(hostA, hostB);
         }
         if (hostA != null || hostB != null) {
             return false;
@@ -132,6 +133,35 @@ public class UriUtils {
             return Objects.equals(uriA.getRawSchemeSpecificPart(), uriB.getRawSchemeSpecificPart());
         }
         return false;
+    }
+
+    /**
+     * Case-insensitive equality restricted to ASCII {@code A-Z}/{@code a-z}.
+     * Unlike {@link String#equalsIgnoreCase(String)}, this does not fold Unicode
+     * letters (e.g. Latin small letter dotless i {@code ı} must not match {@code i}).
+     */
+    private static boolean asciiEqualsIgnoreCase(String a, String b) {
+        int len = a.length();
+        if (len != b.length()) {
+            return false;
+        }
+        for (int i = 0; i < len; i++) {
+            char ca = a.charAt(i);
+            char cb = b.charAt(i);
+            if (ca == cb) {
+                continue;
+            }
+            if (ca >= 'A' && ca <= 'Z') {
+                ca += 'a' - 'A';
+            }
+            if (cb >= 'A' && cb <= 'Z') {
+                cb += 'a' - 'A';
+            }
+            if (ca != cb) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
