@@ -45,6 +45,24 @@ public enum DeliveryMethod {
     }
 
     /**
+     * Null-safe {@link #family()} lookup by URI: {@code null} for a
+     * {@code null}, blank or unknown method URI instead of throwing, for
+     * callers that only need to ask "is this a POLL stream?" without
+     * validating the value.
+     */
+    public static DeliveryMethodFamily familyOfUri(String deliveryMethod) {
+        if (deliveryMethod == null || deliveryMethod.isBlank()) {
+            return null;
+        }
+        for (DeliveryMethod dm : values()) {
+            if (dm.specUrn.equals(deliveryMethod)) {
+                return dm.family();
+            }
+        }
+        return null;
+    }
+
+    /**
      * Coarse-grained PUSH/POLL family. Both spec variants of each transport
      * (RFC 8935 + legacy RISC PUSH; RFC 8936 + legacy RISC POLL) collapse to
      * the same family so per-client allow-listing operates on the operator's
