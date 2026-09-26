@@ -22,11 +22,13 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
 import org.infinispan.protostream.WrappedMessage;
 import org.infinispan.protostream.annotations.ProtoFactory;
@@ -38,6 +40,10 @@ import org.infinispan.protostream.annotations.ProtoTypeId;
  */
 @ProtoTypeId(Marshalling.SESSION_ENTITY_WRAPPER)
 public class SessionEntityWrapper<S extends SessionEntity> {
+
+    private static final String LOADING_MARKER_KEY = "loading";
+    public static final String CACHED_AT_KEY = "cachedAt";
+    public static final long LOADING_MARKER_LIFESPAN_MS = 60_000;
 
     private final UUID version;
     private final S entity;
@@ -112,6 +118,16 @@ public class SessionEntityWrapper<S extends SessionEntity> {
         return new SessionEntityWrapper<>(version, localMetadata, entity);
     }
 
+    public boolean isLoadingMarker() {
+        return localMetadata != null && localMetadata.containsKey(LOADING_MARKER_KEY);
+    }
+
+    public static <S extends SessionEntity> SessionEntityWrapper<S> createLoadingMarker(S minimalEntity) {
+        Map<String, String> metadata = new ConcurrentHashMap<>();
+        metadata.put(LOADING_MARKER_KEY, "true");
+        return new SessionEntityWrapper<>(metadata, minimalEntity);
+    }
+
     public ClientModel getClientIfNeeded(RealmModel realm) {
         if (entity instanceof AuthenticatedClientSessionEntity) {
             String clientId = ((AuthenticatedClientSessionEntity) entity).getClientId();
@@ -120,6 +136,27 @@ public class SessionEntityWrapper<S extends SessionEntity> {
             }
         }
         return null;
+    }
+
+    /**
+     * Clamps {@code lifespan} so that the cache entry never lives past
+     * {@code cachedAt + maxCacheLifespanMs}. Does not set {@code cachedAt} —
+     * callers that create new entries must set it before calling this method.
+     */
+    public static long capLifespan(long lifespan, long maxCacheLifespanMs, SessionEntityWrapper<?> wrapper) {
+        if (maxCacheLifespanMs == Long.MAX_VALUE || lifespan == SessionTimeouts.ENTRY_EXPIRED_FLAG) {
+            return lifespan;
+        }
+        String cachedAtStr = wrapper.getLocalMetadataNote(CACHED_AT_KEY);
+        long maxRemaining = maxCacheLifespanMs;
+        if (cachedAtStr != null) {
+            long cachedAt = Long.parseLong(cachedAtStr);
+            maxRemaining = cachedAt + maxCacheLifespanMs - Time.currentTimeMillis();
+        }
+        if (maxRemaining <= 0) {
+            return 1;
+        }
+        return lifespan == SessionTimeouts.IMMORTAL_FLAG ? maxRemaining : Math.min(lifespan, maxRemaining);
     }
 
     public String getLocalMetadataNote(String key) {

@@ -36,11 +36,13 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
     private CacheOperation operation;
     private final long lifespanMs;
     private final long maxIdleTimeMs;
+    private final long maxCacheLifespanMs;
 
-    private MergedUpdate(CacheOperation operation, long lifespanMs, long maxIdleTimeMs) {
+    private MergedUpdate(CacheOperation operation, long lifespanMs, long maxIdleTimeMs, long maxCacheLifespanMs) {
         this.operation = operation;
         this.lifespanMs = lifespanMs;
         this.maxIdleTimeMs = maxIdleTimeMs;
+        this.maxCacheLifespanMs = maxCacheLifespanMs;
     }
 
     @Override
@@ -73,8 +75,21 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
         return maxIdleTimeMs;
     }
 
+    /**
+     * Returns the lifespan clamped so that the entry never lives past
+     * {@code cachedAt + maxCacheLifespanMs}. Must be called with the actual wrapper
+     * being written to the cache, since different wrappers may have different
+     * {@code cachedAt} timestamps.
+     */
+    public long capLifespan(SessionEntityWrapper<?> wrapper) {
+        return SessionEntityWrapper.capLifespan(lifespanMs, maxCacheLifespanMs, wrapper);
+    }
 
     public static <S extends SessionEntity> MergedUpdate<S> computeUpdate(List<SessionUpdateTask<S>> childUpdates, SessionEntityWrapper<S> sessionWrapper, long lifespanMs, long maxIdleTimeMs) {
+        return computeUpdate(childUpdates, sessionWrapper, lifespanMs, maxIdleTimeMs, Long.MAX_VALUE);
+    }
+
+    public static <S extends SessionEntity> MergedUpdate<S> computeUpdate(List<SessionUpdateTask<S>> childUpdates, SessionEntityWrapper<S> sessionWrapper, long lifespanMs, long maxIdleTimeMs, long maxCacheLifespanMs) {
         if (childUpdates == null || childUpdates.isEmpty()) {
             return null;
         }
@@ -90,7 +105,7 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
                     logger.tracef("Entry '%s' is expired. Will remove it from the cache", sessionWrapper);
                 }
 
-                result = new MergedUpdate<>(operation, lifespanMs, maxIdleTimeMs);
+                result = new MergedUpdate<>(operation, lifespanMs, maxIdleTimeMs, maxCacheLifespanMs);
                 result.childUpdates.add(child);
             } else {
 
@@ -99,7 +114,7 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
 
                 // REMOVE is special case as other operations are not needed then.
                 if (result.operation == CacheOperation.REMOVE) {
-                    result = new MergedUpdate<>(result.operation, lifespanMs, maxIdleTimeMs);
+                    result = new MergedUpdate<>(result.operation, lifespanMs, maxIdleTimeMs, maxCacheLifespanMs);
                     result.childUpdates.add(child);
                     return result;
                 }

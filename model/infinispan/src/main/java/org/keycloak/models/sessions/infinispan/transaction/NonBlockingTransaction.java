@@ -56,6 +56,14 @@ public interface NonBlockingTransaction {
     void asyncRollback(AggregateCompletionStage<Void> stage);
 
     /**
+     * Executes cache operations after database changes are committed (DB-first ordering).
+     * All cache writes (ADD, ADD_IF_ABSENT, REPLACE, REMOVE) run here so that the database
+     * is always the source of truth when cache updates become visible.
+     */
+    default void asyncPostDatabaseCommit(AggregateCompletionStage<Void> stage) {
+    }
+
+    /**
      * This transaction connects to entities in the database.
      *
      * @return When this returns true, this has entities in the database
