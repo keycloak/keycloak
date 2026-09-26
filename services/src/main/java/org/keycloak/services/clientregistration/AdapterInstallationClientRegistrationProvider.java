@@ -33,7 +33,7 @@ import org.keycloak.services.managers.RealmManager;
 
 /**
  *  @deprecated Use the Admin REST API to retrieve client installation configuration.
- *  *
+ *
  *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
