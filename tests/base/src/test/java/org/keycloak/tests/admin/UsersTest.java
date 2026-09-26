@@ -19,10 +19,13 @@ package org.keycloak.tests.admin;
 
 import java.util.List;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -384,6 +387,22 @@ public class UsersTest {
         assertThat(realm.admin().users().search("User", true), hasSize(1));
         assertThat(realm.admin().users().search("USER", true), hasSize(1));
         assertThat(realm.admin().users().search("Use", true), hasSize(0));
+    }
+
+    @Test
+    public void createUserWithIncompleteDeprecatedPasswordCredentialReturnsBadRequest() {
+        UserRepresentation user = UserBuilder.create()
+                .username("incomplete-cred-user")
+                .enabled(true)
+                .build();
+
+        CredentialRepresentation cred = new CredentialRepresentation();
+        cred.setType(CredentialRepresentation.PASSWORD);
+        user.setCredentials(List.of(cred));
+
+        try (Response response = realm.admin().users().create(user)) {
+            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+        }
     }
 
     private void createUser(UserRepresentation user) {
