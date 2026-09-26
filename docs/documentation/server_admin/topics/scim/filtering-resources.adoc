@@ -75,6 +75,47 @@ NOTE: The `gt`, `ge`, `lt`, and `le` operators are supported on date/time attrib
 or boolean attributes. Invalid operator/type combinations return a `400 Bad Request` response with
 `scimType: "invalidFilter"`.
 
+[[_scim_filtering_null_values]]
+== Attributes without a value
+
+Filters are evaluated in the database, and whether a resource whose attribute has no value is returned depends on how
+{project_name} stores the attribute:
+
+* *Stored with the resource.* For users, these are `userName`, `name.givenName`, `name.familyName`, `emails`,
+`active`, `meta.created`, and `meta.lastModified`. For groups, these are `displayName`, `meta.created`, and
+`meta.lastModified`. A comparison with a missing value is neither true nor false, so neither the comparison nor its
+negation returns the resource.
+* *Stored as separate values.* These are all other attributes, including the remaining core attributes such as
+`title` or `externalId`, extension and custom attributes, `groups.value`, and `members.value`. A comparison is true
+only when a matching value exists, so `ne` does not return a resource without a value, but a negated `eq` does. For a
+multi-valued attribute, `ne` returns the resources that have at least one other value.
+
+The following table shows whether a resource without a value for `attribute` is returned:
+
+[cols="2,1,1",options="header"]
+|===
+| Filter | Stored with the resource | Stored as separate values
+
+| `attribute ne "value"`
+| Not returned
+| Not returned
+
+| `not (attribute eq "value")`
+| Not returned
+| Returned
+
+| `not (attribute pr)`
+| Returned
+| Returned
+
+| `attribute eq null` or `attribute ne null`
+| Never matches
+| Never matches
+|===
+
+The `eq` and `ne` operators accept the `null` literal, but the comparison never matches, so it cannot be used to find
+resources without a value.
+
 == Logical operators
 
 Filters can be combined using logical operators:
@@ -291,6 +332,8 @@ default order of the underlying store, consistent with the {project_name} Admin 
 simultaneously. Use `or` to match either value.
 * *Operator and attribute-type compatibility is enforced.* String operators (`sw`, `ew`, `co`) cannot be used on
 date/time or boolean attributes, and incompatible combinations are rejected. See <<Comparison operators>>.
+* *Comparisons skip attributes without a value.* `attribute ne "value"` and `attribute eq null` do not match resources
+where the attribute has no value. Use `not (attribute pr)` to find them. See <<Attributes without a value>>.
 * *Membership filters carry extra restrictions.* The `groups.value` and `members.value` paths behave differently under
 fine-grained admin permissions and with LDAP `LDAP_ONLY` group mappers. See <<Filtering by group membership>>.
 
@@ -314,3 +357,4 @@ Common causes of filter errors:
 *   Unknown filter operators.
 *   Using an operator on an incompatible attribute type (for example, `gt` on a boolean).
 *   Using string operators (`sw`, `ew`, `co`) on date/time attributes.
+*   Using `null` with an operator other than `eq` or `ne`.
