@@ -68,6 +68,8 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -178,6 +180,49 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         assertNull(loginUsernamePage.getUsernameInputError());
         assertTrue(loginPage.isPasswordInputPresent());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"user@neworg;org", "user@neworg org", "user@neworg.org.", "user@new_org.org", "user@2802@neworg.org"})
+    public void testMalformedDomainInUsernameContinuesToPasswordStep(String username) {
+        createOrganization();
+
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(username);
+        loginUsernamePage.submit();
+
+        // a malformed domain matches no organization, so the flow continues to the password step
+        assertTrue(loginPage.isPasswordInputPresent());
+        loginPage.fillPassword("password");
+        loginPage.submit();
+        assertThat(loginPage.getPasswordInputError().orElse(null), is("Invalid username or password."));
+    }
+
+    @Test
+    public void testMalformedDomainInUsernameWhenOrganizationHasNoDomain() {
+        createOrganization(organizationName, new String[0]);
+
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly("user@neworg;org");
+        loginUsernamePage.submit();
+
+        assertTrue(loginPage.isPasswordInputPresent());
+        loginPage.fillPassword("password");
+        loginPage.submit();
+        assertThat(loginPage.getPasswordInputError().orElse(null), is("Invalid username or password."));
+    }
+
+    @Test
+    public void testMalformedDomainInLoginHintContinuesToPasswordStep() {
+        createOrganization();
+
+        oauth.loginForm().loginHint("user@neworg;org").open();
+
+        // the login_hint bypasses the username form, but a malformed domain must still match no organization
+        assertTrue(loginPage.isPasswordInputPresent());
+        loginPage.fillPassword("password");
+        loginPage.submit();
+        assertThat(loginPage.getPasswordInputError().orElse(null), is("Invalid username or password."));
     }
 
     @Test
