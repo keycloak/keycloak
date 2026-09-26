@@ -56,6 +56,13 @@ public interface NonBlockingTransaction {
     void asyncRollback(AggregateCompletionStage<Void> stage);
 
     /**
+     * Executes deferred cache operations that must happen after database changes are committed.
+     * Used for REMOVE operations to ensure DB-first ordering.
+     */
+    default void asyncPostDatabaseCommit(AggregateCompletionStage<Void> stage) {
+    }
+
+    /**
      * This transaction connects to entities in the database.
      *
      * @return When this returns true, this has entities in the database

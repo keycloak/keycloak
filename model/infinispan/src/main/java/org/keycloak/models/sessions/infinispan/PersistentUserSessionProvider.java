@@ -714,8 +714,15 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
         SessionEntityWrapper<UserSessionEntity> wrappedUserSessionEntity = new SessionEntityWrapper<>(userSessionEntityToImport);
 
+        clientSessionTx.placeLoadingMarkers(clientSessionsById, offline);
+
         SessionEntityWrapper<UserSessionEntity> existingSession = sessionTx.importSession(realm, sessionId, wrappedUserSessionEntity, offline, lifespan, maxIdle);
         if (existingSession != null) {
+            clientSessionTx.cleanupAllLoadingMarkers(offline);
+            if (existingSession.isLoadingMarker()) {
+                log.debugf("CAS failed for sessionId=%s offline=%s — session was likely deleted during import", sessionId, offline);
+                return null;
+            }
             // skip import the client sessions, they should have been imported too.
             log.debugf("The user-session already imported by another transaction for sessionId=%s offline=%s", sessionId, offline);
             return existingSession;
@@ -726,7 +733,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
             migrateRememberMe(persistentUserSession);
         }
 
-        // Import client sessions
+        // Import client sessions (uses CAS replace with pre-placed markers)
         clientSessionTx.importSessionsConcurrently(realm, clientSessionsById, offline);
         clientSessionTx.setUserSessionId(clientSessionsById.keySet(), sessionId, offline);
         return wrappedUserSessionEntity;

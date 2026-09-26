@@ -422,6 +422,9 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         var clientSessionTx = new UserSessionInfinispanChangelogBasedTransaction<>(session, clientSessionCacheHolder);
         var offlineClientSessionTx = new UserSessionInfinispanChangelogBasedTransaction<>(session, offlineClientSessionCacheHolder);
 
+        offlineSessionTx.setPersistToDatabaseCacheName(OFFLINE_USER_SESSION_CACHE_NAME);
+        offlineClientSessionTx.setPersistToDatabaseCacheName(OFFLINE_CLIENT_SESSION_CACHE_NAME);
+
         var transactionProvider = session.getProvider(InfinispanTransactionProvider.class);
         transactionProvider.registerTransaction(sessionTx);
         transactionProvider.registerTransaction(offlineSessionTx);

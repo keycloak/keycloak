@@ -250,33 +250,131 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         return null;
     }
 
+    private static final long LOADING_MARKER_LIFESPAN_MS = 60_000;
+
+    @SuppressWarnings("unchecked")
+    private Map<Object, SessionEntityWrapper<?>> getOrCreateVolatileLoadingMarkers() {
+        Map<Object, SessionEntityWrapper<?>> markers = (Map<Object, SessionEntityWrapper<?>>) session.getAttribute(InfinispanChangelogBasedTransaction.LOADING_MARKERS_ATTR);
+        if (markers == null) {
+            markers = new HashMap<>();
+            session.setAttribute(InfinispanChangelogBasedTransaction.LOADING_MARKERS_ATTR, markers);
+        }
+        return markers;
+    }
+
+    private SessionEntityWrapper<UserSessionEntity> placeLoadingMarker(RealmModel realm, String sessionId) {
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getTransaction(true).getCache();
+        UserSessionEntity markerEntity = new UserSessionEntity(sessionId);
+        markerEntity.setRealmId(realm.getId());
+        SessionEntityWrapper<UserSessionEntity> marker = SessionEntityWrapper.createLoadingMarker(markerEntity);
+        SessionEntityWrapper<UserSessionEntity> existing = cache.putIfAbsent(sessionId, marker, LOADING_MARKER_LIFESPAN_MS, TimeUnit.MILLISECONDS);
+
+        if (existing == null) {
+            getOrCreateVolatileLoadingMarkers().put(sessionId, marker);
+            return null;
+        } else if (existing.isLoadingMarker()) {
+            return existing;
+        }
+        return existing;
+    }
+
+    private void cleanupVolatileLoadingMarker(String sessionId) {
+        Map<Object, SessionEntityWrapper<?>> markers = getOrCreateVolatileLoadingMarkers();
+        @SuppressWarnings("unchecked")
+        SessionEntityWrapper<UserSessionEntity> marker = (SessionEntityWrapper<UserSessionEntity>) markers.remove(sessionId);
+        if (marker != null) {
+            getTransaction(true).getCache().remove(sessionId, marker);
+        }
+    }
+
+    private boolean wasMarkerConsumed(String sessionId) {
+        return !getOrCreateVolatileLoadingMarkers().containsKey(sessionId);
+    }
+
+    private UserSessionEntity loadUserSessionEntityWithoutCaching(RealmModel realm, String sessionId) {
+        UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+        UserSessionModel persistentUserSession = persister.loadUserSession(realm, sessionId, true);
+        if (persistentUserSession == null) {
+            return null;
+        }
+        return loadUserSessionEntityWithoutCaching(realm, persistentUserSession);
+    }
+
+    private UserSessionEntity loadUserSessionEntityWithoutCaching(RealmModel realm, UserSessionModel persistentUserSession) {
+        UserSessionEntity entity = UserSessionEntity.createFromModel(persistentUserSession);
+
+        for (String clientUUID : persistentUserSession.getAuthenticatedClientSessions().keySet()) {
+            entity.getClientSessions().add(clientUUID);
+        }
+
+        long lifespan = offlineSessionCacheEntryLifespanAdjuster.apply(realm, null, entity);
+        long maxIdle = SessionTimeouts.getOfflineSessionMaxIdleMs(realm, null, entity);
+        if (lifespan == SessionTimeouts.ENTRY_EXPIRED_FLAG || maxIdle == SessionTimeouts.ENTRY_EXPIRED_FLAG) {
+            return null;
+        }
+
+        getTransaction(true).addTask(entity.getId(), null, entity, UserSessionModel.SessionPersistenceState.PERSISTENT);
+        return entity;
+    }
+
     private UserSessionEntity getUserSessionEntityFromPersistenceProvider(RealmModel realm, String sessionId) {
         log.debugf("Offline user-session not found in infinispan, attempting UserSessionPersisterProvider lookup for sessionId=%s", sessionId);
+
+        SessionEntityWrapper<UserSessionEntity> existingData = placeLoadingMarker(realm, sessionId);
+        if (existingData != null) {
+            if (existingData.isLoadingMarker()) {
+                return loadUserSessionEntityWithoutCaching(realm, sessionId);
+            }
+            return existingData.getEntity();
+        }
+
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
         UserSessionModel persistentUserSession = persister.loadUserSession(realm, sessionId, true);
 
         if (persistentUserSession == null) {
             log.debugf("Offline user-session not found in UserSessionPersisterProvider for sessionId=%s", sessionId);
+            cleanupVolatileLoadingMarker(sessionId);
             return null;
         }
 
         UserSessionEntity sessionEntity = importUserSession(realm, persistentUserSession);
         if (sessionEntity == null) {
-            // TODO session expired, remove or ignore?
             persister.removeUserSession(sessionId, true);
+            cleanupVolatileLoadingMarker(sessionId);
+            return null;
+        }
+
+        if (!wasMarkerConsumed(sessionId)) {
+            cleanupVolatileLoadingMarker(sessionId);
+            return null;
         }
 
         return sessionEntity;
     }
 
     private UserSessionEntity getUserSessionEntityFromCacheOrImportIfNecessary(RealmModel realm, UserSessionModel persistentUserSession) {
-        UserSessionEntity userSessionEntity = getUserSessionEntity(realm, persistentUserSession.getId(), true);
-        if (userSessionEntity != null) {
-            // user session present in cache, return existing session
-            return userSessionEntity;
+        String sessionId = persistentUserSession.getId();
+
+        SessionEntityWrapper<UserSessionEntity> existingData = placeLoadingMarker(realm, sessionId);
+        if (existingData != null) {
+            if (existingData.isLoadingMarker()) {
+                return loadUserSessionEntityWithoutCaching(realm, persistentUserSession);
+            }
+            return existingData.getEntity();
         }
 
-        return importUserSession(realm, persistentUserSession);
+        UserSessionEntity sessionEntity = importUserSession(realm, persistentUserSession);
+        if (sessionEntity == null) {
+            cleanupVolatileLoadingMarker(sessionId);
+            return null;
+        }
+
+        if (!wasMarkerConsumed(sessionId)) {
+            cleanupVolatileLoadingMarker(sessionId);
+            return null;
+        }
+
+        return sessionEntity;
     }
 
     private UserSessionEntity importUserSession(RealmModel realm, UserSessionModel persistentUserSession) {
@@ -294,21 +392,22 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
             return null;
         }
 
+        var clientSessionsById = computeClientSessionsToImport(persistentUserSession, userSessionEntityToImport);
+        var clientTx = getClientSessionTransaction(true);
+        clientTx.placeLoadingMarkers(clientSessionsById);
+
         UserSessionEntity existing = getTransaction(true)
                 .importSession(realm, userSessionEntityToImport.getId(), new SessionEntityWrapper<>(userSessionEntityToImport),
                         lifespan, maxIdle);
 
         if (existing != null) {
-            // skip import the client sessions, they should have been imported too.
+            clientTx.cleanupLoadingMarkers(clientSessionsById);
             log.debugf("The user-session already imported by another transaction for sessionId=%s offline=true", sessionId);
             return existing;
         }
 
-        // we need to import the client sessions too.
         log.debugf("Attempting to import the client-sessions for user-session with sessionId=%s offline=true", sessionId);
-
-        var clientSessionsById = computeClientSessionsToImport(persistentUserSession, userSessionEntityToImport);
-        getClientSessionTransaction(true).importSessionsConcurrently(realm, clientSessionsById, offlineClientSessionCacheEntryLifespanAdjuster, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
+        clientTx.importSessionsConcurrently(realm, clientSessionsById, offlineClientSessionCacheEntryLifespanAdjuster, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
 
         return userSessionEntityToImport;
     }

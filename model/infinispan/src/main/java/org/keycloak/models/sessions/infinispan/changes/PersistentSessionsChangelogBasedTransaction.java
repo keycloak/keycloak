@@ -17,7 +17,9 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -27,6 +29,7 @@ import java.util.stream.Stream;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.sessions.infinispan.CacheDecorators;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.transaction.DatabaseUpdate;
@@ -47,6 +50,9 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
     private final String cacheName;
     private final CacheHolder<K, V> cacheHolder;
     private final CacheHolder<K, V> offlineCacheHolder;
+    private final Map<K, SessionEntityWrapper<V>> loadingMarkers = new HashMap<>();
+    private final Map<K, SessionEntityWrapper<V>> offlineLoadingMarkers = new HashMap<>();
+    protected List<DeferredRemove<K, V>> deferredRemoves;
 
     public PersistentSessionsChangelogBasedTransaction(KeycloakSession session,
                                                        String cacheName,
@@ -72,6 +78,61 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
 
     protected Map<K, SessionUpdatesList<V>> getUpdates(boolean offline) {
         return offline ? offlineUpdates : updates;
+    }
+
+    protected static final long LOADING_MARKER_LIFESPAN_MS = 60_000;
+
+    protected record DeferredRemove<K, V extends SessionEntity>(CacheHolder<K, V> cacheHolder, K key, boolean offline) {}
+
+    private Map<K, SessionEntityWrapper<V>> getLoadingMarkers(boolean offline) {
+        return offline ? offlineLoadingMarkers : loadingMarkers;
+    }
+
+    protected void storeLoadingMarker(K key, SessionEntityWrapper<V> marker, boolean offline) {
+        getLoadingMarkers(offline).put(key, marker);
+    }
+
+    protected SessionEntityWrapper<V> removeLoadingMarker(K key, boolean offline) {
+        return getLoadingMarkers(offline).remove(key);
+    }
+
+    protected boolean hasStoredLoadingMarker(K key, boolean offline) {
+        return getLoadingMarkers(offline).containsKey(key);
+    }
+
+    protected void cleanupLoadingMarker(K key, boolean offline) {
+        SessionEntityWrapper<V> marker = removeLoadingMarker(key, offline);
+        if (marker != null) {
+            Cache<K, SessionEntityWrapper<V>> cache = getCache(offline);
+            if (cache != null) {
+                cache.remove(key, marker);
+            }
+        }
+    }
+
+    public void placeLoadingMarkers(Map<K, SessionEntityWrapper<V>> sessions, boolean offline) {
+        Cache<K, SessionEntityWrapper<V>> cache = getCache(offline);
+        if (cache == null) return;
+        for (var entry : sessions.entrySet()) {
+            K key = entry.getKey();
+            SessionEntityWrapper<V> marker = SessionEntityWrapper.createLoadingMarker(entry.getValue().getEntity());
+            SessionEntityWrapper<V> existing = cache.putIfAbsent(key, marker, LOADING_MARKER_LIFESPAN_MS, TimeUnit.MILLISECONDS);
+            if (existing == null) {
+                storeLoadingMarker(key, marker, offline);
+            }
+        }
+    }
+
+    public void cleanupAllLoadingMarkers(boolean offline) {
+        Map<K, SessionEntityWrapper<V>> markers = getLoadingMarkers(offline);
+        if (markers.isEmpty()) return;
+        Cache<K, SessionEntityWrapper<V>> cache = getCache(offline);
+        if (cache != null) {
+            for (var entry : markers.entrySet()) {
+                cache.remove(entry.getKey(), entry.getValue());
+            }
+        }
+        markers.clear();
     }
 
     public K generateKey() {
@@ -171,8 +232,14 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             if (merged != null) {
                 var c = isOffline ? offlineCacheHolder : cacheHolder;
                 if (c.cache() != null) {
-                    // Update cache. It is non-blocking.
-                    InfinispanChangesUtils.runOperationInCluster(c, entry.getKey(), merged, entry.getValue().getEntityWrapper(), stage, LOG);
+                    if (merged.getOperation() == SessionUpdateTask.CacheOperation.REMOVE) {
+                        if (deferredRemoves == null) {
+                            deferredRemoves = new ArrayList<>();
+                        }
+                        deferredRemoves.add(new DeferredRemove<>(c, entry.getKey(), isOffline));
+                    } else {
+                        InfinispanChangesUtils.runOperationInCluster(c, entry.getKey(), merged, entry.getValue().getEntityWrapper(), stage, LOG);
+                    }
                 }
 
                 if (persister == null) {
@@ -188,6 +255,15 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
     public void asyncRollback(AggregateCompletionStage<Void> stage) {
         updates.clear();
         offlineUpdates.clear();
+    }
+
+    @Override
+    public void asyncPostDatabaseCommit(AggregateCompletionStage<Void> stage) {
+        if (deferredRemoves != null) {
+            for (var deferred : deferredRemoves) {
+                stage.dependsOn(CacheDecorators.ignoreReturnValues(deferred.cacheHolder().cache()).removeAsync(deferred.key()));
+            }
+        }
     }
 
     @Override
@@ -301,10 +377,25 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             // exists in transaction, avoid import operation
             return updatesList.getEntityWrapper();
         }
+
         SessionEntityWrapper<V> existing = null;
         try {
             if (getCache(offline) != null) {
-                existing = getCache(offline).putIfAbsent(key, session, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS);
+                long effectiveLifespan = SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan);
+                SessionEntityWrapper<V> marker = removeLoadingMarker(key, offline);
+                if (marker != null) {
+                    boolean replaced = getCache(offline).replace(key, marker, session, effectiveLifespan, TimeUnit.MILLISECONDS);
+                    if (!replaced) {
+                        LOG.debugf("CAS replace failed for key %s — marker was removed or replaced. Skipping cache import.", key);
+                        return marker;
+                    }
+                } else {
+                    existing = getCache(offline).putIfAbsent(key, session, effectiveLifespan, TimeUnit.MILLISECONDS);
+                    if (existing != null && existing.isLoadingMarker()) {
+                        updates.put(key, new SessionUpdatesList<>(realmModel, session));
+                        return null;
+                    }
+                }
             }
         } catch (RuntimeException exception) {
             // If the import fails, the transaction can continue with the data from the database.
@@ -354,14 +445,33 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                 //nothing to import, already expired
                 return;
             }
-            var future = cache.putIfAbsentAsync(key, session, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS)
-                    .exceptionally(throwable -> {
-                        // If the import fails, the transaction can continue with the data from the database.
-                        LOG.debugf(throwable, "Failed to import session %s", session);
-                        return null;
-                    });
-            // write result into concurrent hash map because the consumer is invoked in a different thread each time.
-            stage.dependsOn(future.thenAccept(existing -> allSessions.put(key, existing == null ? session : existing)));
+            long effectiveLifespan = SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan);
+            SessionEntityWrapper<V> marker = removeLoadingMarker(key, offline);
+            if (marker != null) {
+                var future = cache.replaceAsync(key, marker, session, effectiveLifespan, TimeUnit.MILLISECONDS)
+                        .exceptionally(throwable -> {
+                            LOG.debugf(throwable, "Failed to CAS replace session %s", session);
+                            return false;
+                        });
+                stage.dependsOn(future.thenAccept(replaced -> {
+                    if (replaced) {
+                        allSessions.put(key, session);
+                    }
+                }));
+            } else {
+                var future = cache.putIfAbsentAsync(key, session, effectiveLifespan, TimeUnit.MILLISECONDS)
+                        .exceptionally(throwable -> {
+                            LOG.debugf(throwable, "Failed to import session %s", session);
+                            return null;
+                        });
+                stage.dependsOn(future.thenAccept(existing -> {
+                    if (existing == null || existing.isLoadingMarker()) {
+                        allSessions.put(key, session);
+                    } else {
+                        allSessions.put(key, existing);
+                    }
+                }));
+            }
         });
 
         CompletionStages.join(stage.freeze());
