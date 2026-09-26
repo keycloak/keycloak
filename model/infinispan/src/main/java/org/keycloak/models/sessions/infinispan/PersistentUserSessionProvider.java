@@ -716,6 +716,10 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
         SessionEntityWrapper<UserSessionEntity> existingSession = sessionTx.importSession(realm, sessionId, wrappedUserSessionEntity, offline, lifespan, maxIdle);
         if (existingSession != null) {
+            if (existingSession.isLoadingMarker()) {
+                log.debugf("CAS failed for sessionId=%s offline=%s — session was likely deleted during import", sessionId, offline);
+                return null;
+            }
             // skip import the client sessions, they should have been imported too.
             log.debugf("The user-session already imported by another transaction for sessionId=%s offline=%s", sessionId, offline);
             return existingSession;

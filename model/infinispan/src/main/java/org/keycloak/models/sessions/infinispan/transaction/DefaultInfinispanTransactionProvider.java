@@ -45,6 +45,7 @@ public class DefaultInfinispanTransactionProvider extends AbstractKeycloakTransa
     private static final int UPDATE_BASE_INTERVAL_MILLIS = 1;
 
     private final List<NonBlockingTransaction> transactionList = new ArrayList<>(4);
+    private final List<NonBlockingTransaction> preparedTransactions = new ArrayList<>(1);
     private final KeycloakSession session;
 
     public DefaultInfinispanTransactionProvider(KeycloakSession session) {
@@ -72,6 +73,10 @@ public class DefaultInfinispanTransactionProvider extends AbstractKeycloakTransa
         // all the cache requests has been sent
         // apply the database changes in a blocking fashion, and in a single transaction.
         commitDatabaseUpdates(databaseWrites);
+
+        // DB committed — now fire deferred REMOVE cache ops (DB-first ordering)
+        preparedTransactions.forEach(t -> t.asyncPostDatabaseCommit(stage));
+        transactionList.forEach(t -> t.asyncPostDatabaseCommit(stage));
 
         // finally, wait for the completion of the cache updates.
         CompletionStages.join(stage.freeze());
@@ -107,6 +112,7 @@ public class DefaultInfinispanTransactionProvider extends AbstractKeycloakTransa
         // sends all the cache requests and queues any pending database writes.
         dbTransactions.forEach(transaction -> transaction.asyncCommit(stage, databaseWrites));
         transactionList.removeAll(dbTransactions);
+        preparedTransactions.addAll(dbTransactions);
 
         databaseWrites.run(session);
 
@@ -118,6 +124,7 @@ public class DefaultInfinispanTransactionProvider extends AbstractKeycloakTransa
     @Override
     protected void rollbackImpl() {
         final AggregateCompletionStage<Void> stage = CompletionStages.aggregateCompletionStage();
+        preparedTransactions.forEach(transaction -> transaction.asyncRollback(stage));
         transactionList.forEach(transaction -> transaction.asyncRollback(stage));
         CompletionStages.join(stage.freeze());
     }

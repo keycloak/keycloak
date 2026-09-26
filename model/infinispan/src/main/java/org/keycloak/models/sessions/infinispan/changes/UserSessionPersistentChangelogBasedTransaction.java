@@ -18,6 +18,8 @@
 package org.keycloak.models.sessions.infinispan.changes;
 
 
+import java.util.concurrent.TimeUnit;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -45,25 +47,38 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
         this.pessimisticLockingAuthenticationSession = pessimisticLockingAuthenticationSession;
     }
 
+    private static final long LOADING_MARKER_LIFESPAN_MS = 60_000;
+
     public SessionEntityWrapper<UserSessionEntity> get(RealmModel realm, String key, UserSessionModel userSession, boolean offline) {
         SessionUpdatesList<UserSessionEntity> myUpdates = getUpdates(offline).get(key);
         if (myUpdates == null) {
             SessionEntityWrapper<UserSessionEntity> wrappedEntity = null;
             Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
             if (cache != null) {
-                wrappedEntity = cache.get(key);
+                UserSessionEntity markerEntity = new UserSessionEntity(key);
+                markerEntity.setRealmId(realm.getId());
+                SessionEntityWrapper<UserSessionEntity> marker = SessionEntityWrapper.createLoadingMarker(markerEntity);
+                SessionEntityWrapper<UserSessionEntity> existing = cache.putIfAbsent(key, marker, LOADING_MARKER_LIFESPAN_MS, TimeUnit.MILLISECONDS);
+
+                if (existing == null) {
+                    storeLoadingMarker(key, marker, offline);
+                } else if (existing.isLoadingMarker()) {
+                    storeLoadingMarker(key, existing, offline);
+                } else {
+                    wrappedEntity = existing;
+                    getUpdates(offline).putIfAbsent(key, new SessionUpdatesList<>(realm, wrappedEntity));
+                    LOG.debugf("user-session found in cache for sessionId=%s offline=%s %s", key, offline, wrappedEntity.getEntity().getLastSessionRefresh());
+                }
             }
 
             if (wrappedEntity == null) {
                 LOG.debugf("user-session not found in cache for sessionId=%s offline=%s, loading from persister", key, offline);
                 wrappedEntity = getSessionEntityFromPersister(realm, key, userSession, offline);
-            } else {
-                getUpdates(offline).putIfAbsent(key, new SessionUpdatesList<>(realm, wrappedEntity));
-                LOG.debugf("user-session found in cache for sessionId=%s offline=%s %s", key, offline, wrappedEntity.getEntity().getLastSessionRefresh());
             }
 
             if (wrappedEntity == null) {
                 LOG.debugf("user-session not found in persister for sessionId=%s offline=%s", key, offline);
+                cleanupLoadingMarker(key, offline);
                 return null;
             }
 

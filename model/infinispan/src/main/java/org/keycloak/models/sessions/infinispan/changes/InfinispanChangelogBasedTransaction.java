@@ -44,6 +44,7 @@ import org.jboss.logging.Logger;
 public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> implements SessionsChangelogBasedTransaction<K, V>, NonBlockingTransaction {
 
     public static final Logger logger = Logger.getLogger(InfinispanChangelogBasedTransaction.class);
+    public static final String LOADING_MARKERS_ATTR = "kc.volatile.loading.markers";
 
     protected final KeycloakSession kcSession;
     protected final Map<K, SessionUpdatesList<V>> updates = new HashMap<>();
@@ -121,7 +122,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
         SessionUpdatesList<V> myUpdates = updates.get(key);
         if (myUpdates == null) {
             SessionEntityWrapper<V> wrappedEntity = cacheHolder.cache().get(key);
-            if (wrappedEntity == null) {
+            if (wrappedEntity == null || wrappedEntity.isLoadingMarker()) {
                 return null;
             }
 
@@ -193,6 +194,20 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
         return cacheHolder.keyGenerator().get();
     }
 
+    @SuppressWarnings("unchecked")
+    private SessionEntityWrapper<V> getLoadingMarker(K key) {
+        Map<Object, SessionEntityWrapper<?>> markers = (Map<Object, SessionEntityWrapper<?>>) kcSession.getAttribute(LOADING_MARKERS_ATTR);
+        return markers != null ? (SessionEntityWrapper<V>) markers.get(key) : null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void consumeLoadingMarker(K key) {
+        Map<Object, SessionEntityWrapper<?>> markers = (Map<Object, SessionEntityWrapper<?>>) kcSession.getAttribute(LOADING_MARKERS_ATTR);
+        if (markers != null) {
+            markers.remove(key);
+        }
+    }
+
     /**
      * Imports a session from an external source into the {@link Cache}.
      * <p>
@@ -216,9 +231,27 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
             // exists in transaction, avoid cache operation
             return updatesList.getEntityWrapper().getEntity();
         }
+
+        SessionEntityWrapper<V> marker = getLoadingMarker(key);
+
+        if (marker != null) {
+            boolean replaced = cacheHolder.cache().replace(key, marker, session, computeLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS, computeMaxIdle(maxIdle, lifespan), TimeUnit.MILLISECONDS);
+            if (replaced) {
+                consumeLoadingMarker(key);
+                updates.put(key, new SessionUpdatesList<>(realmModel, session));
+                return null;
+            }
+            logger.debugf("CAS replace failed for key %s — marker was removed or replaced. Skipping cache import.", key);
+            return null;
+        }
+
         SessionEntityWrapper<V> existing = cacheHolder.cache().putIfAbsent(key, session, computeLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS, computeMaxIdle(maxIdle, lifespan), TimeUnit.MILLISECONDS);
         if (existing == null) {
             // keep track of the imported session for updates
+            updates.put(key, new SessionUpdatesList<>(realmModel, session));
+            return null;
+        }
+        if (existing.isLoadingMarker()) {
             updates.put(key, new SessionUpdatesList<>(realmModel, session));
             return null;
         }
@@ -275,7 +308,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
     private void lookupAndAndExecuteTask(K key, SessionUpdateTask<V> task) {
         // Lookup entity from cache
         SessionEntityWrapper<V> wrappedEntity = cacheHolder.cache().get(key);
-        if (wrappedEntity == null) {
+        if (wrappedEntity == null || wrappedEntity.isLoadingMarker()) {
             logger.tracef("Not present cache item for key %s", key);
             return;
         }

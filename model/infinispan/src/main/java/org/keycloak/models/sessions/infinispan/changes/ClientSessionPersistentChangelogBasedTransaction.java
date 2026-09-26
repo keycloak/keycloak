@@ -20,6 +20,7 @@ package org.keycloak.models.sessions.infinispan.changes;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -62,6 +63,8 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
                 .forEach(authenticatedClientSessionEntity -> authenticatedClientSessionEntity.setUserSessionId(userSessionId));
     }
 
+    private static final long LOADING_MARKER_LIFESPAN_MS = 60_000;
+
     public SessionEntityWrapper<AuthenticatedClientSessionEntity> get(RealmModel realm, ClientModel client, UserSessionModel userSession, EmbeddedClientSessionKey key, boolean offline) {
         if (key == null) {
             key = new EmbeddedClientSessionKey(userSession.getId(), client.getId());
@@ -71,21 +74,32 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
             SessionEntityWrapper<AuthenticatedClientSessionEntity> wrappedEntity = null;
             Cache<EmbeddedClientSessionKey, SessionEntityWrapper<AuthenticatedClientSessionEntity>> cache = getCache(offline);
             if (cache != null) {
-                wrappedEntity = cache.get(key);
+                AuthenticatedClientSessionEntity markerEntity = new AuthenticatedClientSessionEntity();
+                markerEntity.setRealmId(realm.getId());
+                SessionEntityWrapper<AuthenticatedClientSessionEntity> marker = SessionEntityWrapper.createLoadingMarker(markerEntity);
+                SessionEntityWrapper<AuthenticatedClientSessionEntity> existing = cache.putIfAbsent(key, marker, LOADING_MARKER_LIFESPAN_MS, TimeUnit.MILLISECONDS);
+
+                if (existing == null) {
+                    storeLoadingMarker(key, marker, offline);
+                } else if (existing.isLoadingMarker()) {
+                    storeLoadingMarker(key, existing, offline);
+                } else {
+                    wrappedEntity = existing;
+                    LOG.tracef("Client-session found in cache. userSessionId=%s, clientSessionId=%s, clientId=%s, offline=%s",
+                            userSession.getId(), key, client.getId(), offline);
+                }
             }
 
             if (wrappedEntity == null) {
                 LOG.tracef("Client-session not found in cache, loading from persister. userSessionId=%s, clientSessionId=%s, clientId=%s, offline=%s",
                         userSession.getId(), key, client.getId(), offline);
                 wrappedEntity = getSessionEntityFromPersister(realm, client, userSession, key, offline);
-            } else {
-                LOG.tracef("Client-session found in cache. userSessionId=%s, clientSessionId=%s, clientId=%s, offline=%s",
-                        userSession.getId(), key, client.getId(), offline);
             }
 
             if (wrappedEntity == null) {
                 LOG.debugf("Client-session not found in persister. userSessionId=%s, clientSessionId=%s, clientId=%s, offline=%s",
                         userSession.getId(), key, client.getId(), offline);
+                cleanupLoadingMarker(key, offline);
                 return null;
             }
 
@@ -198,6 +212,11 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         SessionEntityWrapper<AuthenticatedClientSessionEntity> imported = importSession(realm, clientSessionId, wrapper, offline, lifespan, maxIdle);
 
         if (imported != null) {
+            if (imported.isLoadingMarker()) {
+                LOG.debugf("CAS failed for client-session. userSessionId=%s, clientSessionId=%s, clientId=%s, offline=%s",
+                        userSession.getId(), clientSessionId, client.getId(), offline);
+                return null;
+            }
             LOG.debugf("Client-session already imported by another transaction. userSessionId=%s, clientSessionId=%s, clientId=%s, offline=%s",
                     userSession.getId(), clientSessionId, client.getId(), offline);
             imported.getEntity().setUserSessionId(userSession.getId());
