@@ -24,6 +24,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
@@ -565,6 +566,12 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 "javax.net.ssl.trustStore",
                 "javax.net.ssl.trustStorePassword",
                 "javax.net.ssl.trustStoreType");
+
+        // Oracle named datasource in XA mode: the connect timeout options have no named datasource siblings
+        // in this branch, so nothing is injected for named datasources
+        var config = createConfigFromCliArguments("--db=postgres", "--db-kind-users=oracle", "--transaction-xa-enabled-users=true");
+        assertNull(config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties").getValue());
+        assertNull(config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.oracle.net.CONNECT_TIMEOUT").getValue());
     }
 
     private static void doDatabaseTlsOptionTest(String dbKind, String dbUrl,
