@@ -280,25 +280,38 @@ public final class CacheConfigurator {
      *                               the {@code holder}. This could indicate a missing or incorrect configuration.
      */
     public static void configureSessionsCachesForVolatileSessions(Config.Scope keycloakConfig, ConfigurationBuilderHolder holder) {
+        configureSessionsCachesForVolatileSessions(keycloakConfig, holder, true);
+    }
+
+    public static void configureSessionsCachesForVolatileSessions(Config.Scope keycloakConfig, ConfigurationBuilderHolder holder, boolean offlinePersistenceEnabled) {
         logger.debug("Configuring session cache (volatile user sessions)");
-        for (var name : Arrays.asList(USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME)) {
+        for (var name : offlinePersistenceEnabled
+                ? Arrays.asList(USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME)
+                : Arrays.asList(USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME)) {
             var builder = holder.getNamedConfigurationBuilders().get(name);
             if (builder == null) {
                 throw cacheNotFound(name);
             }
 
             setMemoryMaxCount(keycloakConfig, name, builder);
+            builder.memory().maxSize(null);
             if (builder.memory().maxCount() != -1) {
                 logger.infof("Persistent user sessions disabled and memory limit is set. Ignoring cache limits to avoid losing sessions for cache %s.", name);
                 builder.memory().maxCount(-1);
             }
             if (builder.clustering().hash().attributes().attribute(HashConfiguration.NUM_OWNERS).get() == 1 &&
-                  builder.persistence().stores().stream().noneMatch(p -> p.attributes().attribute(AbstractStoreConfiguration.SHARED).get())
+                  (!offlinePersistenceEnabled || builder.persistence().stores().stream().noneMatch(p -> p.attributes().attribute(AbstractStoreConfiguration.SHARED).get()))
             ) {
                 logger.infof("Persistent user sessions disabled with number of owners set to default value 1 for cache %s and no shared persistence store configured. Setting num_owners=2 to avoid data loss.", name);
                 builder.clustering().hash().numOwners(2);
             }
+            builder.clustering().stateTransfer().fetchInMemoryState(true);
+            builder.expiration().lifespan(-1).maxIdle(-1);
             configureSessionExpirationReaper(builder);
+        }
+
+        if (!offlinePersistenceEnabled) {
+            return;
         }
 
         for (var name : Arrays.asList(OFFLINE_USER_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME)) {
@@ -457,6 +470,8 @@ public final class CacheConfigurator {
     // private methods below
 
     private static void configureSessionExpirationReaper(ConfigurationBuilder builder) {
+        // Store detached values even on the owner. Request mutations must never change cached state.
+        builder.encoding().value().mediaType(MediaType.APPLICATION_PROTOSTREAM_TYPE);
         builder.expiration().enableReaper().wakeUpInterval(InfinispanUserSessionProviderFactory.getExpirationPeriod(TimeUnit.MILLISECONDS));
     }
 
@@ -593,6 +608,7 @@ public final class CacheConfigurator {
                 if (clustered) {
                     builder.clustering().cacheMode(CacheMode.DIST_SYNC).hash().numOwners(1);
                 }
+                builder.encoding().value().mediaType(MediaType.APPLICATION_PROTOSTREAM_TYPE);
                 builder.memory().maxCount(SESSIONS_CACHE_DEFAULT_MAX);
                 return builder;
             case ACTION_TOKEN_CACHE:

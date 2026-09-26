@@ -34,6 +34,7 @@ import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.session.UserSessionPersisterProviderFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -157,7 +158,7 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
 
     private static ConfigurationBuilderHolder configureSingleSiteWithVolatileSessions(ConfigurationBuilderHolder holder, Config.Scope keycloakConfig, KeycloakSessionFactory factory) {
         singleSiteConfiguration(keycloakConfig, holder, factory);
-        CacheConfigurator.configureSessionsCachesForVolatileSessions(keycloakConfig, holder);
+        CacheConfigurator.configureSessionsCachesForVolatileSessions(keycloakConfig, holder, UserSessionPersisterProviderFactory.isPersistenceEnabled(factory));
         return holder;
     }
 

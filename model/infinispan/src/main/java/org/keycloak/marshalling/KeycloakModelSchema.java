@@ -71,6 +71,7 @@ import org.keycloak.models.cache.infinispan.stream.InGroupPredicate;
 import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
 import org.keycloak.models.cache.infinispan.stream.InRealmPredicate;
 import org.keycloak.models.sessions.infinispan.changes.ReplaceFunction;
+import org.keycloak.models.sessions.infinispan.changes.SessionCompareAndSet;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.sessions.SessionData;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
@@ -227,6 +228,7 @@ import org.infinispan.protostream.types.java.CommonTypes;
                 SingleUseObjectValueEntity.class,
                 UserSessionEntity.class,
                 ReplaceFunction.class,
+                SessionCompareAndSet.class,
 
                 // sessions.infinispan.stream
                 AuthClientSessionSetMapper.class,

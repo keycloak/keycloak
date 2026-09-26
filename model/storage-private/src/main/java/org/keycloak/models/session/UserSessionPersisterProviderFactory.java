@@ -17,10 +17,19 @@
 
 package org.keycloak.models.session;
 
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public interface UserSessionPersisterProviderFactory extends ProviderFactory<UserSessionPersisterProvider> {
+    /** Whether the selected provider persists offline sessions. Missing providers are configuration errors. */
+    static boolean isPersistenceEnabled(KeycloakSessionFactory factory) {
+        var provider = factory.getProviderFactory(UserSessionPersisterProvider.class);
+        if (provider == null) {
+            throw new IllegalStateException("No user session persister is configured");
+        }
+        return !(provider instanceof DisabledUserSessionPersisterProvider);
+    }
 }

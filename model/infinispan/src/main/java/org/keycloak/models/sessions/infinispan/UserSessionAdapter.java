@@ -223,7 +223,7 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
             return;
         }
 
-        if (!MultiSiteUtils.isPersistentSessionsEnabled() && offline) {
+        if (!MultiSiteUtils.isPersistentSessionsEnabled() && offline && provider.getPersisterLastSessionRefreshStore() != null) {
             // Received the message from the other DC that we should update the lastSessionRefresh in local cluster. Don't update DB in that case.
             // The other DC already did.
             provider.getPersisterLastSessionRefreshStore().putLastSessionRefresh(session, entity.getId(), realm.getId(), lastSessionRefresh);
@@ -242,6 +242,11 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
             @Override
             public boolean isOffline() {
                 return offline;
+            }
+
+            @Override
+            public boolean requiresDatabasePersistence() {
+                return false;
             }
 
             @Override
