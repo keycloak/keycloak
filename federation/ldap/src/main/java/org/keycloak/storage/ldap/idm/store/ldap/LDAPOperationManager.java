@@ -282,6 +282,10 @@ public class LDAPOperationManager {
     }
 
     public List<SearchResult> search(final LdapName baseDN, final Condition condition, Collection<String> returningAttributes, int searchScope) throws NamingException {
+        return search(baseDN, condition, returningAttributes, searchScope, false);
+    }
+
+    public List<SearchResult> search(final LdapName baseDN, final Condition condition, Collection<String> returningAttributes, int searchScope, boolean requireCompleteResults) throws NamingException {
         final List<SearchResult> result = new ArrayList<>();
         final SearchControls cons = getSearchControls(returningAttributes, searchScope);
         final String filter = condition.toFilter();
@@ -292,11 +296,14 @@ public class LDAPOperationManager {
                 public List<SearchResult> execute(LdapContext context) throws NamingException {
                     NamingEnumeration<SearchResult> search = context.search(baseDN, filter, cons);
 
-                    while (search.hasMoreElements()) {
-                        result.add(search.nextElement());
+                    try {
+                        // hasMoreElements() hides LDAP size-limit errors and returns a partial list.
+                        while (requireCompleteResults ? search.hasMore() : search.hasMoreElements()) {
+                            result.add(search.next());
+                        }
+                    } finally {
+                        search.close();
                     }
-
-                    search.close();
 
                     return result;
                 }
@@ -347,16 +354,20 @@ public class LDAPOperationManager {
 
                         NamingEnumeration<SearchResult> search = context.search(baseDN, filter, cons);
 
-                        while (search.hasMoreElements()) {
-                            result.add(search.nextElement());
+                        try {
+                            while (identityQuery.isRequireCompleteResults() ? search.hasMore() : search.hasMoreElements()) {
+                                result.add(search.next());
+                            }
+                        } finally {
+                            search.close();
                         }
 
-                        search.close();
-
                         Control[] responseControls = context.getResponseControls();
+                        boolean receivedPagedResponse = false;
                         if (responseControls != null) {
                             for (Control respControl : responseControls) {
                                 if (respControl instanceof PagedResultsResponseControl) {
+                                    receivedPagedResponse = true;
                                     PagedResultsResponseControl prrc = (PagedResultsResponseControl)respControl;
                                     cookie = prrc.getCookie();
                                     identityQuery.getPaginationContext().setCookie(cookie);
@@ -370,6 +381,10 @@ public class LDAPOperationManager {
                              */
                             identityQuery.getPaginationContext().setCookie(null);
                             logger.warnf("Did not receive response controls for paginated query using DN [%s], filter [%s]. Did you hit a query result size limit?", baseDN, filter);
+                        }
+
+                        if (identityQuery.isRequireCompleteResults() && !receivedPagedResponse) {
+                            throw new NamingException("Missing paged results response control; LDAP role sync cannot safely remove roles");
                         }
 
                         return result;

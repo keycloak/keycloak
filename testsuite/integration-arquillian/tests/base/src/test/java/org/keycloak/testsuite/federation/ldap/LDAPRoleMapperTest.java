@@ -16,26 +16,39 @@
  */
 package org.keycloak.testsuite.federation.ldap;
 
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
+import org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleMapperConfig;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+import org.keycloak.util.ldap.LDAPEmbeddedServer;
 
+import org.apache.directory.api.ldap.model.message.SearchResultDone;
+import org.apache.directory.api.ldap.model.message.controls.PagedResults;
+import org.apache.directory.server.protocol.shared.transport.Transport;
+import org.apache.mina.core.filterchain.IoFilterAdapter;
+import org.apache.mina.core.session.IoSession;
+import org.apache.mina.core.write.WriteRequest;
 import org.hamcrest.Matchers;
+import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -53,7 +66,59 @@ import static org.hamcrest.Matchers.nullValue;
 public class LDAPRoleMapperTest extends AbstractLDAPTest {
 
     @ClassRule
-    public static LDAPRule ldapRule = new LDAPRule();
+    public static LDAPRule ldapRule = new LDAPRule() {
+        @Override
+        protected LDAPEmbeddedServer createServer() {
+            // Retain LDAPRule's normal embedded-server settings and expose its search limit to this test.
+            super.createServer();
+            return new SizeLimitedLDAPEmbeddedServer(defaultProperties);
+        }
+    };
+
+    private static class SizeLimitedLDAPEmbeddedServer extends LDAPEmbeddedServer {
+
+        SizeLimitedLDAPEmbeddedServer(Properties properties) {
+            super(properties);
+        }
+
+        private volatile boolean omitPagingResponseControl;
+        private final AtomicInteger omittedPagingResponses = new AtomicInteger();
+
+        @Override
+        public void start() throws Exception {
+            super.start();
+            for (Transport transport : ldapServer.getTransports()) {
+                // Outbound filters run in reverse order, before the LDAP encoder.
+                transport.getAcceptor().getFilterChain().addLast("omit-paging-response", new IoFilterAdapter() {
+                    @Override
+                    public void filterWrite(NextFilter nextFilter, IoSession session, WriteRequest request) throws Exception {
+                        if (omitPagingResponseControl && request.getMessage() instanceof SearchResultDone done
+                                && done.hasControl(PagedResults.OID)) {
+                            done.removeControl(done.getControl(PagedResults.OID));
+                            omittedPagingResponses.incrementAndGet();
+                        }
+                        nextFilter.filterWrite(session, request);
+                    }
+                });
+            }
+        }
+
+        long getSearchSizeLimit() {
+            return ldapServer.getMaxSizeLimit();
+        }
+
+        void setSearchSizeLimit(long limit) {
+            ldapServer.setMaxSizeLimit(limit);
+        }
+
+        boolean isAccessControlEnabled() {
+            return directoryService.isAccessControlEnabled();
+        }
+
+        void setAccessControlEnabled(boolean enabled) {
+            directoryService.setAccessControlEnabled(enabled);
+        }
+    }
 
     @Override
     protected LDAPRule getLDAPRule() {
@@ -198,6 +263,386 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
                 appRealm.removeClient(rolesClient.getId());
             }
         });
+    }
+
+    @Test
+    public void test04DropOnlyRolesOwnedByThisRealmMapper() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+            LDAPTestUtils.updateConfigOptions(mapperModel,
+                    RoleMapperConfig.USE_REALM_ROLES_MAPPING, "true",
+                    RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "false");
+            realm.updateComponent(mapperModel);
+            RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+            RoleModel localRole = realm.addRole("local-role-remains");
+            RoleModel otherMapperRole = realm.addRole("other-mapper-role-remains");
+            otherMapperRole.setSingleAttribute("kc.ldap.role.provider.id", ctx.getLdapModel().getId());
+            otherMapperRole.setSingleAttribute("kc.ldap.role.mapper.id", "a-different-mapper");
+
+            LDAPObject ldapRole = mapper.createLDAPRole("deleted-ldap-realm-role");
+            try {
+                mapper.syncDataFromFederationProviderToKeycloak(realm);
+                RoleModel managedRole = realm.getRole("deleted-ldap-realm-role");
+                Assertions.assertNotNull(managedRole);
+                Assertions.assertEquals(mapperModel.getId(), managedRole.getFirstAttribute("kc.ldap.role.mapper.id"));
+
+                ctx.getLdapProvider().getLdapIdentityStore().remove(ldapRole);
+                mapper.syncDataFromFederationProviderToKeycloak(realm);
+                Assertions.assertNotNull(realm.getRole("deleted-ldap-realm-role")); // default off
+
+                LDAPTestUtils.updateConfigOptions(mapperModel, RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "true");
+                realm.updateComponent(mapperModel);
+                mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+                Assertions.assertEquals(1, mapper.syncDataFromFederationProviderToKeycloak(realm).getRemoved());
+                Assertions.assertNull(realm.getRole("deleted-ldap-realm-role"));
+                Assertions.assertNotNull(realm.getRole(localRole.getName()));
+                Assertions.assertNotNull(realm.getRole(otherMapperRole.getName()));
+            } finally {
+                try (LDAPQuery query = mapper.createRoleQuery(false)) {
+                    query.getResultList().stream()
+                            .filter(role -> "deleted-ldap-realm-role".equals(role.getAttributeAsString("cn")))
+                            .forEach(role -> ctx.getLdapProvider().getLdapIdentityStore().remove(role));
+                }
+                RoleModel remaining = realm.getRole("deleted-ldap-realm-role");
+                if (remaining != null) {
+                    realm.removeRole(remaining);
+                }
+                realm.removeRole(localRole);
+                realm.removeRole(otherMapperRole);
+                LDAPTestUtils.updateConfigOptions(mapperModel, RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "false");
+                realm.updateComponent(mapperModel);
+            }
+        });
+    }
+
+    @Test
+    public void test05DropClientRoleWithoutAdoptingExistingRole() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+            ClientModel client = session.clients().addClient(realm, "role-cleanup-client");
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+            RoleModel localRole = client.addRole("local-role-collision");
+
+            try {
+                LDAPTestUtils.updateConfigOptions(mapperModel,
+                        RoleMapperConfig.USE_REALM_ROLES_MAPPING, "false",
+                        RoleMapperConfig.CLIENT_ID, client.getClientId(),
+                        RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "true");
+                realm.updateComponent(mapperModel);
+                RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+                LDAPObject ldapRole = mapper.createLDAPRole("deleted-ldap-client-role");
+                LDAPObject collidingRole = mapper.createLDAPRole("local-role-collision");
+                try {
+                    mapper.syncDataFromFederationProviderToKeycloak(realm);
+                    Assertions.assertNull(localRole.getFirstAttribute("kc.ldap.role.mapper.id"));
+                    Assertions.assertNotNull(client.getRole("deleted-ldap-client-role"));
+                    ctx.getLdapProvider().getLdapIdentityStore().remove(ldapRole);
+                    ctx.getLdapProvider().getLdapIdentityStore().remove(collidingRole);
+                    Assertions.assertEquals(1, mapper.syncDataFromFederationProviderToKeycloak(realm).getRemoved());
+                    Assertions.assertNull(client.getRole("deleted-ldap-client-role"));
+                    Assertions.assertNotNull(client.getRole("local-role-collision"));
+                } finally {
+                    try (LDAPQuery query = mapper.createRoleQuery(false)) {
+                        query.getResultList().stream()
+                                .filter(role -> "deleted-ldap-client-role".equals(role.getAttributeAsString("cn"))
+                                        || "local-role-collision".equals(role.getAttributeAsString("cn")))
+                                .forEach(role -> ctx.getLdapProvider().getLdapIdentityStore().remove(role));
+                    }
+                }
+            } finally {
+                realm.removeClient(client.getId());
+                LDAPTestUtils.updateConfigOptions(mapperModel,
+                        RoleMapperConfig.USE_REALM_ROLES_MAPPING, "true",
+                        RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "false");
+                realm.updateComponent(mapperModel);
+            }
+        });
+    }
+
+    @Test
+    public void test06IncompleteRoleSearchDoesNotDeleteManagedRoles() {
+        Assume.assumeTrue("Requires the embedded LDAP server", ldapRule.isEmbeddedServer());
+        SizeLimitedLDAPEmbeddedServer server = (SizeLimitedLDAPEmbeddedServer) ldapRule.getLdapEmbeddedServer();
+        long originalLimit = server.getSearchSizeLimit();
+        boolean originalAccessControl = server.isAccessControlEnabled();
+        String originalBindDn = ldapRule.getConfig().get(LDAPConstants.BIND_DN);
+
+        try {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel realm = ctx.getRealm();
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+                LDAPTestUtils.updateConfigOptions(mapperModel,
+                        RoleMapperConfig.USE_REALM_ROLES_MAPPING, "true",
+                        RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "true");
+                realm.updateComponent(mapperModel);
+                RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+                mapper.createLDAPRole("size-limit-preserved-role");
+                mapper.syncDataFromFederationProviderToKeycloak(realm);
+                RoleModel managedRole = realm.getRole("size-limit-preserved-role");
+                Assertions.assertNotNull(managedRole);
+                Assertions.assertEquals(mapperModel.getId(), managedRole.getFirstAttribute("kc.ldap.role.mapper.id"));
+            });
+
+            // ApacheDS exempts its administrator from server size limits. Bind as the fixture's
+            // non-administrator account with access control disabled to exercise an incomplete search.
+            server.setAccessControlEnabled(false);
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                ctx.getLdapModel().getConfig().putSingle(LDAPConstants.BIND_DN, "uid=keycloak-admin,dc=keycloak,dc=org");
+                ctx.getLdapModel().getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, "secret");
+                ctx.getRealm().updateComponent(ctx.getLdapModel());
+            });
+            server.setSearchSizeLimit(1);
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel realm = ctx.getRealm();
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+                RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+
+                Assertions.assertThrows(ModelException.class, () -> mapper.syncDataFromFederationProviderToKeycloak(realm));
+                Assertions.assertNotNull(realm.getRole("size-limit-preserved-role"));
+                Assertions.assertNotNull(realm.getRole("group1"));
+                Assertions.assertNotNull(realm.getRole("group2"));
+                Assertions.assertNotNull(realm.getRole("group3"));
+            });
+        } finally {
+            server.setSearchSizeLimit(originalLimit);
+            try {
+                testingClient.server().run(session -> {
+                    LDAPTestContext ctx = LDAPTestContext.init(session);
+                    RealmModel realm = ctx.getRealm();
+                    ctx.getLdapModel().getConfig().putSingle(LDAPConstants.BIND_DN, originalBindDn);
+                    realm.updateComponent(ctx.getLdapModel());
+                    ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+                    LDAPTestUtils.updateConfigOptions(mapperModel, RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "false");
+                    realm.updateComponent(mapperModel);
+                    RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+                    try (LDAPQuery query = mapper.createRoleQuery(false)) {
+                        query.getResultList().stream()
+                                .filter(role -> "size-limit-preserved-role".equals(role.getAttributeAsString("cn")))
+                                .forEach(role -> ctx.getLdapProvider().getLdapIdentityStore().remove(role));
+                    }
+                    RoleModel managedRole = realm.getRole("size-limit-preserved-role");
+                    if (managedRole != null) {
+                        realm.removeRole(managedRole);
+                    }
+                });
+            } finally {
+                server.setAccessControlEnabled(originalAccessControl);
+            }
+        }
+    }
+
+    @Test
+    public void test07ImportCreatedRoleIsOwnedAndRemoved() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "rolesMapper");
+            LDAPTestUtils.updateConfigOptions(mapperModel,
+                    RoleMapperConfig.MODE, LDAPGroupMapperMode.IMPORT.toString(),
+                    RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "true");
+            ctx.getRealm().updateComponent(mapperModel);
+        });
+
+        try {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel realm = ctx.getRealm();
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+                RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+                LDAPObject ldapRole = mapper.createLDAPRole("import-owned-role");
+                LDAPObject ldapUser = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), realm,
+                        "role-import-owner", "Role", "Import", "role-import-owner@example.org", null, "1234");
+                mapper.addRoleMappingInLDAP("import-owned-role", ldapUser);
+                Assertions.assertNull(realm.getRole("import-owned-role"));
+
+                UserModel importedUser = session.users().getUserByUsername(realm, "role-import-owner");
+                Assertions.assertNotNull(importedUser);
+                RoleModel importedRole = realm.getRole("import-owned-role");
+                Assertions.assertNotNull(importedRole);
+                Assertions.assertTrue(importedUser.hasRole(importedRole));
+                Assertions.assertEquals(ctx.getLdapModel().getId(), importedRole.getFirstAttribute("kc.ldap.role.provider.id"));
+                Assertions.assertEquals(mapperModel.getId(), importedRole.getFirstAttribute("kc.ldap.role.mapper.id"));
+
+                ctx.getLdapProvider().getLdapIdentityStore().remove(ldapRole);
+                Assertions.assertEquals(1, mapper.syncDataFromFederationProviderToKeycloak(realm).getRemoved());
+                Assertions.assertNull(realm.getRole("import-owned-role"));
+            });
+        } finally {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel realm = ctx.getRealm();
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+                LDAPTestUtils.updateConfigOptions(mapperModel,
+                        RoleMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString(),
+                        RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "false");
+                realm.updateComponent(mapperModel);
+                RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+                LDAPObject ldapRole = mapper.loadLDAPRoleByName("import-owned-role");
+                if (ldapRole != null) {
+                    ctx.getLdapProvider().getLdapIdentityStore().remove(ldapRole);
+                }
+                RoleModel role = realm.getRole("import-owned-role");
+                if (role != null) {
+                    realm.removeRole(role);
+                }
+                UserModel user = session.users().getUserByUsername(realm, "role-import-owner");
+                if (user != null) {
+                    session.users().removeUser(realm, user);
+                }
+                LDAPObject remainingUser = ctx.getLdapProvider().loadLDAPUserByUsername(realm, "role-import-owner");
+                if (remainingUser != null) {
+                    ctx.getLdapProvider().getLdapIdentityStore().remove(remainingUser);
+                }
+            });
+        }
+    }
+
+    @Test
+    public void test08LazyRoleMappingIsOwnedAndRemoved() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+            LDAPTestUtils.updateConfigOptions(mapperModel, RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "true");
+            realm.updateComponent(mapperModel);
+            RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+            try {
+                LDAPObject ldapRole = mapper.createLDAPRole("lazy-owned-role");
+                LDAPObject ldapUser = ctx.getLdapProvider().loadLDAPUserByUsername(realm, "johnkeycloak");
+                mapper.addRoleMappingInLDAP("lazy-owned-role", ldapUser);
+                Assertions.assertNull(realm.getRole("lazy-owned-role"));
+
+                UserModel john = session.users().getUserByUsername(realm, "johnkeycloak");
+                Assertions.assertNotNull(john);
+                Assertions.assertTrue(john.getRealmRoleMappingsStream()
+                        .anyMatch(role -> "lazy-owned-role".equals(role.getName())));
+                RoleModel lazyRole = realm.getRole("lazy-owned-role");
+                Assertions.assertNotNull(lazyRole);
+                Assertions.assertEquals(ctx.getLdapModel().getId(), lazyRole.getFirstAttribute("kc.ldap.role.provider.id"));
+                Assertions.assertEquals(mapperModel.getId(), lazyRole.getFirstAttribute("kc.ldap.role.mapper.id"));
+
+                ctx.getLdapProvider().getLdapIdentityStore().remove(ldapRole);
+                Assertions.assertEquals(1, mapper.syncDataFromFederationProviderToKeycloak(realm).getRemoved());
+                Assertions.assertNull(realm.getRole("lazy-owned-role"));
+            } finally {
+                LDAPTestUtils.updateConfigOptions(mapperModel, RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "false");
+                realm.updateComponent(mapperModel);
+                LDAPObject ldapRole = mapper.loadLDAPRoleByName("lazy-owned-role");
+                if (ldapRole != null) {
+                    ctx.getLdapProvider().getLdapIdentityStore().remove(ldapRole);
+                }
+                RoleModel role = realm.getRole("lazy-owned-role");
+                if (role != null) {
+                    realm.removeRole(role);
+                }
+            }
+        });
+    }
+
+    @Test
+    public void test09MissingPagingResponseDoesNotDeleteManagedRoles() {
+        Assume.assumeTrue("Requires the embedded LDAP server", ldapRule.isEmbeddedServer());
+        SizeLimitedLDAPEmbeddedServer server = (SizeLimitedLDAPEmbeddedServer) ldapRule.getLdapEmbeddedServer();
+        String[] originalConfig = testingClient.server().fetch(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "rolesMapper");
+            return new String[] { ctx.getLdapModel().getConfig().getFirst(LDAPConstants.PAGINATION),
+                    ctx.getLdapModel().getConfig().getFirst(LDAPConstants.BATCH_SIZE_FOR_SYNC),
+                    mapperModel.getConfig().getFirst(RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC) };
+        }, String[].class);
+
+        try {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                ctx.getLdapModel().getConfig().putSingle(LDAPConstants.PAGINATION, "true");
+                ctx.getLdapModel().getConfig().putSingle(LDAPConstants.BATCH_SIZE_FOR_SYNC, "1");
+                ctx.getRealm().updateComponent(ctx.getLdapModel());
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "rolesMapper");
+                LDAPTestUtils.updateConfigOptions(mapperModel, RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC, "true");
+                ctx.getRealm().updateComponent(mapperModel);
+            });
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel realm = ctx.getRealm();
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+                RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+                LDAPObject ldapRole = mapper.createLDAPRole("paging-preserved-role");
+                mapper.syncDataFromFederationProviderToKeycloak(realm);
+                RoleModel role = realm.getRole("paging-preserved-role");
+                Assertions.assertNotNull(role);
+                Assertions.assertEquals(mapperModel.getId(), role.getFirstAttribute("kc.ldap.role.mapper.id"));
+                // Make this role eligible for deletion by a complete sync.
+                ctx.getLdapProvider().getLdapIdentityStore().remove(ldapRole);
+            });
+
+            int omittedBefore = server.omittedPagingResponses.get();
+            server.omitPagingResponseControl = true;
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel realm = ctx.getRealm();
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+                RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+                var rolesBefore = realm.getRolesStream().collect(Collectors.toMap(RoleModel::getName, RoleModel::getId));
+                ModelException failure = Assertions.assertThrows(ModelException.class,
+                        () -> mapper.syncDataFromFederationProviderToKeycloak(realm));
+                Throwable rootCause = failure;
+                while (rootCause.getCause() != null) {
+                    rootCause = rootCause.getCause();
+                }
+                Assertions.assertTrue(rootCause.getMessage().contains("Missing paged results response control"), rootCause.toString());
+                Assertions.assertEquals(rolesBefore,
+                        realm.getRolesStream().collect(Collectors.toMap(RoleModel::getName, RoleModel::getId)));
+            });
+            Assertions.assertTrue(server.omittedPagingResponses.get() > omittedBefore,
+                    "The LDAP server must actually omit a paging response control");
+
+            server.omitPagingResponseControl = false;
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel realm = ctx.getRealm();
+                Assertions.assertNotNull(realm.getRole("paging-preserved-role"));
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+                RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+                Assertions.assertEquals(1, mapper.syncDataFromFederationProviderToKeycloak(realm).getRemoved());
+                Assertions.assertNull(realm.getRole("paging-preserved-role"));
+                Assertions.assertNotNull(realm.getRole("group1"));
+                Assertions.assertNotNull(realm.getRole("group2"));
+                Assertions.assertNotNull(realm.getRole("group3"));
+            });
+        } finally {
+            server.omitPagingResponseControl = false;
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel realm = ctx.getRealm();
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "rolesMapper");
+                RoleLDAPStorageMapper mapper = (RoleLDAPStorageMapper) new RoleLDAPStorageMapperFactory().create(session, mapperModel);
+                LDAPObject ldapRole = mapper.loadLDAPRoleByName("paging-preserved-role");
+                if (ldapRole != null) {
+                    ctx.getLdapProvider().getLdapIdentityStore().remove(ldapRole);
+                }
+                RoleModel role = realm.getRole("paging-preserved-role");
+                if (role != null) {
+                    realm.removeRole(role);
+                }
+                String[] keys = { LDAPConstants.PAGINATION, LDAPConstants.BATCH_SIZE_FOR_SYNC,
+                        RoleMapperConfig.DROP_NON_EXISTING_ROLES_DURING_SYNC };
+                for (int i = 0; i < keys.length; i++) {
+                    ComponentModel model = i < 2 ? ctx.getLdapModel() : mapperModel;
+                    if (originalConfig[i] == null) {
+                        model.getConfig().remove(keys[i]);
+                    } else {
+                        model.getConfig().putSingle(keys[i], originalConfig[i]);
+                    }
+                }
+                realm.updateComponent(ctx.getLdapModel());
+                realm.updateComponent(mapperModel);
+            });
+        }
     }
 
     /**
