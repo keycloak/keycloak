@@ -27,6 +27,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 import static org.keycloak.provider.ProviderConfigProperty.BOOLEAN_TYPE;
 import static org.keycloak.provider.ProviderConfigProperty.FILE_TYPE;
+import static org.keycloak.provider.ProviderConfigProperty.INTEGER_TYPE;
 import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
 import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
 
@@ -79,6 +80,16 @@ public interface Attributes {
             "16", "24", "32", "64", "128", "256", "512");
 
     String ALGORITHM_KEY = "algorithm";
+
+    // Default kept at 3654 days (~10 years) to match the legacy 10-year validity of generated RSA certificates. Buffer of 4 to include leap days and fuzzy edge date behavior
+    int DEFAULT_NUMBER_DAYS_VALID = 3654;
+    String NUMBER_DAYS_VALID = "numberDaysValid";
+    ProviderConfigProperty NUMBER_DAYS_VALID_PROPERTY = new ProviderConfigProperty(
+            NUMBER_DAYS_VALID,
+            "Certificate validity (days)",
+            "Maximum number of days the generated certificate will be valid",
+            INTEGER_TYPE,
+            DEFAULT_NUMBER_DAYS_VALID);
 
     ProviderConfigProperty RS_ALGORITHM_PROPERTY = new ProviderConfigProperty(ALGORITHM_KEY, "Algorithm", "Intended algorithm for the key", LIST_TYPE,
             Algorithm.RS256,
