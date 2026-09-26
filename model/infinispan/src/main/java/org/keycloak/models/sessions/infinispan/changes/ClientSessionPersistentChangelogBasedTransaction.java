@@ -28,12 +28,16 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.sessions.infinispan.CacheDecorators;
 import org.keycloak.models.sessions.infinispan.UserSessionAdapter;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.EmbeddedClientSessionKey;
+import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
 import org.infinispan.Cache;
+import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
+import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
@@ -81,9 +85,7 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
 
                 if (existing == null) {
                     storeLoadingMarker(key, marker, offline);
-                } else if (existing.isLoadingMarker()) {
-                    storeLoadingMarker(key, existing, offline);
-                } else {
+                } else if (!existing.isLoadingMarker()) {
                     wrappedEntity = existing;
                     LOG.tracef("Client-session found in cache. userSessionId=%s, clientSessionId=%s, clientId=%s, offline=%s",
                             userSession.getId(), key, client.getId(), offline);
@@ -93,7 +95,11 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
             if (wrappedEntity == null) {
                 LOG.tracef("Client-session not found in cache, loading from persister. userSessionId=%s, clientSessionId=%s, clientId=%s, offline=%s",
                         userSession.getId(), key, client.getId(), offline);
-                wrappedEntity = getSessionEntityFromPersister(realm, client, userSession, key, offline);
+                if (hasStoredLoadingMarker(key, offline)) {
+                    wrappedEntity = getSessionEntityFromPersister(realm, client, userSession, key, offline);
+                } else {
+                    wrappedEntity = loadClientSessionFromPersisterWithoutCaching(realm, client, userSession, key, offline);
+                }
             }
 
             if (wrappedEntity == null) {
@@ -134,6 +140,36 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
     }
 
     @Override
+    public void asyncPostDatabaseCommit(AggregateCompletionStage<Void> stage) {
+        if (deferredRemoves == null) return;
+
+        AggregateCompletionStage<Void> markerInvalidations = CompletionStages.aggregateCompletionStage();
+        for (var deferred : deferredRemoves) {
+            String userSessionId = deferred.key().userSessionId();
+            Cache<String, SessionEntityWrapper<UserSessionEntity>> userCache = userSessionTx.getCache(deferred.offline());
+            if (userCache != null) {
+                markerInvalidations.dependsOn(
+                    userCache.getAsync(userSessionId).thenAccept(existing -> {
+                        if (existing != null && existing.isLoadingMarker()) {
+                            userCache.remove(userSessionId, existing);
+                        }
+                    })
+                );
+            }
+        }
+
+        stage.dependsOn(markerInvalidations.freeze().thenCompose(v -> {
+            AggregateCompletionStage<Void> clientRemoves = CompletionStages.aggregateCompletionStage();
+            for (var deferred : deferredRemoves) {
+                clientRemoves.dependsOn(
+                    CacheDecorators.ignoreReturnValues(deferred.cacheHolder().cache()).removeAsync(deferred.key())
+                );
+            }
+            return clientRemoves.freeze();
+        }));
+    }
+
+    @Override
     protected boolean lockDatabaseEntity(RealmModel realm, EmbeddedClientSessionKey clientSessionKey, boolean offline, SessionUpdateTask.CacheOperation operation) {
         if (operation == SessionUpdateTask.CacheOperation.ADD_IF_ABSENT) {
             // There might be concurrent inserts for the same key, which can lead to conflicts.
@@ -143,6 +179,30 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         } else {
             return kcSession.getProvider(UserSessionPersisterProvider.class).lockClientSession(realm, clientSessionKey.userSessionId(), clientSessionKey.clientId(), offline, operation == SessionUpdateTask.CacheOperation.REMOVE);
         }
+    }
+
+    private SessionEntityWrapper<AuthenticatedClientSessionEntity> loadClientSessionFromPersisterWithoutCaching(RealmModel realm, ClientModel client, UserSessionModel userSession, EmbeddedClientSessionKey key, boolean offline) {
+        UserSessionPersisterProvider persister = kcSession.getProvider(UserSessionPersisterProvider.class);
+        AuthenticatedClientSessionModel clientSession = persister.loadClientSession(realm, client, userSession, offline);
+        if (clientSession == null) {
+            return null;
+        }
+        AuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionInstance(
+                userSession.getId(), userSession.getUser().getId(), clientSession,
+                realm.getId(), client.getId(), offline);
+        if (offline) {
+            entity.setTimestamp(userSession.getLastSessionRefresh());
+        }
+        entity.setUserSessionId(userSession.getId());
+
+        long lifespan = getLifespanMsLoader(offline).apply(realm, client, entity);
+        long maxIdle = getMaxIdleMsLoader(offline).apply(realm, client, entity);
+        if (lifespan == SessionTimeouts.ENTRY_EXPIRED_FLAG || maxIdle == SessionTimeouts.ENTRY_EXPIRED_FLAG) {
+            return null;
+        }
+
+        addTask(key, null, entity, UserSessionModel.SessionPersistenceState.PERSISTENT);
+        return new SessionEntityWrapper<>(entity);
     }
 
     private SessionEntityWrapper<AuthenticatedClientSessionEntity> getSessionEntityFromPersister(RealmModel realm, ClientModel client, UserSessionModel userSession, EmbeddedClientSessionKey clientSessionId, boolean offline) {

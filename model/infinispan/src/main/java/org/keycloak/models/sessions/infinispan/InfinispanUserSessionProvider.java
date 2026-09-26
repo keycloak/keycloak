@@ -273,8 +273,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
             getOrCreateVolatileLoadingMarkers().put(sessionId, marker);
             return null;
         } else if (existing.isLoadingMarker()) {
-            getOrCreateVolatileLoadingMarkers().put(sessionId, existing);
-            return null;
+            return existing;
         }
         return existing;
     }
@@ -292,11 +291,40 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         return !getOrCreateVolatileLoadingMarkers().containsKey(sessionId);
     }
 
+    private UserSessionEntity loadUserSessionEntityWithoutCaching(RealmModel realm, String sessionId) {
+        UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+        UserSessionModel persistentUserSession = persister.loadUserSession(realm, sessionId, true);
+        if (persistentUserSession == null) {
+            return null;
+        }
+        return loadUserSessionEntityWithoutCaching(realm, persistentUserSession);
+    }
+
+    private UserSessionEntity loadUserSessionEntityWithoutCaching(RealmModel realm, UserSessionModel persistentUserSession) {
+        UserSessionEntity entity = UserSessionEntity.createFromModel(persistentUserSession);
+
+        for (String clientUUID : persistentUserSession.getAuthenticatedClientSessions().keySet()) {
+            entity.getClientSessions().add(clientUUID);
+        }
+
+        long lifespan = offlineSessionCacheEntryLifespanAdjuster.apply(realm, null, entity);
+        long maxIdle = SessionTimeouts.getOfflineSessionMaxIdleMs(realm, null, entity);
+        if (lifespan == SessionTimeouts.ENTRY_EXPIRED_FLAG || maxIdle == SessionTimeouts.ENTRY_EXPIRED_FLAG) {
+            return null;
+        }
+
+        getTransaction(true).addTask(entity.getId(), null, entity, UserSessionModel.SessionPersistenceState.PERSISTENT);
+        return entity;
+    }
+
     private UserSessionEntity getUserSessionEntityFromPersistenceProvider(RealmModel realm, String sessionId) {
         log.debugf("Offline user-session not found in infinispan, attempting UserSessionPersisterProvider lookup for sessionId=%s", sessionId);
 
         SessionEntityWrapper<UserSessionEntity> existingData = placeLoadingMarker(realm, sessionId);
         if (existingData != null) {
+            if (existingData.isLoadingMarker()) {
+                return loadUserSessionEntityWithoutCaching(realm, sessionId);
+            }
             return existingData.getEntity();
         }
 
@@ -329,6 +357,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
         SessionEntityWrapper<UserSessionEntity> existingData = placeLoadingMarker(realm, sessionId);
         if (existingData != null) {
+            if (existingData.isLoadingMarker()) {
+                return loadUserSessionEntityWithoutCaching(realm, persistentUserSession);
+            }
             return existingData.getEntity();
         }
 
@@ -361,21 +392,22 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
             return null;
         }
 
+        var clientSessionsById = computeClientSessionsToImport(persistentUserSession, userSessionEntityToImport);
+        var clientTx = getClientSessionTransaction(true);
+        clientTx.placeLoadingMarkers(clientSessionsById);
+
         UserSessionEntity existing = getTransaction(true)
                 .importSession(realm, userSessionEntityToImport.getId(), new SessionEntityWrapper<>(userSessionEntityToImport),
                         lifespan, maxIdle);
 
         if (existing != null) {
-            // skip import the client sessions, they should have been imported too.
+            clientTx.cleanupLoadingMarkers(clientSessionsById);
             log.debugf("The user-session already imported by another transaction for sessionId=%s offline=true", sessionId);
             return existing;
         }
 
-        // we need to import the client sessions too.
         log.debugf("Attempting to import the client-sessions for user-session with sessionId=%s offline=true", sessionId);
-
-        var clientSessionsById = computeClientSessionsToImport(persistentUserSession, userSessionEntityToImport);
-        getClientSessionTransaction(true).importSessionsConcurrently(realm, clientSessionsById, offlineClientSessionCacheEntryLifespanAdjuster, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
+        clientTx.importSessionsConcurrently(realm, clientSessionsById, offlineClientSessionCacheEntryLifespanAdjuster, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
 
         return userSessionEntityToImport;
     }

@@ -199,11 +199,13 @@ public class SessionResurrectionConcurrencyTest {
         assertEquals(200, oauth.doRefreshTokenRequest(refreshToken).getStatusCode(),
                 "Refresh should succeed before injecting marker");
 
+        String realmName = realm.getName();
         runOnServer.run(session -> {
+            String realmId = session.realms().getRealmByName(realmName).getId();
             Cache<String, SessionEntityWrapper<UserSessionEntity>> cache =
                     session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
             UserSessionEntity entity = new UserSessionEntity(sessionId);
-            entity.setRealmId("dummy");
+            entity.setRealmId(realmId);
             SessionEntityWrapper<UserSessionEntity> marker = SessionEntityWrapper.createLoadingMarker(entity);
             cache.put(sessionId, marker, 30, TimeUnit.SECONDS);
             LOG.debugf("Injected loading marker for user session %s", sessionId);

@@ -229,11 +229,13 @@ public class VolatileSessionResurrectionConcurrencyTest {
         assertEquals(200, oauth.doRefreshTokenRequest(refreshToken).getStatusCode(),
                 "Offline refresh should succeed before injecting marker");
 
+        String realmName = realm.getName();
         runOnServer.run(session -> {
+            String realmId = session.realms().getRealmByName(realmName).getId();
             Cache<String, SessionEntityWrapper<UserSessionEntity>> cache =
                     session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME);
             UserSessionEntity entity = new UserSessionEntity(sessionId);
-            entity.setRealmId("dummy");
+            entity.setRealmId(realmId);
             SessionEntityWrapper<UserSessionEntity> marker = SessionEntityWrapper.createLoadingMarker(entity);
             cache.put(sessionId, marker, 30, TimeUnit.SECONDS);
             LOG.debugf("Injected loading marker for offline user session %s", sessionId);
@@ -241,6 +243,57 @@ public class VolatileSessionResurrectionConcurrencyTest {
 
         assertEquals(200, oauth.doRefreshTokenRequest(refreshToken).getStatusCode(),
                 "Offline refresh should succeed — loading marker must be treated as cache miss, session loaded from DB");
+
+        oauth.doLogout(refreshToken);
+        oauth.scope(null);
+    }
+
+    /**
+     * Verifies that a session note change on an offline session in the volatile path
+     * is persisted to the database. After setting a note and clearing the cache,
+     * reloading the session from DB should still have the note.
+     */
+    @Test
+    public void offlineSessionNotePersistedToDatabase() {
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest(user.getUsername(), "password");
+        assertEquals(200, tokenResponse.getStatusCode());
+        String refreshToken = tokenResponse.getRefreshToken();
+        String sessionId = oauth.parseRefreshToken(refreshToken).getSessionId();
+        String realmName = realm.getName();
+
+        // Set a session note on the offline session
+        runOnServer.run(session -> {
+            var realmModel = session.realms().getRealmByName(realmName);
+            var userSession = session.sessions().getOfflineUserSession(realmModel, sessionId);
+            if (userSession == null) {
+                throw new AssertionError("Offline user session should exist: " + sessionId);
+            }
+            userSession.setNote("test-note", "test-value");
+        });
+
+        // Clear the offline session cache to force DB load on next access
+        runOnServer.run(session -> {
+            Cache<String, SessionEntityWrapper<UserSessionEntity>> cache =
+                    session.getProvider(InfinispanConnectionProvider.class)
+                            .getCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME);
+            cache.remove(sessionId);
+            LOG.debugf("Evicted offline user session %s from cache", sessionId);
+        });
+
+        // Reload the session — should come from DB. Check if the note survived.
+        runOnServer.run(session -> {
+            var realmModel = session.realms().getRealmByName(realmName);
+            var userSession = session.sessions().getOfflineUserSession(realmModel, sessionId);
+            if (userSession == null) {
+                throw new AssertionError("Offline user session should be loadable from DB after cache eviction: " + sessionId);
+            }
+            String noteValue = userSession.getNote("test-note");
+            if (!"test-value".equals(noteValue)) {
+                throw new AssertionError("Session note should be persisted to DB and survive cache eviction. " +
+                        "Expected 'test-value', got: " + noteValue);
+            }
+        });
 
         oauth.doLogout(refreshToken);
         oauth.scope(null);

@@ -62,9 +62,7 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
 
                 if (existing == null) {
                     storeLoadingMarker(key, marker, offline);
-                } else if (existing.isLoadingMarker()) {
-                    storeLoadingMarker(key, existing, offline);
-                } else {
+                } else if (!existing.isLoadingMarker()) {
                     wrappedEntity = existing;
                     getUpdates(offline).putIfAbsent(key, new SessionUpdatesList<>(realm, wrappedEntity));
                     LOG.debugf("user-session found in cache for sessionId=%s offline=%s %s", key, offline, wrappedEntity.getEntity().getLastSessionRefresh());
@@ -73,7 +71,11 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
 
             if (wrappedEntity == null) {
                 LOG.debugf("user-session not found in cache for sessionId=%s offline=%s, loading from persister", key, offline);
-                wrappedEntity = getSessionEntityFromPersister(realm, key, userSession, offline);
+                if (hasStoredLoadingMarker(key, offline)) {
+                    wrappedEntity = getSessionEntityFromPersister(realm, key, userSession, offline);
+                } else {
+                    wrappedEntity = loadFromPersisterWithoutCaching(realm, key, userSession, offline);
+                }
             }
 
             if (wrappedEntity == null) {
@@ -100,6 +102,18 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
 
             return scheduledForRemove ? null : myUpdates.getEntityWrapper();
         }
+    }
+
+    private SessionEntityWrapper<UserSessionEntity> loadFromPersisterWithoutCaching(RealmModel realm, String key, UserSessionModel userSession, boolean offline) {
+        if (userSession == null) {
+            UserSessionPersisterProvider persister = kcSession.getProvider(UserSessionPersisterProvider.class);
+            userSession = persister.loadUserSession(realm, key, offline);
+        }
+        if (userSession == null || isScheduledForRemove(key, offline)) {
+            return null;
+        }
+        return ((PersistentUserSessionProvider) kcSession.getProvider(UserSessionProvider.class))
+                .wrapPersistentEntity(realm, offline, userSession);
     }
 
     private SessionEntityWrapper<UserSessionEntity> getSessionEntityFromPersister(RealmModel realm, String key, UserSessionModel userSession, boolean offline) {
