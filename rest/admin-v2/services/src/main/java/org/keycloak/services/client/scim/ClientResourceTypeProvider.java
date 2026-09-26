@@ -37,6 +37,7 @@ import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.StripSecretsUtilsV2;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
@@ -412,7 +413,11 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
     @Override
     protected BaseClientRepresentation createResourceTypeInstance(ClientModel model, List<String> attributes,
             List<String> excludedAttributes) {
-        return populateFromSchema(getSchema(model.getProtocol()), model, attributes, excludedAttributes);
+        BaseClientRepresentation result = populateFromSchema(getSchema(model.getProtocol()), model, attributes, excludedAttributes);
+        if (!permissions.clients().canManage(model)) {
+            result = StripSecretsUtilsV2.stripSecrets(session, result);
+        }
+        return result;
     }
     
     private static <R extends BaseClientRepresentation> R populateFromSchema(
