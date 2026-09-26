@@ -59,14 +59,17 @@ and create an account at the realm.
 After that, the administrator can send an invitation link to the user or manually add the user as a member of an organization.
 For more details, see <<_managing_members_,Managing members>>.
 
-If the organization has an identity provider without a domain and the *Hide on login page* setting is *OFF*, users can also click
+If the organization has an identity provider with the *Hide on login page* setting *OFF*, users can also click
 the identity provider link at the identity-first login page to automatically create an account and join an organization
 once they authenticate through the identity provider.
 For more details, see <<_managing_identity_provider_,Managing identity providers>>.
 
-In a similar situation to the previous section, the organization may have a domain configured to route to an identity provider
-with auto-redirect enabled.
-In this situation, the user is redirected to the identity provider if that user's email matches the domain.
+When a domain is linked to an identity provider and auto redirect is enabled, the user is automatically redirected to
+that identity provider if their email matches the domain. When no identity provider is linked to the domain, or auto
+redirect is disabled, the organization's available identity providers are shown for the user to select manually.
+For details on how domain-to-identity-provider linking controls routing and email enforcement, see
+<<managing-organization-domains_{context},Managing organization domains>>.
+
 Once the flow completes, an account is created and the user joins the organization. In case the user has any first-factor credentials
 configured (e.g.: password, passwordless, kerberos) to the account, the user is not automatically redirected to the identity provider but asked to authenticate using their
 credentials.
