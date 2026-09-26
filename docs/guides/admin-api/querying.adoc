@@ -67,13 +67,15 @@ The `gt`, `ge`, `lt`, and `le` operators supported by the SCIM API are not avail
 
 === Queryable fields
 
-Only registered fields can be used in filter expressions.
-Using an unknown field returns HTTP 400, unlike the SCIM API which silently ignores unrecognized attributes.
+Only the fields listed below can be used in filter expressions.
+Other fields of the client representation are not searchable.
+Using an unsearchable or unknown field returns HTTP 400, unlike the SCIM API which silently ignores unrecognized attributes.
 
 ==== Common fields (all client types)
 
 <@api.queryableFields group="common"/>
 
+<#if ctx.adminApiV2.getQueryableFields("openid-connect")?has_content>
 ==== OIDC-specific fields
 
 These fields are available only for `openid-connect` clients.
@@ -82,6 +84,8 @@ However, `eq null` and `not ... pr` will match because the field is genuinely ab
 
 <@api.queryableFields group="openid-connect"/>
 
+</#if>
+<#if ctx.adminApiV2.getQueryableFields("saml")?has_content>
 ==== SAML-specific fields
 
 These fields are available only for `saml` clients.
@@ -90,13 +94,13 @@ However, `eq null` and `not ... pr` will match because the field is genuinely ab
 
 <@api.queryableFields group="saml"/>
 
+</#if>
 === Collection field matching
 
-For fields that hold a collection of values (`redirectUris`, `roles`, `loginFlows`, `webOrigins`, `serviceAccountRoles`), the `eq`, `co`, `sw`, and `ew` operators match if *any* element in the collection satisfies the condition:
+For multi-valued fields (type `Set<String>` in the tables above), the `eq`, `co`, `sw`, and `ew` operators match if *any* element in the collection satisfies the condition:
 
 * `roles eq "admin"` - matches clients that have a role named `admin`
-* `redirectUris co "example.com"` - matches clients with any redirect URI containing `example.com`
-* `loginFlows eq "SERVICE_ACCOUNT"` - matches OIDC clients with the service account flow enabled
+* `roles co "adm"` - matches clients that have a role whose name contains `adm`
 
 The `ne` operator is the logical negation of `eq`: it matches if *no* element in the collection equals the value.
 For example, `roles ne "admin"` matches clients that do not have a role named `admin`.
@@ -131,13 +135,6 @@ Find OIDC clients using client-secret authentication:
 GET /admin/api/{realmName}/clients/v2?q=auth.method eq "client-secret"
 ----
 
-Find SAML clients with document signing enabled:
-
-[source]
-----
-GET /admin/api/{realmName}/clients/v2?q=signDocuments eq true
-----
-
 Find clients by display name prefix, excluding a specific protocol:
 
 [source]
@@ -169,6 +166,7 @@ The server returns HTTP 400 with a descriptive error message when:
 
 * The filter expression has a syntax error.
 * The filter references an unknown field.
+* The filter references a field that is not searchable.
 * The filter uses an unsupported operator (e.g. `gt`, `ge`, `lt`, `le`).
 
 [source,json]

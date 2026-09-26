@@ -5,18 +5,19 @@ import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.services.client.scim.BaseClientModelSchema;
-import org.keycloak.services.client.scim.ClientResourceTypeProvider;
 import org.keycloak.services.client.scim.OIDCClientModelSchema;
 import org.keycloak.services.client.scim.SAMLClientModelSchema;
 
@@ -360,102 +361,71 @@ final class JavaDocExampleGenerator {
                          Class<? extends BaseClientRepresentation> schemaClass) {}
 
     private static Map<String, List<QueryableField>> collectQueryableFields(Map<String, DocSchema> schemas) {
-        Set<String> commonFieldNames = null;
         Map<String, Set<String>> protocolFieldNames = new LinkedHashMap<>();
-
         for (ProtocolEntry protocol : PROTOCOLS) {
-            Set<String> fieldNames = new LinkedHashSet<>(protocol.schema().getAttributes().keySet());
-            if (commonFieldNames == null) {
-                commonFieldNames = new LinkedHashSet<>(fieldNames);
-            } else {
-                commonFieldNames.retainAll(fieldNames);
-            }
-            protocolFieldNames.put(protocol.name(), fieldNames);
+            protocolFieldNames.put(protocol.name(), queryableFieldNames(protocol.schema()));
         }
 
         String baseSchemaName = BaseClientRepresentation.class.getSimpleName();
+        Set<String> unresolved = new LinkedHashSet<>(BaseClientModelSchema.QUERYABLE_FIELDS);
+        protocolFieldNames.values().forEach(unresolved::removeAll);
+        if (!unresolved.isEmpty()) {
+            throw new IllegalStateException("Queryable fields " + unresolved
+                    + " are not resolvable by any client schema — update BaseClientModelSchema.QUERYABLE_FIELDS or the schemas");
+        }
+
+        Set<String> commonFieldNames = new LinkedHashSet<>(BaseClientModelSchema.QUERYABLE_FIELDS);
+        protocolFieldNames.values().forEach(commonFieldNames::retainAll);
+
         Map<String, List<QueryableField>> result = new LinkedHashMap<>();
         result.put("common", resolveFields(commonFieldNames, schemas, baseSchemaName));
 
         for (ProtocolEntry protocol : PROTOCOLS) {
-            Set<String> onlyFieldNames = protocolFieldNames.get(protocol.name());
+            Set<String> onlyFieldNames = new LinkedHashSet<>(protocolFieldNames.get(protocol.name()));
             onlyFieldNames.removeAll(commonFieldNames);
-            String schemaName = protocol.schemaClass().getSimpleName();
-            expandNestedFields(onlyFieldNames, schemas, schemaName);
-            result.put(protocol.name(), resolveFields(onlyFieldNames, schemas, schemaName));
+            result.put(protocol.name(), resolveFields(onlyFieldNames, schemas, protocol.schemaClass().getSimpleName()));
         }
         return result;
     }
 
-    private static void expandNestedFields(Set<String> fieldNames, Map<String, DocSchema> schemas, String schemaName) {
-        DocSchema schema = schemas.get(schemaName);
-        if (schema == null) {
-            return;
-        }
-        Map<String, String> replacements = new LinkedHashMap<>();
-        for (DocProperty prop : schema.properties()) {
-            if (!fieldNames.contains(prop.name()) || prop.typeRef() == null || !schemas.containsKey(prop.typeRef())) {
-                continue;
-            }
-            DocSchema nestedSchema = schemas.get(prop.typeRef());
-            if (nestedSchema == null || nestedSchema.properties().isEmpty()) {
-                continue;
-            }
-            String match = null;
-            for (DocProperty nested : nestedSchema.properties()) {
-                String dotPath = prop.name() + "." + nested.name();
-                if (ClientResourceTypeProvider.isKnownField(dotPath)) {
-                    match = dotPath;
-                    break;
-                }
-            }
-            if (match == null) {
-                throw new IllegalStateException("No nested property of '" + prop.name()
-                        + "' is recognized by FieldResolver — update FieldResolver or the schema");
-            }
-            replacements.put(prop.name(), match);
-        }
-        if (!replacements.isEmpty()) {
-            Set<String> reordered = new LinkedHashSet<>();
-            for (String name : fieldNames) {
-                reordered.add(replacements.getOrDefault(name, name));
-            }
-            fieldNames.clear();
-            fieldNames.addAll(reordered);
-        }
+    private static Set<String> queryableFieldNames(BaseClientModelSchema<?> schema) {
+        return BaseClientModelSchema.QUERYABLE_FIELDS.stream()
+                .filter(path -> schema.getAttributeByPath(path) != null)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private static List<QueryableField> resolveFields(Set<String> fieldNames, Map<String, DocSchema> schemas, String schemaName) {
-        List<QueryableField> fields = new ArrayList<>();
-        DocSchema schema = schemas.get(schemaName);
-        Map<String, DocProperty> propsByName = schemaPropertyMap(schema);
+        Map<String, DocProperty> propsByName = schemaPropertyMap(schemas.get(schemaName));
+        List<String> propertyOrder = List.copyOf(propsByName.keySet());
+        return fieldNames.stream()
+                .sorted(Comparator.comparingInt((String name) -> propertyIndex(name, propertyOrder))
+                        .thenComparing(Comparator.naturalOrder()))
+                .map(name -> resolveField(name, schemaName, propsByName, schemas))
+                .toList();
+    }
 
-        for (String name : fieldNames) {
-            int dot = name.indexOf('.');
-            if (dot > 0) {
-                String parentName = name.substring(0, dot);
-                String childName = name.substring(dot + 1);
-                DocProperty parentProp = propsByName.get(parentName);
-                if (parentProp != null && parentProp.typeRef() != null) {
-                    DocSchema nestedSchema = schemas.get(parentProp.typeRef());
-                    Map<String, DocProperty> nestedProps = schemaPropertyMap(nestedSchema);
-                    DocProperty childProp = nestedProps.get(childName);
-                    if (childProp != null) {
-                        fields.add(new QueryableField(name, toQueryableType(childProp.type()), stripValidationSuffix(childProp.description())));
-                        continue;
-                    }
-                }
-                fields.add(new QueryableField(name, null, null));
-            } else {
-                DocProperty prop = propsByName.get(name);
-                if (prop != null) {
-                    fields.add(new QueryableField(name, toQueryableType(prop.type()), stripValidationSuffix(prop.description())));
-                } else {
-                    fields.add(new QueryableField(name, null, null));
-                }
-            }
+    private static int propertyIndex(String name, List<String> propertyOrder) {
+        int dot = name.indexOf('.');
+        int index = propertyOrder.indexOf(dot > 0 ? name.substring(0, dot) : name);
+        return index < 0 ? Integer.MAX_VALUE : index;
+    }
+
+    private static QueryableField resolveField(String name, String schemaName, Map<String, DocProperty> propsByName,
+            Map<String, DocSchema> schemas) {
+        int dot = name.indexOf('.');
+        DocProperty prop;
+        if (dot > 0) {
+            DocProperty parentProp = propsByName.get(name.substring(0, dot));
+            DocSchema nestedSchema = parentProp != null && parentProp.typeRef() != null ? schemas.get(parentProp.typeRef()) : null;
+            prop = schemaPropertyMap(nestedSchema).get(name.substring(dot + 1));
+        } else {
+            prop = propsByName.get(name);
         }
-        return fields;
+        if (prop == null) {
+            throw new IllegalStateException("Queryable field '" + name + "' has no matching property in schema '"
+                    + schemaName + "' — update BaseClientModelSchema.QUERYABLE_FIELDS or the representation");
+        }
+        return new QueryableField(name, toQueryableType(prop.type()), stripValidationSuffix(prop.description()));
     }
 
     private static Map<String, DocProperty> schemaPropertyMap(DocSchema schema) {
