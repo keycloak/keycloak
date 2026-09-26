@@ -28,16 +28,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.KeycloakSession;
 
-import org.apache.http.HttpHeaders;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
 
@@ -121,28 +116,10 @@ public abstract class OCSPProvider {
     }
 
     protected byte[] getEncodedOCSPResponse(KeycloakSession session, byte[] encodedOCSPReq, URI responderUri) throws IOException {
-
-        CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
-        HttpPost post = new HttpPost(responderUri);
-        post.setHeader(HttpHeaders.CONTENT_TYPE, "application/ocsp-request");
-        post.setEntity(new ByteArrayEntity(encodedOCSPReq));
-
-        //Get Response
-        try (CloseableHttpResponse response = httpClient.execute(post)) {
-            try {
-                if (response.getStatusLine().getStatusCode() != 200) {
-                    String errorMessage = String.format("Connection error, unable to obtain certificate revocation status using OCSP responder \"%s\", code \"%d\"",
-                            responderUri.toString(), response.getStatusLine().getStatusCode());
-                    throw new IOException(errorMessage);
-                }
-
-                byte[] data = EntityUtils.toByteArray(response.getEntity());
-                return data;
-            } finally {
-                EntityUtils.consumeQuietly(response.getEntity());
-            }
-        }
-
+        return session.getProvider(HttpClientProvider.class).postBinary(
+                responderUri.toString(),
+                encodedOCSPReq,
+                Map.of("Content-Type", "application/ocsp-request"));
     }
 
     /**
