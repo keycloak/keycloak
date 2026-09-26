@@ -37,8 +37,11 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 
 /**
+ * @deprecated Use the Admin REST API to manage clients, or OIDC dynamic client registration for OIDC clients.
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Deprecated
 public class DefaultClientRegistrationProvider extends AbstractClientRegistrationProvider {
 
     public DefaultClientRegistrationProvider(KeycloakSession session) {

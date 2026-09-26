@@ -32,8 +32,11 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientregistration.AbstractClientRegistrationProvider;
 
 /**
+ * @deprecated Use the Admin REST API to convert a SAML entity descriptor and create the client.
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Deprecated
 public class EntityDescriptorClientRegistrationProvider extends AbstractClientRegistrationProvider {
 
     public EntityDescriptorClientRegistrationProvider(KeycloakSession session) {
