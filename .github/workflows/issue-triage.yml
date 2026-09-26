@@ -1,0 +1,56 @@
+name: Issue Triage
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (no labels applied)'
+        type: boolean
+        default: true
+      issue:
+        description: 'Single issue number (optional)'
+        type: string
+        default: ''
+  schedule:
+    - cron: '*/15 * * * *'
+
+permissions:
+  issues: write
+  contents: read
+  copilot-requests: write
+
+jobs:
+  triage:
+    if: github.repository == 'keycloak/keycloak'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Install Copilot CLI
+        run: npm install --global @github/copilot@1.0.83
+
+      - name: Run auto-label
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COPILOT_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          ARGS=""
+
+          if [ -n "${{ inputs.issue }}" ]; then
+            ARGS="$ARGS --issue ${{ inputs.issue }}"
+          fi
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+
+          python3 .github/scripts/auto_label.py $ARGS
