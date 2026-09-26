@@ -39,6 +39,7 @@ jobs:
   conditional:
     name: Check conditional workflows and jobs
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       ci: ${{ steps.conditional.outputs.ci }}
       ci-quarkus: ${{ steps.conditional.outputs.ci-quarkus }}
@@ -55,6 +56,8 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github
 
       - id: conditional
         uses: ./.github/actions/conditional
@@ -98,8 +101,11 @@ jobs:
   testsuite-deprecation-check:
     name: Testsuite Deprecation Check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github
 
       - id: conditional
         uses: ./.github/actions/testsuite-deprecation-check
@@ -111,6 +117,7 @@ jobs:
     if: needs.conditional.outputs.ci == 'true'
     runs-on: ubuntu-latest
     needs: conditional
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -119,6 +126,8 @@ jobs:
 
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
+        with:
+          upload-dist: true
 
       - name: Spotless
         run: ./mvnw -Pdocs,distribution,operator spotless:check
@@ -176,7 +185,7 @@ jobs:
     name: Adapter IT
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -198,45 +207,21 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Papp-server-wildfly -Dtest=$TESTS -Dapp.server.ssl.required=true -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
+      # Reuses the adapter distributions and app servers built above instead of building them again in a separate job
+      - name: Run adapter tests (strict cookies)
+        if: ${{ !cancelled() }}
+        run: |
+          TESTS="org.keycloak.testsuite.adapter.**"
+          echo "Tests: $TESTS"
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pfirefox-strict-cookies -Pauth-server-quarkus -Papp-server-wildfly -Dtest=$TESTS -Dapp.server.ssl.required=true "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -Dsurefire.reportsDirectory=target/surefire-reports-strict-cookies -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
+        if: ${{ !cancelled() }}
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Adapter IT
-
-  adapter-integration-tests-strict-cookies:
-    name: Adapter IT Strict Cookies
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
-        with:
-          jdk-version: "21"
-
-      - name: Build adapter distributions
-        run: ./mvnw install -DskipTests -f distribution/pom.xml
-
-      - name: Build app servers
-        run: ./mvnw install -DskipTests -Pbuild-app-servers -f testsuite/integration-arquillian/servers/app-server/pom.xml
-
-      - name: Run adapter tests
-        run: |
-          TESTS="org.keycloak.testsuite.adapter.**"
-          echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pfirefox-strict-cookies -Pauth-server-quarkus -Papp-server-wildfly -Dtest=$TESTS -Dapp.server.ssl.required=true "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
-
-      - uses: ./.github/actions/upload-flaky-tests
-        name: Upload flaky tests
-        env:
-          GH_TOKEN: ${{ github.token }}
-        with:
-          job-name: Adapter IT Strict Cookies
 
   quarkus-unit-tests:
     name: Quarkus UT
@@ -862,7 +847,7 @@ jobs:
 
   store-integration-tests-additional:
     name: Store IT (additional)
-    needs: build
+    needs: [build, conditional]
     runs-on: ubuntu-latest
     timeout-minutes: 75
     if: needs.conditional.outputs.ci-additional-dbs == 'true'
@@ -1192,11 +1177,9 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
-
-        # This step is necessary because test/clustering requires building a new Keycloak image built from tar.gz
-        # file that is not part of m2-keycloak.tzts archive
-      - name: Build tar keycloak-quarkus-dist
-        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+        with:
+          # test/clustering builds a Keycloak image from the tar.gz distribution, which is not part of the m2-keycloak.tzts archive
+          download-dist: true
 
       - name: Run tests
         run: ./mvnw package -f tests/pom.xml -Dtest=${{ matrix.suite }}
@@ -1213,11 +1196,9 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
-
-        # This step is necessary because test/clustering requires building a new Keycloak image built from tar.gz
-        # file that is not part of m2-keycloak.tzts archive
-      - name: Build tar keycloak-quarkus-dist
-        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+        with:
+          # test/clustering builds a Keycloak image from the tar.gz distribution, which is not part of the m2-keycloak.tzts archive
+          download-dist: true
 
       - name: Run tests
         run: ./mvnw package -f scim/tests/pom.xml
@@ -1234,11 +1215,9 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
-
-        # This step is necessary because test/clustering requires building a new Keycloak image built from tar.gz
-        # file that is not part of m2-keycloak.tzts archive
-      - name: Build tar keycloak-quarkus-dist
-        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+        with:
+          # test/clustering builds a Keycloak image from the tar.gz distribution, which is not part of the m2-keycloak.tzts archive
+          download-dist: true
 
       - name: Run tests
         run: ./mvnw package -f ssf/tests/pom.xml
@@ -1255,9 +1234,9 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
-
-      - name: Build tar keycloak-quarkus-dist
-        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+        with:
+          # test/clustering builds a Keycloak image from the tar.gz distribution, which is not part of the m2-keycloak.tzts archive
+          download-dist: true
 
       - name: Run tests
         run: ./mvnw package -f authzen/tests/pom.xml
@@ -1320,11 +1299,9 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
-
-        # This step is necessary because test/clustering requires building a new Keycloak image built from tar.gz
-        # file that is not part of m2-keycloak.tzts archive
-      - name: Build tar keycloak-quarkus-dist
-        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+        with:
+          # test/clustering builds a Keycloak image from the tar.gz distribution, which is not part of the m2-keycloak.tzts archive
+          download-dist: true
 
       - name: Run tests
         run: ./mvnw verify -pl tests/clustering
@@ -1355,11 +1332,9 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
-
-        # This step is necessary because test/clustering requires building a new Keycloak image built from tar.gz
-        # file that is not part of m2-keycloak.tzts archive
-      - name: Build tar keycloak-quarkus-dist
-        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+        with:
+          # test/clustering builds a Keycloak image from the tar.gz distribution, which is not part of the m2-keycloak.tzts archive
+          download-dist: true
 
       - name: Run tests
         run: ./mvnw verify -pl tests/clustering
@@ -1382,11 +1357,12 @@ jobs:
       - unit-tests
       - base-integration-tests
       - adapter-integration-tests
-      - adapter-integration-tests-strict-cookies
       - quarkus-unit-tests
       - quarkus-integration-tests
       - jdk-integration-tests
+      - login-v1-tests
       - store-integration-tests
+      - store-integration-tests-additional
       - volatile-sessions-tests
       - store-model-tests
       - clustering-integration-tests
@@ -1401,6 +1377,8 @@ jobs:
       - test-framework
       - base-new-integration-tests
       - mixed-cluster-compatibility-tests
+      - scim-integration-tests
+      - ssf-integration-tests
       - authzen-integration-tests
       - admin-v2-tests
       - jackson3-admin-client-tests
@@ -1408,8 +1386,11 @@ jobs:
       - stateless-tests
       - stateless-cluster-integration-tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github
       - uses: ./.github/actions/status-check
         with:
           jobs: ${{ toJSON(needs) }}
