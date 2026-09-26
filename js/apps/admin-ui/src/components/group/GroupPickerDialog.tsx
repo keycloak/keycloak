@@ -221,9 +221,6 @@ export const GroupPickerDialog = ({
         setCount(selectedGroup.subGroupCount!);
       }
 
-      groups.forEach((group: SelectableGroup) => {
-        group.checked = !!selectedRows.find((r) => r.id === group.id);
-      });
       setGroups(groups);
       if (filter !== "" || !groupId) {
         setCount(groups.length);
@@ -538,18 +535,14 @@ const GroupRow = ({
             className="kc-join-group-modal-check"
             data-testid={`${group.name}-check`}
             aria-label={group.name}
-            checked={group.checked}
+            checked={!!selectedRows.find((r) => r.id === group.id)}
             isDisabled={isRowDisabled(group)}
             onChange={(_event, checked) => {
-              group.checked = checked;
-              let newSelectedRows: SelectableGroup[] = [];
-              if (!group.checked) {
-                newSelectedRows = selectedRows.filter((r) => r.id !== group.id);
-              } else {
-                newSelectedRows = [...selectedRows, group];
-              }
-
-              setSelectedRows(newSelectedRows);
+              setSelectedRows(
+                checked
+                  ? [...selectedRows, { ...group, checked: true }]
+                  : selectedRows.filter((r) => r.id !== group.id),
+              );
             }}
             aria-labelledby={`select-${group.name}`}
           />
