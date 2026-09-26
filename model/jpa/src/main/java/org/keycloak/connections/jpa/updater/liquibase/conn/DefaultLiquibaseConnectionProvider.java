@@ -30,6 +30,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 
 import liquibase.Scope;
 import liquibase.ThreadLocalScopeManager;
+import liquibase.analytics.configuration.AnalyticsArgs;
 import liquibase.database.AbstractJdbcDatabase;
 import liquibase.database.Database;
 import liquibase.database.DatabaseConnection;
@@ -87,6 +88,8 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
         scopeValues.put(Scope.Attr.resourceAccessor.name(), new ClassLoaderResourceAccessor(this.getClass().getClassLoader()));
         scopeValues.put(Scope.Attr.classLoader.name(), this.getClass().getClassLoader());
         scopeValues.put(Scope.Attr.ui.name(), new LoggerUIService());
+        // Disable Liquibase analytics; Keycloak does not send product usage data to Liquibase
+        scopeValues.put(AnalyticsArgs.ENABLED.getKey(), Boolean.FALSE);
         try {
             Scope.enter(scopeValues);
         } catch (Exception e) {
