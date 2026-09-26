@@ -127,7 +127,11 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
 
     @Override
     public boolean test(Map.Entry<String, SessionEntityWrapper<UserSessionEntity>> entry) {
-        UserSessionEntity entity = entry.getValue().getEntity();
+        SessionEntityWrapper<UserSessionEntity> wrapper = entry.getValue();
+        if (wrapper.isLoadingMarker()) {
+            return false;
+        }
+        UserSessionEntity entity = wrapper.getEntity();
 
         return realm.equals(entity.getRealmId()) &&
                 (user == null || entity.getUser().equals(user)) &&

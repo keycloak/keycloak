@@ -74,6 +74,32 @@ public class InfinispanChangesUtils {
         return new CacheHolder<>(null, null, lifespanFunction, maxIdleFunction, keyGenerator);
     }
 
+    public static <K, V extends SessionEntity> CompletionStage<Boolean> removeLoadingMarker(
+            Cache<K, SessionEntityWrapper<V>> cache, K key) {
+        return cache.getAsync(key).thenCompose(current -> current != null && current.isLoadingMarker()
+                ? cache.removeAsync(key, current)
+                : CompletableFuture.completedFuture(false));
+    }
+
+    public static <K, V extends SessionEntity> CompletionStage<?> publishCreatedSessionOrInvalidate(
+            Cache<K, SessionEntityWrapper<V>> cache, K key, SessionEntityWrapper<V> publicationFence,
+            SessionEntityWrapper<V> session, long lifespan, long maxIdle) {
+        if (publicationFence == null) {
+            // Another transaction already owned a loading marker or had published a complete
+            // entry before this DB-backed creation started. The newly-created wrapper is not a
+            // complete merged snapshot, so neither leaving nor replacing that entry is safe.
+            // Invalidate after the DB commit and let the next reader reconstruct from the DB.
+            return cache.removeAsync(key);
+        }
+        return cache.replaceAsync(key, publicationFence, session, lifespan, TimeUnit.MILLISECONDS,
+                        maxIdle, TimeUnit.MILLISECONDS)
+                .thenCompose(published -> published
+                        ? CompletableFuture.completedFuture(true)
+                        // The fence may have expired and a new loader may have published a DB
+                        // snapshot read before this creation committed. Force reconstruction.
+                        : cache.removeAsync(key).thenApply(ignored -> false));
+    }
+
     public static <K, V extends SessionEntity> void runOperationInCluster(
             CacheHolder<K, V> cacheHolder,
             K key,
@@ -131,6 +157,12 @@ public class InfinispanChangesUtils {
             logger.debugf("Existing entity in cache for key: %s . Will update it", key);
         }
 
+        if (existing.isLoadingMarker()) {
+            logger.debugf("Existing entity for key %s is a loading marker, removing to prevent stale import", key);
+            return CacheDecorators.ignoreReturnValues(cacheHolder.cache()).removeAsync(key)
+                    .thenRun(CompletionStages.NO_OP_RUNNABLE);
+        }
+
         // Apply updates on the existing entity and replace it
         task.runUpdate(existing.getEntity());
 
@@ -144,6 +176,38 @@ public class InfinispanChangesUtils {
             SessionEntityWrapper<V> oldVersionEntity,
             Logger logger) {
         return cacheHolder.sequencer().orderOnKey(key, () -> replaceIteration(cacheHolder.cache(), key, task, null, oldVersionEntity, 0, logger));
+    }
+
+    /**
+     * Publishes a database-backed replacement only if the cache entry still has the version
+     * observed by the transaction. Unlike cache-only replacements, a committed database update
+     * must not be replayed onto a different cache version because cache publication order can
+     * differ from database commit order.
+     */
+    public static <K, V extends SessionEntity> CompletionStage<Void> replaceAfterDatabaseCommit(
+            CacheHolder<K, V> cacheHolder,
+            K key,
+            MergedUpdate<V> task,
+            SessionEntityWrapper<V> expectedSession,
+            Logger logger) {
+        return cacheHolder.sequencer().orderOnKey(key, () -> {
+            V session = expectedSession.getEntity();
+            if (session.shouldEvaluateRemoval() && task.shouldRemove(session)) {
+                logger.debugf("Entity %s removed after post-database-commit evaluation", key);
+                return CacheDecorators.ignoreReturnValues(cacheHolder.cache()).removeAsync(key, expectedSession)
+                        .thenRun(CompletionStages.NO_OP_RUNNABLE);
+            }
+            SessionEntityWrapper<V> replacement = new SessionEntityWrapper<>(
+                    expectedSession.getLocalMetadata(), session);
+            long effectiveLifespan = task.capLifespan(expectedSession);
+            return cacheHolder.cache().computeIfPresentAsync(key,
+                            // Removing a UUID mismatch in the same atomic operation closes the
+                            // loading-marker publication race without removing a later update.
+                            new ReplaceFunction<>(expectedSession.getVersion(), replacement, true),
+                            effectiveLifespan, TimeUnit.MILLISECONDS,
+                            task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS)
+                    .thenRun(CompletionStages.NO_OP_RUNNABLE);
+        });
     }
 
     private static <K, V extends SessionEntity> CompletionStage<Void> replaceIteration(
@@ -165,7 +229,8 @@ public class InfinispanChangesUtils {
             return CacheDecorators.ignoreReturnValues(cache).removeAsync(key).thenRun(CompletionStages.NO_OP_RUNNABLE);
         }
         SessionEntityWrapper<V> newVersionEntity = new SessionEntityWrapper<>(expectedSession.getLocalMetadata(), session);
-        CompletionStage<SessionEntityWrapper<V>> stage = cache.computeIfPresentAsync(key, new ReplaceFunction<>(expectedSession.getVersion(), newVersionEntity), task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
+        long effectiveLifespan = task.capLifespan(expectedSession);
+        CompletionStage<SessionEntityWrapper<V>> stage = cache.computeIfPresentAsync(key, new ReplaceFunction<>(expectedSession.getVersion(), newVersionEntity), effectiveLifespan, TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
         return stage.thenCompose(rv -> handleReplaceResponse(cache, key, task, expectedSession, newVersionEntity, rv, iteration + 1, logger));
     }
 
@@ -182,6 +247,12 @@ public class InfinispanChangesUtils {
         if (returnValue == null) {
             logger.debugf("Entity %s not found. Maybe removed in the meantime. Replace task will be ignored", key);
             return CompletableFutures.completedNull();
+        }
+
+        if (returnValue.isLoadingMarker()) {
+            logger.debugf("Entity %s is a loading marker, invalidating to prevent stale cache after marker is consumed", key);
+            return CacheDecorators.ignoreReturnValues(cache).removeAsync(key)
+                    .thenRun(CompletionStages.NO_OP_RUNNABLE);
         }
 
         if (returnValue.getVersion().equals(newSession.getVersion())) {
