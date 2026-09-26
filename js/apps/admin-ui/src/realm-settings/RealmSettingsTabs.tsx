@@ -66,6 +66,7 @@ type RealmSettingsHeaderProps = {
   value: boolean;
   save: () => void;
   realmName: string;
+  displayName: string;
   refresh: () => void;
 };
 
@@ -74,6 +75,7 @@ const RealmSettingsHeader = ({
   onChange,
   value,
   realmName,
+  displayName,
   refresh,
 }: RealmSettingsHeaderProps) => {
   const { adminClient } = useAdminClient();
@@ -126,7 +128,7 @@ const RealmSettingsHeader = ({
         onClose={() => setPartialExportOpen(false)}
       />
       <ViewHeader
-        titleKey={realmName}
+        titleKey={displayName}
         noTranslate
         subKey="realmSettingsExplain"
         helpUrl={helpUrls.realmSettingsUrl}
@@ -328,7 +330,8 @@ export const RealmSettingsTabs = () => {
           <RealmSettingsHeader
             value={field.value}
             onChange={field.onChange}
-            realmName={resolveDisplayName(t, realm.displayName, realmName)}
+            realmName={realmName}
+            displayName={resolveDisplayName(t, realm.displayName, realmName)}
             refresh={refreshHeader}
             save={() => save(getValues())}
           />
