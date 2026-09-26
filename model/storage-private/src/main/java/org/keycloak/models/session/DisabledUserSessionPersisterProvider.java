@@ -20,6 +20,7 @@ package org.keycloak.models.session;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
@@ -99,6 +100,11 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     @Override
     public void onUserRemoved(RealmModel realm, UserModel user) {
 
+    }
+
+    @Override
+    public Map<String, Set<String>> findUserSessionsByUserId(RealmModel realm, UserModel user, boolean offline) {
+        return Collections.emptyMap();
     }
 
     @Override

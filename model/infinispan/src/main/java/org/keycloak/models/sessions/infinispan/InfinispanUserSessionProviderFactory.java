@@ -89,6 +89,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     public static final String CONFIG_EXPIRATION_PERIOD = "sessionExpirationPeriod";
     private static final int DEFAULT_EXPIRATION_PERIOD_SECONDS = 180;
     private static final int MIN_EXPIRATION_PERIOD_SECONDS = 60; // anything below 60s may be too frequent.
+    public static final String CONFIG_MAX_CACHE_LIFESPAN = "maxCacheLifespan";
+    private static final int DEFAULT_MAX_CACHE_LIFESPAN_SECONDS = 3600;
 
     private CacheHolder<String, UserSessionEntity> sessionCacheHolder;
     private CacheHolder<String, UserSessionEntity> offlineSessionCacheHolder;
@@ -105,6 +107,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private boolean useCaches;
     private int expirationPeriodSeconds;
     private boolean pessimisticLockingAuthenticationSession;
+    private long maxCacheLifespanMs;
 
     @Override
     public UserSessionProvider create(KeycloakSession session) {
@@ -147,6 +150,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         }
         useCaches = config.getBoolean(CONFIG_USE_CACHES, DEFAULT_USE_CACHES) && InfinispanUtils.isEmbeddedInfinispan() && !Profile.isFeatureEnabled(Profile.Feature.STATELESS);
         expirationPeriodSeconds = getExpirationPeriodSeconds(config);
+        int maxCacheLifespanSeconds = config.getInt(CONFIG_MAX_CACHE_LIFESPAN, DEFAULT_MAX_CACHE_LIFESPAN_SECONDS);
+        maxCacheLifespanMs = maxCacheLifespanSeconds > 0 ? TimeUnit.SECONDS.toMillis(maxCacheLifespanSeconds) : Long.MAX_VALUE;
     }
 
     @Override
@@ -378,6 +383,12 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 .helpText("Sets the expiration task run period, to remove the expired session.")
                 .add();
 
+        builder.property()
+                .name(CONFIG_MAX_CACHE_LIFESPAN)
+                .type("int")
+                .helpText("Maximum lifespan of a database-backed session cache entry in seconds. Ensures eventual cache-DB consistency even after node failures. Set to 0 or -1 to disable the cap. Default: " + DEFAULT_MAX_CACHE_LIFESPAN_SECONDS)
+                .add();
+
         return builder.build();
     }
 
@@ -417,6 +428,11 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         var clientSessionTx = new UserSessionInfinispanChangelogBasedTransaction<>(session, clientSessionCacheHolder);
         var offlineClientSessionTx = new UserSessionInfinispanChangelogBasedTransaction<>(session, offlineClientSessionCacheHolder);
 
+        offlineSessionTx.setPersistToDatabaseCacheName(OFFLINE_USER_SESSION_CACHE_NAME);
+        offlineSessionTx.setMaxCacheLifespanMs(maxCacheLifespanMs);
+        offlineClientSessionTx.setPersistToDatabaseCacheName(OFFLINE_CLIENT_SESSION_CACHE_NAME);
+        offlineClientSessionTx.setMaxCacheLifespanMs(maxCacheLifespanMs);
+
         var transactionProvider = session.getProvider(InfinispanTransactionProvider.class);
         transactionProvider.registerTransaction(sessionTx);
         transactionProvider.registerTransaction(offlineSessionTx);
@@ -429,13 +445,15 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         var sessionTx = new UserSessionPersistentChangelogBasedTransaction(session,
                 sessionCacheHolder,
                 offlineSessionCacheHolder,
-                pessimisticLockingAuthenticationSession);
+                pessimisticLockingAuthenticationSession,
+                maxCacheLifespanMs);
 
         var clientSessionTx = new ClientSessionPersistentChangelogBasedTransaction(session,
                 clientSessionCacheHolder,
                 offlineClientSessionCacheHolder,
                 sessionTx,
-                pessimisticLockingAuthenticationSession);
+                pessimisticLockingAuthenticationSession,
+                maxCacheLifespanMs);
 
         var transactionProvider = session.getProvider(InfinispanTransactionProvider.class);
         transactionProvider.registerTransaction(sessionTx);

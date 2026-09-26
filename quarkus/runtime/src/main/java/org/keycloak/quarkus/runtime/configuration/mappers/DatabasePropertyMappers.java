@@ -16,7 +16,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.DurationConverter;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.CachingOptions.Stack;
@@ -421,18 +420,15 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
 
     /**
      * MySQL and MariaDB default to REPEATABLE READ transaction isolation, which acquires gap locks on
-     * {@code INSERT ... ON DUPLICATE KEY UPDATE} statements. When the stateless feature is enabled,
-     * concurrent login requests execute such upserts on authentication session and login failure tables,
-     * causing deadlocks under load. Switching to READ COMMITTED eliminates gap locks and resolves
-     * these deadlocks. This matches the isolation level PostgreSQL, Oracle, and SQL Server use by default.
+     * {@code INSERT ... ON DUPLICATE KEY UPDATE} statements and allows stale snapshots to resurrect
+     * deleted sessions in the cache. Switching to READ COMMITTED eliminates gap locks, prevents
+     * stale-snapshot resurrection, and matches the isolation level PostgreSQL, Oracle, and SQL Server
+     * use by default.
      */
     public static boolean isReadCommittedIsolationRequired() {
         String db = Configuration.getConfigValue(DB).getValue();
         Database.Vendor vendor = Database.getVendor(db).orElse(null);
-        if (vendor != Database.Vendor.MYSQL && vendor != Database.Vendor.MARIADB && vendor != Database.Vendor.TIDB) {
-            return false;
-        }
-        return Profile.isFeatureEnabled(Profile.Feature.STATELESS);
+        return vendor == Database.Vendor.MYSQL || vendor == Database.Vendor.MARIADB || vendor == Database.Vendor.TIDB;
     }
 
     private static ValueMapper getConnectTimeout(Collection<Database.Vendor> validForVendors, String timeoutProperty) {

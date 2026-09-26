@@ -20,6 +20,7 @@ package org.keycloak.models.sessions.infinispan.changes;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
@@ -36,11 +37,13 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
     private CacheOperation operation;
     private final long lifespanMs;
     private final long maxIdleTimeMs;
+    private final long maxCacheLifespanMs;
 
-    private MergedUpdate(CacheOperation operation, long lifespanMs, long maxIdleTimeMs) {
+    private MergedUpdate(CacheOperation operation, long lifespanMs, long maxIdleTimeMs, long maxCacheLifespanMs) {
         this.operation = operation;
         this.lifespanMs = lifespanMs;
         this.maxIdleTimeMs = maxIdleTimeMs;
+        this.maxCacheLifespanMs = maxCacheLifespanMs;
     }
 
     @Override
@@ -73,8 +76,33 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
         return maxIdleTimeMs;
     }
 
+    /**
+     * Returns the lifespan clamped so that the entry never lives past
+     * {@code cachedAt + maxCacheLifespanMs}. Must be called with the actual wrapper
+     * being written to the cache, since different wrappers may have different
+     * {@code cachedAt} timestamps.
+     */
+    public long getEffectiveLifespanMs(SessionEntityWrapper<?> wrapper) {
+        if (maxCacheLifespanMs == Long.MAX_VALUE || lifespanMs == SessionTimeouts.ENTRY_EXPIRED_FLAG) {
+            return lifespanMs;
+        }
+        String cachedAtStr = wrapper.getLocalMetadataNote(SessionEntityWrapper.CACHED_AT_KEY);
+        if (cachedAtStr == null) {
+            // Rolling upgrade: entries cached before this feature was introduced lack
+            // cachedAt. effectiveLifespan/capLifespan set it on ADD_IF_ABSENT, so this
+            // branch is only reachable for pre-upgrade entries still live in the cache.
+            return Math.min(lifespanMs, maxCacheLifespanMs);
+        }
+        long cachedAt = Long.parseLong(cachedAtStr);
+        long maxRemaining = cachedAt + maxCacheLifespanMs - Time.currentTimeMillis();
+        return maxRemaining > 0 ? Math.min(lifespanMs, maxRemaining) : 1;
+    }
 
     public static <S extends SessionEntity> MergedUpdate<S> computeUpdate(List<SessionUpdateTask<S>> childUpdates, SessionEntityWrapper<S> sessionWrapper, long lifespanMs, long maxIdleTimeMs) {
+        return computeUpdate(childUpdates, sessionWrapper, lifespanMs, maxIdleTimeMs, Long.MAX_VALUE);
+    }
+
+    public static <S extends SessionEntity> MergedUpdate<S> computeUpdate(List<SessionUpdateTask<S>> childUpdates, SessionEntityWrapper<S> sessionWrapper, long lifespanMs, long maxIdleTimeMs, long maxCacheLifespanMs) {
         if (childUpdates == null || childUpdates.isEmpty()) {
             return null;
         }
@@ -90,7 +118,7 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
                     logger.tracef("Entry '%s' is expired. Will remove it from the cache", sessionWrapper);
                 }
 
-                result = new MergedUpdate<>(operation, lifespanMs, maxIdleTimeMs);
+                result = new MergedUpdate<>(operation, lifespanMs, maxIdleTimeMs, maxCacheLifespanMs);
                 result.childUpdates.add(child);
             } else {
 
@@ -99,7 +127,7 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
 
                 // REMOVE is special case as other operations are not needed then.
                 if (result.operation == CacheOperation.REMOVE) {
-                    result = new MergedUpdate<>(result.operation, lifespanMs, maxIdleTimeMs);
+                    result = new MergedUpdate<>(result.operation, lifespanMs, maxIdleTimeMs, maxCacheLifespanMs);
                     result.childUpdates.add(child);
                     return result;
                 }

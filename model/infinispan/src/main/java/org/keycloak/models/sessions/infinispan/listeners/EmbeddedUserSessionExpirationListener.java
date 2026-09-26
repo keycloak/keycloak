@@ -40,7 +40,11 @@ public class EmbeddedUserSessionExpirationListener extends BaseUserSessionExpira
 
     @CacheEntryExpired
     public void onSessionExpired(CacheEntryExpiredEvent<?, SessionEntityWrapper<UserSessionEntity>> event) {
-        UserSessionEntity entity = event.getValue().getEntity();
+        SessionEntityWrapper<UserSessionEntity> wrapper = event.getValue();
+        if (wrapper.isLoadingMarker()) {
+            return;
+        }
+        UserSessionEntity entity = wrapper.getEntity();
         sendExpirationEvent(entity.getId(), entity.getUser(), entity.getRealmId());
     }
 }

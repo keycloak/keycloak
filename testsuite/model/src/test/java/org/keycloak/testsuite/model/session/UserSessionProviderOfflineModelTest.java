@@ -528,27 +528,46 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
         reinitializeKeycloakSessionFactory();
 
-        withRealm(realmId, (session, realm) -> {
+        // Bulk-query streams bind sessions to the transaction without importing into the cache
+        List<String> sessionIds = withRealm(realmId, (session, realm) -> {
             InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
 
-            // skip remote cache load as we are only interested in embedded caches
             AdvancedCache<?, ?> offlineUSCache = provider.getCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD);
             AdvancedCache<?, ?> offlineCSCache = provider.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME).getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD);
 
             Assert.assertEquals(0, offlineUSCache.size());
             Assert.assertEquals(0, offlineCSCache.size());
 
-            // lazy load offline user sessions from DB => this should also import user and client sessions to the caches
-            Assert.assertEquals(2, session.sessions().getOfflineUserSessionsStream(realm, session.users().getUserByUsername(realm, "user1")).count());
+            List<String> ids = session.sessions().getOfflineUserSessionsStream(realm, session.users().getUserByUsername(realm, "user1"))
+                    .map(UserSessionModel::getId)
+                    .collect(Collectors.toList());
+            Assert.assertEquals(2, ids.size());
 
-            // check sessions were imported to the caches
+            // Bulk-query streams (getOfflineUserSessionsStream by user) bind sessions to the transaction
+            // without importing into the cache, to avoid resurrecting concurrently deleted sessions.
+            Assert.assertEquals(0, offlineUSCache.size());
+            Assert.assertEquals(0, offlineCSCache.size());
+
+            return ids;
+        });
+
+        // Single-session loads by ID use marker/CAS and DO cache — verify lifespan override eviction
+        withRealm(realmId, (session, realm) -> {
+            InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
+
+            AdvancedCache<?, ?> offlineUSCache = provider.getCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD);
+            AdvancedCache<?, ?> offlineCSCache = provider.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME).getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD);
+
+            for (String id : sessionIds) {
+                Assert.assertNotNull(session.sessions().getOfflineUserSession(realm, id));
+            }
+
             Assert.assertEquals(2, offlineUSCache.size());
             Assert.assertEquals(4, offlineCSCache.size());
 
             // lifespan override set to 12h (43200s)
             setTimeOffset(44000);
 
-            // check sessions were evicted from the caches
             Assert.assertEquals(0, offlineUSCache.size());
             Assert.assertEquals(0, offlineCSCache.size());
 

@@ -131,6 +131,12 @@ public class InfinispanChangesUtils {
             logger.debugf("Existing entity in cache for key: %s . Will update it", key);
         }
 
+        if (existing.isLoadingMarker()) {
+            logger.debugf("Existing entity for key %s is a loading marker, removing to prevent stale import", key);
+            return CacheDecorators.ignoreReturnValues(cacheHolder.cache()).removeAsync(key)
+                    .thenRun(CompletionStages.NO_OP_RUNNABLE);
+        }
+
         // Apply updates on the existing entity and replace it
         task.runUpdate(existing.getEntity());
 
@@ -165,7 +171,8 @@ public class InfinispanChangesUtils {
             return CacheDecorators.ignoreReturnValues(cache).removeAsync(key).thenRun(CompletionStages.NO_OP_RUNNABLE);
         }
         SessionEntityWrapper<V> newVersionEntity = new SessionEntityWrapper<>(expectedSession.getLocalMetadata(), session);
-        CompletionStage<SessionEntityWrapper<V>> stage = cache.computeIfPresentAsync(key, new ReplaceFunction<>(expectedSession.getVersion(), newVersionEntity), task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
+        long effectiveLifespan = task.getEffectiveLifespanMs(expectedSession);
+        CompletionStage<SessionEntityWrapper<V>> stage = cache.computeIfPresentAsync(key, new ReplaceFunction<>(expectedSession.getVersion(), newVersionEntity), effectiveLifespan, TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
         return stage.thenCompose(rv -> handleReplaceResponse(cache, key, task, expectedSession, newVersionEntity, rv, iteration + 1, logger));
     }
 
@@ -182,6 +189,12 @@ public class InfinispanChangesUtils {
         if (returnValue == null) {
             logger.debugf("Entity %s not found. Maybe removed in the meantime. Replace task will be ignored", key);
             return CompletableFutures.completedNull();
+        }
+
+        if (returnValue.isLoadingMarker()) {
+            logger.debugf("Entity %s is a loading marker, invalidating to prevent stale cache after marker is consumed", key);
+            return CacheDecorators.ignoreReturnValues(cache).removeAsync(key)
+                    .thenRun(CompletionStages.NO_OP_RUNNABLE);
         }
 
         if (returnValue.getVersion().equals(newSession.getVersion())) {

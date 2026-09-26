@@ -39,6 +39,10 @@ import org.infinispan.protostream.annotations.ProtoTypeId;
 @ProtoTypeId(Marshalling.SESSION_ENTITY_WRAPPER)
 public class SessionEntityWrapper<S extends SessionEntity> {
 
+    private static final String LOADING_MARKER_KEY = "loading";
+    public static final String CACHED_AT_KEY = "cachedAt";
+    public static final long LOADING_MARKER_LIFESPAN_MS = 60_000;
+
     private final UUID version;
     private final S entity;
     private final Map<String, String> localMetadata;
@@ -110,6 +114,16 @@ public class SessionEntityWrapper<S extends SessionEntity> {
             return new SessionEntityWrapper<>(entity);
         }
         return new SessionEntityWrapper<>(version, localMetadata, entity);
+    }
+
+    public boolean isLoadingMarker() {
+        return localMetadata != null && localMetadata.containsKey(LOADING_MARKER_KEY);
+    }
+
+    public static <S extends SessionEntity> SessionEntityWrapper<S> createLoadingMarker(S minimalEntity) {
+        Map<String, String> metadata = new ConcurrentHashMap<>();
+        metadata.put(LOADING_MARKER_KEY, "true");
+        return new SessionEntityWrapper<>(metadata, minimalEntity);
     }
 
     public ClientModel getClientIfNeeded(RealmModel realm) {
