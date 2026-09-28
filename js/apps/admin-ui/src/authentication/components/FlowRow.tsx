@@ -87,6 +87,7 @@ export const FlowRow = ({
                   : execution.alias) || ""
               }
               providerId={execution.providerId!}
+              providerUnavailable={execution.providerUnavailable}
               title={execution.displayName!}
             />
           </Td>
@@ -100,7 +101,9 @@ export const FlowRow = ({
             </>
           )}
           <Td isActionCell>
-            <ExecutionConfigModal execution={execution} />
+            {!execution.providerUnavailable && (
+              <ExecutionConfigModal execution={execution} />
+            )}
           </Td>
 
           {execution.authenticationFlow && !builtIn && (
