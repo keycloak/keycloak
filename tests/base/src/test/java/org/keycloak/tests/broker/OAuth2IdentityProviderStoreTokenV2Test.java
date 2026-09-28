@@ -269,6 +269,51 @@ public class OAuth2IdentityProviderStoreTokenV2Test implements InterfaceIdentity
         Assertions.assertEquals(400, response.getStatusCode());
     }
 
+    /**
+     * Verifies that when both DB and session storage are enabled, token refresh
+     * returns a fresh token (simulating that both stores are updated).
+     */
+    @Test
+    public void testRefreshWithBothStoresEnabled() {
+        realm.updateIdentityProvider(IDP_ALIAS, idp -> {
+            idp.setStoreToken(true);
+            idp.getConfig().put(IdentityProviderModel.STORE_TOKEN_IN_SESSION, Boolean.TRUE.toString());
+        });
+
+        oauth.openLoginForm();
+        loginWithIdP();
+
+        AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(internalTokens.isSuccess());
+
+        AccessTokenResponse externalTokens1 = (AccessTokenResponse) doFetchExternalIdpToken(internalTokens.getAccessToken());
+        Assertions.assertEquals(200, externalTokens1.getStatusCode());
+        checkSuccessfulTokenResponse(externalTokens1);
+
+        String dbToken1 = getTokenFromDatabase(realm.getName());
+        Assertions.assertNotNull(dbToken1, "Token should be stored in database");
+
+        // Advance time past the external token's expiry
+        getTimeOffSet().set(externalTokens1.getExpiresIn() - IdentityProviderModel.DEFAULT_MIN_VALIDITY_TOKEN + 1);
+
+        internalTokens = oauth.doRefreshTokenRequest(internalTokens.getRefreshToken());
+        Assertions.assertEquals(200, internalTokens.getStatusCode());
+
+        // Fetch external token - triggers refresh of both stores
+        AccessTokenResponse externalTokens2 = (AccessTokenResponse) doFetchExternalIdpToken(internalTokens.getAccessToken());
+        Assertions.assertEquals(200, externalTokens2.getStatusCode());
+        checkSuccessfulTokenResponse(externalTokens2);
+        Assertions.assertNotEquals(externalTokens1.getAccessToken(), externalTokens2.getAccessToken(),
+            "Should receive refreshed token from provider");
+
+        // DB token should be updated
+        String dbToken2 = getTokenFromDatabase(realm.getName());
+        Assertions.assertNotEquals(dbToken1, dbToken2, "DB token should be refreshed");
+
+        getTimeOffSet().set(0);
+    }
+
+
     static class IdentityBrokeringAPIV2ServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
