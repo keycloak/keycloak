@@ -98,6 +98,7 @@ export const AddRoleButton = ({
           component="button"
           onClick={() => {
             onFilerTypeChange("clients");
+            toggle();
           }}
         >
           {t("clientRoles")}
@@ -108,6 +109,7 @@ export const AddRoleButton = ({
             component="button"
             onClick={() => {
               onFilerTypeChange("roles");
+              toggle();
             }}
           >
             {t("realmRoles")}

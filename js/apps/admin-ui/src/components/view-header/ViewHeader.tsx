@@ -1,6 +1,5 @@
 import {
   Badge,
-  Button,
   Divider,
   Dropdown,
   DropdownList,
@@ -35,9 +34,6 @@ export type ViewHeaderProps = {
   actionsDropdownId?: string;
   helpUrl?: string | undefined;
   dropdownItems?: ReactElement[];
-  lowerDropdownItems?: any;
-  lowerDropdownMenuTitle?: any;
-  lowerButton?: any;
   isEnabled?: boolean;
   onToggle?: (value: boolean) => void;
   divider?: boolean;
@@ -62,9 +58,6 @@ export const ViewHeader = ({
   subKey,
   helpUrl,
   dropdownItems,
-  lowerDropdownMenuTitle,
-  lowerDropdownItems,
-  lowerButton,
   isEnabled = true,
   onToggle,
   divider = true,
@@ -76,14 +69,9 @@ export const ViewHeader = ({
   const { t, i18n } = useTranslation();
   const { enabled } = useHelp();
   const [isDropdownOpen, setDropdownOpen] = useState(false);
-  const [isLowerDropdownOpen, setIsLowerDropdownOpen] = useState(false);
 
   const onDropdownToggle = () => {
     setDropdownOpen(!isDropdownOpen);
-  };
-
-  const onLowerDropdownToggle = () => {
-    setIsLowerDropdownOpen(!isLowerDropdownOpen);
   };
 
   const toKey = (value: string) => value.replace(/\s/g, "-");
@@ -196,34 +184,6 @@ export const ViewHeader = ({
               )}
             </Content>
           </Content>
-        )}
-        {lowerDropdownItems && (
-          <Dropdown
-            className="keycloak__user-federation__dropdown"
-            onOpenChange={onLowerDropdownToggle}
-            toggle={(ref) => (
-              <MenuToggle
-                ref={ref}
-                onClick={onLowerDropdownToggle}
-                variant="primary"
-                id="ufToggleId"
-              >
-                {t(lowerDropdownMenuTitle)}
-              </MenuToggle>
-            )}
-            isOpen={isLowerDropdownOpen}
-          >
-            <DropdownList>{lowerDropdownItems}</DropdownList>
-          </Dropdown>
-        )}
-        {lowerButton && (
-          <Button
-            variant={lowerButton.variant}
-            onClick={lowerButton.onClick}
-            data-testid="viewHeader-lower-btn"
-          >
-            {lowerButton.lowerButtonTitle}
-          </Button>
         )}
       </PageSection>
       {divider && <Divider component="div" />}
