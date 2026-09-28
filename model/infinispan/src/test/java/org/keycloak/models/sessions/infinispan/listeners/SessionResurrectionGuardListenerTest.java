@@ -119,6 +119,25 @@ public class SessionResurrectionGuardListenerTest {
         assertNotNull("An insertion at a key that was never tombstoned must be left untouched", cache.get(key));
     }
 
+    @Test
+    public void newerIncarnationAtSameKeyIsNotTreatedAsResurrection() {
+        // Offline sessions are stored under their originating online session's key (see class javadoc),
+        // so revoking and re-granting offline access shortly afterwards legitimately reuses a key that
+        // was just tombstoned, with a later "started" time.
+        String key = "session-5";
+        SessionEntityWrapper<UserSessionEntity> removed = wrap(key, 1000);
+        SessionEntityWrapper<UserSessionEntity> tombstone = SessionEntityWrapper.createTombstoneMarker(removed.getEntity());
+
+        cache.put(key, tombstone);
+        awaitRemoval(key);
+
+        SessionEntityWrapper<UserSessionEntity> newerIncarnation = wrap(key, 1001);
+        cache.putIfAbsent(key, newerIncarnation);
+
+        assertNotNull("A genuinely newer incarnation reusing a tombstoned key must not be removed",
+                cache.get(key));
+    }
+
     private static SessionEntityWrapper<UserSessionEntity> wrap(String id, int started) {
         return new SessionEntityWrapper<>(entity(id, started));
     }

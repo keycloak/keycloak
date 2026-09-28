@@ -54,9 +54,15 @@ import org.jboss.logging.Logger;
  * stale data) is transparent to it - {@code clear()} only fires removal notifications, never
  * create/modify ones.
  * <p>
- * Only used for the user session caches (not client sessions): user session keys are random IDs that
- * are never intentionally reused after a delete, so any real entity re-appearing at a recently-tombstoned
- * key can be assumed to be a resurrection, with no need for a version/discriminator check.
+ * Only used for the user session caches (not client sessions). Online user session keys are random IDs
+ * that are never intentionally reused after a delete, so a real entity re-appearing at a recently-
+ * tombstoned online-session key can be assumed to be a resurrection. Offline session keys, however, are
+ * <em>not</em> unique to a single incarnation: {@code UserSessionManager#createOrUpdateOfflineSession}
+ * stores an offline session under its originating online session's ID, so revoking offline access and
+ * re-granting it shortly afterwards legitimately reuses a key that was just tombstoned. To tell the two
+ * cases apart, a tombstoned key also records the removed entity's {@code started} time; a real entity
+ * re-appearing at that key is only treated as a resurrection if its own {@code started} is at or before
+ * the removed entity's - a later {@code started} is a genuine newer incarnation and is left alone.
  * <p>
  * In addition to the per-key tombstone above, {@link #recordRealmNotBefore(String)} supports a
  * per-realm "not-before" watermark for bulk removals (e.g. "logout all sessions in a realm") where
@@ -79,8 +85,11 @@ public class SessionResurrectionGuardListener<K, V extends SessionEntity> {
 
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
-    // Tracks keys for which a tombstone marker was recently observed, for a short grace period.
-    private final Cache<K, Boolean> tombstonedKeys = Caffeine.newBuilder()
+    // Tracks, for keys with a recently observed tombstone marker, the removed entity's "started" time -
+    // for a short grace period. A real entity re-appearing at that key is only a resurrection if its own
+    // "started" is at or before the removed entity's; a later "started" means a legitimate newer
+    // incarnation (see class javadoc: offline sessions reuse their online session's key).
+    private final Cache<K, Integer> tombstonedKeys = Caffeine.newBuilder()
             .expireAfterWrite(TOMBSTONE_TTL_SECONDS, TimeUnit.SECONDS)
             .ticker(() -> TimeUnit.MILLISECONDS.toNanos(Time.currentTimeMillis()))
             .build();
@@ -118,7 +127,7 @@ public class SessionResurrectionGuardListener<K, V extends SessionEntity> {
             return;
         }
         if (value.isTombstoneMarker()) {
-            tombstonedKeys.put(key, Boolean.TRUE);
+            tombstonedKeys.put(key, tombstonedStartedOf(value.getEntity()));
             // Restores the "absent" state expected by genuine reads. The tombstone marker also carries
             // its own short lifespan as a safety net in case this removal doesn't happen for any reason.
             cache.removeAsync(key, value);
@@ -128,7 +137,7 @@ public class SessionResurrectionGuardListener<K, V extends SessionEntity> {
         if (entity == null) {
             return;
         }
-        boolean keyResurrection = tombstonedKeys.getIfPresent(key) != null;
+        boolean keyResurrection = isAtOrBeforeTombstonedStarted(key, entity);
         boolean realmResurrection = !keyResurrection && isBeforeRealmNotBefore(entity);
         if (!keyResurrection && !realmResurrection) {
             return;
@@ -155,5 +164,35 @@ public class SessionResurrectionGuardListener<K, V extends SessionEntity> {
         }
         Integer notBefore = realmNotBefore.getIfPresent(entity.getRealmId());
         return notBefore != null && userSessionEntity.getStarted() <= notBefore;
+    }
+
+    /**
+     * Whether {@code entity} (re-)appearing at {@code key} is a resurrection of a recently tombstoned
+     * entry at that same key, rather than a legitimate newer incarnation. Offline sessions are stored
+     * under the same key as their originating online session (see class javadoc), so revoking and
+     * re-granting offline access within the grace period can legitimately reuse a tombstoned key; the
+     * "started" time distinguishes the two cases the same way the realm watermark does.
+     */
+    private boolean isAtOrBeforeTombstonedStarted(K key, V entity) {
+        Integer tombstonedStarted = tombstonedKeys.getIfPresent(key);
+        if (tombstonedStarted == null) {
+            return false;
+        }
+        if (!(entity instanceof UserSessionEntity userSessionEntity)) {
+            // No discriminator available for the reappearing entity - fall back to the pre-existing
+            // conservative behavior and treat any reappearance at a tombstoned key as a resurrection.
+            return true;
+        }
+        return userSessionEntity.getStarted() <= tombstonedStarted;
+    }
+
+    /**
+     * The removed entity's "started" time to record for a tombstoned key, or {@link Integer#MAX_VALUE} if
+     * unavailable (not a {@link UserSessionEntity}, or {@code null}) so that, absent a discriminator, any
+     * reappearance at that key is still conservatively treated as a resurrection (the pre-existing
+     * behavior).
+     */
+    private static int tombstonedStartedOf(SessionEntity removedEntity) {
+        return removedEntity instanceof UserSessionEntity userSessionEntity ? userSessionEntity.getStarted() : Integer.MAX_VALUE;
     }
 }
