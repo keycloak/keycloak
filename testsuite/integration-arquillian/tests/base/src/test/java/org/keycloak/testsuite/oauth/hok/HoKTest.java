@@ -7,6 +7,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.client.Client;
@@ -36,6 +37,7 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
@@ -89,6 +91,9 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
     private static final List<String> CLIENT_LIST = Arrays.asList("test-app", "named-test-app", "service-account-client");
 
+    // Client without certificate bound access tokens, used to obtain a plain bearer token
+    private static final String TOKEN_EXCHANGE_SOURCE_CLIENT = "token-exchange-source-client";
+
     public static class HoKAssertEvents extends AssertEvents {
 
         public HoKAssertEvents(AbstractKeycloakTest ctx) {
@@ -120,6 +125,9 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
         // for token introspection
         configTestRealmForTokenIntrospection(testRealm);
+
+        // for token exchange
+        configTestRealmForTokenExchange(testRealm);
     }
 
     @BeforeClass
@@ -166,6 +174,25 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         testRealm.getUsers().add(user);
     }
 
+    private void configTestRealmForTokenExchange(RealmRepresentation testRealm) {
+        // This client does not use certificate bound access tokens, so the tokens it obtains are plain bearer tokens.
+        // "test-app" is added to their audience so that they can be used as the subject_token of a token exchange
+        // performed by "test-app", which does use certificate bound access tokens.
+        ClientRepresentation sourceApp = KeycloakModelUtils.createClient(testRealm, TOKEN_EXCHANGE_SOURCE_CLIENT);
+        sourceApp.setSecret("secret1");
+        sourceApp.setDirectAccessGrantsEnabled(Boolean.TRUE);
+
+        ProtocolMapperRepresentation audMapper = new ProtocolMapperRepresentation();
+        audMapper.setName("oidc-audience-mapper");
+        audMapper.setProtocol("openid-connect");
+        audMapper.setProtocolMapper("oidc-audience-mapper");
+        audMapper.setConfig(Map.of(
+                "included.client.audience", "test-app",
+                "access.token.claim", "true"
+        ));
+        sourceApp.setProtocolMappers(List.of(audMapper));
+    }
+
     // enable HoK Token as default
     @Before
     public void enableHoKToken() {
@@ -177,7 +204,12 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         // Enable MTLS HoK Token
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), clientId);
         ClientRepresentation clientRep = clientResource.toRepresentation();
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(true);
+        OIDCAdvancedConfigWrapper oidc = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
+        oidc.setUseMtlsHoKToken(true);
+        if (clientId.equals("test-app")) {
+            // Enable token exchange
+            oidc.setStandardTokenExchangeEnabled(true);
+        }
         clientResource.update(clientRep);
     }
     
@@ -753,6 +785,49 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         } finally {
             oauth.httpClient().reset();
         }
+    }
+
+    @Test
+    public void testTokenExchangeV2WithoutClientCertificate() throws Exception {
+
+        AccessTokenResponse subjectTokenResponse;
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
+            oauth.httpClient().set(client);
+            oauth.client(TOKEN_EXCHANGE_SOURCE_CLIENT, "secret1");
+            subjectTokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        } finally {
+            oauth.httpClient().reset();
+        }
+
+        assertEquals(200, subjectTokenResponse.getStatusCode());
+        String subjectToken = subjectTokenResponse.getAccessToken();
+        assertNull(new JWSInput(subjectToken).readJsonContent(AccessToken.class).getConfirmation());
+
+        // "test-app" requires certificate bound access tokens
+        oauth.client("test-app", "password");
+        AccessTokenResponse exchangeResponse;
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
+            oauth.httpClient().set(client);
+            exchangeResponse = oauth.tokenExchangeRequest(subjectToken).send();
+        } finally {
+            oauth.httpClient().reset();
+        }
+
+        assertEquals(400, exchangeResponse.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, exchangeResponse.getError());
+        assertEquals("Client Certification missing for MTLS HoK Token Binding", exchangeResponse.getErrorDescription());
+        assertNull(exchangeResponse.getAccessToken());
+
+        // The same exchange succeeds with a client certificate
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
+            oauth.httpClient().set(client);
+            exchangeResponse = oauth.tokenExchangeRequest(subjectToken).send();
+        } finally {
+            oauth.httpClient().reset();
+        }
+
+        assertEquals(200, exchangeResponse.getStatusCode());
+        assertNotNull(exchangeResponse.getAccessToken());
     }
 
     private void verifyHoKTokenDefaultCertThumbPrint(AccessTokenResponse response) throws Exception {

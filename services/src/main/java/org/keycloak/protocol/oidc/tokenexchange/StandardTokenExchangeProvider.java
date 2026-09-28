@@ -51,6 +51,7 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.util.AuthorizationContextUtil;
+import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -144,6 +145,8 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                     Response.Status.BAD_REQUEST);
         }
 
+        checkMtlsHoKToken();
+
         event.user(tokenUser);
         event.detail(Details.USERNAME, tokenUser.getUsername());
         if (token.getSessionId() != null) {
@@ -152,6 +155,15 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         event.detail(Details.SUBJECT_TOKEN_CLIENT_ID, token.getIssuedFor());
 
         return exchangeClientToClient(tokenUser, tokenSession, token, true);
+    }
+
+    private void checkMtlsHoKToken() {
+        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseMtlsHokToken() && MtlsHoKTokenUtil.bindTokenWithClientCertificate(session.getContext().getHttpRequest(), session) == null) {
+            String errorMessage = "Client Certification missing for MTLS HoK Token Binding";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, errorMessage, Response.Status.BAD_REQUEST);
+        }
     }
 
     @Override
