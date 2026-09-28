@@ -1,5 +1,6 @@
 package org.keycloak.protocol.oidc.rar;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -10,8 +11,8 @@ import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 /**
  * Minimal {@link AuthorizationDetailsProcessor} for unit tests. Records the processing processor in the response,
  * so that tests can assert which processor handled a given authorization detail. Narrowing produces a distinct
- * {@link NarrowedAuthorizationDetail} instance and sanitizing marks it, so that tests can assert that a hook received
- * the narrowed representation.
+ * {@link NarrowedAuthorizationDetail} instance, sanitizing marks it and {@link #afterAuthorizationDetailsProcessed}
+ * records it, so that tests can assert that a hook received the narrowed representation.
  */
 class TestAuthorizationDetailsProcessor implements AuthorizationDetailsProcessor<TestAuthorizationDetailsProcessor.NarrowedAuthorizationDetail> {
 
@@ -28,6 +29,7 @@ class TestAuthorizationDetailsProcessor implements AuthorizationDetailsProcessor
     private final String name;
     private final boolean supported;
     private final Set<String> supportedTypes;
+    private final List<NarrowedAuthorizationDetail> afterProcessed = new ArrayList<>();
 
     TestAuthorizationDetailsProcessor(String name, boolean supported, Set<String> supportedTypes) {
         this.name = name;
@@ -82,6 +84,14 @@ class TestAuthorizationDetailsProcessor implements AuthorizationDetailsProcessor
 
     @Override
     public void afterAuthorizationDetailsProcessed(UserSessionModel userSession, ClientSessionContext clientSessionCtx, NarrowedAuthorizationDetail authorizationDetailsResponse) {
+        afterProcessed.add(authorizationDetailsResponse);
+    }
+
+    /**
+     * @return the (narrowed) authorization details passed to {@link #afterAuthorizationDetailsProcessed} so far
+     */
+    List<NarrowedAuthorizationDetail> getAfterProcessed() {
+        return afterProcessed;
     }
 
     @Override

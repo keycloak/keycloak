@@ -1,6 +1,7 @@
 package org.keycloak.protocol.oidc.rar;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -18,6 +19,7 @@ import org.keycloak.util.JsonSerialization;
 import org.junit.Test;
 
 import static org.keycloak.protocol.oidc.rar.TestAuthorizationDetailsProcessor.NARROWED_BY;
+import static org.keycloak.protocol.oidc.rar.TestAuthorizationDetailsProcessor.NarrowedAuthorizationDetail;
 import static org.keycloak.protocol.oidc.rar.TestAuthorizationDetailsProcessor.PROCESSED_BY;
 import static org.keycloak.protocol.oidc.rar.TestAuthorizationDetailsProcessor.SANITIZED_BY;
 
@@ -137,7 +139,7 @@ public class AuthorizationDetailsProcessorManagerTest {
         assertEquals(List.of("type_b", "type_a"), sanitized.stream().map(AuthorizationDetailsJSONRepresentation::getType).toList());
         for (AuthorizationDetailsJSONRepresentation authzDetail : sanitized) {
             // The sanitizer must have received the representation narrowed by the processor owning the type
-            assertThat(authzDetail, instanceOf(TestAuthorizationDetailsProcessor.NarrowedAuthorizationDetail.class));
+            assertThat(authzDetail, instanceOf(NarrowedAuthorizationDetail.class));
             assertEquals("multi", authzDetail.getCustomData().get(NARROWED_BY));
             assertEquals("multi", authzDetail.getCustomData().get(SANITIZED_BY));
         }
@@ -158,7 +160,28 @@ public class AuthorizationDetailsProcessorManagerTest {
                 .map(authzDetail -> authzDetail.getCustomData().get(NARROWED_BY) + ":" + authzDetail.getCustomData().get(SANITIZED_BY)).toList());
     }
 
+    @Test
+    public void afterAuthorizationDetailsProcessedReceivesNarrowedRepresentationFromWinningProcessor() {
+        KeycloakSession session = session(
+                factory("low", 5, "shared", "low_only"),
+                factory("high", 10, "shared"));
+
+        new AuthorizationDetailsProcessorManager(session).afterAuthorizationDetailsProcessed(null, null,
+                List.of(detail("shared"), detail("low_only")));
+
+        // The hook signature only accepts the processor specific subtype, so each entry must have been narrowed by the
+        // processor that received it. Additionally assert that "shared" went to the winner only.
+        assertEquals(List.of("shared:high"), afterProcessed(session, "high"));
+        assertEquals(List.of("low_only:low"), afterProcessed(session, "low"));
+    }
+
     // Helpers ---------------------------------------------------------------------------------------------------------
+
+    private static List<String> afterProcessed(KeycloakSession session, String providerId) {
+        TestAuthorizationDetailsProcessor processor = (TestAuthorizationDetailsProcessor) session.getProvider(AuthorizationDetailsProcessor.class, providerId);
+        return processor.getAfterProcessed().stream()
+                .map(authzDetail -> authzDetail.getType() + ":" + authzDetail.getCustomData().get(NARROWED_BY)).toList();
+    }
 
     private static Map<String, String> process(AuthorizationDetailsProcessorManager manager, String... types) throws Exception {
         List<AuthorizationDetailsJSONRepresentation> request = Arrays.stream(types).map(AuthorizationDetailsProcessorManagerTest::detail).toList();
@@ -201,12 +224,18 @@ public class AuthorizationDetailsProcessorManagerTest {
         };
     }
 
-    /**
-     * Creates a manager backed by a mocked {@link KeycloakSession}, which only knows the given factories.
-     */
     private static AuthorizationDetailsProcessorManager manager(AuthorizationDetailsProcessorFactory... factories) {
+        return new AuthorizationDetailsProcessorManager(session(factories));
+    }
+
+    /**
+     * Creates a mocked {@link KeycloakSession}, which only knows the given factories. Like the real session, it creates
+     * one provider instance per factory and returns that instance on subsequent lookups.
+     */
+    private static KeycloakSession session(AuthorizationDetailsProcessorFactory... factories) {
         Map<String, AuthorizationDetailsProcessorFactory> factoriesById = Arrays.stream(factories)
                 .collect(Collectors.toMap(ProviderFactory::getId, Function.identity()));
+        Map<String, AuthorizationDetailsProcessor<?>> providersById = new HashMap<>();
 
         KeycloakSessionFactory sessionFactory = mock(KeycloakSessionFactory.class);
         when(sessionFactory.getProviderFactoriesStream(AuthorizationDetailsProcessor.class))
@@ -216,10 +245,11 @@ public class AuthorizationDetailsProcessorManagerTest {
         when(session.getKeycloakSessionFactory()).thenReturn(sessionFactory);
         when(session.getProvider(eq(AuthorizationDetailsProcessor.class), anyString()))
                 .thenAnswer(invocation -> {
-                    AuthorizationDetailsProcessorFactory factory = factoriesById.get(invocation.getArgument(1, String.class));
-                    return factory == null ? null : factory.create(session);
+                    String id = invocation.getArgument(1, String.class);
+                    AuthorizationDetailsProcessorFactory factory = factoriesById.get(id);
+                    return factory == null ? null : providersById.computeIfAbsent(id, k -> factory.create(session));
                 });
 
-        return new AuthorizationDetailsProcessorManager(session);
+        return session;
     }
 }
