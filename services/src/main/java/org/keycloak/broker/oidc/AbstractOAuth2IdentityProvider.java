@@ -343,10 +343,11 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     private OAuthResponse doRefreshToken(OAuthResponse previousResponse, Long previousExpiration) throws IOException {
         OAuthResponse newResponse = refreshToken(previousResponse, session);
         if (newResponse.getExpiresIn() != null && newResponse.getExpiresIn() > 0) {
-            long newExpiration = Time.currentTime() + newResponse.getExpiresIn();
-            newResponse.setAccessTokenExpiration(newExpiration);
+            newResponse.setAccessTokenExpiration(Time.currentTime() + newResponse.getExpiresIn());
         } else if (previousExpiration != null && previousExpiration > 0) {
             newResponse.setAccessTokenExpiration(previousExpiration);
+        } else {
+            logger.debugf("Refreshed token from %s has no expiration info", getConfig().getAlias());
         }
         return newResponse;
     }
@@ -536,6 +537,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                         model.setToken(JsonSerialization.writeValueAsString(newResponse));
                         session.users().updateFederatedIdentity(realm, tokenSubject, model);
                     } else {
+                        logger.debugf("Token for %s expired with no refresh_token", getConfig().getAlias());
                         if (event != null) {
                             event.detail(Details.REASON, "requested_issuer token expired");
                             event.error(Errors.INVALID_TOKEN);
@@ -545,7 +547,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 }
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            logger.errorf(e, "Failed to parse or refresh token from %s", getConfig().getAlias());
+            throw new IdentityBrokerException("Failed to refresh external token: " + e.getMessage(), e);
         }
 
         String accessToken = extractTokenFromResponse(model.getToken(), getAccessTokenResponseParameter());
@@ -618,10 +621,12 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     }
                     return buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, tokenResponse, OAuth2Constants.ACCESS_TOKEN_TYPE);
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    logger.errorf(e, "Failed to refresh token from %s", getConfig().getAlias());
+                    throw new IdentityBrokerException("Failed to refresh external token: " + e.getMessage(), e);
                 }
             }
 
+            logger.debugf("Token for %s expired with no refresh_token in session", getConfig().getAlias());
             if (event != null) {
                 event.detail(Details.REASON, "requested_issuer token expired");
                 event.error(Errors.INVALID_TOKEN);
