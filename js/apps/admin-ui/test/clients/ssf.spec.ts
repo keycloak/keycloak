@@ -1,9 +1,18 @@
-import { expect, test, type Page } from "@playwright/test";
+import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import { toClient } from "../../src/clients/routes/Client.tsx";
-import { toSsfClientTab } from "../../src/clients/routes/ClientSsfTab.tsx";
 import adminClient from "../utils/AdminClient.ts";
-import { login, navigateTo } from "../utils/login.ts";
+import {
+  assertClientSettingsLoaded,
+  assertSsfNavigationTabsVisible,
+  assertSsfPendingLookupVisible,
+  assertSsfReceiverSaveButtonVisible,
+  assertSsfStreamEmptyStateVisible,
+  assertSsfSubjectTypeVisible,
+  assertSsfTabHidden,
+  loginToSsfTab,
+  navigateToClientSettings,
+  openSsfSubTab,
+} from "./ssf.ts";
 
 // The SSF (Shared Signals Framework) client view is triple-gated in
 // ClientDetails: the server `ssf` feature must be enabled, the realm must
@@ -57,57 +66,38 @@ test.describe.serial("Client SSF tab", () => {
     await adminClient.deleteRealm(realmName);
   });
 
-  /**
-   * Navigate straight to a client's SSF sub-tab via deep link and assert the
-   * SSF tab rendered. The server always has the `ssf` feature enabled (see
-   * file header), so a missing tab is a real failure, not a skip.
-   */
-  async function goToSsfTab(
-    page: Page,
-    tab: Parameters<typeof toSsfClientTab>[0]["tab"],
-  ) {
-    await login(page, {
-      to: toSsfClientTab({ realm: realmName, clientId: ssfClientUuid, tab }),
-    });
-
-    // Use a generous timeout here (not the expect default) to absorb the
-    // login + SPA load on the first navigation of the run.
-    await expect(page.getByTestId("ssfTab")).toBeVisible({ timeout: 15_000 });
-  }
-
   test("shows the SSF tab and all sub-tabs for an opted-in client", async ({
     page,
   }) => {
-    await goToSsfTab(page, "receiver");
-
-    await expect(page.getByTestId("ssfTab")).toBeVisible();
-    await expect(page.getByTestId("ssfReceiverTab")).toBeVisible();
-    await expect(page.getByTestId("ssfStreamTab")).toBeVisible();
-    await expect(page.getByTestId("ssfSubjectsTab")).toBeVisible();
-    await expect(page.getByTestId("ssfEventSearchTab")).toBeVisible();
-    await expect(page.getByTestId("ssfEmitEventsTab")).toBeVisible();
-
-    // The Receiver sub-tab is the default landing page; its save action
-    // confirms the form rendered.
-    await expect(page.getByTestId("ssfReceiverSave")).toBeVisible();
+    await loginToSsfTab(page, {
+      realm: realmName,
+      clientUuid: ssfClientUuid,
+      tab: "receiver",
+    });
+    await assertSsfNavigationTabsVisible(page);
+    await assertSsfReceiverSaveButtonVisible(page);
   });
 
   test("navigates between the SSF sub-tabs", async ({ page }) => {
-    await goToSsfTab(page, "receiver");
+    await loginToSsfTab(page, {
+      realm: realmName,
+      clientUuid: ssfClientUuid,
+      tab: "receiver",
+    });
 
     // The test client has no registered stream, so the Stream sub-tab shows
     // the "not registered" empty state rather than the refresh/stream card.
-    await page.getByTestId("ssfStreamTab").click();
-    await expect(page.getByTestId("empty-state")).toBeVisible();
+    await openSsfSubTab(page, "stream");
+    await assertSsfStreamEmptyStateVisible(page);
 
-    await page.getByTestId("ssfSubjectsTab").click();
-    await expect(page.getByTestId("ssfSubjectType")).toBeVisible();
+    await openSsfSubTab(page, "subjects");
+    await assertSsfSubjectTypeVisible(page);
 
-    await page.getByTestId("ssfEventSearchTab").click();
-    await expect(page.getByTestId("ssfPendingLookup")).toBeVisible();
+    await openSsfSubTab(page, "event-search");
+    await assertSsfPendingLookupVisible(page);
 
-    await page.getByTestId("ssfReceiverTab").click();
-    await expect(page.getByTestId("ssfReceiverSave")).toBeVisible();
+    await openSsfSubTab(page, "receiver");
+    await assertSsfReceiverSaveButtonVisible(page);
   });
 
   test("hides the SSF tab for a client that has not opted in", async ({
@@ -116,21 +106,16 @@ test.describe.serial("Client SSF tab", () => {
     // First prove the SSF tab does render for the opted-in client — otherwise
     // the negative assertion below could pass vacuously (e.g. if the feature
     // were off, the tab would be absent for every client).
-    await goToSsfTab(page, "receiver");
-    await expect(page.getByTestId("ssfTab")).toBeVisible();
+    await loginToSsfTab(page, {
+      realm: realmName,
+      clientUuid: ssfClientUuid,
+      tab: "receiver",
+    });
 
     // Then, without re-logging in (the session persists), open the client that
     // has NOT opted in and confirm the tab is absent.
-    await navigateTo(
-      page,
-      toClient({
-        realm: realmName,
-        clientId: plainClientUuid,
-        tab: "settings",
-      }),
-    );
-
-    await expect(page.getByTestId("clientId")).toBeVisible();
-    await expect(page.getByTestId("ssfTab")).toHaveCount(0);
+    await navigateToClientSettings(page, realmName, plainClientUuid);
+    await assertClientSettingsLoaded(page);
+    await assertSsfTabHidden(page);
   });
 });

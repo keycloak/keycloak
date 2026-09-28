@@ -52,6 +52,7 @@ pnpm lint
 ## Integration testing with Playwright
 
 This repository contains integration tests developed with the [Playwright framework](https://playwright.dev/).
+For conventions on how tests should be structured and written, see the [Playwright Test Style Guide](./test/README.md).
 
 ### Prerequisites
 
