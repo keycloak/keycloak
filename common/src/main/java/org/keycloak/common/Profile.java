@@ -155,7 +155,7 @@ public class Profile {
         OPENTELEMETRY_LOGS("OpenTelemetry Logs support", Type.PREVIEW, OPENTELEMETRY),
         OPENTELEMETRY_METRICS("Micrometer to OpenTelemetry bridge support for metrics", Type.EXPERIMENTAL, OPENTELEMETRY),
 
-        DECLARATIVE_UI("declarative ui spi", Type.EXPERIMENTAL),
+        DECLARATIVE_UI("declarative ui spi", Type.PREVIEW),
 
         ORGANIZATION("Organization support within realms", Type.DEFAULT),
 

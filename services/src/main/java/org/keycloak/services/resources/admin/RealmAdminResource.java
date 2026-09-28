@@ -400,6 +400,11 @@ public class RealmAdminResource {
         return new ComponentResource(session, auth, adminEvent);
     }
 
+    @Path("ui-extensions")
+    public UiExtensionsResource getUiExtensions() {
+        return new UiExtensionsResource(session, realm, auth);
+    }
+
     /**
      * base path for managing realm-level roles of this realm
      *
