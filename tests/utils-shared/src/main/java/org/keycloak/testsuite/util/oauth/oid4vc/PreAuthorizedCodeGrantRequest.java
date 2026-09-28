@@ -32,6 +32,11 @@ public class PreAuthorizedCodeGrantRequest extends AbstractHttpPostRequest<PreAu
         return client.getEndpoints().getToken();
     }
 
+    public PreAuthorizedCodeGrantRequest txCode(String txCode) {
+        parameter(PreAuthorizedCodeGrant.TX_CODE_PARAM, txCode);
+        return this;
+    }
+
     @Override
     protected void initRequest() {
         parameter(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE);

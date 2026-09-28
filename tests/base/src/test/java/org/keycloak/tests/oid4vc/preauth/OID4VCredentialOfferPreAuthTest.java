@@ -36,6 +36,7 @@ import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
 import static org.keycloak.tests.oid4vc.CredentialOfferStateUtils.getCredentialOfferStateRecord;
+import static org.keycloak.tests.oid4vc.CredentialOfferStateUtils.injectTxCode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -460,6 +461,80 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         CredentialOfferResponse res = wallet.credentialsOfferRequest(ctx, offerURI).send();
         assertEquals("invalid_credential_offer_request", res.getError());
         assertEquals("Credential offer not found or already consumed", res.getErrorDescription());
+    }
+
+    @Test
+    public void testPreAuthOffer_WrongTxCodeDoesNotConsumePreAuthCode() throws Exception {
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        // Create a pre-authorized credential offer
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+        });
+
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
+
+        CredentialOfferURI offerURI = ctx.getCredentialsOfferUri();
+        assertNotNull(offerURI, "No CredentialOfferURI");
+
+        // Inject a tx_code into the stored offer state
+        String correctTxCode = "123456";
+        injectTxCode(runOnServer, offerURI.getNonce(), correctTxCode);
+
+        // Verify the tx_code was injected
+        CredentialOfferStateRecord offerState = getCredentialOfferStateRecord(runOnServer, offerURI.getNonce());
+        assertEquals(correctTxCode, offerState.txCode());
+
+        // Attempt to redeem with a wrong tx_code — should fail but NOT consume the pre-authorized code
+        AccessTokenResponse wrongTxResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode)
+                .txCode("000000")
+                .send();
+        assertFalse(wrongTxResponse.isSuccess(), "Token request with wrong tx_code should fail");
+        assertEquals("invalid_grant", wrongTxResponse.getError());
+        assertEquals("Invalid TxCode", wrongTxResponse.getErrorDescription());
+
+        // Attempt to redeem with the correct tx_code — should succeed because the code was not consumed
+        AccessTokenResponse correctTxResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode)
+                .txCode(correctTxCode)
+                .send();
+        assertTrue(correctTxResponse.isSuccess(),
+                "Token request with correct tx_code should succeed after a failed attempt: " + correctTxResponse.getErrorDescription());
+    }
+
+    @Test
+    public void testPreAuthOffer_MissingTxCodeDoesNotConsumePreAuthCode() {
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        // Create a pre-authorized credential offer
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+        });
+
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
+
+        CredentialOfferURI offerURI = ctx.getCredentialsOfferUri();
+        assertNotNull(offerURI, "No CredentialOfferURI");
+
+        // Inject a tx_code into the stored offer state
+        String correctTxCode = "789012";
+        injectTxCode(runOnServer, offerURI.getNonce(), correctTxCode);
+
+        // Attempt to redeem without providing tx_code — should fail but NOT consume the code
+        AccessTokenResponse missingTxResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        assertFalse(missingTxResponse.isSuccess(), "Token request without tx_code should fail when one is required");
+        assertEquals("invalid_grant", missingTxResponse.getError());
+        assertEquals("Missing TxCode", missingTxResponse.getErrorDescription());
+
+        // Attempt to redeem with the correct tx_code — should succeed
+        AccessTokenResponse correctTxResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode)
+                .txCode(correctTxCode)
+                .send();
+        assertTrue(correctTxResponse.isSuccess(),
+                "Token request with correct tx_code should succeed after missing tx_code attempt: " + correctTxResponse.getErrorDescription());
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
