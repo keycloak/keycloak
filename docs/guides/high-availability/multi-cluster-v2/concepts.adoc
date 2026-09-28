@@ -24,9 +24,9 @@ This simplifies the deployment architecture and removes the need for an external
 
 Two or more independent {project_name} deployments running in different sites.
 
-Users, realms, clients, sessions, and other entities are stored in a database that is replicated synchronously across all sites.
-
-Realm data (including clients and groups) and authorization data are cached in the {project_name} embedded Infinispan caches as local caches.
+Users, realms, clients, user sessions, authentication sessions and other persisted entities are stored in a database that is replicated synchronously across all sites.
+{project_name} still maintains local in-memory caches for performance. Frequently read realm and authorization metadata, such as realm, client and group configuration, is cached in the embedded caches of each {project_name} cluster.
+Within a local {project_name} cluster, cache invalidations still uses the embedded work caches. Between independent clusters, cache invalidations are propagated through the database-backed outbox mechanism.
 
 image::high-availability/active-active-stateless.dio.svg[]
 
