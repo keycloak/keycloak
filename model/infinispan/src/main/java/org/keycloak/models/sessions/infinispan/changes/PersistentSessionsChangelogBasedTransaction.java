@@ -313,7 +313,13 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                 existing = resolveTombstoneOnImport(getCache(offline), key, existing, session, lifespanMs);
             }
         } catch (RuntimeException exception) {
-            // If the import fails, the transaction can continue with the data from the database.
+            // If the import fails, the transaction can continue with the data from the database. A
+            // tombstone marker must never leak out as if it were a real cached session - if resolution of
+            // one (e.g. the replace()/get() in resolveTombstoneOnImport) threw, clear it here so the
+            // fallback below is used instead.
+            if (existing != null && existing.isTombstoneMarker()) {
+                existing = null;
+            }
             LOG.debugf(exception, "Failed to import session %s", session);
         }
         if (existing == null) {
