@@ -344,9 +344,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         OAuthResponse newResponse = refreshToken(previousResponse, session);
         if (newResponse.getExpiresIn() != null && newResponse.getExpiresIn() > 0) {
             newResponse.setAccessTokenExpiration(Time.currentTime() + newResponse.getExpiresIn());
-        } else if (previousExpiration != null && previousExpiration > 0) {
-            newResponse.setAccessTokenExpiration(previousExpiration);
         } else {
+            newResponse.setAccessTokenExpiration(0L);
             logger.debugf("Refreshed token from %s has no expiration info", getConfig().getAlias());
         }
         return newResponse;
@@ -536,6 +535,15 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                         storedExpiration = newResponse.getAccessTokenExpiration();
                         model.setToken(JsonSerialization.writeValueAsString(newResponse));
                         session.users().updateFederatedIdentity(realm, tokenSubject, model);
+                        if (tokenUserSession != null && getConfig().isStoreTokenInSession()) {
+                            if (getFederatedAccessToken(tokenUserSession) != null && getFederatedAccessToken(tokenUserSession).equals(previousResponse.getToken())) {
+                                setFederatedAccessToken(tokenUserSession, newResponse.getToken());
+                                setFederatedTokenExpiration(tokenUserSession, Long.toString(newResponse.getAccessTokenExpiration() != null ? newResponse.getAccessTokenExpiration() : 0));
+                                if (newResponse.getRefreshToken() != null) {
+                                    setFederatedRefreshToken(tokenUserSession, newResponse.getRefreshToken());
+                                }
+                            }
+                        }
                     } else {
                         logger.debugf("Token for %s expired with no refresh_token", getConfig().getAlias());
                         if (event != null) {
@@ -588,8 +596,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         if (expirationNote != null) {
             Long expiration = parseTokenExpiration(expirationNote);
             if (expiration == null) {
-                logger.warnf("Failed to parse FEDERATED_TOKEN_EXPIRATION: %s", expirationNote);
-                expiration = 0L;
+                logger.warnf("Failed to parse FEDERATED_TOKEN_EXPIRATION: %s, will attempt refresh", expirationNote);
+                expiration = (long) currentTime;
             }
 
             if (expiration == 0 || expiration > currentTime + getConfig().getMinValidityToken()) {
@@ -614,6 +622,15 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                         setFederatedRefreshToken(tokenUserSession, newResponse.getRefreshToken());
                     }
 
+                    RealmModel realm = session.getContext().getRealm();
+                    if (Booleans.isTrue(getConfig().isStoreToken())) {
+                        FederatedIdentityModel model = session.users().getFederatedIdentity(realm, tokenSubject, getConfig().getAlias());
+                        if (model != null) {
+                            model.setToken(JsonSerialization.writeValueAsString(newResponse));
+                            session.users().updateFederatedIdentity(realm, tokenSubject, model);
+                        }
+                    }
+
                     AccessTokenResponse tokenResponse = new AccessTokenResponse();
                     tokenResponse.setToken(newResponse.getToken());
                     if (newExpiration > currentTime) {
@@ -634,9 +651,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
 
-        AccessTokenResponse tokenResponse = new AccessTokenResponse();
-        tokenResponse.setToken(accessToken);
-        return buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, tokenResponse, OAuth2Constants.ACCESS_TOKEN_TYPE);
+        logger.debugf("No expiration metadata for %s session token (legacy session before migration), falling back to DB token", getConfig().getAlias());
+        return exchangeStoredToken(uriInfo, event, authorizedClient, tokenUserSession, tokenSubject);
     }
 
     public BrokeredIdentityContext getFederatedIdentity(String response) {
