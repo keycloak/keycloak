@@ -54,7 +54,7 @@ export const RoleComponent = ({
         defaultValue={defaultValue || ""}
         control={control}
         render={({ field }) => (
-          <Split>
+          <Split hasGutter style={{ alignItems: "center" }}>
             {openModal && (
               <AddRoleMappingModal
                 id="id"
