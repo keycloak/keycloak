@@ -255,7 +255,7 @@ export const GroupPickerDialog = ({
         })}
       />
       <ModalBody>
-          <PaginatingTableToolbar
+        <PaginatingTableToolbar
           count={count}
           first={first}
           max={max}
@@ -405,7 +405,7 @@ export const GroupPickerDialog = ({
               )}
             </>
           )}
-          </PaginatingTableToolbar>
+        </PaginatingTableToolbar>
       </ModalBody>
       <ModalFooter>
         <Button
@@ -470,7 +470,6 @@ const OrganizationRow = ({ organization, onSelect }: OrganizationRowProps) => {
           id="actions"
           aria-labelledby={labelId}
           aria-label={t("organization")}
-          isPlainButtonAction
         >
           <Button
             icon={<AngleRightIcon />}
@@ -582,7 +581,6 @@ const GroupRow = ({
           id="actions"
           aria-labelledby={`select-${group.name}`}
           aria-label={t("groupName")}
-          isPlainButtonAction
         >
           {(canBrowse || type === "selectOne") && group.subGroupCount !== 0 && (
             <Button
