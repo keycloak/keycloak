@@ -292,10 +292,14 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 // Bulk realm-wide removal ("logout all sessions in a realm") bypasses per-key tombstoning
                 // for performance (see PersistentUserSessionProvider#removeEntriesByRealm), so record a
                 // per-realm "not-before" watermark instead, BEFORE the local removal below runs. The removal
-                // below can take a while for a large realm, and any resurrection race for this realm - at any
-                // point during or after that removal, not only once it has finished - must be caught by the
-                // watermark; recording it first (rather than after removeLocalUserSessions() below returns)
-                // closes that window instead of leaving it open for the whole duration of the removal.
+                // below (onRemoveUserSessionsEvent -> removeLocalUserSessions) only touches the local,
+                // in-memory embedded cache (no database or network I/O), so it completes quickly even for a
+                // large realm - well within the guard listener's tombstone grace period - but recording the
+                // watermark first, rather than after the removal returns, still closes the window for its
+                // entire duration rather than leaving it open until it finishes. This event (and therefore
+                // this watermark) is only fired once the removal from the database (PersistentUserSessionProvider
+                // #removeUserSessions -> UserSessionPersisterProvider#removeUserSessions) has already committed,
+                // since SessionEventsSenderTransaction is enlisted with enlistAfterCompletion.
                 // Realm deletion (REALM_REMOVED_SESSION_EVENT) does not need this: once the realm is gone, a
                 // resurrected session cannot be used.
                 String realmId = sessionEvent.getRealmId();

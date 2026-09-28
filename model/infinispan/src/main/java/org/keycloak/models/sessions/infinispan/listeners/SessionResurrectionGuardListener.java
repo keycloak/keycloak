@@ -62,7 +62,11 @@ import org.jboss.logging.Logger;
  * per-realm "not-before" watermark for bulk removals (e.g. "logout all sessions in a realm") where
  * writing a tombstone per removed key would not scale. Any real {@link UserSessionEntity} whose
  * {@code started} timestamp is at or before a realm's recorded watermark is treated the same way as a
- * per-key resurrection and removed again.
+ * per-key resurrection and removed again. The watermark is recorded before the corresponding bulk local
+ * removal runs (see {@code InfinispanUserSessionProviderFactory#registerClusterListeners}), and that
+ * removal only ever touches the local, in-memory embedded cache (no database or network I/O), so it
+ * completes well within the {@link #TOMBSTONE_TTL_SECONDS} grace period even for realms with a very
+ * large number of sessions.
  * <p>
  * This is deliberately not a complete fix for cache consistency (see the loading-marker + CAS pattern in
  * the full upstream fix); it only prevents deleted entries from reappearing in the cache.
