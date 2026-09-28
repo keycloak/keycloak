@@ -435,18 +435,17 @@ public enum OperatorDeployment {local_apiserver,local,remote}
                                       .equals(k.getMetadata().getGeneration());
                   }))
                   .get(40, TimeUnit.SECONDS);
-      } catch (Exception e) {
-          throw KubernetesClientException.launderThrowable(e);
-      }
+          
+          // pause all Keycloaks, so that additional reconciliations won't happen due to deletion of dependents
+          k8sclient.resources(Keycloak.class).list().getItems().forEach(k -> k8sclient.resource(new KeycloakBuilder(k).editMetadata()
+                  .addToAnnotations(Constants.KEYCLOAK_PAUSE_ANNOTATION, Boolean.TRUE.toString()).endMetadata().build()).unlock().patch());
 
-      // Foreground cascade deletion would simplify this to just deleting the CRs and waiting
-      // for them to disappear, but it requires blockOwnerDeletion=true on owner references.
-      // fabric8 defaults it to null and https://github.com/fabric8io/kubernetes-client/issues/5838
-      // was auto-closed as stale without a fix, so that path is not available.
-      var roots = List.of(Keycloak.class, KeycloakRealmImport.class, KeycloakOIDCClient.class, KeycloakSAMLClient.class);
-      roots.forEach(c -> k8sclient.resources(c).delete());
-      // enforce that at least the statefulset are gone
-      try {
+          k8sclient.resources(Keycloak.class).informOnCondition(l -> l.stream().allMatch(
+                  kc -> "true".equals(kc.getMetadata().getAnnotations().get(Constants.KEYCLOAK_PAUSED_ANNOTATION)))).get(20, TimeUnit.SECONDS);
+          
+          var roots = List.of(Keycloak.class, KeycloakRealmImport.class, KeycloakOIDCClient.class, KeycloakSAMLClient.class);
+          roots.forEach(c -> k8sclient.resources(c).delete());
+          // enforce that at least the statefulsets are gone
           k8sclient
                   .apps()
                   .statefulSets()

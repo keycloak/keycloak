@@ -45,7 +45,7 @@ Please see link:https://www.keycloak.org/server/reverseproxy[Using a reverse pro
 
 === Disabled clients are no longer added to the token audience
 
-A disabled client is never added to the `aud` claim of a token, and its client roles are not present in the `resource_access` claim.
+A disabled or removed client is never added to the `aud` claim of a token, and its client roles are not present in the `resource_access` claim.
 Tokens are still issued, only without that client, so logins and refreshes keep succeeding.
 This change addresses CVE-2026-93999.
 
@@ -53,6 +53,21 @@ For more details, see link:{adminguide_link}#_audience_disabled_clients[Disabled
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
+
+=== Secrets referenced by OIDC Client CRs now require a label
+// https://github.com/keycloak/keycloak/issues/52320
+
+Kubernetes Secrets referenced via `spec.client.auth.secretRef` in a `KeycloakOIDCClient` CR must now carry the label `operator.keycloak.org/kind: KeycloakOIDCClient`.
+Without this label the operator treats the Secret as missing and reports a `HasErrors` status condition on the CR, even if the Secret exists.
+
+This change prevents arbitrary Secrets in the namespace from being read by the operator.
+
+If you already have Secrets used by OIDC Client CRs, add the required label before upgrading:
+
+[source,bash]
+----
+kubectl label secret <secret-name> operator.keycloak.org/kind=KeycloakOIDCClient
+----
 
 === `NO_PROXY` entries with leading dots or spaces after commas now parsed correctly
 // https://github.com/keycloak/keycloak/issues/52706
@@ -408,6 +423,12 @@ After upgrading, verify the domain routing and per-association configuration in 
 . If you use the Admin REST API to manage identity provider-organization links, update your integrations. The `organizationId` field on `IdentityProviderRepresentation` has been replaced by a list of organization links accessible through the organization identity provider endpoints.
 
 For details on the new configuration model, see link:{adminguide_link}#++_managing_identity_provider_++[Managing identity providers] and link:{adminguide_link}#managing-organization-domains_server_administration_guide[Managing organization domains] in the {adminguide_name}.
+
+=== Default JPA persistence unit renamed to `<default>`
+
+{project_name}'s default JPA persistence unit is now configured through Quarkus Hibernate ORM properties instead of an internal `persistence.xml`. As a result, the default persistence unit, previously named `keycloak-default`, is now Quarkus' default (unnamed) persistence unit, reported as `<default>`.
+
+If a custom provider archive defines multiple persistence units within a single `persistence.xml` and an entity-less unit should load `META-INF/orm.xml`, explicitly declare the standard `<mapping-file>META-INF/orm.xml</mapping-file>` element in that `<persistence-unit>` to ensure its entities are properly bound and to prevent cross-unit mapping collisions.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features

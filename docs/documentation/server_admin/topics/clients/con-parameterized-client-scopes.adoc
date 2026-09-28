@@ -1,12 +1,9 @@
 [[_parameterized_client_scopes]]
 == Parameterized client scopes
 
-[IMPORTANT]
-====
-This feature is currently experimental. Do not use it in production. Backward compatibility is not guaranteed, and future updates may introduce breaking changes.
-
-To enable, start the server with `--features=parameterized-scopes`.
-====
+:tech_feature_name: Parameterized scopes
+:tech_feature_id: parameterized-scopes
+include::../../topics/templates/techpreview.adoc[]
 
 {project_name} supports parameterized client scopes, which allow clients to pass a parameter value along with the scope name in the OAuth 2.0 authorization request. A parameterized scope uses the format `scopeName:parameterValue`, where the colon (`:`) separates the scope name from its parameter.
 

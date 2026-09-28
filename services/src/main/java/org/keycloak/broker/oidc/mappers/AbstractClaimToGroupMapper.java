@@ -35,7 +35,7 @@ public abstract class AbstractClaimToGroupMapper extends AbstractClaimMapper {
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user,
             IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
 
-        GroupModel group = KeycloakModelUtils.getGroupForIdpMapper(session, realm, mapperModel, context);
+        GroupModel group = KeycloakModelUtils.getGroupForIdpMapper(session, realm, user, mapperModel, context);
         if (group == null) {
             return;
         }
@@ -49,7 +49,7 @@ public abstract class AbstractClaimToGroupMapper extends AbstractClaimMapper {
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user,
             IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
 
-        GroupModel group = KeycloakModelUtils.getGroupForIdpMapper(session, realm, mapperModel, context);
+        GroupModel group = KeycloakModelUtils.getGroupForIdpMapper(session, realm, user, mapperModel, context);
         if (group == null) {
             return;
         }
