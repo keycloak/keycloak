@@ -44,8 +44,13 @@ import org.junit.jupiter.api.Test;
 @KeycloakIntegrationTest(config = SsfTransmitterMetadataTests.SsfTransmitterKeycloakServerConfig.class)
 public class SsfTransmitterMetadataTests {
 
+    static final String REALM_FRONTEND_URL = "https://ssf-frontend.example/auth";
+
     @InjectRealm(config = SsfTransmitterRealm.class)
     ManagedRealm realm;
+
+    @InjectRealm(ref = "frontend-url", config = SsfTransmitterFrontendUrlRealm.class)
+    ManagedRealm frontendUrlRealm;
 
     @InjectSimpleHttp
     SimpleHttp http;
@@ -101,6 +106,52 @@ public class SsfTransmitterMetadataTests {
             Assertions.assertEquals("urn:ietf:rfc:6749",
                     metadata.getAuthorizationSchemes().get(0).get("spec_urn"),
                     "authorization_schemes should advertise OAuth 2.0 (RFC 6749)");
+        }
+    }
+
+    /**
+     * The realm {@code frontendUrl} attribute is the server base URL, so the
+     * advertised issuer and endpoints must carry the {@code /realms/{realm}}
+     * path and agree with the realm's OIDC issuer. See keycloak/keycloak#53107.
+     */
+    @Test
+    public void testWellKnownMetadataWithRealmFrontendUrl() throws IOException {
+
+        String expectedIssuer = REALM_FRONTEND_URL + "/realms/" + frontendUrlRealm.getName();
+
+        String oidcIssuer;
+        try (SimpleHttpResponse response = http.doGet(frontendUrlRealm.getBaseUrl() + "/.well-known/openid-configuration").asResponse()) {
+            Assertions.assertEquals(200, response.getStatus(),
+                    "OIDC well-known endpoint should return 200");
+            oidcIssuer = response.asJson().get("issuer").asText();
+        }
+        Assertions.assertEquals(expectedIssuer, oidcIssuer,
+                "OIDC issuer should be the frontendUrl plus the realm path");
+
+        String wellKnownUrl = frontendUrlRealm.getBaseUrl() + "/" + Ssf.SSF_WELL_KNOWN_METADATA_PATH;
+
+        try (SimpleHttpResponse response = http.doGet(wellKnownUrl).asResponse()) {
+            Assertions.assertEquals(200, response.getStatus(),
+                    "Well-known endpoint should return 200");
+
+            TransmitterMetadata metadata = response.asJson(TransmitterMetadata.class);
+
+            Assertions.assertEquals(oidcIssuer, metadata.getIssuer(),
+                    "issuer should match the realm's OIDC issuer");
+            Assertions.assertEquals(oidcIssuer + "/protocol/openid-connect/certs",
+                    metadata.getJwksUri(),
+                    "jwks_uri should point at the realm's OIDC JWKS");
+
+            String transmitterBase = SsfTransmitterUrls.getSsfTransmitterBasePath(oidcIssuer);
+            Assertions.assertEquals(transmitterBase + "/streams",
+                    metadata.getConfigurationEndpoint(),
+                    "configuration_endpoint should point at the transmitter streams endpoint");
+            Assertions.assertEquals(transmitterBase + "/streams/status",
+                    metadata.getStatusEndpoint(),
+                    "status_endpoint should point at the transmitter streams/status endpoint");
+            Assertions.assertEquals(transmitterBase + "/verify",
+                    metadata.getVerificationEndpoint(),
+                    "verification_endpoint should point at the transmitter verify endpoint");
         }
     }
 
@@ -178,6 +229,17 @@ public class SsfTransmitterMetadataTests {
         public RealmBuilder configure(RealmBuilder realm) {
             realm.name("ssf-transmitter-test");
             realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
+            return realm;
+        }
+    }
+
+    public static class SsfTransmitterFrontendUrlRealm implements RealmConfig {
+
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.name("ssf-transmitter-frontend-url-test");
+            realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
+            realm.attribute("frontendUrl", REALM_FRONTEND_URL);
             return realm;
         }
     }

@@ -26,9 +26,11 @@ public class SsfUtil {
         KeycloakContext context = session.getContext();
         RealmModel realm = context.getRealm();
 
+        // As in HostnameV2Provider, the realm frontendUrl is the server base URL
+        // (scheme, host and context path), not the realm URL.
         String frontendUrl = realm.getAttribute("frontendUrl");
         if (frontendUrl != null && !frontendUrl.isBlank())  {
-            return frontendUrl;
+            return appendRealmPath(frontendUrl, realm.getName());
         }
 
         String hostnameUrl = System.getenv().get("KC_HOSTNAME_URL");
