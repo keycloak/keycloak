@@ -358,6 +358,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         return session.getAllProviders(AuthorizationDetailsProcessor.class).stream()
                 .filter(AuthorizationDetailsProcessor::isSupported)
                 .flatMap(processor -> processor.getSupportedTypes().stream())
+                .distinct()
                 .toList();
     }
 

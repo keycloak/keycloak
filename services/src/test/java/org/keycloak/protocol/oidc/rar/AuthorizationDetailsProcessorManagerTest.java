@@ -17,8 +17,12 @@ import org.keycloak.util.JsonSerialization;
 
 import org.junit.Test;
 
+import static org.keycloak.protocol.oidc.rar.TestAuthorizationDetailsProcessor.NARROWED_BY;
 import static org.keycloak.protocol.oidc.rar.TestAuthorizationDetailsProcessor.PROCESSED_BY;
+import static org.keycloak.protocol.oidc.rar.TestAuthorizationDetailsProcessor.SANITIZED_BY;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -92,6 +96,35 @@ public class AuthorizationDetailsProcessorManagerTest {
     }
 
     @Test
+    public void unsupportedProcessorDoesNotShadowSupportedProcessor() throws Exception {
+        AuthorizationDetailsProcessorManager manager = manager(
+                factory("disabled-high", 10, false, "shared", "disabled_only"),
+                factory("enabled-low", 5, true, "shared", "low_only"));
+
+        Map<String, String> processedBy = process(manager, "shared", "low_only");
+
+        // Consistent with discovery, which advertises "shared" from the enabled processor only
+        assertEquals("enabled-low", processedBy.get("shared"));
+        assertEquals("enabled-low", processedBy.get("low_only"));
+
+        InvalidAuthorizationDetailsException ex = assertThrows(InvalidAuthorizationDetailsException.class,
+                () -> process(manager, "disabled_only"));
+        assertTrue(ex.getMessage(), ex.getMessage().contains("disabled_only"));
+    }
+
+    @Test
+    public void unsupportedProcessorIsNotAskedForMissingAuthorizationDetails() {
+        AuthorizationDetailsProcessorManager manager = manager(
+                factory("disabled", 10, false, "disabled_only"),
+                factory("enabled", 5, true, "enabled_only"));
+
+        List<AuthorizationDetailsJSONRepresentation> responses = manager.handleMissingAuthorizationDetails(null, null);
+
+        assertEquals(List.of("enabled:enabled_only"), responses.stream()
+                .map(response -> response.getCustomData().get(PROCESSED_BY) + ":" + response.getType()).toList());
+    }
+
+    @Test
     public void sanitizeUsesProcessorNarrowing() {
         AuthorizationDetailsProcessorManager manager = manager(factory("multi", 0, "type_a", "type_b"));
 
@@ -100,8 +133,29 @@ public class AuthorizationDetailsProcessorManagerTest {
 
         manager.sanitizeBeforeSendingTokenResponse(tokenResponse);
 
-        assertEquals(List.of("type_b", "type_a"), tokenResponse.getAuthorizationDetails().stream()
-                .map(AuthorizationDetailsJSONRepresentation::getType).toList());
+        List<AuthorizationDetailsJSONRepresentation> sanitized = tokenResponse.getAuthorizationDetails();
+        assertEquals(List.of("type_b", "type_a"), sanitized.stream().map(AuthorizationDetailsJSONRepresentation::getType).toList());
+        for (AuthorizationDetailsJSONRepresentation authzDetail : sanitized) {
+            // The sanitizer must have received the representation narrowed by the processor owning the type
+            assertThat(authzDetail, instanceOf(TestAuthorizationDetailsProcessor.NarrowedAuthorizationDetail.class));
+            assertEquals("multi", authzDetail.getCustomData().get(NARROWED_BY));
+            assertEquals("multi", authzDetail.getCustomData().get(SANITIZED_BY));
+        }
+    }
+
+    @Test
+    public void sanitizeDispatchesToWinningProcessor() {
+        AuthorizationDetailsProcessorManager manager = manager(
+                factory("low", 5, "shared", "low_only"),
+                factory("high", 10, "shared"));
+
+        AccessTokenResponse tokenResponse = new AccessTokenResponse();
+        tokenResponse.setAuthorizationDetails(List.of(detail("shared"), detail("low_only")));
+
+        manager.sanitizeBeforeSendingTokenResponse(tokenResponse);
+
+        assertEquals(List.of("high:high", "low:low"), tokenResponse.getAuthorizationDetails().stream()
+                .map(authzDetail -> authzDetail.getCustomData().get(NARROWED_BY) + ":" + authzDetail.getCustomData().get(SANITIZED_BY)).toList());
     }
 
     // Helpers ---------------------------------------------------------------------------------------------------------
@@ -121,10 +175,14 @@ public class AuthorizationDetailsProcessorManagerTest {
     }
 
     private static AuthorizationDetailsProcessorFactory factory(String id, int order, String... supportedTypes) {
+        return factory(id, order, true, supportedTypes);
+    }
+
+    private static AuthorizationDetailsProcessorFactory factory(String id, int order, boolean supported, String... supportedTypes) {
         return new AuthorizationDetailsProcessorFactory() {
             @Override
             public AuthorizationDetailsProcessor<?> create(KeycloakSession session) {
-                return new TestAuthorizationDetailsProcessor(id, Set.of(supportedTypes));
+                return new TestAuthorizationDetailsProcessor(id, supported, Set.of(supportedTypes));
             }
 
             @Override
