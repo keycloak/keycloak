@@ -546,7 +546,7 @@ const GroupRow = ({
             className="kc-join-group-modal-check"
             data-testid={`${group.name}-check`}
             aria-label={group.name}
-            checked={group.checked}
+            isChecked={!!group.checked}
             isDisabled={isRowDisabled(group)}
             onChange={(_event, checked) => {
               group.checked = checked;
