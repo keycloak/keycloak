@@ -153,6 +153,11 @@ public class DefaultRefreshTokenProvider extends AbstractRefreshTokenProvider im
                 TimeUnit.SECONDS.toMillis(userSession.getStarted()),
                 realm, client);
         expiration = lifespan > 0? Math.min(expiration, lifespan) : expiration;
+        long userSessionIdle = SessionExpirationUtils.calculateUserSessionIdleTimestamp(
+                offline, userSession.isRememberMe(),
+                TimeUnit.SECONDS.toMillis(userSession.getLastSessionRefresh()),
+                realm);
+        expiration = Math.min(expiration, userSessionIdle);
 
         return TimeUnit.MILLISECONDS.toSeconds(expiration);
     }
