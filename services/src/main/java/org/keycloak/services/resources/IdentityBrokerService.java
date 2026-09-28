@@ -600,6 +600,10 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         }
 
         // now it is OK to retrieve the token from the session or the database
+        // Note: retrieveToken() may refresh the token and update the identity object in-place.
+        // For DB-stored tokens, it persists via updateFederatedIdentity() internally.
+        // For session tokens, updates are reflected in the user session object.
+        String oldToken = identity.getToken();
         try {
             Response response = identityProvider.retrieveToken(session, identity, userSession, authResult.user());
             event.success();
@@ -609,6 +613,11 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             event.detail(Details.REASON, e.getMessage());
             event.error(Errors.INVALID_REQUEST);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Failed to retrieve token from identity provider", Response.Status.BAD_REQUEST);
+        } finally {
+            // Belt-and-suspenders: ensure refreshed DB tokens are persisted (redundant for exchangeStoredToken but safe).
+            if (Booleans.isTrue(model.isStoreToken()) && !Objects.equals(oldToken, identity.getToken())) {
+                session.users().updateFederatedIdentity(realmModel, authResult.user(), identity);
+            }
         }
     }
 
