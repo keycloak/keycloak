@@ -102,7 +102,7 @@ public class ClassLoaderTheme extends FileBasedTheme {
 
     @Override
     public URL getTemplate(String name) {
-        return classLoader.getResource(templateRoot + name);
+        return ResourceLoader.getResource(classLoader, templateRoot, name);
     }
 
     @Override

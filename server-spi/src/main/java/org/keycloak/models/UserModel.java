@@ -38,7 +38,6 @@ public interface UserModel extends RoleMapperModel, Model {
     String EMAIL = "email";
     String EMAIL_PENDING = "kc.email.pending";
     String EMAIL_VERIFIED = "emailVerified";
-    String DID = "did";
     String LOCALE = "locale";
     String ENABLED = "enabled";
     String IDP_ALIAS = "keycloak.session.realm.users.query.idp_alias";
@@ -229,6 +228,9 @@ public interface UserModel extends RoleMapperModel, Model {
     String getFederationLink();
     void setFederationLink(String link);
 
+    default boolean isServiceAccount() {
+        return getServiceAccountClientLink() != null;
+    }
     String getServiceAccountClientLink();
     void setServiceAccountClientLink(String clientInternalId);
 

@@ -150,8 +150,14 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
 
     @Override
     public void action(AuthenticationFlowContext context) {
-        context.getUser().setEmailVerified(true);
-        context.success();
+        UserModel user = context.getUser();
+        String actionTokenUserId = context.getAuthenticationSession().getAuthNote(DefaultActionTokenKey.ACTION_TOKEN_USER_ID);
+        if (user != null && user.getId().equals(actionTokenUserId)) {
+            context.success();
+        } else {
+            // not called via action token or any other weird situation
+            context.failure(AuthenticationFlowError.INVALID_USER);
+        }
     }
 
     @Override

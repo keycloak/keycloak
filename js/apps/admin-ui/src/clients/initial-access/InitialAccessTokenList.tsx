@@ -115,7 +115,7 @@ export const InitialAccessTokenList = () => {
             instructions={t("noTokensInstructions")}
             primaryActionText={t("create")}
             onPrimaryAction={() =>
-              navigate(toCreateInitialAccessToken({ realm }))
+              void navigate(toCreateInitialAccessToken({ realm }))
             }
           />
         }

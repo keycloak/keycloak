@@ -51,7 +51,7 @@ public class ManagementDistTest {
     @Launch({"start", "--hostname=hostname", "--http-enabled=false"})
     void testManagementNoHttps(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertNoMessage("Management interface listening on");
+        cliResult.assertNoStartupMessage("Management interface listening on");
         cliResult.assertError("Key material not provided to setup HTTPS.");
     }
 
@@ -60,7 +60,7 @@ public class ManagementDistTest {
     @Launch({"start-dev", "--legacy-observability-interface=true"})
     void testManagementDisabled(LaunchResult result, KeycloakRunner runner) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertNoMessage("Management interface listening on");
+        cliResult.assertNoStartupMessage("Management interface listening on");
 
         assertThrows(IOException.class, () -> when().get("/"), "Connection refused must be thrown");
         assertThrows(IOException.class, () -> when().get("/health"), "Connection refused must be thrown");

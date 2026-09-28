@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.keycloak.models.KeycloakSession;
@@ -30,7 +31,7 @@ import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import org.apache.commons.collections4.ListUtils;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_JTI;
 
 /**
  * Adds a generated ID to the credential (as a configurable property).
@@ -70,11 +71,19 @@ public class OID4VCGeneratedIdMapper extends OID4VCMapper {
     }
 
     @Override
+    protected Set<String> getAllowedReservedClaims() {
+        // The value is a generated id, not user-controlled; the claim name may legitimately target "jti".
+        return Set.of(CLAIM_NAME_JTI);
+    }
+
+    @Override
     public List<String> getMetadataAttributePath() {
-        String property = Optional.ofNullable(mapperModel.getConfig())
-                                  .map(config -> config.get(CLAIM_NAME))
-                                  .orElse(SUBJECT_PROPERTY_CONFIG_KEY_DEFAULT);
-        return ListUtils.union(getAttributePrefix(), List.of(property));
+        return getMetadataAttributePath(getGeneratedIdClaimName());
+    }
+
+    @Override
+    protected List<String> getClaimLookupPath() {
+        return getClaimLookupPath(getGeneratedIdClaimName());
     }
 
     public void setClaim(VerifiableCredential verifiableCredential,
@@ -85,12 +94,14 @@ public class OID4VCGeneratedIdMapper extends OID4VCMapper {
     @Override
     public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
         // Assign a generated ID
-        List<String> attributePath = getMetadataAttributePath();
-        if (attributePath.isEmpty()) {
-            return;
-        }
-        String propertyName = attributePath.get(attributePath.size() - 1);
+        String propertyName = getGeneratedIdClaimName();
         claims.put(propertyName, String.format("urn:uuid:%s", UUID.randomUUID()));
+    }
+
+    private String getGeneratedIdClaimName() {
+        return Optional.ofNullable(mapperModel.getConfig())
+                .map(config -> config.get(CLAIM_NAME))
+                .orElse(SUBJECT_PROPERTY_CONFIG_KEY_DEFAULT);
     }
 
     @Override

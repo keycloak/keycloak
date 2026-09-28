@@ -1,0 +1,21 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== Resource URI matching in Authorization Services normalizes matrix parameters, dot segments, percent-encoding, and query/fragment components
+
+When matching an incoming request URI against a resource URI configured in Authorization Services (the policy enforcer and the UMA permission endpoint), the URI is now normalized before comparison:
+
+* Matrix parameters (for example `+;jsessionid=...+`), including percent-encoded (`+%3B+`), are stripped.
+* Dot segments (for example `+/foo/../admin+`, `+/./admin+`), including percent-encoded (`+%2E%2E+`, `+%2e.+`), are resolved.
+* Percent-encoded slashes (`+%2F+`) are decoded, and any duplicate slashes this produces are collapsed.
+* A trailing slash is stripped.
+* The query string and fragment are dropped before matching, so a resource configured for `+/api/admin+` also matches, for example, `+/api/admin?foo=bar+` and `+/api/admin#section+`.
+
+This prevents a mutated form of a protected resource's URI from evading its configured policy and falling through to a more permissive resource, such as a catch-all `+/*+` resource.
+
+Resources configured with a full absolute URI (a scheme and authority, for example `+https://my.domain/api/admin+`) are unaffected beyond their path component — the scheme and authority are preserved, and only the path is normalized.
+
+If your Authorization Services configuration relies on distinguishing resources by matrix parameters, dot segments, trailing slashes, or query string/fragment content in the resource URI, review your resource and policy configuration, since these are now treated as equivalent to their normalized form.

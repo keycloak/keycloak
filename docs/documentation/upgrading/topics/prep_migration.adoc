@@ -23,10 +23,12 @@ The database schema will no longer be compatible with the old server after the u
 If the `persistent-user-sessions` feature is disabled in your current setup and the server is upgraded, all user sessions will be lost except for offline user sessions.
 Users with these sessions will have to log in again.
 Note that the `persistent-user-sessions` feature is disabled by default in {project_name} server releases prior to 26.0.0.
+Disabling `persistent-user-sessions` is deprecated since {project_name} 26.8 and will not be supported in a future release.
 ====
 
 [WARNING]
 ====
-Information about failed logins for brute force detection and currently ongoing authentication flows is only stored in the internal caches that are cleared when {project_name} is shut down.
+Information about failed logins for brute force detection is now stored in the database by default since {project_name} 26.8 and survives cluster restarts.
+Currently ongoing authentication flows are only stored in the internal caches that are cleared when {project_name} is shut down.
 Users currently authenticating, changing their passwords, or resetting their passwords will need to restart the authentication flow once {project_name} is up and running again.
 ====

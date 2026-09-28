@@ -28,7 +28,7 @@ public class ServerConfigClassOrderer implements ClassOrderer {
             } else if (a1.isPresent()) {
                 return 1;
             } else if (a2.isPresent()) {
-                return 2;
+                return -1;
             } else {
                 return 0;
             }

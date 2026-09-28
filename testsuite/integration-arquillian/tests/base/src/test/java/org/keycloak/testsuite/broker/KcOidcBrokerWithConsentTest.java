@@ -53,7 +53,8 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
     @Test
     public void testConsentDeniedWithExpiredClientSession() {
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -82,7 +83,8 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
     @Test
     public void testConsentDeniedWithExpiredAndClearedClientSession() {
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
@@ -110,7 +112,8 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 

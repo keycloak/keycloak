@@ -14,6 +14,8 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import org.jboss.logging.Logger;
+
 public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFactory, EnvironmentDependentProviderFactory {
 
     public static final String ID = "argon2";
@@ -24,6 +26,11 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
     public static final String ITERATIONS_KEY = "iterations";
     public static final String PARALLELISM_KEY = "parallelism";
     public static final String CPU_CORES_KEY = "cpuCores";
+    /** @deprecated Disabling pooling is deprecated and will be removed in a future release. */
+    @Deprecated
+    public static final String POOLING_KEY = "pooling";
+
+    private static final Logger logger = Logger.getLogger(Argon2PasswordHashProviderFactory.class);
 
     /**
      * The Argon2 password hashing is CPU bound, so it doesn't make sense to hash more values concurrently than there are cores on the machine.
@@ -31,6 +38,7 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
      * when a CPU limit is imposed. The throttling would have a negative impact on other concurrent non-hashing activities of Keycloak.
      */
     private Semaphore cpuCoreSemaphore;
+    private BlockChunkManager blockChunkManager;
 
     private String version;
     private String type;
@@ -41,7 +49,7 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
 
     @Override
     public PasswordHashProvider create(KeycloakSession session) {
-        return new Argon2PasswordHashProvider(version, type, hashLength, memory, iterations, parallelism, cpuCoreSemaphore);
+        return new Argon2PasswordHashProvider(version, type, hashLength, memory, iterations, parallelism, cpuCoreSemaphore, blockChunkManager);
     }
 
     @Override
@@ -52,7 +60,14 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
         memory = config.getInt(MEMORY_KEY, Argon2Parameters.DEFAULT_MEMORY);
         iterations = config.getInt(ITERATIONS_KEY, Argon2Parameters.DEFAULT_ITERATIONS);
         parallelism = config.getInt(PARALLELISM_KEY, Argon2Parameters.DEFAULT_PARALLELISM);
-        cpuCoreSemaphore = new Semaphore(config.getInt(CPU_CORES_KEY, Runtime.getRuntime().availableProcessors()));
+        int cpuCores = config.getInt(CPU_CORES_KEY, Runtime.getRuntime().availableProcessors());
+        cpuCoreSemaphore = new Semaphore(cpuCores);
+        if (config.getBoolean(POOLING_KEY, true)) {
+            blockChunkManager = new BlockChunkManager();
+        } else {
+            logger.warn("Argon2 memory pooling is disabled. This is deprecated and will be removed in a future release.");
+            blockChunkManager = null;
+        }
     }
 
     @Override
@@ -120,6 +135,13 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
                 .name(CPU_CORES_KEY)
                 .type("int")
                 .helpText("Maximum parallel CPU cores to use for hashing")
+                .add();
+
+        builder.property()
+                .name(POOLING_KEY)
+                .type("boolean")
+                .helpText("Pool and reuse Argon2 memory blocks to reduce GC pressure (deprecated: disabling will be removed in a future release)")
+                .defaultValue(true)
                 .add();
 
         return builder.build();

@@ -14,7 +14,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
-import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.util.Strings;
 import org.keycloak.utils.StringUtil;
 
@@ -71,11 +70,11 @@ public class CredentialScopeUtils {
     }
 
     /**
-     * Get the list of credential scopes associated by the given and requested by the given authorization request
+     * Get the list of credential scopes associated with the given client and requested by the given scope parameter
      */
-    public static List<CredentialScopeModel> getCredentialScopesForAuthorization(ClientModel client, AuthorizationEndpointRequest request) {
+    public static List<CredentialScopeModel> getCredentialScopesForScopeParameter(ClientModel client, String scopeParam) {
 
-        List<String> requestScopes = Optional.ofNullable(request.getScope())
+        List<String> requestScopes = Optional.ofNullable(scopeParam)
                 .map(it -> it.split("\\s"))
                 .map(Arrays::asList)
                 .orElse(List.of());

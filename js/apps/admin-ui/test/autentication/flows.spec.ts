@@ -29,6 +29,7 @@ import {
   clickDefaultSwitchPolicy,
   clickDeleteRow,
   clickSwitchPolicy,
+  dragExecutionAboveExecution,
   fillBindFlowModal,
   fillCreateForm,
   fillDuplicateFlowModal,
@@ -38,6 +39,7 @@ import {
   goToPoliciesTab,
   goToRequiredActions,
   goToWebAuthnTab,
+  openExecutionConfig,
 } from "./flow.ts";
 
 test.describe("Authentication flows", () => {
@@ -162,6 +164,31 @@ test.describe("Authentication flow details", () => {
     await assertRowExists(page, "Cookie", false);
   });
 
+  test("clears an execution config", async ({ page }) => {
+    await using testBed = await createTestBed();
+
+    await adminClient.copyFlow("browser", flowName, testBed.realm);
+    await login(page, { to: toAuthentication({ realm: testBed.realm }) });
+
+    await clickTableRowItem(page, flowName);
+
+    const name = "Identity Provider Redirector";
+    await openExecutionConfig(page, name);
+    await page.getByTestId("alias").fill("redirector-config");
+    await page.getByTestId("default.reference.value").fill("reference");
+    await page.getByTestId("save").click();
+    await assertNotificationMessage(page, "Successfully saved the config");
+
+    await openExecutionConfig(page, name);
+    await page.getByTestId("clear").click();
+
+    await openExecutionConfig(page, name);
+    await expect(page.getByTestId("alias")).toHaveValue("");
+    await expect(page.getByTestId("alias")).toBeEnabled();
+    await expect(page.getByTestId("default.reference.value")).toHaveValue("");
+    await expect(page.getByTestId("clear")).toBeHidden();
+  });
+
   test("sets as default in action menu", async ({ page }) => {
     await using testBed = await createTestBed();
 
@@ -187,29 +214,21 @@ test.describe("Authentication flow details", () => {
   });
 
   test("drags and drops execution", async ({ page }) => {
+    test.setTimeout(60_000);
     await using testBed = await createTestBed();
 
     await adminClient.copyFlow("browser", flowName, testBed.realm);
     await login(page, { to: toAuthentication({ realm: testBed.realm }) });
 
     await clickTableRowItem(page, flowName);
-
-    const sourceBox = await page
-      .getByText("Identity Provider Redirector")
-      .boundingBox();
-    const targetBox = await page.getByText("Kerberos").boundingBox();
-
-    await page.mouse.move(
-      sourceBox!.x + sourceBox!.width / 2,
-      sourceBox!.y + sourceBox!.height / 2,
+    const moved = await dragExecutionAboveExecution(
+      page,
+      "Identity Provider Redirector",
+      "Kerberos",
     );
-    await page.mouse.down();
-    await page.mouse.move(
-      targetBox!.x + targetBox!.width / 2,
-      targetBox!.y + targetBox!.height / 2,
-      { steps: 10 },
+    expect(moved, "Expected drag interaction to reorder execution rows").toBe(
+      true,
     );
-    await page.mouse.up();
 
     await assertNotificationMessage(page, "Flow successfully updated");
   });

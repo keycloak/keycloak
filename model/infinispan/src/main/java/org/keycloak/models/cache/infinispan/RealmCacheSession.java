@@ -190,6 +190,15 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
+    public void clearManagedModels() {
+        managedRealms.clear();
+        managedApplications.clear();
+        managedClientScopes.clear();
+        managedRoles.clear();
+        managedGroups.clear();
+    }
+
+    @Override
     public RealmProvider getRealmDelegate() {
         if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (realmDelegate != null) return realmDelegate;
@@ -1443,6 +1452,11 @@ public class RealmCacheSession implements CacheRealmProvider {
     @Override
     public Stream<ClientScopeModel> getClientScopesByProtocol(RealmModel realm, String protocol) {
         return getClientScopeDelegate().getClientScopesByProtocol(realm, protocol);
+    }
+
+    @Override
+    public Stream<ClientScopeModel> getClientScopesByProtocolForUpdate(RealmModel realm, String protocol) {
+        return getClientScopeDelegate().getClientScopesByProtocolForUpdate(realm, protocol);
     }
 
     @Override

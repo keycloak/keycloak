@@ -237,6 +237,7 @@ public class OrganizationGroupsResource {
             @APIResponse(responseCode = "404", description = "Not Found")
     })
     public GroupRepresentation getGroupByPath(@PathParam("path") String path,
+                                              @Parameter(description = "Whether to return a brief representation (default: true)") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
                                               @Parameter(description = "Whether to return the count of subgroups (default: false)") @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount) {
         auth.orgs().requireView(organization);
 
@@ -244,7 +245,9 @@ public class OrganizationGroupsResource {
         if (found == null) {
             throw new NotFoundException("Group path does not exist");
         }
-        GroupRepresentation rep = ModelToRepresentation.groupToBriefRepresentation(found);
+        GroupRepresentation rep = briefRepresentation ?
+                ModelToRepresentation.groupToBriefRepresentation(found) :
+                ModelToRepresentation.toRepresentation(found, true);
         if (subGroupsCount) {
             rep.setSubGroupCount(found.getSubGroupsCount());
         }

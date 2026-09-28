@@ -31,8 +31,6 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
@@ -46,12 +44,12 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.actions.RequiredActionEmailVerificationTest.getEmailLink;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -74,9 +72,6 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public MailServer mail = new MailServer();
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected LoginPage loginPage;
@@ -156,8 +151,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
 
         // Logged in
-        appPage.assertCurrent();
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.expectLoginSuccess(events.poll());
     }
 
@@ -205,8 +199,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 .details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID);
 
         // Logged in
-        appPage.assertCurrent();
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.expectLoginSuccess(events.poll());
     }
 
@@ -230,7 +223,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
         // Login with kc_action=UPDATE_PROFILE
         oauth.loginForm().kcAction(RequiredAction.UPDATE_PROFILE.name()).open();
-        loginPage.assertCurrent(TEST_REALM_NAME);
+        loginPage.assertCurrent();
         loginPage.login(USERNAME, PASSWORD);
 
         // First, change password
@@ -255,8 +248,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 .details(Details.UPDATED_EMAIL, NEW_EMAIL);
 
         // Logged in
-        appPage.assertCurrent();
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.expectLoginSuccess(events.poll());
     }
 
@@ -282,7 +274,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
         // Get a password reset link
         oauth.openLoginForm();
-        loginPage.assertCurrent(TEST_REALM_NAME);
+        loginPage.assertCurrent();
         loginPage.resetPassword();
 
         resetPasswordPage.assertCurrent();
@@ -319,8 +311,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 .details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID);
 
         // Logged in
-        appPage.assertCurrent();
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.expectLoginSuccess(events.poll());
     }
 
@@ -348,7 +339,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
         // Get a password reset link
         oauth.openLoginForm();
-        loginPage.assertCurrent(TEST_REALM_NAME);
+        loginPage.assertCurrent();
         loginPage.login(USERNAME, PASSWORD);
 
         // Second, complete the profile
@@ -370,8 +361,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 .details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID);
 
         // Logged in
-        appPage.assertCurrent();
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.expectLoginSuccess(events.poll());
     }
 
@@ -411,8 +401,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
 
         // Logged in
-        appPage.assertCurrent();
-        assertThat(appPage.getRequestType(), is(RequestType.AUTH_RESPONSE));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.expectLoginSuccess(events.poll());
 
     }
@@ -447,8 +436,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         changePasswordPage.changePassword(NEW_PASSWORD, NEW_PASSWORD);
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD);
 
-        appPage.assertCurrent();
-        assertThat(appPage.getRequestType(), is(RequestType.AUTH_RESPONSE));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL);
     }
 

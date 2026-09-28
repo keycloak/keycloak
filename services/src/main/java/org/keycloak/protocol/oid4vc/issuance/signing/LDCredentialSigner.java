@@ -74,7 +74,7 @@ public class LDCredentialSigner extends AbstractCredentialSigner<VerifiableCrede
         SignatureSignerContext signer = getSigner(credentialBuildConfig);
 
         if (Objects.equals(ldpProofType, Ed255192018Suite.PROOF_TYPE)) {
-            return new Ed255192018Suite(signer);
+            return new Ed255192018Suite(keycloakSession, signer);
         }
 
         throw new CredentialSignerException(String.format("Proof Type %s is not supported.", ldpProofType));

@@ -86,7 +86,7 @@ public abstract class AbstractUsernameTemplateMapperTest extends AbstractIdentit
 
         waitForPage(driver, "update account information", false);
 
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
                 "We must be on correct realm right now");
 

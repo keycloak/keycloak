@@ -72,12 +72,12 @@ public class KcSamlUsernameTemplateMapperTest extends AbstractUsernameTemplateMa
         logInAsUserInIDP();
 
         WaitUtils.waitForPageToLoad();
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent(), "Should be on update profile page");
+        updateAccountInformationPage.assertCurrent();
         // try to update the account info with only the first and last name (no username provided here).
         updateAccountInformationPage.updateAccountInformation("John", "Doe");
 
         // we should still be in the update profile page, with an error asking to provide the username
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent(), "Should still be on update profile page");
+        updateAccountInformationPage.assertCurrent();
         Assertions.assertTrue(driver.getPageSource().contains("Please specify username"), "Should show error about missing username");
 
         // no user should be present in the realm with an empty or null username
@@ -113,16 +113,16 @@ public class KcSamlUsernameTemplateMapperTest extends AbstractUsernameTemplateMa
         logInAsUserInIDP();
 
         WaitUtils.waitForPageToLoad();
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent(), "Should be on update profile page");
+        updateAccountInformationPage.assertCurrent();
 
         // try to update with only first and last name (no username) - should fail
         updateAccountInformationPage.updateAccountInformation("John", "Doe");
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent(), "Should still be on update profile page");
+        updateAccountInformationPage.assertCurrent();
         Assertions.assertTrue(driver.getPageSource().contains("Please specify username"), "Should show error about missing username");
 
         // now provide a username and verify the user is created
         updateAccountInformationPage.updateAccountInformation("valid-username", "user@example.com", "John", "Doe");
-        Assertions.assertFalse(updateAccountInformationPage.isCurrent(), "Should not be on update profile page");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         UserRepresentation user = adminClient.realm(bc.consumerRealmName()).users().search("valid-username").get(0);
         Assertions.assertNotNull(user);

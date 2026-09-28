@@ -105,11 +105,10 @@ public class JwtCredentialBuilder implements CredentialBuilder {
                 .map(Object::toString)
                 .ifPresent(jsonWebToken::subject);
 
-        JWSBuilder.EncodingBuilder jwsBuilder = new JWSBuilder()
-                .type(credentialBuildConfig.getTokenJwsType())
-                .jsonContent(jsonWebToken);
+        JWSBuilder jwsBuilder = new JWSBuilder()
+                .type(credentialBuildConfig.getTokenJwsType());
 
-        return new JwtCredentialBody(jwsBuilder);
+        return new JwtCredentialBody(jwsBuilder, jsonWebToken);
     }
 
     private static List<String> getCredentialTypes(List<String> credentialTypes) {

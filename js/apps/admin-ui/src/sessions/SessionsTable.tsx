@@ -155,7 +155,7 @@ export default function SessionsTable({
       try {
         await adminClient.users.logout({ id: logoutUser! });
         if (isOnUserPage && isLightweightUser(logoutUser)) {
-          navigate(toUsers({ realm: realm }));
+          void navigate(toUsers({ realm: realm }));
         } else {
           refresh();
         }
@@ -187,7 +187,7 @@ export default function SessionsTable({
     if (session.userId === whoAmI.userId) {
       await keycloak.logout({ redirectUri: "" });
     } else if (isOnUserPage && isLightweightUser(session.userId)) {
-      navigate(toUsers({ realm: realm }));
+      void navigate(toUsers({ realm: realm }));
     } else {
       refresh();
     }

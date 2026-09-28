@@ -25,7 +25,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
@@ -34,6 +33,7 @@ import org.keycloak.testsuite.util.MailServer;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest.SUCCESS;
 
@@ -56,9 +56,6 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
     public MailServer mail = new MailServer();
 
     @Page
-    protected AppPage appPage;
-
-    @Page
     protected LoginPage loginPage;
 
     @Page
@@ -70,7 +67,7 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.login("test-user@localhost", "password");
 
-        assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String kcActionStatus = oauth.parseLoginResponse().getKcActionStatus();
         assertEquals("error", kcActionStatus);
@@ -80,10 +77,10 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void executeUnknownActionAfterBeingAuthenticated() {
         oauth.loginForm().doLogin("test-user@localhost", "password");
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         oauth.loginForm().kcAction("nosuch").open();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String kcActionStatus = oauth.parseLoginResponse().getKcActionStatus();
         assertEquals("error", kcActionStatus);
@@ -95,7 +92,7 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.login("test-user@localhost", "password");
 
-        assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String kcActionStatus = oauth.parseLoginResponse().getKcActionStatus();
         assertEquals("error", kcActionStatus);
@@ -112,7 +109,7 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
 
             loginPage.login("test-user@localhost", "password");
 
-            assertTrue(appPage.isCurrent());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             String kcActionStatus = oauth.parseLoginResponse().getKcActionStatus();
             assertEquals("error", kcActionStatus);
@@ -150,7 +147,7 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
             passwordUpdatePage.changePassword("password", "password");
 
             // once the AIA password is executed the terms and conditions should be displayed for the login
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             assertEquals(SUCCESS, oauth.parseLoginResponse().getKcActionStatus());
         } finally {
             termsAndConditions.setPriority(prevPriority);

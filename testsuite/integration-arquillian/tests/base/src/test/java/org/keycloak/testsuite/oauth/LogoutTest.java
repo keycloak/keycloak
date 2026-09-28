@@ -159,7 +159,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         driver.navigate().refresh();
         oauth.fillLoginForm("test-user@localhost", "password");
 
-        Assertions.assertFalse(loginPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code);

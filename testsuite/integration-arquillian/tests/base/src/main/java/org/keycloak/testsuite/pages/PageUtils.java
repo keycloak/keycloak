@@ -4,6 +4,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 
+@Deprecated(forRemoval = true)
 public class PageUtils {
 
     public static String getPageTitle(WebDriver driver) {

@@ -78,6 +78,7 @@ import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.remoting.transport.Transport;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
+import org.infinispan.topology.LocalTopologyManager;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
@@ -151,6 +152,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         }
         runWithWriteLockOnCacheManager(() -> {
             if (cacheManager != null) {
+                leaveCaches(cacheManager);
                 cacheManager.stop();
                 cacheManager = null;
             }
@@ -158,6 +160,63 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         if (remoteCacheManager != null) {
             remoteCacheManager.close();
             remoteCacheManager = null;
+        }
+    }
+
+    /**
+     * Explicitly leave all distributed caches before stopping the cache manager.
+     * <p>
+     * {@code DefaultCacheManager.stop()} calls {@code cache.stop()} which sends a per-cache
+     * {@code CacheLeaveCommand} to the coordinator, but immediately tears down local cache components
+     * without waiting for the new topology (excluding this node) to propagate to all members.
+     * During that gap, other nodes still route RPCs to this node's dead caches, causing
+     * {@code ISPN000427} remote-timeout failures.
+     * <p>
+     * By sending the leave commands upfront and letting the coordinator broadcast the updated topology
+     * before local teardown begins, other nodes stop routing to this node before its caches terminate.
+     * <p>
+     * This method and its call in {@link #close()} can be removed once Keycloak upgrades to
+     * Infinispan 16.2+, which handles this natively via {@code OrderedGracefulLeaveHandler}
+     * (see <a href="https://github.com/infinispan/infinispan/issues/17016">infinispan#17016</a>).
+     */
+    private void leaveCaches(EmbeddedCacheManager cm) {
+        var ltm = GlobalComponentRegistry.componentOf(cm, LocalTopologyManager.class);
+        if (ltm == null) {
+            return;
+        }
+        var transport = GlobalComponentRegistry.componentOf(cm, Transport.class);
+        if (transport == null) {
+            return;
+        }
+        int clusterSize = transport.getMembers().size();
+        if (clusterSize <= 1) {
+            return;
+        }
+        for (String cacheName : CLUSTERED_CACHE_NAMES) {
+            try {
+                var cache = cm.getCache(cacheName, false);
+                if (cache == null) {
+                    continue;
+                }
+                var dm = cache.getAdvancedCache().getDistributionManager();
+                if (dm == null) {
+                    continue;
+                }
+                logger.infof("Leaving cache '%s' before shutdown", cacheName);
+                ltm.leave(cacheName, cm.getCacheManagerConfiguration().transport().distributedSyncTimeout());
+            } catch (Exception e) {
+                logger.warnf(e, "Failed to leave cache '%s' during shutdown", cacheName);
+            }
+        }
+        if (clusterSize >= 3) {
+            try {
+                // Allow time for the coordinator to broadcast the updated topology to all members.
+                // This will guard against new requests reaching this node hitting a cache that is terminated in the next step.
+                // With only 2 members, the single remaining node receives the topology update directly — no wait needed.
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
@@ -256,6 +315,11 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             Arrays.stream(CLUSTERED_CACHE_NAMES)
                     .filter(Predicate.not(WORK_CACHE_NAME::equals))
                     .forEach(holder.getNamedConfigurationBuilders()::remove);
+        }
+
+        // remove login-failure cache if V2 is active
+        if (Profile.isFeatureEnabled(Profile.Feature.LOGIN_FAILURES_V2)) {
+            holder.getNamedConfigurationBuilders().remove(LOGIN_FAILURE_CACHE_NAME);
         }
 
         StringBuilderWriter sw = new StringBuilderWriter();

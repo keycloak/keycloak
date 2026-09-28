@@ -268,9 +268,9 @@ public class SsfTransmitterPushDeliveryTests {
                 "SSE CAEP event should carry a nested 'subject' object");
         Assertions.assertTrue(event.path("subject").path("user").isObject(),
                 "SSE CAEP event.subject should wrap a 'user' entry");
-        // Per SSE 1.0 §3.2 each facet of a complex subject is a sibling
+        // Per SSE 1.0 §3.2 each subject member of a complex subject is a sibling
         // key under `subject`. The native CaepSessionRevoked path always
-        // carries a complex subject (user + session), so both facets
+        // carries a complex subject (user + session), so both subject members
         // must appear at the same depth — not nested under user.
         Assertions.assertTrue(event.path("subject").path("session").isObject(),
                 "SSE CAEP event.subject.session must be a sibling of subject.user, not nested under it");

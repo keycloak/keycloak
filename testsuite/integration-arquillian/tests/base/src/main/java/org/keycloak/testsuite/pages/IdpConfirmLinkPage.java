@@ -37,8 +37,8 @@ public class IdpConfirmLinkPage extends LanguageComboboxAwarePage {
     private WebElement message;
 
     @Override
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Account already exists");
+    public String getExpectedPageId() {
+        return "login-login-idp-link-confirm";
     }
 
     public String getMessage() {

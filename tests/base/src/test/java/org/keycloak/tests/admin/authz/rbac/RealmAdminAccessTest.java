@@ -8,6 +8,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.TokenVerifier;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.VerificationException;
@@ -19,12 +20,18 @@ import org.keycloak.protocol.oidc.mappers.RoleNameMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.admin.AdminClientFactory;
+import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Test;
@@ -38,6 +45,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
 public class RealmAdminAccessTest extends AbstractAdminRBACTest {
+
+    @InjectAdminClientFactory
+    AdminClientFactory scopedClientFactory;
 
     @Test
     public void testIgnoreAdminRolesGrantedViaProtocolMapper() {
@@ -432,7 +442,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
     }
 
     @Test
-    public void testIgnoreCompositeRealmRoleWithRealmManagementAdminRoles() {
+    public void testCompositeRealmRoleWithAdminSubRolesNotStrippedFromToken() {
         String realmName = "test-realm";
         RealmResource testRealm = createRealm(adminClient, realmName);
 
@@ -456,18 +466,30 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
                 AccessToken token = TokenVerifier.create(tokenResponse.getToken(), AccessToken.class).getToken();
                 AccessToken.Access realmAccess = token.getRealmAccess();
 
-                if (realmAccess != null && realmAccess.getRoles() != null) {
-                    assertFalse(realmAccess.getRoles().contains("custom-admin"),
-                            "Composite realm role containing realm-management admin roles should be stripped");
+                assertTrue(realmAccess != null
+                                && realmAccess.getRoles() != null
+                                && realmAccess.getRoles().contains("custom-admin"),
+                        "Composite realm role with a non-admin name should remain in the token");
+
+                AccessToken.Access realmMgmtAccess = token.getResourceAccess(Constants.REALM_MANAGEMENT_CLIENT_ID);
+                if (realmMgmtAccess != null && realmMgmtAccess.getRoles() != null) {
+                    assertFalse(realmMgmtAccess.getRoles().contains(AdminRoles.VIEW_CLIENTS),
+                            "Admin sub-role should not be granted via composite injection");
                 }
             } catch (VerificationException e) {
                 throw new RuntimeException(e);
             }
         });
+
+        assertThrows(ForbiddenException.class, () -> {
+            runAs(realmName, client.getClientId(), username, userClient -> {
+                userClient.realm(realmName).clients().findAll();
+            });
+        });
     }
 
     @Test
-    public void testIgnoreCompositeRealmRoleWithMasterRealmClientAdminRoles() {
+    public void testCompositeRealmRoleWithMasterRealmClientAdminSubRolesNotStrippedFromToken() {
         String targetRealmName = "target-realm";
         createRealm(adminClient, targetRealmName);
 
@@ -489,9 +511,15 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
                     AccessToken token = TokenVerifier.create(tokenResponse.getToken(), AccessToken.class).getToken();
                     AccessToken.Access realmAccess = token.getRealmAccess();
 
-                    if (realmAccess != null && realmAccess.getRoles() != null) {
-                        assertFalse(realmAccess.getRoles().contains("cross-realm-admin"),
-                                "Composite realm role containing <realm>-realm admin roles should be stripped");
+                    assertTrue(realmAccess != null
+                                    && realmAccess.getRoles() != null
+                                    && realmAccess.getRoles().contains("cross-realm-admin"),
+                            "Composite realm role with a non-admin name should remain in the token");
+
+                    AccessToken.Access realmClientAccess = token.getResourceAccess(targetRealmName + "-realm");
+                    if (realmClientAccess != null && realmClientAccess.getRoles() != null) {
+                        assertFalse(realmClientAccess.getRoles().contains(AdminRoles.MANAGE_USERS),
+                                "Admin sub-role should not be granted via composite injection");
                     }
                 } catch (VerificationException e) {
                     throw new RuntimeException(e);
@@ -529,6 +557,126 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
     }
 
     @Test
+    public void testCustomClientRoleWithAdminRoleNameNotStripped() {
+        String realmName = "test-realm";
+        RealmResource testRealm = createRealm(adminClient, realmName);
+        String username = "test-user";
+        UserRepresentation user = createUser(testRealm, username);
+
+        ClientRepresentation customApp = new ClientRepresentation();
+        customApp.setClientId("custom-app");
+        customApp.setEnabled(true);
+        customApp.setPublicClient(true);
+        customApp.setDirectAccessGrantsEnabled(true);
+        customApp.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        try (Response response = testRealm.clients().create(customApp)) {
+            customApp.setId(ApiUtil.getCreatedId(response));
+        }
+
+        RoleRepresentation customManageUsers = new RoleRepresentation();
+        customManageUsers.setName(AdminRoles.MANAGE_USERS);
+        testRealm.clients().get(customApp.getId()).roles().create(customManageUsers);
+        customManageUsers = testRealm.clients().get(customApp.getId())
+                .roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
+
+        testRealm.users().get(user.getId()).roles()
+                .clientLevel(customApp.getId()).add(List.of(customManageUsers));
+
+        ClientRepresentation tokenClient = createClient(testRealm, "token-client",
+                toRepresentation(HardcodedRole.create("inject-custom-manage-users",
+                        "custom-app." + AdminRoles.MANAGE_USERS))
+        );
+
+        runAs(realmName, tokenClient.getClientId(), username, userClient -> {
+            AccessTokenResponse tokenResponse = userClient.tokenManager().getAccessToken();
+            try {
+                AccessToken token = TokenVerifier.create(tokenResponse.getToken(), AccessToken.class).getToken();
+                AccessToken.Access customAppAccess = token.getResourceAccess("custom-app");
+
+                assertTrue(customAppAccess != null
+                                && customAppAccess.getRoles() != null
+                                && customAppAccess.getRoles().contains(AdminRoles.MANAGE_USERS),
+                        "Custom client role named '" + AdminRoles.MANAGE_USERS
+                                + "' on non-admin client should not be stripped from the token");
+
+                AccessToken.Access realmMgmtAccess = token.getResourceAccess(Constants.REALM_MANAGEMENT_CLIENT_ID);
+                if (realmMgmtAccess != null && realmMgmtAccess.getRoles() != null) {
+                    assertTrue(realmMgmtAccess.getRoles().stream().noneMatch(AdminRoles.ALL_ROLES::contains),
+                            "No admin roles should appear on realm-management for this user");
+                }
+            } catch (VerificationException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    @Test
+    public void testInjectedAdminRoleStrippedDespiteNameCollisionWithCustomClientRole() {
+        String realmName = "test-realm";
+        RealmResource testRealm = createRealm(adminClient, realmName);
+        String username = "test-user";
+        UserRepresentation user = createUser(testRealm, username);
+
+        // Create a custom client with a role named identically to an admin role
+        ClientRepresentation customApp = new ClientRepresentation();
+        customApp.setClientId("custom-app");
+        customApp.setEnabled(true);
+        customApp.setPublicClient(true);
+        customApp.setDirectAccessGrantsEnabled(true);
+        customApp.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        try (Response response = testRealm.clients().create(customApp)) {
+            customApp.setId(ApiUtil.getCreatedId(response));
+        }
+
+        RoleRepresentation customManageUsers = new RoleRepresentation();
+        customManageUsers.setName(AdminRoles.MANAGE_USERS);
+        testRealm.clients().get(customApp.getId()).roles().create(customManageUsers);
+        customManageUsers = testRealm.clients().get(customApp.getId())
+                .roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
+
+        // User has custom-app.manage-users but NOT realm-management.manage-users
+        testRealm.users().get(user.getId()).roles()
+                .clientLevel(customApp.getId()).add(List.of(customManageUsers));
+
+        // Hardcoded mapper injects the ADMIN version of manage-users on realm-management
+        ClientRepresentation tokenClient = createClient(testRealm, "token-client",
+                toRepresentation(HardcodedRole.create("inject-admin-manage-users",
+                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_USERS))
+        );
+
+        runAs(realmName, tokenClient.getClientId(), username, userClient -> {
+            AccessTokenResponse tokenResponse = userClient.tokenManager().getAccessToken();
+            try {
+                AccessToken token = TokenVerifier.create(tokenResponse.getToken(), AccessToken.class).getToken();
+
+                // custom-app.manage-users should remain (non-admin client, legitimately granted)
+                AccessToken.Access customAppAccess = token.getResourceAccess("custom-app");
+                assertTrue(customAppAccess != null
+                                && customAppAccess.getRoles() != null
+                                && customAppAccess.getRoles().contains(AdminRoles.MANAGE_USERS),
+                        "custom-app." + AdminRoles.MANAGE_USERS + " should not be stripped");
+
+                // realm-management.manage-users was injected, not granted — must be stripped
+                AccessToken.Access realmMgmtAccess = token.getResourceAccess(Constants.REALM_MANAGEMENT_CLIENT_ID);
+                assertTrue(realmMgmtAccess == null
+                                || realmMgmtAccess.getRoles() == null
+                                || !realmMgmtAccess.getRoles().contains(AdminRoles.MANAGE_USERS),
+                        "Injected " + AdminRoles.MANAGE_USERS + " on realm-management should be stripped "
+                                + "even when the user has a same-named role on a non-admin client");
+            } catch (VerificationException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        // The injected admin role should not grant actual admin access
+        assertThrows(ForbiddenException.class, () -> {
+            runAs(realmName, tokenClient.getClientId(), username, userClient -> {
+                userClient.realm(realmName).users().list();
+            });
+        });
+    }
+
+    @Test
     public void testManageUsersAdminCannotGrantRealmAdmin() {
         String realmName = "test-realm";
         RealmResource testRealm = createRealm(adminClient, realmName);
@@ -545,6 +693,257 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
                 grantRealmManagementRole(attackerClient.realm(realmName), victimName, AdminRoles.REALM_ADMIN);
             });
         });
+    }
+
+    @Test
+    public void testClientScopeLimitsRbacAccess() {
+        String realmName = "test-realm";
+        RealmResource testRealm = createRealm(adminClient, realmName);
+        createUser(testRealm, "scoped-admin");
+        grantRealmManagementRole(testRealm, "scoped-admin", AdminRoles.REALM_ADMIN);
+
+        String realmMgmtUuid = testRealm.clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+        ClientRepresentation restrictedClient = createRestrictedScopeClient(testRealm, "restricted-client");
+        RoleRepresentation viewUsersRole = testRealm.clients().get(realmMgmtUuid)
+                .roles().get(AdminRoles.VIEW_USERS).toRepresentation();
+        testRealm.clients().get(restrictedClient.getId()).getScopeMappings()
+                .clientLevel(realmMgmtUuid).add(List.of(viewUsersRole));
+
+        runAs(realmName, "restricted-client", "scoped-admin", client -> {
+            assertFalse(client.realm(realmName).users().search("").isEmpty());
+        });
+
+        runAs(realmName, "restricted-client", "scoped-admin", client -> {
+            assertEquals(Status.FORBIDDEN.getStatusCode(), client.realm(realmName).users().create(
+                    UserBuilder.create("should-not-be-created").build()).getStatus());
+        });
+    }
+
+    @Test
+    public void testMasterRealmRealmRoleScopeBoundary() {
+        grantRealmRole(masterRealm.admin(), masterUser.admin().toRepresentation(), AdminRoles.CREATE_REALM);
+
+        ClientRepresentation restrictedClient = createRestrictedScopeClient(
+                masterRealm.admin(), "restricted-client");
+        try {
+            assertThrows(ForbiddenException.class, () -> {
+                runAs("master", "restricted-client", masterUser.getUsername(), client -> {
+                    RealmRepresentation r = new RealmRepresentation();
+                    r.setRealm("scope-bypass-realm");
+                    r.setEnabled(true);
+                    client.realms().create(r);
+                });
+            });
+        } finally {
+            masterRealm.admin().clients().get(restrictedClient.getId()).remove();
+        }
+    }
+
+    @Test
+    public void testMasterRealmClientScopeBoundary() {
+        String targetRealmName = "target-realm";
+        createRealm(adminClient, targetRealmName);
+        grantMasterRealmManagementRole(targetRealmName, masterUser.getUsername(), AdminRoles.VIEW_USERS);
+        grantMasterRealmManagementRole(targetRealmName, masterUser.getUsername(), AdminRoles.MANAGE_USERS);
+        grantMasterRealmManagementRole(targetRealmName, masterUser.getUsername(), AdminRoles.QUERY_USERS);
+
+        String masterAdminClientUuid = masterRealm.admin().clients()
+                .findByClientId(targetRealmName + "-realm").get(0).getId();
+        ClientRepresentation restrictedClient = createRestrictedScopeClient(
+                masterRealm.admin(), "restricted-client");
+        RoleRepresentation viewUsersRole = masterRealm.admin().clients().get(masterAdminClientUuid)
+                .roles().get(AdminRoles.VIEW_USERS).toRepresentation();
+        RoleRepresentation queryUsersRole = masterRealm.admin().clients().get(masterAdminClientUuid)
+                .roles().get(AdminRoles.QUERY_USERS).toRepresentation();
+        masterRealm.admin().clients().get(restrictedClient.getId()).getScopeMappings()
+                .clientLevel(masterAdminClientUuid).add(List.of(viewUsersRole, queryUsersRole));
+
+        try {
+            // view-users + query-users are in scope — listing users should not throw
+            runAs("master", "restricted-client", masterUser.getUsername(), client -> {
+                client.realm(targetRealmName).users().search("");
+            });
+
+            // manage-users is NOT in scope — creating a user should be denied
+            runAs("master", "restricted-client", masterUser.getUsername(), client -> {
+                assertEquals(Status.FORBIDDEN.getStatusCode(), client.realm(targetRealmName).users().create(
+                        UserBuilder.create("should-not-be-created-from-master").build()).getStatus());
+            });
+        } finally {
+            masterRealm.admin().clients().get(restrictedClient.getId()).remove();
+        }
+    }
+
+    @Test
+    public void testDifferentlyScopedTokensFromSameClientHaveDifferentEffectiveAdminRoles() {
+        String realmName = "test-realm";
+        RealmResource testRealm = createRealm(adminClient, realmName);
+        UserRepresentation user = createUser(testRealm, "scoped-admin");
+
+        String realmMgmtUuid = testRealm.clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+
+        for (String roleName : List.of(AdminRoles.VIEW_CLIENTS, AdminRoles.QUERY_CLIENTS,
+                AdminRoles.VIEW_USERS, AdminRoles.QUERY_USERS)) {
+            RoleRepresentation role = testRealm.clients().get(realmMgmtUuid)
+                    .roles().get(roleName).toRepresentation();
+            testRealm.users().get(user.getId()).roles()
+                    .clientLevel(realmMgmtUuid).add(List.of(role));
+        }
+
+        // Optional scope that brings view-clients + query-clients into the token
+        ClientScopeRepresentation viewClientsScope = new ClientScopeRepresentation();
+        viewClientsScope.setName("scope-view-clients");
+        viewClientsScope.setProtocol("openid-connect");
+        try (Response response = testRealm.clientScopes().create(viewClientsScope)) {
+            viewClientsScope.setId(ApiUtil.getCreatedId(response));
+        }
+        testRealm.clientScopes().get(viewClientsScope.getId()).getScopeMappings()
+                .clientLevel(realmMgmtUuid).add(List.of(
+                        testRealm.clients().get(realmMgmtUuid).roles().get(AdminRoles.VIEW_CLIENTS).toRepresentation(),
+                        testRealm.clients().get(realmMgmtUuid).roles().get(AdminRoles.QUERY_CLIENTS).toRepresentation()));
+
+        // Optional scope that brings view-users + query-users into the token
+        ClientScopeRepresentation viewUsersScope = new ClientScopeRepresentation();
+        viewUsersScope.setName("scope-view-users");
+        viewUsersScope.setProtocol("openid-connect");
+        try (Response response = testRealm.clientScopes().create(viewUsersScope)) {
+            viewUsersScope.setId(ApiUtil.getCreatedId(response));
+        }
+        testRealm.clientScopes().get(viewUsersScope.getId()).getScopeMappings()
+                .clientLevel(realmMgmtUuid).add(List.of(
+                        testRealm.clients().get(realmMgmtUuid).roles().get(AdminRoles.VIEW_USERS).toRepresentation(),
+                        testRealm.clients().get(realmMgmtUuid).roles().get(AdminRoles.QUERY_USERS).toRepresentation()));
+
+        // Non-full-scope client with both optional scopes
+        ClientRepresentation tokenClient = createRestrictedScopeClient(testRealm, "test-client");
+        testRealm.clients().get(tokenClient.getId()).addOptionalClientScope(viewClientsScope.getId());
+        testRealm.clients().get(tokenClient.getId()).addOptionalClientScope(viewUsersScope.getId());
+
+        // Token requested with scope=scope-view-clients: only view-clients roles in the token
+        try (Keycloak viewClientsOnly = scopedClientFactory.create()
+                .realm(realmName)
+                .clientId("test-client")
+                .username("scoped-admin")
+                .password("password")
+                .scope("scope-view-clients")
+                .build()) {
+            assertFalse(viewClientsOnly.realm(realmName).clients().findAll().isEmpty(),
+                    "Token with view-clients scope should be able to list clients");
+            assertThrows(ForbiddenException.class, () ->
+                            viewClientsOnly.realm(realmName).users().search(""),
+                    "Token with only view-clients scope should NOT be able to list users");
+        }
+
+        // Token requested with scope=scope-view-users: only view-users roles in the token
+        try (Keycloak viewUsersOnly = scopedClientFactory.create()
+                .realm(realmName)
+                .clientId("test-client")
+                .username("scoped-admin")
+                .password("password")
+                .scope("scope-view-users")
+                .build()) {
+            assertFalse(viewUsersOnly.realm(realmName).users().search("").isEmpty(),
+                    "Token with view-users scope should be able to list users");
+            assertThrows(ForbiddenException.class, () ->
+                            viewUsersOnly.realm(realmName).clients().findAll(),
+                    "Token with only view-users scope should NOT be able to list clients");
+        }
+    }
+
+    @Test
+    public void testDifferentlyScopedLightweightTokensFromSameClientHaveDifferentEffectiveAdminRoles() {
+        String realmName = "test-realm";
+        RealmResource testRealm = createRealm(adminClient, realmName);
+        UserRepresentation user = createUser(testRealm, "scoped-admin");
+
+        String realmMgmtUuid = testRealm.clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+
+        for (String roleName : List.of(AdminRoles.VIEW_CLIENTS, AdminRoles.QUERY_CLIENTS,
+                AdminRoles.VIEW_USERS, AdminRoles.QUERY_USERS)) {
+            RoleRepresentation role = testRealm.clients().get(realmMgmtUuid)
+                    .roles().get(roleName).toRepresentation();
+            testRealm.users().get(user.getId()).roles()
+                    .clientLevel(realmMgmtUuid).add(List.of(role));
+        }
+
+        ClientScopeRepresentation viewClientsScope = new ClientScopeRepresentation();
+        viewClientsScope.setName("scope-view-clients");
+        viewClientsScope.setProtocol("openid-connect");
+        try (Response response = testRealm.clientScopes().create(viewClientsScope)) {
+            viewClientsScope.setId(ApiUtil.getCreatedId(response));
+        }
+        testRealm.clientScopes().get(viewClientsScope.getId()).getScopeMappings()
+                .clientLevel(realmMgmtUuid).add(List.of(
+                        testRealm.clients().get(realmMgmtUuid).roles().get(AdminRoles.VIEW_CLIENTS).toRepresentation(),
+                        testRealm.clients().get(realmMgmtUuid).roles().get(AdminRoles.QUERY_CLIENTS).toRepresentation()));
+
+        ClientScopeRepresentation viewUsersScope = new ClientScopeRepresentation();
+        viewUsersScope.setName("scope-view-users");
+        viewUsersScope.setProtocol("openid-connect");
+        try (Response response = testRealm.clientScopes().create(viewUsersScope)) {
+            viewUsersScope.setId(ApiUtil.getCreatedId(response));
+        }
+        testRealm.clientScopes().get(viewUsersScope.getId()).getScopeMappings()
+                .clientLevel(realmMgmtUuid).add(List.of(
+                        testRealm.clients().get(realmMgmtUuid).roles().get(AdminRoles.VIEW_USERS).toRepresentation(),
+                        testRealm.clients().get(realmMgmtUuid).roles().get(AdminRoles.QUERY_USERS).toRepresentation()));
+
+        ClientRepresentation tokenClient = ClientBuilder.create("test-client-lightweight")
+                .publicClient()
+                .directAccessGrantsEnabled()
+                .fullScopeEnabled(false)
+                .attribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, Boolean.TRUE.toString())
+                .build();
+        try (Response response = testRealm.clients().create(tokenClient)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            tokenClient.setId(ApiUtil.getCreatedId(response));
+        }
+        testRealm.clients().get(tokenClient.getId()).addOptionalClientScope(viewClientsScope.getId());
+        testRealm.clients().get(tokenClient.getId()).addOptionalClientScope(viewUsersScope.getId());
+
+        try (Keycloak viewClientsOnly = scopedClientFactory.create()
+                .realm(realmName)
+                .clientId("test-client-lightweight")
+                .username("scoped-admin")
+                .password("password")
+                .scope("scope-view-clients")
+                .build()) {
+            assertFalse(viewClientsOnly.realm(realmName).clients().findAll().isEmpty(),
+                    "Lightweight token with view-clients scope should be able to list clients");
+            assertThrows(ForbiddenException.class, () ->
+                            viewClientsOnly.realm(realmName).users().search(""),
+                    "Lightweight token with only view-clients scope should NOT be able to list users");
+        }
+
+        try (Keycloak viewUsersOnly = scopedClientFactory.create()
+                .realm(realmName)
+                .clientId("test-client-lightweight")
+                .username("scoped-admin")
+                .password("password")
+                .scope("scope-view-users")
+                .build()) {
+            assertFalse(viewUsersOnly.realm(realmName).users().search("").isEmpty(),
+                    "Lightweight token with view-users scope should be able to list users");
+            assertThrows(ForbiddenException.class, () ->
+                            viewUsersOnly.realm(realmName).clients().findAll(),
+                    "Lightweight token with only view-users scope should NOT be able to list clients");
+        }
+    }
+
+    private ClientRepresentation createRestrictedScopeClient(RealmResource realm, String clientId) {
+        ClientRepresentation client = ClientBuilder.create(clientId)
+                .publicClient()
+                .directAccessGrantsEnabled()
+                .fullScopeEnabled(false)
+                .build();
+        try (Response response = realm.clients().create(client)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            client.setId(ApiUtil.getCreatedId(response));
+        }
+        return client;
     }
 
     private ClientRepresentation createClient(RealmResource realm, String clientId, ProtocolMapperRepresentation... mapper) {

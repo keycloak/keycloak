@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,6 +44,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
+import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -112,37 +114,36 @@ public class AuthorizationTokenService {
     private static final String RESPONSE_MODE_DECISION = "decision";
     private static final String RESPONSE_MODE_PERMISSIONS = "permissions";
     private static final String RESPONSE_MODE_DECISION_RESULT = "result";
-    private static Map<String, BiFunction<KeycloakAuthorizationRequest, AuthorizationProvider, EvaluationContext>> SUPPORTED_CLAIM_TOKEN_FORMATS;
+    private static Map<String, BiFunction<KeycloakAuthorizationRequest, AuthorizationProvider, Identity>> CLAIM_TOKEN_FORMAT_HANDLERS;
 
     static {
-        SUPPORTED_CLAIM_TOKEN_FORMATS = new HashMap<>();
-        SUPPORTED_CLAIM_TOKEN_FORMATS.put(CLAIM_TOKEN_FORMAT_JWT, (request, authorization) -> {
-            Map claims = request.getClaims();
+        CLAIM_TOKEN_FORMAT_HANDLERS = new HashMap<>();
+        CLAIM_TOKEN_FORMAT_HANDLERS.put(CLAIM_TOKEN_FORMAT_JWT, (request, authorization) -> {
+            Map<String, List<String>> claims = new HashMap<>();
             String claimToken = request.getClaimToken();
 
             if (claimToken != null) {
                 try {
-                    claims = JsonSerialization.readValue(Base64Url.decode(request.getClaimToken()), Map.class);
-                    request.setClaims(claims);
+                    Map<String, List<String>> claimTokenClaims = JsonSerialization.readValue(Base64Url.decode(request.getClaimToken()), Map.class);
+                    claims.putAll(claimTokenClaims);
                 } catch (Exception cause) {
                     throw new CorsErrorResponseException(request.getCors(), "invalid_request", "Invalid claims",
                             Status.BAD_REQUEST);
                 }
             }
 
-            KeycloakIdentity identity;
+            claims.putAll(Optional.ofNullable(request.getClaims()).orElse(Map.of()));
+            request.setClaims(claims);
 
             try {
-                identity = new KeycloakIdentity(authorization.getKeycloakSession(),
+                return new KeycloakIdentity(authorization.getKeycloakSession(),
                         Tokens.getAccessToken(request.getSubjectToken(), authorization.getKeycloakSession()));
             } catch (Exception cause) {
                 fireErrorEvent(request.getEvent(), Errors.INVALID_TOKEN, cause);
                 throw new CorsErrorResponseException(request.getCors(), "unauthorized_client", "Invalid identity", Status.BAD_REQUEST);
             }
-
-            return new DefaultEvaluationContext(identity, claims, authorization.getKeycloakSession());
         });
-        SUPPORTED_CLAIM_TOKEN_FORMATS.put(CLAIM_TOKEN_FORMAT_ID_TOKEN, (request, authorization) -> {
+        CLAIM_TOKEN_FORMAT_HANDLERS.put(CLAIM_TOKEN_FORMAT_ID_TOKEN, (request, authorization) -> {
             KeycloakSession keycloakSession = authorization.getKeycloakSession();
             String subjectToken = request.getSubjectToken();
 
@@ -174,16 +175,12 @@ public class AuthorizationTokenService {
                 throw exception;
             }
 
-            KeycloakIdentity identity;
-
             try {
-                identity = new KeycloakIdentity(keycloakSession, idToken);
+                return new KeycloakIdentity(keycloakSession, idToken);
             } catch (Exception cause) {
                 fireErrorEvent(request.getEvent(), Errors.INVALID_TOKEN, cause);
                 throw new CorsErrorResponseException(request.getCors(), "unauthorized_client", "Invalid identity", Status.BAD_REQUEST);
             }
-
-            return new DefaultEvaluationContext(identity, request.getClaims(), keycloakSession);
         });
     }
 
@@ -424,19 +421,21 @@ public class AuthorizationTokenService {
     }
 
     private PermissionTicketToken getPermissionTicket(KeycloakAuthorizationRequest request) {
+        PermissionTicketToken ticket;
+
         // if there is a ticket is because it is a UMA flow and the ticket was sent by the client after obtaining it from the target resource server
         if (request.getTicket() != null) {
-            return verifyPermissionTicket(request);
+            ticket = verifyPermissionTicket(request);
+        } else {
+            // if there is no ticket, we use the permissions the client is asking for.
+            // This is a Keycloak extension to UMA flow where clients are capable of obtaining a RPT without a ticket
+            ticket = request.getPermissions();
+
+            // an issuedFor must be set by the client when doing this method of obtaining RPT, that is how we know the target resource server
+            ticket.issuedFor(request.getAudience());
         }
 
-        // if there is no ticket, we use the permissions the client is asking for.
-        // This is a Keycloak extension to UMA flow where clients are capable of obtaining a RPT without a ticket
-        PermissionTicketToken permissions = request.getPermissions();
-
-        // an issuedFor must be set by the client when doing this method of obtaining RPT, that is how we know the target resource server
-        permissions.issuedFor(request.getAudience());
-
-        return permissions;
+        return ticket;
     }
 
     private ResourceServer getResourceServer(PermissionTicketToken ticket, KeycloakAuthorizationRequest request) {
@@ -477,15 +476,23 @@ public class AuthorizationTokenService {
             claimTokenFormat = CLAIM_TOKEN_FORMAT_JWT;
         }
 
-        BiFunction<KeycloakAuthorizationRequest, AuthorizationProvider, EvaluationContext> evaluationContextProvider = SUPPORTED_CLAIM_TOKEN_FORMATS.get(claimTokenFormat);
+        BiFunction<KeycloakAuthorizationRequest, AuthorizationProvider, Identity> claimTokenFormatHandler = CLAIM_TOKEN_FORMAT_HANDLERS.get(claimTokenFormat);
 
-        if (evaluationContextProvider == null) {
+        if (claimTokenFormatHandler == null) {
             CorsErrorResponseException unsupportedClaimTokenFormatException = new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Claim token format [" + claimTokenFormat + "] not supported", Status.BAD_REQUEST);
             fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, unsupportedClaimTokenFormatException);
             throw unsupportedClaimTokenFormatException;
         }
 
-        return evaluationContextProvider.apply(request, request.getAuthorization());
+        Identity identity = claimTokenFormatHandler.apply(request, request.getAuthorization());
+
+        Map<String, List<String>> claims = request.getClaims();
+
+        if (claims != null) {
+            claims.keySet().removeIf(key -> key.startsWith("kc."));
+        }
+
+        return new DefaultEvaluationContext(identity, claims, request.getKeycloakSession());
     }
 
     private Collection<ResourcePermission> createPermissions(PermissionTicketToken ticket, KeycloakAuthorizationRequest request, ResourceServer resourceServer, AuthorizationProvider authorization, EvaluationContext context) {

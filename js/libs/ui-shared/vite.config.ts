@@ -1,7 +1,7 @@
 import react from "@vitejs/plugin-react-swc";
 import path from "node:path";
 import peerDepsExternal from "rollup-plugin-peer-deps-external";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import { checker } from "vite-plugin-checker";
 import dts from "vite-plugin-dts";
 import { libInjectCss } from "vite-plugin-lib-inject-css";
@@ -29,4 +29,8 @@ export default defineConfig({
     checker({ typescript: true }),
     dts({ insertTypesEntry: true }),
   ],
+  test: {
+    watch: false,
+    environment: "jsdom",
+  },
 });

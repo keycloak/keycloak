@@ -1,0 +1,66 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.keycloak.tests.account.custom;
+
+import org.keycloak.models.AuthenticationExecutionModel.Requirement;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+
+/**
+ *
+ * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
+ */
+@KeycloakIntegrationTest
+public class CustomAuthFlowCookieTest extends AbstractCustomAccountManagementTest {
+
+    @Test
+    public void cookieAlternative() {
+        //test default setting of cookie provider
+        //login
+        oauth.openLoginForm();
+        testRealmLoginPage.login(testUser.getUsername(), CredentialRepresentation.PASSWORD);
+        
+        //check SSO is working
+        //navigate to different client of the same realm and verify user is logged in
+        oauth.openLoginForm();
+        assertTrue(
+                "AUTH_RESPONSE".equals(driver.driver().getTitle()) || driver.getCurrentUrl().startsWith(oauth.getRedirectUri()),
+                "Expected SSO to immediately redirect to the OAuth client response"
+        );
+    }
+    
+    @Test
+    public void disabledCookie() {
+        //disable cookie 
+        updateRequirement("browser", "auth-cookie", Requirement.DISABLED);
+        
+        //login
+        oauth.openLoginForm();
+        testRealmLoginPage.login(testUser.getUsername(), CredentialRepresentation.PASSWORD);
+        
+        //SSO shouldn't work
+        //navigate to different client of the same realm and verify user is not logged in
+        oauth.openLoginForm();
+        assertEquals("Sign in to test", driver.driver().getTitle());
+    }
+}

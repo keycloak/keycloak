@@ -42,7 +42,7 @@ export default function AddOid4Vp() {
         providerId: id,
       });
       addAlert(t("createIdentityProviderSuccess"), AlertVariant.success);
-      navigate(
+      void navigate(
         toIdentityProvider({
           realm,
           providerId: id,

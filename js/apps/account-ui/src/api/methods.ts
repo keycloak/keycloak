@@ -91,18 +91,43 @@ export async function deleteConsent(
   context: KeycloakContext<BaseEnvironment>,
   id: string,
 ) {
-  return request(`/applications/${encodeURIComponent(id)}/consent`, context, {
-    method: "DELETE",
-  });
+  const response = await request(
+    `/applications/${encodeURIComponent(id)}/consent`,
+    context,
+    { method: "DELETE" },
+  );
+  if (!response.ok) {
+    throw await parseResponse(response);
+  }
+  return response;
 }
 
 export async function deleteSession(
   context: KeycloakContext<BaseEnvironment>,
   id?: string,
 ) {
-  return request(`/sessions${id ? `/${id}` : ""}`, context, {
+  const response = await request(`/sessions${id ? `/${id}` : ""}`, context, {
     method: "DELETE",
   });
+  if (!response.ok) {
+    throw await parseResponse(response);
+  }
+  return response;
+}
+
+export async function deleteApplicationSessions(
+  context: KeycloakContext<BaseEnvironment>,
+  clientId: string,
+) {
+  const response = await request(
+    `/applications/${encodeURIComponent(clientId)}/sessions`,
+    context,
+    { method: "DELETE" },
+  );
+  if (!response.ok) {
+    throw await parseResponse(response);
+  }
+  return response;
 }
 
 export async function getCredentials({ signal, context }: CallOptions) {

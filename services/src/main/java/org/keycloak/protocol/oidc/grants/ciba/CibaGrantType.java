@@ -29,6 +29,7 @@ import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -55,6 +56,7 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -71,6 +73,11 @@ import org.jboss.logging.Logger;
 public class CibaGrantType extends OAuth2GrantTypeBase {
 
     private static final Logger logger = Logger.getLogger(CibaGrantType.class);
+
+    @Override
+    public boolean isConfidentialOnlyGrantType() {
+        return true;
+    }
 
     public static final String IS_CONSENT_REQUIRED = "is_consent_required";
     public static final String LOGIN_HINT = "login_hint";
@@ -239,6 +246,12 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "User disabled", Response.Status.BAD_REQUEST);
         }
 
+        String bruteForceError = AuthenticatorUtils.getDisabledByBruteForceEventError(session.getProvider(BruteForceProtector.class), session, realm, user);
+        if (bruteForceError != null) {
+            event.error(bruteForceError);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "User disabled", Response.Status.BAD_REQUEST);
+        }
+
         logger.debugf("CIBA Grant :: user model found. user.getId() = %s, user.getEmail() = %s, user.getUsername() = %s.", user.getId(), user.getEmail(), user.getUsername());
 
         authSession.setAuthenticatedUser(user);
@@ -304,7 +317,7 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
 
         event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
         event.detail(Details.CODE_ID, userSession.getId());
-        event.session(userSession.getId());
+        event.session(userSession);
         event.user(user);
         logger.debugf("Successfully verified Authe Req Id '%s'. User session: '%s', client: '%s'", request, userSession.getId(), client.getId());
 

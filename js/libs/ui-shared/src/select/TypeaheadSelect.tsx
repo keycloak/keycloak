@@ -25,6 +25,7 @@ export const TypeaheadSelect = ({
   onSelect,
   onToggle,
   onFilter,
+  onClear,
   variant,
   validated,
   placeholderText,
@@ -42,6 +43,7 @@ export const TypeaheadSelect = ({
   ...rest
 }: KeycloakSelectProps) => {
   const [filterValue, setFilterValue] = useState("");
+  const [isFiltering, setIsFiltering] = useState(false);
   const [focusedItemIndex, setFocusedItemIndex] = useState<number>(0);
   const textInputRef = useRef<HTMLInputElement>();
 
@@ -49,14 +51,30 @@ export const TypeaheadSelect = ({
     children,
   ) as React.ReactElement<SelectOptionProps>[];
 
+  // Only filter while the user is actually typing, so that re-opening the menu
+  // after a selection still lists every option.
   const visibleChildren =
-    onFilter || !filterValue
+    onFilter || !isFiltering || !filterValue
       ? childArray
       : childArray.filter((child) => {
           const { children: label, value } = child.props;
           const text = typeof label === "string" ? label : String(value ?? "");
           return text.toLowerCase().includes(filterValue.toLowerCase());
         });
+
+  // The single typeahead shows the current selection whenever the user is not
+  // editing, but their keystrokes must always win over it while they are.
+  const inputValue =
+    variant === SelectVariant.typeahead && !isFiltering && selections
+      ? (selections as string)
+      : filterValue;
+
+  const stopFiltering = () => {
+    setIsFiltering(false);
+    setFilterValue("");
+    setFocusedItemIndex(0);
+    onFilter?.("");
+  };
 
   const toggle = () => {
     onToggle(!rest.isOpen);
@@ -71,25 +89,15 @@ export const TypeaheadSelect = ({
         event.preventDefault();
         if (!focusedItem) break;
 
-        if (variant !== SelectVariant.typeaheadMulti) {
-          setFilterValue(String(focusedItem.props.value));
-        } else {
-          setFilterValue("");
-        }
         onSelect?.(focusedItem.props.value);
         onToggle(false);
-        setFocusedItemIndex(0);
+        stopFiltering();
 
         break;
       }
       case "Escape": {
         onToggle(false);
-        break;
-      }
-      case "Backspace": {
-        if (variant === SelectVariant.typeahead) {
-          onSelect?.("");
-        }
+        stopFiltering();
         break;
       }
       case "ArrowUp":
@@ -125,11 +133,15 @@ export const TypeaheadSelect = ({
     <Select
       {...rest}
       onClick={toggle}
-      onOpenChange={(isOpen) => onToggle(isOpen)}
+      onOpenChange={(isOpen) => {
+        onToggle(isOpen);
+        if (!isOpen) {
+          stopFiltering();
+        }
+      }}
       onSelect={(_, value) => {
         onSelect?.(value || "");
-        onFilter?.("");
-        setFilterValue("");
+        stopFiltering();
       }}
       maxMenuHeight={propertyToString(maxHeight)}
       popperProps={{ direction, width: propertyToString(width) }}
@@ -148,13 +160,10 @@ export const TypeaheadSelect = ({
           <TextInputGroup isPlain>
             <TextInputGroupMain
               placeholder={placeholderText}
-              value={
-                variant === SelectVariant.typeahead && selections
-                  ? (selections as string)
-                  : filterValue
-              }
+              value={inputValue}
               onClick={toggle}
               onChange={(_, value) => {
+                setIsFiltering(true);
                 setFilterValue(value);
                 setFocusedItemIndex(0);
                 onFilter?.(value);
@@ -188,13 +197,19 @@ export const TypeaheadSelect = ({
                 ))}
             </TextInputGroupMain>
             <TextInputGroupUtilities>
-              {!!filterValue && (
+              {!!inputValue && (
                 <Button
                   variant="plain"
                   onClick={() => {
-                    onSelect?.("");
-                    setFilterValue("");
-                    onFilter?.("");
+                    // Consumers that track their own value need to reset it
+                    // themselves: onSelect("") stores an empty entry rather
+                    // than an empty selection.
+                    if (onClear) {
+                      onClear();
+                    } else {
+                      onSelect?.("");
+                    }
+                    stopFiltering();
                     textInputRef.current?.focus();
                   }}
                   aria-label="Clear input value"

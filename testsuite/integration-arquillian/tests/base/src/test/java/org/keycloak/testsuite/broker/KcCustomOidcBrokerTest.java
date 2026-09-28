@@ -39,7 +39,7 @@ public class KcCustomOidcBrokerTest extends AbstractInitializedBaseBrokerTest {
     }
 
     private static class KcOidcCustomBrokerConfiguration extends KcOidcBrokerConfiguration {
-        
+
         @Override
         public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
             IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, TestKeycloakOidcIdentityProviderFactory.ID);
@@ -53,7 +53,8 @@ public class KcCustomOidcBrokerTest extends AbstractInitializedBaseBrokerTest {
     @Test
     public void testCustomDisplayIcon() {
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         assertThat(driver.getPageSource(), containsString("my-custom-idp-icon"));
     }
 }

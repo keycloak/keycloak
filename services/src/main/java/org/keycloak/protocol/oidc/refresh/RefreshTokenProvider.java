@@ -62,9 +62,14 @@ public interface RefreshTokenProvider extends Provider {
      * @param event  the event builder for recording revocation events
      *
      */
-    default void revokeToken(AccessToken token, UserModel user, ClientModel client, EventBuilder event) {
-        // no-op by default
-    }
+    void revokeToken(AccessToken token, UserModel user, ClientModel client, EventBuilder event);
+
+    /**
+     * Returns the provider ID that this instance uses to identify issued refresh tokens.
+     * Used for event detail emission during initial issuance
+     * and refresh-token processing when the token does not carry a provider claim
+     */
+    String getProviderId();
 
     @Override
     default void close() {

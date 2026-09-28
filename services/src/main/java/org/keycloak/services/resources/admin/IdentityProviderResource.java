@@ -51,6 +51,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
@@ -182,6 +183,10 @@ public class IdentityProviderResource {
                 message = "Invalid request";
             }
 
+            if (logger.isDebugEnabled()) {
+                logger.debug(message, e);
+            }
+
             throw ErrorResponse.error(message, BAD_REQUEST);
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Identity Provider " + providerRep.getAlias() + " already exists");
@@ -198,6 +203,9 @@ public class IdentityProviderResource {
         if (providerRep.getAlias() != null && !oldProviderAlias.equals(providerRep.getAlias())) {
             throw new IllegalArgumentException("Identity Provider alias cannot be changed");
         }
+
+        // organization-related information should not be processed by non-organization API
+        Organizations.stripOrganizationId(providerRep);
 
         IdentityProviderModel updated = RepresentationToModel.toModel(realm, providerRep, session);
 
@@ -325,6 +333,11 @@ public class IdentityProviderResource {
 
         IdentityProviderMapperModel model = RepresentationToModel.toModel(mapper);
 
+        // the mapper belongs to the identity provider from the path, whatever alias the representation carries
+        model.setIdentityProviderAlias(identityProviderModel.getAlias());
+
+        Organizations.validateGroupMapperOrganization(session, identityProviderModel, model);
+
         try {
 //            model = realm.addIdentityProviderMapper(model);
             model = session.identityProviders().createMapper(model);
@@ -383,8 +396,14 @@ public class IdentityProviderResource {
         }
 
         IdentityProviderMapperModel model = session.identityProviders().getMapperById(id);
-        if (model == null) throw new NotFoundException("Model not found");
+        if (model == null || !identityProviderModel.getAlias().equals(model.getIdentityProviderAlias())) {
+            throw new NotFoundException("Model not found");
+        }
         model = RepresentationToModel.toModel(rep);
+        model.setId(id);
+        model.setIdentityProviderAlias(identityProviderModel.getAlias());
+
+        Organizations.validateGroupMapperOrganization(session, identityProviderModel, model);
 
         session.identityProviders().updateMapper(model);
         adminEvent.operation(OperationType.UPDATE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(session.getContext().getUri()).representation(rep).success();

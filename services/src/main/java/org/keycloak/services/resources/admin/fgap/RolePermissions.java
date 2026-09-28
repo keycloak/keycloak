@@ -684,6 +684,10 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         return resourceServer;
     }
     private boolean isRealmAdminRole(RoleModel role) {
-        return role.getContainer() instanceof RealmModel && List.of(AdminRoles.ADMIN, AdminRoles.CREATE_REALM).contains(role.getName());
+        if (!(role.getContainer() instanceof RealmModel)) {
+            return false;
+        }
+        RealmModel roleRealm = (RealmModel) role.getContainer();
+        return roleRealm.getName().equals(Config.getAdminRealm()) && List.of(AdminRoles.ADMIN, AdminRoles.CREATE_REALM).contains(role.getName());
     }
 }

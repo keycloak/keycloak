@@ -8,6 +8,7 @@ import IdentityProviderRepresentation from "libs/keycloak-admin-client/lib/defs/
 export const KubernetesSettings = () => {
   const { t } = useTranslation();
   const { control } = useFormContext<IdentityProviderRepresentation>();
+
   return (
     <>
       <TextControl
@@ -18,11 +19,15 @@ export const KubernetesSettings = () => {
           required: t("required"),
         }}
       />
-
       <TextControl
         name="config.issuer"
         labelIcon={t("kubernetesIssuerUrlHelp")}
         label={t("kubernetesIssuerUrl")}
+      />
+      <TextControl
+        name="config.issuerDiscoveryUrl"
+        labelIcon={t("kubernetesIssuerDiscoveryUrlHelp")}
+        label={t("kubernetesIssuerDiscoveryUrl")}
       />
       <FormGroupField label="fedClientAssertionMaxExp">
         <Controller

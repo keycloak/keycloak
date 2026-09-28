@@ -41,6 +41,7 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.GroupPathChangeEvent;
@@ -107,6 +108,13 @@ public class GroupResource {
 
         GroupRepresentation rep = GroupUtils.toRepresentation(this.auth.groups(), group, true);
 
+        if (rep.getClientRoles() != null) {
+            rep.getClientRoles().keySet().removeIf(clientId -> {
+                ClientModel client = realm.getClientByClientId(clientId);
+                return client == null || !auth.clients().canView(client);
+            });
+        }
+
         rep.setAccess(auth.groups().getAccess(group));
 
         return GroupUtils.populateSubGroupCount(group, rep);
@@ -128,6 +136,10 @@ public class GroupResource {
     })
     public Response updateGroup(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
+
+        if (rep == null) {
+            throw ErrorResponse.error("Group representation is missing", Response.Status.BAD_REQUEST);
+        }
 
         String groupName = rep.getName();
 
@@ -229,6 +241,10 @@ public class GroupResource {
     })
     public Response addChild(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
+
+        if (rep == null) {
+            throw ErrorResponse.error("Group representation is missing", Response.Status.BAD_REQUEST);
+        }
 
         String groupName = rep.getName();
         if (isBlank(groupName)) {

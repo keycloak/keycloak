@@ -151,7 +151,7 @@ export default function PolicyDetails() {
           policy,
         );
 
-        navigate(
+        void navigate(
           navigateTo({
             realm: realm!,
             id: clientId!,
@@ -181,7 +181,7 @@ export default function PolicyDetails() {
           policyId,
         });
         addAlert(t("policyDeletedSuccess"), AlertVariant.success);
-        navigate(
+        void navigate(
           isAdminPermissionsClient
             ? toPermissionsConfigurationTabs({
                 realm: realm!,

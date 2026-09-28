@@ -21,15 +21,16 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
-import org.apache.directory.server.kerberos.shared.crypto.encryption.KerberosKeyFactory;
-import org.apache.directory.server.kerberos.shared.keytab.Keytab;
-import org.apache.directory.server.kerberos.shared.keytab.KeytabEntry;
-import org.apache.directory.shared.kerberos.KerberosTime;
-import org.apache.directory.shared.kerberos.codec.types.EncryptionType;
-import org.apache.directory.shared.kerberos.components.EncryptionKey;
+import org.apache.kerby.kerberos.kerb.KrbException;
+import org.apache.kerby.kerberos.kerb.crypto.EncryptionHandler;
+import org.apache.kerby.kerberos.kerb.keytab.Keytab;
+import org.apache.kerby.kerberos.kerb.keytab.KeytabEntry;
+import org.apache.kerby.kerberos.kerb.type.KerberosTime;
+import org.apache.kerby.kerberos.kerb.type.base.EncryptionKey;
+import org.apache.kerby.kerberos.kerb.type.base.EncryptionType;
+import org.apache.kerby.kerberos.kerb.type.base.PrincipalName;
 
 /**
  * Helper utility for creating Keytab files.
@@ -37,6 +38,16 @@ import org.apache.directory.shared.kerberos.components.EncryptionKey;
  * @author Josef Cacek
  */
 public class KerberosKeytabCreator {
+
+    // Same 5 types that ApacheDS KeyDerivationInterceptor derives when loading LDIF entries;
+    // the old KerberosKeyFactory.getKerberosKeys() produced these implicitly.
+    private static final EncryptionType[] KEYTAB_ENC_TYPES = {
+            EncryptionType.AES256_CTS_HMAC_SHA1_96,
+            EncryptionType.AES128_CTS_HMAC_SHA1_96,
+            EncryptionType.DES3_CBC_SHA1_KD,
+            EncryptionType.ARCFOUR_HMAC,
+            EncryptionType.DES_CBC_MD5
+    };
 
     // Public methods --------------------------------------------------------
 
@@ -75,19 +86,21 @@ public class KerberosKeytabCreator {
      */
     public static void createKeytab(final String principalName, final String passPhrase, final File keytabFile)
             throws IOException {
-        final KerberosTime timeStamp = new KerberosTime();
-        final int principalType = 1; // KRB5_NT_PRINCIPAL
+        final KerberosTime timeStamp = KerberosTime.now();
+        final PrincipalName principal = new PrincipalName(principalName);
 
-        final Keytab keytab = Keytab.getInstance();
-        final List<KeytabEntry> entries = new ArrayList<KeytabEntry>();
-        for (Map.Entry<EncryptionType, EncryptionKey> keyEntry : KerberosKeyFactory.getKerberosKeys(principalName, passPhrase)
-                .entrySet()) {
-            System.out.println("Adding keytab entry of type: " + keyEntry.getKey().getName());
-            final EncryptionKey key = keyEntry.getValue();
-            final byte keyVersion = (byte) key.getKeyVersion();
-            entries.add(new KeytabEntry(principalName, principalType, timeStamp, keyVersion, key));
+        final Keytab keytab = new Keytab();
+        final List<KeytabEntry> entries = new ArrayList<>();
+        try {
+            for (EncryptionType encType : KEYTAB_ENC_TYPES) {
+                EncryptionKey key = EncryptionHandler.string2Key(principalName, passPhrase, encType);
+                System.out.println("Adding keytab entry of type: " + encType.getName());
+                entries.add(new KeytabEntry(principal, timeStamp, key.getKvno(), key));
+            }
+        } catch (KrbException e) {
+            throw new IOException("Failed to create keytab entries", e);
         }
-        keytab.setEntries(entries);
-        keytab.write(keytabFile);
+        keytab.addKeytabEntries(entries);
+        keytab.store(keytabFile);
     }
 }

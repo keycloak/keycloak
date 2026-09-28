@@ -166,6 +166,70 @@ public class RefreshTokenRevokeTest {
                 .error("invalid_token");
     }
 
+    @Test
+    public void refreshTokenSameSecondReplayRejected() {
+        realm.updateWithCleanup(r -> r.revokeRefreshToken(true));
+
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.assertSuccess(loginEvent).userId(user.getId());
+        String sessionId = loginEvent.getSessionId();
+        String authCode = oauth.parseLoginResponse().getCode();
+
+        // Obtain initial token pair — RT-0
+        AccessTokenResponse response1 = oauth.doAccessTokenRequest(authCode);
+        RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CODE_TO_TOKEN);
+
+
+        // RT-0 → RT-1 (legitimate rotation)
+        AccessTokenResponse response2 = oauth.doRefreshTokenRequest(response1.getRefreshToken());
+        assertEquals(200, response2.getStatusCode());
+        RefreshToken refreshToken2 = oauth.parseRefreshToken(response2.getRefreshToken());
+        EventAssertion.assertSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.REFRESH_TOKEN_ID, refreshToken1.getId())
+                .type(EventType.REFRESH_TOKEN);
+
+        // RT-1 → RT-2 (legitimate rotation, same second — stored ID becomes RT-1)
+        AccessTokenResponse response3 = oauth.doRefreshTokenRequest(response2.getRefreshToken());
+        assertEquals(200, response3.getStatusCode());
+        RefreshToken refreshToken3 = oauth.parseRefreshToken(response3.getRefreshToken());
+        EventAssertion.assertSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.REFRESH_TOKEN_ID, refreshToken2.getId())
+                .type(EventType.REFRESH_TOKEN);
+
+        // Verify all tokens were issued close to each other
+        long TOLERANCE_INTERVAL = 5; // Helper interval to make sure that refresh tokens are issued close to each other
+        long diff_1 = refreshToken2.getIat() - refreshToken1.getIat();
+        assertTrue(diff_1 >=0 && diff_1 <= TOLERANCE_INTERVAL, "RT-0 and RT-1 must share iat (or very close to each other)");
+        long diff_2 = refreshToken3.getIat() - refreshToken2.getIat();
+        assertTrue(diff_2 >=0 && diff_2 <= TOLERANCE_INTERVAL, "RT-1 and RT-2 must share iat (or very close to each other)");
+
+        // Replay stale RT-0 — different ID from stored RT-1, but same iat second.
+        // The stale check must reject this even when iat == lastRefresh.
+        AccessTokenResponse replayResponse = oauth.doRefreshTokenRequest(response1.getRefreshToken());
+        assertEquals(400, replayResponse.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, replayResponse.getError());
+
+        EventAssertion.assertError(events.poll())
+                .sessionId(sessionId)
+                .details(Details.REFRESH_TOKEN_ID, refreshToken1.getId())
+                .type(EventType.REFRESH_TOKEN_ERROR)
+                .error("invalid_token");
+
+        // RT-2 must also be invalidated (client session detached on replay)
+        AccessTokenResponse response4 = oauth.doRefreshTokenRequest(response3.getRefreshToken());
+        assertEquals(400, response4.getStatusCode());
+
+        EventAssertion.assertError(events.poll())
+                .sessionId(sessionId)
+                .details(Details.REFRESH_TOKEN_ID, refreshToken3.getId())
+                .type(EventType.REFRESH_TOKEN_ERROR)
+                .error("invalid_token");
+    }
 
     @Test
     public void refreshTokenReuseOnDifferentTab() {

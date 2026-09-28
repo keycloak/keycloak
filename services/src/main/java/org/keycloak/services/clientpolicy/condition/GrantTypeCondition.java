@@ -21,12 +21,14 @@ import java.util.List;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.context.ImplicitHybridTokenResponse;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
@@ -74,22 +76,39 @@ public class GrantTypeCondition extends AbstractClientPolicyConditionProvider<Gr
                 if (isGrantMatching((AuthorizationRequestContext)context)) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             case TOKEN_REFRESH:
+            case TOKEN_REFRESH_RESPONSE:
                 if (isGrantMatching(OAuth2Constants.REFRESH_TOKEN)) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             case RESOURCE_OWNER_PASSWORD_CREDENTIALS_REQUEST:
+            case RESOURCE_OWNER_PASSWORD_CREDENTIALS_RESPONSE:
                 if (isGrantMatching(OAuth2Constants.PASSWORD)) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             case SERVICE_ACCOUNT_TOKEN_REQUEST:
+            case SERVICE_ACCOUNT_TOKEN_RESPONSE:
                 if (isGrantMatching(OAuth2Constants.CLIENT_CREDENTIALS)) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             case TOKEN_EXCHANGE_REQUEST:
+            case TOKEN_EXCHANGE_RESPONSE:
                 if (isGrantMatching(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             case DEVICE_TOKEN_REQUEST:
+            case DEVICE_TOKEN_RESPONSE:
                 if (isGrantMatching(OAuth2Constants.DEVICE_CODE_GRANT_TYPE)) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             case JWT_AUTHORIZATION_GRANT:
+            case JWT_AUTHORIZATION_GRANT_RESPONSE:
                 if (isGrantMatching(OAuth2Constants.JWT_AUTHORIZATION_GRANT)) return ClientPolicyVote.YES;
+                return ClientPolicyVote.NO;
+            case BACKCHANNEL_AUTHENTICATION_REQUEST:
+            case BACKCHANNEL_TOKEN_REQUEST:
+            case BACKCHANNEL_TOKEN_RESPONSE:
+                if (isGrantMatching(OAuth2Constants.CIBA_GRANT_TYPE)) return ClientPolicyVote.YES;
+                return ClientPolicyVote.NO;
+            case TOKEN_RESPONSE:
+                if (isGrantMatching(OAuth2Constants.AUTHORIZATION_CODE)) return ClientPolicyVote.YES;
+                return ClientPolicyVote.NO;
+            case IMPLICIT_HYBRID_TOKEN_RESPONSE:
+                if (isGrantMatching((ImplicitHybridTokenResponse) context))  return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             default:
                 return ClientPolicyVote.ABSTAIN;
@@ -98,8 +117,18 @@ public class GrantTypeCondition extends AbstractClientPolicyConditionProvider<Gr
 
     private boolean isGrantMatching(AuthorizationRequestContext request) {
         if (request == null) return false;
+        return isGrantMatchingResponseType(request.getAuthorizationEndpointRequest().getResponseType());
+    }
+
+    private boolean isGrantMatching(ImplicitHybridTokenResponse response) {
+        if (response == null) return false;
+        return isGrantMatchingResponseType(response.getAuthenticationSession().getClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM));
+    }
+
+    private boolean isGrantMatchingResponseType(String responseType) {
+        if (responseType == null) return false;
         try {
-            OIDCResponseType parsedResponseType = OIDCResponseType.parse(request.getAuthorizationEndpointRequest().getResponseType());
+            OIDCResponseType parsedResponseType = OIDCResponseType.parse(responseType);
             if (parsedResponseType.hasResponseType(OIDCResponseType.CODE)) {
                 return isGrantMatching(OAuth2Constants.AUTHORIZATION_CODE);
             }

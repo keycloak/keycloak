@@ -89,18 +89,23 @@ public class GroupUtils {
             while (currGroup.getParentId() != null && !currGroup.getParentId().equals(stopAtParentId)) {
                 GroupModel parentModel = session.groups().getGroupById(realm, currGroup.getParentId());
 
-                // Permission check for parent
-                if (!filter.shouldInclude(parentModel)) {
-                    groupIdToGroups.remove(currGroup.getId());
-                    break;
+                boolean canViewParent = filter.shouldInclude(parentModel);
+
+                if (!canViewParent) {
+                    if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+                        groupIdToGroups.remove(currGroup.getId());
+                        break;
+                    }
                 }
 
                 GroupRepresentation parent = groupIdToGroups.computeIfAbsent(
                     currGroup.getParentId(),
-                    id -> mapper.apply(parentModel)
+                    id -> canViewParent ?
+                            mapper.apply(parentModel) :
+                            ModelToRepresentation.groupToBriefRepresentation(parentModel)
                 );
 
-                if (subGroupsCount) {
+                if (subGroupsCount && canViewParent) {
                     populateSubGroupCount(parentModel, parent);
                 }
 
@@ -124,6 +129,10 @@ public class GroupUtils {
             }
         });
 
+        if (subGroupsCount) {
+            groupIdToGroups.values().forEach(GroupUtils::deriveSubGroupCountFromChildren);
+        }
+
         return groupIdToGroups.values().stream()
             .sorted(Comparator.comparing(GroupRepresentation::getName));
     }
@@ -144,14 +153,7 @@ public class GroupUtils {
             groups,
             // Mapper with permission-aware representation
             group -> toRepresentation(groupEvaluator, group, full),
-            // Filter with permission checks
-            group -> {
-                if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
-                    return true; // FGAP v2 handles permissions differently
-                }
-                //TODO GROUPS do permissions work in such a way that if you can view the children you can definitely view the parents?
-                return groupEvaluator.canView() || groupEvaluator.canView(group);
-            },
+            groupEvaluator::canView,
             subGroupsCount
         );
     }
@@ -178,6 +180,15 @@ public class GroupUtils {
             subGroupsCount,
             stopAtParentId
         );
+    }
+
+    private static void deriveSubGroupCountFromChildren(GroupRepresentation group) {
+        if (group.getSubGroups() != null) {
+            group.getSubGroups().forEach(GroupUtils::deriveSubGroupCountFromChildren);
+            if (group.getSubGroupCount() == null && !group.getSubGroups().isEmpty()) {
+                group.setSubGroupCount((long) group.getSubGroups().size());
+            }
+        }
     }
 
     /**

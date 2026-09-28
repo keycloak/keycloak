@@ -50,9 +50,11 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
@@ -91,6 +93,52 @@ public class CertificateValidator {
     private final static Logger logger = Logger.getLogger(CertificateValidator.class);
 
     private PKIXCertPathBuilderResult certPathBuilderResult;
+
+    // Custom OIDs defined in the OpenBanking Brasil - https://openbanking-brasil.github.io/specs-seguranca/open-banking-brasil-certificate-standards-1_ID1.html#name-client-certificate
+    // These are not recognized by default in RFC1779 or RFC2253 and hence not read in Java by default
+    private static final Map<String, String> CUSTOM_OIDS = Map.of(
+            "2.5.4.5", "serialNumber".toUpperCase(Locale.ROOT),
+            "2.5.4.15", "businessCategory".toUpperCase(Locale.ROOT),
+            "1.3.6.1.4.1.311.60.2.1.3", "jurisdictionCountryName".toUpperCase(Locale.ROOT),
+            "1.2.840.113549.1.9.1", "emailAddress".toUpperCase(Locale.ROOT));
+    private static final Map<String, String> CUSTOM_OIDS_REVERSED = Stream.concat(
+            CUSTOM_OIDS.entrySet().stream(),
+            Stream.of(Map.entry("1.2.840.113549.1.9.1", "E")))
+            .collect(Collectors.toUnmodifiableMap(Map.Entry::getValue, Map.Entry::getKey));
+
+    public static X500Principal constructX500Principal(String subjectDN) {
+        if (subjectDN == null) {
+            return null;
+        }
+
+        try {
+            return new X500Principal(subjectDN, CUSTOM_OIDS_REVERSED);
+        } catch (IllegalArgumentException e) {
+            logger.debugf("Invalid subjectDN '%s'", subjectDN);
+            return null;
+        }
+    }
+
+    public static String getSubjectName(X509Certificate cert) {
+        if (cert == null) {
+            return null;
+        }
+        return cert.getSubjectX500Principal().getName(X500Principal.RFC2253, CUSTOM_OIDS);
+    }
+
+    public static boolean checkSubjectDNExact(X509Certificate certificate, String subjectDN) {
+        if (certificate == null || subjectDN == null) {
+            return false;
+        }
+
+        X500Principal expectedDNPrincipal = constructX500Principal(subjectDN);
+        if (expectedDNPrincipal == null) {
+            return false;
+        }
+
+        return expectedDNPrincipal.getName(X500Principal.RFC2253, CUSTOM_OIDS)
+                .equals(certificate.getSubjectX500Principal().getName(X500Principal.RFC2253, CUSTOM_OIDS));
+    }
 
     enum KeyUsageBits {
         DIGITAL_SIGNATURE(0, "digitalSignature"),
@@ -428,10 +476,12 @@ public class CertificateValidator {
     OCSPChecker ocspChecker;
     boolean _timestampValidationEnabled;
     boolean _trustValidationEnabled;
+    List<String> _caSubjectDN;
 
     public CertificateValidator() {
 
     }
+
     protected CertificateValidator(X509Certificate[] certChain,
                          int keyUsageBits, List<String> extendedKeyUsage,
                                    List<String> certificatePolicy, String certificatePolicyMode,
@@ -444,7 +494,8 @@ public class CertificateValidator {
                                    OCSPChecker ocspChecker,
                                    KeycloakSession session,
                                    boolean timestampValidationEnabled,
-                                   boolean trustValidationEnabled) {
+                                   boolean trustValidationEnabled,
+                                   List<String> caSubjectDN) {
         _certChain = certChain;
         _keyUsageBits = keyUsageBits;
         _extendedKeyUsage = extendedKeyUsage;
@@ -460,6 +511,7 @@ public class CertificateValidator {
         this.session = session;
         _timestampValidationEnabled = timestampValidationEnabled;
         _trustValidationEnabled = trustValidationEnabled;
+        _caSubjectDN = caSubjectDN;
 
         if (ocspChecker == null)
             throw new IllegalArgumentException("ocspChecker");
@@ -622,6 +674,27 @@ public class CertificateValidator {
             logger.debugf("Found %d trusted root certs", truststoreProvider.getHttpsTruststore().size());
 
             this.certPathBuilderResult = verifyCertificateTrust(_certChain, trustedRootCerts, trustedIntermediateCerts);
+        }
+
+        return this;
+    }
+
+    public CertificateValidator validateCASubjectDN() throws GeneralSecurityException {
+        if (_caSubjectDN == null || _caSubjectDN.isEmpty()) {
+            return this;
+        }
+
+        if (this.certPathBuilderResult == null) {
+            throw new GeneralSecurityException("Trust is not validated yet");
+        }
+
+        X509Certificate ca = this.certPathBuilderResult.getTrustAnchor().getTrustedCert();
+
+        if (ca == null || _caSubjectDN.stream().noneMatch(dn -> checkSubjectDNExact(ca, dn))) {
+            if (logger.isDebugEnabled()) {
+                logger.debugf("Couldn't match trusted anchor subject DN '%s' with expected CA Subject DNs: %s", getSubjectName(ca), _caSubjectDN);
+            }
+            throw new GeneralSecurityException("Invalid trust anchor for the certificate");
         }
 
         return this;
@@ -840,6 +913,7 @@ public class CertificateValidator {
         X509Certificate _responderCert;
         boolean _timestampValidationEnabled;
         boolean _trustValidationEnabled;
+        List<String> _caSubjectDN;
 
         public CertificateValidatorBuilder() {
             _extendedKeyUsage = new LinkedList<>();
@@ -1063,6 +1137,11 @@ public class CertificateValidator {
                 _parent = parent;
             }
 
+            public TrustValidationBuilder caSubjectDN(List<String> value) {
+                _caSubjectDN = value == null ? List.of() : List.copyOf(value);
+                return this;
+            }
+
             public CertificateValidatorBuilder enabled(boolean value) {
                 _trustValidationEnabled = value;
                 return _parent;
@@ -1105,7 +1184,7 @@ public class CertificateValidator {
             return new CertificateValidator(certs, _keyUsageBits, _extendedKeyUsage,
                     _certificatePolicy, _certificatePolicyMode,
                     _crlCheckingEnabled, _crlAbortIfNonUpdated, _crldpEnabled, _crlLoader, _ocspEnabled, _ocspFailOpen,
-                    new BouncyCastleOCSPChecker(session, _responderUri, _responderCert), session, _timestampValidationEnabled, _trustValidationEnabled);
+                    new BouncyCastleOCSPChecker(session, _responderUri, _responderCert), session, _timestampValidationEnabled, _trustValidationEnabled, _caSubjectDN);
         }
     }
 

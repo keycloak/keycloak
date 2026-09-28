@@ -18,14 +18,20 @@
 package org.keycloak.tests.admin.authz.fgap;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.GroupResource;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
@@ -55,6 +61,8 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
@@ -87,6 +95,150 @@ public class GroupResourceTypeFilteringTest extends AbstractPermissionTest {
                 groupResource.subGroup(subGroup).close();
             }
         }
+    }
+
+    @Test
+    public void testVisibleSubGroupSearchReturnsStrippedParent() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,
+                "Only My Admin User Policy", myadmin.getId());
+
+        GroupRepresentation parentGroup = realm.admin().groups().groups("group-0", -1, -1).get(0);
+        parentGroup.setAttributes(Map.of(
+                "hidden-parent-attribute", List.of("hidden-parent-value")));
+        realm.admin().groups().group(parentGroup.getId()).update(parentGroup);
+
+        GroupRepresentation visibleSubGroup = parentGroup.getSubGroups().stream()
+                .filter(group -> group.getName().equals("subgroup-0.1"))
+                .findFirst()
+                .orElseThrow();
+        createPermission(adminPermissionsClient, visibleSubGroup.getId(),
+                GROUPS_RESOURCE_TYPE, Set.of(VIEW), policy);
+
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName())
+                .groups().group(parentGroup.getId()).toRepresentation());
+
+        List<GroupRepresentation> search = realmAdminClient.realm(realm.getName())
+                .groups().groups(visibleSubGroup.getName(), -1, -1, false);
+        assertEquals(1, search.size());
+
+        GroupRepresentation strippedParent = search.get(0);
+        assertEquals(parentGroup.getId(), strippedParent.getId());
+        assertEquals(parentGroup.getName(), strippedParent.getName());
+        assertNull(strippedParent.getAttributes());
+        assertNull(strippedParent.getRealmRoles());
+        assertNull(strippedParent.getClientRoles());
+        assertNull(strippedParent.getAccess());
+        assertEquals(1L, strippedParent.getSubGroupCount());
+
+        assertEquals(1, strippedParent.getSubGroups().size());
+        assertEquals(visibleSubGroup.getId(), strippedParent.getSubGroups().get(0).getId());
+    }
+
+    @Test
+    public void testDeepHierarchyWithMultipleHiddenAncestors() {
+        String topId = ApiUtil.getCreatedId(realm.admin().groups().add(GroupBuilder.create().name("top-group").build()));
+        String midId = ApiUtil.getCreatedId(realm.admin().groups().group(topId).subGroup(GroupBuilder.create().name("mid-group").build()));
+        String leafId = ApiUtil.getCreatedId(realm.admin().groups().group(midId).subGroup(GroupBuilder.create().name("leaf-group").build()));
+        realm.cleanup().add(r -> r.groups().group(topId).remove());
+
+        GroupRepresentation topGroup = realm.admin().groups().group(topId).toRepresentation();
+        topGroup.setAttributes(Map.of("secret-attr", List.of("secret-value")));
+        realm.admin().groups().group(topId).update(topGroup);
+
+        GroupRepresentation midGroup = realm.admin().groups().group(midId).toRepresentation();
+        midGroup.setAttributes(Map.of("secret-attr", List.of("secret-value")));
+        realm.admin().groups().group(midId).update(midGroup);
+
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,
+                "Only My Admin User Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, leafId, GROUPS_RESOURCE_TYPE, Set.of(VIEW), policy);
+
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName())
+                .groups().group(topId).toRepresentation());
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName())
+                .groups().group(midId).toRepresentation());
+
+        List<GroupRepresentation> search = realmAdminClient.realm(realm.getName())
+                .groups().groups("leaf-group", -1, -1, false);
+        assertEquals(1, search.size());
+
+        GroupRepresentation strippedTop = search.get(0);
+        assertEquals(topId, strippedTop.getId());
+        assertEquals("top-group", strippedTop.getName());
+        assertNull(strippedTop.getAttributes());
+        assertNull(strippedTop.getRealmRoles());
+        assertNull(strippedTop.getClientRoles());
+        assertNull(strippedTop.getAccess());
+        assertEquals(1L, strippedTop.getSubGroupCount());
+
+        assertEquals(1, strippedTop.getSubGroups().size());
+        GroupRepresentation strippedMid = strippedTop.getSubGroups().get(0);
+        assertEquals(midId, strippedMid.getId());
+        assertEquals("mid-group", strippedMid.getName());
+        assertNull(strippedMid.getAttributes());
+        assertNull(strippedMid.getRealmRoles());
+        assertNull(strippedMid.getClientRoles());
+        assertNull(strippedMid.getAccess());
+        assertEquals(1L, strippedMid.getSubGroupCount());
+
+        assertEquals(1, strippedMid.getSubGroups().size());
+        assertEquals(leafId, strippedMid.getSubGroups().get(0).getId());
+    }
+
+    @Test
+    public void testStrippedParentSubGroupCountReflectsOnlyVisibleChildren() {
+        String parentId = ApiUtil.getCreatedId(realm.admin().groups().add(GroupBuilder.create().name("hidden-parent").build()));
+        String hiddenChildId = ApiUtil.getCreatedId(realm.admin().groups().group(parentId).subGroup(GroupBuilder.create().name("hidden-child").build()));
+        String visibleChildId = ApiUtil.getCreatedId(realm.admin().groups().group(parentId).subGroup(GroupBuilder.create().name("visible-child").build()));
+        realm.cleanup().add(r -> r.groups().group(parentId).remove());
+
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,
+                "Only My Admin User Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, visibleChildId, GROUPS_RESOURCE_TYPE, Set.of(VIEW), policy);
+
+        List<GroupRepresentation> search = realmAdminClient.realm(realm.getName())
+                .groups().groups("visible-child", -1, -1, false);
+        assertEquals(1, search.size());
+
+        GroupRepresentation strippedParent = search.get(0);
+        assertEquals(parentId, strippedParent.getId());
+        assertEquals(1L, strippedParent.getSubGroupCount());
+        assertEquals(1, strippedParent.getSubGroups().size());
+        assertEquals(visibleChildId, strippedParent.getSubGroups().get(0).getId());
+    }
+
+    @Test
+    public void testStrippedParentSubGroupCountWithMultipleVisibleSiblings() {
+        String parentId = ApiUtil.getCreatedId(realm.admin().groups().add(GroupBuilder.create().name("hidden-parent").build()));
+        String child1Id = ApiUtil.getCreatedId(realm.admin().groups().group(parentId).subGroup(GroupBuilder.create().name("visible-sibling-1").build()));
+        String child2Id = ApiUtil.getCreatedId(realm.admin().groups().group(parentId).subGroup(GroupBuilder.create().name("visible-sibling-2").build()));
+        String hiddenChildId = ApiUtil.getCreatedId(realm.admin().groups().group(parentId).subGroup(GroupBuilder.create().name("hidden-child").build()));
+        realm.cleanup().add(r -> r.groups().group(parentId).remove());
+
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,
+                "Only My Admin User Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, child1Id, GROUPS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        createPermission(adminPermissionsClient, child2Id, GROUPS_RESOURCE_TYPE, Set.of(VIEW), policy);
+
+        List<GroupRepresentation> search = realmAdminClient.realm(realm.getName())
+                .groups().groups("visible-sibling", -1, -1, false);
+        assertEquals(1, search.size());
+
+        GroupRepresentation strippedParent = search.get(0);
+        assertEquals(parentId, strippedParent.getId());
+        assertEquals(2L, strippedParent.getSubGroupCount());
+        assertEquals(2, strippedParent.getSubGroups().size());
+
+        Set<String> childIds = strippedParent.getSubGroups().stream()
+                .map(GroupRepresentation::getId)
+                .collect(Collectors.toSet());
+        assertTrue(childIds.contains(child1Id));
+        assertTrue(childIds.contains(child2Id));
+        assertFalse(childIds.contains(hiddenChildId));
     }
 
     @Test
@@ -248,5 +400,65 @@ public class GroupResourceTypeFilteringTest extends AbstractPermissionTest {
         createGroupPermission(company, Set.of(VIEW_MEMBERS), disallowSubAdmins);
         search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1).stream().map(UserRepresentation::getUsername).toList();
         assertThat(search, containsInAnyOrder("myadmin", "sub1-admin", "department-a-member", "department-b-member"));
+    }
+
+    @Test
+    public void testDefaultGroupsFilteredByGroupPermissions() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        String realmManagement = realm.admin().clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+        RoleRepresentation viewRealmRole = realm.admin().clients().get(realmManagement)
+                .roles().get(AdminRoles.VIEW_REALM).toRepresentation();
+
+        realm.admin().users().get(myadmin.getId()).roles().clientLevel(realmManagement)
+                .add(List.of(viewRealmRole));
+
+        GroupRepresentation hiddenGroup = realm.admin().groups().groups("group-0", -1, -1).get(0);
+        realm.admin().addDefaultGroup(hiddenGroup.getId());
+
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName())
+                .groups().group(hiddenGroup.getId()).toRepresentation());
+
+        List<GroupRepresentation> defaultGroups = realmAdminClient.realm(realm.getName())
+                .getDefaultGroups();
+        assertFalse(defaultGroups.stream().anyMatch(group -> hiddenGroup.getId().equals(group.getId())),
+                "Default groups endpoint should not disclose hidden group");
+
+        RealmRepresentation realmRepresentation = realmAdminClient.realm(realm.getName())
+                .toRepresentation();
+        assertTrue(realmRepresentation.getDefaultGroups() == null
+                        || !realmRepresentation.getDefaultGroups().contains(hiddenGroup.getPath()),
+                "Realm representation should not disclose hidden default group path");
+
+        List<RealmRepresentation> realms = realmAdminClient.realms().findAll();
+        RealmRepresentation realmFromList = realms.stream()
+                .filter(r -> realm.getName().equals(r.getRealm()))
+                .findFirst().orElse(null);
+        assertNotNull(realmFromList, "Realm should be visible in realm listing");
+        assertTrue(realmFromList.getDefaultGroups() == null
+                        || !realmFromList.getDefaultGroups().contains(hiddenGroup.getPath()),
+                "Realm listing should not disclose hidden default group path");
+
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,
+                "Only My Admin User Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, hiddenGroup.getId(), GROUPS_RESOURCE_TYPE, Set.of(VIEW), policy);
+
+        defaultGroups = realmAdminClient.realm(realm.getName()).getDefaultGroups();
+        assertTrue(defaultGroups.stream().anyMatch(group -> hiddenGroup.getId().equals(group.getId())),
+                "Default groups endpoint should return group when view permission is granted");
+
+        realmRepresentation = realmAdminClient.realm(realm.getName()).toRepresentation();
+        assertNotNull(realmRepresentation.getDefaultGroups());
+        assertTrue(realmRepresentation.getDefaultGroups().contains(hiddenGroup.getPath()),
+                "Realm representation should include default group path when view permission is granted");
+
+        realms = realmAdminClient.realms().findAll();
+        realmFromList = realms.stream()
+                .filter(r -> realm.getName().equals(r.getRealm()))
+                .findFirst().orElse(null);
+        assertNotNull(realmFromList);
+        assertNotNull(realmFromList.getDefaultGroups());
+        assertTrue(realmFromList.getDefaultGroups().contains(hiddenGroup.getPath()),
+                "Realm listing should include default group path when view permission is granted");
     }
 }

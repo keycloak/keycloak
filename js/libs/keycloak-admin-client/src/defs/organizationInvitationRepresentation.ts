@@ -12,5 +12,6 @@ export default interface OrganizationInvitationRepresentation {
   sentDate?: number;
   expiresAt?: number;
   status?: OrganizationInvitationStatus;
+  /** @deprecated The invite link is no longer exposed in API responses. */
   inviteLink?: string;
 }

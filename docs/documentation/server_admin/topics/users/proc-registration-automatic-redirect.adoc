@@ -1,0 +1,16 @@
+// Module included in the following assemblies:
+//
+// con-user-registration.adoc
+
+[id="proc-registration-automatic-redirect_{context}"]
+= Redirect to registration screen directly from the application
+
+[role="_abstract"]
+By default, applications redirect to {project_name} login screen with the use of OIDC or SAML protocol. Login screen is displayed to the user
+and in case that user does not have an account, he can click **Register** link as described above to register new account.
+
+In some cases, it might be useful to directly redirect application to the {project_name} registration screen instead of login screen. For instance in the case
+when application already knows that user does not have an account yet.
+
+This is supported for OIDC applications by including parameter `prompt=create` in the initial OIDC authentication request.
+Please see <<_registration-rc-client-flows,this section>> for additional details.

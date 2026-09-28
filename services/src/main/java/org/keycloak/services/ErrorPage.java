@@ -27,7 +27,14 @@ import org.keycloak.sessions.AuthenticationSessionModel;
  */
 public class ErrorPage {
 
+    /**
+     * Builds an error page response and marks the current transaction for rollback.
+     *
+     * <p>Any state changes that must persist despite the error should be committed
+     * in a separate transaction before calling this method.</p>
+     */
     public static Response error(KeycloakSession session, AuthenticationSessionModel authenticationSession, Response.Status status, String message, Object... parameters) {
+        session.getTransactionManager().setRollbackOnly();
         return session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authenticationSession).setError(message, parameters).createErrorPage(status);
     }
 

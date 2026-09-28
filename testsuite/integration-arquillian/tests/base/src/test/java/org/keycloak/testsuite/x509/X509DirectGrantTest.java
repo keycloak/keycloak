@@ -33,6 +33,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.HtmlUnitBrowser;
+import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.hamcrest.MatcherAssert;
@@ -166,6 +167,37 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
         AccessTokenResponse response = oauth.doPasswordGrantRequest("", "");
 
         assertEquals(200, response.getStatusCode());
+    }
+
+    @Test
+    public void loginWithRevalidateCertEnabledCertIsTrusted() throws Exception {
+        // Set the X509 authenticator configuration
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config",
+                createLoginSubjectEmailWithRevalidateCert(MutualTLSUtils.CA_CERTIFICATE_SUBJECT_DN).getConfig());
+        String cfgId = createConfig(directGrantExecution.getId(), cfg);
+        Assertions.assertNotNull(cfgId);
+
+        oauth.client("resource-owner", "secret");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("", "");
+
+        assertEquals(200, response.getStatusCode());
+    }
+
+    @Test
+    public void loginWithRevalidateCertEnabledAndInvalidCASubjectDN() throws Exception {
+        // Set the X509 authenticator configuration
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config",
+                createLoginSubjectEmailWithRevalidateCert(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN).getConfig());
+        String cfgId = createConfig(directGrantExecution.getId(), cfg);
+        Assertions.assertNotNull(cfgId);
+
+        oauth.client("resource-owner", "secret");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("", "");
+
+        assertEquals(401, response.getStatusCode());
+        assertEquals("invalid_request", response.getError());
+        assertThat(response.getErrorDescription(), containsString("Invalid trust anchor for the certificate"));
+        events.clear();
     }
 
     @Test

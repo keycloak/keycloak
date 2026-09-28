@@ -36,6 +36,7 @@ import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthen
 import org.keycloak.authentication.authenticators.browser.WebAuthnConditionalUIAuthenticator;
 import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.email.freemarker.beans.ProfileBean;
+import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
@@ -46,7 +47,6 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
-import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
@@ -64,7 +64,6 @@ import org.keycloak.util.Booleans;
 
 import static org.keycloak.authentication.AuthenticatorUtil.isSSOAuthentication;
 import static org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator.USER_SET_BEFORE_USERNAME_PASSWORD_AUTH;
-import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
 import static org.keycloak.models.utils.KeycloakModelUtils.findUserByNameOrEmail;
 import static org.keycloak.organization.utils.Organizations.getEmailDomain;
 import static org.keycloak.organization.utils.Organizations.getMatchingDomain;
@@ -132,11 +131,24 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
         UserModel user = context.getUser();
 
+        if (username != null) {
+            username = username.trim();
+        }
+
         if (user == null && isBlank(username)) {
             initialChallenge(context, form -> {
                 form.addError(new FormMessage(UserModel.USERNAME, Messages.INVALID_USERNAME));
                 return form.createLoginUsername();
             });
+            return;
+        }
+
+        if (AuthenticatorUtils.isUsernameTooLong(username)) {
+            context.getEvent().error(Errors.USER_NOT_FOUND);
+            Response challengeResponse = context.form()
+                .addError(new FormMessage(UserModel.USERNAME, Messages.INVALID_USERNAME))
+                .createLoginUsername();
+            context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
 
@@ -305,35 +317,10 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return false;
         }
 
-        // first look for an IDP that matches exactly the specified domain (case-insensitive)
-        IdentityProviderModel idp = organization.getIdentityProviders()
-                .filter(IdentityProviderRedirectMode.EMAIL_MATCH::isSet)
-                .filter(broker -> {
-                    String brokerDomain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        String idpAlias = matching.getIdentityProviderAlias();
 
-                    if (brokerDomain == null) {
-                        return false;
-                    }
-
-                    String excludedDomains = broker.getConfig().get(OrganizationModel.ORGANIZATION_EXCLUDED_DOMAIN_ATTRIBUTE);
-
-                    if (excludedDomains != null) {
-                        for (String excludedDomain : excludedDomains.split(",")) {
-                            if (Organizations.isSameDomain(domain, excludedDomain.trim())) {
-                                return false;
-                            }
-                        }
-                    }
-
-                    if (ANY_DOMAIN.equals(brokerDomain)) {
-                        return true;
-                    }
-
-                    return brokerDomain.equals(matching.getName());
-                }).findFirst().orElse(null);
-
-        if (idp != null) {
-            redirect(context, idp.getAlias(), username);
+        if (idpAlias != null && matching.isAutoRedirect()) {
+            redirect(context, idpAlias, username);
             return true;
         }
 

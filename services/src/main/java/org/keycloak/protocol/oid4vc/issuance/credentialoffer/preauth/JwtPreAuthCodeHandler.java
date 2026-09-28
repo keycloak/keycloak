@@ -99,7 +99,7 @@ public class JwtPreAuthCodeHandler implements PreAuthCodeHandler {
             throw new VerificationException("Jwt pre-auth code has no expiration time");
         }
 
-        long now = Time.currentTime();
+        long now = Time.currentTimeSeconds();
         if (exp < now) {
             String message = String.format("Jwt pre-auth code not valid: %s (exp) < %s (now)", exp, now);
             throw new VerificationException(message, Errors.EXPIRED_CODE);

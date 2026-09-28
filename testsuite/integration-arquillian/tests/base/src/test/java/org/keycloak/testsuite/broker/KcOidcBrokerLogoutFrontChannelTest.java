@@ -33,11 +33,11 @@ public class KcOidcBrokerLogoutFrontChannelTest extends AbstractKcOidcBrokerLogo
     }
 
     private static class KcOidcBrokerConfigurationIdpLogoutFrontChannel
-        extends KcOidcBrokerConfiguration {
+            extends KcOidcBrokerConfiguration {
 
         @Override
         protected void applyDefaultConfiguration(
-            Map<String, String> config, IdentityProviderSyncMode syncMode) {
+                Map<String, String> config, IdentityProviderSyncMode syncMode) {
             super.applyDefaultConfiguration(config, syncMode);
             config.put("backchannelSupported", "false");
         }
@@ -51,9 +51,7 @@ public class KcOidcBrokerLogoutFrontChannelTest extends AbstractKcOidcBrokerLogo
 
         // Exchange code from "broker-app" client of "consumer" realm for the tokens
         String code = oauth.parseLoginResponse().getCode();
-        AccessTokenResponse response =
-            oauth
-                .realm(bc.consumerRealmName())
+        AccessTokenResponse response = oauth.realm(bc.consumerRealmName())
                 .client("broker-app", "broker-app-secret")
                 .redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app")
                 .doAccessTokenRequest(code);
@@ -67,16 +65,17 @@ public class KcOidcBrokerLogoutFrontChannelTest extends AbstractKcOidcBrokerLogo
         timeOffSet.set(expiresInMs * 2);
 
         logoutFromRealm(
-            getConsumerRoot(),
-            bc.consumerRealmName(),
-            "something-else",
-            idTokenString,
-            "broker-app",
-            getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app");
+                getConsumerRoot(),
+                bc.consumerRealmName(),
+                "something-else",
+                idTokenString,
+                "broker-app",
+                getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app");
 
         oauth.client("account");
         oauth.redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/account");
-        loginPage.open(REALM_PROV_NAME);
+        oauth.realm(REALM_PROV_NAME);
+        oauth.openLoginForm();
 
         waitForPage(driver, "sign in to provider", true);
     }

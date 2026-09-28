@@ -17,10 +17,12 @@
 
 package org.keycloak.it.cli.dist;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
@@ -35,6 +37,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DistributionTest(stopServer = Mode.MANUAL)
 @RawDistOnly(reason = "Containers are immutable")
@@ -59,12 +63,16 @@ public class TruststoreDistTest {
         rawDist.copyOrReplaceFileFromClasspath("/self-signed.p12", Path.of("conf", "self-signed.p12"));
         Path keyStore = rawDist.getDistPath().resolve("conf").resolve("self-signed.p12").toAbsolutePath();
 
-        runner.run("--verbose", "start", "--db=dev-file", "--http-enabled=true", "--hostname=mykeycloak.org",
+        CLIResult result = runner.run("--verbose", "start", "--db=dev-file", "--http-enabled=true", "--hostname=mykeycloak.org", "--log-level=org.keycloak.truststore:debug",
                 "--truststore-paths=" + paths, "--https-client-auth=required", "--https-key-store-file=" + keyStore);
 
         given().trustStore(TruststoreDistTest.class.getResource("/self-signed-truststore.p12").getPath(), TruststoreBuilder.DUMMY_PASSWORD)
                 .keyStore(TruststoreDistTest.class.getResource("/self-signed.p12").getPath(), "password")
                 .get("https://mykeycloak.org:8443").then().body(Matchers.containsString("https://mykeycloak.org"));
+        
+        // ensure that the provider factories init with the correct truststore
+        // this is from the startup, so no additional waiting is necessary
+        assertTrue(result.getOutputStream().stream().anyMatch(s -> s.matches(".*File truststore provider initialized: .*keycloak-truststore.p12.*")));
     }
 
     @Test
@@ -80,6 +88,9 @@ public class TruststoreDistTest {
 
         runner.run("--verbose", "start", "--db=dev-file", "--http-enabled=true", "--hostname=mykeycloak.org",
                 "--https-client-auth=required", "--https-key-store-file=" + keyStore);
+
+        assertTrue(Files.exists(rawDist.getDistPath().resolve("data").resolve("keycloak-truststore.p12")));
+        assertFalse(Files.exists(rawDist.getDistPath().resolve("data").resolve("keycloak-truststore.bcfks")));
 
         given().trustStore(TruststoreDistTest.class.getResource("/self-signed-truststore.p12").getPath(), TruststoreBuilder.DUMMY_PASSWORD)
                 .keyStore(TruststoreDistTest.class.getResource("/self-signed.p12").getPath(), "password")

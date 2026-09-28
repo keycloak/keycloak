@@ -27,6 +27,24 @@ import org.jboss.logging.Logger;
  */
 public class SubjectResolver {
 
+    /**
+     * Base namespace of the URI tenant scheme for Organizations. Not
+     * resolvable on its own: an explicit identifier segment is
+     * required — {@link #ORG_URN_ALIAS_PREFIX} or
+     * {@link #ORG_URN_ID_PREFIX} — so a URN always states which lookup
+     * it wants instead of relying on alias/id heuristics. These URNs
+     * are the only URI forms {@link #resolveOrganization} resolves to
+     * a local organization — arbitrary URIs must not resolve, see the
+     * {@code uri} branch there.
+     */
+    public static final String ORG_URN_PREFIX = "urn:keycloak:org:";
+
+    /** {@code urn:keycloak:org:alias:<alias>} — resolves strictly by organization alias. */
+    public static final String ORG_URN_ALIAS_PREFIX = ORG_URN_PREFIX + "alias:";
+
+    /** {@code urn:keycloak:org:id:<id>} — resolves strictly by internal organization id. */
+    public static final String ORG_URN_ID_PREFIX = ORG_URN_PREFIX + "id:";
+
     private static final Logger log = Logger.getLogger(SubjectResolver.class);
 
     /**
@@ -71,7 +89,21 @@ public class SubjectResolver {
         return SubjectResolution.UNSUPPORTED_FORMAT;
     }
 
-    private static SubjectResolution resolveOrganization(KeycloakSession session, SubjectId tenantSubject) {
+    /**
+     * Resolves a tenant subject to an organization. This is the shared
+     * contract for tenant subject members — {@code opaque} (internal
+     * org id only — aliases go through the {@code alias:} URN form),
+     * {@code iss_sub} (sub as internal org id, realm issuer only), {@code email}
+     * (org domain or alias) and {@code uri}
+     * ({@code urn:keycloak:org:alias:<alias>} or
+     * {@code urn:keycloak:org:id:<id>}, each resolving strictly by the
+     * named identifier) are all understood.
+     * Callers that gate on "the supplied tenant subject member must
+     * resolve" (e.g. the synthetic event emitter) must use this rather
+     * than a narrower lookup so a tenant format accepted elsewhere is
+     * not rejected there.
+     */
+    public static SubjectResolution resolveOrganization(KeycloakSession session, SubjectId tenantSubject) {
         if (!Organizations.isEnabled(session)) {
             log.debugf("Organization feature is disabled — cannot resolve tenant subject");
             return SubjectResolution.UNSUPPORTED_FORMAT;
@@ -79,13 +111,27 @@ public class SubjectResolver {
 
         OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
 
-        // opaque id → getById
+        // opaque id → internal org id only. Aliases are addressed via
+        // the explicit urn:keycloak:org:alias: URN form instead, so an
+        // opaque value never needs a lookup heuristic — a UUID-shaped
+        // alias can't shadow another organization's id or vice versa.
         if (tenantSubject instanceof OpaqueSubjectId opaque) {
             return resolveOrgById(orgProvider, opaque.getId());
         }
 
-        // iss_sub → sub as org id
+        // iss_sub → sub as org id, accepted only for this realm's own
+        // issuer. Unlike user iss_sub lookups there is no
+        // federated-identity analog for organizations, so a foreign iss
+        // cannot be mapped to anything this server has validated — and
+        // callers like the synthetic emitter forward the sub_id
+        // verbatim, so resolving the org regardless would let an
+        // emitter mint a signed SET whose tenant ties a local
+        // organization to an issuer Keycloak never checked.
         if (tenantSubject instanceof IssuerSubjectId issSub) {
+            if (!SubjectUserLookup.isRealmIssuer(session, issSub.getIss())) {
+                log.debugf("Tenant iss_sub subject carries a foreign issuer — not resolvable. iss=%s", issSub.getIss());
+                return SubjectResolution.NOT_FOUND;
+            }
             return resolveOrgById(orgProvider, issSub.getSub());
         }
 
@@ -104,20 +150,59 @@ public class SubjectResolver {
             return SubjectResolution.NOT_FOUND;
         }
 
-        // uri → extract the path/fragment as alias or domain
-        // e.g. "https://keycloak.example.com/orgs/acme" → "acme"
-        //   or "urn:keycloak:org:acme" → "acme"
+        // uri → only the Keycloak-scoped URN forms
+        // urn:keycloak:org:alias:<alias> and urn:keycloak:org:id:<id>
+        // are accepted, each resolving strictly by the identifier the
+        // URN names. Earlier revisions took arbitrary https URIs
+        // (resolving their last path segment as an alias) and a bare
+        // urn:keycloak:org:<value> shorthand with heuristic lookup —
+        // both are gone: the sub_id travels verbatim in emitted SETs,
+        // so resolving "https://evil.example/orgs/acme" against the
+        // local org "acme" would let an emitter tie a local
+        // organization to a URI namespace Keycloak never validated,
+        // and the explicit segment removes any alias/id ambiguity for
+        // the one URI scheme this server authoritatively owns.
         if (tenantSubject instanceof UriSubjectId uriSubject) {
-            String alias = extractOrgAliasFromUri(uriSubject.getUri());
-            if (alias != null) {
-                return resolveOrgByAliasOrDomain(orgProvider, alias);
-            }
-            return SubjectResolution.NOT_FOUND;
+            return resolveOrgByUrn(orgProvider, uriSubject.getUri());
         }
 
         return SubjectResolution.UNSUPPORTED_FORMAT;
     }
 
+    /**
+     * Resolves a {@code urn:keycloak:org:} tenant URN, strictly by the
+     * identifier kind its segment names ({@code alias:} / {@code id:},
+     * no cross-fallback). Any other URI shape — including the bare
+     * {@code urn:keycloak:org:<value>} form without a segment — yields
+     * {@link SubjectResolution#NOT_FOUND}; see the caller's comment
+     * for why arbitrary URIs must not resolve to local orgs.
+     */
+    private static SubjectResolution resolveOrgByUrn(OrganizationProvider orgProvider, String uri) {
+        if (uri == null) {
+            return SubjectResolution.NOT_FOUND;
+        }
+        if (uri.startsWith(ORG_URN_ALIAS_PREFIX)) {
+            String alias = uri.substring(ORG_URN_ALIAS_PREFIX.length());
+            var org = alias.isBlank() ? null : orgProvider.getByAlias(alias);
+            return org != null ? new SubjectResolution.Organization(org) : SubjectResolution.NOT_FOUND;
+        }
+        if (uri.startsWith(ORG_URN_ID_PREFIX)) {
+            String id = uri.substring(ORG_URN_ID_PREFIX.length());
+            var org = id.isBlank() ? null : orgProvider.getById(id);
+            return org != null ? new SubjectResolution.Organization(org) : SubjectResolution.NOT_FOUND;
+        }
+        log.debugf("Tenant URI subject is not a urn:keycloak:org:{alias|id} URN — not resolvable. uri=%s", uri);
+        return SubjectResolution.NOT_FOUND;
+    }
+
+    /**
+     * Strict internal-id lookup — deliberately no alias fallback.
+     * Every tenant identifier states its lookup kind now (opaque /
+     * iss_sub {@code sub} = internal id, URN segments = explicit), and
+     * Keycloak's own producers serialize the self-describing
+     * {@code urn:keycloak:org:alias:} form, so a heuristic here would
+     * only reintroduce the alias/id shadowing it exists to prevent.
+     */
     private static SubjectResolution resolveOrgById(OrganizationProvider orgProvider, String orgId) {
         if (orgId == null) {
             return SubjectResolution.UNSUPPORTED_FORMAT;
@@ -126,56 +211,7 @@ public class SubjectResolver {
         if (org != null) {
             return new SubjectResolution.Organization(org);
         }
-        // id didn't match — try as alias
-        org = orgProvider.getByAlias(orgId);
-        if (org != null) {
-            return new SubjectResolution.Organization(org);
-        }
         return SubjectResolution.NOT_FOUND;
     }
 
-    private static SubjectResolution resolveOrgByAliasOrDomain(OrganizationProvider orgProvider, String value) {
-        var org = orgProvider.getByAlias(value);
-        if (org != null) {
-            return new SubjectResolution.Organization(org);
-        }
-        org = orgProvider.getByDomainName(value);
-        if (org != null) {
-            return new SubjectResolution.Organization(org);
-        }
-        return SubjectResolution.NOT_FOUND;
-    }
-
-    private static String extractOrgAliasFromUri(String uri) {
-        if (uri == null || uri.isBlank()) {
-            return null;
-        }
-
-        // Validate that the string is a syntactically valid URI before
-        // attempting to extract an alias from it.
-        java.net.URI parsed;
-        try {
-            parsed = java.net.URI.create(uri);
-        } catch (IllegalArgumentException e) {
-            log.debugf("Tenant URI subject is not a valid URI: %s", uri);
-            return null;
-        }
-
-        // urn:keycloak:org:<alias>
-        if ("urn".equals(parsed.getScheme()) && uri.startsWith("urn:keycloak:org:")) {
-            String alias = uri.substring("urn:keycloak:org:".length());
-            return alias.isBlank() ? null : alias;
-        }
-
-        // https://example.com/orgs/acme → last path segment "acme"
-        String path = parsed.getPath();
-        if (path != null && !path.isBlank()) {
-            int lastSlash = path.lastIndexOf('/');
-            if (lastSlash >= 0 && lastSlash < path.length() - 1) {
-                return path.substring(lastSlash + 1);
-            }
-        }
-
-        return null;
-    }
 }

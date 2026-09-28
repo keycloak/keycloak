@@ -23,7 +23,6 @@ import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
@@ -236,20 +235,8 @@ public class LoginPage extends LanguageComboboxAwarePage {
     }
 
     @Override
-    public boolean isCurrent() {
-        String realm = "test";
-        return isCurrent(realm);
-    }
-
-    @Override
-    public boolean isCurrent(String realm) {
-        return DroneUtils.getCurrentDriver().getTitle().equals("Sign in to " + realm) || DroneUtils.getCurrentDriver().getTitle().equals("Anmeldung bei " + realm);
-    }
-
-    public void assertCurrent(String realm) {
-        String name = getClass().getSimpleName();
-        Assertions.assertTrue(isCurrent(realm),
-                "Expected " + name + " but was " + DroneUtils.getCurrentDriver().getTitle() + " (" + DroneUtils.getCurrentDriver().getCurrentUrl() + ")");
+    public String getExpectedPageId() {
+        return "login-login";
     }
 
     public void clickRegister() {
@@ -283,13 +270,4 @@ public class LoginPage extends LanguageComboboxAwarePage {
         return rememberMe.isSelected();
     }
 
-    /**
-     * @deprecated Use {@link OAuthClient#openLoginForm()}
-     */
-    @Deprecated
-    public void open(String realm) {
-        oauth.realm(realm);
-        oauth.openLoginForm();
-        assertCurrent(realm);
-    }
 }

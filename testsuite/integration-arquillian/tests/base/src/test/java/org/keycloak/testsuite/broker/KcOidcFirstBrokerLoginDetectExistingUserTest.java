@@ -102,11 +102,12 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, firstname, lastname, "firstnamelastname@example.org");
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithIdp(bc.getIDPAlias(), username, BrokerTestConstants.USER_PASSWORD);
 
-        loginPage.assertCurrent(bc.consumerRealmName());
+        errorPage.assertCurrent();
 
         assertEquals("User " +  username + " authenticated with identity provider " + bc.getIDPAlias() + " does not exist. Please contact your administrator.", loginPage.getInstruction());
     }
@@ -123,7 +124,8 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         createUser(bc.consumerRealmName(), username, "THIS PASSWORD IS USELESS", null, null, email);
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithIdp(bc.getIDPAlias(), username, BrokerTestConstants.USER_PASSWORD);
 

@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { selectItem } from "../utils/form.ts";
+import { selectClient, selectItem } from "../utils/form.ts";
 
 export async function clickCreateNewPolicy(page: Page) {
   await page.getByTestId("no-policies-empty-action").click();
@@ -41,8 +41,7 @@ export async function fillPolicyForm(
       continue;
     }
     if (key === "client") {
-      await selectItem(page, "#clients", value);
-      await page.locator("#clients").click();
+      await selectClient(page, value);
       continue;
     }
 

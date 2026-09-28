@@ -12,13 +12,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.keycloak.models.mapper.BaseClientModelMapper;
-import org.keycloak.models.mapper.OIDCClientModelMapper;
-import org.keycloak.models.mapper.SAMLClientModelMapper;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
-import org.keycloak.services.client.query.FieldResolver;
+import org.keycloak.services.client.scim.BaseClientModelSchema;
+import org.keycloak.services.client.scim.ClientResourceTypeProvider;
+import org.keycloak.services.client.scim.OIDCClientModelSchema;
+import org.keycloak.services.client.scim.SAMLClientModelSchema;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -351,12 +351,12 @@ final class JavaDocExampleGenerator {
 
     private static final List<ProtocolEntry> PROTOCOLS = List.of(
             new ProtocolEntry(OIDCClientRepresentation.PROTOCOL,
-                    new OIDCClientModelMapper(), OIDCClientRepresentation.class),
+                    OIDCClientModelSchema.INSTANCE, OIDCClientRepresentation.class),
             new ProtocolEntry(SAMLClientRepresentation.PROTOCOL,
-                    new SAMLClientModelMapper(), SAMLClientRepresentation.class)
+                    SAMLClientModelSchema.INSTANCE, SAMLClientRepresentation.class)
     );
 
-    record ProtocolEntry(String name, BaseClientModelMapper<?> mapper,
+    record ProtocolEntry(String name, BaseClientModelSchema<?> schema,
                          Class<? extends BaseClientRepresentation> schemaClass) {}
 
     private static Map<String, List<QueryableField>> collectQueryableFields(Map<String, DocSchema> schemas) {
@@ -364,7 +364,7 @@ final class JavaDocExampleGenerator {
         Map<String, Set<String>> protocolFieldNames = new LinkedHashMap<>();
 
         for (ProtocolEntry protocol : PROTOCOLS) {
-            Set<String> fieldNames = new LinkedHashSet<>(protocol.mapper().getFieldNames());
+            Set<String> fieldNames = new LinkedHashSet<>(protocol.schema().getAttributes().keySet());
             if (commonFieldNames == null) {
                 commonFieldNames = new LinkedHashSet<>(fieldNames);
             } else {
@@ -404,7 +404,7 @@ final class JavaDocExampleGenerator {
             String match = null;
             for (DocProperty nested : nestedSchema.properties()) {
                 String dotPath = prop.name() + "." + nested.name();
-                if (FieldResolver.isKnownField(dotPath)) {
+                if (ClientResourceTypeProvider.isKnownField(dotPath)) {
                     match = dotPath;
                     break;
                 }

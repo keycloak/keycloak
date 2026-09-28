@@ -59,7 +59,7 @@ public class SyncDummyFederationProviderCommand extends AbstractCommand {
 
         StoreSyncEvent.fire(session, realm, fedProviderModel, false);
 
-        log.infof("User federation provider created and sync was started", waitTime);
+        log.infof("User federation provider created and sync was started with wait time: %d", waitTime);
     }
 
     private void updateConfig(MultivaluedHashMap<String, String> cfg, int waitTime) {

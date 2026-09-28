@@ -32,4 +32,6 @@ multi-cluster/upgrades
 multi-cluster-v2/introduction
 multi-cluster-v2/concepts
 multi-cluster-v2/deploy-keycloak-kubernetes
+multi-cluster-v2/deploy-keycloak-bare-metal
 multi-cluster-v2/upgrades
+multi-cluster-v2/migrate-from-v1-to-v2

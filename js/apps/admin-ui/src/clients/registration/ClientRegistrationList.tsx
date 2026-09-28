@@ -91,7 +91,7 @@ export const ClientRegistrationList = ({
       {isAddDialogOpen && (
         <AddProviderDialog
           onConfirm={(providerId) =>
-            navigate(
+            void navigate(
               toRegistrationProvider({
                 realm,
                 subTab: subTab || "anonymous",

@@ -174,7 +174,7 @@ export default function RealmSection() {
         );
         addAlert(t("deletedSuccessRealmSetting"));
         if (selected.some(({ name }) => name === realm)) {
-          navigate(toRealm({ realm: environment.masterRealm }));
+          void navigate(toRealm({ realm: environment.masterRealm }));
         }
         refresh();
         setSelected([]);

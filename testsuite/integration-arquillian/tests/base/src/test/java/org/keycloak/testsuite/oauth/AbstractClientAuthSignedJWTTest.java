@@ -552,7 +552,9 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         } else if (keystoreFormat.equals(CertificateInfoHelper.JSON_WEB_KEY_SET)) {
             Assertions.assertEquals("true", client.getAttributes().get(OIDCConfigAttributes.USE_JWKS_STRING));
             String jwks = new String(Files.readAllBytes(keystoreFile.toPath()));
-            Assertions.assertEquals(jwks, client.getAttributes().get(OIDCConfigAttributes.JWKS_STRING));
+            JSONWebKeySet expected = JsonSerialization.readValue(jwks, JSONWebKeySet.class);
+            JSONWebKeySet actual = JsonSerialization.readValue(client.getAttributes().get(OIDCConfigAttributes.JWKS_STRING), JSONWebKeySet.class);
+            Assertions.assertEquals(JsonSerialization.writeValueAsString(expected), JsonSerialization.writeValueAsString(actual));
             CertificateRepresentation info = getClient(testRealm.getRealm(), client.getId())
                     .getCertficateResource(JWTClientAuthenticator.ATTR_PREFIX).getKeyInfo();
             Assertions.assertNotNull(info.getPublicKey());

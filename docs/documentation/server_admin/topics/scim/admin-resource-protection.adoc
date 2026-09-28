@@ -54,5 +54,8 @@ The following restrictions apply to administrative groups accessed through the S
 ** Adding or removing members through a `PATCH` on the group resource returns `403 Forbidden`.
 ** Adding or removing a user to or from an administrative group through a `PATCH` on the user resource also
    returns `403 Forbidden`.
+* *Deletion is blocked for parent groups of an administrative group.* Deleting a group whose subtree contains an
+  administrative group at any depth returns `403 Forbidden`, even if the parent group itself is not administrative,
+  to prevent an administrative group from being removed through a cascading delete.
 
 Administrative groups still appear in listing and search results, but always with the minimal representation.

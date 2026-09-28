@@ -183,7 +183,8 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         userResource.roles().realmLevel().add(Collections.singletonList(managerRole));
 
         oauth.client("broker-app", CONSUMER_BROKER_APP_SECRET);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInAsUserInIDPForFirstTime();
 
         String consumerClientBrokerAppId = adminClient.realm(bc.consumerRealmName()).clients().findByClientId("broker-app").get(0).getId();
@@ -204,7 +205,8 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         userResource.roles().realmLevel().add(Collections.singletonList(userRole));
 
         oauth.client("broker-app", CONSUMER_BROKER_APP_SECRET);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         if (! isUsingTransientSessions()) {
             logInAsUserInIDP();
@@ -242,7 +244,8 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             clients.get(brokerApp.getId()).update(brokerApp);
 
             oauth.client("broker-app", CONSUMER_BROKER_APP_SECRET);
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
 
             logInWithBroker(bc);
 
@@ -306,7 +309,8 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         identityProviderResource.addMapper(hardCodedSessionNoteMapper).close();
 
         oauth.client("broker-app", CONSUMER_BROKER_APP_SECRET);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         loginFetchingUserFromUserEndpoint();
 
@@ -323,7 +327,8 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
         oauth.client("broker-app", CONSUMER_BROKER_APP_SECRET);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -347,7 +352,8 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
         oauth.client("broker-app", CONSUMER_BROKER_APP_SECRET);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -494,7 +500,10 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         try (var c = ClientAttributeUpdater.forClient(adminClient, bc.consumerRealmName(), CONSUMER_BROKER_APP_CLIENT_ID).setConsentRequired(true).update()) {
             oauth.client(CONSUMER_BROKER_APP_CLIENT_ID);
             oauth.realm(bc.consumerRealmName());
-            doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
+            doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword()).isSuccess();
+
+            updateAccountInformationPage.assertCurrent();
+            updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
 
             WaitUtils.waitForPageToLoad();
             consentPage.assertCurrent();
@@ -579,6 +588,9 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         oauth.realm(bc.consumerRealmName());
 
         doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
+
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
 
         EventRepresentation loginEvent;
         do {

@@ -123,7 +123,12 @@ public class DefaultRefreshTokenProvider extends AbstractRefreshTokenProvider im
         }
     }
 
-    private void revokeTokenExchangeSession(UserSessionModel userSession, AccessToken token, EventBuilder event) {
+    @Override
+    public String getProviderId() {
+        return DefaultRefreshTokenProviderFactory.PROVIDER_ID;
+    }
+
+    public static void revokeTokenExchangeSession(UserSessionModel userSession, AccessToken token, EventBuilder event) {
         Map<String, AuthenticatedClientSessionModel> clientSessionModelMap = userSession.getAuthenticatedClientSessions();
         List<String> revokedClients = new ArrayList<>();
         clientSessionModelMap.forEach((key, clientSessionModel) -> {

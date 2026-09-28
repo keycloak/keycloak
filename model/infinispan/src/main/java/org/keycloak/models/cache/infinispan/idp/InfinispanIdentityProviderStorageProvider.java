@@ -18,7 +18,6 @@ package org.keycloak.models.cache.infinispan.idp;
 
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -66,7 +65,7 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
         return realm.getId() + IDP_COUNT_KEY_SUFFIX;
     }
 
-    private static String cacheKeyIdpAlias(RealmModel realm, String alias) {
+    public static String cacheKeyIdpAlias(RealmModel realm, String alias) {
         return realm.getId() + "." + alias + IDP_ALIAS_KEY_SUFFIX;
     }
 
@@ -438,7 +437,7 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
         }
         // IDP is currently available for login and update preserves that, including organization link - no need to invalidate.
         if (getLoginPredicate().test(original) && getLoginPredicate().test(updated)
-                && Objects.equals(original.getOrganizationId(), updated.getOrganizationId())) {
+                && original.getOrganizationIds().equals(updated.getOrganizationIds())) {
             return;
         }
 
@@ -465,11 +464,13 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
         return new IdentityProviderModel(idp) {
             @Override
             public boolean isEnabled() {
-                // if IdP is bound to an org
-                if (getOrganizationId() != null) {
+                if (hasOrganization()) {
                     OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
-                    OrganizationModel org = provider == null ? null : provider.getById(getOrganizationId());
-                    return org != null && provider.isEnabled() && org.isEnabled() && super.isEnabled();
+                    if (provider == null || !provider.isEnabled()) return false;
+                    return getOrganizationIds().stream()
+                            .map(provider::getById)
+                            .filter(java.util.Objects::nonNull)
+                            .anyMatch(OrganizationModel::isEnabled) && super.isEnabled();
                 }
                 return super.isEnabled();
             }

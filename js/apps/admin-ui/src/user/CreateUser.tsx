@@ -51,7 +51,7 @@ export default function CreateUser() {
       });
 
       addAlert(t("userCreated"), AlertVariant.success);
-      navigate(
+      void navigate(
         toUser({ id: createdUser.id, realm: realmName, tab: "settings" }),
       );
     } catch (error) {

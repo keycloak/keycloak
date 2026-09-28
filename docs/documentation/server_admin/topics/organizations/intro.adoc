@@ -17,6 +17,7 @@ some of the core capabilities needed to manage organizations such as:
 * Organize members into groups with hierarchical structures
 * Onboard organization members using invitation links
 * Onboard organization members by federating their identities through identity brokering
+* Share identity providers across multiple organizations with independent per-association configuration
 * Identity-first login and organization-specific steps when authenticating in the scope of an organization
 * Propagate organization-specific claims to applications through tokens for authorization purposes
 

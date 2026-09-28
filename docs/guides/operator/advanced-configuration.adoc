@@ -279,8 +279,8 @@ spec:
                 app: keycloak
                 app.kubernetes.io/managed-by: keycloak-operator
                 app.kubernetes.io/component: server
-                topologyKey: topology.kubernetes.io/zone
-              weight: 10
+            topologyKey: topology.kubernetes.io/zone
+          weight: 10
     tolerations:
     - key: "some-taint"
       operator: "Exists"

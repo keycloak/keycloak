@@ -32,6 +32,8 @@ public class OrganizationDomainRepresentation {
 
     private String name;
     private boolean verified;
+    private String identityProviderAlias;
+    private boolean autoRedirect;
 
     public OrganizationDomainRepresentation() {
         // for reflection
@@ -55,6 +57,22 @@ public class OrganizationDomainRepresentation {
 
     public void setVerified(boolean verified) {
         this.verified = verified;
+    }
+
+    public String getIdentityProviderAlias() {
+        return this.identityProviderAlias;
+    }
+
+    public void setIdentityProviderAlias(String identityProviderAlias) {
+        this.identityProviderAlias = identityProviderAlias;
+    }
+
+    public boolean isAutoRedirect() {
+        return this.autoRedirect;
+    }
+
+    public void setAutoRedirect(boolean autoRedirect) {
+        this.autoRedirect = autoRedirect;
     }
 
     @Override

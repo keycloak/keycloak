@@ -17,6 +17,9 @@
 
 package org.keycloak.tests.organization.authz;
 
+
+import java.util.List;
+
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -25,8 +28,10 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.admin.AdminClientFactory;
@@ -46,6 +51,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest
@@ -932,6 +938,68 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             try (Response response = manageOrgsResource.organizations().get(orgId).members().member(userId).delete()) {
                 assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
             }
+        }
+    }
+
+    @Test
+    public void testGenericIdpEndpointCannotBindOrganization() {
+        String orgId;
+        try (
+                Keycloak manageOrgsClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("manage-orgs-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            RealmResource manageOrgsResource = manageOrgsClient.realm(realm.getName());
+
+            OrganizationRepresentation orgRep = createRepresentation("genericIdpBindOrg", "genericidpbind.org");
+            try (Response response = manageOrgsResource.organizations().create(orgRep)) {
+                assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+                orgId = ApiUtil.getCreatedId(response);
+                realm.cleanup().add(r -> r.organizations().get(orgId).delete().close());
+            }
+        }
+
+        // view-orgs-manage-idps-admin has view-organizations + manage-identity-providers but NOT manage-organizations
+        try (
+                Keycloak viewOrgsManageIdpsClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("view-orgs-manage-idps-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            RealmResource viewOrgsManageIdpsResource = viewOrgsManageIdpsClient.realm(realm.getName());
+
+            // create IdP via generic endpoint with organizationId set — binding should be stripped
+            IdentityProviderRepresentation idpRep = new IdentityProviderRepresentation();
+            idpRep.setAlias("genericOrgBoundIdp");
+            idpRep.setProviderId("oidc");
+            idpRep.setOrganizationLinks(List.of(new OrganizationIdentityProviderLinkRepresentation(orgId)));
+
+            try (Response response = viewOrgsManageIdpsResource.identityProviders().create(idpRep)) {
+                assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+                realm.cleanup().add(r -> r.identityProviders().get("genericOrgBoundIdp").remove());
+            }
+
+            IdentityProviderRepresentation created = viewOrgsManageIdpsResource
+                    .identityProviders().get("genericOrgBoundIdp").toRepresentation();
+            assertTrue(created.getOrganizationLinks() == null || created.getOrganizationLinks().isEmpty(),
+                    "Generic IdP create should not bind the IdP to an organization");
+
+            // update the IdP via generic endpoint with organizationLinks set — binding should still be stripped
+            created.setOrganizationLinks(List.of(new OrganizationIdentityProviderLinkRepresentation(orgId)));
+            created.getConfig().put(OrganizationModel.ORGANIZATION_ATTRIBUTE, orgId);
+            viewOrgsManageIdpsResource.identityProviders().get("genericOrgBoundIdp").update(created);
+
+            IdentityProviderRepresentation updated = viewOrgsManageIdpsResource
+                    .identityProviders().get("genericOrgBoundIdp").toRepresentation();
+            assertTrue(updated.getOrganizationLinks() == null || updated.getOrganizationLinks().isEmpty(),
+                    "Generic IdP update should not bind the IdP to an organization");
+        }
+
+        // verify the org has no linked IdPs
+        try (
+                Keycloak manageOrgsClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("manage-orgs-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            RealmResource manageOrgsResource = manageOrgsClient.realm(realm.getName());
+            assertThat(manageOrgsResource.organizations().get(orgId).identityProviders().getIdentityProviders(),
+                    Matchers.empty());
         }
     }
 

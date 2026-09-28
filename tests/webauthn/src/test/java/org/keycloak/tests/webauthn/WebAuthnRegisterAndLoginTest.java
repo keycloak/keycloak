@@ -40,6 +40,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
@@ -188,9 +189,8 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         final String WEBAUTHN_LABEL = "webauthn";
         final String PASSWORDLESS_LABEL = "passwordless";
 
+        managedRealm.addUser(UserBuilder.create(USERNAME).password(PASSWORD).name("WebAuthn", "User") .email("webauthn-user@localhost").emailVerified(true));
         managedRealm.updateWithCleanup(r -> r.browserFlow(webAuthnTogetherPasswordlessFlow()));
-        final UserRepresentation cleanupUser = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME);
-        managedRealm.cleanup().add(r -> r.users().get(cleanupUser.getId()).update(cleanupUser));
 
         UserRepresentation user = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME);
 
@@ -420,6 +420,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
     public void webAuthnTwoFactorAndWebAuthnPasswordlessTogether() {
         // Change binding to browser-webauthn-passwordless. This is flow, which contains both "webauthn" and "webauthn-passwordless" authenticator
         managedRealm.updateWithCleanup(r -> r.browserFlow("browser-webauthn-passwordless"));
+        managedRealm.addUser(UserBuilder.create(USERNAME).password(PASSWORD).name("WebAuthn", "User") .email("webauthn-user@localhost").emailVerified(true));
         // Login as webauthn-user with password
         oAuthClient.openLoginForm();
         loginPage.fillLogin(USERNAME, PASSWORD);

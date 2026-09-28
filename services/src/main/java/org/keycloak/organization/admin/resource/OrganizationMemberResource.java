@@ -29,6 +29,7 @@ import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -47,6 +48,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
@@ -131,7 +133,10 @@ public class OrganizationMemberResource {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Invites an existing user or sends a registration link to a new user, based on the provided e-mail address.",
-            description = "If the user with the given e-mail address exists, it sends an invitation link, otherwise it sends a registration link.")
+            description = "If the user with the given e-mail address exists, it sends an invitation link, otherwise it sends a registration link. " +
+                    "The client_id query parameter is optional. If no client_id is provided, the account client is used. " +
+                    "After accepting the invitation the user is redirected to the selected client's home URL; for the account client the " +
+                    "organization redirect URL is used instead when configured.")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
@@ -141,8 +146,9 @@ public class OrganizationMemberResource {
     })
     public Response inviteUser(@FormParam("email") String email,
                                @FormParam("firstName") String firstName,
-                               @FormParam("lastName") String lastName) {
-        return new OrganizationInvitationResource(session, organization, adminEvent, auth).inviteUser(email, firstName, lastName);
+                               @FormParam("lastName") String lastName,
+                               @Parameter(description = "Client id") @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
+        return new OrganizationInvitationResource(session, organization, adminEvent, auth).inviteUser(email, firstName, lastName, clientId);
     }
 
     @POST
@@ -229,6 +235,52 @@ public class OrganizationMemberResource {
         UserModel member = getMember(memberId);
         auth.users().requireView(member);
         return toRepresentation(member, false);
+    }
+
+    @Path("{member-id}/membership-type")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Updates the membership type of the member with the specified id")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public Response updateMembershipType(@PathParam("member-id") String memberId, MembershipType membershipType) {
+        auth.orgs().requireManage(organization);
+        if (StringUtil.isBlank(memberId)) {
+            throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
+        }
+        if (membershipType == null) {
+            throw ErrorResponse.error("membershipType cannot be null", Status.BAD_REQUEST);
+        }
+
+        UserModel member = getMember(memberId);
+        auth.users().requireManage(member);
+
+        MembershipType currentType = provider.isManagedMember(organization, member) ? MembershipType.MANAGED : MembershipType.UNMANAGED;
+        if (membershipType.equals(currentType)) {
+            return Response.noContent().build();
+        }
+
+        try {
+            if (provider.updateMembershipType(organization, member, membershipType)) {
+                adminEvent.operation(OperationType.UPDATE)
+                        .representation(toRepresentation(member, false))
+                        .resourcePath(session.getContext().getUri())
+                        .detail(UserModel.USERNAME, member.getUsername())
+                        .detail(UserModel.EMAIL, member.getEmail())
+                        .detail(MembershipType.NAME, membershipType.name())
+                        .success();
+                return Response.noContent().build();
+            }
+        } catch (ModelException me) {
+            throw ErrorResponse.error(me.getMessage(), Status.BAD_REQUEST);
+        }
+
+        throw ErrorResponse.error("Not a member of the organization", Status.NOT_FOUND);
     }
 
     @Path("{member-id}")

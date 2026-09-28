@@ -81,6 +81,7 @@ public class LDAPIdentityStore implements IdentityStore {
 
     private final LDAPConfig config;
     private final LDAPOperationManager operationManager;
+    private final Meter.MeterProvider<Timer> requestTimer;
 
     public LDAPIdentityStore(KeycloakSession session, LDAPConfig config) {
         this(session, config, null);
@@ -88,7 +89,12 @@ public class LDAPIdentityStore implements IdentityStore {
 
     public LDAPIdentityStore(KeycloakSession session, LDAPConfig config, Meter.MeterProvider<Timer> requestTimer) {
         this.config = config;
+        this.requestTimer = requestTimer;
         this.operationManager = new LDAPOperationManager(session, config, requestTimer);
+    }
+
+    public Meter.MeterProvider<Timer> getRequestTimer() {
+        return requestTimer;
     }
 
     @Override

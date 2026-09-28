@@ -395,11 +395,11 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
 
         oauth.openLoginForm();
         loginPage.login(upperCaseUsername, "Password1");
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         managedRealm.admin().users().get(john.getId()).logout();
         oauth.openLoginForm();
         loginPage.login(upperCaseUsername.toLowerCase(), "Password1");
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test
@@ -432,11 +432,11 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
 
         oauth.openLoginForm();
         loginPage.login(upperCaseUsername, "Password1");
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         managedRealm.admin().users().get(john.getId()).logout();
         oauth.openLoginForm();
         loginPage.login(upperCaseUsername.toLowerCase(), "Password1");
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test

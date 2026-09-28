@@ -126,7 +126,7 @@ When starting the server, you can check that the startup log contains `KC` provi
 
 [source]
 ----
-FIPS1402Provider created: KC(BCFIPS version 2.0102 Approved Mode, FIPS-JVM: enabled)
+FIPS1402Provider created: KC(BCFIPS version 2.0103 Approved Mode, FIPS-JVM: enabled)
 ----
 
 === Cryptography restrictions in strict mode
@@ -294,3 +294,20 @@ see the https://access.redhat.com/documentation/en-us/red_hat_build_of_openjdk/2
 You can check the {project_name} server log at startup to see if the correct security providers are used. TRACE logging should be enabled for crypto-related {project_name} packages as described in the Keycloak startup command earlier.
 
 </@tmpl.guide>
+
+
+== Troubleshooting
+
+BouncyCastle FIPS requires TLS certificates with a Subject Alternative Name (SAN), with no fallback to using
+the Common Name (CN) from the certificate. Due to an issue in older versions of BouncyCastle FIPS the fallback was
+enabled by default, which is no longer the case.
+
+If you see an error such as `No hostname specified for HTTPS endpoint ID check` the recommended solution is to
+update the certificates to include a Subject Alternative Name (SAN).
+
+As an alternative temporary solution enable the Common Name (CN) fallback with:
+
+[source, bash]
+----
+export JAVA_OPTS_APPEND="-Dorg.bouncycastle.jsse.hostname_check_cn_fallback=true"
+----

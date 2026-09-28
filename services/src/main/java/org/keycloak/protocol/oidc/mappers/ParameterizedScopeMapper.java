@@ -68,7 +68,7 @@ public class ParameterizedScopeMapper extends AbstractOIDCProtocolMapper
         ProtocolMapperModel model = new ProtocolMapperModel(mappingModel);
         model.getConfig().put(ProtocolMapperUtils.MULTIVALUED, Boolean.toString(TokenManager.isRepeatableScope(keycloakSession, clientScope)));
         if (!parameterValues.isEmpty()) {
-            setClaim(token, model, userSession, keycloakSession, parameterValues);
+            setClaim(token, model, userSession, keycloakSession, clientScope, parameterValues);
         }
     }
 
@@ -76,6 +76,11 @@ public class ParameterizedScopeMapper extends AbstractOIDCProtocolMapper
      * Maps resolved parameter values to a token claim. The mapper's {@code multivalued} config
      * controls whether multiple values are mapped as a JSON array or only the first value is used.
      */
+    protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession,
+                            KeycloakSession keycloakSession, ClientScopeModel clientScope, List<String> parameterValues) {
+        setClaim(token, mappingModel, userSession, keycloakSession, parameterValues);
+    }
+
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession,
                             KeycloakSession keycloakSession, List<String> parameterValues) {
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, parameterValues);

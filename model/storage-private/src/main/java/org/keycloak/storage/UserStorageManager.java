@@ -511,11 +511,15 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
+        // Published before any removal work, including the federated pre-removal
+        // below. That call deletes the user's federated attributes, so a listener
+        // running after it would observe a user that has already lost part of its
+        // state -- which the "pre removed" contract does not lead anyone to expect.
+        publishUserPreRemovedEvent(realm, user);
+
         if (getFederatedStorage() != null && user.getServiceAccountClientLink() == null) {
             getFederatedStorage().preRemove(realm, user);
         }
-
-        publishUserPreRemovedEvent(realm, user);
 
         StorageId storageId = new StorageId(user.getId());
 
@@ -1014,6 +1018,14 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             return getFederatedStorage().removeIssuedVerifiableCredential(credentialId);
         }
         return false;
+    }
+
+    @Override
+    public boolean removeIssuedVerifiableCredential(String userId, String credentialId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().removeIssuedVerifiableCredential(userId, credentialId);
+        }
+        return getFederatedStorage() != null && getFederatedStorage().removeIssuedVerifiableCredential(userId, credentialId);
     }
 
     @Override

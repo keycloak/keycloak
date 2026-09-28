@@ -36,6 +36,12 @@ public interface WorkflowProvider extends Provider {
 
     Workflow toModel(WorkflowRepresentation representation);
 
+    /**
+     * Returns the {@link Workflow} with the given id, or {@code null} if no such workflow exists.
+     *
+     * @param id the workflow id.
+     * @return the workflow, or {@code null} if not found.
+     */
     Workflow getWorkflow(String id);
 
     void removeWorkflow(Workflow workflow);

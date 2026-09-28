@@ -206,6 +206,8 @@ public class SecureClientUrisPatternExecutor implements ClientPolicyExecutorProv
                 return getAttributeMultivalued(attributes, OIDCConfigAttributes.REQUEST_URIS);
             case "backchannelLogoutUrl":
                 return singletonOrEmpty(attributes.get(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL));
+            case "frontChannelLogoutUrl":
+                return singletonOrEmpty(attributes.get(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI));
             case "postLogoutRedirectUris":
                 return getAttributeMultivalued(attributes, OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
             case "cibaClientNotificationEndpoint":

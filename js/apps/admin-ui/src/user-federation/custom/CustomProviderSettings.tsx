@@ -91,7 +91,7 @@ export default function CustomProviderSettings() {
     try {
       if (!id) {
         await adminClient.components.create(saveComponent);
-        navigate(toUserFederation({ realm: realmName }));
+        void navigate(toUserFederation({ realm: realmName }));
       } else {
         await adminClient.components.update({ id }, saveComponent);
       }

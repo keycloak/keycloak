@@ -20,6 +20,7 @@ import org.keycloak.tests.suites.DatabaseTest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -100,6 +101,45 @@ public class FederatedIssuedVerifiableCredentialTest extends AbstractUserTest {
         runOnServer.run(session -> {
             long count = session.users().getIssuedVerifiableCredentialsStreamByUser(federatedUserId).count();
             assertEquals(0, count);
+        });
+    }
+
+    @Test
+    @DatabaseTest
+    public void testRemoveIssuedCredentialForFederatedUserScopedToOwner() {
+        String federatedUserId = createFederatedUser("fed-user-scoped-owner");
+        String otherFederatedUserId = createFederatedUser("fed-user-scoped-other");
+        String clientId = createTestClient("wallet-client");
+        String scopeId = resolveScopeId(CLIENT_SCOPE_NAME_1);
+
+        // Add VC and Issued VC for the owner, get Issued VC Id
+        String issuedVcId = runOnServer.fetchString(session -> {
+            UserVerifiableCredentialModel addedVC = session.users().addVerifiableCredential(federatedUserId, new UserVerifiableCredentialModel("vc_01", scopeId));
+            IssuedVerifiableCredentialModel issuedVc = new IssuedVerifiableCredentialModel(federatedUserId, addedVC.getId(), clientId);
+            issuedVc.setRevision("rev-001");
+            return session.users().addIssuedVerifiableCredential(issuedVc).getId();
+        });
+
+        // A non-owner federated user must not be able to remove the credential
+        runOnServer.run(session -> {
+            boolean removed = session.users().removeIssuedVerifiableCredential(otherFederatedUserId, issuedVcId);
+            assertFalse(removed);
+        });
+        runOnServer.run(session -> {
+            long count = session.users().getIssuedVerifiableCredentialsStreamByUser(federatedUserId).count();
+            assertEquals(1, count);
+        });
+
+        // The owner can remove the credential
+        runOnServer.run(session -> {
+            boolean removed = session.users().removeIssuedVerifiableCredential(federatedUserId, issuedVcId);
+            assertTrue(removed);
+        });
+
+        // Removing a non-existent or already removed credential returns false
+        runOnServer.run(session -> {
+            assertFalse(session.users().removeIssuedVerifiableCredential(federatedUserId, issuedVcId));
+            assertFalse(session.users().removeIssuedVerifiableCredential(federatedUserId, "non-existent-id"));
         });
     }
 

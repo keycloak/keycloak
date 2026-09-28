@@ -30,6 +30,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import static java.util.Arrays.asList;
 
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CANONICAL_DN;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_CA_SUBJECT_DN;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_EXTENDED_KEY_USAGE;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_KEY_USAGE;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY;
@@ -60,7 +61,6 @@ import static org.keycloak.authentication.authenticators.x509.AbstractX509Client
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.OCSPRESPONDER_URI;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.OCSP_FAIL_OPEN;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.REGULAR_EXPRESSION;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.REVALIDATE_CERTIFICATE;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.SERIALNUMBER_HEX;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.TIMESTAMP_VALIDATION;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.USERNAME_EMAIL_MAPPER;
@@ -255,11 +255,13 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         identityConfirmationPageDisallowed.setLabel("Bypass identity confirmation");
         identityConfirmationPageDisallowed.setHelpText("By default, the users are prompted to confirm their identity extracted from X509 client certificate. The identity confirmation prompt is skipped if the option is switched on.");
 
-        ProviderConfigProperty revalidateCertificateEnabled = new ProviderConfigProperty();
-        revalidateCertificateEnabled.setType(BOOLEAN_TYPE);
-        revalidateCertificateEnabled.setName(REVALIDATE_CERTIFICATE);
-        revalidateCertificateEnabled.setLabel("Revalidate Client Certificate");
-        revalidateCertificateEnabled.setHelpText("Forces revalidation of the client certificate according to the certificates defined in the truststore. This is useful when behind a non-validating proxy or when the number of allowed certificate chains would be too large for mutual SSL negotiation.");
+        // revalidate certificate is removed at configuration although accepted for backwards compatibility
+        ProviderConfigProperty caSubjectDn = new ProviderConfigProperty();
+        caSubjectDn.setType(MULTIVALUED_STRING_TYPE);
+        caSubjectDn.setName(CERTIFICATE_CA_SUBJECT_DN);
+        caSubjectDn.setRequired(true);
+        caSubjectDn.setLabel("Certificate Authority subject DN");
+        caSubjectDn.setHelpText("Subject DN of the root Certificate Authority (or Authorities) (CA) that issued the user certificates (trust anchor). The CA Subject DN can be in the RFC4514 or RFC1779 format.");
 
         configProperties = asList(mappingMethodList,
                 canonicalDn,
@@ -279,7 +281,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
                 keyUsage,
                 extendedKeyUsage,
                 identityConfirmationPageDisallowed,
-                revalidateCertificateEnabled,
+                caSubjectDn,
                 certificatePolicy,
                 certificatePolicyMode);
     }

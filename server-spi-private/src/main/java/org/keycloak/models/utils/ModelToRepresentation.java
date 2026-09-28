@@ -76,6 +76,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.OrganizationDomainModel;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ParConfig;
 import org.keycloak.models.ProtocolMapperModel;
@@ -93,6 +94,7 @@ import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.account.LocalizedMessage;
@@ -113,6 +115,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
@@ -356,14 +359,14 @@ public class ModelToRepresentation {
     public static UserRepresentation toRepresentation(KeycloakSession session, UserModel user, boolean brief) {
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
         UserProfile profile = provider.create(UserProfileContext.USER_API, user);
-        UserRepresentation rep = profile.toRepresentation(!brief);
+        UserRepresentation rep = profile.toRepresentation(!brief, false);
         RealmModel realm = session.getContext().getRealm();
 
-        rep = brief ?
-                ModelToRepresentation.toBriefRepresentation(user, rep, false) :
-                ModelToRepresentation.toRepresentation(session, realm, user, rep, false);
-
-        rep.setUserProfileMetadata(null);
+        if (brief) {
+            ModelToRepresentation.toBriefRepresentation(user, rep, false);
+        } else {
+            ModelToRepresentation.toRepresentation(session, realm, user, rep, false);
+        }
 
         return rep;
     }
@@ -1010,7 +1013,24 @@ public class ModelToRepresentation {
         }
 
         if (!export) {
-            providerRep.setOrganizationId(identityProviderModel.getOrganizationId());
+            Set<String> orgIds = identityProviderModel.getOrganizationIds();
+            if (orgIds != null && !orgIds.isEmpty()) {
+                OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+                providerRep.setOrganizationLinks(orgIds.stream()
+                        .map(orgId -> {
+                            OrganizationIdentityProviderLinkRepresentation linkRep = new OrganizationIdentityProviderLinkRepresentation(orgId);
+                            OrganizationModel org = orgProvider.getById(orgId);
+                            if (org != null) {
+                                OrganizationIdentityProviderLinkModel link = orgProvider.getIdentityProviderLink(org, identityProviderModel);
+                                if (link != null) {
+                                    linkRep.setAutoMembership(link.isAutoMembership());
+                                    linkRep.setMembershipType(link.getMembershipType().name());
+                                }
+                            }
+                            return linkRep;
+                        })
+                        .collect(Collectors.toList()));
+            }
         }
 
         List<IdentityProviderType> identityProviderTypes = IdentityProviderTypeUtil.listTypesFromFactory(session, identityProviderModel.getProviderId());
@@ -1525,6 +1545,8 @@ public class ModelToRepresentation {
         OrganizationDomainRepresentation representation = new OrganizationDomainRepresentation();
         representation.setName(model.getName());
         representation.setVerified(model.isVerified());
+        representation.setIdentityProviderAlias(model.getIdentityProviderAlias());
+        representation.setAutoRedirect(model.isAutoRedirect());
         return representation;
     }
 

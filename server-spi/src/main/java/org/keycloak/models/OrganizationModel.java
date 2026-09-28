@@ -29,29 +29,9 @@ public interface OrganizationModel {
     String ORGANIZATION_ATTRIBUTE = "kc.org";
     String ORGANIZATION_SWITCHABLE_ATTRIBUTE = "kc.org.switchable";
     String ORGANIZATION_NAME_ATTRIBUTE = "kc.org.name";
-    String ORGANIZATION_DOMAIN_ATTRIBUTE = "kc.org.domain";
-    String ORGANIZATION_EXCLUDED_DOMAIN_ATTRIBUTE = "kc.org.excluded.domains";
     String ALIAS = "alias";
     String HIDE_IDP_ON_LOGIN_WHEN_ORGANIZATION_UNKNOWN = "kc.org.broker.login.hide-when-org-unknown";
     String SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE = "kc.org.broker.login.show-when-linked-elsewhere";
-
-    enum IdentityProviderRedirectMode {
-        EMAIL_MATCH("kc.org.broker.redirect.mode.email-matches");
-
-        private final String key;
-
-        IdentityProviderRedirectMode(String key) {
-            this.key = key;
-        }
-
-        public boolean isSet(IdentityProviderModel broker) {
-            return Boolean.parseBoolean(broker.getConfig().get(key));
-        }
-
-        public String getKey() {
-            return key;
-        }
-    }
 
     interface OrganizationMembershipEvent extends ProviderEvent {
         OrganizationModel getOrganization();

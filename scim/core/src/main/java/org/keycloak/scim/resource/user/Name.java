@@ -1,6 +1,6 @@
 package org.keycloak.scim.resource.user;
 
-import java.util.Optional;
+import java.util.StringJoiner;
 
 import org.keycloak.utils.StringUtil;
 
@@ -30,18 +30,22 @@ public class Name {
 
     public String getFormatted() {
         if (formatted == null) {
-            formatted = Optional.ofNullable(honorificPrefix).orElse("") +
-                    " " +
-                    Optional.ofNullable(givenName).orElse("") +
-                    " " +
-                    Optional.ofNullable(middleName).orElse("") +
-                    " " +
-                    Optional.ofNullable(familyName).orElse("") +
-                    " " +
-                    Optional.ofNullable(honorificSuffix).orElse("");
+            StringJoiner joiner = new StringJoiner(" ");
+            addIfNotBlank(joiner, honorificPrefix);
+            addIfNotBlank(joiner, givenName);
+            addIfNotBlank(joiner, middleName);
+            addIfNotBlank(joiner, familyName);
+            addIfNotBlank(joiner, honorificSuffix);
+            formatted = joiner.toString();
         }
 
         return StringUtil.isBlank(formatted.trim()) ? null : formatted;
+    }
+
+    private static void addIfNotBlank(StringJoiner joiner, String value) {
+        if (!StringUtil.isBlank(value)) {
+            joiner.add(value);
+        }
     }
 
     public void setFormatted(String formatted) {
