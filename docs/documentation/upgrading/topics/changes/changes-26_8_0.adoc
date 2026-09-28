@@ -448,8 +448,19 @@ If a custom provider archive defines multiple persistence units within a single 
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
-
 The following sections provide details on deprecated features.
+
+=== Client registration providers `default`, `install`, and `saml2-entity-descriptor`
+
+The following client registration endpoints are now deprecated and will be removed in a future major release:
+
+* `/realms/<realm>/clients-registrations/default` — {project_name} Client Representation provider
+* `/realms/<realm>/clients-registrations/install/<clientId>` — Adapter Installation Configuration provider
+* `/realms/<realm>/clients-registrations/saml2-entity-descriptor` — SAML Entity Descriptor provider
+
+These endpoints are not backed by any specification. For `default`, use either the Admin REST API or the standards-compliant OpenID Connect dynamic client registration endpoint (`/realms/<realm>/clients-registrations/openid-connect`). For `install`, retrieve adapter configuration with `GET /admin/realms/<realm>/clients/<client-uuid>/installation/providers/<provider-id>`. For `saml2-entity-descriptor`, first convert the descriptor with `POST /admin/realms/<realm>/client-description-converter`, then create the returned client representation with `POST /admin/realms/<realm>/clients`.
+
+A `WARN`-level log message is now emitted whenever these endpoints are invoked.
 
 === Multi-cluster v1 (`multi-site` feature) is deprecated
 // https://github.com/keycloak/keycloak/issues/52772
