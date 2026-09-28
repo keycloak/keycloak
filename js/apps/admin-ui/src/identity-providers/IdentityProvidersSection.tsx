@@ -209,7 +209,7 @@ export default function IdentityProvidersSection() {
       />
       <PageSection
         hasBodyWrapper={false}
-        variant={!hasProviders ? "default" : "secondary"}
+        variant={!hasProviders ? "secondary" : "default"}
         className={!hasProviders ? "" : "pf-v6-u-p-0"}
       >
         {!hasProviders && (
