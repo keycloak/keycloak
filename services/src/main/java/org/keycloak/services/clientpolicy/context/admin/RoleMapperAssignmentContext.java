@@ -23,7 +23,8 @@ import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.services.clientpolicy.ClientPolicyContext;
+import org.keycloak.services.clientpolicy.context.ClientModelContext;
+import org.keycloak.services.clientpolicy.context.ClientPolicyCRUDContext;
 
 /**
  * Context fired by {@link org.keycloak.services.resources.admin.RoleMapperResource} and
@@ -33,13 +34,18 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
  * <p>Dispatched as {@link org.keycloak.services.clientpolicy.ClientPolicyEvent#REGISTER_ROLE_MAPPING}
  * and {@link org.keycloak.services.clientpolicy.ClientPolicyEvent#UNREGISTER_ROLE_MAPPING}.
  */
-public interface RoleMapperAssignmentContext extends ClientPolicyContext {
+public interface RoleMapperAssignmentContext extends ClientModelContext, ClientPolicyCRUDContext {
 
     /**
      * @return the client that owns the mapped roles, or {@code null} for realm-role mappings.
      */
     default ClientModel getTargetClient() {
         return getRoleContainerClient();
+    }
+
+    @Override
+    default ClientModel getClient() {
+        return getTargetClient();
     }
 
     /**
@@ -57,7 +63,8 @@ public interface RoleMapperAssignmentContext extends ClientPolicyContext {
     }
 
     /**
-     * @return the roles being added or removed.
+     * @return a structurally immutable list of validated roles being added or removed.
+     *         Changing these representations does not change the role mappings applied by the request.
      */
     default List<RoleRepresentation> getRoles() {
         return null;

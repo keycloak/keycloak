@@ -30,7 +30,6 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.ClientModelContext;
-import org.keycloak.services.clientpolicy.context.admin.RoleMapperAssignmentContext;
 
 import org.jboss.logging.Logger;
 
@@ -72,13 +71,12 @@ public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProv
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
-        if (context instanceof RoleMapperAssignmentContext roleMappingContext) {
-            return isClientAccessTypeMatched(roleMappingContext.getTargetClient()) ? ClientPolicyVote.YES : ClientPolicyVote.NO;
-        } else if (context.getEvent() == REGISTER) {
+        if (context.getEvent() == REGISTER) {
             if (isProposedClientAccessTypeMatched((ClientCRUDContext) context)) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
         } else if (context instanceof ClientModelContext) {
             ClientModel client = ((ClientModelContext) context).getClient();
+            if (client == null) return ClientPolicyVote.ABSTAIN;
             if (isClientAccessTypeMatched(client)) return ClientPolicyVote.YES;
             // In case that there is an attempt to update the client to the target access type, condition should be also evaluated to success
             if (context instanceof ClientCRUDContext && isProposedClientAccessTypeMatched((ClientCRUDContext) context)) return ClientPolicyVote.YES;

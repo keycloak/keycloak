@@ -27,7 +27,6 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.ClientPolicyCRUDContext;
-import org.keycloak.services.clientpolicy.context.admin.RoleMapperAssignmentContext;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.util.TokenUtil;
 
@@ -79,15 +78,9 @@ public class ClientUpdaterContextCondition extends AbstractClientPolicyCondition
         case REGISTER_PROTOCOL_MAPPER:
         case UPDATE_PROTOCOL_MAPPER:
         case UNREGISTER_PROTOCOL_MAPPER:
-            if (isAuthMethodMatched((ClientPolicyCRUDContext)context)) return ClientPolicyVote.YES;
-            return ClientPolicyVote.NO;
         case REGISTER_ROLE_MAPPING:
         case UNREGISTER_ROLE_MAPPING:
-            RoleMapperAssignmentContext roleMappingContext = (RoleMapperAssignmentContext) context;
-            if (isAuthMethodMatched(roleMappingContext.getToken(),
-                    roleMappingContext.getAuthenticatedUser() != null || roleMappingContext.getAuthenticatedClient() != null)) {
-                return ClientPolicyVote.YES;
-            }
+            if (isAuthMethodMatched((ClientPolicyCRUDContext)context)) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
         default:
             return ClientPolicyVote.ABSTAIN;
@@ -109,21 +102,16 @@ public class ClientUpdaterContextCondition extends AbstractClientPolicyCondition
     }
 
     private boolean isAuthMethodMatched(ClientPolicyCRUDContext context) {
-        return isAuthMethodMatched(context.getToken(),
-                context.getAuthenticatedUser() != null || context.getAuthenticatedClient() != null);
-    }
-
-    private boolean isAuthMethodMatched(JsonWebToken token, boolean authenticated) {
         String authMethod = null;
 
-        if (token == null) {
+        if (context.getToken() == null) {
             authMethod = ClientUpdaterContextConditionFactory.BY_ANONYMOUS;
-        } else if (isInitialAccessToken(token)) {
+        } else if (isInitialAccessToken(context.getToken())) {
             authMethod = ClientUpdaterContextConditionFactory.BY_INITIAL_ACCESS_TOKEN;
-        } else if (isRegistrationAccessToken(token)) {
+        } else if (isRegistrationAccessToken(context.getToken())) {
             authMethod = ClientUpdaterContextConditionFactory.BY_REGISTRATION_ACCESS_TOKEN;
-        } else if (isBearerToken(token)) {
-            if (authenticated) {
+        } else if (isBearerToken(context.getToken())) {
+            if (context.getAuthenticatedUser() != null || context.getAuthenticatedClient() != null) {
                 authMethod = ClientUpdaterContextConditionFactory.BY_AUTHENTICATED_USER;
             } else {
                 authMethod = ClientUpdaterContextConditionFactory.BY_ANONYMOUS;

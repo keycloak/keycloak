@@ -17,6 +17,7 @@
 package org.keycloak.tests.client.policies;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.client.Client;
@@ -30,11 +31,18 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientAttributesCondition;
+import org.keycloak.services.clientpolicy.condition.ClientAttributesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientProtocolCondition;
 import org.keycloak.services.clientpolicy.condition.ClientProtocolConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientRolesCondition;
+import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
 import org.keycloak.services.clientpolicy.executor.RejectRequestExecutorFactory;
@@ -43,14 +51,23 @@ import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientPolicyBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.providers.client.policies.TrackEventsClientPolicyExecutor;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = AdminRoleMappingClientPolicyTest.CustomProvidersServerConfig.class)
 public class AdminRoleMappingClientPolicyTest extends AbstractClientPoliciesTest {
 
     @InjectRealm
@@ -61,6 +78,9 @@ public class AdminRoleMappingClientPolicyTest extends AbstractClientPoliciesTest
 
     @InjectKeycloakUrls
     KeycloakUrls keycloakUrls;
+
+    @InjectRunOnServer(permittedPackages = {"org.keycloak.tests.client.policies", "org.keycloak.tests.providers.client.policies"})
+    RunOnServerClient runOnServer;
 
     @Test
     public void rejectRealmRoleMappingAddAndRemove() throws Exception {
@@ -145,6 +165,135 @@ public class AdminRoleMappingClientPolicyTest extends AbstractClientPoliciesTest
         assertRolePresent(user.roles().realmLevel().listAll(), realmRole.getName());
     }
 
+    @ParameterizedTest
+    @MethodSource("clientConditions")
+    public void realmRoleMappingIgnoresNegativeClientCondition(String conditionId,
+            ClientPolicyConditionConfigurationRepresentation configuration) throws Exception {
+        // given
+        UserResource user = createUser("negative-condition-user");
+        RoleRepresentation role = createRealmRole("negative-condition-role");
+        configuration.setNegativeLogic(true);
+        setupPolicy(realm, RejectRequestExecutorFactory.PROVIDER_ID, null, conditionId, configuration);
+
+        // when
+        user.roles().realmLevel().add(List.of(role));
+
+        // then
+        assertRolePresent(user.roles().realmLevel().listAll(), role.getName());
+    }
+
+    @ParameterizedTest
+    @MethodSource("clientConditions")
+    public void realmRoleRemovalIgnoresNegativeClientCondition(String conditionId,
+            ClientPolicyConditionConfigurationRepresentation configuration) throws Exception {
+        // given
+        UserResource user = createUser("negative-condition-user");
+        RoleRepresentation role = createRealmRole("negative-condition-role");
+        user.roles().realmLevel().add(List.of(role));
+        configuration.setNegativeLogic(true);
+        setupPolicy(realm, RejectRequestExecutorFactory.PROVIDER_ID, null, conditionId, configuration);
+
+        // when
+        user.roles().realmLevel().remove(List.of(role));
+
+        // then
+        assertRoleAbsent(user.roles().realmLevel().listAll(), role.getName());
+    }
+
+    @ParameterizedTest
+    @MethodSource("clientConditions")
+    public void realmRoleMappingEvaluatesRemainingConditions(String conditionId,
+            ClientPolicyConditionConfigurationRepresentation configuration) throws Exception {
+        // given
+        UserResource user = createUser("multiple-condition-user");
+        RoleRepresentation role = createRealmRole("multiple-condition-role");
+        setupRejectingPolicy();
+        ClientUpdaterContextCondition.Configuration updater = new ClientUpdaterContextCondition.Configuration();
+        updater.setUpdateClientSource(List.of(ClientUpdaterContextConditionFactory.BY_AUTHENTICATED_USER));
+        realm.updateWithCleanup(r -> r.resetClientPolicies().clientPolicy(ClientPolicyBuilder.create()
+                .name("policy")
+                .condition(conditionId, configuration)
+                .condition(ClientUpdaterContextConditionFactory.PROVIDER_ID, updater)
+                .profile("executor")
+                .build()));
+
+        // when
+        Assertions.assertThrows(BadRequestException.class, () -> user.roles().realmLevel().add(List.of(role)));
+
+        // then
+        assertRoleAbsent(user.roles().realmLevel().listAll(), role.getName());
+    }
+
+    private static Stream<Arguments> clientConditions() {
+        ClientAttributesCondition.Configuration attributes = new ClientAttributesCondition.Configuration();
+        attributes.setAttributes("[{\"key\":\"policy-test\",\"value\":\"value\"}]");
+        ClientRolesCondition.Configuration roles = new ClientRolesCondition.Configuration();
+        roles.setRoles(List.of("policy-test"));
+        return Stream.of(
+                Arguments.of(ClientAccessTypeConditionFactory.PROVIDER_ID,
+                        ClientPolicyBuilder.clientAccessTypeCondition(false, ClientAccessTypeConditionFactory.TYPE_PUBLIC)),
+                Arguments.of(ClientAttributesConditionFactory.PROVIDER_ID, attributes),
+                Arguments.of(ClientProtocolConditionFactory.PROVIDER_ID,
+                        new ClientProtocolCondition.Configuration(OIDCLoginProtocol.LOGIN_PROTOCOL)),
+                Arguments.of(ClientRolesConditionFactory.PROVIDER_ID, roles));
+    }
+
+    @Test
+    public void realmRoleMappingsTriggerCorrectEvents() throws Exception {
+        UserResource user = createUser("event-user");
+        RoleRepresentation role = createRealmRole("event-role");
+        setupTrackingPolicy();
+
+        user.roles().realmLevel().add(List.of(role));
+        assertAndClearEvents(ClientPolicyEvent.REGISTER_ROLE_MAPPING);
+
+        user.roles().realmLevel().remove(List.of(role));
+        assertAndClearEvents(ClientPolicyEvent.UNREGISTER_ROLE_MAPPING);
+
+        user.roles().realmLevel().add(List.of(role));
+        assertAndClearEvents(ClientPolicyEvent.REGISTER_ROLE_MAPPING);
+
+        Assertions.assertEquals(Response.Status.NO_CONTENT.getStatusCode(),
+                bodylessDelete(user.toRepresentation().getId(), "realm"));
+        assertAndClearEvents(ClientPolicyEvent.UNREGISTER_ROLE_MAPPING);
+        assertRoleAbsent(user.roles().realmLevel().listAll(), role.getName());
+    }
+
+    @Test
+    public void clientRoleMappingsTriggerCorrectEvents() throws Exception {
+        UserResource user = createUser("event-user");
+        ClientResource client = createClient("event-client");
+        String clientId = client.toRepresentation().getId();
+        RoleRepresentation role = createClientRole(client, "event-role");
+        setupTrackingPolicy();
+
+        user.roles().clientLevel(clientId).add(List.of(role));
+        assertAndClearEvents(ClientPolicyEvent.REGISTER_ROLE_MAPPING);
+
+        user.roles().clientLevel(clientId).remove(List.of(role));
+        assertAndClearEvents(ClientPolicyEvent.UNREGISTER_ROLE_MAPPING);
+
+        user.roles().clientLevel(clientId).add(List.of(role));
+        assertAndClearEvents(ClientPolicyEvent.REGISTER_ROLE_MAPPING);
+
+        Assertions.assertEquals(Response.Status.NO_CONTENT.getStatusCode(),
+                bodylessDelete(user.toRepresentation().getId(), "clients", clientId));
+        assertAndClearEvents(ClientPolicyEvent.UNREGISTER_ROLE_MAPPING);
+        assertRoleAbsent(user.roles().clientLevel(clientId).listAll(), role.getName());
+    }
+
+    private void setupTrackingPolicy() throws Exception {
+        runOnServer.fetch(new TrackEventsSnapshot(), ClientPolicyEvent[].class);
+        ClientUpdaterContextCondition.Configuration configuration = new ClientUpdaterContextCondition.Configuration();
+        configuration.setUpdateClientSource(List.of(ClientUpdaterContextConditionFactory.BY_AUTHENTICATED_USER));
+        setupPolicy(realm, TrackEventsClientPolicyExecutor.PROVIDER_ID, new TrackEventsClientPolicyExecutor.Configuration(),
+                ClientUpdaterContextConditionFactory.PROVIDER_ID, configuration);
+    }
+
+    private void assertAndClearEvents(ClientPolicyEvent event) {
+        Assertions.assertEquals(List.of(event), List.of(runOnServer.fetch(new TrackEventsSnapshot(), ClientPolicyEvent[].class)));
+    }
+
     private UserResource createUser(String username) {
         UserRepresentation user = new UserRepresentation();
         user.setUsername(generateSuffixedName(username));
@@ -221,6 +370,13 @@ public class AdminRoleMappingClientPolicyTest extends AbstractClientPoliciesTest
             try (Response response = target.request(MediaType.APPLICATION_JSON).delete()) {
                 return response.getStatus();
             }
+        }
+    }
+    public static class CustomProvidersServerConfig implements KeycloakServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.dependency("org.keycloak.tests", "keycloak-tests-custom-providers");
         }
     }
 }
