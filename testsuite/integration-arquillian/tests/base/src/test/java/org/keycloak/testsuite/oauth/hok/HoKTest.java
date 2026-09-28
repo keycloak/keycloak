@@ -16,6 +16,7 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
@@ -95,6 +96,9 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
     private static final List<String> CLIENT_LIST = Arrays.asList("test-app", "named-test-app", "service-account-client");
 
+    // Client without certificate bound access tokens, used to obtain a plain bearer token
+    private static final String TOKEN_EXCHANGE_SOURCE_CLIENT = "token-exchange-source-client";
+
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
@@ -105,6 +109,9 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
         // for token introspection
         configTestRealmForTokenIntrospection(testRealm);
+
+        // for token exchange
+        configTestRealmForTokenExchange(testRealm);
     }
 
     @BeforeClass
@@ -151,6 +158,25 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         testRealm.getUsers().add(user);
     }
 
+    private void configTestRealmForTokenExchange(RealmRepresentation testRealm) {
+        // This client does not use certificate bound access tokens, so the tokens it obtains are plain bearer tokens.
+        // "test-app" is added to their audience so that they can be used as the subject_token of a token exchange
+        // performed by "test-app", which does use certificate bound access tokens.
+        ClientRepresentation sourceApp = KeycloakModelUtils.createClient(testRealm, TOKEN_EXCHANGE_SOURCE_CLIENT);
+        sourceApp.setSecret("secret1");
+        sourceApp.setDirectAccessGrantsEnabled(Boolean.TRUE);
+
+        ProtocolMapperRepresentation audMapper = new ProtocolMapperRepresentation();
+        audMapper.setName("oidc-audience-mapper");
+        audMapper.setProtocol("openid-connect");
+        audMapper.setProtocolMapper("oidc-audience-mapper");
+        audMapper.setConfig(Map.of(
+                "included.client.audience", "test-app",
+                "access.token.claim", "true"
+        ));
+        sourceApp.setProtocolMappers(List.of(audMapper));
+    }
+
     @Before
     public void configureClients() {
         for (String clientId : CLIENT_LIST) {
@@ -163,6 +189,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
             if (clientId.equals("test-app")) {
                 // Enable token exchange
                 oidc.setStandardTokenExchangeEnabled(true);
+                oidc.setStandardTokenExchangeRefreshEnabled(OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION);
 
                 ProtocolMapperRepresentation namedAudMapper = new ProtocolMapperRepresentation();
                 namedAudMapper.setName("oidc-named-audience-mapper");
@@ -854,6 +881,54 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         assertEquals(MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC, exchangeResponse.getErrorDescription());
     }
 
+    @Test
+    public void testTokenExchangeV2WithoutClientCertificate() throws Exception {
+
+        AccessTokenResponse subjectTokenResponse;
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
+            oauth.httpClient().set(client);
+            oauth.client(TOKEN_EXCHANGE_SOURCE_CLIENT, "secret1");
+            subjectTokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        } finally {
+            oauth.httpClient().reset();
+        }
+
+        assertEquals(200, subjectTokenResponse.getStatusCode(), subjectTokenResponse.getErrorDescription());
+        String subjectToken = subjectTokenResponse.getAccessToken();
+        assertNull(new JWSInput(subjectToken).readJsonContent(AccessToken.class).getConfirmation());
+
+        // "test-app" requires certificate bound access tokens
+        oauth.client("test-app", "password");
+        AccessTokenResponse exchangeResponse;
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
+            oauth.httpClient().set(client);
+            exchangeResponse = oauth.tokenExchangeRequest(subjectToken)
+                  .audience("named-test-app")
+                  .send();
+        } finally {
+            oauth.httpClient().reset();
+        }
+
+        assertEquals(400, exchangeResponse.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, exchangeResponse.getError());
+        assertEquals("Client Certification missing for MTLS HoK Token Binding", exchangeResponse.getErrorDescription());
+        assertNull(exchangeResponse.getAccessToken());
+
+        // The same exchange succeeds with a client certificate, and both exchanged tokens are bound to it
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
+            oauth.httpClient().set(client);
+            exchangeResponse = oauth.tokenExchangeRequest(subjectToken)
+                  .audience("named-test-app")
+                  .requestedTokenType(OAuth2Constants.REFRESH_TOKEN_TYPE)
+                  .send();
+        } finally {
+            oauth.httpClient().reset();
+        }
+
+        assertEquals(200, exchangeResponse.getStatusCode(), exchangeResponse.getErrorDescription());
+        verifyHoKTokenDefaultCertThumbPrint(exchangeResponse);
+    }
+
     private void verifyHoKTokenDefaultCertThumbPrint(AccessTokenResponse response) throws Exception {
         verifyHoKTokenCertThumbPrint(response, MutualTLSUtils.getThumbprintFromDefaultClientCert(), true);
     }
@@ -882,6 +957,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
             } catch (JWSInputException e) {
                 Assertions.fail(e.toString());
             }
+            assertNotNull(rt.getConfirmation());
             assertTrue(MessageDigest.isEqual(certThumbPrint.getBytes(), rt.getConfirmation().getCertThumbprint().getBytes()));
         }
     }
