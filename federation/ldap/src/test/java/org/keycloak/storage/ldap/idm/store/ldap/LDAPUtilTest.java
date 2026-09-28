@@ -38,4 +38,16 @@ public class LDAPUtilTest {
         String decodeObjectGUID = LDAPUtil.decodeGuid(bytes);
         Assert.assertEquals(guid, decodeObjectGUID);
     }
+
+    @Test
+    public void testCheckLdapConnectionUrlsMatch() {
+        Assert.assertTrue(LDAPUtil.checkLdapConnectionUrlsMatch(null, null));
+        Assert.assertFalse(LDAPUtil.checkLdapConnectionUrlsMatch("ldap://localhost:10389", null));
+        Assert.assertFalse(LDAPUtil.checkLdapConnectionUrlsMatch(null, "ldap://localhost:10389"));
+        Assert.assertTrue(LDAPUtil.checkLdapConnectionUrlsMatch("ldap://localhost:10389", "ldap://localhost:10389"));
+        Assert.assertTrue(LDAPUtil.checkLdapConnectionUrlsMatch("ldap://localhost:10389 ", " ldap://localhost:10389"));
+        Assert.assertTrue(LDAPUtil.checkLdapConnectionUrlsMatch("ldap://host1:389 ldap://host2:389", "ldap://host1:389 ldap://host2:389"));
+        Assert.assertFalse(LDAPUtil.checkLdapConnectionUrlsMatch("ldap://localhost:10389", "ldap://anotherhost:10389"));
+        Assert.assertFalse(LDAPUtil.checkLdapConnectionUrlsMatch("ldap://host1:389", "ldap://host1:389 ldap://host2:389"));
+    }
 }
