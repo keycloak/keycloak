@@ -501,6 +501,40 @@ public class OfflineTokenSessionManagementTest {
 
 
     @Test
+    public void testClientOfflineSessionIdleTimeoutCappedByUserSessionIdle() {
+        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "offline-client");
+        ClientRepresentation clientRepresentation = client.toRepresentation();
+
+        RealmResource realm = adminClient.realm("test");
+        RealmRepresentation rep = realm.toRepresentation();
+        int originalOfflineSessionIdleTimeout = rep.getOfflineSessionIdleTimeout();
+
+        try {
+            int realmIdleTimeout = 600;
+            rep.setOfflineSessionIdleTimeout(realmIdleTimeout);
+            realm.update(rep);
+
+            clientRepresentation.getAttributes().put(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT,
+                    Integer.toString(realmIdleTimeout + 600));
+            client.update(clientRepresentation);
+
+            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+            oauth.client("offline-client", "secret1");
+            oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+            assertEquals(200, response.getStatusCode());
+            assertExpiration(response.getRefreshExpiresIn(), realmIdleTimeout);
+        } finally {
+            rep.setOfflineSessionIdleTimeout(originalOfflineSessionIdleTimeout);
+            realm.update(rep);
+            clientRepresentation.getAttributes().put(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT, "");
+            client.update(clientRepresentation);
+        }
+    }
+
+    @Test
     public void offlineRefreshWhenNoStartedAtClientNote() {
         int[] prevOfflineSession = null;
         try {
