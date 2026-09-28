@@ -19,8 +19,11 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.ssf.event.InitiatingEntity;
+import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.event.risc.RiscAccountDisabled;
 import org.keycloak.ssf.event.risc.RiscAccountEnabled;
 import org.keycloak.ssf.event.risc.RiscAccountPurged;
@@ -41,6 +44,9 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * Unit tests for the RISC {@code account-disabled} / {@code account-enabled} /
@@ -275,6 +281,100 @@ class SecurityEventTokenMapperTest {
 
         assertFalse(mapper.shouldIgnoreLogout(event),
                 "details without a REASON entry must be treated like a real logout");
+    }
+
+    // ----- OAuth2 token revocation (REVOKE_GRANT) -----
+
+    @Test
+    void canConvert_revokeGrantWithoutSessionId_false() {
+        // Access-token revocation and consent revocation never set a session id.
+        Event event = revokeGrantEvent(null);
+
+        assertFalse(mapper.canConvert(event));
+        assertNull(mapper.toSecurityEventToken(event, streamConfig()));
+    }
+
+    @Test
+    void canConvert_revokeGrantWithSessionId_doesNotTouchSessionStore() {
+        KeycloakSession session = mock(KeycloakSession.class);
+        SecurityEventTokenMapper mapper = new SecurityEventTokenMapper(session, null, ignored -> "https://issuer.example/realms/test");
+
+        assertTrue(mapper.canConvert(revokeGrantEvent("sid-1")),
+                "a revocation carrying a session id is mappable as far as the cheap check can tell");
+        verify(session, never()).sessions();
+    }
+
+    @Test
+    void toSecurityEventToken_revokeGrant_sessionGone_producesSessionRevokedWithSystemEntity() {
+        UserSessionProvider sessions = sessionStore(false, false);
+        SecurityEventTokenMapper mapper = revokeMapper(sessions);
+
+        SsfSecurityEventToken token = mapper.toSecurityEventToken(revokeGrantEvent("sid-1"), streamConfig());
+
+        assertNotNull(token);
+        Object payload = token.getEvents().get(CaepSessionRevoked.TYPE);
+        assertTrue(payload instanceof CaepSessionRevoked);
+        CaepSessionRevoked sessionRevoked = (CaepSessionRevoked) payload;
+        // /revoke is called by the RP with client credentials, not by the end user.
+        assertEquals(InitiatingEntity.SYSTEM, sessionRevoked.getInitiatingEntity());
+        assertEquals("Token revoked", sessionRevoked.getReasonAdmin().get("en"));
+    }
+
+    @Test
+    void toSecurityEventToken_revokeGrant_onlineSessionAlive_yieldsNull() {
+        assertNull(revokeMapper(sessionStore(true, false)).toSecurityEventToken(revokeGrantEvent("sid-1"), streamConfig()),
+                "another client still holds the online SSO session");
+    }
+
+    @Test
+    void toSecurityEventToken_revokeGrant_offlineSessionAlive_yieldsNull() {
+        assertNull(revokeMapper(sessionStore(false, true)).toSecurityEventToken(revokeGrantEvent("sid-1"), streamConfig()),
+                "another client still holds an offline token for the same session id");
+    }
+
+    @Test
+    void toSecurityEventToken_revokeGrant_looksUpLivenessOncePerEvent() {
+        UserSessionProvider sessions = sessionStore(false, false);
+        SecurityEventTokenMapper mapper = revokeMapper(sessions);
+        Event event = revokeGrantEvent("sid-1");
+
+        // The listener maps the same event once per matching stream.
+        assertNotNull(mapper.toSecurityEventToken(event, streamConfig()));
+        assertNotNull(mapper.toSecurityEventToken(event, streamConfig()));
+        assertNotNull(mapper.toSecurityEventToken(event, streamConfig()));
+
+        verify(sessions, times(1)).getUserSession(any(), anyString());
+        verify(sessions, times(1)).getOfflineUserSession(any(), anyString());
+
+        // A different event instance is looked up again.
+        assertNotNull(mapper.toSecurityEventToken(revokeGrantEvent("sid-1"), streamConfig()));
+        verify(sessions, times(2)).getUserSession(any(), anyString());
+    }
+
+    private static Event revokeGrantEvent(String sessionId) {
+        Event event = new Event();
+        event.setType(EventType.REVOKE_GRANT);
+        event.setUserId(USER_ID);
+        event.setSessionId(sessionId);
+        return event;
+    }
+
+    private static UserSessionProvider sessionStore(boolean onlineAlive, boolean offlineAlive) {
+        UserSessionProvider sessions = mock(UserSessionProvider.class);
+        lenient().when(sessions.getUserSession(any(), anyString()))
+                .thenReturn(onlineAlive ? mock(UserSessionModel.class) : null);
+        lenient().when(sessions.getOfflineUserSession(any(), anyString()))
+                .thenReturn(offlineAlive ? mock(UserSessionModel.class) : null);
+        return sessions;
+    }
+
+    private static SecurityEventTokenMapper revokeMapper(UserSessionProvider sessions) {
+        KeycloakContext context = mock(KeycloakContext.class);
+        lenient().when(context.getRealm()).thenReturn(mock(RealmModel.class));
+        KeycloakSession session = mock(KeycloakSession.class);
+        lenient().when(session.getContext()).thenReturn(context);
+        lenient().when(session.sessions()).thenReturn(sessions);
+        return new SecurityEventTokenMapper(session, null, ignored -> "https://issuer.example/realms/test");
     }
 
     // ----- account purge (admin DELETE + self-service DELETE_ACCOUNT) -----

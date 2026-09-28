@@ -10,6 +10,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
@@ -28,6 +29,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.SsfProfile;
+import org.keycloak.ssf.event.InitiatingEntity;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.stream.StreamStatus;
@@ -51,6 +53,7 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.util.TokenUtil;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
@@ -251,6 +254,8 @@ public class SsfTransmitterPushDeliveryTests {
                 "revoking the refresh token ends the session — the SET must carry CAEP session-revoked");
         Assertions.assertEquals("Token revoked", sessionRevoked.path("reason_admin").path("en").asText(),
                 "reason_admin should distinguish token revocation from logout");
+            Assertions.assertEquals(InitiatingEntity.SYSTEM.getCode(), sessionRevoked.path("initiating_entity").asText(),
+                    "/revoke is called by the RP with client credentials, so the RP's system initiated the revocation, not the user");
 
         Assertions.assertEquals(sessionId, set.path("sub_id").path("session").path("id").asText(),
                 "sub_id.session should identify the session the revoked token belonged to");
@@ -388,6 +393,102 @@ public class SsfTransmitterPushDeliveryTests {
             Assertions.assertEquals(sessionId, set.path("sub_id").path("session").path("id").asText(),
                     "sub_id.session should identify the shared SSO session");
         } finally {
+            oauthClient.client(firstClientId, firstClientSecret);
+            oauthClient.getDriver().manage().deleteAllCookies();
+        }
+    }
+
+    /**
+     * The one-store case that {@link #testNoPushOnRefreshTokenRevocationWhileOtherClientSessionAlive}
+     * does not cover: online and offline sessions share one session id and
+     * the SET subject cannot say which of the two ended, so the mapper
+     * must stay silent while the id is still in use in <em>either</em>
+     * store. The first client logs in through the browser and keeps a
+     * plain refresh token; the second client joins the SSO session with
+     * {@code offline_access} and holds an offline token, so the id now
+     * lives in both stores. Revoking the offline token removes the offline
+     * session (the second client was its only member) and detaches the
+     * second client's online client session, but the first client keeps
+     * the online user session alive; a SET now would let the first
+     * client's receiver kill a live session. Revoking the first client's
+     * refresh token afterwards ends the last session under that id and
+     * must trigger the push.
+     */
+    @Test
+    public void testNoPushOnOfflineTokenRevocationWhileOtherClientOnlineSessionAlive() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
+        createPushStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        String firstClientId = oauthClient.config().getClientId();
+        String firstClientSecret = oauthClient.config().getClientSecret();
+        try {
+            // Browser login with the first client establishes the SSO session.
+            AuthorizationEndpointResponse firstLogin = oauthClient.doLogin(TEST_USER, TEST_PASSWORD);
+            Assertions.assertNotNull(firstLogin.getCode(),
+                    () -> "browser login with the first client should succeed, got error: "
+                            + firstLogin.getError() + " / " + firstLogin.getErrorDescription());
+            AccessTokenResponse firstTokens = oauthClient.doAccessTokenRequest(firstLogin.getCode());
+            Assertions.assertNotNull(firstTokens.getRefreshToken(),
+                    "code exchange for the first client should include a refresh token");
+            Assertions.assertEquals(TokenUtil.TOKEN_TYPE_REFRESH, extractTokenType(firstTokens.getRefreshToken()),
+                    "the first client should hold a plain refresh token");
+            String sessionId = extractSessionId(firstTokens.getRefreshToken());
+
+            // The second client joins the same SSO session through the
+            // browser's identity cookie, requesting offline_access.
+            oauthClient.client(SECOND_RP, SECOND_RP_SECRET);
+            oauthClient.scope("openid " + OAuth2Constants.OFFLINE_ACCESS);
+            oauthClient.openLoginForm();
+            AuthorizationEndpointResponse secondLogin = oauthClient.parseLoginResponse();
+            Assertions.assertNotNull(secondLogin.getCode(),
+                    () -> "SSO login with the second client should succeed, got error: "
+                            + secondLogin.getError() + " / " + secondLogin.getErrorDescription());
+            AccessTokenResponse secondTokens = oauthClient.doAccessTokenRequest(secondLogin.getCode());
+            Assertions.assertNotNull(secondTokens.getRefreshToken(),
+                    "code exchange for the second client should include a token");
+            Assertions.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, extractTokenType(secondTokens.getRefreshToken()),
+                    "the second client should hold an offline token");
+            Assertions.assertEquals(sessionId, extractSessionId(secondTokens.getRefreshToken()),
+                    "both clients should share the same session id");
+            oauthClient.scope(null);
+
+            // Precondition: the id is now present in both stores.
+            Assertions.assertEquals(Stream.of(firstClientId, SECOND_RP).sorted().toList(), onlineSessionClients(sessionId),
+                    "both clients should be attached to the online session");
+            Assertions.assertTrue(offlineSessionExists(sessionId, SECOND_RP),
+                    "the second client should have an offline session under the same id");
+
+            // Revoking the offline token removes the offline session and the
+            // second client's online client session, but the first client
+            // keeps the online user session under the same id.
+            Assertions.assertTrue(oauthClient.tokenRevocationRequest(secondTokens.getRefreshToken())
+                            .refreshToken().send().isSuccess(),
+                    "offline token revocation for the second client should succeed");
+            Assertions.assertFalse(offlineSessionExists(sessionId, SECOND_RP),
+                    "the offline session should be gone after revoking its only offline token");
+            Assertions.assertEquals(List.of(firstClientId), onlineSessionClients(sessionId),
+                    "the online session should survive with the first client attached");
+
+            Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                    "the offline session is gone, but the first client still holds the online SSO session — no session-revoked SET may be pushed");
+
+            // Revoking the last refresh token removes the online user session
+            // as well; the id is now gone from both stores and must be announced.
+            oauthClient.client(firstClientId, firstClientSecret);
+            Assertions.assertTrue(oauthClient.tokenRevocationRequest(firstTokens.getRefreshToken())
+                            .refreshToken().send().isSuccess(),
+                    "refresh token revocation for the first client should succeed");
+
+            CapturedPush captured = awaitPush();
+            JsonNode set = decodeSet(captured);
+
+            Assertions.assertTrue(set.path("events").has(CaepSessionRevoked.TYPE),
+                    "revoking the last token under the session id ends the session — the SET must carry CAEP session-revoked");
+            Assertions.assertEquals(sessionId, set.path("sub_id").path("session").path("id").asText(),
+                    "sub_id.session should identify the shared session id");
+        } finally {
+            oauthClient.scope(null);
             oauthClient.client(firstClientId, firstClientSecret);
             oauthClient.getDriver().manage().deleteAllCookies();
         }
@@ -640,6 +741,39 @@ public class SsfTransmitterPushDeliveryTests {
         String sid = claims.path("sid").asText();
         Assertions.assertFalse(sid.isEmpty(), "token should carry a sid claim");
         return sid;
+    }
+
+    /**
+     * Reads the {@code typ} claim of a token, {@link TokenUtil#TOKEN_TYPE_REFRESH}
+     * or {@link TokenUtil#TOKEN_TYPE_OFFLINE} for the tokens revoked here.
+     */
+    protected String extractTokenType(String token) throws JWSInputException, IOException {
+        JsonNode claims = JsonSerialization.readValue(new JWSInput(token).getContent(), JsonNode.class);
+        return claims.path("typ").asText();
+    }
+
+    /**
+     * Client ids attached to the <em>online</em> user session with the given
+     * id, or an empty list when the online store no longer has it.
+     */
+    protected List<String> onlineSessionClients(String sessionId) {
+        String userId = realm.admin().users().search(TEST_USER, true).get(0).getId();
+        return realm.admin().users().get(userId).getUserSessions().stream()
+                .filter(userSession -> sessionId.equals(userSession.getId()))
+                .flatMap(userSession -> userSession.getClients().values().stream())
+                .sorted()
+                .toList();
+    }
+
+    /**
+     * Whether the <em>offline</em> store still holds a session with the given
+     * id for the given client.
+     */
+    protected boolean offlineSessionExists(String sessionId, String clientId) {
+        String userId = realm.admin().users().search(TEST_USER, true).get(0).getId();
+        String clientUuid = realm.admin().clients().findByClientId(clientId).get(0).getId();
+        return realm.admin().users().get(userId).getOfflineSessions(clientUuid).stream()
+                .anyMatch(userSession -> sessionId.equals(userSession.getId()));
     }
 
     protected CapturedPush awaitPush() throws InterruptedException {
