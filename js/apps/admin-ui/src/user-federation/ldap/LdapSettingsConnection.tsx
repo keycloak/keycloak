@@ -15,11 +15,12 @@ import {
   Switch,
 } from "@patternfly/react-core";
 import { get, isEqual } from "lodash-es";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Controller,
   FormProvider,
   UseFormReturn,
+  useFormState,
   useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -86,6 +87,34 @@ export const LdapSettingsConnection = ({
   };
 
   const [isBindTypeDropdownOpen, setIsBindTypeDropdownOpen] = useState(false);
+
+  const connectionUrl = useWatch({
+    control: form.control,
+    name: "config.connectionUrl.0",
+  });
+
+  const bindDn = useWatch({
+    control: form.control,
+    name: "config.bindDn.0",
+  });
+
+  const { dirtyFields } = useFormState({
+    control: form.control,
+    name: ["config.connectionUrl.0", "config.bindDn.0"],
+  });
+
+  // When connection URL or bind DN is modified in edit mode, clear the bind credential
+  // field to prevent previously stored credentials from being silently sent to a different server.
+  useEffect(() => {
+    if (!edit) return;
+
+    const isUrlDirty = !!get(dirtyFields, "config.connectionUrl.0");
+    const isBindDnDirty = !!get(dirtyFields, "config.bindDn.0");
+
+    if (isUrlDirty || isBindDnDirty) {
+      form.setValue("config.bindCredential.0", "");
+    }
+  }, [connectionUrl, bindDn, dirtyFields, edit, form]);
 
   const ldapBindType = useWatch({
     control: form.control,
