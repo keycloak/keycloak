@@ -69,6 +69,14 @@ public class SessionResurrectionTombstoneTest {
     @InjectRealm(config = SessionResurrectionRealmConfig.class)
     ManagedRealm managedRealm;
 
+    // A separate realm, used only by the bulk realm-wide removal test: that test records a realm-scoped
+    // "not-before" watermark (SessionResurrectionGuardListener#recordRealmNotBefore) that stays active for
+    // up to TOMBSTONE_TTL_SECONDS. Since @InjectRealm defaults to a class-scoped lifecycle, sharing
+    // managedRealm across all test methods would let that watermark leak into sibling tests and wipe
+    // brand-new, legitimate sessions they create in the same realm shortly afterwards.
+    @InjectRealm(ref = "bulk-realm-removal", config = SessionResurrectionBulkRealmConfig.class)
+    ManagedRealm bulkRemovalRealm;
+
     @InjectRunOnServer
     RunOnServerClient runOnServer;
 
@@ -153,8 +161,8 @@ public class SessionResurrectionTombstoneTest {
     public void resurrectedUserSessionAfterBulkRealmRemovalIsRemovedAgain() {
         assumeOnlineUserSessionGuardSupported();
 
-        final String realmName = managedRealm.getName();
-        final String realmId = managedRealm.getId();
+        final String realmName = bulkRemovalRealm.getName();
+        final String realmId = bulkRemovalRealm.getId();
         final String userSessionId = createUserSession(realmName);
         final int started = readCachedStarted(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, userSessionId);
 
@@ -280,6 +288,16 @@ public class SessionResurrectionTombstoneTest {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
             realm.name("session-resurrection-tombstone");
+            realm.users(UserBuilder.create(USERNAME));
+            realm.clients(ClientBuilder.create(CLIENT_ID));
+            return realm;
+        }
+    }
+
+    public static class SessionResurrectionBulkRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.name("session-resurrection-bulk-removal");
             realm.users(UserBuilder.create(USERNAME));
             realm.clients(ClientBuilder.create(CLIENT_ID));
             return realm;
