@@ -289,10 +289,27 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
             @Override
             protected void eventReceived(UserSessionProvider provider, RemoveUserSessionsEvent sessionEvent) {
+                // Bulk realm-wide removal ("logout all sessions in a realm") bypasses per-key tombstoning
+                // for performance (see PersistentUserSessionProvider#removeEntriesByRealm), so record a
+                // per-realm "not-before" watermark instead, BEFORE the local removal below runs. The removal
+                // below can take a while for a large realm, and any resurrection race for this realm - at any
+                // point during or after that removal, not only once it has finished - must be caught by the
+                // watermark; recording it first (rather than after removeLocalUserSessions() below returns)
+                // closes that window instead of leaving it open for the whole duration of the removal.
+                // Realm deletion (REALM_REMOVED_SESSION_EVENT) does not need this: once the realm is gone, a
+                // resurrected session cannot be used.
+                String realmId = sessionEvent.getRealmId();
+                if (sessionResurrectionListener != null) {
+                    sessionResurrectionListener.recordRealmNotBefore(realmId);
+                }
+                if (offlineSessionResurrectionListener != null) {
+                    offlineSessionResurrectionListener.recordRealmNotBefore(realmId);
+                }
+
                 if (provider instanceof InfinispanUserSessionProvider) {
-                    ((InfinispanUserSessionProvider) provider).onRemoveUserSessionsEvent(sessionEvent.getRealmId());
+                    ((InfinispanUserSessionProvider) provider).onRemoveUserSessionsEvent(realmId);
                 } else if (provider instanceof PersistentUserSessionProvider) {
-                    ((PersistentUserSessionProvider) provider).onRemoveUserSessionsEvent(sessionEvent.getRealmId());
+                    ((PersistentUserSessionProvider) provider).onRemoveUserSessionsEvent(realmId);
                 }
             }
 

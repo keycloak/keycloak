@@ -142,6 +142,52 @@ public class SessionResurrectionTombstoneTest {
     }
 
     /**
+     * Bulk realm-wide removal ("logout all sessions in a realm", {@code PersistentUserSessionProvider#
+     * removeEntriesByRealm}) bypasses per-key tombstoning for performance - it removes cache entries
+     * directly instead of going through {@code InfinispanChangesUtils}. Instead, a per-realm "not-before"
+     * watermark is recorded (see {@code SessionResurrectionGuardListener#recordRealmNotBefore}), and this
+     * test exercises that path specifically: it simulates the same stale-reader race as the other tests,
+     * but after a bulk realm removal rather than a single-session removal.
+     */
+    @Test
+    public void resurrectedUserSessionAfterBulkRealmRemovalIsRemovedAgain() {
+        assumeOnlineUserSessionGuardSupported();
+
+        final String realmName = managedRealm.getName();
+        final String realmId = managedRealm.getId();
+        final String userSessionId = createUserSession(realmName);
+        final int started = readCachedStarted(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, userSessionId);
+
+        // Logout all sessions in the realm: runs in its own transaction/request, so the bulk cache
+        // removal and the "not-before" watermark recording are both fully applied by the time this call
+        // returns - exactly as they would be for a real, separate admin request.
+        runOnServer.run(session -> {
+            RealmModel realm = setRealmContext(session, realmName);
+            session.sessions().removeUserSessions(realm);
+        });
+
+        // A concurrent reader (a separate request) that had loaded the pre-delete row from the database
+        // moments earlier now re-inserts it via putIfAbsent() - after the bulk removal above already ran.
+        // No per-key tombstone exists for this key (the bulk path never writes one), so only the
+        // realm-wide watermark can catch this resurrection.
+        runOnServer.run(session -> {
+            Cache<String, SessionEntityWrapper<UserSessionEntity>> cache =
+                    session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
+            cache.putIfAbsent(userSessionId, staleUserSessionWrapper(userSessionId, realmId, started));
+        });
+
+        runOnServer.run(session -> {
+            RealmModel realm = setRealmContext(session, realmName);
+            Cache<String, SessionEntityWrapper<UserSessionEntity>> cache =
+                    session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
+
+            awaitNull(() -> cache.get(userSessionId));
+            assertNull(cache.get(userSessionId), "Resurrected user session must be removed again from the cache");
+            assertNull(session.sessions().getUserSession(realm, userSessionId), "Session must not be resurrected after bulk realm removal");
+        });
+    }
+
+    /**
      * The online user session cache is only guarded when persistent user sessions with embedded
      * Infinispan caches are in use - see InfinispanUserSessionProviderFactory. Without a database
      * fallback behind it, a plain (volatile) online session cache is not susceptible to the

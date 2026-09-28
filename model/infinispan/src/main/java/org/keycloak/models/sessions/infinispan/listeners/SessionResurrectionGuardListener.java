@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -57,6 +58,12 @@ import org.jboss.logging.Logger;
  * are never intentionally reused after a delete, so any real entity re-appearing at a recently-tombstoned
  * key can be assumed to be a resurrection, with no need for a version/discriminator check.
  * <p>
+ * In addition to the per-key tombstone above, {@link #recordRealmNotBefore(String)} supports a
+ * per-realm "not-before" watermark for bulk removals (e.g. "logout all sessions in a realm") where
+ * writing a tombstone per removed key would not scale. Any real {@link UserSessionEntity} whose
+ * {@code started} timestamp is at or before a realm's recorded watermark is treated the same way as a
+ * per-key resurrection and removed again.
+ * <p>
  * This is deliberately not a complete fix for cache consistency (see the loading-marker + CAS pattern in
  * the full upstream fix); it only prevents deleted entries from reappearing in the cache.
  */
@@ -73,6 +80,24 @@ public class SessionResurrectionGuardListener<K, V extends SessionEntity> {
             .expireAfterWrite(TOMBSTONE_TTL_SECONDS, TimeUnit.SECONDS)
             .ticker(() -> TimeUnit.MILLISECONDS.toNanos(Time.currentTimeMillis()))
             .build();
+
+    // Tracks, per realm, the time of the most recent bulk removal ("logout all sessions in a realm"), for
+    // the same short grace period. Any user session with a started time at or before the watermark is
+    // treated as a resurrection if it (re-)appears.
+    private final Cache<String, Integer> realmNotBefore = Caffeine.newBuilder()
+            .expireAfterWrite(TOMBSTONE_TTL_SECONDS, TimeUnit.SECONDS)
+            .ticker(() -> TimeUnit.MILLISECONDS.toNanos(Time.currentTimeMillis()))
+            .build();
+
+    /**
+     * Records that all user sessions in {@code realmId} that existed prior to this call are being bulk
+     * removed. Called from the node handling a "logout all sessions in a realm" cluster event, on every
+     * node in the cluster (each node executes that removal locally), so the watermark ends up recorded on
+     * whichever node later ends up as primary owner of a resurrected key.
+     */
+    public void recordRealmNotBefore(String realmId) {
+        realmNotBefore.put(realmId, Time.currentTime());
+    }
 
     @CacheEntryCreated
     public void onCreated(CacheEntryCreatedEvent<K, SessionEntityWrapper<V>> event) {
@@ -95,7 +120,13 @@ public class SessionResurrectionGuardListener<K, V extends SessionEntity> {
             cache.removeAsync(key, value);
             return;
         }
-        if (tombstonedKeys.getIfPresent(key) == null || value.getEntity() == null) {
+        V entity = value.getEntity();
+        if (entity == null) {
+            return;
+        }
+        boolean keyResurrection = tombstonedKeys.getIfPresent(key) != null;
+        boolean realmResurrection = !keyResurrection && isBeforeRealmNotBefore(entity);
+        if (!keyResurrection && !realmResurrection) {
             return;
         }
         logger.infof("Detected resurrection of previously removed cache entry '%s' in cache '%s' - removing it again",
@@ -107,5 +138,18 @@ public class SessionResurrectionGuardListener<K, V extends SessionEntity> {
                 logger.warnf(error, "Failed to remove resurrected cache entry '%s' in cache '%s'", key, cache.getName());
             }
         });
+    }
+
+    /**
+     * Whether {@code entity} was created at or before the recorded "not-before" watermark for its realm,
+     * meaning it existed prior to a bulk "logout all sessions in a realm" removal and should not have
+     * survived (or reappeared after) that removal.
+     */
+    private boolean isBeforeRealmNotBefore(V entity) {
+        if (!(entity instanceof UserSessionEntity userSessionEntity) || entity.getRealmId() == null) {
+            return false;
+        }
+        Integer notBefore = realmNotBefore.getIfPresent(entity.getRealmId());
+        return notBefore != null && userSessionEntity.getStarted() <= notBefore;
     }
 }
