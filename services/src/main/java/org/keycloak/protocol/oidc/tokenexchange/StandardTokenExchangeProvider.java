@@ -147,6 +147,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         AccessToken token = authResult.token();
 
         validateSenderConstrainedToken(token);
+        checkMtlsHoKToken();
 
         event.user(tokenUser);
         event.detail(Details.USERNAME, tokenUser.getUsername());
@@ -206,6 +207,24 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                           ex.getMessage(), Response.Status.BAD_REQUEST);
                 }
             }
+        }
+    }
+
+    private void checkMtlsHoKToken() {
+        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseMtlsHokToken() && MtlsHoKTokenUtil.bindTokenWithClientCertificate(session.getContext().getHttpRequest(), session) == null) {
+            String errorMessage = "Client Certification missing for MTLS HoK Token Binding";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, errorMessage, Response.Status.BAD_REQUEST);
+        }
+    }
+
+    // The exchanged access token is bound to the client certificate by the transient MtlsHoKProtocolMapper, but
+    // TokenManager propagates that binding to the refresh token of public clients only, so it is done here instead.
+    private void bindRefreshTokenWithClientCertificate(TokenManager.AccessTokenResponseBuilder responseBuilder) {
+        AccessToken.Confirmation cnf = responseBuilder.getAccessToken().getConfirmation();
+        if (cnf != null && cnf.getCertThumbprint() != null) {
+            responseBuilder.getRefreshToken().setConfirmation(cnf);
         }
     }
 
@@ -339,6 +358,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
             if (OAuth2Constants.REFRESH_TOKEN_TYPE.equals(requestedTokenType)) {
                 responseBuilder.generateRefreshToken();
+                bindRefreshTokenWithClientCertificate(responseBuilder);
             }
 
             try {
