@@ -82,4 +82,10 @@ public interface TokenManager {
     String encryptAlgorithm(TokenCategory category);
 
     LogoutToken initLogoutToken(ClientModel client, UserModel user, AuthenticatedClientSessionModel clientSessionModel);
+
+    default LogoutToken initLogoutToken(ClientModel client, UserModel user,
+                                        AuthenticatedClientSessionModel clientSessionModel,
+                                        boolean logoutAllUserSessions) {
+        return initLogoutToken(client, user, clientSessionModel);
+    }
 }

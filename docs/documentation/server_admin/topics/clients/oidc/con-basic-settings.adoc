@@ -125,7 +125,11 @@ There will be also one item on the consent screen about this client itself.
 *Backchannel logout URL*:: URL that will cause the client to log itself out when a logout request is sent to this realm (via end_session_endpoint). The logout is done by sending logout token as specified in the OIDC Backchannel logout specification. If omitted, the logout request might be sent to the specified `Admin URL` (if configured) in the format specific to {project_name} adapters. If even `Admin URL` is not configured, no logout request will be sent to the client. This option is applicable just if `Front channel logout` option is OFF.
 
 *Backchannel logout session required*::
-Specifies whether a session ID Claim is included in the Logout Token when the *Backchannel Logout URL* is used.
+Specifies whether a session ID (`sid`) claim is included in the Logout Token when the *Backchannel Logout URL* is used.
++
+Per the https://openid.net/specs/openid-connect-backchannel-1_0.html[OIDC Back-Channel Logout 1.0 specification], a Logout Token that contains `sid` instructs the Relying Party to terminate only the identified session. A Logout Token without `sid` instructs the Relying Party to terminate all sessions for the identified user (`sub`).
++
+{project_name} applies this distinction automatically when an administrator triggers a logout via the user management REST API (`DELETE /admin/realms/{realm}/users/{id}/sessions`): if the user has more than one active online session, the `sid` claim is omitted from the Logout Token so that the Relying Party terminates all sessions. If only one session is active, `sid` is retained because there is no ambiguity about which session to terminate.
 
 *Backchannel logout revoke offline sessions*:: Specifies whether a revoke_offline_access event is included in the Logout Token when the Backchannel Logout URL is used. {project_name} will revoke offline sessions when receiving a Logout Token with this event.
 
