@@ -21,7 +21,7 @@ Users can view and revoke offline tokens that {project_name} grants them in the 
 Changing the password of a user or disabling a user does not necessarily revoke offline sessions:
 
 * When an administrator resets the password of a user, the offline sessions of the user remain valid.
-* When users update their password and select *Sign out from other devices*, their other sessions, including offline sessions, are ended.
+* When users update their password and select *Sign out from other devices*, their other sessions, including offline sessions, are ended. If the deprecated feature `logout-all-sessions:v1` is enabled, only regular sessions are ended and offline sessions remain valid.
 * When an administrator disables a user, the offline tokens of the user can no longer be used for a refresh token action, but the offline sessions are not removed. When the user is enabled again, the offline tokens become usable again as long as the offline sessions have not expired.
 
 To issue an offline token, users must have the role mapping for the realm-level `offline_access` role. Clients must also have that role in their scope. Clients must add an `offline_access` client scope as an `Optional client scope` to the role, which is done by default.
