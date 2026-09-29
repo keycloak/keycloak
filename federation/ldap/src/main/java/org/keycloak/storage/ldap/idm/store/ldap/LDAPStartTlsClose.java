@@ -28,12 +28,16 @@ import javax.net.ssl.SSLSocketFactory;
 import org.jboss.logging.Logger;
 
 /**
- * Tracks the TLS socket negotiated by JNDI and bounds the TLS close-notify read.
+ * Tracks the TLS socket negotiated by JNDI and ensures StartTLS teardown does not block.
+ *
+ * <p>Closing the underlying transport socket before invoking {@link StartTlsResponse#close()}
+ * unblocks any JNDI reader thread that may be holding the TLS read lock, which would otherwise
+ * prevent {@code close()} from acquiring it and returning. {@code setSoTimeout} alone is
+ * insufficient because it does not interrupt a read already in progress.
  */
 final class LDAPStartTlsClose {
 
     private static final Logger logger = Logger.getLogger(LDAPStartTlsClose.class);
-    private static final int CLOSE_TIMEOUT_MILLIS = 3_000;
 
     private LDAPStartTlsClose() {
     }
@@ -47,44 +51,16 @@ final class LDAPStartTlsClose {
             return;
         }
 
-        // Without the socket there is no way to bound StartTlsResponse.close().
-        // The owning LdapContext is closed immediately after this method.
-        if (socket == null) {
-            logger.warn("Could not close Ldap tlsResponse gracefully because the TLS socket was not captured; closing the LDAP context instead.");
-            if (transport != null) {
-                closeSocket(null, transport);
-            }
-            return;
-        }
+        // Close the underlying TCP transport first. This unblocks any JNDI reader thread
+        // that is blocked inside a TLS read and holds the lock that StartTlsResponse.close()
+        // needs to acquire. Without this, close() can block indefinitely regardless of
+        // any socket timeout set on the SSLSocket layer.
+        closeSocket(socket, transport);
 
-        int originalTimeout;
-        try {
-            originalTimeout = socket.getSoTimeout();
-            socket.setSoTimeout(CLOSE_TIMEOUT_MILLIS);
-        } catch (IOException e) {
-            logger.warn("Could not set a bounded timeout for closing the LDAP TLS response; closing the TLS socket.", e);
-            closeSocket(socket, transport);
-            return;
-        }
-
-        boolean closed = false;
         try {
             tlsResponse.close();
-            closed = true;
         } catch (IOException e) {
-            logger.warn("Could not close Ldap tlsResponse within the configured socket timeout; closing the TLS socket.", e);
-            closeSocket(socket, transport);
-        } finally {
-            if (closed) {
-                Socket timeoutSocket = socket.isClosed() && transport != null ? transport : socket;
-                if (!timeoutSocket.isClosed()) {
-                    try {
-                        timeoutSocket.setSoTimeout(originalTimeout);
-                    } catch (IOException e) {
-                        logger.debug("Could not restore the LDAP TLS socket timeout after closing the TLS response.", e);
-                    }
-                }
-            }
+            logger.debug("Could not close LDAP TLS response after transport was closed.", e);
         }
     }
 
@@ -95,7 +71,7 @@ final class LDAPStartTlsClose {
             } else if (socket != null) {
                 socket.close();
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.debug("Could not close LDAP TLS socket.", e);
         }
     }

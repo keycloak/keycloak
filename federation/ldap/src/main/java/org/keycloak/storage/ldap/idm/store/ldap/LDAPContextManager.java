@@ -307,15 +307,17 @@ public final class LDAPContextManager implements AutoCloseable {
 
     @Override
     public void close() {
-        if (tlsResponse != null) {
-            LDAPStartTlsClose.close(tlsResponse, tlsSocket.get(), tlsTransport.get());
-        }
-
-        if (ldapContext != null) {
-            try {
-                ldapContext.close();
-            } catch (NamingException e) {
-                logger.error("Could not close Ldap context.", e);
+        try {
+            if (tlsResponse != null) {
+                LDAPStartTlsClose.close(tlsResponse, tlsSocket.get(), tlsTransport.get());
+            }
+        } finally {
+            if (ldapContext != null) {
+                try {
+                    ldapContext.close();
+                } catch (NamingException e) {
+                    logger.error("Could not close Ldap context.", e);
+                }
             }
         }
     }
