@@ -224,6 +224,15 @@ Operators had to create the missing indexes manually.
 Invalid PostgreSQL indexes left by failed previous attempts are detected and recreated automatically.
 On databases without non-blocking support, {project_name} continues to log the SQL for manual execution.
 
+== Hibernate ORM options and persistence units defined with options
+// https://github.com/keycloak/keycloak/issues/41465
+
+The properties of the Quarkus Hibernate ORM extension are now available as first-class options with the `db-orm-` prefix, for example `db-orm-query-query-plan-cache-max-size` for `quarkus.hibernate-orm.query.query-plan-cache-max-size`.
+They are set through environment variables or the configuration file, not on the command line.
+
+The persistence unit of an additional datasource can now be defined with the `db-jpa-packages-<datasource>` option instead of a `persistence.xml` file.
+For details, see <@links.server id="db"/>.
+
 == Helm Chart Operator install (experimental)
 // https://github.com/keycloak/keycloak/issues/42079
 

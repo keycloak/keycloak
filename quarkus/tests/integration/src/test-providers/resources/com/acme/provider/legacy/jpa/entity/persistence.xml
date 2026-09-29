@@ -22,6 +22,7 @@
              version="3.0">
     <persistence-unit name="new-user-store" transaction-type="JTA">
         <class>com.acme.provider.legacy.jpa.entity.Realm</class>
+        <class>org.keycloak.acme.test.OverlapEntity</class>
         <shared-cache-mode>ENABLE_SELECTIVE</shared-cache-mode>
         <validation-mode>NONE</validation-mode>
         <properties>

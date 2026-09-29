@@ -20,6 +20,8 @@ import picocli.CommandLine.UnmatchedArgumentException;
 
 import static java.lang.String.format;
 
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+
 public class ShortErrorMessageHandler implements IParameterExceptionHandler {
 
     @Override
@@ -28,6 +30,7 @@ public class ShortErrorMessageHandler implements IParameterExceptionHandler {
         PrintWriter writer = cmd.getErr();
         String errorMessage = ex.getMessage();
         String additionalSuggestion = null;
+        boolean printSuggestions = true;
 
         if (ex instanceof UnmatchedArgumentException uae) {
             String[] unmatched = getUnmatchedPartsByOptionSeparator(uae, "=");
@@ -48,6 +51,9 @@ public class ShortErrorMessageHandler implements IParameterExceptionHandler {
 
                 errorMessage = format("Disabled option: '%s'%s", cliKey, enabledWhen);
                 additionalSuggestion = "Specify '--help-all' to obtain information on all options and their availability.";
+            } else if (mapper != null && !mapper.getOption().isCli()) {
+                errorMessage = getNonCliOptionMessage(cliKey, mapper);
+                printSuggestions = false; // similar command line options are not what the user is looking for
             } else if (isUnknownOption.getAsBoolean()) {
                 if (cliKey.split("\\s").length > 1) {
                     errorMessage = "Option: '" + cliKey + "' is not expected to contain whitespace, please remove any unnecessary quoting/escaping";
@@ -71,7 +77,9 @@ public class ShortErrorMessageHandler implements IParameterExceptionHandler {
         if (!(ex instanceof KcUnmatchedArgumentException) && ex instanceof UnmatchedArgumentException) {
             ex = new KcUnmatchedArgumentException((UnmatchedArgumentException) ex);
         }
-        UnmatchedArgumentException.printSuggestions(ex, writer);
+        if (printSuggestions) {
+            UnmatchedArgumentException.printSuggestions(ex, writer);
+        }
 
         CommandSpec spec = cmd.getCommandSpec();
         writer.printf("Try '%s --help' for more information on the available options.%n", spec.qualifiedName());
@@ -81,6 +89,16 @@ public class ShortErrorMessageHandler implements IParameterExceptionHandler {
         }
 
         return getInvalidInputExitCode(ex, cmd);
+    }
+
+    /**
+     * The message for an option that cannot be set on the command line, see {@link org.keycloak.config.Option#isCli()}:
+     * the option is set through the other configuration sources.
+     */
+    static String getNonCliOptionMessage(String cliKey, PropertyMapper<?> mapper) {
+        String kcKey = PropertyMappers.getKcKeyFromCliKey(cliKey).orElseThrow();
+        return format("Option: '%s' cannot be set on the command line. Set it with the environment variable '%s' or as '%s' in the configuration file instead.",
+                cliKey, mapper.forKey(kcKey).getEnvVarFormat(), kcKey.substring(NS_KEYCLOAK_PREFIX.length()));
     }
 
     static int getInvalidInputExitCode(Throwable ex, CommandLine cmd) {

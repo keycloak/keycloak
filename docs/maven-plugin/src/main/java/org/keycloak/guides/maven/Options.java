@@ -42,6 +42,7 @@ public class Options {
         mappers.addAll(PropertyMappers.getWildcardMappers());
         mappers.stream()
                 .filter(m -> !m.isHidden())
+                .filter(m -> m.getOption().isCli())
                 .filter(propertyMapper -> Objects.nonNull(propertyMapper.getDescription()))
                 .map(m -> new Option(m.getFrom(),
                         m.getCategory(),

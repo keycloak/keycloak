@@ -174,6 +174,23 @@ public class DatabaseOptions {
             .buildTime(true)
             .build();
 
+    public static final Option<String> DB_JPA_PACKAGES = new OptionBuilder<>("db-jpa-packages-<datasource>", String.class)
+            .category(OptionCategory.DATABASE_DATASOURCES)
+            .description("Defines a persistence unit for the named <datasource>: a comma-separated list of "
+                    + "the packages of the JPA entities it manages. The persistence unit has the same name as the datasource, "
+                    + "and the database options of the datasource such as 'db-dialect-<datasource>' apply to it.")
+            .buildTime(true)
+            .build();
+
+    /**
+     * Prefix of the options that expose the Quarkus Hibernate ORM properties: the property name without
+     * {@code quarkus.hibernate-orm.}, with dots replaced by dashes. For example, {@code db-orm-query-query-plan-cache-max-size}
+     * sets {@code quarkus.hibernate-orm.query.query-plan-cache-max-size}. The build time flag follows the property. The options
+     * of a persistence unit property also exist with the {@code -<datasource>} suffix, for the unit that
+     * {@code db-jpa-packages-<datasource>} defines. The options cannot be set on the command line, see {@link Option#isCli()}.
+     */
+    public static final String DB_ORM_PREFIX = "db-orm-";
+
     public static class Datasources {
 
         /**

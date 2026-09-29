@@ -177,6 +177,128 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testHibernateOrmOptionCannotBeSetOnCommandLine() {
+        // the Hibernate ORM options (db-orm-*) are set through the other configuration sources, see Option#isCli
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db-orm-query-query-plan-cache-max-size=512");
+        assertError(nonRunningPicocli, "Option: '--db-orm-query-query-plan-cache-max-size' cannot be set on the command line. "
+                + "Set it with the environment variable 'KC_DB_ORM_QUERY_QUERY_PLAN_CACHE_MAX_SIZE' or as 'db-orm-query-query-plan-cache-max-size' in the configuration file instead.");
+        assertThat(nonRunningPicocli.getErrString(), not(containsString("Possible solutions")));
+
+        // also with the datasource suffix, and for the build command
+        onAfter();
+        nonRunningPicocli = pseudoLaunch("build", "--db-orm-query-query-plan-cache-max-size-my-store=512");
+        assertError(nonRunningPicocli, "Option: '--db-orm-query-query-plan-cache-max-size-my-store' cannot be set on the command line. "
+                + "Set it with the environment variable 'KC_DB_ORM_QUERY_QUERY_PLAN_CACHE_MAX_SIZE_MY_STORE' or as 'db-orm-query-query-plan-cache-max-size-my-store' in the configuration file instead.");
+
+        // also without a value
+        onAfter();
+        nonRunningPicocli = pseudoLaunch("start-dev", "--db-orm-query-query-plan-cache-max-size");
+        assertError(nonRunningPicocli, "Option: '--db-orm-query-query-plan-cache-max-size' cannot be set on the command line.");
+
+        // the option is not a command line option, so it is not in the help either
+        onAfter();
+        nonRunningPicocli = pseudoLaunch("start", "--help-all");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("--db-schema"));
+        assertThat(nonRunningPicocli.getOutString(), not(containsString("db-orm-")));
+    }
+
+    @Test
+    public void testHibernateOrmOptionFromEnvironmentVariable() {
+        putEnvVar("KC_DB_ORM_QUERY_QUERY_PLAN_CACHE_MAX_SIZE", "512");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("build", "--db=dev-file");
+        assertNoError(nonRunningPicocli);
+        // a build time option, persisted with the build
+        assertEquals("512", nonRunningPicocli.getBuildProps().getProperty("kc.db-orm-query-query-plan-cache-max-size"));
+        assertEquals("512", nonRunningPicocli.config.getConfigValue("quarkus.hibernate-orm.query.query-plan-cache-max-size").getValue());
+
+        // validated like any other option
+        onAfter();
+        putEnvVar("KC_DB_ORM_QUERY_QUERY_PLAN_CACHE_MAX_SIZE", "many");
+        nonRunningPicocli = pseudoLaunch("build", "--db=dev-file");
+        assertError(nonRunningPicocli, "Invalid value for option 'KC_DB_ORM_QUERY_QUERY_PLAN_CACHE_MAX_SIZE'");
+    }
+
+    @Test
+    public void testHibernateOrmRunTimeOption() {
+        // a run time Hibernate ORM property is a run time option
+        putEnvVar("KC_DB_ORM_LOG_SQL", "true");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("build", "--db=dev-file");
+        assertNoError(nonRunningPicocli);
+        assertThat(nonRunningPicocli.getOutString(), containsString("The following run time options were found, but will be ignored during build time:"));
+        assertThat(nonRunningPicocli.getOutString(), containsString("kc.db-orm-log-sql"));
+        assertNull(nonRunningPicocli.getBuildProps().getProperty("kc.db-orm-log-sql"));
+
+        onAfter();
+        putEnvVar("KC_DB_ORM_LOG_SQL", "true");
+        nonRunningPicocli = pseudoLaunch("start-dev");
+        assertNoError(nonRunningPicocli);
+        assertEquals("true", nonRunningPicocli.config.getConfigValue("quarkus.hibernate-orm.log.sql").getValue());
+
+        // validated with the type of the property
+        onAfter();
+        putEnvVar("KC_DB_ORM_LOG_SQL", "yes");
+        nonRunningPicocli = pseudoLaunch("start-dev");
+        assertError(nonRunningPicocli, "Invalid value for option 'KC_DB_ORM_LOG_SQL': yes. Expected values are: true, false");
+
+        // properties that Keycloak configures itself have no option
+        onAfter();
+        nonRunningPicocli = pseudoLaunch("start-dev", "--db-orm-packages=org.example");
+        assertError(nonRunningPicocli, "Unknown option: '--db-orm-packages'");
+    }
+
+    @Test
+    public void testHibernateOrmOptionOfDatasourceRequiresPersistenceUnit() {
+        // a db-orm-*-<datasource> option applies to the persistence unit that db-jpa-packages-<datasource> defines only
+        putEnvVar("KC_DB_ORM_JDBC_STATEMENT_BATCH_SIZE_MY_STORE", "64"); // build time
+        putEnvVar("KC_DB_ORM_LOG_SQL_MY_STORE", "true"); // run time
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("build", "--db=dev-file", "--db-kind-my-store=dev-mem");
+        assertError(nonRunningPicocli, "The options 'db-orm-jdbc-statement-batch-size-my-store', 'db-orm-log-sql-my-store' apply to the persistence unit that 'db-jpa-packages-my-store' defines, which is not set.");
+
+        onAfter();
+        putEnvVar("KC_DB_ORM_LOG_SQL_MY_STORE", "true");
+        nonRunningPicocli = pseudoLaunch("start-dev", "--db-kind-my-store=dev-mem");
+        assertError(nonRunningPicocli, "The option 'db-orm-log-sql-my-store' applies to the persistence unit that 'db-jpa-packages-my-store' defines, which is not set.");
+
+        onAfter();
+        putEnvVar("KC_DB_ORM_JDBC_STATEMENT_BATCH_SIZE_MY_STORE", "64");
+        putEnvVar("KC_DB_ORM_LOG_SQL_MY_STORE", "true");
+        nonRunningPicocli = pseudoLaunch("build", "--db=dev-file", "--db-kind-my-store=dev-mem", "--db-jpa-packages-my-store=org.example");
+        assertNoError(nonRunningPicocli);
+
+        // the explicitly mapped options also apply to a persistence.xml unit, so they are not validated
+        onAfter();
+        putEnvVar("KC_DB_SCHEMA_MY_STORE", "other");
+        nonRunningPicocli = pseudoLaunch("build", "--db=dev-file", "--db-kind-my-store=dev-mem", "--db-debug-jpql-my-store=true");
+        assertNoError(nonRunningPicocli);
+    }
+
+    @Test
+    public void testRawHibernateOrmPropertyIsSecondClassToItsOption() {
+        // the raw property of the default unit and of a unit defined with db-jpa-packages
+        setSystemProperty("quarkus.hibernate-orm.log.sql", "true", () -> {
+            NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+            assertNoError(nonRunningPicocli);
+            assertThat(nonRunningPicocli.getOutString(), containsString("Please use the first-class option `kc.db-orm-log-sql` instead of `quarkus.hibernate-orm.log.sql`"));
+        });
+        onAfter();
+        setSystemProperty("quarkus.hibernate-orm.\"user-store\".log.sql", "true", () -> {
+            NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db-kind-user-store=dev-mem", "--db-jpa-packages-user-store=org.example");
+            assertNoError(nonRunningPicocli);
+            assertThat(nonRunningPicocli.getOutString(), containsString("Please use the first-class option `kc.db-orm-log-sql-user-store` instead of `quarkus.hibernate-orm.\"user-store\".log.sql`"));
+        });
+
+        // the option of a named datasource does not apply to a persistence.xml unit
+        onAfter();
+        setSystemProperty("quarkus.hibernate-orm.\"user-store\".log.sql", "true", () -> {
+            NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db-kind-user-store=dev-mem");
+            assertNoError(nonRunningPicocli);
+            assertThat(nonRunningPicocli.getOutString(), not(containsString("first-class option `kc.db-orm-log-sql-user-store`")));
+            assertEquals("true", nonRunningPicocli.config.getConfigValue("quarkus.hibernate-orm.\"user-store\".log.sql").getValue());
+        });
+    }
+
+    @Test
     public void testTrustStorePasswordRequiredForPkcs12() {
         putEnvVar("KC_HTTPS_TRUST_STORE_FILE", "truststore.p12");
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");

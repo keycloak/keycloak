@@ -24,6 +24,7 @@ public class OptionBuilder<T> {
     private String key;
     private OptionCategory category;
     private boolean hidden;
+    private boolean cli;
     private boolean build;
     private String description;
     private Optional<T> defaultValue;
@@ -54,6 +55,7 @@ public class OptionBuilder<T> {
         this.key = key;
         category = OptionCategory.GENERAL;
         hidden = false;
+        cli = true;
         build = false;
         description = null;
         strictExpectedValues = true;
@@ -71,6 +73,11 @@ public class OptionBuilder<T> {
 
     public OptionBuilder<T> hidden() {
         this.hidden = true;
+        return this;
+    }
+
+    public OptionBuilder<T> cli(boolean cli) {
+        this.cli = cli;
         return this;
     }
 
@@ -196,7 +203,7 @@ public class OptionBuilder<T> {
             }
         }
 
-        return new Option<T>(type, key, category, hidden || synthetic, build, description, defaultValue, expectedValues, strictExpectedValues, caseInsensitiveExpectedValues, deprecatedMetadata, connectedOptions, wildcardKey, expected, synthetic);
+        return new Option<T>(type, key, category, hidden || synthetic, cli, build, description, defaultValue, expectedValues, strictExpectedValues, caseInsensitiveExpectedValues, deprecatedMetadata, connectedOptions, wildcardKey, expected, synthetic);
     }
 
     public OptionBuilder<T> synthetic() {

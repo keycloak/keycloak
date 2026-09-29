@@ -737,6 +737,44 @@ If you are explicitly configuring the `wait_timeout` in your database, it is nec
 to be your `wait_timeout` minus a few minutes. Failure to correctly configure the `db-pool-max-lifetime` will result in
 {project_name} logging a warning on startup.
 
+[[hibernate-orm-options]]
+== Configuring Hibernate ORM
+
+{project_name} exposes the properties of the Quarkus Hibernate ORM extension as options with the `db-orm-` prefix: the name of the option is the Quarkus property without `quarkus.hibernate-orm.`, with dots replaced by dashes.
+For example, `db-orm-query-query-plan-cache-max-size` sets `quarkus.hibernate-orm.query.query-plan-cache-max-size`.
+An option is a build time option if the Quarkus property is one.
+Boolean and numeric values are validated by {project_name}, other values by Quarkus.
+The options have no default of their own: the default of the Quarkus property applies.
+
+The properties and their descriptions are listed in the https://quarkus.io/guides/hibernate-orm#configuration-reference[configuration reference of the Quarkus Hibernate ORM extension] for the Quarkus version that {project_name} ships.
+The following properties have no `db-orm-` option:
+
+* Properties set by a dedicated option: `db-dialect`, `db-schema` and `db-log-slow-queries-threshold`.
+* Properties that {project_name} configures itself, such as `quarkus.hibernate-orm.packages`, and properties that {project_name} cannot work with, such as `quarkus.hibernate-orm.enabled`, `quarkus.hibernate-orm.multitenant` and `quarkus.hibernate-orm.schema-management.strategy`.
+* Properties without a fixed name, such as `quarkus.hibernate-orm.unsupported-properties."<property>"`.
+* Deprecated properties.
+
+WARNING: {project_name} is tested with the defaults of these properties and relies on some of them. Consult the Quarkus documentation before changing one.
+
+The options are not available on the command line, and they are not listed in the command-line help, the shell completion or the <@links.server id="all-config"/> guide.
+Set them through the other configuration sources described in <@links.server id="configuration"/>, for example as an environment variable:
+
+[source,bash]
+----
+export KC_DB_ORM_QUERY_QUERY_PLAN_CACHE_MAX_SIZE=512
+----
+
+or in the `conf/keycloak.conf` file:
+
+[source]
+----
+db-orm-query-query-plan-cache-max-size=512
+----
+
+With the `-<datasource>` suffix, such as `db-orm-query-query-plan-cache-max-size-user-store`, an option applies to the persistence unit of an additional datasource that is <<persistence-unit-options,defined with options>>.
+Setting such an option for a datasource whose persistence unit is not defined with `db-jpa-packages-<datasource>`, for example a unit defined in a `persistence.xml` file, fails the validation of the configuration.
+Properties of the extension as a whole, such as `quarkus.hibernate-orm.metrics.enabled`, have no `-<datasource>` variant.
+
 [[multiple-datasources]]
 == Configure multiple datasources
 
@@ -751,6 +789,7 @@ Defining multiple datasources works like defining a single datasource, with one 
 In order to enable an additional datasource, you need to set up 2 things - the JPA `persistence.xml` file and {project_name} configuration.
 The `persistence.xml` file serves to specify persistence units as part of the Jakarta Persistence API standard, and is required for proper configuration propagation to the Hibernate ORM framework.
 When you complete the part with the `persistence.xml` file, you need to set up {project_name} configuration accordingly.
+Alternatively, you can define the persistence unit with {project_name} options instead of a `persistence.xml` file, see <<persistence-unit-options,Defining the persistence unit with options>>.
 
 The additional datasource properties might be specified via the standard config sources like CLI, `keycloak.conf`, or environment variables.
 
@@ -764,8 +803,7 @@ See the Relevant options chapter for the complete list of them.
 The `persistence.xml` provides configuration for Jakarta Persistence API (JPA) such as what entities it should manage, the datasource name, JDBC settings, JPA/Hibernate custom settings, and more.
 The file needs to be placed in the `META-INF/persistence.xml` folder of your custom {project_name} extension.
 
-NOTE: Be aware that Quarkus provides the ability to set up the JPA persistence unit via Hibernate ORM properties instead of using the `persistence.xml` file.
-However, the supported way for {project_name} is using the `persistence.xml` file, and if the file is present, the Quarkus properties are ignored.
+NOTE: {project_name} reads `persistence.xml` files itself. A persistence unit can also be defined with `db-jpa-packages-<datasource>`, see <<persistence-unit-options,Defining the persistence unit with options>>.
 
 In {project_name}, most of the configuration is automatic, and you just need to provide fundamental configuration details - the datasource name and transaction type.
 
@@ -805,6 +843,37 @@ Therefore, you can enable the additional datasource `user-store` as follows (`po
 
 After specifying the db-kind for the datasource, all database-kind–specific defaults (such as the driver and dialect) are automatically applied, just like for the main datasource.
 
+[[persistence-unit-options]]
+=== Defining the persistence unit with options
+
+Instead of packaging a `persistence.xml` file with your extension, you can define the persistence unit of an additional datasource with the build time option `db-jpa-packages-<datasource>`.
+Its value is a comma-separated list of the packages that contain the JPA entities of the persistence unit. Every entity in these packages, including their sub-packages, is managed by the persistence unit.
+
+The persistence unit has the same name as the datasource, and it is configured through the options of the datasource: `db-kind-<datasource>` is required, and options such as `db-dialect-<datasource>`, `db-schema-<datasource>`, `db-debug-jpql-<datasource>` or `db-log-slow-queries-threshold-<datasource>` apply to the persistence unit of the datasource.
+
+For example, the following defines the persistence unit `user-store` for the datasource of the same name, managing the entities in the package `org.your.extension.entity`:
+
+<@kc.build parameters="--db-kind-user-store=postgres --db-jpa-packages-user-store=org.your.extension.entity"/>
+
+Your extension then obtains the persistence unit by the name of the datasource:
+
+[source,java]
+----
+JpaConnectionProvider provider = session.getProvider(JpaConnectionProvider.class, "user-store");
+EntityManager entityManager = provider.getEntityManager();
+----
+
+NOTE: JPA entities of an extension that are not managed by any additional persistence unit, that is neither listed in a `persistence.xml` file nor located in the packages of a `db-jpa-packages-<datasource>` option, are managed by the main {project_name} persistence unit.
+
+The Hibernate ORM settings of the persistence unit are set with the `db-orm-*-<datasource>` options described in <<hibernate-orm-options,Configuring Hibernate ORM>>.
+Hibernate ORM settings that have no {project_name} option can be set with the raw Quarkus properties in `conf/quarkus.properties`, which is **unsupported** as described in the guide <@links.server id="configuration"/>.
+{project_name} maps its options to the Quarkus properties with the quoted datasource name, so a raw property that complements the options must use the same form, for example `quarkus.hibernate-orm."user-store".unsupported-properties."hibernate.jdbc.fetch_size"=100`.
+A {project_name} option that is set takes precedence over the corresponding raw Quarkus property.
+
+WARNING: Quarkus reads the configuration of a persistence unit, or of a datasource, in one form only: either with the quoted name or with the unquoted name, whichever it encounters first.
+Combining the {project_name} options of a datasource, which use the quoted form, with raw properties in the unquoted form therefore silently ignores one of them.
+The unquoted form described in <<_backward_compatibility_for_the_quarkus_properties,Backward compatibility for the `quarkus.properties`>> is meant for a datasource, and its persistence unit, configured entirely with raw Quarkus properties.
+
 === Configuration via environment variables
 If you do not want to configure the datasource via CLI or `keycloak.conf` properties, you can use the environment variables.
 
@@ -832,6 +901,7 @@ export KCKEY_USER_STORE_DB_KIND=db-kind-user_store$marketing
 
 You can find more information in the guide <@links.server id="configuration"/>, in subsection _Formats for environment variable keys with special characters_.
 
+[[_backward_compatibility_for_the_quarkus_properties]]
 === Backward compatibility for the `quarkus.properties`
 In the past, we instructed users to use raw Quarkus properties to configure additional datasources in some places.
 However, as using Quarkus properties in the `conf/quarkus.properties` file is considered **unsupported**, it is strongly recommended to use the dedicated additional datasources options as described above.
