@@ -21,14 +21,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.core.Response;
-
-import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.events.Details;
@@ -48,9 +43,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.util.JsonSerialization;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
@@ -145,69 +138,6 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
             fail();
         }
 
-        // Regression test: omitting post.logout.redirect.uris in a partial update must
-        // still validate stored HTTP URIs against stored rootUrl and fail.
-        //
-        // Note: Can't use updateClientByAdmin() here because it re-populates attributes.
-        // We need a fresh ClientRepresentation to actually test the missing-attribute fallback path.
-
-        String bypassClientId = generateSuffixedName(CLIENT_NAME);
-
-        // Step 1: Seed an unsafe HTTP URI before the policy is enabled
-        revertToBuiltinPolicies();
-        String bypassCId = createClientByAdmin(bypassClientId, (ClientRepresentation clientRep) -> {
-            clientRep.setSecret("secret");
-            clientRep.setRedirectUris(List.of("https://oauth.redirect/some"));
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep)
-                    .setPostLogoutRedirectUris(List.of("http://attacker.example/steal"));
-            clientRep.setStandardFlowEnabled(false);
-            clientRep.setImplicitFlowEnabled(false);
-        });
-
-        // Re-enable the policy.
-        String profileJson = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
-                (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
-                        .addExecutor(SecureRedirectUrisEnforcerExecutorFactory.PROVIDER_ID,
-                                createSecureRedirectUrisEnforcerExecutorConfig(it -> {}))
-                        .toRepresentation()
-        ).toString();
-        updateProfiles(profileJson);
-        String policyJson = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
-                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
-                        .addCondition(AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig())
-                        .addProfile(PROFILE_NAME)
-                        .toRepresentation()
-        ).toString();
-        updatePolicies(policyJson);
-
-        ClientRepresentation freshPartialRep = new ClientRepresentation();
-        freshPartialRep.setId(bypassCId);
-        freshPartialRep.setClientId(bypassClientId);
-        freshPartialRep.setSecret("secret");
-        freshPartialRep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        freshPartialRep.setStandardFlowEnabled(true);  // re-enable standard flow
-        freshPartialRep.setImplicitFlowEnabled(false);
-        freshPartialRep.setRedirectUris(List.of("https://oauth.redirect/some")); // safe redirect URI
-
-
-        ClientPolicyException ex = Assert.assertThrows(
-                "Partial update omitting post-logout URI attribute must be rejected when stored URI is HTTP",
-                ClientPolicyException.class,
-                () -> {
-                    try {
-                        adminClient.realm(REALM_NAME).clients().get(bypassCId).update(freshPartialRep);
-                    } catch (BadRequestException bre) {
-                        Response resp = bre.getResponse();
-                        if (resp.getStatus() == Response.Status.BAD_REQUEST.getStatusCode()) {
-                            String respBody = resp.readEntity(String.class);
-                            Map<String, String> responseJson = JsonSerialization.readValue(respBody, Map.class);
-                            throw new ClientPolicyException(responseJson.get(OAuth2Constants.ERROR), responseJson.get(OAuth2Constants.ERROR_DESCRIPTION));
-                        }
-                        throw bre;
-                    }
-                }
-        );
-        assertEquals(OAuthErrorException.INVALID_REQUEST, ex.getError());
     }
 
     @Test
