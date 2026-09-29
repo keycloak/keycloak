@@ -51,10 +51,13 @@ import static org.mockito.Mockito.verify;
  * the snapshot before the live lookup for purge events, so the two have to agree on
  * what {@code sub} means.
  *
- * <p>The realm here carries a {@code frontendUrl} attribute, which makes the
- * transmitter's issuer differ from the realm issuer — the configuration that would
- * break if the gate were written against {@code SubjectUserLookup.isRealmIssuer}
- * instead of the transmitter's own issuer.
+ * <p>The realm here carries a {@code frontendUrl} attribute. Since the transmitter
+ * appends {@code /realms/{realm}} to that value, its issuer is identical to the
+ * realm's OIDC issuer in this configuration — the gate must still be written
+ * against {@link org.keycloak.ssf.transmitter.support.SsfUtil#getIssuerUrl} rather
+ * than {@code SubjectUserLookup.isRealmIssuer}, because the two can still diverge
+ * when neither a {@code frontendUrl} nor a frontend hostname is configured and the
+ * fallback resolves the base URI without the {@code FRONTEND} url type.
  */
 class PurgedUserSnapshotTest {
 
@@ -62,8 +65,11 @@ class PurgedUserSnapshotTest {
     static final String USER_ID = "1c9a1a0e-0000-4000-8000-000000000001";
     static final String EMAIL = "purged@local.test";
 
-    /** What SsfUtil.getIssuerUrl returns for this realm: the frontendUrl attribute, verbatim. */
+    /** What SsfUtil.getIssuerUrl returns for this realm: frontendUrl + /realms/{realm}. */
     static final String TRANSMITTER_ISSUER = "https://ssf.example/auth/realms/test";
+
+    /** The raw frontendUrl realm attribute (without the realm path). */
+    static final String FRONTEND_URL = "https://ssf.example/auth";
 
     static final String FOREIGN_ISSUER = "https://idp.partner.example";
 
@@ -81,7 +87,7 @@ class PurgedUserSnapshotTest {
         realm = mock(RealmModel.class);
         lenient().when(realm.getId()).thenReturn(REALM_ID);
         lenient().when(realm.getName()).thenReturn("test");
-        lenient().when(realm.getAttribute("frontendUrl")).thenReturn(TRANSMITTER_ISSUER);
+        lenient().when(realm.getAttribute("frontendUrl")).thenReturn(FRONTEND_URL);
 
         KeycloakContext context = mock(KeycloakContext.class);
         lenient().when(context.getRealm()).thenReturn(realm);
