@@ -110,6 +110,11 @@ public class HardcodedRoleMapper extends AbstractIdentityProviderMapper {
         if (role == null) {
             LOG.warnf("Unable to find role '%s' referenced by mapper '%s' on realm '%s'.", roleName,
                     mapperModel.getName(), realm.getName());
+            return null;
+        }
+
+        if (!isAdminRoleGrantAllowed(session, realm, role, mapperModel)) {
+            return null;
         }
 
         return role;

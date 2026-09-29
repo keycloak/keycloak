@@ -19,6 +19,7 @@ import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
+import { useAccess } from "../../context/access/Access";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import type { FieldProps } from "../component/FormGroupField";
 import { FormGroupField } from "../component/FormGroupField";
@@ -121,6 +122,7 @@ export const AdvancedSettings = ({
     defaultValue: "false",
   });
   const claimFilterRequired = filteredByClaim === "true";
+  const { hasAccess } = useAccess();
   const isFeatureEnabled = useIsFeatureEnabled();
   const isTransientUsersEnabled = isFeatureEnabled(Feature.TransientUsers);
   const isClientAuthFederatedEnabled = isFeatureEnabled(
@@ -332,6 +334,12 @@ export const AdvancedSettings = ({
         field="config.caseSensitiveOriginalUsername"
         label="caseSensitiveOriginalUsername"
       />
+      {hasAccess("manage-realm") && (
+        <SwitchField
+          field="config.allowAdminRoleMapping"
+          label="allowAdminRoleMapping"
+        />
+      )}
       {isClientAuthFederatedEnabled && isOIDC && (
         <SwitchField
           field="config.supportsClientAssertions"
