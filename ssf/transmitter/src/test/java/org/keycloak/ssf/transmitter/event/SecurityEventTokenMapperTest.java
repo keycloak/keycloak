@@ -287,7 +287,8 @@ class SecurityEventTokenMapperTest {
 
     @Test
     void canConvert_revokeGrantWithoutSessionId_false() {
-        // Access-token revocation and consent revocation never set a session id.
+        // Access-token revocation currently sets no session id (TokenRevocationEndpoint
+        // only does so for refresh/offline tokens), so it is excluded by shape.
         Event event = revokeGrantEvent(null);
 
         assertFalse(mapper.canConvert(event));
@@ -330,6 +331,33 @@ class SecurityEventTokenMapperTest {
     void toSecurityEventToken_revokeGrant_offlineSessionAlive_yieldsNull() {
         assertNull(revokeMapper(sessionStore(false, true)).toSecurityEventToken(revokeGrantEvent("sid-1"), streamConfig()),
                 "another client still holds an offline token for the same session id");
+    }
+
+    @Test
+    void toSecurityEventToken_accessTokenRevocationWithSessionId_yieldsNull() {
+        // Should access-token revocation ever copy the token's sid onto the event, the
+        // liveness check still keeps it out: revoking an access token never ends a session.
+        Event event = revokeGrantEvent("sid-1");
+        event.setDetails(Map.of(Details.TOKEN_ID, "access-token-id"));
+
+        assertNull(revokeMapper(sessionStore(true, false)).toSecurityEventToken(event, streamConfig()),
+                "the session the access token belonged to is still alive and must not be announced as revoked");
+    }
+
+    @Test
+    void toSecurityEventToken_consentRevocation_callersLiveSessionId_yieldsNull() {
+        // Account-console consent revocation fires REVOKE_GRANT with the caller's own
+        // session id (AccountLoader) and Details.REVOKED_CLIENT, but no refresh token
+        // details. That session is alive inside its own request, so the liveness check,
+        // not the shape check, keeps it out. This pins the invariant that the caller's
+        // live session never becomes the subject of a session-revoked SET.
+        Event event = revokeGrantEvent("callers-own-sid");
+        event.setDetails(Map.of(Details.REVOKED_CLIENT, "third-party-app"));
+        SecurityEventTokenMapper mapper = revokeMapper(sessionStore(true, false));
+
+        assertTrue(mapper.canConvert(event), "the shape check alone cannot tell consent revocation apart");
+        assertNull(mapper.toSecurityEventToken(event, streamConfig()),
+                "the caller's live account-console session must not be announced as revoked");
     }
 
     @Test

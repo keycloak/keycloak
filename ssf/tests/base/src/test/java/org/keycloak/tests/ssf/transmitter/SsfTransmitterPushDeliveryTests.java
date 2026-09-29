@@ -23,6 +23,8 @@ import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.AccountRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -254,8 +256,8 @@ public class SsfTransmitterPushDeliveryTests {
                 "revoking the refresh token ends the session — the SET must carry CAEP session-revoked");
         Assertions.assertEquals("Token revoked", sessionRevoked.path("reason_admin").path("en").asText(),
                 "reason_admin should distinguish token revocation from logout");
-            Assertions.assertEquals(InitiatingEntity.SYSTEM.getCode(), sessionRevoked.path("initiating_entity").asText(),
-                    "/revoke is called by the RP with client credentials, so the RP's system initiated the revocation, not the user");
+        Assertions.assertEquals(InitiatingEntity.SYSTEM.getCode(), sessionRevoked.path("initiating_entity").asText(),
+                "/revoke is called by the RP with client credentials, so the RP's system initiated the revocation, not the user");
 
         Assertions.assertEquals(sessionId, set.path("sub_id").path("session").path("id").asText(),
                 "sub_id.session should identify the session the revoked token belonged to");
@@ -396,6 +398,52 @@ public class SsfTransmitterPushDeliveryTests {
             oauthClient.client(firstClientId, firstClientSecret);
             oauthClient.getDriver().manage().deleteAllCookies();
         }
+    }
+
+    /**
+     * Account-console consent revocation also fires {@code REVOKE_GRANT},
+     * and unlike access-token revocation its event <em>does</em> carry a
+     * session id: the caller's own, set by {@code AccountLoader}. That
+     * session is alive inside its own request and is unrelated to the
+     * revocation, so the mapper must stay silent; a SET here would tell
+     * receivers that the very session the user is working in was revoked.
+     * Revoking the same session's refresh token afterwards must push,
+     * which proves the id on the consent event named a live session and
+     * that the stream itself was working.
+     */
+    @Test
+    public void testNoPushOnAccountConsoleConsentRevocation() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
+        createPushStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        AccessTokenResponse tokenResponse = oauthClient.passwordGrantRequest(TEST_USER, TEST_PASSWORD).send();
+        Assertions.assertNotNull(tokenResponse.getAccessToken(),
+                () -> "password grant should succeed, got error: " + tokenResponse.getError() + " / " + tokenResponse.getErrorDescription());
+        String sessionId = extractSessionId(tokenResponse.getRefreshToken());
+
+        // Revoke consent for another client through the account REST API,
+        // authenticated with the session established above. The JSON accept
+        // header is what routes the request to the REST service rather than
+        // the account console web app.
+        String consentUrl = realm.getBaseUrl() + "/account/applications/" + SECOND_RP + "/consent";
+        try (SimpleHttpResponse response = http.doDelete(consentUrl).acceptJson().auth(tokenResponse.getAccessToken()).asResponse()) {
+            Assertions.assertEquals(204, response.getStatus(), "consent revocation through the account REST API should succeed");
+        }
+
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "consent revocation names the caller's own live session — no session-revoked SET may be pushed");
+
+        // The caller's session is still alive; revoking its refresh token now ends it and must push.
+        Assertions.assertTrue(oauthClient.tokenRevocationRequest(tokenResponse.getRefreshToken()).refreshToken().send().isSuccess(),
+                "refresh token revocation should succeed");
+
+        CapturedPush captured = awaitPush();
+        JsonNode set = decodeSet(captured);
+        Assertions.assertTrue(set.path("events").has(CaepSessionRevoked.TYPE),
+                "revoking the refresh token ends the session — the SET must carry CAEP session-revoked");
+        Assertions.assertEquals(sessionId, set.path("sub_id").path("session").path("id").asText(),
+                "sub_id.session should identify the session the consent-revocation event had named");
     }
 
     /**
@@ -955,6 +1003,8 @@ public class SsfTransmitterPushDeliveryTests {
                             .password(TEST_PASSWORD)
                             // grant offline_access explicitly for the offline-token revocation test
                             .realmRoles(OAuth2Constants.OFFLINE_ACCESS)
+                            // account REST access for the consent-revocation test
+                            .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.MANAGE_ACCOUNT)
                             .build()
             );
 

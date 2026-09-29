@@ -889,7 +889,7 @@ public class SecurityEventTokenMapper {
             // Only the shape check here; whether the revocation actually ended
             // the session needs store lookups, which toSecurityEventToken does
             // (once per event, see isRevokedSessionAlive) before yielding null.
-            case REVOKE_GRANT -> hasRevokedSession(event);
+            case REVOKE_GRANT -> carriesSessionId(event);
             case UPDATE_CREDENTIAL,
                  REMOVE_CREDENTIAL,
                  RESET_PASSWORD -> !shouldIgnoreCredentialChange(event);
@@ -1020,11 +1020,13 @@ public class SecurityEventTokenMapper {
 
                 // Token revocation via the OAuth2 /revoke endpoint that
                 // actually ended the user session, see shouldIgnoreRevokeGrant
-                // for the cases that must NOT map (consent revocation,
-                // partial revocation with surviving SSO session). Future
-                // revoke-grant flavors (e.g. consent revocation → RISC
-                // opt-out) branch on the event's shape here, mirrored in
-                // canConvert.
+                // for the cases that must NOT map: access-token revocation
+                // is excluded by shape (no session id today, and by liveness
+                // should that change), consent revocation and partial
+                // revocation with a surviving SSO session are both excluded
+                // by the liveness check. Future revoke-grant
+                // flavors (e.g. consent revocation → RISC opt-out) need a
+                // discriminator of their own here, mirrored in canConvert.
                 if (shouldIgnoreRevokeGrant(event)) {
                     yield null;
                 }
@@ -1125,15 +1127,24 @@ public class SecurityEventTokenMapper {
     /**
      * {@code REVOKE_GRANT} covers two very different flows: OAuth2 token
      * revocation ({@code POST /protocol/openid-connect/revoke} with a
-     * refresh or offline token, where the endpoint puts the token's session id
-     * on the event) and account-console consent revocation (no session
-     * id). Only the former is mapped. Consent revocation can end a session
-     * too: it revokes the client's offline token, which removes the offline
-     * session once no other client remains on it, and backchannel-logs the
-     * client out of its online client sessions. That event carries no
-     * session id and no LOGOUT event is fired along the way, so it is
-     * knowingly out of scope here, pending a dedicated mapping (e.g. RISC
-     * opt-out).
+     * refresh or offline token, where the endpoint puts the revoked token's
+     * session id on the event) and account-console consent revocation.
+     * Only the former is mapped. Consent revocation does carry a session id
+     * as well, but it is the account-console caller's own session (set by
+     * {@code AccountLoader} on the event builder), unrelated to the
+     * revocation, so it must never end up as the subject of a
+     * session-revoked SET. It is not kept out by shape; it is suppressed
+     * only because that session is necessarily alive inside its own
+     * request: consent revocation revokes the client's offline token (which
+     * may remove an offline session once no client remains on it) and
+     * backchannel-logs the client out of its online client sessions, which
+     * only detaches them and never removes the online user session the
+     * event names. Any future change that narrows the liveness check or
+     * uses the session id to tell the two flows apart must add an explicit
+     * discriminator for consent revocation (e.g. the absence of
+     * {@code Details.REFRESH_TOKEN_TYPE}).
+     * Consent revocation itself is knowingly out of scope here, pending a
+     * dedicated mapping (e.g. RISC opt-out).
      *
      * <p>Even a token revocation only detaches the revoking client's
      * client-session; Keycloak removes the user session itself only when
@@ -1154,16 +1165,22 @@ public class SecurityEventTokenMapper {
      * makes the per-stream calls of this method share one lookup.
      */
     protected boolean shouldIgnoreRevokeGrant(Event event) {
-        return !hasRevokedSession(event) || isRevokedSessionAlive(event);
+        return !carriesSessionId(event) || isRevokedSessionAlive(event);
     }
 
     /**
-     * Cheap shape check used by {@link #canConvert(Event)}: only revocations
-     * of refresh and offline tokens carry the session id (see
-     * {@code TokenRevocationEndpoint}); access-token revocation and consent
-     * revocation do not and never map.
+     * Cheap shape check used by {@link #canConvert(Event)}: whether the event
+     * names a session at all. Access-token revocation currently sets no
+     * session id (only the refresh/offline branch of
+     * {@code TokenRevocationEndpoint} does, even though access tokens carry a
+     * {@code sid} claim) and is excluded here; should that change, the
+     * liveness check still keeps it out, since revoking an access token never
+     * ends a session. Refresh and offline token revocation carry the revoked
+     * token's session id, consent revocation carries the caller's own live
+     * session id, so a {@code true} here says nothing about whether a session
+     * was revoked; that is what {@link #isRevokedSessionAlive(Event)} decides.
      */
-    protected boolean hasRevokedSession(Event event) {
+    protected boolean carriesSessionId(Event event) {
         return event.getSessionId() != null;
     }
 
