@@ -36,6 +36,7 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.realm.UserBuilder;
@@ -681,6 +682,11 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     public void testFailUpdateEmailNotAssociatedOrganizationUsingAdminAPI() {
         OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
 
+        OrganizationIdentityProviderLinkRepresentation idpLink = new OrganizationIdentityProviderLinkRepresentation();
+        idpLink.setAutoMembership(true);
+        idpLink.setMembershipType("MANAGED");
+        organization.identityProviders().get(bc.getIDPAlias()).update(idpLink).close();
+
         // add the member for the first time
         assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
         UserRepresentation member = getUserRepresentation(bc.getUserEmail());
@@ -704,6 +710,11 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     @Test
     public void testDeleteManagedMember() {
         OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+
+        OrganizationIdentityProviderLinkRepresentation idpLink = new OrganizationIdentityProviderLinkRepresentation();
+        idpLink.setAutoMembership(true);
+        idpLink.setMembershipType("MANAGED");
+        organization.identityProviders().get(bc.getIDPAlias()).update(idpLink).close();
 
         // add the member for the first time
         assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
@@ -1069,7 +1080,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     }
 
     @Test
-    public void testLoginUsingBrokerWithoutDomain() {
+    public void testBrokerWithoutDomainDoesNotGrantMembership() {
         OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
 
         IdentityProviderRepresentation idp = bc.setUpIdentityProvider();
@@ -1086,7 +1097,8 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         loginOrgIdp("external", email, true, true);
 
-        assertIsMember(email, organization);
+        // V4: domain gate blocks membership when user's email domain doesn't match any org domain
+        assertIsNotMember(email, organization);
 
         // make sure the federated identity matches the expected broker
         UserRepresentation user = managedRealm.admin().users().searchByEmail(email, true).get(0);
@@ -1127,7 +1139,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
 
     @Test
-    public void testAnyEmailFromBrokerWithoutDomainSet() {
+    public void testNonMatchingEmailFromBrokerDoesNotGrantMembership() {
         OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         OrganizationRepresentation representation = organization.toRepresentation();
         representation.addDomain(new OrganizationDomainRepresentation("other.org"));
@@ -1146,7 +1158,8 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         openIdentityFirstLoginPage(email, true, idp.getAlias(), false, true);
 
         loginOrgIdp(email, "external@unknown.org", true, true);
-        assertIsMember("external@unknown.org", organization);
+        // V4: domain gate blocks membership when user's email domain doesn't match any org domain
+        assertIsNotMember("external@unknown.org", organization);
     }
 
     @Test
@@ -1197,8 +1210,18 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     @Test
     public void testMemberFromBrokerRedirectedToOriginBroker() {
         OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
-        clearDomainRouting(organization);
+
+        // remove org domains so domain gate is skipped (domain-less org auto-adds any user)
+        OrganizationRepresentation orgRep = organization.toRepresentation();
+        orgRep.getDomains().clear();
+        organization.update(orgRep).close();
+
         IdentityProviderRepresentation idpRep = organization.identityProviders().getIdentityProviders().get(0);
+
+        OrganizationIdentityProviderLinkRepresentation idpLink = new OrganizationIdentityProviderLinkRepresentation();
+        idpLink.setAutoMembership(true);
+        idpLink.setMembershipType("MANAGED");
+        organization.identityProviders().get(idpRep.getAlias()).update(idpLink).close();
 
         // make sure the user can select this idp from the organization when authenticating
         idpRep.setHideOnLogin(false);
@@ -1241,6 +1264,12 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     @Test
     public void testFailUpdateEmailWithDifferentDomainThanOrgIfBrokerHasDomainSet() {
         OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+
+        OrganizationIdentityProviderLinkRepresentation idpLink = new OrganizationIdentityProviderLinkRepresentation();
+        idpLink.setAutoMembership(true);
+        idpLink.setMembershipType("MANAGED");
+        organization.identityProviders().get(bc.getIDPAlias()).update(idpLink).close();
+
         String email = bc.getUserEmail();
         assertBrokerRegistration(organization, bc.getUserLogin(), email);
         // V3: domain routing is on the domain object, verify it's set

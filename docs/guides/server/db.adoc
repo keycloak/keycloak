@@ -300,7 +300,7 @@ Default: `10s`.
 
 === Asynchronous commits
 
-Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use PostgreSQL's async commit feature (`synchronous_commit = off`).
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, or events will use PostgreSQL's async commit feature (`synchronous_commit = off`).
 Logouts will still force a synchronous commit.
 
 You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
@@ -424,12 +424,12 @@ SET GLOBAL binlog_format = 'ROW';
 
 Alternatively, update the MySQL or MariaDB configuration file (`my.cnf` / `my.ini`) to make the change persistent across database restarts.
 
-[#mariadb-galera-cluster-considerations]
-=== MariaDB Galera Cluster
+[#galera-cluster-considerations]
+=== Galera Cluster
 
-WARNING: MariaDB Galera Cluster is not a supported database configuration for {project_name}. The guidance in this section is provided on a best-effort basis. Before reporting bugs, reproduce them with a supported database configuration first.
+WARNING: Galera Cluster is not a supported database configuration for {project_name}. The guidance in this section is provided on a best-effort basis. Before reporting bugs, reproduce them with a supported database configuration first.
 
-MariaDB Galera Cluster uses certification-based replication.
+Galera Cluster uses certification-based replication.
 The `transaction_isolation` setting configured by {project_name} has no practical effect on Galera, as Galera internally operates under its own Snapshot Isolation model regardless of the configured isolation level.
 
 On a multi-writer Galera setup, concurrent write transactions on different nodes that modify the same row can trigger certification failures.
@@ -474,7 +474,7 @@ In the output, look for the row where the option is `isolation level`. The value
 
 === Asynchronous commits
 
-Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events can use MS SQL Server's delayed durability feature.
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, or events can use MS SQL Server's delayed durability feature.
 Logouts will still force a durable commit.
 
 To enable this optimization, set the database to allow delayed durability:
@@ -494,7 +494,7 @@ You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--asy
 
 === Asynchronous commits
 
-Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use Oracle's asynchronous redo log write (`COMMIT WRITE BATCH NOWAIT`).
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, or events will use Oracle's asynchronous redo log write (`COMMIT WRITE BATCH NOWAIT`).
 Logouts will still force a synchronous commit.
 
 NOTE: This optimization is not available when using XA datasources (`+--transaction-xa-enabled=true+`).

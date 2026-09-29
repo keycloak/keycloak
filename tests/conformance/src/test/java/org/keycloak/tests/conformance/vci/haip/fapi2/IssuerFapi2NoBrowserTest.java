@@ -25,14 +25,14 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.conformance.runner.BrowserInteraction;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.testframework.conformance.runner.ConformanceResult;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.tests.conformance.vci.AbstractVciConformanceTest;
-import org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig;
+import org.keycloak.tests.conformance.vci.haip.configs.HaipVciRealmConfig;
+import org.keycloak.tests.conformance.vci.haip.configs.HaipVciServerConfig;
 
-import static org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig.HAIP_PLAN;
+import static org.keycloak.tests.conformance.vci.haip.configs.HaipVciRealmConfig.HAIP_PLAN;
 
-@KeycloakIntegrationTest(config = HaipVciConformanceRealmConfig.ServerConfig.class)
+@KeycloakIntegrationTest(config = HaipVciServerConfig.class)
 public class IssuerFapi2NoBrowserTest extends AbstractVciConformanceTest {
 
     private static final List<String> MODULES = List.of(
@@ -41,7 +41,7 @@ public class IssuerFapi2NoBrowserTest extends AbstractVciConformanceTest {
             "fapi2-security-profile-final-par-attempt-invalid-http-method",
             "fapi2-security-profile-final-ensure-request-object-without-redirect-uri-fails");
 
-    @InjectRealm(config = HaipVciConformanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(config = HaipVciRealmConfig.class)
     ManagedRealm realm;
 
     @Override

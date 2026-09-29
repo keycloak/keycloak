@@ -83,7 +83,7 @@ public class DatabaseClusterEventPollerTask implements ScheduledTask {
             WrapperClusterEvent wrappedEvent;
             try {
                 wrappedEvent = (WrapperClusterEvent) marshaller.objectFromByteBuffer(event.eventData());
-            } catch (IOException | ClassNotFoundException e) {
+            } catch (IOException | ClassNotFoundException | ClassCastException e) {
                 logger.warnf(e, "Failed to deserialize cluster event %s, skipping", event.id());
                 processedIds.add(event.id());
                 continue;

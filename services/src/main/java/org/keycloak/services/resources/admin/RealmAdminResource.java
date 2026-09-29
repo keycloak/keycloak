@@ -1185,6 +1185,13 @@ public class RealmAdminResource {
                 settings.put("authTokenClientSecret", realm.getSmtpConfig().get("authTokenClientSecret"));
             }
             session.getProvider(EmailTemplateProvider.class).sendSmtpTestEmail(settings, user);
+        } catch (EmailException e) {
+            if ("Email sender provider is disabled or not configured".equals(e.getMessage())) {
+                logger.error(e.getMessage(), e);
+                throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
+            }
+            logger.errorf(e, "Failed to send email \n %s", e.getCause());
+            throw ErrorResponse.error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
             logger.errorf(e, "Failed to send email \n %s", e.getCause());
             throw ErrorResponse.error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);

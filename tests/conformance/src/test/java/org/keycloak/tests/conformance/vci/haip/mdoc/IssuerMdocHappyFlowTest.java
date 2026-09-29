@@ -17,7 +17,6 @@
 
 package org.keycloak.tests.conformance.vci.haip.mdoc;
 
-import java.util.Map;
 import java.util.stream.Stream;
 
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -25,22 +24,22 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.conformance.runner.BrowserInteraction;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.testframework.conformance.runner.ConformanceResult;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.tests.conformance.vci.AbstractVciConformanceTest;
-import org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig;
+import org.keycloak.tests.conformance.vci.haip.configs.MdocHaipVciRealmConfig;
+import org.keycloak.tests.conformance.vci.haip.configs.MdocHaipVciServerConfig;
 import org.keycloak.tests.conformance.vci.haip.issuer.IssuerHappyFlowTest;
 
 import static org.keycloak.tests.conformance.vci.VciConformanceRealmUtil.MDOC_CREDENTIAL_FORMAT_VARIANT;
-import static org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig.HAIP_PLAN;
+import static org.keycloak.tests.conformance.vci.haip.configs.HaipVciRealmConfig.HAIP_PLAN;
 
 /**
  * Runs the issuer happy flow with the ISO mdoc credential format, mirroring {@link IssuerHappyFlowTest} for SD-JWT VC.
  */
-@KeycloakIntegrationTest(config = HaipVciConformanceRealmConfig.ServerConfig.class)
+@KeycloakIntegrationTest(config = MdocHaipVciServerConfig.class)
 public class IssuerMdocHappyFlowTest extends AbstractVciConformanceTest {
 
-    @InjectRealm(config = HaipVciConformanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(config = MdocHaipVciRealmConfig.class)
     ManagedRealm realm;
 
     @Override
@@ -48,9 +47,7 @@ public class IssuerMdocHappyFlowTest extends AbstractVciConformanceTest {
         // The plan variant pins every dimension but vci_credential_encryption, leaving the plain and encrypted variants
         return discoverModuleVariants(
                 HAIP_PLAN,
-                Map.of(
-                        "credential_format", MDOC_CREDENTIAL_FORMAT_VARIANT,
-                        "vci_authorization_code_flow_variant", "wallet_initiated"),
+                planVariant(MDOC_CREDENTIAL_FORMAT_VARIANT, "wallet_initiated"),
                 "oid4vci-1_0-issuer-happy-flow",
                 ConformanceResult.PASSED,
                 BrowserInteraction.LOGIN);

@@ -54,16 +54,21 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.IMPERSONATE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERS;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERSHIP;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERSHIP_OF_MEMBERS;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.RESET_PASSWORD;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW_MEMBERS;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -560,6 +565,281 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
                         .groups("/" + permittedGroup.getName(), "/" + unpermittedGroup.getName()).build())) {
             assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
         }
+    }
+
+    @Test
+    public void testViewUserMemberOfGroupDeniedByMemberScopeIsForbidden() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+
+        // grant myadmin 'view' on all users
+        createAllPermission(adminPermissionsClient, usersType, allowMyAdmin, Set.of(VIEW));
+
+        GroupRepresentation permittedGroup = createGroup("view-permitted-group");
+        GroupRepresentation unpermittedGroup = createGroup("view-unpermitted-group");
+
+        // myadmin can view/view-members only for the permitted group
+        createGroupPermission(permittedGroup, Set.of(VIEW, VIEW_MEMBERS), allowMyAdmin);
+
+        // a permission scoped to the unpermitted group grants another user, so it denies myadmin under UNANIMOUS.
+        // it includes 'view-members', which protects the group's members, so myadmin must be denied.
+        UserPolicyRepresentation allowAlice = createUserPolicy(realm, adminPermissionsClient, "Only Alice User Policy", userAlice.getId());
+        createGroupPermission(unpermittedGroup, Set.of(VIEW, VIEW_MEMBERS), allowAlice);
+
+        // create a user member of both groups
+        UserRepresentation targetUser = createUser("member-of-both");
+        realm.admin().users().get(targetUser.getId()).joinGroup(permittedGroup.getId());
+        realm.admin().users().get(targetUser.getId()).joinGroup(unpermittedGroup.getId());
+        realm.cleanup().add(r -> r.users().delete(targetUser.getId()));
+
+        // the unpermitted group protects its members via 'view-members', so myadmin must be denied
+        try {
+            realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).toRepresentation();
+            fail("Expected the user to be denied because the unpermitted group protects its members");
+        } catch (ForbiddenException expected) {
+        }
+    }
+
+    @Test
+    public void testViewUserMemberOfGroupWithSharedViewDenyIsViewable() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+
+        // grant myadmin 'view' on all users
+        createAllPermission(adminPermissionsClient, usersType, allowMyAdmin, Set.of(VIEW));
+
+        GroupRepresentation permittedGroup = createGroup("view-permitted-group");
+        GroupRepresentation unpermittedGroup = createGroup("view-unpermitted-group");
+
+        // myadmin can view/view-members only for the permitted group
+        createGroupPermission(permittedGroup, Set.of(VIEW, VIEW_MEMBERS), allowMyAdmin);
+
+        // a permission scoped to the unpermitted group grants another user, so it denies myadmin under UNANIMOUS.
+        // it only touches the shared 'view' scope (not 'view-members'), so it must not block the user-level view grant.
+        UserPolicyRepresentation allowAlice = createUserPolicy(realm, adminPermissionsClient, "Only Alice User Policy", userAlice.getId());
+        createGroupPermission(unpermittedGroup, Set.of(VIEW), allowAlice);
+
+        // create a user member of both groups
+        UserRepresentation targetUser = createUser("member-of-both-shared-view");
+        realm.admin().users().get(targetUser.getId()).joinGroup(permittedGroup.getId());
+        realm.admin().users().get(targetUser.getId()).joinGroup(unpermittedGroup.getId());
+        realm.cleanup().add(r -> r.users().delete(targetUser.getId()));
+
+        // myadmin must be able to view the user despite membership in the unpermitted group
+        UserRepresentation representation = realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).toRepresentation();
+        assertThat(representation, notNullValue());
+
+        // the user's group memberships seen by myadmin must be filtered to the permitted group only
+        List<GroupRepresentation> visibleGroups = realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).groups();
+        assertThat(visibleGroups, hasSize(1));
+        assertEquals(permittedGroup.getId(), visibleGroups.get(0).getId());
+    }
+
+    @Test
+    public void testViewUserMemberOfGroupDeniedByDefault() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+
+        // grant myadmin 'view' on all users
+        createAllPermission(adminPermissionsClient, usersType, allowMyAdmin, Set.of(VIEW));
+
+        GroupRepresentation permittedGroup = createGroup("view-permitted-group");
+        // no permission is set on this group, so it is denied by default for myadmin
+        GroupRepresentation unpermittedGroup = createGroup("view-unpermitted-group");
+
+        // myadmin can view/view-members only for the permitted group
+        createGroupPermission(permittedGroup, Set.of(VIEW, VIEW_MEMBERS), allowMyAdmin);
+
+        // create a user member of both groups
+        UserRepresentation targetUser = createUser("member-of-both-default-deny");
+        realm.admin().users().get(targetUser.getId()).joinGroup(permittedGroup.getId());
+        realm.admin().users().get(targetUser.getId()).joinGroup(unpermittedGroup.getId());
+        realm.cleanup().add(r -> r.users().delete(targetUser.getId()));
+
+        // myadmin must be able to view the user despite membership in the group denied by default
+        UserRepresentation representation = realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).toRepresentation();
+        assertThat(representation, notNullValue());
+
+        // the group denied by default must be filtered out from the memberships seen by myadmin
+        List<GroupRepresentation> visibleGroups = realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).groups();
+        assertThat(visibleGroups, hasSize(1));
+        assertEquals(permittedGroup.getId(), visibleGroups.get(0).getId());
+    }
+
+    @Test
+    public void testViewUserDeniedOnlyForProtectedGroupMembers() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        UserPolicyRepresentation denyMyAdmin = createUserPolicy(Logic.NEGATIVE, realm, adminPermissionsClient, "Not My Admin User Policy", myadmin.getId());
+
+        // grant myadmin 'view' on all users
+        createAllPermission(adminPermissionsClient, usersType, allowMyAdmin, Set.of(VIEW));
+
+        GroupRepresentation group1 = createGroup("ordinary-group-1");
+        GroupRepresentation group2 = createGroup("ordinary-group-2");
+        GroupRepresentation protectedGroup = createGroup("protected-group");
+
+        // members of the protected group must not be viewable by myadmin
+        createGroupPermission(protectedGroup, Set.of(VIEW_MEMBERS), denyMyAdmin);
+
+        // a user member of the two ordinary groups only remains viewable
+        UserRepresentation allowedUser = createUser("member-of-ordinary-groups");
+        realm.admin().users().get(allowedUser.getId()).joinGroup(group1.getId());
+        realm.admin().users().get(allowedUser.getId()).joinGroup(group2.getId());
+        realm.cleanup().add(r -> r.users().delete(allowedUser.getId()));
+        assertThat(realmAdminClient.realm(realm.getName()).users().get(allowedUser.getId()).toRepresentation(), notNullValue());
+
+        // a user member of the two ordinary groups AND the protected group must not be viewable
+        UserRepresentation protectedUser = createUser("member-of-protected-group");
+        realm.admin().users().get(protectedUser.getId()).joinGroup(group1.getId());
+        realm.admin().users().get(protectedUser.getId()).joinGroup(group2.getId());
+        realm.admin().users().get(protectedUser.getId()).joinGroup(protectedGroup.getId());
+        realm.cleanup().add(r -> r.users().delete(protectedUser.getId()));
+
+        try {
+            realmAdminClient.realm(realm.getName()).users().get(protectedUser.getId()).toRepresentation();
+            fail("Expected Exception wasn't thrown.");
+        } catch (ForbiddenException expected) {
+        }
+
+        // listing users must still return the non-protected users while excluding the protected one
+        List<String> visibleUsernames = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1)
+                .stream().map(UserRepresentation::getUsername).toList();
+        assertThat(visibleUsernames, hasItem(allowedUser.getUsername()));
+        assertThat(visibleUsernames, not(hasItem(protectedUser.getUsername())));
+    }
+
+    @Test
+    public void testManageUserMemberOfGroupDeniedByMemberScopeIsForbidden() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+
+        // grant myadmin 'manage' on all users
+        createAllPermission(adminPermissionsClient, usersType, allowMyAdmin, Set.of(MANAGE));
+
+        GroupRepresentation permittedGroup = createGroup("manage-permitted-group");
+        GroupRepresentation unpermittedGroup = createGroup("manage-unpermitted-group");
+
+        // myadmin can manage/manage-members only for the permitted group
+        createGroupPermission(permittedGroup, Set.of(MANAGE, MANAGE_MEMBERS), allowMyAdmin);
+
+        // a permission scoped to the unpermitted group grants another user, so it denies myadmin under UNANIMOUS.
+        // it includes 'manage-members', which protects the group's members, so myadmin must be denied.
+        UserPolicyRepresentation allowAlice = createUserPolicy(realm, adminPermissionsClient, "Only Alice User Policy", userAlice.getId());
+        createGroupPermission(unpermittedGroup, Set.of(MANAGE, MANAGE_MEMBERS), allowAlice);
+
+        // create a user member of both groups
+        UserRepresentation targetUser = createUser("manage-member-of-both");
+        realm.admin().users().get(targetUser.getId()).joinGroup(permittedGroup.getId());
+        realm.admin().users().get(targetUser.getId()).joinGroup(unpermittedGroup.getId());
+        realm.cleanup().add(r -> r.users().delete(targetUser.getId()));
+
+        // the unpermitted group protects its members via 'manage-members', so myadmin must be denied
+        UserRepresentation rep = realm.admin().users().get(targetUser.getId()).toRepresentation();
+        rep.setFirstName("updated");
+        try {
+            realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).update(rep);
+            fail("Expected the user update to be denied because the unpermitted group protects its members");
+        } catch (ForbiddenException expected) {
+        }
+
+        // the denied update must not have been persisted
+        assertThat(realm.admin().users().get(targetUser.getId()).toRepresentation().getFirstName(), nullValue());
+    }
+
+    @Test
+    public void testManageUserMemberOfGroupWithSharedManageDenyIsUpdatable() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+
+        // grant myadmin 'manage' on all users
+        createAllPermission(adminPermissionsClient, usersType, allowMyAdmin, Set.of(MANAGE));
+
+        GroupRepresentation permittedGroup = createGroup("manage-permitted-group");
+        GroupRepresentation unpermittedGroup = createGroup("manage-unpermitted-group");
+
+        // myadmin can manage/manage-members only for the permitted group
+        createGroupPermission(permittedGroup, Set.of(MANAGE, MANAGE_MEMBERS), allowMyAdmin);
+
+        // a permission scoped to the unpermitted group grants another user, so it denies myadmin under UNANIMOUS.
+        // it only touches the shared 'manage' scope (not 'manage-members'), so it must not block the user-level manage grant.
+        UserPolicyRepresentation allowAlice = createUserPolicy(realm, adminPermissionsClient, "Only Alice User Policy", userAlice.getId());
+        createGroupPermission(unpermittedGroup, Set.of(MANAGE), allowAlice);
+
+        // create a user member of both groups
+        UserRepresentation targetUser = createUser("manage-member-of-both-shared-manage");
+        realm.admin().users().get(targetUser.getId()).joinGroup(permittedGroup.getId());
+        realm.admin().users().get(targetUser.getId()).joinGroup(unpermittedGroup.getId());
+        realm.cleanup().add(r -> r.users().delete(targetUser.getId()));
+
+        // myadmin must be able to update the user despite membership in the unpermitted group
+        UserRepresentation rep = realm.admin().users().get(targetUser.getId()).toRepresentation();
+        rep.setFirstName("updated");
+        realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).update(rep);
+
+        assertEquals("updated", realm.admin().users().get(targetUser.getId()).toRepresentation().getFirstName());
+    }
+
+    @Test
+    public void testViewUserDeniedForProtectedGroupMembersWithSharedScope() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        UserPolicyRepresentation denyMyAdmin = createUserPolicy(Logic.NEGATIVE, realm, adminPermissionsClient, "Not My Admin User Policy", myadmin.getId());
+
+        // grant myadmin 'view' on all users
+        createAllPermission(adminPermissionsClient, usersType, allowMyAdmin, Set.of(VIEW));
+
+        // deny includes the shared 'view' scope in addition to 'view-members'
+        GroupRepresentation protectedGroup = createGroup("protected-group-shared-view");
+        createGroupPermission(protectedGroup, Set.of(VIEW, VIEW_MEMBERS), denyMyAdmin);
+
+        UserRepresentation protectedUser = createUser("member-of-protected-shared-view");
+        realm.admin().users().get(protectedUser.getId()).joinGroup(protectedGroup.getId());
+        realm.cleanup().add(r -> r.users().delete(protectedUser.getId()));
+
+        // the member-scope protection must still veto the view despite the extra shared scope
+        try {
+            realmAdminClient.realm(realm.getName()).users().get(protectedUser.getId()).toRepresentation();
+            fail("Expected Exception wasn't thrown.");
+        } catch (ForbiddenException expected) {
+        }
+
+        // listing users must also exclude the protected user
+        List<String> visibleUsernames = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1)
+                .stream().map(UserRepresentation::getUsername).toList();
+        assertThat(visibleUsernames, not(hasItem(protectedUser.getUsername())));
+    }
+
+    @Test
+    public void testManageUserDeniedForProtectedGroupMembersWithSharedScope() {
+        // manage parallel of the bypass guard: a NEGATIVE deny on 'manage'/'manage-members' must still
+        // protect the group's members from being managed, despite the unrelated shared 'manage' scope.
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        UserPolicyRepresentation denyMyAdmin = createUserPolicy(Logic.NEGATIVE, realm, adminPermissionsClient, "Not My Admin User Policy", myadmin.getId());
+
+        // grant myadmin 'manage' on all users
+        createAllPermission(adminPermissionsClient, usersType, allowMyAdmin, Set.of(MANAGE));
+
+        // deny includes the shared 'manage' scope in addition to 'manage-members'
+        GroupRepresentation protectedGroup = createGroup("protected-group-shared-manage");
+        createGroupPermission(protectedGroup, Set.of(MANAGE, MANAGE_MEMBERS), denyMyAdmin);
+
+        UserRepresentation protectedUser = createUser("member-of-protected-shared-manage");
+        realm.admin().users().get(protectedUser.getId()).joinGroup(protectedGroup.getId());
+        realm.cleanup().add(r -> r.users().delete(protectedUser.getId()));
+
+        // the member-scope protection must still veto the update despite the extra shared scope
+        UserRepresentation rep = realm.admin().users().get(protectedUser.getId()).toRepresentation();
+        rep.setFirstName("should-not-update");
+        try {
+            realmAdminClient.realm(realm.getName()).users().get(protectedUser.getId()).update(rep);
+            fail("Expected Exception wasn't thrown.");
+        } catch (ForbiddenException expected) {
+        }
+
+        // the denied update must not have been persisted
+        assertThat(realm.admin().users().get(protectedUser.getId()).toRepresentation().getFirstName(), nullValue());
     }
 
     @Test

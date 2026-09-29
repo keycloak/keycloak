@@ -25,18 +25,18 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.conformance.runner.BrowserInteraction;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.testframework.conformance.runner.ConformanceResult;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.tests.conformance.vci.AbstractVciConformanceTest;
-import org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig;
+import org.keycloak.tests.conformance.vci.haip.configs.HaipVciRealmConfig;
+import org.keycloak.tests.conformance.vci.haip.configs.HaipVciServerConfig;
 
-import static org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig.HAIP_PLAN;
+import static org.keycloak.tests.conformance.vci.haip.configs.HaipVciRealmConfig.HAIP_PLAN;
 
-@KeycloakIntegrationTest(config = HaipVciConformanceRealmConfig.ServerConfig.class)
+@KeycloakIntegrationTest(config = HaipVciServerConfig.class)
 public class IssuerExpiredRequestUriTest extends AbstractVciConformanceTest {
 
-    @InjectRealm(config = ShortParRequestUriLifespanRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(config = ShortParRequestUriLifespanRealmConfig.class)
     ManagedRealm realm;
 
     @Override
@@ -46,11 +46,11 @@ public class IssuerExpiredRequestUriTest extends AbstractVciConformanceTest {
                 walletInitiated(),
                 "fapi2-security-profile-final-par-attempt-to-use-expired-request_uri",
                 ConformanceResult.REVIEW,
-                // the expired request_uri is no longer resolvable, so Keycloak rejects it at the authorization endpoint
-                BrowserInteraction.errorPage("PAR not found, not issued or used multiple times."));
+                // Keycloak rejects the expired request_uri and displays a generic "Invalid Request" error page.
+                BrowserInteraction.errorPage("Invalid Request"));
     }
 
-    public static class ShortParRequestUriLifespanRealmConfig extends HaipVciConformanceRealmConfig {
+    public static class ShortParRequestUriLifespanRealmConfig extends HaipVciRealmConfig {
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {

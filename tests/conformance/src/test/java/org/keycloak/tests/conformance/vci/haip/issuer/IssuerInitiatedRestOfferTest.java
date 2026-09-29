@@ -18,7 +18,7 @@
 package org.keycloak.tests.conformance.vci.haip.issuer;
 
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig;
+import org.keycloak.tests.conformance.vci.haip.configs.HaipVciServerConfig;
 
 import org.junit.jupiter.api.Disabled;
 
@@ -29,7 +29,7 @@ import static org.keycloak.tests.conformance.vci.VciConformanceRealmUtil.REALM;
 //  rejected ("Unexpected login client"). The suite redeems with its own wallet client, so the offer must be
 //  created without a target client, which only the AIA path (see IssuerInitiatedHappyFlowTest) supports today.
 @Disabled("The create-credential-offer REST endpoint binds the offer to the creating client, see the TODO")
-@KeycloakIntegrationTest(config = HaipVciConformanceRealmConfig.ServerConfig.class)
+@KeycloakIntegrationTest(config = HaipVciServerConfig.class)
 public class IssuerInitiatedRestOfferTest extends IssuerInitiatedHappyFlowTest {
 
     @Override

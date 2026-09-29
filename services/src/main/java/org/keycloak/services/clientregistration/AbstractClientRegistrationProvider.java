@@ -48,6 +48,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -162,6 +163,10 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         ClientRepresentation rep = ModelToRepresentation.toRepresentation(client, session);
         if (!(Boolean.TRUE.equals(rep.isBearerOnly()) || Boolean.TRUE.equals(rep.isPublicClient()))) {
             rep.setSecret(client.getSecret());
+        }
+
+        if (auth.isViewOnly()) {
+            StripSecretsUtils.stripClient(rep);
         }
 
         if (auth.isRegistrationAccessToken()) {

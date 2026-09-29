@@ -220,6 +220,28 @@ public class IssuedVerifiableCredentialTest extends AbstractUserTest {
 
     @Test
     @DatabaseTest
+    public void testRevokeIssuedCredential_CrossUserDenied() {
+        String ownerId = createUser("vc-owner", "vc-owner@test.com");
+        UserResource ownerResource = managedRealm.admin().users().get(ownerId);
+        String otherId = createUser("vc-other", "vc-other@test.com");
+        UserResource otherResource = managedRealm.admin().users().get(otherId);
+
+        // Issue a credential that belongs to the owner
+        createIssuedVcViaModelLayer(ownerId, CREDENTIAL_TYPE_1, "wallet-123", "rev-001");
+        List<IssuedVerifiableCredentialRepresentation> ownerCreds = ownerResource.verifiableCredentials().getIssuedCredentials();
+        assertThat(ownerCreds, hasSize(1));
+        String ownerCredentialId = ownerCreds.get(0).getId();
+
+        // Revoke credential with a wrong owner
+        Assertions.assertThrows(NotFoundException.class, () -> otherResource.verifiableCredentials().revokeIssuedCredential(ownerCredentialId));
+
+        // Revoke credential with a correct owner
+        ownerResource.verifiableCredentials().revokeIssuedCredential(ownerCredentialId);
+        assertThat(ownerResource.verifiableCredentials().getIssuedCredentials(), hasSize(0));
+    }
+
+    @Test
+    @DatabaseTest
     public void testIssuedVCDeletedWhenUserVCDeleted() {
         String userId = createUser();
         String clientId = createTestClient("wallet-client");

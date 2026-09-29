@@ -53,7 +53,7 @@ public class JdbcPingClusterHealthImpl implements ClusterHealth {
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
     private final ReentrantLock lock = new ReentrantLock();
-    private volatile boolean healthy = true;
+    private volatile boolean healthy = false;
     private volatile HealthRunner runner;
 
     @Inject
@@ -79,6 +79,7 @@ public class JdbcPingClusterHealthImpl implements ClusterHealth {
 
     public void init(KEYCLOAK_JDBC_PING2 discovery, Executor executor) {
         runner = new HealthRunner(discovery, executor, this::checkHealth);
+        checkHealth(discovery);
     }
 
     private void checkHealth(KEYCLOAK_JDBC_PING2 ping) {

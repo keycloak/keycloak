@@ -76,6 +76,8 @@ import org.w3c.dom.Element;
 
 import static org.keycloak.OAuth2Constants.UMA_GRANT_TYPE;
 import static org.keycloak.events.Details.REASON;
+import static org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID;
+import static org.keycloak.models.Constants.ADMIN_CONSOLE_CLIENT_ID;
 import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
 
 /**
@@ -84,6 +86,10 @@ import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH
 public class TokenEndpoint {
 
     private static final Logger LOGGER = Logger.getLogger(TokenEndpoint.class);
+
+    // Dedicated logger to make it easier to disable the logging category
+    private static final Logger LOGGER_FULL_SCOPE_ALLOWED = Logger.getLogger(TokenEndpoint.class, "full-scope-allowed");
+
     private MultivaluedMap<String, String> formParams;
     private ClientModel client;
     private Map<String, String> clientAuthAttributes;
@@ -173,6 +179,8 @@ public class TokenEndpoint {
         try {
             return grant.process(context);
         } catch (TokenInterceptorException e) {
+            event.detail(REASON, e.getDescription());
+            event.error(Errors.INVALID_REQUEST);
             throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
         } catch (RefreshTokenException e) {
             event.detail(REASON, e.getErrorDescription());
@@ -216,6 +224,13 @@ public class TokenEndpoint {
 
         if (client.isBearerOnly()) {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
+        }
+
+        // We don't display the warning for Keycloak built-in admin clients. Disabling of full-scope-allowed for those clients in KC 27 will be handled by Keycloak team
+        if (client.isFullScopeAllowed() && !ADMIN_CONSOLE_CLIENT_ID.equals(client.getClientId()) && !ADMIN_CLI_CLIENT_ID.equals(client.getClientId())) {
+            LOGGER_FULL_SCOPE_ALLOWED.warnf("Client '%s' in the realm '%s' has 'Full scope allowed' switch enabled. This client switch is deprecated and will be removed in the future. " +
+                            "Please update your client settings to disable the switch and configure needed roles, which this client application needs, to the client role scope", client.getClientId(), realm.getName()
+                    );
         }
     }
 

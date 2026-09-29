@@ -1,31 +1,48 @@
 package org.keycloak.ssf.transmitter.event;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
+import org.keycloak.common.Profile;
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.events.Event;
+import org.keycloak.events.EventType;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.subject.PurgedUserSnapshot;
 import org.keycloak.storage.ReadOnlyException;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -45,6 +62,12 @@ import static org.mockito.Mockito.when;
  * the predicate doesn't touch it; only its arguments matter.
  */
 class SsfTransmitterEventListenerTest {
+
+    @BeforeAll
+    static void initProfile() {
+        // PurgedUserSnapshot.capture consults Organizations.isEnabled, which reads the profile.
+        Profile.configure(new PropertiesProfileConfigResolver(new Properties()));
+    }
 
     private final SsfTransmitterEventListener listener = new SsfTransmitterEventListener(null);
 
@@ -246,5 +269,114 @@ class SsfTransmitterEventListenerTest {
         event.setClientId(RECEIVER_CLIENT_ID);
         event.setUserId(LOGIN_USER_ID);
         return event;
+    }
+
+    // ----- self-service deletion (DELETE_ACCOUNT) -----
+    //
+    // The account console's delete-account action fires DELETE_ACCOUNT *after* the user
+    // row is gone, so resolveEventUser is the one place that decides whether the
+    // self-service purge has a subject at all. Nothing else covers it: the integration
+    // tests drive admin deletion over REST, and the mapper tests hand-build the event
+    // and never reach the listener.
+
+    static final String PURGED_USER_ID = "1c9a1a0e-0000-4000-8000-000000000009";
+
+    @Test
+    void resolveEventUser_deletedUser_fallsBackToTheSnapshot() {
+        KeycloakSession session = purgeSession(true);
+        SsfTransmitterEventListener listener = new SsfTransmitterEventListener(session);
+
+        UserModel resolved = listener.resolveEventUser(deleteAccountEvent(PURGED_USER_ID));
+
+        // Without this the subject gate sees an unresolvable user and drops every
+        // self-service deletion under the default default_subjects=NONE.
+        assertSame(PurgedUserSnapshot.lookup(session, session.getContext().getRealm(), PURGED_USER_ID),
+                resolved, "a DELETE_ACCOUNT subject can only come from the snapshot");
+    }
+
+    @Test
+    void resolveEventUser_liveUser_isPreferredOverAnySnapshot() {
+        KeycloakSession session = purgeSession(true);
+        UserModel live = mock(UserModel.class);
+        when(session.users().getUserById(session.getContext().getRealm(), PURGED_USER_ID)).thenReturn(live);
+        SsfTransmitterEventListener listener = new SsfTransmitterEventListener(session);
+
+        assertSame(live, listener.resolveEventUser(deleteAccountEvent(PURGED_USER_ID)));
+    }
+
+    @Test
+    void resolveEventUser_noUserAndNoSnapshot_isNull() {
+        KeycloakSession session = purgeSession(false);
+        SsfTransmitterEventListener listener = new SsfTransmitterEventListener(session);
+
+        assertNull(listener.resolveEventUser(deleteAccountEvent(PURGED_USER_ID)));
+    }
+
+    @Test
+    void resolveEventUser_eventWithoutUserId_isNull() {
+        KeycloakSession session = purgeSession(true);
+        SsfTransmitterEventListener listener = new SsfTransmitterEventListener(session);
+
+        assertNull(listener.resolveEventUser(deleteAccountEvent(null)));
+    }
+
+    /**
+     * The {@code DELETE_ACCOUNT} event {@code DeleteAccount} fires once the user has
+     * already been removed — it carries the id and nothing else to resolve from.
+     */
+    private Event deleteAccountEvent(String userId) {
+        Event event = new Event();
+        event.setType(EventType.DELETE_ACCOUNT);
+        event.setUserId(userId);
+        return event;
+    }
+
+    /**
+     * A session standing in for the request that just deleted a user: the live lookup
+     * misses, and (when {@code captured}) this request's snapshot holds the user.
+     */
+    private KeycloakSession purgeSession(boolean captured) {
+        RealmModel realm = mock(RealmModel.class);
+        lenient().when(realm.getId()).thenReturn("realm-1");
+        lenient().when(realm.getName()).thenReturn("test");
+
+        KeycloakContext context = mock(KeycloakContext.class);
+        lenient().when(context.getRealm()).thenReturn(realm);
+        lenient().when(context.getHttpRequest()).thenReturn(mock(HttpRequest.class));
+
+        KeycloakSession session = mock(KeycloakSession.class);
+        lenient().when(session.getContext()).thenReturn(context);
+
+        Map<String, Object> attributes = new HashMap<>();
+        doAnswer(invocation -> {
+            attributes.put(invocation.getArgument(0), invocation.getArgument(1));
+            return null;
+        }).when(session).setAttribute(anyString(), any());
+        lenient().when(session.getAttribute(anyString(), any(Class.class))).thenAnswer(invocation -> {
+            Object value = attributes.get(invocation.<String>getArgument(0));
+            return value == null ? null : invocation.<Class<?>>getArgument(1).cast(value);
+        });
+
+        UserProvider users = mock(UserProvider.class);
+        lenient().when(session.users()).thenReturn(users);
+        // The row is gone by the time the event fires — this is the whole point.
+        lenient().when(users.getUserById(realm, PURGED_USER_ID)).thenReturn(null);
+
+        OrganizationProvider orgProvider = mock(OrganizationProvider.class);
+        lenient().when(orgProvider.isEnabled()).thenReturn(false);
+        lenient().when(session.getProvider(OrganizationProvider.class)).thenReturn(orgProvider);
+
+        if (captured) {
+            UserModel user = mock(UserModel.class);
+            lenient().when(user.getId()).thenReturn(PURGED_USER_ID);
+            lenient().when(user.getUsername()).thenReturn("purged");
+            lenient().when(user.getAttributes()).thenReturn(
+                    Map.of(UserModel.USERNAME, List.of("purged")));
+            lenient().when(user.getGroupsStream()).thenAnswer(invocation -> Stream.empty());
+            lenient().when(user.getRoleMappingsStream()).thenAnswer(invocation -> Stream.empty());
+            PurgedUserSnapshot.capture(session, realm, user);
+        }
+
+        return session;
     }
 }

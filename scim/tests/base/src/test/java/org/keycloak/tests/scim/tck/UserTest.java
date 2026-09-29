@@ -1,13 +1,18 @@
 package org.keycloak.tests.scim.tck;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -19,8 +24,12 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.UserRemovedEvent;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
@@ -50,16 +59,21 @@ import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.userprofile.UserProfileConstants;
 import org.keycloak.userprofile.config.UPConfigUtils;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.validators.LengthValidator;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.http.client.HttpClient;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -74,7 +88,9 @@ import static org.keycloak.scim.resource.Scim.getCoreSchema;
 import static org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider.MAX_PATCH_OPERATIONS;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -85,7 +101,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-@KeycloakIntegrationTest(config = ScimServerConfig.class)
+@KeycloakIntegrationTest
 public class UserTest extends AbstractScimTest {
 
     @InjectScimClient(clientId = "noaccess-scim-client", clientSecret = "secret", attachTo = "noaccess-scim-client")
@@ -93,6 +109,9 @@ public class UserTest extends AbstractScimTest {
 
     @InjectHttpClient
     HttpClient httpClient;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @BeforeEach
     public void onBefore() {
@@ -117,6 +136,11 @@ public class UserTest extends AbstractScimTest {
         realmRep.setEditUsernameAllowed(false);
         realm.admin().update(realmRep);
         adminEvents.clear();
+    }
+
+    @AfterEach
+    public void onAfterEach() {
+        unregisterProviderEventListener();
     }
 
     @Test
@@ -420,6 +444,83 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testUpdateServiceAccountIsRejected() {
+        String clientId = "service-account-update-" + KeycloakModelUtils.generateId();
+        ClientRepresentation targetClient = ClientBuilder.create()
+                .clientId(clientId)
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        try (Response response = realm.admin().clients().create(targetClient)) {
+            targetClient.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.clients().get(targetClient.getId()).remove());
+
+        UserRepresentation serviceAccount = realm.admin().clients().get(targetClient.getId()).getServiceAccountUser();
+        User update = new User();
+        update.setId(serviceAccount.getId());
+        update.setUserName(serviceAccount.getUsername());
+
+        try {
+            client.users().update(serviceAccount.getId(), update);
+            fail("Should not be able to update a service account via SCIM");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.NOT_FOUND.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testDeleteServiceAccountIsRejected() {
+        String clientId = "service-account-delete-" + KeycloakModelUtils.generateId();
+        ClientRepresentation targetClient = ClientBuilder.create()
+                .clientId(clientId)
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        try (Response response = realm.admin().clients().create(targetClient)) {
+            targetClient.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.clients().get(targetClient.getId()).remove());
+
+        UserRepresentation serviceAccount = realm.admin().clients().get(targetClient.getId()).getServiceAccountUser();
+
+        try {
+            client.users().delete(serviceAccount.getId());
+            fail("Should not be able to delete a service account via SCIM");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.NOT_FOUND.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testPatchServiceAccountIsRejected() {
+        String clientId = "service-account-patch-" + KeycloakModelUtils.generateId();
+        ClientRepresentation targetClient = ClientBuilder.create()
+                .clientId(clientId)
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        try (Response response = realm.admin().clients().create(targetClient)) {
+            targetClient.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.clients().get(targetClient.getId()).remove());
+
+        UserRepresentation serviceAccount = realm.admin().clients().get(targetClient.getId()).getServiceAccountUser();
+
+        try {
+            client.users().patch(serviceAccount.getId(), PatchRequest.create()
+                    .add("name.givenName", "modified")
+                    .build());
+            fail("Should not be able to patch a service account via SCIM");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.NOT_FOUND.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
     public void testGetExisting() {
         UserRepresentation existing = UserBuilder.create()
                 .username(KeycloakModelUtils.generateId())
@@ -655,6 +756,16 @@ public class UserTest extends AbstractScimTest {
 
         actual = client.users().get(id);
         assertNull(actual);
+    }
+
+    @Test
+    public void testDeleteFiresUserRemovedEvent() {
+        registerProviderEventListener();
+        User expected = createUser();
+        String id = client.users().create(expected).getId();
+        client.users().delete(id);
+        assertThrows(NotFoundException.class, () -> realm.admin().users().get(id).toRepresentation());
+        runOnServer.run(assertUserRemovedEventFired());
     }
 
     @Test
@@ -1679,6 +1790,38 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testUpdateUnchangedImmutableMetaCreated() {
+        User user = client.users().create(createUser());
+        adminEvents.clear();
+
+        // PUT round-trip that resubmits the same meta.created should succeed (RFC 7644 §3.5.1)
+        user = client.users().get(user.getId());
+        user.setEmail(user.getEmail().replace("keycloak.org", "updated.org"));
+        client.users().update(user);
+
+        User actual = client.users().get(user.getId());
+        assertEquals(user.getEmail(), actual.getEmail());
+    }
+
+    @Test
+    public void testUpdateImmutableMetaCreated() {
+        User user = client.users().create(createUser());
+        adminEvents.clear();
+
+        user = client.users().get(user.getId());
+        user.getMeta().setCreated(Instant.EPOCH.toString());
+        try {
+            client.users().update(user);
+            fail("should fail because meta.created is immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+        }
+    }
+
+    @Test
     public void testUserMembership() {
         GroupRepresentation groupA = createGroup("Group A");
         GroupRepresentation groupA1 = createSubGroup(groupA, "Group A1");
@@ -1796,6 +1939,241 @@ public class UserTest extends AbstractScimTest {
         assertNotNull(resources.getResources().stream()
                 .filter(u -> u.getId().equals(expected1.getId()))
                 .findFirst().orElse(null));
+    }
+
+    @Test
+    public void testGroupFilterMultivaluedConjunctionAndNegationBugs() {
+        // Covers the bugs tracked by https://github.com/keycloak/keycloak/issues/51805: correlated
+        // EXISTS subqueries (rather than a shared JOIN) are required to correctly express conjunction
+        // across independent values and negation for multivalued attributes (here, groups).
+        GroupRepresentation groupA = createGroup("MultiValued Group A");
+        GroupRepresentation groupB = createGroup("MultiValued Group B");
+
+        User user = createUser();
+        user.addGroup(groupA.getId());
+        user.addGroup(groupB.getId());
+        User created = client.users().create(user);
+
+        // Conjunction: the user belongs to BOTH groupA and groupB, so a filter requiring
+        // "some value = A" AND "some value = B" should match. Each side is evaluated as an
+        // independent EXISTS subquery, so a different group membership row can satisfy each side.
+        boolean matchesConjunction = client.users().search(
+                        "(groups.value eq \"" + groupA.getId() + "\") and (groups.value eq \"" + groupB.getId() + "\")")
+                .getResources().stream()
+                .anyMatch(u -> u.getId().equals(created.getId()));
+        assertTrue(matchesConjunction, "user belongs to both groups and should match the conjunction filter");
+
+        // Negation: the user DOES belong to groupA, so "not (groups.value eq A)" must NOT match.
+        // The NOT applies to the correlated EXISTS as a whole (i.e. per resource), not per joined row,
+        // so a resource is excluded only if it truly has no group matching groupA.
+        User noGroupsUser = client.users().create(createUser());
+        ListResponse<User> negationResults = client.users().search(
+                "not (groups.value eq \"" + groupA.getId() + "\")");
+        assertFalse(negationResults.getResources().stream().anyMatch(u -> u.getId().equals(created.getId())),
+                "user belongs to groupA and must not match the negated filter");
+        // a resource with no values at all for the attribute must still match the negated filter
+        assertTrue(negationResults.getResources().stream().anyMatch(u -> u.getId().equals(noGroupsUser.getId())),
+                "user has no groups at all and should match the negated filter");
+    }
+
+    @Test
+    public void testGroupFilterValuePathAndOperatorRejected() {
+        // Unlike "(groups.value eq A) and (groups.value eq B)" above - two independent top-level
+        // comparisons, each with its own EXISTS - a bracketed value path requires every condition
+        // inside it to be satisfied by the SAME group membership. Since groups only exposes a single
+        // "value" sub-attribute, no single membership can equal two different values at once, so this
+        // filter shape is rejected with 400 rather than silently evaluated as two independent EXISTS
+        // subqueries (which would incorrectly match a user belonging to both groups separately).
+        GroupRepresentation groupA = createGroup("ValuePath Group A");
+        GroupRepresentation groupB = createGroup("ValuePath Group B");
+
+        User user = createUser();
+        user.addGroup(groupA.getId());
+        user.addGroup(groupB.getId());
+        client.users().create(user);
+
+        try {
+            client.users().search(
+                    "groups[value eq \"" + groupA.getId() + "\" and value eq \"" + groupB.getId() + "\"]");
+            fail("Should have thrown an exception - AND operator is not supported within a value path for multivalued attributes");
+        } catch (ScimClientException e) {
+            ErrorResponse error = e.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt(),
+                    "AND operator within a value path for a multivalued attribute should return 400, got " + error.getStatusInt());
+            assertTrue(error.getDetail().contains("'and' operator is not supported within a value path filter for multivalued or non-complex attributes"),
+                    "Error should mention 'and' operator not supported within a value path, got: " + error.getDetail());
+        }
+    }
+
+    @Test
+    public void testUserMembershipAdminEventsPatch() {
+        GroupRepresentation groupA = createGroup(KeycloakModelUtils.generateId());
+        GroupRepresentation groupB = createGroup(KeycloakModelUtils.generateId());
+        User user = client.users().create(createUser());
+        adminEvents.clear();
+
+        // adding two new groups produces the generic PATCH event followed by one GROUP_MEMBERSHIP CREATE event per group
+        client.users().patch(user.getId(), PatchRequest.create()
+                .add("groups", groupA.getId())
+                .add("groups", groupB.getId())
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.USER);
+        assertMembershipEvents(OperationType.CREATE, user, groupA, groupB);
+        assertNull(adminEvents.poll());
+
+        // re-adding an already existing membership is a no-op: no GROUP_MEMBERSHIP event should be emitted
+        client.users().patch(user.getId(), PatchRequest.create()
+                .add("groups", groupA.getId())
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.USER);
+        assertNull(adminEvents.poll());
+
+        // removing a group produces the generic PATCH event followed by a GROUP_MEMBERSHIP DELETE event
+        client.users().patch(user.getId(), PatchRequest.create()
+                .remove("groups[value eq \"" + groupA.getId() + "\"]")
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.USER);
+        assertMembershipEvent(adminEvents.poll(), OperationType.DELETE, groupA, user);
+        assertNull(adminEvents.poll());
+
+        // removing a group the user is not a member of is a no-op: no GROUP_MEMBERSHIP event should be emitted
+        client.users().patch(user.getId(), PatchRequest.create()
+                .remove("groups[value eq \"" + groupA.getId() + "\"]")
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.USER);
+        assertNull(adminEvents.poll());
+    }
+
+    @Test
+    public void testUserMembershipAdminEventsPut() {
+        GroupRepresentation groupA = createGroup(KeycloakModelUtils.generateId());
+        GroupRepresentation groupB = createGroup(KeycloakModelUtils.generateId());
+        User user = createUser();
+        user.addGroup(groupA.getId());
+        User created = client.users().create(user);
+        User withGroups = client.users().get(created.getId(), List.of("groups"));
+        adminEvents.clear();
+
+        // full replace: drop groupA, add groupB
+        withGroups.getGroups().clear();
+        withGroups.addGroup(groupB.getId());
+        client.users().update(withGroups);
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.USER);
+        assertMembershipEvent(adminEvents.poll(), OperationType.CREATE, groupB, created);
+        assertMembershipEvent(adminEvents.poll(), OperationType.DELETE, groupA, created);
+        assertNull(adminEvents.poll());
+
+        // replacing with the exact same membership is a no-op: no GROUP_MEMBERSHIP event should be emitted
+        User current = client.users().get(created.getId(), List.of("groups"));
+        client.users().update(current);
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.USER);
+        assertNull(adminEvents.poll());
+    }
+
+    @Test
+    public void testUserMembershipAdminEventNotEmittedForInheritedGroupMembership() {
+        GroupRepresentation parent = createGroup(KeycloakModelUtils.generateId());
+        GroupRepresentation child = createSubGroup(parent, KeycloakModelUtils.generateId());
+
+        User user = createUser();
+        user.addGroup(child.getId());
+        User created = client.users().create(user);
+        adminEvents.clear();
+
+        // the user is only a direct member of the child group; membership in the parent is inherited, so removing
+        // the parent group id is a no-op (leaveGroup(parent) does nothing) and no GROUP_MEMBERSHIP event should fire
+        client.users().patch(created.getId(), PatchRequest.create()
+                .remove("groups[value eq \"" + parent.getId() + "\"]")
+                .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.USER);
+        assertNull(adminEvents.poll());
+    }
+
+    @Test
+    public void testGroupMembershipEventConsistentWithAdminApi() throws Exception {
+        GroupRepresentation adminApiGroup = createGroup(KeycloakModelUtils.generateId());
+        GroupRepresentation scimGroup = createGroup(KeycloakModelUtils.generateId());
+        User user = client.users().create(createUser());
+        adminEvents.clear();
+
+        // Admin REST: join a group through the dedicated join endpoint
+        realm.admin().users().get(user.getId()).joinGroup(adminApiGroup.getId());
+        AdminEventRepresentation adminRestEvent = adminEvents.poll();
+
+        // SCIM: join a different group through the User PATCH "groups" attribute
+        client.users().patch(user.getId(), PatchRequest.create()
+                .add("groups", scimGroup.getId())
+                .build());
+        adminEvents.poll(); // discard the generic PATCH/USER event, keep only the membership event
+        AdminEventRepresentation scimEvent = adminEvents.poll();
+
+        // both APIs must produce an equivalent GROUP_MEMBERSHIP audit trail for the same kind of change
+        assertEquals(ResourceType.GROUP_MEMBERSHIP.name(), adminRestEvent.getResourceType());
+        assertEquals(adminRestEvent.getResourceType(), scimEvent.getResourceType());
+        assertEquals(adminRestEvent.getOperationType(), scimEvent.getOperationType());
+        assertEquals(adminRestEvent.getDetails().keySet(), scimEvent.getDetails().keySet());
+
+        Map<?, ?> adminRestRepresentation = JsonSerialization.readValue(adminRestEvent.getRepresentation(), Map.class);
+        Map<?, ?> scimRepresentation = JsonSerialization.readValue(scimEvent.getRepresentation(), Map.class);
+        assertEquals(adminRestRepresentation.keySet(), scimRepresentation.keySet());
+    }
+
+    private static void assertMembershipEvent(AdminEventRepresentation event, OperationType operationType, GroupRepresentation group, User user) {
+        // the resource path is completed with the group id since the request URI (Users/{id}) already carries the
+        // user id; the representation is built via the Admin API's GroupRepresentation (field "name"), not the
+        // SCIM Group representation (field "displayName")
+        AdminEventAssertion.assertSuccess(event)
+                .operationType(operationType)
+                .resourceType(ResourceType.GROUP_MEMBERSHIP)
+                .resourcePath("scim/v2/Users/" + user.getId() + "/" + group.getId())
+                .representation(Map.of("id", group.getId(), "name", group.getName()));
+        Map<String, String> expectedDetails = user.getEmail() != null
+                ? Map.of(UserModel.USERNAME, user.getUserName(), UserModel.EMAIL, user.getEmail())
+                : Map.of(UserModel.USERNAME, user.getUserName());
+        assertThat(event.getDetails(), is(equalTo(expectedDetails)));
+    }
+
+    /**
+     * Asserts a GROUP_MEMBERSHIP event was emitted for each of the given {@code groups}, matching each event to its
+     * corresponding group by resource path rather than by polling order: multivalued PATCH values are materialized
+     * as a {@code Set} internally, so events for a single request are not guaranteed to be emitted in request order.
+     */
+    private void assertMembershipEvents(OperationType operationType, User user, GroupRepresentation... groups) {
+        List<AdminEventRepresentation> events = new ArrayList<>();
+        for (int i = 0; i < groups.length; i++) {
+            events.add(adminEvents.poll());
+        }
+        for (GroupRepresentation group : groups) {
+            String resourcePathSuffix = "/" + group.getId();
+            AdminEventRepresentation event = events.stream()
+                    .filter(e -> e.getResourcePath().endsWith(resourcePathSuffix))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("No membership event found for group " + group.getId()));
+            events.remove(event);
+            assertMembershipEvent(event, operationType, group, user);
+        }
     }
 
     @Test
@@ -3037,5 +3415,59 @@ public class UserTest extends AbstractScimTest {
         upConfig.addOrReplaceAttribute(affiliationAttribute);
 
         realm.admin().users().userProfile().update(upConfig);
+    }
+
+    private void registerProviderEventListener() {
+        runOnServer.run(session -> {
+            ProviderEventCollector collector = ProviderEventCollector.getInstance();
+            session.getKeycloakSessionFactory().register(collector);
+            collector.clear();
+        });
+    }
+
+    private void unregisterProviderEventListener() {
+        runOnServer.run(session -> {
+            ProviderEventCollector collector = ProviderEventCollector.getInstance();
+            session.getKeycloakSessionFactory().unregister(collector);
+            collector.clear();
+        });
+    }
+
+    private static RunOnServer assertUserRemovedEventFired() {
+        return session -> assertFalse(ProviderEventCollector.getInstance().getEvents(UserRemovedEvent.class).isEmpty(), "User removed event was not fired");
+    }
+
+    private static class ProviderEventCollector implements ProviderEventListener, Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        private static final ProviderEventCollector INSTANCE = new ProviderEventCollector();
+
+        private final List<ProviderEvent> events = new CopyOnWriteArrayList<>();
+
+        private ProviderEventCollector() {}
+
+        public static ProviderEventCollector getInstance() {
+            return INSTANCE;
+        }
+
+        @Override
+        public void onEvent(ProviderEvent event) {
+            if (event instanceof UserRemovedEvent) {
+                events.add(event);
+            }
+        }
+
+        public <T extends ProviderEvent> List<T> getEvents(Class<T> eventType) {
+            return events.stream()
+                    .filter(eventType::isInstance)
+                    .map(eventType::cast)
+                    .toList();
+        }
+
+        public void clear() {
+            events.clear();
+        }
     }
 }

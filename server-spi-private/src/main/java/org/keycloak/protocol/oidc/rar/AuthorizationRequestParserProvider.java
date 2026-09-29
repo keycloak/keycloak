@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.rar;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
@@ -33,6 +34,19 @@ public interface AuthorizationRequestParserProvider extends Provider {
 
     default AuthorizationRequestContext parseScopes(@Nullable UserModel user, @Nonnull ClientModel client, @Nullable String scopeParam) {
         return parseScopes(client, scopeParam);
+    }
+
+    /**
+     * Same as {@link #parseScopes(UserModel, ClientModel, String)}, but also given the client session scopes are
+     * being resolved for, when one already exists (e.g. {@code null} before any client/user session exists, such as
+     * a consent screen preview). Needed for validations with side effects tied to that client session (e.g. identity
+     * pinning).
+     *
+     * @param clientSession the client session scopes are being resolved for, or {@code null}
+     */
+    default AuthorizationRequestContext parseScopes(@Nullable UserModel user, @Nonnull ClientModel client,
+            @Nullable AuthenticatedClientSessionModel clientSession, @Nullable String scopeParam) {
+        return parseScopes(user, client, scopeParam);
     }
 
 }

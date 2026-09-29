@@ -25,24 +25,24 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.conformance.runner.BrowserInteraction;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.testframework.conformance.runner.ConformanceResult;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.tests.conformance.vci.AbstractVciConformanceTest;
-import org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig;
+import org.keycloak.tests.conformance.vci.haip.configs.HaipVciRealmConfig;
+import org.keycloak.tests.conformance.vci.haip.configs.HaipVciServerConfig;
 
 import static org.keycloak.tests.conformance.vci.VciConformanceRealmUtil.SD_JWT_SCOPE;
-import static org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig.HAIP_PLAN;
+import static org.keycloak.tests.conformance.vci.haip.configs.HaipVciRealmConfig.HAIP_PLAN;
 
 /**
  * Issues a credential whose configuration requires key attestations, so the suite includes a valid key attestation
  * that Keycloak must accept. The attestation x5c chain is trusted through the {@code conformance-attester-x509}
- * trust-material identity provider configured by {@link HaipVciConformanceRealmConfig}.
+ * trust-material identity provider configured by {@link HaipVciRealmConfig}.
  */
-@KeycloakIntegrationTest(config = HaipVciConformanceRealmConfig.ServerConfig.class)
+@KeycloakIntegrationTest(config = HaipVciServerConfig.class)
 public class IssuerKeyAttestationTest extends AbstractVciConformanceTest {
 
-    @InjectRealm(config = KeyAttestationRequiredRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(config = KeyAttestationRequiredRealmConfig.class)
     ManagedRealm realm;
 
     @Override
@@ -55,7 +55,7 @@ public class IssuerKeyAttestationTest extends AbstractVciConformanceTest {
                 BrowserInteraction.LOGIN);
     }
 
-    public static class KeyAttestationRequiredRealmConfig extends HaipVciConformanceRealmConfig {
+    public static class KeyAttestationRequiredRealmConfig extends HaipVciRealmConfig {
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {

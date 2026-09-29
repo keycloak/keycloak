@@ -137,6 +137,10 @@ public class GroupResource {
     public Response updateGroup(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
 
+        if (rep == null) {
+            throw ErrorResponse.error("Group representation is missing", Response.Status.BAD_REQUEST);
+        }
+
         String groupName = rep.getName();
 
         if (isBlank(groupName)) {
@@ -237,6 +241,10 @@ public class GroupResource {
     })
     public Response addChild(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
+
+        if (rep == null) {
+            throw ErrorResponse.error("Group representation is missing", Response.Status.BAD_REQUEST);
+        }
 
         String groupName = rep.getName();
         if (isBlank(groupName)) {

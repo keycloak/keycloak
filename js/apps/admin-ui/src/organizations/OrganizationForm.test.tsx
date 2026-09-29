@@ -44,7 +44,7 @@ describe("convertToOrg", () => {
     ]);
   });
 
-  it("handles undefined domains", () => {
+  it("handles undefined domains with no serverDomains", () => {
     const form = {
       name: "test-org",
       alias: "test-org",
@@ -53,5 +53,35 @@ describe("convertToOrg", () => {
     const result = convertToOrg(form);
 
     expect(result.domains).toBeUndefined();
+  });
+
+  it("passes through serverDomains when domains is undefined", () => {
+    const form = {
+      name: "test-org",
+      alias: "test-org",
+      serverDomains: [
+        { name: "example.com", verified: true },
+        { name: "acme.com", verified: false },
+      ],
+    } as OrganizationFormType;
+
+    const result = convertToOrg(form);
+
+    expect(result.domains).toEqual([
+      { name: "example.com", verified: true },
+      { name: "acme.com", verified: false },
+    ]);
+  });
+
+  it("does not include serverDomains in the converted org", () => {
+    const form = {
+      name: "test-org",
+      alias: "test-org",
+      serverDomains: [{ name: "example.com", verified: true }],
+    } as OrganizationFormType;
+
+    const result = convertToOrg(form);
+
+    expect(result).not.toHaveProperty("serverDomains");
   });
 });

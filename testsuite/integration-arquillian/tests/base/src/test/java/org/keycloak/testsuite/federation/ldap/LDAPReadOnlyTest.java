@@ -219,8 +219,6 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
             loginInvalidPassword("johnkeycloak");
             assertUserNumberOfFailures(user.getId(), failureFactor);
 
-            WaitUtils.waitForBruteForceExecutors(testingClient);
-
             // Make sure user is now disabled
             bruteForceStatus = managedRealm.admin().attackDetection().bruteForceUserStatus(user.getId());
             assertTrue((boolean) bruteForceStatus.get("disabled"), "User should be disabled by brute force.");
@@ -246,6 +244,8 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
         loginPage.assertCurrent();
 
         Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
+
+        WaitUtils.waitForBruteForceExecutors(testingClient);
 
         events.clear();
     }

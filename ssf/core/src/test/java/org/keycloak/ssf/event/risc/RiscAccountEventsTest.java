@@ -50,8 +50,30 @@ class RiscAccountEventsTest {
     }
 
     @Test
+    void accountPurged_serializesTimestampAndInitiatingEntity() throws Exception {
+        RiscAccountPurged event = new RiscAccountPurged();
+        event.setEventTimestamp(1712345678L);
+        event.setInitiatingEntity(InitiatingEntity.USER);
+
+        JsonNode json = JsonSerialization.mapper.valueToTree(event);
+
+        assertEquals(1712345678L, json.path("event_timestamp").asLong());
+        assertEquals("user", json.path("initiating_entity").asText());
+        // RISC defines no reason for a purge; the claim must not leak in from
+        // the sibling account-disabled shape this class was modelled on.
+        assertTrue(json.path("reason").isMissingNode(),
+                "account-purged must not carry a reason claim: " + json);
+    }
+
+    @Test
     void unsetClaims_areOmittedFromWireJson() throws Exception {
         JsonNode disabled = JsonSerialization.mapper.valueToTree(new RiscAccountDisabled());
+        JsonNode purged = JsonSerialization.mapper.valueToTree(new RiscAccountPurged());
+
+        assertTrue(purged.path("event_timestamp").isMissingNode(),
+                "unset event_timestamp must be omitted, not serialized as 0: " + purged);
+        assertTrue(purged.path("initiating_entity").isMissingNode(),
+                "unset initiating_entity must be omitted: " + purged);
 
         // @JsonInclude(NON_NULL) on SsfEvent must still apply to the claims now
         // declared on the concrete class — a primitive long would have emitted 0.

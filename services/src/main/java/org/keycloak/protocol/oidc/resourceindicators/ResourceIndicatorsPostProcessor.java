@@ -57,7 +57,10 @@ public class ResourceIndicatorsPostProcessor implements TokenPostProcessor {
         if (audience != null && isClientUrn(requestedResource)) {
             audienceToSet = findAudienceByClientUrn(requestedResource, audience);
         } else if (audience != null) {
-            audienceToSet = findAudienceByClientAttribute(requestedResource, audience);
+            audienceToSet = findCustomAudience(requestedResource, audience);
+            if (audienceToSet == null) {
+                audienceToSet = findAudienceByClientAttribute(requestedResource, audience);
+            }
         }
 
         if (audienceToSet == null) {
@@ -90,6 +93,11 @@ public class ResourceIndicatorsPostProcessor implements TokenPostProcessor {
             }
         }
         return null;
+    }
+
+    private String findCustomAudience(String resource, String[] audience) {
+        // Direct match against existing token audiences (fast path to support custom audiences without DB lookups)
+        return find(resource, audience);
     }
 
     private String find(String search, String[] array) {

@@ -343,6 +343,42 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
     }
 
     @Test
+    public void testRemoveAbsentTabId() {
+        AtomicReference<String> rootAuthSessionId = new AtomicReference<>();
+        List<String> tabIds = withRealm(realmId, (session, realm) -> {
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);
+            rootAuthSessionId.set(rootAuthSession.getId());
+            ClientModel client = realm.getClientByClientId("test-app");
+            return IntStream.range(0, 3)
+                    .mapToObj(i -> rootAuthSession.createAuthenticationSession(client))
+                    .map(AuthenticationSessionModel::getTabId)
+                    .collect(Collectors.toList());
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, rootAuthSessionId.get());
+
+            // removing a tab ID that was never added must not throw
+            rootAuthSession.removeAuthenticationSessionByTabId("nonexistent-tab-id");
+
+            // all original sessions must still be present
+            assertThat(rootAuthSession.getAuthenticationSessions(), Matchers.aMapWithSize(3));
+
+            // remove a real tab, then remove it again (double-remove)
+            rootAuthSession.removeAuthenticationSessionByTabId(tabIds.get(0));
+            rootAuthSession.removeAuthenticationSessionByTabId(tabIds.get(0));
+
+            // remaining sessions are intact
+            assertThat(rootAuthSession.getAuthenticationSessions(), Matchers.aMapWithSize(2));
+            ClientModel client = realm.getClientByClientId("test-app");
+            Assert.assertNotNull(rootAuthSession.getAuthenticationSession(client, tabIds.get(1)));
+            Assert.assertNotNull(rootAuthSession.getAuthenticationSession(client, tabIds.get(2)));
+
+            return null;
+        });
+    }
+
+    @Test
     public void testCrossRealmIsolation() {
         // Create a second realm
         var realmBId = inComittedTransaction(s -> {

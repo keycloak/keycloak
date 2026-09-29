@@ -129,6 +129,7 @@ public class OID4VCINaturalPersonTest extends OID4VCIssuerTestBase {
     public void testNaturalPersonMdoc_AttestationProof() throws Exception {
 
         ensureEcSigningKeyProvider("mdoc-natural-person-issuer-key", "P-256", "ES256", 200);
+        ensureMdocCompliantSigningConfiguration();
         var ctx = new OID4VCTestContext(client, mdocNaturalPersonCredentialScope);
 
         Proofs proofs = wallet.generateAttestationProof(ctx, attestationKey);
@@ -142,6 +143,7 @@ public class OID4VCINaturalPersonTest extends OID4VCIssuerTestBase {
     public void testNaturalPersonMdoc_JwtProof() throws Exception {
 
         ensureEcSigningKeyProvider("mdoc-natural-person-issuer-key", "P-256", "ES256", 200);
+        ensureMdocCompliantSigningConfiguration();
         var ctx = new OID4VCTestContext(client, mdocNaturalPersonCredentialScope);
 
         String accessToken = getAccessToken(ctx);

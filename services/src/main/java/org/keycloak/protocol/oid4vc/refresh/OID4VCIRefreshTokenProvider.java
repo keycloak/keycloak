@@ -1,7 +1,11 @@
 package org.keycloak.protocol.oid4vc.refresh;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.UriInfo;
@@ -9,8 +13,10 @@ import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
@@ -18,6 +24,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
@@ -55,6 +62,14 @@ import static org.keycloak.models.UserSessionModel.SessionPersistenceState.TRANS
 public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider implements RefreshTokenProvider {
 
     private static final Logger logger = Logger.getLogger(OID4VCIRefreshTokenProvider.class);
+    private static final String ROTATION_KEY_PREFIX = OID4VCIRefreshTokenProvider.class.getName().toLowerCase(Locale.ROOT) + ".rotation.";
+    private static final String NOTE_ACCEPTED_TOKEN_ID = "acceptedTokenId";
+    private static final String NOTE_LATEST_GENERATED_TOKEN_ID = "latestGeneratedTokenId";
+    private static final String NOTE_USE_COUNT = "useCount";
+    private static final String NOTE_LAST_REFRESH = "lastRefresh";
+    private static final int ROTATION_RECORD_CLOCK_SKEW_SECONDS = 10;
+    private String pendingRotationKey;
+    private Map<String, String> pendingRotationRecord;
 
     public OID4VCIRefreshTokenProvider(KeycloakSession session) {
         super(session);
@@ -164,6 +179,9 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
 
     @Override
     protected void afterRefreshTokenGenerated(RefreshTokenContext ctx, TokenManager.AccessTokenResponseBuilder responseBuilder) {
+        // Run before the authorization_details early return below, otherwise the rotation record is never written
+        flushRotationRecord(ctx, responseBuilder.getRefreshToken());
+
         ClientSessionContext clientSessionCtx = responseBuilder.getClientSessionCtx();
         List<AuthorizationDetailsJSONRepresentation> authzDetails = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
 
@@ -188,6 +206,33 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
         }
 
         clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, clearedDetails);
+    }
+
+
+    private void flushRotationRecord(RefreshTokenContext ctx, RefreshToken newRefreshToken) {
+        //Retrieve the staged token from in-memory fields and immediately clear them
+        String key = pendingRotationKey;
+        Map<String, String> record = pendingRotationRecord;
+
+        pendingRotationKey = null;
+        pendingRotationRecord = null;
+
+        if (key == null || record == null) {
+            return;
+        }
+
+        // Complete the record with newly generated child token's metadata
+        RefreshToken lifespanSource = ctx.oldRefreshToken();
+        if (newRefreshToken != null) {
+            // Record new Refresh token as the most recent valid child in the family
+            record.put(NOTE_LATEST_GENERATED_TOKEN_ID, newRefreshToken.getId());
+            record.put(NOTE_LAST_REFRESH, String.valueOf(newRefreshToken.getIat()));
+            lifespanSource = newRefreshToken;
+        }
+        // Completes the read-modify-write started in validateTokenReuseForRefresh. It is atomic because
+        // getRefreshTokenLockId() keys the refresh lock on the same family key as the record, and that lock is only
+        // released once this transaction has committed.
+        storeRotationRecord(session.singleUseObjects(), key, lifespanSource, record);
     }
 
     @Override
@@ -237,6 +282,101 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
     @Override
     public String getProviderId() {
         return OID4VCIRefreshTokenProviderFactory.PROVIDER_ID;
+    }
+
+    /**
+     * Every OID4VCI refresh mints a fresh transient session, and {@link OID4VCITokenPostProcessor} clears the session
+     * id on the tokens produced from it. The inherited session scoped lock id would therefore differ between a token
+     * and its rotated child, even though both contend on the same rotation record. Key the lock on the family instead,
+     * exactly as the record itself is keyed.
+     */
+    @Override
+    protected String getRefreshTokenLockId(RealmModel realm, RefreshToken refreshToken, TokenManager tokenManager) {
+        return "refreshLock:" + getRotationKey(realm, refreshToken);
+    }
+
+    /**
+     * The client session created in {@link #validateToken} is TRANSIENT, so it is discarded at the end of the request
+     * and the rotation state the default implementation keeps on it is always empty. Keep the equivalent state in the
+     * single-use object store instead, keyed by the refresh token family.
+     * <p>
+     * Mirrors the logic of {@link TokenManager#validateTokenReuse}.
+     * The updated record is only staged here and written once in {@link #flushRotationRecord}, which also knows the id of the newly generated token.
+     */
+    @Override
+    protected void validateTokenReuseForRefresh(KeycloakSession session, RealmModel realm, RefreshToken refreshToken, TokenManager.TokenValidation validation, TokenManager tokenManager) throws OAuthErrorException {
+        pendingRotationKey = null;
+        pendingRotationRecord = null;
+
+        if (!realm.isRevokeRefreshToken()) {
+            return;
+        }
+
+        if (refreshToken.getExp() == null) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", "Refresh token has no expiration");
+        }
+
+        String key = getRotationKey(realm, refreshToken);
+        Map<String, String> record = session.singleUseObjects().get(key);
+
+        String acceptedTokenId = getNote(record, NOTE_ACCEPTED_TOKEN_ID);
+        String latestGeneratedTokenId = getNote(record, NOTE_LATEST_GENERATED_TOKEN_ID);
+        int useCount = getIntNote(record, NOTE_USE_COUNT);
+        int lastRefresh = getIntNote(record, NOTE_LAST_REFRESH);
+
+        if (acceptedTokenId != null && !refreshToken.getId().equals(acceptedTokenId)) {
+            // A different token of this family was already accepted. Anything issued no later than the most recently
+            // generated token is a replay of an already rotated token.
+            if (latestGeneratedTokenId != null && !refreshToken.getId().equals(latestGeneratedTokenId) && refreshToken.getIat() <= lastRefresh) {
+                logger.debugf("Rejecting replayed oid4vci refresh token %s. Realm: %s, client: %s",
+                        refreshToken.getId(), realm.getName(), session.getContext().getClient().getClientId());
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
+            }
+            // Strictly newer token: it becomes the accepted one and its reuse counter starts over
+            useCount = 0;
+        }
+
+        if (useCount > realm.getRefreshTokenMaxReuse()) {
+            logger.debugf("Rejecting oid4vci refresh token %s due to exceeding max reuse count. Realm: %s, client: %s",
+                    refreshToken.getId(), realm.getName(), session.getContext().getClient().getClientId());
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Maximum allowed refresh token reuse exceeded",
+                    "Maximum allowed refresh token reuse exceeded");
+        }
+
+        Map<String, String> updated = record == null ? new HashMap<>() : new HashMap<>(record);
+        updated.put(NOTE_ACCEPTED_TOKEN_ID, refreshToken.getId());
+        updated.put(NOTE_USE_COUNT, String.valueOf(useCount + 1));
+        pendingRotationKey = key;
+        pendingRotationRecord = updated;
+    }
+
+    private void storeRotationRecord(SingleUseObjectProvider singleUseStore, String key, RefreshToken refreshToken, Map<String, String> record) {
+        Long expiration = refreshToken.getExp();
+        long lifeSpan = (expiration == null ? 0 : expiration - Time.currentTimeSeconds()) + ROTATION_RECORD_CLOCK_SKEW_SECONDS;
+        if (lifeSpan <= 0) {
+            return; // already expired, it can never be successfully replayed anyway
+        }
+        singleUseStore.put(key, lifeSpan, record);
+    }
+
+    private int getIntNote(Map<String, String> record, String name) {
+        String value = getNote(record, name);
+        return value != null ? Integer.parseInt(value) : 0;
+    }
+
+    private String getNote(Map<String, String> record, String name) {
+        return record == null ? null : record.get(name);
+    }
+
+    /**
+     * The reuse_id claim is generated once per refresh token family and copied onto every rotated token, so it
+     * identifies the whole chain. Tokens issued before revoke-refresh-token was enabled have none, in which case this
+     * degrades to strict single-use of that one token.
+     */
+    private String getRotationKey(RealmModel realm, RefreshToken refreshToken) {
+        Object reuseId = refreshToken.getOtherClaims().get(Constants.REUSE_ID);
+        String familyId = reuseId != null ? String.valueOf(reuseId) : refreshToken.getId();
+        return ROTATION_KEY_PREFIX + HashUtils.sha256UrlEncodedHash(realm.getId() + "." + familyId, StandardCharsets.UTF_8);
     }
 
     // Might eventually be overridden for scenarios where a user is not available in the Keycloak DB

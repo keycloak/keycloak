@@ -23,7 +23,6 @@ import java.util.stream.Stream;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 
 import static org.keycloak.tests.conformance.vp.VpConformanceRealmConfig.TEST_PLAN;
@@ -35,7 +34,7 @@ import static org.keycloak.tests.conformance.vp.VpConformanceRealmConfig.TEST_PL
 @KeycloakIntegrationTest(config = VpConformanceRealmConfig.ServerConfig.class)
 public class VerifierEncryptedInvalidKbJwtNonceTest extends AbstractVpConformanceTest {
 
-    @InjectRealm(config = VpEncryptedConformanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(config = VpEncryptedConformanceRealmConfig.class)
     ManagedRealm realm;
 
     @Override

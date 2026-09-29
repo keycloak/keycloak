@@ -153,6 +153,12 @@ public class ClientRegistrationAuth {
         return jwt != null && ClientRegistrationTokenUtils.TYPE_REGISTRATION_ACCESS_TOKEN.equals(jwt.getType());
     }
 
+    public boolean isViewOnly() {
+        return isBearerToken()
+                && hasRole(AdminRoles.VIEW_CLIENTS)
+                && !hasRole(AdminRoles.MANAGE_CLIENTS);
+    }
+
     public RegistrationAuth requireCreate(ClientRegistrationContext context) {
         init();
 

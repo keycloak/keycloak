@@ -40,8 +40,8 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.39.2</quarkus.version>
-        <quarkus.build.version>3.39.2</quarkus.build.version>
+        <quarkus.version>3.40.0.CR1</quarkus.version>
+        <quarkus.build.version>3.40.0.CR1</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -74,17 +74,17 @@
         <!-- Versions used mostly for Undertow server, aligned with WildFly -->
         <jboss.dmr.version>1.5.1.Final</jboss.dmr.version>
 
-        <bouncycastle.pkixfips.version>2.1.10</bouncycastle.pkixfips.version>
-        <bouncycastle.bcfips.version>2.1.2</bouncycastle.bcfips.version>
-        <bouncycastle.bctls-fips.version>2.1.22</bouncycastle.bctls-fips.version>
-        <bouncycastle.bcutilfips.version>2.1.5</bouncycastle.bcutilfips.version>
+        <bouncycastle.pkixfips.version>2.1.13</bouncycastle.pkixfips.version>
+        <bouncycastle.bcfips.version>2.1.3</bouncycastle.bcfips.version>
+        <bouncycastle.bctls-fips.version>2.1.25</bouncycastle.bctls-fips.version>
+        <bouncycastle.bcutilfips.version>2.1.8</bouncycastle.bcutilfips.version>
 
         <dom4j.version>2.1.3</dom4j.version>
         <h2.version>2.4.240</h2.version>
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
         <microprofile-metrics-api.version>5.1.2</microprofile-metrics-api.version>
-        <infinispan.version>16.0.14</infinispan.version>
+        <infinispan.version>16.0.15</infinispan.version>
         <protostream.version>6.0.7</protostream.version> <!-- For the annotation processor: keep in sync with the version shipped with Infinispan -->
         <protostream.plugin.version>${protostream.version}</protostream.plugin.version>
 
@@ -128,7 +128,7 @@
         <apacheds.codec.version>2.1.8</apacheds.codec.version>
         <kerby.version>2.1.2</kerby.version>
         <google.zxing.version>3.4.0</google.zxing.version>
-        <freemarker.version>2.3.32</freemarker.version>
+        <freemarker.version>2.3.35</freemarker.version>
         <sundrio.version>0.200.0</sundrio.version>
         <antlr4.version>4.13.2</antlr4.version>
         <dbus-java.version>5.2.0</dbus-java.version>
@@ -177,9 +177,9 @@
         <!-- OID4VCI + OID4VP Conformance Container Images -->
         <mongodb.version>6.0.13</mongodb.version>
         <mongodb.container>mongo:${mongodb.version}</mongodb.container>
-        <conformance.version>release-v5.2.2</conformance.version>
+        <conformance.version>release-v5.3.0</conformance.version>
         <conformance.container>registry.gitlab.com/openid/conformance-suite:${conformance.version}</conformance.container>
-        <nginx.version>release-v5.2.2</nginx.version>
+        <nginx.version>release-v5.3.0</nginx.version>
         <nginx.container>registry.gitlab.com/openid/conformance-suite/nginx:${nginx.version}</nginx.container>
 
         <!-- Test -->

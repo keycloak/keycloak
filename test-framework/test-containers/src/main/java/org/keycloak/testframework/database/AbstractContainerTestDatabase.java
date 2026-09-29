@@ -11,6 +11,7 @@ import org.keycloak.testframework.logging.JBossContainerLogConsumer;
 import org.jboss.logging.Logger;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.utility.TestcontainersConfiguration;
 
 public abstract class AbstractContainerTestDatabase implements TestDatabase {
 
@@ -29,6 +30,15 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
             this.reuse = false;
         } else {
             this.reuse = reuseConfigured;
+        }
+
+        if (reuse && !TestcontainersConfiguration.getInstance().environmentSupportsReuse()) {
+            getLogger().errorf(
+                    "%s is enabled, but testcontainers reuse is not configured. " +
+                    "Set testcontainers.reuse.enable=true in ~/.testcontainers.properties " +
+                    "or set the environment variable TESTCONTAINERS_REUSE_ENABLE=true. " +
+                    "Note: TESTCONTAINERS_REUSE_ENABLE must be a real environment variable, not a .env.test entry.", reuseProp);
+            this.reuse = false;
         }
 
         container = createContainer();

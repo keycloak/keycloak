@@ -200,8 +200,8 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
 
         assertEquals(400, credentialResponse.getStatusCode(),
                 "Credential request with token without OID4VCI scope should fail");
-        assertEquals(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue(), credentialResponse.getError());
-        assertEquals("Invalid AccessToken for credential request. No authorization_details", credentialResponse.getErrorDescription());
+        assertEquals(ErrorType.INVALID_TOKEN.getValue(), credentialResponse.getError());
+        assertEquals("Invalid or missing token", credentialResponse.getErrorDescription());
     }
 
     /**

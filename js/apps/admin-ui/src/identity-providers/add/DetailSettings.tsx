@@ -21,6 +21,7 @@ import {
   PageSection,
   Tab,
   TabTitleText,
+  Tabs,
   Text,
   ToolbarItem,
 } from "@patternfly/react-core";
@@ -48,7 +49,12 @@ import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
-import { toUpperCase } from "../../util";
+import {
+  beerify,
+  convertAttributeNameToForm,
+  convertFormValuesToObject,
+  toUpperCase,
+} from "../../util";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { useParams } from "../../utils/useParams";
 import { toIdentityProviderAddMapper } from "../routes/AddMapper";
@@ -76,8 +82,9 @@ import { KubernetesSettings } from "./KubernetesSettings";
 import { JWTAuthorizationGrantAssertionSettings } from "./JWTAuthorizationGrantAssertionSettings";
 import JWTAuthorizationGrantSettings from "./JWTAuthorizationGrantSettings";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
-import { GroupResourceContext } from "../../context/group-resource/GroupResourceContext";
 import DefaultTrustSettings from "./DefaultTrustSettings";
+import { IdpDomainsTab } from "./IdpDomainsTab";
+import { IdpOrganizationsTab } from "./IdpOrganizationsTab";
 import Oid4VpSettings from "./Oid4VpSettings";
 
 type HeaderProps = {
@@ -279,6 +286,22 @@ export default function DetailSettings() {
     formState: { isDirty },
   } = form;
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
+
+  const toFormValues = (
+    p: IdentityProviderRepresentation,
+  ): IdentityProviderRepresentation =>
+    p.config
+      ? {
+          ...p,
+          config: Object.fromEntries(
+            Object.entries(p.config).map(([key, value]) => [
+              beerify(key),
+              value,
+            ]),
+          ),
+        }
+      : p;
+
   const [selectedMapper, setSelectedMapper] =
     useState<IdPWithMapperAttributes>();
   const serverInfo = useServerInfo();
@@ -304,6 +327,7 @@ export default function DetailSettings() {
   const { realm, realmRepresentation } = useRealm();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
+  const [orgSubTab, setOrgSubTab] = useState("org-list");
   const { hasAccess } = useAccess();
 
   useFetch(
@@ -313,7 +337,7 @@ export default function DetailSettings() {
         throw new Error(t("notFound"));
       }
 
-      reset(fetchedProvider);
+      reset(toFormValues(fetchedProvider));
       setProvider(fetchedProvider);
 
       if (fetchedProvider.config!.authnContextClassRefs) {
@@ -330,7 +354,7 @@ export default function DetailSettings() {
         );
       }
     },
-    [],
+    [key],
   );
 
   const toTab = (tab: IdentityProviderTab) =>
@@ -345,11 +369,14 @@ export default function DetailSettings() {
 
   const settingsTab = useTab("settings");
   const mappersTab = useTab("mappers");
+  const organizationsTab = useTab("organizations");
   const permissionsTab = useTab("permissions");
   const eventsTab = useTab("events");
 
   const save = async (savedProvider?: IdentityProviderRepresentation) => {
-    const p = savedProvider || getValues();
+    const p = convertFormValuesToObject<IdentityProviderRepresentation>(
+      savedProvider || getValues(),
+    );
     const origAuthnContextClassRefs = p.config?.authnContextClassRefs;
     if (p.config?.authnContextClassRefs)
       p.config.authnContextClassRefs = JSON.stringify(
@@ -377,7 +404,30 @@ export default function DetailSettings() {
       if (origAuthnContextDeclRefs) {
         p.config!.authnContextDeclRefs = origAuthnContextDeclRefs;
       }
-      reset(p);
+      const updatedProvider = await adminClient.identityProviders.findOne({
+        alias: provider?.alias || alias,
+      });
+
+      if (updatedProvider) {
+        setProvider(updatedProvider);
+        reset(toFormValues(updatedProvider));
+
+        if (updatedProvider.config?.authnContextClassRefs) {
+          form.setValue(
+            "config.authnContextClassRefs",
+            JSON.parse(updatedProvider.config.authnContextClassRefs),
+          );
+        }
+
+        if (updatedProvider.config?.authnContextDeclRefs) {
+          form.setValue(
+            "config.authnContextDeclRefs",
+            JSON.parse(updatedProvider.config.authnContextDeclRefs),
+          );
+        }
+      } else {
+        reset(toFormValues(p));
+      }
       addAlert(t("updateSuccessIdentityProvider"), AlertVariant.success);
     } catch (error) {
       addError("updateErrorIdentityProvider", error);
@@ -447,9 +497,6 @@ export default function DetailSettings() {
     (isOAuth2 || isOIDC) &&
     !!provider.types?.includes(IdentityProviderType.JWT_AUTHORIZATION_GRANT) &&
     isFeatureEnabled(Feature.JWTAuthorizationGrant);
-  const groupResource = provider.organizationId
-    ? adminClient.organizations.groups(provider.organizationId)
-    : adminClient.groups;
 
   const loader = async () => {
     const [loaderMappers, loaderMapperTypes] = await Promise.all([
@@ -688,6 +735,40 @@ export default function DetailSettings() {
         </FormAccess>
       ),
     },
+    {
+      title: t("organizationSettings"),
+      isHidden: (provider.organizationLinks?.length ?? 0) === 0,
+      panel: (
+        <FormAccess
+          role="manage-identity-providers"
+          isHorizontal
+          onSubmit={handleSubmit(save)}
+        >
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm(
+              "config.kc.org.broker.login.hide-when-org-unknown",
+            )}
+            label={t("hideOnLoginWhenOrgNotResolved")}
+            labelIcon={t("hideOnLoginWhenOrgNotResolvedHelp")}
+            stringify
+          />
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm(
+              "config.kc.org.broker.login.show-when-linked-elsewhere",
+            )}
+            label={t("showOnLoginForUnlinkedMembers")}
+            labelIcon={t("showOnLoginForUnlinkedMembersHelp")}
+            stringify
+          />
+          <FixedButtonsGroup
+            name="idp-org-settings"
+            isSubmit
+            reset={reset}
+            isDisabled={!isDirty}
+          />
+        </FormAccess>
+      ),
+    },
   ];
 
   return (
@@ -733,79 +814,106 @@ export default function DetailSettings() {
             title={<TabTitleText>{t("mappers")}</TabTitleText>}
             {...mappersTab}
           >
-            <GroupResourceContext value={groupResource}>
-              <KeycloakDataTable
-                emptyState={
-                  <ListEmptyState
-                    message={t("noMappers")}
-                    instructions={t("noMappersInstructions")}
-                    primaryActionText={t("addMapper")}
-                    onPrimaryAction={() =>
-                      void navigate(
-                        toIdentityProviderAddMapper({
+            <KeycloakDataTable
+              emptyState={
+                <ListEmptyState
+                  message={t("noMappers")}
+                  instructions={t("noMappersInstructions")}
+                  primaryActionText={t("addMapper")}
+                  onPrimaryAction={() =>
+                    void navigate(
+                      toIdentityProviderAddMapper({
+                        realm,
+                        alias: alias!,
+                        providerId: provider.providerId!,
+                        tab: "mappers",
+                      }),
+                    )
+                  }
+                />
+              }
+              loader={loader}
+              key={key}
+              ariaLabelKey="mappersList"
+              searchPlaceholderKey="searchForMapper"
+              toolbarItem={
+                <ToolbarItem>
+                  <Button
+                    id="add-mapper-button"
+                    component={(props) => (
+                      <Link
+                        {...props}
+                        to={toIdentityProviderAddMapper({
                           realm,
                           alias: alias!,
                           providerId: provider.providerId!,
                           tab: "mappers",
-                        }),
-                      )
-                    }
-                  />
-                }
-                loader={loader}
-                key={key}
-                ariaLabelKey="mappersList"
-                searchPlaceholderKey="searchForMapper"
-                toolbarItem={
-                  <ToolbarItem>
-                    <Button
-                      id="add-mapper-button"
-                      component={(props) => (
-                        <Link
-                          {...props}
-                          to={toIdentityProviderAddMapper({
-                            realm,
-                            alias: alias!,
-                            providerId: provider.providerId!,
-                            tab: "mappers",
-                          })}
-                        />
-                      )}
-                      data-testid="addMapper"
-                    >
-                      {t("addMapper")}
-                    </Button>
-                  </ToolbarItem>
-                }
-                columns={[
-                  {
-                    name: "name",
-                    displayKey: "name",
-                    cellRenderer: (row) => (
-                      <MapperLink {...row} provider={provider} />
-                    ),
+                        })}
+                      />
+                    )}
+                    data-testid="addMapper"
+                  >
+                    {t("addMapper")}
+                  </Button>
+                </ToolbarItem>
+              }
+              columns={[
+                {
+                  name: "name",
+                  displayKey: "name",
+                  cellRenderer: (row) => (
+                    <MapperLink {...row} provider={provider} />
+                  ),
+                },
+                {
+                  name: "category",
+                  displayKey: "category",
+                },
+                {
+                  name: "type",
+                  displayKey: "type",
+                },
+              ]}
+              actions={[
+                {
+                  title: t("delete"),
+                  onRowClick: (mapper) => {
+                    setSelectedMapper(mapper);
+                    toggleDeleteMapperDialog();
                   },
-                  {
-                    name: "category",
-                    displayKey: "category",
-                  },
-                  {
-                    name: "type",
-                    displayKey: "type",
-                  },
-                ]}
-                actions={[
-                  {
-                    title: t("delete"),
-                    onRowClick: (mapper) => {
-                      setSelectedMapper(mapper);
-                      toggleDeleteMapperDialog();
-                    },
-                  } as Action<IdPWithMapperAttributes>,
-                ]}
-              />
-            </GroupResourceContext>
+                } as Action<IdPWithMapperAttributes>,
+              ]}
+            />
           </Tab>
+          {(provider.organizationLinks?.length ?? 0) > 0 && (
+            <Tab
+              id="organizations"
+              data-testid="organizationsTab"
+              title={<TabTitleText>{t("organizations")}</TabTitleText>}
+              {...organizationsTab}
+            >
+              <Tabs
+                activeKey={orgSubTab}
+                onSelect={(_, key) => setOrgSubTab(key as string)}
+                mountOnEnter
+              >
+                <Tab
+                  id="org-list"
+                  eventKey="org-list"
+                  title={<TabTitleText>{t("organizations")}</TabTitleText>}
+                >
+                  <IdpOrganizationsTab alias={alias} onLinksChange={refresh} />
+                </Tab>
+                <Tab
+                  id="org-domains"
+                  eventKey="org-domains"
+                  title={<TabTitleText>{t("domains")}</TabTitleText>}
+                >
+                  <IdpDomainsTab alias={alias} />
+                </Tab>
+              </Tabs>
+            </Tab>
+          )}
           {isFeatureEnabled(Feature.AdminFineGrainedAuthz) && (
             <Tab
               id="permissions"

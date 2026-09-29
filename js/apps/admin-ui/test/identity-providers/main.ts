@@ -117,6 +117,7 @@ export async function createKubernetesProvider(
   issuerUrl: string,
 ) {
   await clickProviderCard(page, providerName);
+  await expect(page.getByTestId("config.issuer")).toBeEnabled();
   await page.getByTestId("config.issuer").fill(issuerUrl);
   await clickAddButton(page);
 }

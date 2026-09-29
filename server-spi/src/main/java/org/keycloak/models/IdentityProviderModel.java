@@ -272,6 +272,19 @@ public class IdentityProviderModel implements Serializable {
         return organizationIds.contains(orgId);
     }
 
+    @Deprecated(forRemoval = true, since = "26.8")
+    public String getOrganizationId() {
+        return organizationIds.isEmpty() ? null : organizationIds.iterator().next();
+    }
+
+    @Deprecated(forRemoval = true, since = "26.8")
+    public void setOrganizationId(String organizationId) {
+        this.organizationIds = new LinkedHashSet<>();
+        if (organizationId != null) {
+            this.organizationIds.add(organizationId);
+        }
+    }
+
     /**
      * <p>Validates this configuration.
      *

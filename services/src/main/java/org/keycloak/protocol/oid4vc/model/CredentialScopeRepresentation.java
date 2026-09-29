@@ -73,7 +73,7 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
         this.protocolMappers = clientScope.getProtocolMappers();
     }
 
-    public boolean getIncludeInTokenScope() {
+    public boolean isIncludeInTokenScope() {
         return Boolean.parseBoolean(getAttribute(INCLUDE_IN_TOKEN_SCOPE));
     }
 

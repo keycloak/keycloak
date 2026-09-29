@@ -23,10 +23,14 @@ import java.util.Map;
 
 import jakarta.persistence.EntityManagerFactory;
 
+import org.keycloak.connections.jpa.support.EntityManagerProxy;
+
 import org.hibernate.Session;
 import org.hibernate.dialect.OracleDialect;
 import org.hibernate.dialect.PostgreSQLDialect;
 import org.hibernate.dialect.SQLServerDialect;
+import org.hibernate.engine.internal.TransactionCompletionCallbacksImpl;
+import org.hibernate.engine.spi.ActionQueue;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.event.spi.EventType;
@@ -36,6 +40,7 @@ import org.hibernate.event.spi.PreInsertEvent;
 import org.hibernate.event.spi.PreInsertEventListener;
 import org.hibernate.event.spi.PreUpdateEvent;
 import org.hibernate.event.spi.PreUpdateEventListener;
+import org.hibernate.internal.SessionImpl;
 import org.jboss.logging.Logger;
 
 /**
@@ -61,7 +66,7 @@ public abstract class AsyncCommitIntegrator implements PreInsertEventListener, P
 
     private static final Logger logger = Logger.getLogger(AsyncCommitIntegrator.class);
 
-    private static final String SYNC_REQUIRED = "kc.sync_commit_required";
+    private static final String SYNC_REQUIRED = EntityManagerProxy.SYNC_COMMIT_REQUIRED;
     private static final String CALLBACK_REGISTERED = "kc.async_commit.registered";
 
     /**
@@ -102,6 +107,7 @@ public abstract class AsyncCommitIntegrator implements PreInsertEventListener, P
         registry.appendListeners(EventType.PRE_UPDATE, listener);
         registry.appendListeners(EventType.PRE_DELETE, listener);
 
+        EntityManagerProxy.enableAsyncCommit(emf);
         logger.debugf("Registered asynchronous commit listeners for %s", dialect.getClass().getSimpleName());
     }
 
@@ -164,6 +170,21 @@ public abstract class AsyncCommitIntegrator implements PreInsertEventListener, P
                     (SharedSessionContractImplementor sess) -> {
                         if (!Boolean.TRUE.equals(((Session) sess).getProperties().get(SYNC_REQUIRED))) {
                             sess.doWork(this::applyAsyncCommit);
+                        }
+                    }
+            );
+            // Workaround for https://hibernate.atlassian.net/browse/HHH-20863:
+            // On rollback, beforeTransactionCompletion() is never called, so the BeforeCompletionCallback
+            // above remains in the ActionQueue and triggers HHH90010101 during em.close().
+            // Clear it on rollback via an AfterCompletionCallback.
+            session.getTransactionCompletionCallbacks().registerCallback(
+                    (boolean success, SharedSessionContractImplementor sess) -> {
+                        if (!success && sess instanceof SessionImpl si) {
+                            ActionQueue aq = si.getActionQueue();
+                            if (aq.hasBeforeTransactionActions()) {
+                                aq.setTransactionCompletionCallbacks(
+                                        new TransactionCompletionCallbacksImpl(si), false);
+                            }
                         }
                     }
             );

@@ -297,9 +297,8 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testGetAllDisabledOrganization() {
-        OrganizationRepresentation orgRep = createOrganization(realm, organizationName,
-                createRealOrgBroker(organizationName + "-identity-provider", providerRealm), organizationName + ".org");
-        OrganizationResource organization = realm.admin().organizations().get(orgRep.getId());
+        OrganizationResource organization = createOrganizationWithBroker(providerRealm, true, MembershipType.MANAGED);
+        OrganizationRepresentation orgRep = organization.toRepresentation();
 
         // add some unmanaged members to the organization.
         for (int i = 0; i < 5; i++) {
@@ -358,9 +357,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testGetAllDisabledOrganizationProvider() throws IOException {
-        OrganizationRepresentation orgRep = createOrganization(realm, organizationName,
-                createRealOrgBroker(organizationName + "-identity-provider", providerRealm), organizationName + ".org");
-        OrganizationResource organization = realm.admin().organizations().get(orgRep.getId());
+        OrganizationResource organization = createOrganizationWithBroker(providerRealm, true, MembershipType.MANAGED);
 
         // add some unmanaged members to the organization.
         for (int i = 0; i < 5; i++) {

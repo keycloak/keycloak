@@ -1,26 +1,12 @@
-/*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.keycloak.tests.oid4vc.issuance.credentialbuilder;
 
 import java.security.KeyPairGenerator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.OID4VCConstants;
@@ -38,6 +24,7 @@ import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
+import org.keycloak.tests.oid4vc.issuance.signing.OID4VCTest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -102,6 +89,93 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
                 0,
                 List.of()
         );
+    }
+
+    @Test
+    public void buildSdJwtCredential_DisclosesArrayElementsIndividually() throws Exception {
+        CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
+                .setCredentialIssuer(TEST_ISSUER_DID)
+                .setCredentialType("https://credentials.example.com/test-credential")
+                .setTokenJwsType(VCFormat.SD_JWT_VC)
+                .setHashAlgorithm(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM)
+                .setNumberOfDecoys(0)
+                .setSdJwtVisibleClaims(List.of());
+
+        VerifiableCredential testCredential = getTestCredential(
+                Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
+                        "roles", List.of("admin", "auditor", "user")));
+
+        SdJwtCredentialBody sdJwtCredentialBody = new SdJwtCredentialBuilder()
+                .buildCredentialBody(testCredential, credentialBuildConfig);
+        SdJwtVP sdJwt = SdJwtVP.of(sdJwtCredentialBody.sign(exampleSigner()));
+
+        // The claim name stays visible while its elements are undisclosed one by one
+        JsonNode rolesNode = sdJwt.getIssuerSignedJWT().getPayload().get("roles");
+        assertNotNull(rolesNode, "Array claim name must stay visible for per-element disclosure");
+        assertEquals(3, rolesNode.size(), "Each array element must be undisclosed separately");
+
+        Map<String, JsonNode> elementDisclosures = sdJwt.getDisclosures().entrySet().stream()
+                .map(e -> Map.entry(e.getKey(), decodeDisclosure(e.getValue())))
+                .filter(e -> e.getValue().size() == 2)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        assertEquals(Set.of("admin", "auditor", "user"),
+                elementDisclosures.values().stream().map(node -> node.get(1).asText()).collect(Collectors.toSet()),
+                "Every element must have its own disclosure");
+
+        // A holder can selectively present a single element
+        String adminDigest = elementDisclosures.entrySet().stream()
+                .filter(e -> "admin".equals(e.getValue().get(1).asText()))
+                .findFirst()
+                .map(Map.Entry::getKey)
+                .orElseThrow();
+        SdJwtVP presentation = SdJwtVP.of(sdJwt.present(List.of(adminDigest), false, null, null));
+        JsonNode disclosedPayload = presentation.getSdJwtVerificationContext()
+                .verifyIssuance(List.of(exampleVerifier()),
+                        IssuerSignedJwtVerificationOpts.builder()
+                                .withIatCheck(true)
+                                .withNbfCheck(true)
+                                .withExpCheck(true)
+                                .build(),
+                        null);
+
+        assertEquals(1, disclosedPayload.get("roles").size(), "Only the selected element must be disclosed");
+        assertEquals("admin", disclosedPayload.get("roles").get(0).asText());
+    }
+
+    @Test
+    public void buildSdJwtCredential_DisclosesSetElementsIndividually() throws Exception {
+        // Regression test: OID4VCTargetRoleMapper stores roles as a HashSet, not a List.
+        // Array-ness must be determined from the serialized JSON value, not the Java type.
+        CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
+                .setCredentialIssuer(TEST_ISSUER_DID)
+                .setCredentialType("https://credentials.example.com/test-credential")
+                .setTokenJwsType(VCFormat.SD_JWT_VC)
+                .setHashAlgorithm(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM)
+                .setNumberOfDecoys(0)
+                .setSdJwtVisibleClaims(List.of());
+
+        Set<String> rolesSet = new HashSet<>(List.of("admin", "auditor", "user"));
+        VerifiableCredential testCredential = getTestCredential(
+                Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
+                        "roles", rolesSet));
+
+        SdJwtCredentialBody sdJwtCredentialBody = new SdJwtCredentialBuilder()
+                .buildCredentialBody(testCredential, credentialBuildConfig);
+        SdJwtVP sdJwt = SdJwtVP.of(sdJwtCredentialBody.sign(exampleSigner()));
+
+        // The claim name stays visible while its elements are undisclosed one by one
+        JsonNode rolesNode = sdJwt.getIssuerSignedJWT().getPayload().get("roles");
+        assertNotNull(rolesNode, "Set-valued claim name must stay visible for per-element disclosure");
+        assertTrue(rolesNode.isArray(), "Set-valued claim must be serialized as a JSON array");
+        assertEquals(3, rolesNode.size(), "Each set element must be undisclosed separately");
+
+        Map<String, JsonNode> elementDisclosures = sdJwt.getDisclosures().entrySet().stream()
+                .map(e -> Map.entry(e.getKey(), decodeDisclosure(e.getValue())))
+                .filter(e -> e.getValue().size() == 2)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        assertEquals(rolesSet,
+                elementDisclosures.values().stream().map(node -> node.get(1).asText()).collect(Collectors.toSet()),
+                "Every set element must have its own disclosure");
     }
 
     static Stream<Integer> decoyCountProvider() {
@@ -183,7 +257,13 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
         }
 
         List<String> disclosed = sdJwt.getDisclosures().values().stream().toList();
-        assertEquals(disclosed.size() + (decoys == 0 ? SdJwt.DEFAULT_NUMBER_OF_DECOYS : decoys),
+        // The _sd array holds one digest per undisclosed claim and per decoy; disclosures
+        // of array elements are anchored inside the visible arrays instead.
+        long undisclosedClaims = disclosed.stream()
+                .map(OID4VCTest::decodeDisclosure)
+                .filter(node -> node.size() == 3)
+                .count();
+        assertEquals(undisclosedClaims + (decoys == 0 ? SdJwt.DEFAULT_NUMBER_OF_DECOYS : decoys),
                 sdArrayNode == null ? 0 : sdArrayNode.size(),
                 "All undisclosed claims and decoys should be provided.");
 

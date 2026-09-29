@@ -38,9 +38,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 public abstract class AbstractNonHaipVciConformanceTest extends AbstractVciConformanceTest {
 
     @Override
-    protected Map<String, String> planVariant(String flowVariant) {
-        return Map.of(
-                "credential_format", "sd_jwt_vc",
+    protected Map<String, String> planVariant(String credentialFormat, String flowVariant) {
+        return Map.of("credential_format", credentialFormat,
                 "vci_authorization_code_flow_variant", flowVariant,
                 "fapi_profile", "vci",
                 "client_auth_type", "private_key_jwt",

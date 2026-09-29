@@ -43,6 +43,7 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -103,6 +104,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
     private AuthorizationEndpointRequest request;
     private String redirectUri;
+    private String invitationToken;
 
     public AuthorizationEndpoint(KeycloakSession session, EventBuilder event) {
         super(session, event);
@@ -251,6 +253,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     public AuthorizationEndpoint register(String tokenString) {
         event.event(EventType.REGISTER);
         action = Action.REGISTER;
+        invitationToken = tokenString;
 
         if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) && tokenString != null) {
             //this call should extract orgId from token and set the organization to the session context
@@ -401,6 +404,20 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             if (authorizationDetails != null) {
                 authenticationSession.setClientNote(OAuth2Constants.AUTHORIZATION_DETAILS, authorizationDetails);
             }
+        }
+
+        // register() resolves the invitation before this session exists, so the request context is
+        // the only place holding it. Keep both the organization and the token for the rest of the
+        // authentication: the invitee may leave for an identity provider, and the link they follow
+        // to get there does not carry the token.
+        OrganizationModel organization = session.getContext().getOrganization();
+
+        if (organization != null) {
+            authenticationSession.setAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
+        }
+
+        if (invitationToken != null) {
+            authenticationSession.setAuthNote(Organizations.INVITATION_TOKEN_NOTE, invitationToken);
         }
     }
 

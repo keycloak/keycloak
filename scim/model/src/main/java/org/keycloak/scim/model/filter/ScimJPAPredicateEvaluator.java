@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.function.BiPredicate;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Root;
 
 import org.keycloak.scim.filter.FilterUtils;
@@ -23,15 +24,15 @@ public class ScimJPAPredicateEvaluator extends ScimFilterParserBaseVisitor<JPAFi
     private String parentPath;
 
     @SuppressWarnings("unchecked,rawtypes")
-    public ScimJPAPredicateEvaluator(ScimResourceTypeProvider resourceTypeProvider, List schemas, CriteriaBuilder cb, Root<?> root) {
-        this(resourceTypeProvider, schemas, cb, root, null);
+    public ScimJPAPredicateEvaluator(ScimResourceTypeProvider resourceTypeProvider, List schemas, CriteriaBuilder cb, CriteriaQuery<?> query, Root<?> root) {
+        this(resourceTypeProvider, schemas, cb, query, root, null);
     }
 
     @SuppressWarnings("unchecked,rawtypes")
-    public ScimJPAPredicateEvaluator(ScimResourceTypeProvider resourceTypeProvider, List schemas, CriteriaBuilder cb, Root<?> root,
+    public ScimJPAPredicateEvaluator(ScimResourceTypeProvider resourceTypeProvider, List schemas, CriteriaBuilder cb, CriteriaQuery<?> query, Root<?> root,
                                       BiPredicate<String, String> filterAuthorizationCheck) {
         this.cb = cb;
-        this.predicateProvider = new ScimJPAPredicateProvider(resourceTypeProvider, schemas, cb, root, filterAuthorizationCheck);
+        this.predicateProvider = new ScimJPAPredicateProvider(resourceTypeProvider, schemas, cb, query, root, filterAuthorizationCheck);
     }
 
     @Override
@@ -58,6 +59,12 @@ public class ScimJPAPredicateEvaluator extends ScimFilterParserBaseVisitor<JPAFi
     @Override
     public JPAFilterResult visitAndExpression(ScimFilterParser.AndExpressionContext ctx) {
         if (ctx.AND() != null) {
+            if (parentPath != null) {
+                // AND inside a value path (e.g. groups[value eq "A" and value eq "B"]) requires all conditions to
+                // be satisfied by the same collection element; reject it for multivalued/non-complex attributes
+                // rather than silently evaluating each condition as an independent EXISTS subquery
+                predicateProvider.validateAndOperatorInValuePath(parentPath);
+            }
             JPAFilterResult left = visit(ctx.andExpression());
             JPAFilterResult right = visit(ctx.notExpression());
 

@@ -288,6 +288,12 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-micrometer</artifactId>
         </dependency>
+        <!-- Quarkus excludes byte-buddy from hibernate-core (it uses build-time enhancement); the embedded
+             Undertow KeycloakServer boots Hibernate at runtime via DefaultJpaConnectionProviderFactory and needs it. -->
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+        </dependency>
     </dependencies>
 
 
