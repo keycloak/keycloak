@@ -86,6 +86,7 @@ public class LDAPStartTlsCloseTest {
         transport.soTimeout = 125;
         TestStartTlsResponse response = new TestStartTlsResponse(() -> {
             Assert.assertEquals(3_000, socket.soTimeout);
+            transport.soTimeout = socket.soTimeout;
             socket.close();
         });
 
