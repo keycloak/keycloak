@@ -51,6 +51,7 @@ public class FeaturePropertyMappersTest {
     public void testValidFeatures() {
         FeaturePropertyMappers.validateEnabledFeature("preview");
         FeaturePropertyMappers.validateEnabledFeature(Feature.ACCOUNT_V3.getVersionedKey());
+        FeaturePropertyMappers.validateEnabledFeature(Feature.LOGIN_V3.getVersionedKey());
     }
 
 }
