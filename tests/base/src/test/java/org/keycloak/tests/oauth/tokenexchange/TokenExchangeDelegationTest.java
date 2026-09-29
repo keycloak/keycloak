@@ -935,6 +935,29 @@ public class TokenExchangeDelegationTest {
     }
 
     @Test
+    public void rejectMayActClientPolicyConsentParameterForms() {
+        addDelegationPermission();
+
+        realm.updateWithCleanup(r -> r.clientProfile(ClientProfileBuilder.create().name("executor").executor(RejectMayActClaimExecutorFactory.PROVIDER_ID, null).build())
+                .clientPolicy(ClientPolicyBuilder.create().name("policy").condition(AnyClientConditionFactory.PROVIDER_ID, null).profile("executor").build()));
+
+        // username and email lookups are case insensitive, but the consent note keeps each parameter verbatim
+        for (String parameter : List.of(administrator.getEmail(), administrator.getEmail().toUpperCase(),
+                administrator.getUsername().toUpperCase())) {
+            final String scope = OIDCLoginProtocolFactory.USER_DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + parameter;
+            AccessTokenResponse res = loginWithDelegation(scope, grants -> MatcherAssert.assertThat(grants,
+                    Matchers.hasItem("Delegate token to administrator " + parameter + "?")));
+            Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+            assertScopeContains(res.getScope(), scope);
+            assertMayActPresent(oauth.verifyToken(res.getAccessToken()), administrator.getId(), null, null);
+
+            LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
+            Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
+            EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT);
+        }
+    }
+
+    @Test
     public void rejectMayActClientPolicyRejectAny() {
         addDelegationPermission();
 
