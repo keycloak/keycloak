@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.keycloak.models.KeycloakSession;
@@ -29,6 +30,8 @@ import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_JTI;
 
 /**
  * Adds a generated ID to the credential (as a configurable property).
@@ -65,6 +68,12 @@ public class OID4VCGeneratedIdMapper extends OID4VCMapper {
         return Optional.ofNullable(mapperModel.getConfig().get(CredentialScopeModel.VC_INCLUDE_IN_METADATA))
                        .map(Boolean::parseBoolean)
                        .orElse(false);
+    }
+
+    @Override
+    protected Set<String> getAllowedReservedClaims() {
+        // The value is a generated id, not user-controlled; the claim name may legitimately target "jti".
+        return Set.of(CLAIM_NAME_JTI);
     }
 
     @Override

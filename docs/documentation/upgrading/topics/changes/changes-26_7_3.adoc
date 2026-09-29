@@ -4,6 +4,13 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Authorization services claim handling changes
+
+Two changes affect how claims are handled in the authorization services token endpoint:
+
+* Claims with the `kc.` prefix are now reserved for server-controlled evaluation context attributes (such as `kc.time.date_time`, `kc.client.id`, and `kc.realm.name`). User-supplied claims with this prefix, whether pushed via `claim_token` or via the UMA permission ticket, are filtered out before policy evaluation. If your authorization policies rely on custom claims that start with `kc.`, rename them to use a different prefix.
+
+* When both a UMA permission ticket and a `claim_token` contain claims with the same key, ticket claims now take precedence. Previously, `claim_token` claims would silently override ticket claims on collision. This change ensures that claims set by the resource server when creating the permission ticket cannot be overridden by the requesting party.
 
 === OIDC parameters in redirect URIs rejected by default
 
@@ -12,3 +19,19 @@ Redirect URIs (`redirect_uri` and `post_logout_redirect_uri`) containing OIDC re
 If you used `post_logout_redirect_uri` pointing directly to the {project_name} OIDC login page (for example `post_logout_redirect_uri=\https://mykchost/realms/myrealm/protocol/openid-connect/auth?response_type=code&client_id=myclient...`), replace it with a callback URL pointing to your application (for example `post_logout_redirect_uri=\https://myapp/logout-callback`) and ensure that opening that callback URL in your application redirects to {project_name} OIDC login.
 
 To temporarily allow the previous behavior, enable the `allow-oidc-params-in-redirect-uris` server option in the link:https://www.keycloak.org/server/all-provider-config#_openid_connect[OpenID Connect provider configuration]. A per-client override is also available via the `allow.oidc.params.in.redirect.uris` client attribute, allowing gradual migration of individual clients. Both options are deprecated and will be removed in {project_name} 27.
+
+// ------------------------ Deprecated features ------------------------ //
+
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== Organization invitation link no longer exposed in API responses
+
+The `inviteLink` field in `OrganizationInvitationRepresentation` is deprecated and is no longer returned in Admin REST API responses from the organization invitation endpoints.
+
+Previously, the invitation link containing the signed registration token was stored and returned in the representation. The invitation link is still sent via email to the intended recipient.
+
+The `getInviteLink()` and `setInviteLink()` methods on `OrganizationInvitationRepresentation` are deprecated and will be removed in a future major version. If your code reads `inviteLink` from invitation API responses, it will now receive `null`.
+
+The "Copy invite link" action has also been removed from the admin console invitations management UI.

@@ -7,13 +7,17 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
+import org.keycloak.VCFormat;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserVerifiableCredentialResource;
 import org.keycloak.common.util.Time;
@@ -28,12 +32,14 @@ import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -44,18 +50,22 @@ import org.keycloak.testframework.realm.ClientScopeBuilder;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.OID4VCCredentialOfferPage;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OAuthErrorException.INVALID_GRANT;
 import static org.keycloak.OAuthErrorException.INVALID_REQUEST;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
 import static org.keycloak.events.Details.CREDENTIAL_TYPE;
 import static org.keycloak.events.Details.REASON;
@@ -660,6 +670,58 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         assertTrue(Math.abs(refreshTokenLifetimeSeconds - credentialLifetime) <= tolerance,
                 String.format("Refresh token lifetime should be ~%d seconds (credential lifetime), but was %d seconds",
                         credentialLifetime, refreshTokenLifetimeSeconds));
+    }
+
+    /**
+     * Verifies that a mapper mapping user-controlled data to the reserved 'exp' claim causes the SD-JWT issuance
+     * to be rejected. A mapper persisted via the scope-create path (which, like imports, does not run
+     * config-time validation) could otherwise let a user-controlled value extend the refresh expiration time, so
+     * it must fail the request at issuance.
+     */
+    @Test
+    public void testUserControlledExpAttributeDoesNotExtendRefreshExpiration() throws Exception {
+        long farFuture = Time.currentTimeSeconds() + 10L * 365 * 24 * 3600; // +10 years
+
+        // Create an SD-JWT credential scope whose reserved 'exp' claim is mapped from user data
+        String scopeName = "reserved-exp-scope-" + UUID.randomUUID();
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation(scopeName)
+                .setIncludeInTokenScope(true)
+                .setCredentialConfigurationId(scopeName + "-config-id")
+                .setCredentialIdentifier(scopeName)
+                .setVct(scopeName)
+                .setFormat(VCFormat.SD_JWT_VC);
+        scope.setProtocolMappers(List.of(ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, "some-user-attribute")));
+
+        String scopeId;
+        try (Response response = testRealm.admin().clientScopes().create(scope)) {
+            scopeId = ApiUtil.getCreatedId(response);
+        }
+        testRealm.cleanup().add(r -> r.clientScopes().get(scopeId).remove());
+        testRealm.admin().clients().get(client.getId()).addOptionalClientScope(scopeId);
+
+        // Grant the user a verifiable credential for the new scope so the access token exchange accepts it.
+        UserVerifiableCredentialRepresentation granted = new UserVerifiableCredentialRepresentation();
+        granted.setCredentialScopeName(scopeName);
+        testRealm.admin().users().get(user.getId()).verifiableCredentials().createCredential(granted);
+
+        // Set a user-controlled attribute to a far-future timestamp to attempt to extend the refresh expiration.
+        user.updateWithCleanup(u -> u.attribute("some-user-attribute", String.valueOf(farFuture)));
+
+        ctx = new OID4VCTestContext(client, scope);
+
+        // The access token exchange succeeds, but issuance must be rejected: the reserved 'exp' mapping is a
+        // misconfiguration that cannot be safely issued, so it fails the request instead of silently extending
+        // the refresh expiration.
+        AccessTokenResponse tokenResponse = authzCodeFlow();
+        assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
+
+        Oid4vcCredentialResponse credResponse = wallet.credentialRequest(ctx, tokenResponse.getAccessToken())
+                .credentialIdentifier(ctx.getAuthorizedCredentialIdentifier())
+                .send();
+        assertEquals(HttpStatus.SC_BAD_REQUEST, credResponse.getStatusCode());
+        assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(), credResponse.getError());
+        assertTrue(credResponse.getErrorDescription().contains("Claim name 'exp' is reserved and must not be used by this OID4VC mapper"),
+                "Issuance rejection should report the reserved claim, but was: " + credResponse.getErrorDescription());
     }
 
     /**

@@ -164,13 +164,17 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         }
 
         if (!OIDCAttributeMapperHelper.isMultivalued(model)) {
-            return organizations.get(0).getAlias();
+            OrganizationModel org = organizations.get(0);
+            if (!isEligibleForClaim(org, user)) {
+                return null;
+            }
+            return org.getAlias();
         }
 
         Map<String, Map<String, Object>> value = new HashMap<>();
 
         for (OrganizationModel o : organizations) {
-            if (o == null || !o.isEnabled() || user == null || !o.isMember(user)) {
+            if (!isEligibleForClaim(o, user)) {
                 continue;
             }
 
@@ -203,6 +207,10 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         }
 
         return value.keySet();
+    }
+
+    private static boolean isEligibleForClaim(OrganizationModel org, UserModel user) {
+        return org != null && org.isEnabled() && user != null && org.isMember(user);
     }
 
     private static boolean isJsonType(ProtocolMapperModel model) {

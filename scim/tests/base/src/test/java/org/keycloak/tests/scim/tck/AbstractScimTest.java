@@ -113,6 +113,7 @@ public abstract class AbstractScimTest {
                 .clientId(clientId)
                 .secret("secret")
                 .serviceAccountsEnabled(true)
+                .fullScopeEnabled(false)
                 .protocolMappers(createScimAudienceMapper(realm))
                 .enabled(true)
                 .build();

@@ -20,8 +20,11 @@ package org.keycloak.storage.ldap;
 import java.net.URI;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.naming.NamingException;
@@ -50,6 +53,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.resources.admin.ComponentResource;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
@@ -60,6 +64,7 @@ import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
+import org.keycloak.storage.ldap.idm.store.ldap.LDAPUtil;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
@@ -331,6 +336,50 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         if (config.getId() == null) {
             // the ldap component is being created, use short id for ldap components
             config.setId(KeycloakModelUtils.generateShortId());
+        } else {
+            // Updating an existing LDAP provider - check if the connection URL changed while
+            // the bind credential was not re-entered (auto-preserved via SECRET_VALUE placeholder or omitted).
+            // This prevents credentials from being silently sent to a different server.
+            validateBindCredentialOnUrlChange(session, realm, config, cfg);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void validateBindCredentialOnUrlChange(KeycloakSession session, RealmModel realm,
+                                                   ComponentModel config, LDAPConfig cfg) {
+        ComponentModel oldComponent = realm.getComponent(config.getId());
+        if (oldComponent == null) {
+            return;
+        }
+
+        // Skip only when both sides use anonymous auth AND the old component has no stored credential.
+        // AUTH_TYPE_NONE alone is not enough: a component can carry a credential in its config even
+        // when auth type is none, which could be silently reused after a URL change + auth-type switch.
+        LDAPConfig oldCfg = new LDAPConfig(oldComponent.getConfig());
+        boolean bothAnonymous = LDAPConstants.AUTH_TYPE_NONE.equals(cfg.getAuthType())
+                && LDAPConstants.AUTH_TYPE_NONE.equals(oldCfg.getAuthType());
+        if (bothAnonymous && oldComponent.getConfig().getFirst(LDAPConstants.BIND_CREDENTIAL) == null) {
+            return;
+        }
+
+        Set<String> secretPlaceholderFields = session.getAttribute(
+                ComponentResource.SECRET_PLACEHOLDER_FIELDS_ATTR, Set.class);
+        if (secretPlaceholderFields == null || !secretPlaceholderFields.contains(LDAPConstants.BIND_CREDENTIAL)) {
+            // Bind credential was explicitly provided (not a SECRET_VALUE placeholder), no risk.
+            return;
+        }
+
+        String oldUrl = oldComponent.getConfig().getFirst(LDAPConstants.CONNECTION_URL);
+        String newUrl = config.getConfig().getFirst(LDAPConstants.CONNECTION_URL);
+        if (!LDAPUtil.checkLdapConnectionUrlsMatch(oldUrl, newUrl)) {
+            throw new ComponentValidationException("ldapErrorCredentialReentryRequiredOnUrlChange");
+        }
+
+        String oldBindDn = oldComponent.getConfig().getFirst(LDAPConstants.BIND_DN);
+        String newBindDn = config.getConfig().getFirst(LDAPConstants.BIND_DN);
+        if (!Objects.equals(oldBindDn == null ? null : oldBindDn.toLowerCase(Locale.ROOT),
+                            newBindDn == null ? null : newBindDn.toLowerCase(Locale.ROOT))) {
+            throw new ComponentValidationException("ldapErrorCredentialReentryRequiredOnUrlChange");
         }
     }
 

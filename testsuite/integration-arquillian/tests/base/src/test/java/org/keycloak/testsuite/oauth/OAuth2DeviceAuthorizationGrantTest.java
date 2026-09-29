@@ -1039,6 +1039,26 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         Assertions.assertEquals(Errors.INVALID_CLIENT, response.getError());
         Assertions.assertEquals("Invalid client or Invalid client credentials", response.getErrorDescription());
     }
+
+    @Test
+    public void testDeviceFlowInvalidScopeAndResource() throws Exception {
+        oauth.realm(REALM_NAME);
+        oauth.client(DEVICE_APP_PUBLIC);
+
+        // 1. Test failing flow due to an invalid/unsupported scope
+        DeviceAuthorizationResponse scopeResponse;
+        try {
+            oauth.scope("service_account");
+            scopeResponse = oauth.device().doDeviceAuthorizationRequest();
+        } finally {
+            oauth.scope(null); // Reset scope for subsequent tests
+        }
+
+        Assertions.assertEquals(400, scopeResponse.getStatusCode());
+        Assertions.assertEquals("invalid_scope", scopeResponse.getError());
+        Assertions.assertTrue(scopeResponse.getErrorDescription().toLowerCase().contains("invalid scope"));
+    }
+
     @Test
     public void testClientWithErrors() throws Exception {
         try {

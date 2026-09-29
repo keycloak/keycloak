@@ -261,6 +261,40 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
     }
 
     @Test
+    public void testClientUpdateSourceHostsConditionWildcardDomain() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Wildcard Domain Profile")
+                        .addExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
+                                createSecureClientAuthenticatorExecutorConfig(List.of(JWTClientAuthenticator.PROVIDER_ID), null)
+                        )
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // the request comes from localhost, and "*.localhost" matches the domain
+        updateWildcardDomainPolicy("localhost");
+        ClientPolicyException e = Assertions.assertThrows(ClientPolicyException.class,
+                () -> createClientByAdmin(generateSuffixedName(CLIENT_NAME), (ClientRepresentation clientRep) -> clientRep.setSecret("secret")));
+        assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getMessage());
+
+        // "*.host" only matches "host" and its subdomains, not any host name ending with it like localhost
+        updateWildcardDomainPolicy("host");
+        createClientByAdmin(generateSuffixedName(CLIENT_NAME), (ClientRepresentation clientRep) -> clientRep.setSecret("secret"));
+    }
+
+    private void updateWildcardDomainPolicy(String domain) throws Exception {
+        String json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Wildcard Domain Policy", Boolean.TRUE)
+                        .addCondition(ClientUpdaterSourceHostsConditionFactory.PROVIDER_ID,
+                                createClientUpdateSourceHostsConditionConfig(List.of("*." + domain)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+    }
+
+    @Test
     public void testClientUpdateSourceGroupsCondition() throws Exception {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(

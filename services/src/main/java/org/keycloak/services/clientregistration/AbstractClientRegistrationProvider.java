@@ -48,12 +48,15 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.ClientNodeRegistrationContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisteredContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdatedContext;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
@@ -93,6 +96,14 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         RegistrationAuth registrationAuth = auth.requireCreate(context);
 
         try {
+
+            if (client.getRegisteredNodes() != null && !client.getRegisteredNodes().isEmpty()) {
+                session.clientPolicy().triggerOnEvent(
+                        new ClientNodeRegistrationContext(null,
+                                List.copyOf(client.getRegisteredNodes().keySet()),
+                                ClientPolicyEvent.REGISTER_NODE));
+            }
+
             ClientModel clientModel = ClientManager.createClient(session, realm, client);
 
             if (client.getDefaultRoles() != null) {
@@ -164,6 +175,10 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             rep.setSecret(client.getSecret());
         }
 
+        if (auth.isViewOnly()) {
+            StripSecretsUtils.stripClient(rep);
+        }
+
         if (auth.isRegistrationAccessToken()) {
             String registrationAccessToken = ClientRegistrationTokenUtils.updateTokenSignature(session, auth);
             rep.setRegistrationAccessToken(registrationAccessToken);
@@ -202,8 +217,22 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
                 );
             }
         }
-
         ClientResource.updateClientServiceAccount(session, client, rep.isServiceAccountsEnabled());
+
+        try {
+            if (rep.getRegisteredNodes() != null && !rep.getRegisteredNodes().isEmpty()) {
+                session.clientPolicy().triggerOnEvent(
+                        new ClientNodeRegistrationContext(client,
+                                List.copyOf(rep.getRegisteredNodes().keySet()),
+                                ClientPolicyEvent.REGISTER_NODE));
+            }
+        } catch (ClientPolicyException e) {
+            throw new ErrorResponseException(
+                    e.getError(),
+                    e.getErrorDetail(),
+                    Response.Status.BAD_REQUEST);
+        }
+
         RepresentationToModel.updateClient(rep, client, session);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
         RepresentationToModel.updateClientScopes(rep, client);

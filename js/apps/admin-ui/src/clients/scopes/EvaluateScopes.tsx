@@ -2,6 +2,7 @@ import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/
 import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   HelpItem,
   KeycloakDataTable,
@@ -168,7 +169,11 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
 
   const form = useForm();
   const { watch } = form;
+  const selectedUser: string[] | undefined = watch("user");
   const selectedAudience: string[] = watch("targetAudience");
+  const evaluatedUser: UserRepresentation | undefined = selectedUser?.length
+    ? { id: selectedUser[0] }
+    : undefined;
 
   const { hasAccess } = useAccess();
   const hasViewUsers = hasAccess("view-users");
@@ -182,12 +187,23 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   useFetch(
     async () => {
       const scope = selected.join(" ");
-      const effectiveRoles = await adminClient.clients.evaluatePermission({
-        id: clientId,
-        roleContainer: realm,
-        scope,
-        type: "granted",
-      });
+
+      const [realmRoles, clientRoles] = await Promise.all([
+        adminClient.clients.evaluatePermission({
+          id: clientId,
+          roleContainer: realm,
+          scope,
+          type: "granted",
+        }),
+        adminClient.clients.evaluatePermission({
+          id: clientId,
+          roleContainer: clientId,
+          scope,
+          type: "granted",
+        }),
+      ]);
+
+      const effectiveRoles = [...realmRoles, ...clientRoles];
 
       const mapperList = (await adminClient.clients.evaluateListProtocolMapper({
         id: clientId,
@@ -218,8 +234,8 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   useFetch(
     async () => {
       const scope = selected.join(" ");
-      const user = form.getValues("user");
-      if (user.length === 0) {
+      const userId = evaluatedUser?.id;
+      if (!userId) {
         return [];
       }
       const audience = selectedAudience.join(" ");
@@ -228,18 +244,18 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
         return await Promise.all([
           adminClient.clients.evaluateGenerateAccessToken({
             id: clientId,
-            userId: user[0],
+            userId,
             scope,
             audience,
           }),
           adminClient.clients.evaluateGenerateUserInfo({
             id: clientId,
-            userId: user[0],
+            userId,
             scope,
           }),
           adminClient.clients.evaluateGenerateIdToken({
             id: clientId,
-            userId: user[0],
+            userId,
             scope,
           }),
         ]);
@@ -249,7 +265,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
         return await Promise.all([
           adminClient.clients.evaluateGenerateSamlResponse({
             id: clientId,
-            userId: user[0],
+            userId,
             scope,
           }),
         ]);
@@ -269,7 +285,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
         setSamlResponse(generatedSamlResponse as any);
       }
     },
-    [form.getValues("user"), selected, selectedAudience],
+    [selectedUser, selected, selectedAudience],
   );
 
   return (
@@ -386,7 +402,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             >
               <GeneratedCodeTab
                 text={accessToken}
-                user={form.getValues("user")}
+                user={evaluatedUser}
                 label="generatedAccessToken"
               />
             </TabContent>
@@ -401,7 +417,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             >
               <GeneratedCodeTab
                 text={idToken}
-                user={form.getValues("user")}
+                user={evaluatedUser}
                 label="generatedIdToken"
               />
             </TabContent>
@@ -416,7 +432,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             >
               <GeneratedCodeTab
                 text={userInfo}
-                user={form.getValues("user")}
+                user={evaluatedUser}
                 label="generatedUserInfo"
               />
             </TabContent>
@@ -432,7 +448,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             >
               <GeneratedCodeTab
                 text={samlResponse}
-                user={form.getValues("user")}
+                user={evaluatedUser}
                 label="generatedSamlResponse"
               />
             </TabContent>

@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,7 +37,40 @@ public final class ThemeResourcesParser {
     private static final Pattern RESOURCE_KEY = Pattern.compile("^(styles|stylesCommon|scripts|favicons)\\.([^.]+)$");
     private static final Pattern ATTRIBUTE_KEY = Pattern.compile("^(styles|stylesCommon|scripts|favicons)\\.([^.]+)\\.(.+)$");
 
+    private record ResourceKeyMatch(String type, String id) {}
+    private record AttributeKeyMatch(String type, String id, String attribute) {}
+
+    private static final ResourceKeyMatch RESOURCE_NO_MATCH = new ResourceKeyMatch(null, null);
+    private static final AttributeKeyMatch ATTRIBUTE_NO_MATCH = new AttributeKeyMatch(null, null, null);
+
+    /**
+     * Caches regex match results keyed by property name string, so each key is matched at most once.
+     * Avoids allocating a new {@link Matcher} on every call to {@link #parseType}, which otherwise
+     * creates ~960 short-lived Matchers per page render (4 types × 2 patterns × ~120 properties),
+     * almost all of which don't match. The number of distinct keys is bounded by the set of property
+     * names across all installed themes — typically a few hundred at most — so no eviction is needed.
+     */
+    private static final Map<String, ResourceKeyMatch> RESOURCE_KEY_MATCHES = new ConcurrentHashMap<>();
+    private static final Map<String, AttributeKeyMatch> ATTRIBUTE_KEY_MATCHES = new ConcurrentHashMap<>();
+
     private ThemeResourcesParser() {
+    }
+
+    private static ResourceKeyMatch matchResourceKey(String key) {
+        return RESOURCE_KEY_MATCHES.computeIfAbsent(key, k -> {
+            Matcher m = RESOURCE_KEY.matcher(k);
+            if (!m.matches() || "order".equals(m.group(2))) {
+                return RESOURCE_NO_MATCH;
+            }
+            return new ResourceKeyMatch(m.group(1), m.group(2));
+        });
+    }
+
+    private static AttributeKeyMatch matchAttributeKey(String key) {
+        return ATTRIBUTE_KEY_MATCHES.computeIfAbsent(key, k -> {
+            Matcher m = ATTRIBUTE_KEY.matcher(k);
+            return m.matches() ? new AttributeKeyMatch(m.group(1), m.group(2), m.group(3)) : ATTRIBUTE_NO_MATCH;
+        });
     }
 
     public static ThemeResources parse(Properties properties) {
@@ -71,29 +105,25 @@ public final class ThemeResourcesParser {
 
         Map<String, ThemeResourceDescriptor.Builder> builders = new HashMap<>();
         for (String key : properties.stringPropertyNames()) {
-            Matcher matcher = RESOURCE_KEY.matcher(key);
-            if (!matcher.matches() || !matcher.group(1).equals(type)) {
-                continue;
-            }
-            String id = matcher.group(2);
-            if ("order".equals(id)) {
+            ResourceKeyMatch match = matchResourceKey(key);
+            if (match == RESOURCE_NO_MATCH || !match.type().equals(type)) {
                 continue;
             }
             String path = properties.getProperty(key);
             if (path == null || path.isBlank()) {
                 continue;
             }
-            builders.put(id, ThemeResourceDescriptor.builder(path));
+            builders.put(match.id(), ThemeResourceDescriptor.builder(path));
         }
 
         for (String key : properties.stringPropertyNames()) {
-            Matcher matcher = ATTRIBUTE_KEY.matcher(key);
-            if (!matcher.matches() || !matcher.group(1).equals(type)) {
+            AttributeKeyMatch match = matchAttributeKey(key);
+            if (match == ATTRIBUTE_NO_MATCH || !match.type().equals(type)) {
                 continue;
             }
-            ThemeResourceDescriptor.Builder builder = builders.get(matcher.group(2));
+            ThemeResourceDescriptor.Builder builder = builders.get(match.id());
             if (builder != null) {
-                builder.attribute(matcher.group(3), properties.getProperty(key));
+                builder.attribute(match.attribute(), properties.getProperty(key));
             }
         }
 

@@ -56,6 +56,14 @@ export async function clickDeleteRow(page: Page, flowName: string) {
   await page.getByTestId(`${flowName}-delete`).click();
 }
 
+export async function openExecutionConfig(page: Page, name: string) {
+  await page
+    .getByRole("row")
+    .filter({ has: page.getByTestId(name) })
+    .getByRole("button", { name: "Settings" })
+    .click();
+}
+
 export async function assertRowExists(page: Page, name: string, exists = true) {
   const locator = page.getByTestId(name);
   if (exists) {

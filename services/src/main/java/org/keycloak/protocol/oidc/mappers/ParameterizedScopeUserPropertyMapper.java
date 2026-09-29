@@ -52,7 +52,7 @@ public class ParameterizedScopeUserPropertyMapper extends ParameterizedScopeMapp
 
     @Override
     public String getHelpText() {
-        return "Resolves a user from a parameterized scope parameter (username) and maps a user attribute or property to a token claim.";
+        return "Resolves a user from a parameterized scope parameter (username, or email when the realm allows login with email) and maps a user attribute or property to a token claim.";
     }
 
     @Override
@@ -73,7 +73,7 @@ public class ParameterizedScopeUserPropertyMapper extends ParameterizedScopeMapp
 
         List<Object> resolvedValues = new ArrayList<>();
         for (String parameterValue : parameterValues) {
-            UserModel targetUser = keycloakSession.users().getUserByUsername(realm, parameterValue);
+            UserModel targetUser = UsernameScopeType.findUser(keycloakSession, realm, parameterValue);
             if (targetUser == null) {
                 continue;
             }

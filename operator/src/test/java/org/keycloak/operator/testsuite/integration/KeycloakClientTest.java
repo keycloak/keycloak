@@ -46,6 +46,7 @@ import org.keycloak.operator.crds.v2beta1.deployment.spec.TruststoreBuilder;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
@@ -137,16 +138,16 @@ public class KeycloakClientTest extends BaseOperatorTest {
     @Test
     @DisabledIfApiServerTest
     public void testBasicOIDCClientCreationAndDeletionHttp() throws InterruptedException {
-        helpTestBasicOIDCClientCreationAndDeletion(false);
+        helpTestBasicOIDCClientCreationAndDeletion(false, true);
     }
 
     @Test
     @DisabledIfApiServerTest
     public void testBasicOIDCClientCreationAndDeletionHttps() throws InterruptedException {
-        helpTestBasicOIDCClientCreationAndDeletion(true);
+        helpTestBasicOIDCClientCreationAndDeletion(true, false);
     }
 
-    public void helpTestBasicOIDCClientCreationAndDeletion(boolean https) throws InterruptedException {
+    public void helpTestBasicOIDCClientCreationAndDeletion(boolean https, boolean missingSecret) throws InterruptedException {
         var kc = getTestDeployment(false);
         deployKeycloakWithAdminApiV2(https, kc);
         String addressOverride = createNodePort(https, kc);
@@ -160,6 +161,11 @@ public class KeycloakClientTest extends BaseOperatorTest {
                 .endMetadata().withNewSpec().withRealm("master").withKeycloakCRName(deploymentName).withNewClient()
                 .withAuth(auth)
                 .withEnabled(true).endClient().endSpec().build();
+        
+        if (!missingSecret) { // try with missing annotation instead
+            K8sUtils.set(k8sclient, new SecretBuilder().withNewMetadata().withName(CLIENT_SECRET).endMetadata()
+                    .addToStringData("secret", "1234567890").build());
+        }
 
         K8sUtils.set(k8sclient, client);
 
@@ -169,20 +175,23 @@ public class KeycloakClientTest extends BaseOperatorTest {
                                 && KeycloakClientStatusCondition.HAS_ERRORS.equals(c.getType())
                                 && c.getMessage().contains(CLIENT_SECRET))).isPresent());
 
-        K8sUtils.set(k8sclient, new SecretBuilder().withNewMetadata().withName(CLIENT_SECRET).endMetadata()
+        K8sUtils.set(k8sclient, new SecretBuilder().withNewMetadata().withName(CLIENT_SECRET).addToLabels(Constants.KEYCLOAK_KIND_ANNOTATION, HasMetadata.getKind(KeycloakOIDCClient.class)).endMetadata()
                 .addToStringData("secret", "1234567890").build());
 
         Awaitility.await()
                 .until(() -> k8sclient.resource(client).get().getStatus().getConditions().stream()
                         .noneMatch(c -> Boolean.TRUE.equals(c.getStatus())
                                 && KeycloakClientStatusCondition.HAS_ERRORS.equals(c.getType())));
-
+        
         try (var adminClient = KeycloakClientBaseController.getAdminClient(k8sclient, kc, addressOverride)) {
             Awaitility.await().until(() -> adminClient.realm("master").clients().findAll().stream().anyMatch(cr -> cr.getClientId().equals(clientName)));
 
             KeycloakClientStatus status = k8sclient.resource(client).get().getStatus();
             String clientUuid = adminClient.realm("master").clients().findByClientId(clientName).get(0).getId();
             assertThat(status.getUuid(), is(clientUuid));
+            
+            K8sUtils.set(k8sclient, new SecretBuilder().withNewMetadata().withName(CLIENT_SECRET).endMetadata()
+                    .addToStringData("secret", "1234567890").build());
 
             k8sclient.resource(client).withTimeout(10, TimeUnit.SECONDS).delete();
 

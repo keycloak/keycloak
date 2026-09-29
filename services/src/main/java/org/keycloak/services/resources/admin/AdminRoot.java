@@ -17,6 +17,7 @@
 package org.keycloak.services.resources.admin;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.Properties;
 
 import jakarta.ws.rs.ForbiddenException;
@@ -67,6 +68,8 @@ import org.jboss.logging.Logger;
 @Provider
 @Path("/admin")
 public class AdminRoot {
+    private static final String ADMIN_AUTH_KEY = "AdminRoot.adminAuth";
+
     protected static final Logger logger = Logger.getLogger(AdminRoot.class);
 
     protected TokenManager tokenManager;
@@ -178,6 +181,9 @@ public class AdminRoot {
         return new AdminConsole(session);
     }
 
+    public static Optional<AdminAuth> getRealmAdminAuth(KeycloakSession session) {
+        return Optional.ofNullable(session.getAttribute(ADMIN_AUTH_KEY, AdminAuth.class));
+    }
 
     public static AdminAuth authenticateRealmAdminRequest(KeycloakSession session) {
         HttpHeaders headers = session.getContext().getRequestHeaders();
@@ -212,7 +218,9 @@ public class AdminRoot {
 
         session.getContext().setBearerToken(authResult.token());
 
-        return new AdminAuth(realm, authResult.token(), authResult.user(), authResult.client());
+        AdminAuth result = new AdminAuth(realm, authResult.token(), authResult.user(), authResult.client());
+        session.setAttribute(ADMIN_AUTH_KEY, result);
+        return result;
     }
 
     public static UriBuilder realmsUrl(UriInfo uriInfo) {

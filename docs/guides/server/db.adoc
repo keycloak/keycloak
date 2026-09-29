@@ -424,12 +424,12 @@ SET GLOBAL binlog_format = 'ROW';
 
 Alternatively, update the MySQL or MariaDB configuration file (`my.cnf` / `my.ini`) to make the change persistent across database restarts.
 
-[#mariadb-galera-cluster-considerations]
-=== MariaDB Galera Cluster
+[#galera-cluster-considerations]
+=== Galera Cluster
 
-WARNING: MariaDB Galera Cluster is not a supported database configuration for {project_name}. The guidance in this section is provided on a best-effort basis. Before reporting bugs, reproduce them with a supported database configuration first.
+WARNING: Galera Cluster is not a supported database configuration for {project_name}. The guidance in this section is provided on a best-effort basis. Before reporting bugs, reproduce them with a supported database configuration first.
 
-MariaDB Galera Cluster uses certification-based replication.
+Galera Cluster uses certification-based replication.
 The `transaction_isolation` setting configured by {project_name} has no practical effect on Galera, as Galera internally operates under its own Snapshot Isolation model regardless of the configured isolation level.
 
 On a multi-writer Galera setup, concurrent write transactions on different nodes that modify the same row can trigger certification failures.

@@ -117,6 +117,7 @@ export async function createKubernetesProvider(
   issuerUrl: string,
 ) {
   await clickProviderCard(page, providerName);
+  await expect(page.getByTestId("config.issuer")).toBeEnabled();
   await page.getByTestId("config.issuer").fill(issuerUrl);
   await clickAddButton(page);
 }
@@ -197,6 +198,9 @@ export async function clickSaveMapper(page: Page) {
   const saveMapperButton = page.getByTestId("new-mapper-save-button");
   await expect(saveMapperButton).toBeEnabled();
   await saveMapperButton.click();
+  // The add-mapper page is itself /mappers/create, so wait until the save has
+  // navigated away from it before deciding where we are.
+  await expect(page).not.toHaveURL(/\/mappers\/create$/);
   await expect(page).toHaveURL(/.*mappers(\/[^/]+)?$/);
 
   // Some mapper forms stay on /mappers/:id after save. Navigate back to the list

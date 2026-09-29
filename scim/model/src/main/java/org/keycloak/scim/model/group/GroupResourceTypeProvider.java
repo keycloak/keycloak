@@ -41,12 +41,12 @@ import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
 import org.keycloak.scim.protocol.ForbiddenException;
-import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.group.Member;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
 import org.keycloak.scim.resource.spi.MembershipChange;
+import org.keycloak.scim.resource.spi.SearchOptions;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -72,7 +72,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     }
 
     @Override
-    public Group onCreate(Group group) {
+    protected Group onCreate(Group group) {
         RealmModel realm = session.getContext().getRealm();
         GroupModel model = session.groups().createGroup(realm, group.getDisplayName());
         populate(model, group);
@@ -133,7 +133,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     }
 
     @Override
-    protected Stream<GroupModel> getModels(SearchRequest searchRequest) {
+    protected Stream<GroupModel> getModels(SearchOptions searchRequest) {
         RealmModel realm = session.getContext().getRealm();
 
         ScimFilterParser.FilterContext filterContext = searchRequest.getFilterContext();
@@ -157,7 +157,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     }
 
     @Override
-    public Long count(SearchRequest searchRequest, int resourceSize) {
+    public Long count(SearchOptions searchRequest, int resourceSize) {
         if (resourceSize < searchRequest.getCount() && (resourceSize > 0 || searchRequest.getStartIndex() == 1)) {
             return (long) (searchRequest.getStartIndex() - 1 + resourceSize);
         }
@@ -246,7 +246,11 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, Root<?> root, Subquery<?> subquery) {
         if ("members".equals(attribute.getName())) {
             Root<UserGroupMembershipEntity> membership = subquery.from(UserGroupMembershipEntity.class);
-            subquery.where(cb.equal(membership.get("groupId"), root.get("id")));
+            // Service accounts are not exposed as SCIM group members, so exclude them from all member
+            // filters (eq, ne, pr, ...) to keep the filter path consistent with member serialization.
+            subquery.where(cb.and(
+                    cb.equal(membership.get("groupId"), root.get("id")),
+                    cb.isNull(membership.get("user").get("serviceAccountClientLink"))));
             return membership.get("user").get("id");
         }
         return null;

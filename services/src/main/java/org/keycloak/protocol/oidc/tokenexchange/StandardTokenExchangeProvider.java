@@ -50,6 +50,8 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.TokenExchangeResponseContext;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.util.DPoPUtil;
@@ -339,6 +341,16 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                 responseBuilder.generateRefreshToken();
             }
 
+            try {
+                session.clientPolicy().triggerOnEvent(new TokenExchangeResponseContext(formParams, clientSessionCtx, responseBuilder));
+            } catch (ClientPolicyException cpe) {
+                event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+                event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+                event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+                event.error(cpe.getError());
+                throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+            }
+
             AccessTokenResponse res;
             if (OAuth2Constants.ID_TOKEN_TYPE.equals(requestedTokenType)) {
                 // Using the id-token inside "access_token" parameter as per description of "access_token" parameter under https://datatracker.ietf.org/doc/html/rfc8693#name-successful-response
@@ -359,6 +371,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
             if (responseBuilder.getAccessToken().getAudience() != null) {
                 event.detail(Details.AUDIENCE, CollectionUtil.join(List.of(responseBuilder.getAccessToken().getAudience()), " "));
             }
+
             event.success();
 
             return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));

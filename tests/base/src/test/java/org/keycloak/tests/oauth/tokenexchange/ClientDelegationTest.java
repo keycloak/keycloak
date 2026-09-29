@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
@@ -21,6 +23,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -295,6 +298,47 @@ public class ClientDelegationTest {
 
     @Test
     public void clientIdMismatchOnExchange() {
+        replaceMayActClientIdMapper("wrong-client", "String");
+
+        AccessTokenResponse res = loginWithDelegation(AGENT_DELEGATION_SCOPE);
+        assertScopeContains(res.getScope(), AGENT_DELEGATION_SCOPE);
+
+        // actor token is from agent-app (azp = "agent-app") but may_act.client_id is "wrong-client"
+        String actorToken = getActorToken();
+        ExpectedActor clientActor = new ExpectedActor(Details.ACTOR_TYPE_CLIENT, AGENT_CLIENT_ID, getServiceAccountUserId());
+        assertTokenExchangeError(AGENT_CLIENT_ID, AGENT_CLIENT_SECRET, res.getAccessToken(), actorToken,
+                AGENT_CLIENT_ID, "Actor token client does not match the client_id in the may_act claim", clientActor);
+
+        logout(res.getRefreshToken());
+    }
+
+    @Test
+    public void nonStringClientIdOnExchange() {
+        // a non-string client_id is a malformed may_act claim and must not silently skip the client binding checks
+        replaceMayActClientIdMapper("12345", "int");
+
+        AccessTokenResponse res = loginWithDelegation(AGENT_DELEGATION_SCOPE);
+        assertScopeContains(res.getScope(), AGENT_DELEGATION_SCOPE);
+
+        String actorToken = getActorToken();
+        ExpectedActor clientActor = new ExpectedActor(Details.ACTOR_TYPE_CLIENT, AGENT_CLIENT_ID, getServiceAccountUserId());
+
+        // the client named in the claim cannot complete the exchange...
+        assertTokenExchangeError(AGENT_CLIENT_ID, AGENT_CLIENT_SECRET, res.getAccessToken(), actorToken,
+                AGENT_CLIENT_ID, "Invalid may_act claim in the subject_token", clientActor);
+
+        // ... and neither can any other client
+        assertTokenExchangeError(TEST_CLIENT_ID, TEST_CLIENT_SECRET, res.getAccessToken(), actorToken,
+                TEST_CLIENT_ID, "Invalid may_act claim in the subject_token", clientActor);
+
+        logout(res.getRefreshToken());
+    }
+
+    /**
+     * Replaces the built-in {@code may_act.client_id} mapper of the delegation client scope with a hardcoded
+     * claim mapper producing the given value and JSON type.
+     */
+    private void replaceMayActClientIdMapper(String claimValue, String jsonType) {
         String clientDelegationScopeId = findClientDelegationScopeId();
 
         // Remove the original client_id mapper so the hardcoded one takes effect
@@ -308,37 +352,25 @@ public class ClientDelegationTest {
         realm.cleanup().add(r -> r.clientScopes().get(clientDelegationScopeId)
                 .getProtocolMappers().createMapper(originalMapper));
 
-        // Add a hardcoded claim mapper that sets may_act.client_id to a wrong value
-        ProtocolMapperRepresentation wrongClientIdMapper = new ProtocolMapperRepresentation();
-        wrongClientIdMapper.setName("wrong-client-id-mapper");
-        wrongClientIdMapper.setProtocol("openid-connect");
-        wrongClientIdMapper.setProtocolMapper("oidc-hardcoded-claim-mapper");
+        ProtocolMapperRepresentation clientIdMapper = new ProtocolMapperRepresentation();
+        clientIdMapper.setName("hardcoded-client-id-mapper");
+        clientIdMapper.setProtocol("openid-connect");
+        clientIdMapper.setProtocolMapper("oidc-hardcoded-claim-mapper");
         Map<String, String> config = new HashMap<>();
         config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "may_act.client_id");
-        config.put(HardcodedClaim.CLAIM_VALUE, "wrong-client");
-        config.put(OIDCAttributeMapperHelper.JSON_TYPE, "String");
+        config.put(HardcodedClaim.CLAIM_VALUE, claimValue);
+        config.put(OIDCAttributeMapperHelper.JSON_TYPE, jsonType);
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, Boolean.TRUE.toString());
-        wrongClientIdMapper.setConfig(config);
+        clientIdMapper.setConfig(config);
 
         String mapperId;
         try (var response = realm.admin().clientScopes().get(clientDelegationScopeId)
-                .getProtocolMappers().createMapper(wrongClientIdMapper)) {
+                .getProtocolMappers().createMapper(clientIdMapper)) {
             Assertions.assertEquals(201, response.getStatus(), "Mapper creation should succeed");
             mapperId = ApiUtil.getCreatedId(response);
         }
         realm.cleanup().add(r -> r.clientScopes().get(clientDelegationScopeId)
                 .getProtocolMappers().delete(mapperId));
-
-        AccessTokenResponse res = loginWithDelegation(AGENT_DELEGATION_SCOPE);
-        assertScopeContains(res.getScope(), AGENT_DELEGATION_SCOPE);
-
-        // actor token is from agent-app (azp = "agent-app") but may_act.client_id is "wrong-client"
-        String actorToken = getActorToken();
-        ExpectedActor clientActor = new ExpectedActor(Details.ACTOR_TYPE_CLIENT, AGENT_CLIENT_ID, getServiceAccountUserId());
-        assertTokenExchangeError(AGENT_CLIENT_ID, AGENT_CLIENT_SECRET, res.getAccessToken(), actorToken,
-                AGENT_CLIENT_ID, "Actor token client does not match the client_id in the may_act claim", clientActor);
-
-        logout(res.getRefreshToken());
     }
 
     @Test
@@ -373,19 +405,91 @@ public class ClientDelegationTest {
         logout(res.getRefreshToken());
     }
 
+    @Test
+    public void delegationDroppedWhenAgentClientRecreated() {
+        removeDelegationPermission();
+
+        String tempClientId = "temp-agent";
+        String tempClientSecret = "temp-agent-secret";
+
+        String tempClientUuid = createClient(tempClientId, tempClientSecret);
+        String originalServiceAccountId = getServiceAccountUserId(tempClientUuid);
+        ScopePermissionRepresentation oldPermission = addDelegationPermission(tempClientId, "Temp Agent Policy");
+
+        String scope = OIDCLoginProtocolFactory.CLIENT_DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + tempClientId;
+        AccessTokenResponse res = loginWithDelegation(scope, grants ->
+                MatcherAssert.assertThat(grants, Matchers.hasItem(Matchers.containsString("act on your behalf"))));
+
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), originalServiceAccountId, tempClientId);
+
+        // Refresh with the original client still in place - should succeed
+        res = oauth.scope(null).doRefreshTokenRequest(res.getRefreshToken());
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), originalServiceAccountId, tempClientId);
+
+        // Remove stale permission, delete the client and recreate with the same clientId (new UUID, new service account)
+        ClientResource adminPerms = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
+        adminPerms.authorization().permissions().scope().findById(oldPermission.getId()).remove();
+        realm.admin().clients().get(tempClientUuid).remove();
+        String newClientUuid = createClient(tempClientId, tempClientSecret);
+
+        String newServiceAccountId = getServiceAccountUserId(newClientUuid);
+        Assertions.assertNotEquals(originalServiceAccountId, newServiceAccountId, "Recreated client should have a different service account ID");
+
+        // Grant delegation permission to the new client so FGAP check still passes
+        addDelegationPermission(tempClientId, "New Temp Agent Policy");
+
+        // Refresh - FGAP passes but identity pinning detects the service account mismatch
+        res = oauth.scope(null).doRefreshTokenRequest(res.getRefreshToken());
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeNotContains(res.getScope(), scope);
+        assertMayActNotPresent(oauth.verifyToken(res.getAccessToken()));
+
+        // Revoke consent and re-authorize within the same SSO session;
+        // fresh auth clears the stale pin, so re-consent works with the new client identity
+        AccountHelper.revokeConsents(realm.admin(), USERNAME, oauth.getClientId());
+        res = loginWithDelegation(scope, grants ->
+                MatcherAssert.assertThat(grants, Matchers.hasItem(Matchers.containsString("act on your behalf"))), false);
+
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), newServiceAccountId, tempClientId);
+
+        // Refresh with the re-pinned identity should succeed
+        res = oauth.scope(null).doRefreshTokenRequest(res.getRefreshToken());
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), newServiceAccountId, tempClientId);
+
+        logout(res.getRefreshToken());
+    }
+
     private AccessTokenResponse loginWithDelegation(String scope) {
         return loginWithDelegation(USERNAME, scope, grants -> MatcherAssert.assertThat(grants,
                 Matchers.hasItem("Allow " + AGENT_CLIENT_ID + " to act on your behalf?")));
     }
 
     private AccessTokenResponse loginWithDelegation(String scope, Consumer<List<String>> grantsValidator) {
-        return loginWithDelegation(USERNAME, scope, grantsValidator);
+        return loginWithDelegation(USERNAME, scope, grantsValidator, true);
+    }
+
+    private AccessTokenResponse loginWithDelegation(String scope, Consumer<List<String>> grantsValidator, boolean fillLoginForm) {
+        return loginWithDelegation(USERNAME, scope, grantsValidator, fillLoginForm);
     }
 
     private AccessTokenResponse loginWithDelegation(String username, String scope, Consumer<List<String>> grantsValidator) {
+        return loginWithDelegation(username, scope, grantsValidator, true);
+    }
+
+    private AccessTokenResponse loginWithDelegation(String username, String scope, Consumer<List<String>> grantsValidator, boolean fillLoginForm) {
         oauth.client(TEST_CLIENT_ID, TEST_CLIENT_SECRET);
         oauth.scope(scope).openLoginForm();
-        oauth.fillLoginForm(username, PASSWORD);
+        if (fillLoginForm) {
+            oauth.fillLoginForm(username, PASSWORD);
+        }
         grantPage.assertCurrent();
         List<String> grants = grantPage.getDisplayedGrants();
         grantsValidator.accept(grants);
@@ -430,6 +534,27 @@ public class ClientDelegationTest {
 
     private String getServiceAccountUserId() {
         return agentApp.admin().getServiceAccountUser().getId();
+    }
+
+    private String getServiceAccountUserId(String clientUuid) {
+        return realm.admin().clients().get(clientUuid).getServiceAccountUser().getId();
+    }
+
+    private String createClient(String clientId, String clientSecret) {
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setClientId(clientId);
+        rep.setSecret(clientSecret);
+        rep.setServiceAccountsEnabled(true);
+        rep.setPublicClient(false);
+        rep.setEnabled(true);
+        rep.setAttributes(Map.of(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, Boolean.TRUE.toString()));
+        String uuid;
+        try (Response response = realm.admin().clients().create(rep)) {
+            uuid = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clients().findByClientId(clientId).stream()
+                .findFirst().ifPresent(c -> r.clients().get(c.getId()).remove()));
+        return uuid;
     }
 
     private void assertTokenExchangeSuccess(String subjectToken, String actorToken, String expectedActorId) {
@@ -498,8 +623,12 @@ public class ClientDelegationTest {
     }
 
     private ScopePermissionRepresentation addDelegationPermission() {
+        return addDelegationPermission(AGENT_CLIENT_ID, "Agent Client Policy");
+    }
+
+    private ScopePermissionRepresentation addDelegationPermission(String clientId, String policyName) {
         ClientResource adminPerms = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
-        ClientPolicyRepresentation policy = PermissionTestUtils.createClientPolicy(realm, adminPerms, "Agent Client Policy", AGENT_CLIENT_ID);
+        ClientPolicyRepresentation policy = PermissionTestUtils.createClientPolicy(realm, adminPerms, policyName, clientId);
         return PermissionTestUtils.createAllPermission(adminPerms, AdminPermissionsSchema.USERS_RESOURCE_TYPE, policy, Set.of(AdminPermissionsSchema.DELEGATE));
     }
 

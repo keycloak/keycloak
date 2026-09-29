@@ -51,7 +51,7 @@ public class KubernetesIdentityProvider implements ClientAssertionIdentityProvid
 
             KeyWrapper publicKey;
             try {
-                publicKey = keyStorage.getPublicKey(modelKey, kid, alg, new KubernetesJwksEndpointLoader(session, config.getIssuer()));
+                publicKey = keyStorage.getPublicKey(modelKey, kid, alg, new KubernetesJwksEndpointLoader(session, config.getIssuer(), config.getJwksUrl()));
             } catch (Exception e) {
                 // Indicative of an infrastructure/configuration and can't be
                 // triggered by a client - worth WARN visibility.

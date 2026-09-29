@@ -4,7 +4,6 @@ authz,3
 broker,2
 client,4
 cluster,IGNORED
-docker,4
 domainextension,4
 exportimport,4
 federation,5
@@ -18,7 +17,6 @@ policy,6
 saml,6
 script,6
 theme,6
-user,4
 util,4
 validation,6
 webauthn,IGNORED

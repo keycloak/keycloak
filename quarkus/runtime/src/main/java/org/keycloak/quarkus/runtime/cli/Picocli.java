@@ -88,7 +88,7 @@ public class Picocli {
 
     static final String PROVIDER_TIMESTAMP_ERROR = "A provider JAR was updated since the last build, please rebuild for this to be fully utilized.";
     static final String PROVIDER_TIMESTAMP_WARNING = "A provider jar has a different timestamp than when the optimized container image was created. If you are changing provider jars after the build, you must run another build to properly account for those modifications.";
-    static final String KC_PROVIDER_FILE_PREFIX = "kc.provider.file.";
+    public static final String KC_PROVIDER_FILE_PREFIX = "kc.provider.file.";
     public static final String ARG_PREFIX = "--";
     public static final String ARG_SHORT_PREFIX = "-";
     public static final String NO_PARAM_LABEL = "none";
@@ -376,7 +376,7 @@ public class Picocli {
         }
     }
 
-    static boolean timestampChanged(String oldValue, String newValue) {
+    public static boolean timestampChanged(String oldValue, String newValue) {
         long longNewValue = Long.valueOf(newValue);
         long longOldValue = Long.valueOf(oldValue);
         // docker commonly truncates to the second at runtime, so we'll allow that special case
@@ -873,7 +873,7 @@ public class Picocli {
         );
     }
 
-    private static void checkChangesInBuildOptions(TriConsumer<String, String, String> valueChanged) {
+    public void checkChangesInBuildOptions(TriConsumer<String, String, String> valueChanged) {
         var current = getNonPersistedBuildTimeOptions();
         var persisted = Configuration.getRawPersistedProperties();
 

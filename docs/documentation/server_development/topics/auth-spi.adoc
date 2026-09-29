@@ -1,6 +1,7 @@
 [[_auth_spi]]
 == Authentication SPI
 
+include::partial-private-spi.adoc[]
 
 {project_name} includes a range of different authentication mechanisms: kerberos, password, otp and others.
 These mechanisms may not meet all of your requirements and you may want to plug in your own custom ones.

@@ -50,6 +50,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -1257,15 +1258,12 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     @Test
     public void testAuthenticatingUsingBroker() {
         String idpAlias = organizationName + "-identity-provider";
-        OrganizationRepresentation orgRep = createOrganization(realm, organizationName,
-                createRealOrgBroker(idpAlias, providerRealm), organizationName + ".org");
-        OrganizationResource organization = realm.admin().organizations().get(orgRep.getId());
+        OrganizationResource organization = createOrganizationWithBroker(providerRealm, true, MembershipType.UNMANAGED);
 
         oauth.scope(OAuth2Constants.ORGANIZATION);
-        assertBrokerRegistration(organization, aliceFromProviderRealm.getUsername(), aliceFromProviderRealm.getEmail(),
+        UserRepresentation user = assertBrokerRegistration(organization, aliceFromProviderRealm.getUsername(), aliceFromProviderRealm.getEmail(),
                 oauth, loginUsernamePage, loginPage, loginUpdateProfilePage, providerRealm);
 
-        UserRepresentation user = getUserRepresentation(aliceFromProviderRealm.getEmail());
         List<FederatedIdentityRepresentation> federatedIdentities = realm.admin().users().get(user.getId()).getFederatedIdentity();
         assertEquals(1, federatedIdentities.size());
         assertEquals(idpAlias, federatedIdentities.get(0).getIdentityProvider());
