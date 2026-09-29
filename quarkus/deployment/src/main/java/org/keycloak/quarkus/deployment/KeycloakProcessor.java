@@ -36,13 +36,22 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Handler;
+import java.util.stream.Stream;
 
 import jakarta.inject.Singleton;
+import jakarta.persistence.Converter;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PersistenceUnitTransactionType;
 import jakarta.persistence.SharedCacheMode;
 import jakarta.persistence.ValidationMode;
@@ -145,9 +154,12 @@ import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.LogHandlerBuildItem;
 import io.quarkus.deployment.builditem.StaticInitConfigBuilderBuildItem;
+import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
+import io.quarkus.hibernate.orm.deployment.HibernateOrmConfigPersistenceUnit;
 import io.quarkus.hibernate.orm.deployment.JpaModelPersistenceUnitContributionBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationRuntimeConfiguredBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationStaticConfiguredBuildItem;
+import io.quarkus.hibernate.orm.deployment.spi.AdditionalJpaModelBuildItem;
 import io.quarkus.hibernate.orm.deployment.spi.AdditionalPersistenceUnitBuildItem;
 import io.quarkus.hibernate.orm.deployment.xml.QuarkusMappingFileParser;
 import io.quarkus.hibernate.orm.runtime.PersistenceUnitUtil;
@@ -177,10 +189,15 @@ import org.hibernate.cfg.JdbcSettings;
 import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
 import org.hibernate.jpa.boot.spi.PersistenceXmlParser;
 import org.infinispan.protostream.SerializationContextInitializer;
+import org.jboss.jandex.AnnotationInstance;
+import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.AnnotationTransformation;
+import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
+import org.jboss.jandex.IndexView;
 import org.jboss.jandex.MethodInfo;
+import org.jboss.jandex.Type;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.server.model.HandlerChainCustomizer;
 import org.jboss.resteasy.reactive.server.processor.scanning.MethodScanner;
@@ -191,6 +208,7 @@ import static org.keycloak.quarkus.runtime.Providers.getProviderManager;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.logging.KeycloakLogFilter.collectAllDefaultUnsupportedHibernateProperties;
+import static org.keycloak.quarkus.runtime.logging.KeycloakLogFilter.collectNamedUnitUnsupportedHibernateProperties;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUTHENTICATORS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAPPERS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.POLICIES;
@@ -205,6 +223,17 @@ class KeycloakProcessor {
     // listeners for the default PU MUST target this exact name, NOT KEYCLOAK_DEFAULT_PERSISTENCE_UNIT ("keycloak-default"),
     // which is only used by the legacy (test-only) DefaultJpaConnectionProviderFactory.
     private static final String QUARKUS_DEFAULT_PERSISTENCE_UNIT = PersistenceUnitUtil.DEFAULT_PERSISTENCE_UNIT_NAME;
+
+    private static final DotName JPA_ENTITY = DotName.createSimple(Entity.class);
+    private static final DotName JPA_MAPPED_SUPERCLASS = DotName.createSimple(MappedSuperclass.class);
+    // annotations of the classes the Hibernate ORM extension collects as JPA model classes
+    private static final List<DotName> JPA_MODEL_CLASS_ANNOTATIONS = List.of(JPA_ENTITY, JPA_MAPPED_SUPERCLASS,
+            DotName.createSimple(Embeddable.class), DotName.createSimple(Converter.class));
+    // annotations whose class value(s) the Hibernate ORM extension collects as JPA model classes
+    private static final List<DotName> JPA_MODEL_CLASS_REFERENCE_ANNOTATIONS = List.of(
+            DotName.createSimple(IdClass.class), DotName.createSimple(EntityListeners.class));
+    // class hierarchy members the Hibernate ORM extension does not collect as JPA model classes
+    private static final List<String> IGNORED_MODEL_HIERARCHY_PREFIXES = List.of("java.", "jakarta.persistence.", "org.hibernate.engine.spi.");
     private static final String KEYCLOAK_DEFAULT_PERSISTENCE_UNIT = "keycloak-default";
 
     // persistence.xml datasource properties: consumed to derive the datasource name (wired via
@@ -411,21 +440,44 @@ class KeycloakProcessor {
     @BuildStep
     @Consume(ProfileBuildItem.class)
     @Produce(ValidatePersistenceUnitsBuildItem.class)
-    void checkPersistenceUnits(List<AdditionalPersistenceUnitBuildItem> additionalPUs) {
+    void checkPersistenceUnits(List<AdditionalPersistenceUnitBuildItem> additionalPUs, HibernateOrmConfig hibernateOrmConfig) {
         if (Database.Vendor.TIDB.isOfKind(Configuration.getConfigValue(DB).getValue())) {
             if (!Profile.isFeatureEnabled(Profile.Feature.DB_TIDB)){
                 throw new RuntimeException("The feature TiDB is not enabled");
             }
         }
 
-        List<String> notSetPersistenceUnitsDBKinds = additionalPUs.stream()
-                .map(pu -> pu.getDataSourceName().orElse(pu.getPersistenceUnitName()))
+        validateConfiguredPersistenceUnits(hibernateOrmConfig).ifPresent(this::throwConfigError);
+
+        List<String> notSetPersistenceUnitsDBKinds = Stream.concat(
+                        additionalPUs.stream().map(pu -> pu.getDataSourceName().orElse(pu.getPersistenceUnitName())),
+                        hibernateOrmConfig.namedPersistenceUnits().keySet().stream())
+                .distinct()
                 .filter(this::missingDbKind)
                 .map(datasourceName -> PropertyMappers.getWildcardPropertyMapper(DatabaseOptions.DB_KIND).orElseThrow().getFrom(datasourceName)).toList();
 
         if (!notSetPersistenceUnitsDBKinds.isEmpty()) {
             throwConfigError("Detected additional named datasources without a DB kind set, please specify: %s".formatted(String.join(",", notSetPersistenceUnitsDBKinds)));
         }
+    }
+
+    /**
+     * Named persistence units defined through configuration are expected to be defined with
+     * {@code db-jpa-packages-<datasource>}, which names the unit after its datasource: the Keycloak database options
+     * of a datasource (e.g. {@code db-dialect-<datasource>}) configure the persistence unit of that name.
+     */
+    static Optional<String> validateConfiguredPersistenceUnits(HibernateOrmConfig hibernateOrmConfig) {
+        for (Map.Entry<String, HibernateOrmConfigPersistenceUnit> unit : new TreeMap<>(hibernateOrmConfig.namedPersistenceUnits()).entrySet()) {
+            String unitName = unit.getKey();
+            String datasource = unit.getValue().datasource().orElse(null);
+            if (!unitName.equals(datasource)) {
+                return Optional.of(("The persistence unit '%s' must use the datasource '%s' of the same name, but %s. "
+                        + "Define the persistence unit of a datasource with the '%s' option.")
+                        .formatted(unitName, unitName, datasource == null ? "no datasource is set" : "it uses the datasource '%s'".formatted(datasource),
+                                PropertyMappers.getWildcardPropertyMapper(DatabaseOptions.DB_JPA_PACKAGES).orElseThrow().getFrom(unitName)));
+            }
+        }
+        return Optional.empty();
     }
 
     /**
@@ -681,7 +733,8 @@ class KeycloakProcessor {
     }
 
     @BuildStep
-    void contributeStandaloneMappingFilesToDefaultPU(BuildProducer<JpaModelPersistenceUnitContributionBuildItem> producer) {
+    void contributeStandaloneMappingFilesToDefaultPU(BuildProducer<JpaModelPersistenceUnitContributionBuildItem> xmlProducer,
+                                                     BuildProducer<AdditionalJpaModelBuildItem> modelProducer) {
         try {
             PersistenceXmlParser parser = PersistenceXmlParser.create();
             List<URL> persistenceUrls = parser.getClassLoaderService().locateResources("META-INF/persistence.xml");
@@ -691,12 +744,16 @@ class KeycloakProcessor {
             }
 
             List<URL> ormXmlUrls = parser.getClassLoaderService().locateResources("META-INF/orm.xml");
-            for (URL ormUrl : ormXmlUrls) {
-                URL jarUrl = ArchiveHelper.getJarURLFromURLEntry(ormUrl, "META-INF/orm.xml");
-                if (jarUrl != null && !persistenceRootUrls.contains(jarUrl)) {
-                    logger.debugf("Found standalone orm.xml at %s. Contributing to default persistence unit.", ormUrl);
-                    producer.produce(new JpaModelPersistenceUnitContributionBuildItem(
-                            QUARKUS_DEFAULT_PERSISTENCE_UNIT, jarUrl, Collections.emptySet(), Set.of("META-INF/orm.xml")));
+            try (QuarkusMappingFileParser mappingParser = QuarkusMappingFileParser.create()) {
+                for (URL ormUrl : ormXmlUrls) {
+                    URL jarUrl = ArchiveHelper.getJarURLFromURLEntry(ormUrl, "META-INF/orm.xml");
+                    if (jarUrl != null && !persistenceRootUrls.contains(jarUrl)) {
+                        logger.debugf("Found standalone orm.xml at %s. Contributing to default persistence unit.", ormUrl);
+                        xmlProducer.produce(new JpaModelPersistenceUnitContributionBuildItem(
+                                QUARKUS_DEFAULT_PERSISTENCE_UNIT, jarUrl, Collections.emptySet(), Set.of("META-INF/orm.xml")));
+
+                        contributeXmlMappedModels(mappingParser, jarUrl, ormUrl, modelProducer);
+                    }
                 }
             }
         } catch (Exception e) {
@@ -704,11 +761,193 @@ class KeycloakProcessor {
         }
     }
 
+    private static void contributeXmlMappedModels(QuarkusMappingFileParser mappingParser, URL jarUrl, URL ormUrl,
+                                                  BuildProducer<AdditionalJpaModelBuildItem> modelProducer) {
+        try {
+            Optional<RecordableXmlMapping> mappingOptional = mappingParser.parse(QUARKUS_DEFAULT_PERSISTENCE_UNIT, jarUrl, "META-INF/orm.xml");
+            if (mappingOptional.isPresent() && mappingOptional.get().getOrmXmlRoot() != null) {
+                JaxbEntityMappingsImpl ormRoot = mappingOptional.get().getOrmXmlRoot();
+                String packagePrefix = ormRoot.getPackage() == null ? "" : ormRoot.getPackage() + ".";
+                if (ormRoot.getEntities() != null) {
+                    for (JaxbEntity entity : ormRoot.getEntities()) {
+                        String className = qualifyClassName(packagePrefix, entity.getClazz());
+                        if (className != null) {
+                            modelProducer.produce(new AdditionalJpaModelBuildItem(className, Set.of(QUARKUS_DEFAULT_PERSISTENCE_UNIT)));
+                        }
+                    }
+                }
+                if (ormRoot.getMappedSuperclasses() != null) {
+                    for (JaxbMappedSuperclass mappedSuperclass : ormRoot.getMappedSuperclasses()) {
+                        String className = qualifyClassName(packagePrefix, mappedSuperclass.getClazz());
+                        if (className != null) {
+                            modelProducer.produce(new AdditionalJpaModelBuildItem(className, Set.of(QUARKUS_DEFAULT_PERSISTENCE_UNIT)));
+                        }
+                    }
+                }
+                if (ormRoot.getEmbeddables() != null) {
+                    for (JaxbEmbeddable embeddable : ormRoot.getEmbeddables()) {
+                        String className = qualifyClassName(packagePrefix, embeddable.getClazz());
+                        if (className != null) {
+                            modelProducer.produce(new AdditionalJpaModelBuildItem(className, Set.of(QUARKUS_DEFAULT_PERSISTENCE_UNIT)));
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.warnf(e, "Failed to parse classes from standalone orm.xml at %s", ormUrl);
+        }
+    }
+
+    /**
+     * Assign the JPA model classes that Quarkus cannot assign to a persistence unit itself:
+     * <ul>
+     * <li>Model classes (entities, mapped superclasses, embeddables, converters, id classes, entity listeners) that no
+     * persistence unit claims, i.e. that are neither managed by a user persistence.xml unit nor within the packages of
+     * a configured unit, belong to the default unit. This keeps the entities of providers without a persistence.xml in
+     * the default unit now that it declares its packages.</li>
+     * <li>Superclasses and interfaces of a model class that are not in the index Quarkus assigns with, for example
+     * {@code org.keycloak.models} interfaces implemented by entities: Quarkus discovers them as model classes through
+     * the computing index, but its assignment stops at the first class it cannot resolve, and it would warn that no
+     * suitable persistence unit exists for them. They belong to the units of the model class.</li>
+     * </ul>
+     * Classes of user persistence.xml units are left to {@link #produceUserDefinedPersistenceUnits}; their hierarchy is
+     * assigned to their units.
+     */
+    @BuildStep
+    void assignUnclaimedModelClasses(CombinedIndexBuildItem indexBuildItem, HibernateOrmConfig hibernateOrmConfig,
+            List<AdditionalPersistenceUnitBuildItem> additionalPUs, BuildProducer<AdditionalJpaModelBuildItem> producer) {
+        Map<String, Set<String>> userUnitClasses = new HashMap<>();
+        for (AdditionalPersistenceUnitBuildItem pu : additionalPUs) {
+            for (String className : pu.getManagedClassNames()) {
+                userUnitClasses.computeIfAbsent(className, c -> new TreeSet<>()).add(pu.getPersistenceUnitName());
+            }
+        }
+
+        Map<String, Set<String>> packageRules = new HashMap<>();
+        for (Map.Entry<String, HibernateOrmConfigPersistenceUnit> unit : hibernateOrmConfig.persistenceUnits().entrySet()) {
+            for (String pkg : unit.getValue().packages().orElse(Set.of())) {
+                packageRules.computeIfAbsent(pkg, p -> new HashSet<>()).add(unit.getKey());
+            }
+        }
+
+        Map<String, Set<String>> assignments = new JpaModelAssignment(indexBuildItem.getIndex(), indexBuildItem.getComputingIndex(),
+                userUnitClasses, packageRules).compute();
+
+        logger.tracef("Assigning JPA model classes to persistence units: %s", assignments);
+        assignments.forEach((className, units) -> producer.produce(new AdditionalJpaModelBuildItem(className, units)));
+    }
+
+    /**
+     * Mirrors how the Hibernate ORM extension assigns model classes to persistence units (see
+     * {@code HibernateOrmProcessor#buildJpaModelPerPersistenceUnit}) to compute the assignments it cannot make.
+     */
+    static final class JpaModelAssignment {
+
+        private final IndexView index;
+        private final IndexView computingIndex;
+        private final Map<String, Set<String>> userUnitClasses;
+        private final Map<String, Set<String>> packageRules;
+        private final Map<String, Set<String>> assignments = new TreeMap<>();
+
+        /**
+         * @param userUnitClasses the persistence units of the classes managed by user persistence units: the classes are
+         *        not assigned, their hierarchy is
+         * @param packageRules the persistence units configured for each package
+         */
+        JpaModelAssignment(IndexView index, IndexView computingIndex, Map<String, Set<String>> userUnitClasses, Map<String, Set<String>> packageRules) {
+            this.index = index;
+            this.computingIndex = computingIndex;
+            this.userUnitClasses = userUnitClasses;
+            this.packageRules = new HashMap<>();
+            // same package matching as the Hibernate ORM extension: prefix of the class name, package delimiter included
+            packageRules.forEach((pkg, units) -> this.packageRules.put(pkg.endsWith(".") ? pkg : pkg + ".", units));
+        }
+
+        /**
+         * @return the persistence units to assign to each model class the Hibernate ORM extension leaves unassigned
+         */
+        Map<String, Set<String>> compute() {
+            for (DotName annotation : JPA_MODEL_CLASS_ANNOTATIONS) {
+                for (AnnotationInstance instance : index.getAnnotations(annotation)) {
+                    if (instance.target().kind() == AnnotationTarget.Kind.CLASS) {
+                        assignModelClass(instance.target().asClass());
+                    }
+                }
+            }
+            for (DotName annotation : JPA_MODEL_CLASS_REFERENCE_ANNOTATIONS) {
+                for (AnnotationInstance instance : index.getAnnotations(annotation)) {
+                    AnnotationValue value = instance.value();
+                    if (value == null) {
+                        continue;
+                    }
+                    Type[] types = value.kind() == AnnotationValue.Kind.ARRAY ? value.asClassArray() : new Type[] { value.asClass() };
+                    for (Type type : types) {
+                        ClassInfo referenced = computingIndex.getClassByName(type.name());
+                        if (referenced != null) {
+                            assignModelClass(referenced);
+                        }
+                    }
+                }
+            }
+            return assignments;
+        }
+
+        private void assignModelClass(ClassInfo modelClass) {
+            String className = modelClass.name().toString();
+            if (userUnitClasses.containsKey(className)) {
+                // Quarkus assigns the class itself, not its hierarchy
+                assignHierarchy(modelClass, userUnitClasses.get(className), false);
+                return;
+            }
+            Set<String> units = new TreeSet<>();
+            packageRules.forEach((pkg, unitNames) -> {
+                if (className.startsWith(pkg)) {
+                    units.addAll(unitNames);
+                }
+            });
+            boolean claimed = !units.isEmpty();
+            if (!claimed) {
+                units.add(QUARKUS_DEFAULT_PERSISTENCE_UNIT);
+                assign(className, units);
+            }
+            // Quarkus assigns the superclasses and interfaces of the entities and mapped superclasses it claims, as far
+            // as it can resolve them in the index
+            boolean assignedByQuarkus = claimed && (modelClass.hasDeclaredAnnotation(JPA_ENTITY) || modelClass.hasDeclaredAnnotation(JPA_MAPPED_SUPERCLASS));
+            assignHierarchy(modelClass, units, assignedByQuarkus);
+        }
+
+        private void assignHierarchy(ClassInfo classInfo, Set<String> units, boolean assignedByQuarkus) {
+            List<DotName> members = new ArrayList<>(classInfo.interfaceNames());
+            if (classInfo.superName() != null) {
+                members.add(classInfo.superName());
+            }
+            for (DotName memberName : members) {
+                String name = memberName.toString();
+                if (IGNORED_MODEL_HIERARCHY_PREFIXES.stream().anyMatch(name::startsWith) || userUnitClasses.containsKey(name)) {
+                    continue;
+                }
+                ClassInfo member = computingIndex.getClassByName(memberName);
+                if (member == null) {
+                    continue; // the Hibernate ORM extension fails the build for model classes it cannot load
+                }
+                boolean memberAssignedByQuarkus = assignedByQuarkus && index.getClassByName(memberName) != null;
+                if (!memberAssignedByQuarkus) {
+                    assign(name, units);
+                }
+                assignHierarchy(member, units, memberAssignedByQuarkus);
+            }
+        }
+
+        private void assign(String className, Set<String> units) {
+            assignments.computeIfAbsent(className, c -> new TreeSet<>()).addAll(units);
+        }
+    }
+
     @Produce(LogHandlerBuildItem.class)
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
     void prepareKeycloakLogFilter(KeycloakRecorder recorder) {
-        recorder.setHibernateUnsupportedProperties(collectAllDefaultUnsupportedHibernateProperties());
+        recorder.setHibernateUnsupportedProperties(collectAllDefaultUnsupportedHibernateProperties(), collectNamedUnitUnsupportedHibernateProperties());
     }
 
     @BuildStep
@@ -801,7 +1040,8 @@ class KeycloakProcessor {
     @Consume(ConfigBuildItem.class)
     @Consume(CryptoProviderInitBuildItem.class)
     @Produce(KeycloakSessionFactoryPreInitBuildItem.class)
-    SyntheticBeanBuildItem configureKeycloakSessionFactory(KeycloakRecorder recorder, List<AdditionalPersistenceUnitBuildItem> additionalPUs) {
+    SyntheticBeanBuildItem configureKeycloakSessionFactory(KeycloakRecorder recorder, List<AdditionalPersistenceUnitBuildItem> additionalPUs,
+            HibernateOrmConfig hibernateOrmConfig) {
         Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories = new HashMap<>();
         Map<Class<? extends Provider>, String> defaultProviders = new HashMap<>();
         Map<String, ProviderFactory> preConfiguredProviders = new HashMap<>();
@@ -821,7 +1061,7 @@ class KeycloakProcessor {
             }
 
             if (spi instanceof JpaConnectionSpi) {
-                configureUserDefinedPersistenceUnits(additionalPUs, factories, preConfiguredProviders, spi);
+                configureUserDefinedPersistenceUnits(additionalPUs, hibernateOrmConfig, factories, preConfiguredProviders, spi);
             }
 
             if (spi instanceof ThemeResourceSpi) {
@@ -866,17 +1106,26 @@ class KeycloakProcessor {
         }
     }
 
-    private void configureUserDefinedPersistenceUnits(List<AdditionalPersistenceUnitBuildItem> additionalPUs,
+    private void configureUserDefinedPersistenceUnits(List<AdditionalPersistenceUnitBuildItem> additionalPUs, HibernateOrmConfig hibernateOrmConfig,
             Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories,
             Map<String, ProviderFactory> preConfiguredProviders, Spi spi) {
         for (AdditionalPersistenceUnitBuildItem pu : additionalPUs) {
-            String unitName = pu.getPersistenceUnitName();
-            NamedJpaConnectionProviderFactory factory = new NamedJpaConnectionProviderFactory();
-            factory.setUnitName(unitName);
-            factory.setDataSourceName(pu.getDataSourceName().orElse(unitName));
-            factories.get(spi).get(JpaConnectionProvider.class).put(unitName, NamedJpaConnectionProviderFactory.class);
-            preConfiguredProviders.put(unitName, factory);
+            registerNamedJpaConnectionProvider(pu.getPersistenceUnitName(), pu.getDataSourceName().orElse(pu.getPersistenceUnitName()), factories, preConfiguredProviders, spi);
         }
+        // persistence units defined through configuration are named after their datasource, see checkConfiguredPersistenceUnits
+        for (String unitName : hibernateOrmConfig.namedPersistenceUnits().keySet()) {
+            registerNamedJpaConnectionProvider(unitName, unitName, factories, preConfiguredProviders, spi);
+        }
+    }
+
+    private static void registerNamedJpaConnectionProvider(String unitName, String dataSourceName,
+            Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories,
+            Map<String, ProviderFactory> preConfiguredProviders, Spi spi) {
+        NamedJpaConnectionProviderFactory factory = new NamedJpaConnectionProviderFactory();
+        factory.setUnitName(unitName);
+        factory.setDataSourceName(dataSourceName);
+        factories.get(spi).get(JpaConnectionProvider.class).put(unitName, NamedJpaConnectionProviderFactory.class);
+        preConfiguredProviders.put(unitName, factory);
     }
 
     /**

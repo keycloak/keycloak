@@ -11,11 +11,11 @@ public class StandaloneOrmXmlTestProvider implements TestProvider {
 
     @Override
     public Class[] getClasses() {
-        return new Class[] { StandaloneEntity.class };
+        return new Class[] { StandaloneEntity.class, StandaloneEntity2.class };
     }
 
     @Override
     public Map<String, String> getManifestResources() {
-        return Map.of("orm.xml", "orm.xml");
+        return Map.of("orm.xml", "orm.xml", "orm2.xml", "orm2.xml");
     }
 }
