@@ -10,6 +10,12 @@ test.describe("Realm settings quick theme", () => {
   test.beforeAll(() => adminClient.createRealm(realmName));
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
+  test.beforeEach(async () => {
+    const enabled = await adminClient.isFeatureEnabled("QUICK_THEME");
+    // eslint-disable-next-line playwright/no-skipped-test -- The Quick theme tab only mounts when the server has the feature; CI does not enable it by default.
+    test.skip(!enabled, "QUICK_THEME feature is not enabled on this server.");
+  });
+
   test("login page preview loads the login theme stylesheet", async ({
     page,
   }) => {
