@@ -17,7 +17,10 @@
 package org.keycloak.tests.admin.authentication;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.IntStream;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.MediaType;
@@ -26,10 +29,15 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.BearerAuthFilter;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ScopePermissionsResource;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -42,6 +50,7 @@ import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.tests.admin.authz.fgap.PermissionTestUtils;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -51,6 +60,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -66,6 +76,13 @@ public class AuthenticationManagementUiExtPermissionsTest {
     private static final String HIDDEN_CLIENT = "hidden-client";
     private static final String HIDDEN_IDP = "hidden-idp";
 
+    // more hidden clients than both the flow summary cap (9) and the default page size (10), all sorting before the
+    // single client the fine-grained viewer may see
+    private static final String FGAP_FLOW = "fgap-flow";
+    private static final List<String> FGAP_HIDDEN_CLIENTS = IntStream.range(0, 11)
+            .mapToObj(i -> String.format("fgap-hidden-%02d", i)).toList();
+    private static final String FGAP_VISIBLE_CLIENT = "fgap-visible";
+
     @InjectRealm(config = AuthenticationUsageRealmConfig.class)
     ManagedRealm managedRealm;
 
@@ -75,21 +92,25 @@ public class AuthenticationManagementUiExtPermissionsTest {
     @InjectAdminClient(ref = "fullViewer", mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "full-viewer")
     Keycloak fullViewer;
 
+    @InjectAdminClient(ref = "fgapViewer", mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "fgap-viewer")
+    Keycloak fgapViewer;
+
     @InjectKeycloakUrls
     KeycloakUrls keycloakUrls;
 
     private String clientFlowId;
     private String idpFlowId;
+    private String fgapFlowId;
 
     @BeforeEach
-    public void bindClientToFlow() {
+    public void bindClientsToFlows() {
         clientFlowId = findFlow(CLIENT_FLOW).getId();
         idpFlowId = findFlow(IDP_FLOW).getId();
+        fgapFlowId = findFlow(FGAP_FLOW).getId();
 
-        ClientResource client = AdminApiUtil.findClientByClientId(managedRealm.admin(), HIDDEN_CLIENT);
-        ClientRepresentation rep = client.toRepresentation();
-        rep.setAuthenticationFlowBindingOverrides(Map.of("browser", clientFlowId));
-        client.update(rep);
+        bindBrowserFlow(HIDDEN_CLIENT, clientFlowId);
+        FGAP_HIDDEN_CLIENTS.forEach(clientId -> bindBrowserFlow(clientId, fgapFlowId));
+        bindBrowserFlow(FGAP_VISIBLE_CLIENT, fgapFlowId);
     }
 
     @Test
@@ -140,6 +161,55 @@ public class AuthenticationManagementUiExtPermissionsTest {
             assertEquals(1, idps.size());
             assertEquals(HIDDEN_IDP, idps.get(0).get("label").asText());
         }
+    }
+
+    /**
+     * Only view permission on a single client, granted through fine-grained admin permissions, exercises the
+     * per-client checks. The hidden clients sort first, so the visible client is only reported if filtering happens
+     * before the summary cap and before paging.
+     */
+    @Test
+    public void fineGrainedViewerSeesPermittedClientBeyondCapAndPage() throws IOException {
+        grantViewClient("fgap-viewer", FGAP_VISIBLE_CLIENT);
+
+        JsonNode clientUsage = findFlow(getFlows(fgapViewer), FGAP_FLOW).get("usedBy");
+        assertNotNull(clientUsage, "the permitted client must be reported even though hidden clients fill the cap");
+        assertEquals("SPECIFIC_CLIENTS", clientUsage.get("type").asText());
+        assertEquals(1, clientUsage.get("values").size());
+        assertEquals(FGAP_VISIBLE_CLIENT, clientUsage.get("values").get(0).asText());
+
+        try (Response response = getUsedBy(fgapViewer, "clients", fgapFlowId)) {
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            JsonNode clients = readJson(response);
+            assertEquals(1, clients.size());
+            assertEquals(FGAP_VISIBLE_CLIENT, clients.get(0).get("label").asText());
+        }
+    }
+
+    private void grantViewClient(String username, String clientId) {
+        ClientResource permissionsClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
+        String userId = managedRealm.admin().users().search(username, true).get(0).getId();
+        String clientUuid = AdminApiUtil.findClientByClientId(managedRealm.admin(), clientId).toRepresentation().getId();
+
+        UserPolicyRepresentation policy = PermissionTestUtils.createUserPolicy(managedRealm, permissionsClient,
+                KeycloakModelUtils.generateId(), userId);
+        ScopePermissionRepresentation permission = PermissionTestUtils.createPermission(permissionsClient, clientUuid,
+                AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, Set.of(AdminPermissionsSchema.VIEW), policy);
+        // removing the policy may already have removed the permission
+        managedRealm.cleanup().add(r -> {
+            ScopePermissionsResource permissions = r.clients().get(permissionsClient.toRepresentation().getId())
+                    .authorization().permissions().scope();
+            if (permissions.findByName(permission.getName()) != null) {
+                permissions.findById(permission.getId()).remove();
+            }
+        });
+    }
+
+    private void bindBrowserFlow(String clientId, String flowId) {
+        ClientResource client = AdminApiUtil.findClientByClientId(managedRealm.admin(), clientId);
+        ClientRepresentation rep = client.toRepresentation();
+        rep.setAuthenticationFlowBindingOverrides(Map.of("browser", flowId));
+        client.update(rep);
     }
 
     private AuthenticationFlowRepresentation findFlow(String alias) {
@@ -195,7 +265,13 @@ public class AuthenticationManagementUiExtPermissionsTest {
                     AuthenticationFlowBuilder.create(CLIENT_FLOW, "Bound to a client", "basic-flow", true, false)
                             .authenticationExecutions(),
                     AuthenticationFlowBuilder.create(IDP_FLOW, "Bound to an identity provider", "basic-flow", true, false)
+                            .authenticationExecutions(),
+                    AuthenticationFlowBuilder.create(FGAP_FLOW, "Bound to clients with fine-grained permissions", "basic-flow", true, false)
                             .authenticationExecutions());
+
+            realm.adminPermissionsEnabled(true);
+            FGAP_HIDDEN_CLIENTS.forEach(clientId -> realm.clients(ClientBuilder.create(clientId)));
+            realm.clients(ClientBuilder.create(FGAP_VISIBLE_CLIENT));
 
             realm.identityProviders(IdentityProviderBuilder.create()
                     .providerId("oidc")
@@ -219,7 +295,13 @@ public class AuthenticationManagementUiExtPermissionsTest {
                             .email("full-viewer@localhost")
                             .emailVerified(true)
                             .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_REALM,
-                                    AdminRoles.VIEW_CLIENTS, AdminRoles.VIEW_IDENTITY_PROVIDERS));
+                                    AdminRoles.VIEW_CLIENTS, AdminRoles.VIEW_IDENTITY_PROVIDERS),
+                    UserBuilder.create("fgap-viewer")
+                            .password("password")
+                            .name("Fgap", "Viewer")
+                            .email("fgap-viewer@localhost")
+                            .emailVerified(true)
+                            .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_REALM));
 
             return realm;
         }
