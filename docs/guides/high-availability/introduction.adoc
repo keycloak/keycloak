@@ -25,7 +25,22 @@ in such high availability architectures.
 
 == Architectures
 
+<@profile.ifProduct>
+
+{project_name} provides capabilities that can be used as building blocks for highly available deployments. This guide describes those capabilities, their configuration requirements, expected product behavior, and important trade-offs.
+
+High availability depends on components outside {project_name}, including the database, networking, load balancing, compute/platform infrastructure, and operational failover procedures.
+{project_name} itself must be deployed on a platform, JVM and database covered by the {project_name} Supported Configurations.
+
+</@profile.ifProduct>
+
+<@profile.ifCommunity>
+
 This document describes the high availability architectures in which to deploy {project_name}.
+
+</@profile.ifCommunity>
+
+Deployers are responsible for designing, validating, and operating their end-to-end HA architecture and for verifying that it meets their required availability, RTO, and RPO objectives.
 
 === Single-cluster deployments
 
