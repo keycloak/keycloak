@@ -25,6 +25,7 @@ import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.conditional.ConditionalCredentialAuthenticatorFactory;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -32,13 +33,12 @@ import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -47,8 +47,10 @@ import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginTotpPage;
+import org.keycloak.testframework.ui.page.LogoutConfirmPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -59,11 +61,14 @@ import org.junit.jupiter.api.Test;
 @KeycloakIntegrationTest
 public class ConditionalCredentialAuthenticatorTest {
 
-    @InjectRealm(config = ConditionalCredentialAuthenticatorRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(config = ConditionalCredentialAuthenticatorRealmConfig.class)
     ManagedRealm managedRealm;
 
     @InjectOAuthClient
     OAuthClient oauth;
+
+    @InjectPage
+    LogoutConfirmPage logoutConfirmPage;
 
     @InjectEvents
     Events events;
@@ -73,6 +78,12 @@ public class ConditionalCredentialAuthenticatorTest {
 
     private static final String USERNAME = "user-with-one-configured-otp";
     private static final String PASSWORD = "password";
+
+    @AfterEach
+    void logoutUser() {
+        oauth.openLogoutForm();
+        logoutConfirmPage.confirmLogout();
+    }
 
     @Test
     public void testPasswordIncluded() {
@@ -172,14 +183,6 @@ public class ConditionalCredentialAuthenticatorTest {
         RealmResource realmRes = managedRealm.admin();
         AuthenticationManagementResource authRes = realmRes.flows();
 
-        // revert the flows if already changed
-        RealmRepresentation realmRep = realmRes.toRepresentation();
-        if (!realmRep.getBrowserFlow().equals("browser")) {
-            realmRep.setBrowserFlow("browser");
-            realmRes.update(realmRep);
-            authRes.deleteFlow(authRes.getFlows().stream().filter(f -> "test".equals(f.getAlias())).findAny().get().getId());
-        }
-
         // copy the browser flow into a test one
         authRes.copy("browser", Map.of("newName", "test"));
 
@@ -207,8 +210,11 @@ public class ConditionalCredentialAuthenticatorTest {
         }
 
         // assign the new flow to the browser binding
-        realmRep.setBrowserFlow("test");
-        realmRes.update(realmRep);
+        managedRealm.updateWithCleanup(r -> r.browserFlow("test"));
+        // revert the flows if already changed
+        managedRealm.cleanup().add(r -> {
+            r.flows().deleteFlow(r.flows().getFlows().stream().filter(f -> "test".equals(f.getAlias())).findAny().get().getId());
+        });
     }
 
     private void checkLoginOk() {
@@ -218,7 +224,11 @@ public class ConditionalCredentialAuthenticatorTest {
         Assertions.assertNull(res.getError());
         Assertions.assertNotNull(res.getAccessToken());
 
-        EventAssertion.expectLoginSuccess(events.poll()).hasUserId().details(Details.USERNAME, USERNAME);
+        EventRepresentation event = events.poll();
+        if (EventType.valueOf(event.getType()) != EventType.LOGIN) {
+            event = events.poll();
+        }
+        EventAssertion.expectLoginSuccess(event).hasUserId().details(Details.USERNAME, USERNAME);
     }
 
 
