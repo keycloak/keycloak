@@ -3,6 +3,7 @@ package org.keycloak.ssf.transmitter.delivery.push;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.models.KeycloakSession;
@@ -11,6 +12,7 @@ import org.keycloak.ssf.event.token.SecurityEventToken;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.entity.StringEntity;
 import org.jboss.logging.Logger;
@@ -22,14 +24,17 @@ public class PushDeliveryService {
 
     protected static final Logger log = Logger.getLogger(PushDeliveryService.class);
 
-    // Session is always live when deliverEvent() runs: outbox path uses a fresh drainer session,
-    // synchronous path runs within the request session scope.
-    private final KeycloakSession session;
+    private final HttpClient httpClient;
 
     private final SsfTransmitterConfig transmitterConfig;
 
     public PushDeliveryService(KeycloakSession session, SsfTransmitterConfig transmitterConfig) {
-        this.session = session;
+        // Resolve the shared HttpClient up front so push delivery can later
+        // run on an async executor thread that has no live KeycloakSession
+        // bound to it any more (the /verify request's session is closed by
+        // then). Likewise, transmitterConfig is captured once so delivery
+        // doesn't depend on the thread-local session via Ssf.transmitter().
+        this.httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
         this.transmitterConfig = transmitterConfig;
     }
 
@@ -132,7 +137,7 @@ public class PushDeliveryService {
                 .setConnectionRequestTimeout(connectRequestTimeout)
                 .setSocketTimeout(socketTimeout)
                 .build();
-        var httpRequest = SimpleHttp.create(session)
+        var httpRequest = SimpleHttp.create(httpClient)
                 .withRequestConfig(requestConfig)
                 .doPost(endpointUrl);
         if (authorizationHeader != null) {

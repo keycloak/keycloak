@@ -26,7 +26,6 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
-import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -146,12 +145,7 @@ public class VertxHttpClientProvider implements HttpClientProvider {
 
     @Override
     public InputStream getInputStream(String uri) throws IOException {
-        return getInputStream(uri, null);
-    }
-
-    @Override
-    public InputStream getInputStream(String uri, Map<String, String> headers) throws IOException {
-        return doGet(uri, headers, (resp, future) -> {
+        return doGet(uri, null, (resp, future) -> {
             resp.pause();
             future.complete(new ChunkedInputStream(resp));
         });
@@ -219,44 +213,6 @@ public class VertxHttpClientProvider implements HttpClientProvider {
             }
         }
         return null;
-    }
-
-    @Override
-    public byte[] postBinary(String uri, byte[] body, Map<String, String> headers) throws IOException {
-        return executeWithRetry(() -> {
-            CompletableFuture<byte[]> future = new CompletableFuture<>();
-            var req = webClient.postAbs(uri);
-            long timeout = getEffectiveTimeoutMs();
-            if (timeout > 0) {
-                req.timeout(timeout);
-            }
-            ProxyOptions proxy = resolveProxy(uri);
-            if (proxy != null) {
-                req.proxy(proxy);
-            }
-            if (headers != null) {
-                headers.forEach(req::putHeader);
-            }
-            req.sendBuffer(Buffer.buffer(body)).onComplete(ar -> {
-                if (ar.succeeded()) {
-                    HttpResponse<Buffer> response = ar.result();
-                    if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                        Buffer b = response.body();
-                        if (b == null || b.length() == 0) {
-                            future.completeExceptionally(new NonRetryableIOException("No content returned from HTTP call"));
-                        } else {
-                            future.complete(b.getBytes());
-                        }
-                    } else {
-                        future.completeExceptionally(new NonRetryableIOException(
-                                "HTTP " + response.statusCode() + " from " + uri));
-                    }
-                } else {
-                    future.completeExceptionally(ar.cause());
-                }
-            });
-            return awaitResult(future);
-        });
     }
 
     @Override

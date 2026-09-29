@@ -20,7 +20,6 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.http.HttpResponse;
@@ -34,6 +33,7 @@ import org.keycloak.services.resources.ServerMetadataResource;
 import org.keycloak.urls.UrlType;
 import org.keycloak.wellknown.WellKnownProvider;
 
+import org.apache.http.HttpHeaders;
 import org.jboss.logging.Logger;
 
 /**

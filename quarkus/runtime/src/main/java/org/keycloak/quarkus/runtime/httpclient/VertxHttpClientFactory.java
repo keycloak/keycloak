@@ -20,13 +20,11 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.truststore.TruststoreProvider;
 
-import io.netty.handler.ssl.OpenSsl;
 import io.quarkus.arc.Arc;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.net.KeyStoreOptions;
-import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import org.jboss.logging.Logger;
@@ -42,7 +40,6 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
     private volatile WebClient webClient;
     private volatile HttpClient httpClient;
     private Config.Scope config;
-    private Config.Scope vertxConfig;
     private long maxConsumedResponseSize;
     private long socketTimeoutMs;
     private int maxRetries;
@@ -69,8 +66,6 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
         // Shared properties (timeouts, pool, etc.) read from "default" scope so users
         // don't reconfigure when switching v1→v2. Same pattern as OTelHttpClientFactory.
         this.config = Config.scope("connectionsHttpClient", "default");
-        // Vertx-only properties read from the provider's own scope.
-        this.vertxConfig = config;
     }
 
     @Override
@@ -85,7 +80,6 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
         useJitter = config.getBoolean("use-jitter", true);
         jitterFactor = Double.parseDouble(config.get("jitter-factor", "0.5"));
 
-        checkOpenSslPresence();
     }
 
     @Override
@@ -110,17 +104,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
 
     @Override
     public List<ProviderConfigProperty> getConfigMetadata() {
-        // Only vertx-specific properties here. Shared properties (socket-timeout-millis,
-        // max-pooled-per-route, etc.) are read from the "default" scope and documented
-        // on DefaultHttpClientFactory's metadata.
-        return ProviderConfigurationBuilder.create()
-                .property()
-                .name("openssl-required")
-                .type("string")
-                .helpText("OpenSSL presence policy when HTTP_CLIENT_V2 is enabled: 'warn' (default), 'fail', or 'none'.")
-                .defaultValue("warn")
-                .add()
-                .build();
+        return ProviderConfigurationBuilder.create().build();
     }
 
     private void lazyInit(KeycloakSession session) {
@@ -137,30 +121,8 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
         }
     }
 
-    private void checkOpenSslPresence() {
-        String policy = vertxConfig.get("openssl-required", "warn");
-        if (!"fail".equals(policy) && !"warn".equals(policy) && !"none".equals(policy)) {
-            throw new RuntimeException("Invalid openssl-required value: '" + policy
-                    + "'. Valid values: 'fail', 'warn', 'none'.");
-        }
-        if (!OpenSsl.isAvailable()) {
-            if ("fail".equals(policy)) {
-                throw new RuntimeException(
-                        "HTTP_CLIENT_V2 requires OpenSSL but it is not available. "
-                        + "Install OpenSSL and netty-tcnative, or set openssl-required=warn.");
-            } else if ("warn".equals(policy)) {
-                logger.warn("OpenSSL is not available — PQC enforcement is disabled. TLS will use JSSE (Java SSL).");
-            }
-        } else {
-            logger.infof("OpenSSL detected: %s", OpenSsl.versionString());
-        }
-    }
-
     private WebClientOptions buildOptions(KeycloakSession session) {
         WebClientOptions options = new WebClientOptions();
-        if (OpenSsl.isAvailable()) {
-            options.setSslEngineOptions(new OpenSSLEngineOptions());
-        }
 
         options.setMaxPoolSize(config.getInt("max-pooled-per-route", 64));
 
