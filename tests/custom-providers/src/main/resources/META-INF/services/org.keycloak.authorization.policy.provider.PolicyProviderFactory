@@ -1,2 +1,8 @@
 org.keycloak.tests.providers.authorization.policy.GrantPolicyProvider
+org.keycloak.tests.providers.authorization.policy.DenyPolicyProvider
+org.keycloak.tests.providers.authorization.policy.GrantResourceOwnerPolicyProvider
+org.keycloak.tests.providers.authorization.policy.ClaimAttributePolicyProvider
+org.keycloak.tests.providers.authorization.policy.ResourceVisibilityAttributePolicyProvider
+org.keycloak.tests.providers.authorization.policy.SpecificAddressPolicyProvider
+org.keycloak.tests.providers.authorization.policy.SpecificDomainOrAdminPolicyProvider
 org.keycloak.tests.providers.authorization.policy.TestPolicyProviderFactory

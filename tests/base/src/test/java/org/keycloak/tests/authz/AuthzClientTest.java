@@ -1,6 +1,8 @@
 package org.keycloak.tests.authz;
 
 import java.io.ByteArrayInputStream;
+import java.lang.reflect.Field;
+import java.util.Map;
 
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.util.crypto.AuthzClientCryptoProvider;
@@ -30,25 +32,32 @@ public class AuthzClientTest {
     }
 
     @Test
-    public void testCreateWithEnvVars() {
-        RuntimeException runtimeException = Assertions.assertThrows(RuntimeException.class, () -> {
-            AuthzClient.create(new ByteArrayInputStream(("{\n"
-                    + "  \"realm\": \"${env.KEYCLOAK_REALM:test}\",\n"
-                    + "  \"auth-server-url\": \"${env.KEYCLOAK_AUTH_SERVER:http://test}\",\n"
-                    + "  \"ssl-required\": \"external\",\n"
-                    + "  \"enable-cors\": true,\n"
-                    + "  \"resource\": \"my-server\",\n"
-                    + "  \"credentials\": {\n"
-                    + "    \"secret\": \"${env.KEYCLOAK_SECRET}\"\n"
-                    + "  },\n"
-                    + "  \"confidential-port\": 0,\n"
-                    + "  \"policy-enforcer\": {\n"
-                    + "    \"enforcement-mode\": \"ENFORCING\"\n"
-                    + "  }\n"
-                    + "}").getBytes()));
-        });
+    public void testCreateWithEnvVars() throws Exception {
+        setEnv("KEYCLOAK_REALM", "test");
+        setEnv("KEYCLOAK_AUTH_SERVER", "http://test");
+        try {
+            RuntimeException runtimeException = Assertions.assertThrows(RuntimeException.class, () -> {
+                AuthzClient.create(new ByteArrayInputStream(("{\n"
+                        + "  \"realm\": \"${env.KEYCLOAK_REALM}\",\n"
+                        + "  \"auth-server-url\": \"${env.KEYCLOAK_AUTH_SERVER}\",\n"
+                        + "  \"ssl-required\": \"external\",\n"
+                        + "  \"enable-cors\": true,\n"
+                        + "  \"resource\": \"my-server\",\n"
+                        + "  \"credentials\": {\n"
+                        + "    \"secret\": \"${env.KEYCLOAK_SECRET}\"\n"
+                        + "  },\n"
+                        + "  \"confidential-port\": 0,\n"
+                        + "  \"policy-enforcer\": {\n"
+                        + "    \"enforcement-mode\": \"ENFORCING\"\n"
+                        + "  }\n"
+                        + "}").getBytes()));
+            });
 
-        MatcherAssert.assertThat(runtimeException.getMessage(), Matchers.containsString("Could not obtain configuration from server"));
+            MatcherAssert.assertThat(runtimeException.getMessage(), Matchers.containsString("Could not obtain configuration from server"));
+        } finally {
+            removeEnv("KEYCLOAK_REALM");
+            removeEnv("KEYCLOAK_AUTH_SERVER");
+        }
     }
 
     private static CryptoProvider getProviderOrNull() {
@@ -57,5 +66,21 @@ public class AuthzClientTest {
         } catch (IllegalStateException e) {
             return null;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void setEnv(String key, String value) throws Exception {
+        Map<String, String> env = System.getenv();
+        Field field = env.getClass().getDeclaredField("m");
+        field.setAccessible(true);
+        ((Map<String, String>) field.get(env)).put(key, value);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void removeEnv(String key) throws Exception {
+        Map<String, String> env = System.getenv();
+        Field field = env.getClass().getDeclaredField("m");
+        field.setAccessible(true);
+        ((Map<String, String>) field.get(env)).remove(key);
     }
 }

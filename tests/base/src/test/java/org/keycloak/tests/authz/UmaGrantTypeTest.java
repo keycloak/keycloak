@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Form;
@@ -61,7 +62,6 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
-import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 
@@ -712,7 +712,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         assertNotNull(refreshTokenToken.getAuthorization());
 
-        Client client = AdminClientUtil.createResteasyClient();
+        Client client = ClientBuilder.newClient();
         WebTarget target = client.target(oauth.newConfig().realm(REALM_NAME).getEndpoints().getToken());
 
         Form parameters = new Form();

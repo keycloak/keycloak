@@ -59,7 +59,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
-import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.BeforeEach;

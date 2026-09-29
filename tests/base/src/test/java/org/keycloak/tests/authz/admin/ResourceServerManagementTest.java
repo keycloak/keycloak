@@ -110,6 +110,8 @@ public class ResourceServerManagementTest extends AbstractAuthorizationTest {
             fail("Should fail, authorization not enabled");
         } catch (NotFoundException nfe) {
             // expected
+        } finally {
+            clientsResource.get(clientId).remove();
         }
     }
 

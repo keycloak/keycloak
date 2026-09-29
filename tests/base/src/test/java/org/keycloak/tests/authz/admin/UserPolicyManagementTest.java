@@ -40,7 +40,6 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
-import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -219,7 +218,6 @@ public class UserPolicyManagementTest extends AbstractPolicyManagementTest {
     }
 
     @Test
-    @UncaughtServerErrorExpected
     public void failInvalidUser() {
         AuthorizationResource authorization = getClient().authorization();
 

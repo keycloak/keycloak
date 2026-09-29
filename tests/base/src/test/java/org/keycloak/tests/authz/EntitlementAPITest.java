@@ -132,6 +132,8 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     private static final String PUBLIC_TEST_CLIENT = "test-public-client";
     private static final String PUBLIC_TEST_CLIENT_CONFIG = "default-keycloak-public-client.json";
 
+    private final Map<String, AuthzClient> authzClients = new HashMap<>();
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create().name("authz-test")
@@ -182,8 +184,20 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     @AfterEach
     public void removeAuthorization() throws Exception {
-        removeAuthorization(RESOURCE_SERVER_TEST);
-        removeAuthorization(PAIRWISE_RESOURCE_SERVER_TEST);
+        try {
+            removeAuthorization(RESOURCE_SERVER_TEST);
+            removeAuthorization(PAIRWISE_RESOURCE_SERVER_TEST);
+        } finally {
+            for (AuthzClient client : authzClients.values()) {
+                if (client.getConfiguration().getHttpClient() instanceof java.io.Closeable closeable) {
+                    try {
+                        closeable.close();
+                    } catch (IOException ignore) {
+                    }
+                }
+            }
+            authzClients.clear();
+        }
     }
 
     @Test
@@ -2960,19 +2974,21 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     }
 
     private AuthzClient getAuthzClient(String configFile) {
-        Configuration configuration;
-        try {
-            configuration = JsonSerialization.readValue(authzConfigurationStream(getClass().getResourceAsStream("/authorization-test/" + configFile)), Configuration.class);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read configuration", e);
-        }
-        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
-        connectionManager.setValidateAfterInactivity(10);
-        connectionManager.setMaxTotal(10);
-        HttpClient client = HttpClients.custom()
-                .setConnectionManager(connectionManager)
-                .build();
-        return AuthzClient.create(new Configuration(configuration.getAuthServerUrl(), configuration.getRealm(), configuration.getResource(), configuration.getCredentials(), client));
+        return authzClients.computeIfAbsent(configFile, file -> {
+            Configuration configuration;
+            try {
+                configuration = JsonSerialization.readValue(authzConfigurationStream(getClass().getResourceAsStream("/authorization-test/" + file)), Configuration.class);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to read configuration", e);
+            }
+            PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+            connectionManager.setValidateAfterInactivity(10);
+            connectionManager.setMaxTotal(10);
+            HttpClient client = HttpClients.custom()
+                    .setConnectionManager(connectionManager)
+                    .build();
+            return AuthzClient.create(new Configuration(configuration.getAuthServerUrl(), configuration.getRealm(), configuration.getResource(), configuration.getCredentials(), client));
+        });
     }
 
     private void configureAuthorization(String clientId) throws Exception {

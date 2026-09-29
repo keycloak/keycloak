@@ -67,7 +67,6 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.authz.config.AuthzScriptsServerConfig;
-import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 
 import org.junit.jupiter.api.Test;
 
@@ -457,7 +456,6 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
     }
 
     @Test
-    @UncaughtServerErrorExpected
     public void testUploadScriptDisabled() {
         ResourceRepresentation resource = new ResourceRepresentation();
 
