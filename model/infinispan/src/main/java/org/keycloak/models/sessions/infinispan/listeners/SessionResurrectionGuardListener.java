@@ -76,6 +76,16 @@ import org.jboss.logging.Logger;
  * <p>
  * This is deliberately not a complete fix for cache consistency (see the loading-marker + CAS pattern in
  * the full upstream fix); it only prevents deleted entries from reappearing in the cache.
+ * <p>
+ * Listening only for {@code primaryOnly} events is a deliberate, accepted limitation: the tombstone and
+ * watermark state tracked here lives only in the local, in-memory cache of whichever node is primary
+ * owner of a key at the time it is recorded, and is not replicated to other nodes. If cluster topology
+ * changes (a node joins or leaves) and ownership of a key moves to a different node within the
+ * {@link #TOMBSTONE_TTL_SECONDS} grace period, the new owner has no record of that key's tombstone, so a
+ * stale reader racing a removal at exactly that moment would not be caught. This requires a topology
+ * change to coincide with an already narrow read/write race on the same key, which is highly unlikely in
+ * practice, and replicating this state across nodes would reintroduce much of the complexity (and size)
+ * of the full upstream fix that this minimal, backportable listener is intentionally avoiding.
  */
 @Listener(primaryOnly = true, observation = Listener.Observation.POST)
 public class SessionResurrectionGuardListener<K, V extends SessionEntity> {
@@ -107,6 +117,18 @@ public class SessionResurrectionGuardListener<K, V extends SessionEntity> {
      * removed. Called from the node handling a "logout all sessions in a realm" cluster event, on every
      * node in the cluster (each node executes that removal locally), so the watermark ends up recorded on
      * whichever node later ends up as primary owner of a resurrected key.
+     * <p>
+     * Each node stamps this with its own {@link Time#currentTime()} at the moment it processes the event,
+     * rather than a single shared timestamp taken when the bulk removal was originally triggered. This is
+     * intentional and safe: the cluster event carrying this removal is only sent after the underlying bulk
+     * database delete has committed (the sending node's {@code SessionEventsSenderTransaction} is enlisted
+     * with {@code enlistAfterCompletion}), and a node only processes the event after it has been sent - so
+     * every node's local clock reading here is always at or after the actual deletion time, never before
+     * it. A slower node (e.g. due to network/queueing delay) therefore never records a watermark earlier
+     * than the true deletion, so no resurrection is ever missed (no false negative). The only effect of
+     * that delay is a correspondingly later watermark on that node, which can only widen the (already
+     * accepted, non-fatal) false-positive window during which a brand-new, legitimate session created in
+     * the same realm might be needlessly evicted from that node's cache before being reloaded normally.
      */
     public void recordRealmNotBefore(String realmId) {
         realmNotBefore.put(realmId, Time.currentTime());
@@ -142,8 +164,17 @@ public class SessionResurrectionGuardListener<K, V extends SessionEntity> {
         if (!keyResurrection && !realmResurrection) {
             return;
         }
-        logger.infof("Detected resurrection of previously removed cache entry '%s' in cache '%s' - removing it again",
-                key, cache.getName());
+        if (keyResurrection) {
+            // These messages could occur in production for concurrent logout and token refresh, but they are always valid.
+            // Log them as info as no action is required from the operator.
+            logger.infof("Detected resurrection of previously removed cache entry '%s' in cache '%s' (tombstoned at %d) - removing it again",
+                    key, cache.getName(), tombstonedKeys.getIfPresent(key));
+        } else {
+            // There could be falsely detected resurrections here if a new session is created in the same realm after the bulk removal,
+            // so only log this as a debug message.
+            logger.debugf("Skipping cache entry for '%s' in cache '%s' (realm not-before %d) - removing it again",
+                    key, cache.getName(), realmNotBefore.getIfPresent(entity.getRealmId()));
+        }
         // Conditional remove: only delete if the entry still holds exactly the resurrected value. This
         // avoids discarding a legitimate write that may have landed on the same key in the meantime.
         cache.removeAsync(key, value).whenComplete((removed, error) -> {
