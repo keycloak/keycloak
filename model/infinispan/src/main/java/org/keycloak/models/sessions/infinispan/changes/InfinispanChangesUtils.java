@@ -124,7 +124,7 @@ public class InfinispanChangesUtils {
                 break;
             case ADD_IF_ABSENT:
                 CompletableFuture<Void> putIfAbsentFuture = cacheHolder.cache().putIfAbsentAsync(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS)
-                        .thenCompose(existing -> handlePutIfAbsentResponse(cacheHolder, existing, key, task, logger));
+                        .thenCompose(existing -> handlePutIfAbsentResponse(cacheHolder, existing, key, task, sessionWrapper, logger));
                 stage.dependsOn(putIfAbsentFuture);
                 break;
             case REPLACE:
@@ -141,6 +141,7 @@ public class InfinispanChangesUtils {
             SessionEntityWrapper<V> existing,
             K key,
             MergedUpdate<V> task,
+            SessionEntityWrapper<V> sessionWrapper,
             Logger logger
     ) {
         if (existing == null) {
@@ -148,6 +149,14 @@ public class InfinispanChangesUtils {
                 logger.tracef("Add_if_absent successfully called for entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cacheHolder.cache().getName(), task.getLifespanMs(), task.getMaxIdleTimeMs());
             }
             return CompletableFutures.completedNull();
+        }
+        if (existing.isTombstoneMarker()) {
+            // The tombstone blocked putIfAbsent; try to overwrite it with a CAS replace. If the
+            // listener already removed the tombstone and the CAS fails, the session simply stays
+            // uncached until the next read loads it from the database.
+            logger.debugf("Existing entity in cache for key %s is a tombstone marker, treating as absent", key);
+            return cacheHolder.cache().replaceAsync(key, existing, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS)
+                    .thenApply(replaced -> null);
         }
         if (logger.isDebugEnabled()) {
             logger.debugf("Existing entity in cache for key: %s . Will update it", key);

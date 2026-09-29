@@ -225,7 +225,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
     private void lookupAndAndExecuteTask(K key, PersistentSessionUpdateTask<V> task) {
         // Lookup entity from cache
         SessionEntityWrapper<V> wrappedEntity = getCache(task.isOffline()).get(key);
-        if (wrappedEntity == null) {
+        if (wrappedEntity == null || wrappedEntity.isTombstoneMarker()) {
             LOG.tracef("Not present cache item for key %s", key);
             return;
         }

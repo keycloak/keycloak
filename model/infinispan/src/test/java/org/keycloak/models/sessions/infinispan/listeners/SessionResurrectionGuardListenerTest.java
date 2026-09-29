@@ -138,6 +138,28 @@ public class SessionResurrectionGuardListenerTest {
                 cache.get(key));
     }
 
+    @Test
+    public void tombstoneOverwritingLiveEntryIsObservedViaModify() {
+        // When a session is removed while it is still cached, the tombstone overwrites the live entry,
+        // firing a CacheEntryModified (not CacheEntryCreated) notification. This test verifies that
+        // the @CacheEntryModified path is functional.
+        String key = "session-6";
+        SessionEntityWrapper<UserSessionEntity> live = wrap(key, 1000);
+        cache.put(key, live);
+        assertNotNull(cache.get(key));
+
+        SessionEntityWrapper<UserSessionEntity> tombstone = SessionEntityWrapper.createTombstoneMarker(live.getEntity());
+        cache.put(key, tombstone);
+
+        awaitRemoval(key);
+        assertNull("Tombstone written over a live entry must be observed and removed", cache.get(key));
+
+        // Verify the key is now guarded: a stale re-insertion should be removed.
+        cache.putIfAbsent(key, live);
+        awaitRemoval(key);
+        assertNull("Re-insertion after tombstone-via-modify must be treated as resurrection", cache.get(key));
+    }
+
     private static SessionEntityWrapper<UserSessionEntity> wrap(String id, int started) {
         return new SessionEntityWrapper<>(entity(id, started));
     }
