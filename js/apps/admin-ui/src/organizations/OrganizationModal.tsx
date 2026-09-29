@@ -86,7 +86,7 @@ export const OrganizationModal = ({
         isPaginated
         ariaLabelKey="organizationsList"
         searchPlaceholderKey="searchOrganization"
-        canSelectAll={!isRadio}
+        canSelectAll
         onSelect={(rows) => setSelectedRows([...rows])}
         isRowDisabled={isRowDisabled}
         columns={[
