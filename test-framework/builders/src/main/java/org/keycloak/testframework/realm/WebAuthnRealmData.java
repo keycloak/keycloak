@@ -61,6 +61,22 @@ public class WebAuthnRealmData {
         return isPasswordless ? realm.getWebAuthnPolicyPasswordlessAcceptableAaguids() : realm.getWebAuthnPolicyAcceptableAaguids();
     }
 
+    public Boolean getPasskeysEnabled() {
+        if (isPasswordless) {
+            return realm.getWebAuthnPolicyPasswordlessPasskeysEnabled();
+        } else {
+            throw new UnsupportedOperationException("Passkeys can be enabled only for a passwordless policy");
+        }
+    }
+
+    public String getMediation() {
+        if (isPasswordless) {
+            return realm.getWebAuthnPolicyPasswordlessMediation();
+        } else {
+            throw new UnsupportedOperationException("Mediation can be set only for a passwordless policy");
+        }
+    }
+
     public RealmRepresentation getRealm() {
         return realm;
     }
@@ -125,6 +141,16 @@ public class WebAuthnRealmData {
 
         public Builder acceptableAaguids(List<String> aaguids) {
             setProperty(aaguids, realm::setWebAuthnPolicyAcceptableAaguids, realm::setWebAuthnPolicyPasswordlessAcceptableAaguids);
+            return this;
+        }
+
+        public Builder passkeysEnabled(Boolean enabled) {
+            setProperty(enabled, (en) -> { throw new UnsupportedOperationException("Passkeys can be enabled only for a passwordless policy"); }, realm::setWebAuthnPolicyPasswordlessPasskeysEnabled);
+            return this;
+        }
+
+        public Builder mediation(String mediation) {
+            setProperty(mediation, (med) -> { throw new UnsupportedOperationException("Mediation can be set only for a passwordless policy"); }, realm::setWebAuthnPolicyPasswordlessMediation);
             return this;
         }
 

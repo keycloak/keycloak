@@ -498,23 +498,27 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
 
             builder.requiredActions(actionRep2);
 
-            builder.webAuthnPolicySignatureAlgorithms(List.of("ES256", "RS256", "RS1"))
-                .webAuthnPolicyAttestationConveyancePreference("not specified")
-                .webAuthnPolicyAuthenticatorAttachment("not specified")
-                .webAuthnPolicyResidentKey("not specified")
-                .webAuthnPolicyUserVerificationRequirement("not specified")
-                .webAuthnPolicyRpEntityName("keycloak-webauthn-2FA")
-                .webAuthnPolicyCreateTimeout(60)
-                .webAuthnPolicyAvoidSameAuthenticatorRegister(true);
+            builder.webAuthn(false, bldr ->
+                    bldr.signatureAlgorithms(List.of("ES256", "RS256", "RS1"))
+                            .attestationConveyancePreference("not specified")
+                            .authenticatorAttachment("not specified")
+                            .residentKey("not specified")
+                            .userVerificationRequirement("not specified")
+                            .rpEntityName("keycloak-webauthn-2FA")
+                            .timeout(60)
+                            .avoidSameAuthenticatorRegister(true)
+            );
 
-            builder.webAuthnPolicyPasswordlessSignatureAlgorithms(List.of("ES256", "RS256", "RS1"))
-                .webAuthnPolicyPasswordlessAttestationConveyancePreference("not specified")
-                .webAuthnPolicyPasswordlessAuthenticatorAttachment("not specified")
-                .webAuthnPolicyPasswordlessResidentKey("not specified")
-                .webAuthnPolicyPasswordlessUserVerificationRequirement("not specified")
-                .webAuthnPolicyPasswordlessRpEntityName("keycloak-webauthn-passwordless-2FA")
-                .webAuthnPolicyPasswordlessCreateTimeout(60)
-                .webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister(true);
+            builder.webAuthn(true, bldr ->
+                    bldr.signatureAlgorithms(List.of("ES256", "RS256", "RS1"))
+                            .attestationConveyancePreference("not specified")
+                            .authenticatorAttachment("not specified")
+                            .residentKey("not specified")
+                            .userVerificationRequirement("not specified")
+                            .rpEntityName("keycloak-webauthn-passwordless-2FA")
+                            .timeout(60)
+                            .avoidSameAuthenticatorRegister(true)
+            );
 
             builder.browserFlow("browser-webauthn");
 
