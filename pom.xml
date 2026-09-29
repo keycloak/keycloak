@@ -38,7 +38,7 @@
 
         <project.version.npm>999.0.0-SNAPSHOT</project.version.npm>
 
-        <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
+        <asciidoctor.plugin.version>3.2.0</asciidoctor.plugin.version>
 
         <quarkus.version>3.40.1</quarkus.version>
         <quarkus.build.version>3.40.1</quarkus.build.version>
