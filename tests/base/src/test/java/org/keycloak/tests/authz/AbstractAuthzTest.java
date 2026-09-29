@@ -7,11 +7,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-
-import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -25,11 +25,10 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.SectorIdentifierRedirectUrisProvider;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectSectorIdentifierRedirectUrisProvider;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.client.resources.TestApplicationResource;
-import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +39,8 @@ import org.junit.jupiter.api.BeforeEach;
 public abstract class AbstractAuthzTest extends AuthzTestRealmSupport {
 
     private final List<String> importedRealmNames = new ArrayList<>();
+    private final LinkedList<EventRepresentation> eventQueue = new LinkedList<>();
+    private final Set<String> processedEventIds = new HashSet<>();
 
     @InjectAdminClient
     protected Keycloak injectedAdminClient;
@@ -47,15 +48,17 @@ public abstract class AbstractAuthzTest extends AuthzTestRealmSupport {
     @InjectOAuthClient
     protected OAuthClient oauth;
 
+    @InjectSectorIdentifierRedirectUrisProvider
+    protected SectorIdentifierRedirectUrisProvider sectorIdentifierRedirectUrisProvider;
+
     @BeforeEach
     public void beforeAuthzTest() {
         adminClient = injectedAdminClient;
         // OAuthClient is CLASS-scoped; clear mutable state left by earlier test methods.
         oauth.scope(null);
-        getTestingClient();
-        runOnServerMaster = testingClient.server();
-        runOnServer = testingClient.server("test");
         importedRealmNames.clear();
+        eventQueue.clear();
+        processedEventIds.clear();
         testRealmReps = new ArrayList<>();
         addTestRealms(testRealmReps);
         ensureInjectedOAuthRedirectUris(testRealmReps);
@@ -68,14 +71,12 @@ public abstract class AbstractAuthzTest extends AuthzTestRealmSupport {
         try {
             runManagedCleanupBeforeRealmRemoval();
         } finally {
-            try {
-                for (String realmName : importedRealmNames) {
-                    removeRealm(realmName);
-                }
-            } finally {
-                importedRealmNames.clear();
-                closeTestingClient();
+            for (String realmName : importedRealmNames) {
+                removeRealm(realmName);
             }
+            importedRealmNames.clear();
+            eventQueue.clear();
+            processedEventIds.clear();
         }
     }
 
@@ -99,18 +100,6 @@ public abstract class AbstractAuthzTest extends AuthzTestRealmSupport {
                 }
             }
         }
-    }
-
-    public KeycloakTestingClient getTestingClient() {
-        if (testingClient == null) {
-            String authServerRoot = oauth.getBaseUrl();
-            int realmSegmentIndex = authServerRoot.indexOf("/realms/");
-            if (realmSegmentIndex >= 0) {
-                authServerRoot = authServerRoot.substring(0, realmSegmentIndex);
-            }
-            testingClient = KeycloakTestingClient.getInstance(authServerRoot);
-        }
-        return testingClient;
     }
 
     protected AccessToken toAccessToken(String rpt) {
@@ -153,11 +142,7 @@ public abstract class AbstractAuthzTest extends AuthzTestRealmSupport {
 
     protected InputStream authzConfigurationStream(InputStream input) {
         try {
-            String authServerRoot = oauth.getBaseUrl();
-            int realmSegmentIndex = authServerRoot.indexOf("/realms/");
-            if (realmSegmentIndex >= 0) {
-                authServerRoot = authServerRoot.substring(0, realmSegmentIndex);
-            }
+            String authServerRoot = authServerRoot();
             String config = new String(input.readAllBytes(), StandardCharsets.UTF_8)
                     .replace("http://localhost:8180/auth", authServerRoot)
                     .replace("https://localhost:8543/auth", authServerRoot);
@@ -203,29 +188,55 @@ public abstract class AbstractAuthzTest extends AuthzTestRealmSupport {
     }
 
     protected String pairwiseSectorIdentifierUri() {
-        return UriBuilder.fromUri(authServerRoot())
-                .path(TestApplicationResource.class)
-                .path(TestApplicationResource.class, "oidcClientEndpoints")
-                .path(TestOIDCEndpointsApplicationResource.class, "getSectorIdentifierRedirectUris")
-                .build().toString();
+        return sectorIdentifierRedirectUrisProvider.getUri();
     }
 
     protected void configureSectorIdentifierRedirectUris(String... redirectUris) {
-        getTestingClient().testApp().oidcClientEndpoints().setSectorIdentifierRedirectUris(Arrays.asList(redirectUris));
+        sectorIdentifierRedirectUrisProvider.setSectorIdentifierRedirectUris(Arrays.asList(redirectUris));
     }
 
     protected EventRepresentation pollTestEvent() {
-        return getTestingClient().testing().pollEvent();
+        long deadline = System.currentTimeMillis() + 5000;
+        while (System.currentTimeMillis() < deadline) {
+            fetchEventsIntoQueue();
+            EventRepresentation event = eventQueue.poll();
+            if (event != null) {
+                return event;
+            }
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        fetchEventsIntoQueue();
+        return eventQueue.poll();
     }
 
     protected void clearTestEvents() {
-        getTestingClient().testing().clearEventQueue();
+        eventQueue.clear();
+        processedEventIds.clear();
+        for (String realmName : importedRealmNames) {
+            try {
+                adminClient.realm(realmName).clearEvents();
+            } catch (Exception ignore) {
+            }
+        }
     }
 
-    private void closeTestingClient() {
-        if (testingClient != null) {
-            testingClient.close();
-            testingClient = null;
+    private void fetchEventsIntoQueue() {
+        for (String realmName : importedRealmNames) {
+            List<EventRepresentation> events = adminClient.realm(realmName)
+                    .getEvents(null, null, null, null, null, null, null, null, "asc");
+            if (events == null) {
+                continue;
+            }
+            for (EventRepresentation event : events) {
+                if (event.getId() != null && processedEventIds.add(event.getId())) {
+                    eventQueue.add(event);
+                }
+            }
         }
     }
 }

@@ -26,7 +26,6 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
-import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +42,6 @@ public class AuthorizationDisabledInPreviewTest {
     ManagedRealm managedRealm;
 
     @Test
-    @UncaughtServerErrorExpected
     public void testAuthzServicesRemoved() {
         String id = managedRealm.admin().clients().findAll().get(0).getId();
         try {

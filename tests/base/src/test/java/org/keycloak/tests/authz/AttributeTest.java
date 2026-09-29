@@ -20,6 +20,7 @@ package org.keycloak.tests.authz;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -29,7 +30,6 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
 
-import org.apache.commons.collections.map.HashedMap;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
@@ -49,7 +49,7 @@ public class AttributeTest {
 
     @Test
     public void testManageAttributes() throws ParseException {
-        Map<String, Collection<String>> map = new HashedMap();
+        Map<String, Collection<String>> map = new HashMap<>();
 
         map.put("integer", asList("1"));
         map.put("long", asList("" + Long.MAX_VALUE));

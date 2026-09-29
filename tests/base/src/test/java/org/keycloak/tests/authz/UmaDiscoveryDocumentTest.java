@@ -16,11 +16,14 @@
  */
 package org.keycloak.tests.authz;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 
 import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
@@ -33,9 +36,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
-import org.keycloak.testsuite.AbstractAdminTest;
-import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.oauth.Endpoints;
+import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.Test;
 
@@ -49,7 +51,7 @@ public class UmaDiscoveryDocumentTest extends AbstractAuthzTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realm = AbstractAdminTest.loadJson(
+        RealmRepresentation realm = loadJson(
                 getClass().getResourceAsStream("/org/keycloak/tests/testrealm.json"), RealmRepresentation.class);
         if (realm.getEventsListeners() != null) {
             realm.setEventsListeners(realm.getEventsListeners().stream()
@@ -61,7 +63,7 @@ public class UmaDiscoveryDocumentTest extends AbstractAuthzTest {
 
     @Test
     public void testFetchDiscoveryDocument() {
-        Client client = AdminClientUtil.createResteasyClient();
+        Client client = ClientBuilder.newClient();
         String authServerRoot = oauth.getBaseUrl();
         int realmSegmentIndex = authServerRoot.indexOf("/realms/");
         if (realmSegmentIndex >= 0) {
@@ -107,7 +109,7 @@ public class UmaDiscoveryDocumentTest extends AbstractAuthzTest {
 
         adminClient.realm("test").update(test);
 
-        Client client = AdminClientUtil.createResteasyClient();
+        Client client = ClientBuilder.newClient();
         String authServerRoot = oauth.getBaseUrl();
         int realmSegmentIndex = authServerRoot.indexOf("/realms/");
         if (realmSegmentIndex >= 0) {
@@ -136,6 +138,14 @@ public class UmaDiscoveryDocumentTest extends AbstractAuthzTest {
             assertEquals(baseBackendUri + "/authz/protection/permission", configuration.getPermissionEndpoint());
             assertEquals(baseBackendUri + "/authz/protection/permission", configuration.getPermissionEndpoint());
             assertEquals(baseFrontendUri + "/protocol/openid-connect/auth", configuration.getAuthorizationEndpoint());
+        }
+    }
+
+    private static <T> T loadJson(InputStream is, Class<T> type) {
+        try {
+            return JsonSerialization.readValue(is, type);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse json", e);
         }
     }
 }

@@ -52,14 +52,14 @@ import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 @KeycloakIntegrationTest(config = DefaultAuthzServerConfig.class)
 public class PolicyEvaluationCompositeRoleTest extends AbstractAuthzTest {
+
+    private static final String TEST = "test";
 
     @InjectRealm
     ManagedRealm managedRealm;

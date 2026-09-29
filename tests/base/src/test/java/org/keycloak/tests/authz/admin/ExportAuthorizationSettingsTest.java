@@ -32,10 +32,8 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
-import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
-import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.tests.authz.config.DefaultAuthzServerConfig;
 
@@ -52,9 +50,6 @@ import static org.hamcrest.Matchers.notNullValue;
  */
 @KeycloakIntegrationTest(config = DefaultAuthzServerConfig.class)
 public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
-
-    @InjectRealm
-    ManagedRealm managedRealm;
 
     //KEYCLOAK-4341
     @Test
@@ -113,8 +108,10 @@ public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
         ClientResource clientResource = getClientResource();
         AuthorizationResource authorizationResource = clientResource.authorization();
         
-        ClientRepresentation account = managedRealm.admin().clients().findByClientId("account").get(0);
-        RoleRepresentation role = managedRealm.admin().clients().get(account.getId()).roles().get("view-profile").toRepresentation();
+        // Look up the role in the same realm as the resource server (authz-test), not the default injected realm.
+        var realm = adminClient.realm(getRealmId());
+        ClientRepresentation account = realm.clients().findByClientId("account").get(0);
+        RoleRepresentation role = realm.clients().get(account.getId()).roles().get("view-profile").toRepresentation();
         
         PolicyRepresentation policy = new PolicyRepresentation();
         policy.setName("role-based-policy");
