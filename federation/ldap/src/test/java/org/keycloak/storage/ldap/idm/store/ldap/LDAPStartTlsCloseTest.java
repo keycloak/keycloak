@@ -78,8 +78,43 @@ public class LDAPStartTlsCloseTest {
         Assert.assertEquals(3_000, socket.soTimeout);
     }
 
+    @Test
+    public void closeRestoresTimeoutOnTransportWhenSslSocketIsClosed() {
+        TestSSLSocket socket = new TestSSLSocket();
+        TestTransportSocket transport = new TestTransportSocket();
+        socket.soTimeout = 125;
+        transport.soTimeout = 125;
+        TestStartTlsResponse response = new TestStartTlsResponse(() -> {
+            Assert.assertEquals(3_000, socket.soTimeout);
+            socket.close();
+        });
+
+        LDAPStartTlsClose.close(response, socket, transport);
+
+        Assert.assertEquals(1, response.closeCalls);
+        Assert.assertTrue(socket.closed);
+        Assert.assertFalse(transport.closed);
+        Assert.assertEquals(125, transport.soTimeout);
+    }
+
     private static final class TestTransportSocket extends Socket {
         private boolean closed;
+        private int soTimeout;
+
+        @Override
+        public void setSoTimeout(int timeout) {
+            soTimeout = timeout;
+        }
+
+        @Override
+        public int getSoTimeout() {
+            return soTimeout;
+        }
+
+        @Override
+        public boolean isClosed() {
+            return closed;
+        }
 
         @Override
         public void close() {

@@ -75,11 +75,14 @@ final class LDAPStartTlsClose {
             logger.warn("Could not close Ldap tlsResponse within the configured socket timeout; closing the TLS socket.", e);
             closeSocket(socket, transport);
         } finally {
-            if (closed && !socket.isClosed()) {
-                try {
-                    socket.setSoTimeout(originalTimeout);
-                } catch (IOException e) {
-                    logger.debug("Could not restore the LDAP TLS socket timeout after closing the TLS response.", e);
+            if (closed) {
+                Socket timeoutSocket = socket.isClosed() && transport != null ? transport : socket;
+                if (!timeoutSocket.isClosed()) {
+                    try {
+                        timeoutSocket.setSoTimeout(originalTimeout);
+                    } catch (IOException e) {
+                        logger.debug("Could not restore the LDAP TLS socket timeout after closing the TLS response.", e);
+                    }
                 }
             }
         }
