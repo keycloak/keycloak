@@ -320,6 +320,75 @@ public class NotificationStepTest extends AbstractWorkflowTest {
     }
 
     @Test
+    public void testNotifyUserStepWithCustomSubjectResolvingProperties() throws Exception {
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .withConfig("subject", "${user.firstName}, your ${realm.name} account's review is due in ${workflow.daysUntilNextStep} days")
+                                .withConfig("message", "<p>Dear ${user.firstName},</p>")
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(7))
+                                .build()
+                ).build()).close();
+
+        try {
+            managedRealm.admin().users().create(
+                    UserBuilder.create()
+                            .username("testuser6")
+                            .email("test6@example.com")
+                            .name("Bob", "Doe")
+                            .build()
+            ).close();
+
+            assertTrue(mailServer.waitForIncomingEmail(10_000, 1), "notification email not received");
+
+            MimeMessage message = mailServer.getLastReceivedMessage();
+            assertNotNull(message);
+
+            // properties are resolved and the text is not interpreted as a MessageFormat pattern
+            assertEquals("Bob, your " + managedRealm.getName() + " account's review is due in 7 days", message.getSubject());
+        } finally {
+            mailServer.runCleanup();
+        }
+    }
+
+    @Test
+    public void testNotifyUserStepWithCustomSubjectFromMessageBundle() throws Exception {
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .withConfig("subject", "accountNotificationSubject")
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(7))
+                                .build()
+                ).build()).close();
+
+        try {
+            managedRealm.admin().users().create(
+                    UserBuilder.create()
+                            .username("testuser7")
+                            .email("test7@example.com")
+                            .name("Bob", "Doe")
+                            .build()
+            ).close();
+
+            assertTrue(mailServer.waitForIncomingEmail(10_000, 1), "notification email not received");
+
+            MimeMessage message = mailServer.getLastReceivedMessage();
+            assertNotNull(message);
+
+            // a subject matching a key from the email theme message bundle still resolves to the localized text
+            assertEquals("Account Notification", message.getSubject());
+        } finally {
+            mailServer.runCleanup();
+        }
+    }
+
+    @Test
     public void testNotifyUserStepWithSendToConfiguration() throws Exception {
         // Create workflow: notify immediately with send_to
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
