@@ -28,6 +28,7 @@ import java.util.Map;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientScopeModel;
@@ -47,12 +48,14 @@ import org.keycloak.services.clientpolicy.condition.AcrCondition;
 import org.keycloak.services.clientpolicy.condition.AcrConditionFactory;
 import org.keycloak.services.clientpolicy.executor.AuthenticationFlowSelectorExecutor;
 import org.keycloak.services.clientpolicy.executor.AuthenticationFlowSelectorExecutorFactory;
+import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -76,15 +79,21 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
 
     private static String PASSWORD_OTP_FLOW_ALIAS = "password-otp-flow";
 
+    private static String NO_OTP_USER = "no-otp-user";
+
     // pages
     @Page
     protected LoginTotpPage loginTotpPage;
+
+    @Page
+    protected LoginConfigTotpPage loginConfigTotpPage;
 
     @Page
     protected LoginPage loginPage;
 
     private TimeBasedOTP totp = new TimeBasedOTP();
     private static String userId;
+    private static String noOtpUserId;
 
     /**
      * Create the ACR protocol mapper and add it to the test OIDC client.
@@ -96,6 +105,11 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
         UserRepresentation user = createTestUser("test-user", PASSWORD, TOTP_SECRET);
         testRealm.getUsers().add(user);
         userId = user.getId();
+
+        // user without any otp credential
+        UserRepresentation noOtpUser = createTestUser(NO_OTP_USER, PASSWORD, null);
+        testRealm.getUsers().add(noOtpUser);
+        noOtpUserId = noOtpUser.getId();
 
         // setup acr scope
         ClientScopeRepresentation scope = createScope();
@@ -351,6 +365,83 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
         tokens = assertLoginWithAcr(userId, "acr-otp");
 
         logout(userId, tokens);
+    }
+
+    @Test
+    public void test2FASetupBypassViaSessionRestart() {
+        startForcedOtpSetup();
+
+        restartAuthenticationSession();
+        authenticatePassword(NO_OTP_USER, PASSWORD);
+        loginConfigTotpPage.assertCurrent();
+    }
+
+    @Test
+    public void test2FASetupBypassViaSessionRestartDuringReAuth() {
+        setAcrClientPolicy(adminClient, TEST_REALM_NAME, "acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+
+        // Log in with password first, so the restart below goes through the re-authentication branch
+        loginWithAcr(List.of("acr-password"));
+        authenticatePassword(NO_OTP_USER, PASSWORD);
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        getCleanup().addCleanup(() -> testRealm().logoutAll());
+        Assert.assertEquals(1, testRealm().users().get(noOtpUserId).getUserSessions().size());
+
+        loginWithAcr(List.of("acr-otp"));
+        authenticatePassword(NO_OTP_USER, PASSWORD);
+        loginConfigTotpPage.assertCurrent();
+
+        restartAuthenticationSession();
+        Assert.assertTrue(testRealm().users().get(noOtpUserId).getUserSessions().isEmpty());
+        authenticatePassword(NO_OTP_USER, PASSWORD);
+        loginConfigTotpPage.assertCurrent();
+    }
+
+    @Test
+    public void test2FASetupBypassViaRestartCookie() {
+        startForcedOtpSetup();
+
+        // Without AUTH_SESSION_ID the session is rebuilt from the KC_RESTART cookie
+        driver.manage().deleteCookieNamed(CookieType.AUTH_SESSION_ID.getName());
+        driver.navigate().to(driver.getCurrentUrl());
+        authenticatePassword(NO_OTP_USER, PASSWORD);
+        loginConfigTotpPage.assertCurrent();
+    }
+
+    @Test
+    public void test2FASetupEnforcedLoaSurvivesRestart() {
+        startForcedOtpSetup();
+
+        restartAuthenticationSession();
+        authenticatePassword(NO_OTP_USER, PASSWORD);
+
+        // Log out and remove the configured OTP afterwards, so other tests start logged out with a user without OTP
+        getCleanup().addCleanup(() -> testRealm().logoutAll());
+        getCleanup().addCleanup(() -> testRealm().users().get(noOtpUserId).credentials().stream()
+                .filter(credential -> "otp".equals(credential.getType()))
+                .forEach(credential -> testRealm().users().get(noOtpUserId).removeCredential(credential.getId())));
+        configureTOTP();
+
+        AccessTokenResponse response = oauth.client(CLIENT_ID, CLIENT_SECRET).doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assert.assertEquals(200, response.getStatusCode());
+        Assert.assertEquals("acr-otp", oauth.verifyToken(response.getAccessToken()).getAcr());
+    }
+
+    private void startForcedOtpSetup() {
+        setAcrClientPolicy(adminClient, TEST_REALM_NAME, "acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+        loginWithAcr(List.of("acr-otp"));
+        authenticatePassword(NO_OTP_USER, PASSWORD);
+        loginConfigTotpPage.assertCurrent();
+    }
+
+    private void restartAuthenticationSession() {
+        // Swap the current login-actions sub-path for "restart", keeping the client_id/tab_id already in the URL
+        driver.navigate().to(driver.getCurrentUrl().replaceFirst("/login-actions/[^/?]+", "/login-actions/restart"));
+    }
+
+    private void configureTOTP() {
+        loginConfigTotpPage.assertCurrent();
+        loginConfigTotpPage.configure(totp.generateTOTP(loginConfigTotpPage.getTotpSecret()));
     }
 
     private void setAcrClientPolicy(Keycloak adminClient, String realm, String acr, String alias) {
