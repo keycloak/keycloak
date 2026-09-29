@@ -35,6 +35,7 @@ export const IdpDomainsTab = ({ alias }: IdpDomainsTabProps) => {
           const org = await adminClient.organizations.findOne({
             id: link.organizationId!,
           });
+          if (!org) return [];
           return (org.domains ?? [])
             .filter((d) => d.identityProviderAlias === alias)
             .map((d) => ({
