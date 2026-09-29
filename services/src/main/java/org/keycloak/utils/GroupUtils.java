@@ -11,12 +11,15 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Permissions;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.GroupPermissionEvaluator;
 
 
@@ -203,6 +206,40 @@ public class GroupUtils {
     public static GroupRepresentation populateSubGroupCount(GroupModel group, GroupRepresentation representation) {
         representation.setSubGroupCount(group.getSubGroupsCount());
         return representation;
+    }
+
+    /**
+     * Removes role and client entries from a {@link GroupRepresentation} that the caller
+     * is not authorized to view. Recurses into subgroups.
+     */
+    public static void filterRolesInRepresentation(GroupRepresentation rep, RealmModel realm, KeycloakSession session, AdminPermissionEvaluator auth) {
+        if (rep.getClientRoles() != null) {
+            rep.getClientRoles().entrySet().removeIf(entry -> {
+                ClientModel client = realm.getClientByClientId(entry.getKey());
+                // No client-level gate: canView(role) falls back to canMapRole(role),
+                // which makes roles visible even without viewing the client. (PR #52754)
+                if (client == null) {
+                    return true;
+                }
+                List<String> roles = entry.getValue();
+                roles.removeIf(roleName -> {
+                    RoleModel role = session.roles().getClientRole(client, roleName);
+                    return role == null || !auth.roles().canView(role);
+                });
+                return roles.isEmpty();
+            });
+        }
+
+        if (rep.getRealmRoles() != null) {
+            rep.getRealmRoles().removeIf(roleName -> {
+                RoleModel role = realm.getRole(roleName);
+                return role == null || !auth.roles().canView(role);
+            });
+        }
+
+        if (rep.getSubGroups() != null) {
+            rep.getSubGroups().forEach(sub -> filterRolesInRepresentation(sub, realm, session, auth));
+        }
     }
 
     //From org.keycloak.admin.ui.rest.GroupsResource

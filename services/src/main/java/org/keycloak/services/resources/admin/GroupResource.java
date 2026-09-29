@@ -41,14 +41,12 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.GroupPathChangeEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -108,31 +106,7 @@ public class GroupResource {
         this.auth.groups().requireView(group);
 
         GroupRepresentation rep = GroupUtils.toRepresentation(this.auth.groups(), group, true);
-
-        if (rep.getClientRoles() != null) {
-            rep.getClientRoles().entrySet().removeIf(entry -> {
-                ClientModel client = realm.getClientByClientId(entry.getKey());
-
-                if (client == null) {
-                    return true;
-                }
-
-                List<String> roles = entry.getValue();
-                roles.removeIf(roleName -> {
-                    RoleModel role = session.roles().getClientRole(client, roleName);
-                    return role == null || !auth.roles().canView(role);
-                });
-                return roles.isEmpty();
-            });
-        }
-
-        if (rep.getRealmRoles() != null) {
-            rep.getRealmRoles().removeIf(roleName -> {
-                RoleModel role = realm.getRole(roleName);
-                return role == null || !auth.roles().canView(role);
-            });
-        }
-
+        GroupUtils.filterRolesInRepresentation(rep, realm, session, auth);
         rep.setAccess(auth.groups().getAccess(group));
 
         return GroupUtils.populateSubGroupCount(group, rep);
@@ -229,6 +203,9 @@ public class GroupResource {
         return paginatedStream(stream, first, max)
             .map(g -> {
                 GroupRepresentation rep = GroupUtils.toRepresentation(auth.groups(), g, !briefRepresentation);
+                if (!briefRepresentation) {
+                    GroupUtils.filterRolesInRepresentation(rep, realm, session, auth);
+                }
 
                 if (subGroupsCount) {
                     return GroupUtils.populateSubGroupCount(g, rep);
