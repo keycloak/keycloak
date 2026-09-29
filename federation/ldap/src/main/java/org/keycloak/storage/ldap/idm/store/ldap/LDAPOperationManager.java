@@ -619,18 +619,23 @@ public class LDAPOperationManager {
             throw new AuthenticationException("Unexpected exception when validating password of user");
         } finally {
             recordLdapRequest("authenticate", success, startTimeNanos, errorName);
-            if (tlsResponse != null) {
-                LDAPStartTlsClose.close(tlsResponse, tlsSocket.get(), tlsTransport.get());
-            }
-
-            if (authCtx != null) {
+            try {
+                if (tlsResponse != null) {
+                    LDAPStartTlsClose.close(tlsResponse, tlsSocket.get(), tlsTransport.get());
+                }
+            } finally {
                 try {
-                    authCtx.close();
-                } catch (NamingException e) {
-                    e.printStackTrace();
+                    if (authCtx != null) {
+                        try {
+                            authCtx.close();
+                        } catch (NamingException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                } finally {
+                    tracing.endSpan();
                 }
             }
-            tracing.endSpan();
         }
     }
 
