@@ -37,6 +37,7 @@ import org.keycloak.organization.authentication.authenticators.browser.Organizat
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -58,6 +59,7 @@ import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
 import org.keycloak.testframework.ui.page.LoginUsernamePage;
+import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.testframework.ui.page.SelectOrganizationPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
@@ -104,6 +106,9 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @InjectPage
     ErrorPage errorPage;
+
+    @InjectPage
+    OAuthGrantPage oauthGrantPage;
 
     @InjectPage
     SelectOrganizationPage selectOrganizationPage;
@@ -622,6 +627,39 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(organizations, hasItem(orgB.getAlias()));
         assertThat(organizations, not(hasItem(orgA.getAlias())));
+    }
+
+    @Test
+    public void testConsentScreenRendersForMultiOrgUser() {
+        OrganizationRepresentation orgA = createOrganization();
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        OrganizationResource orgAResource = realm.admin().organizations().get(orgA.getId());
+        OrganizationResource orgBResource = realm.admin().organizations().get(orgB.getId());
+        UserRepresentation member = addMember(orgAResource, memberEmail, "John", "Doe");
+        orgBResource.members().addMember(member.getId()).close();
+
+        ClientRepresentation clientRep = oauth.clientResource().toRepresentation();
+        clientRep.setConsentRequired(true);
+        oauth.clientResource().update(clientRep);
+        realm.cleanup().add(r -> {
+            clientRep.setConsentRequired(false);
+            r.clients().get(clientRep.getId()).update(clientRep);
+        });
+
+        oauth.scope("organization");
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
+        loginUsernamePage.submit();
+
+        selectOrganizationPage.assertCurrent();
+        selectOrganizationPage.selectOrganization(orgA.getAlias());
+
+        loginPage.fillPassword(memberPassword);
+        loginPage.submit();
+
+        oauthGrantPage.assertCurrent();
+        oauthGrantPage.accept();
+        assertLoginSuccess();
     }
 
     @Test
