@@ -142,5 +142,9 @@ public abstract class AbstractCommand implements Callable<Integer> {
     public boolean shouldStart() {
         return false;
     }
+    
+    public boolean usesPropertyMapperOptions() {
+        return false;
+    }
 
 }

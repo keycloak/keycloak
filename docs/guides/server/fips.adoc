@@ -253,6 +253,8 @@ RUN /opt/keycloak/bin/kc.sh build --features=fips --fips-mode=strict
 FROM quay.io/keycloak/keycloak:{containerlabel}
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 
+ENV KC_AUTO_BUILD=false
+
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
 ----
 

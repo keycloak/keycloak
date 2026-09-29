@@ -66,6 +66,9 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
 
     boolean requiresReAugmentation() {
         Map<String, String> rawPersistedProperties = Configuration.getRawPersistedProperties();
+        if (picocli.isAutoBuildDisabled()) {
+            return false; // already validated
+        }
         if (rawPersistedProperties.isEmpty()) {
             return true; // no build yet
         }
@@ -95,7 +98,7 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
         directBuild();
 
         if(!isDevMode()) {
-            spec.commandLine().getOut().printf("Next time you run the server, just add %s to the command to ensure this build is used.\n", OPTIMIZED_BUILD_OPTION_LONG);
+            spec.commandLine().getOut().printf("See the documentation on how to create an optimized build.\n");
         }
     }
 
@@ -142,6 +145,11 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
 
     @Override
     public boolean shouldStart() {
+        return true;
+    }
+    
+    @Override
+    public boolean usesPropertyMapperOptions() {
         return true;
     }
 

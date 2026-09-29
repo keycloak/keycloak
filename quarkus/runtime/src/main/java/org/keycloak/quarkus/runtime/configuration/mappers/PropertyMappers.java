@@ -34,7 +34,6 @@ import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.Expressions;
 
-import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 import static org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider.isKeyStoreConfigSource;
 
 public final class PropertyMappers {
@@ -140,8 +139,8 @@ public final class PropertyMappers {
     /**
      * Removes all disabled mappers from the runtime/buildtime mappers
      */
-    public static void sanitizeDisabledMappers(AbstractCommand command) {
-        MAPPERS.sanitizeDisabledMappers(command);
+    public static void sanitizeDisabledMappers(AbstractCommand command, boolean rebuildCheck) {
+        MAPPERS.sanitizeDisabledMappers(command, rebuildCheck);
     }
 
     public static String maskValue(String value, PropertyMapper<?> mapper) {
@@ -312,9 +311,9 @@ public final class PropertyMappers {
             return Collections.unmodifiableSet(wildcardConfig.wildcardMappers);
         }
 
-        public void sanitizeDisabledMappers(AbstractCommand command) {
+        public void sanitizeDisabledMappers(AbstractCommand command, boolean rebuildCheck) {
             // Initialize profile in order to check state of features. Disable Persisted CS for re-augmentation
-            if (isRebuildCheck()) {
+            if (rebuildCheck) {
                 PersistedConfigSource.getInstance().runWithDisabled(Environment::getCurrentOrCreateFeatureProfile);
             } else {
                 Environment.getCurrentOrCreateFeatureProfile();

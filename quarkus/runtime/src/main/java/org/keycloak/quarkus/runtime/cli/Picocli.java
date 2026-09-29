@@ -45,7 +45,7 @@ import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.Main;
-import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
+import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.quarkus.runtime.cli.command.Tools;
 import org.keycloak.quarkus.runtime.cli.command.WindowsService;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
@@ -86,6 +86,7 @@ import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIS
 
 public class Picocli {
 
+    public static final String KC_AUTO_BUILD = NS_KEYCLOAK_PREFIX + "auto-build";
     static final String PROVIDER_TIMESTAMP_ERROR = "A provider JAR was updated since the last build, please rebuild for this to be fully utilized.";
     static final String PROVIDER_TIMESTAMP_WARNING = "A provider jar has a different timestamp than when the optimized container image was created. If you are changing provider jars after the build, you must run another build to properly account for those modifications.";
     public static final String KC_PROVIDER_FILE_PREFIX = "kc.provider.file.";
@@ -93,7 +94,7 @@ public class Picocli {
     public static final String ARG_SHORT_PREFIX = "-";
     public static final String NO_PARAM_LABEL = "none";
 
-    private record IncludeOptions(boolean includeRuntime, boolean includeBuildTime, boolean allowUnrecognized) {
+    private record IncludeOptions(boolean includeRuntime, boolean includeBuildTime) {
     }
 
     private final ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
@@ -103,6 +104,7 @@ public class Picocli {
     private Ansi colorMode = hasColorSupport() ? Ansi.ON : Ansi.OFF;
     private IncludeOptions options;
     private Set<String> duplicatedOptionsNames = new HashSet<String>();
+    private boolean autoBuildDisabled;
 
     public static boolean hasColorSupport() {
         return TerminalUtils.hasColorSupport();
@@ -155,7 +157,7 @@ public class Picocli {
             initConfig(currentCommand);
 
             // now that the property mappers are properly initalized further refine the args
-            if (options.allowUnrecognized) {
+            if (currentCommand != null && currentCommand.usesPropertyMapperOptions()) {
                 normalizedArgs.keySet().removeIf(arg -> PropertyMappers.getMapperByCliKey(arg) != null || arg.startsWith(ConfigArgsConfigSource.SPI_OPTION_PREFIX));
             }
             unknown.forEach(arg -> {
@@ -230,8 +232,17 @@ public class Picocli {
      */
     public void validateConfig() {
         AbstractCommand abstractCommand = this.getParsedCommand().orElseThrow();
-        if (abstractCommand.isOptimized() && !wasBuildEverRun()) {
-            throw new PropertyException(Messages.optimizedUsedForFirstStartup());
+        if (abstractCommand.isOptimized()) {
+            // TODO: add an env variable to suppress this warning
+            warn("%s is deprecated, please see the documentation for the usage of the 'auto-build' configuration option instead.".formatted(AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG));
+        }
+        if (!wasBuildEverRun()) {
+            if (abstractCommand.isOptimized()) {
+                throw new PropertyException(Messages.optimizedUsedForFirstStartup("The '%s' flag was used".formatted(AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG)));
+            }
+            if (autoBuildDisabled) {
+                throw new PropertyException(Messages.optimizedUsedForFirstStartup("The 'auto-build' option was disabled"));
+            }
         }
         warnOnDuplicatedOptionsInCli();
 
@@ -240,7 +251,15 @@ public class Picocli {
         }
 
         if (!options.includeBuildTime) {
+            if (autoBuildDisabled) {
+                if (!Configuration.getRawPersistedProperties().containsKey(Configuration.KC_OPTIMIZED)) {
+                    throw new PropertyException("The `auto-build` option is `false`, but the current build is not from the `build` command. You should rerun the `build` command with the desired configuration.");
+                }
+            }
             validateBuildtime();
+            if (autoBuildDisabled) {
+                info("Reusing the current build as the `auto-build` option is `false` and no build options were changed.");
+            }
         }
 
         final List<String> ignoredRunTime = new ArrayList<>();
@@ -601,7 +620,7 @@ public class Picocli {
             // Completion is inheriting mixinStandardHelpOptions = true
         }
 
-        if (spec.subcommands().isEmpty() && spec.userObject() instanceof AbstractCommand ac && getIncludeOptions(ac).allowUnrecognized) {
+        if (spec.subcommands().isEmpty() && spec.userObject() instanceof AbstractCommand ac && ac.usesPropertyMapperOptions()) {
             spec.addUnmatchedArgsBinding(CommandLine.Model.UnmatchedArgsBinding.forStringArrayConsumer(new ISetter() {
                 @Override
                 public <T> T set(T value) {
@@ -701,11 +720,11 @@ public class Picocli {
 
     private IncludeOptions getIncludeOptions(AbstractCommand abstractCommand) {
         if (abstractCommand == null) {
-            return new IncludeOptions(false, false, false);
+            return new IncludeOptions(false, false);
         }
         boolean autoBuild = abstractCommand instanceof AbstractAutoBuildCommand;
-        boolean includeBuildTime = abstractCommand instanceof Build || (autoBuild && !abstractCommand.isOptimized());
-        return new IncludeOptions(autoBuild, includeBuildTime, autoBuild || includeBuildTime || abstractCommand instanceof ShowConfig);
+        boolean includeBuildTime = abstractCommand instanceof Build || (autoBuild && !autoBuildDisabled && !abstractCommand.isOptimized());
+        return new IncludeOptions(autoBuild, includeBuildTime);
     }
 
     private void addCommandOptions(CommandLine command, AbstractCommand ac) {
@@ -867,7 +886,7 @@ public class Picocli {
                         new StringBuilder("@|bold,red ")
                                 .append("The previous optimized build will be overridden with the following build options:")
                                 .append(options)
-                                .append("\nTo avoid that, run the 'build' command again and then start the optimized server instance using the '--optimized' flag.")
+                                .append("\nTo avoid that, run the 'build' command again and then start the server instance with the `auto-build` option set to `false`.")
                                 .append("|@").toString()
                 )
         );
@@ -926,17 +945,35 @@ public class Picocli {
             throw new IllegalStateException("Config should not be initialized until profile is determined");
         }
         this.parsedCommand = Optional.ofNullable(command);
-        options = getIncludeOptions(command);
+        
+        // the order of the following calls is unfortunately important
+        // as the static state needs to be set prior to loading the config
 
-        Environment.setRebuildCheck(!Environment.isRebuilt() && command instanceof AbstractAutoBuildCommand
-                && !command.isOptimized());
+        boolean initialRebuildCheck = !Environment.isRebuilt() && command instanceof AbstractAutoBuildCommand && !command.isOptimized();
+        Environment.setRebuildCheck(initialRebuildCheck);
 
         String profile = Optional.ofNullable(org.keycloak.common.util.Environment.getProfile())
                 .or(() -> parsedCommand.map(AbstractCommand::getInitProfile)).orElse(Environment.PROD_PROFILE_VALUE);
 
         Environment.setProfile(profile);
+        
+        // we're not yet using a command option for auto build - determine it directly
+        // from the config - which can now be used given that the profile is set.
+        // if the profile isn't correct, it will get adjusted in AbstractAutoBuildCommand
+        String autoBuildValue = Configuration.getConfigValue(KC_AUTO_BUILD).getValue();
+        
+        if (autoBuildValue != null && initialRebuildCheck && !(command instanceof StartDev)) {
+            if (autoBuildValue.equals(Boolean.FALSE.toString())) {
+                autoBuildDisabled = true;
+            } else if (!autoBuildValue.equals(Boolean.TRUE.toString())) {
+                throw new PropertyException("The `auto-build` option may only be `true` or `false`");
+            }
+        }
+        
+        options = getIncludeOptions(command);
+                
         if (parsedCommand.filter(AbstractCommand::isHelpAll).isEmpty()) {
-            parsedCommand.ifPresent(PropertyMappers::sanitizeDisabledMappers);
+            parsedCommand.ifPresent(pc -> PropertyMappers.sanitizeDisabledMappers(pc, initialRebuildCheck && !autoBuildDisabled));
         }
     }
 
@@ -945,6 +982,10 @@ public class Picocli {
         if (!duplicatedOptionsNames.isEmpty()) {
             warn("Duplicated options present in CLI: %s".formatted(String.join(", ", duplicatedOptionsNames)));
         }
+    }
+    
+    public boolean isAutoBuildDisabled() {
+        return autoBuildDisabled;
     }
 
 }
