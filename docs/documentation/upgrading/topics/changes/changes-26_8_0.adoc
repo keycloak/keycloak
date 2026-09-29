@@ -102,6 +102,21 @@ Realms that previously listed multiple redirect URIs that differed only by hostn
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
+=== `secure-redirect-uris-enforcer` now always validates post-logout redirect URIs
+// https://github.com/keycloak/keycloak/issues/50982
+
+The `secure-redirect-uris-enforcer` client policy executor previously skipped post-logout redirect URI validation when both standard flow and implicit flow were disabled on a client.
+This allowed a delegated client manager to retain an HTTP (insecure) post-logout redirect URI by temporarily disabling both flows, then re-enabling them via a partial update that omitted the `post.logout.redirect.uris` attribute.
+
+Post-logout redirect URIs are now always validated on every CREATE and UPDATE event, regardless of whether redirect-based flows are enabled.
+
+Additionally, a partial update that omits the `post.logout.redirect.uris` attribute now causes the executor to re-validate the URIs already stored in the model, rather than silently accepting the update.
+
+*Impact on existing clients*
+
+Clients that have both standard flow and implicit flow disabled and rely on HTTP redirect URIs for post-logout redirects (either explicitly or through the `+` or absent-attribute fallback that inherits redirect URIs) will be rejected by any CREATE or UPDATE operation after upgrading.
+Before upgrading, set `post.logout.redirect.uris` to `-` on affected clients to disable post-logout URI enforcement, or update them to use HTTPS URIs.
+
 === Secrets referenced by OIDC Client CRs now require a label
 // https://github.com/keycloak/keycloak/issues/52320
 

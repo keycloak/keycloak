@@ -217,7 +217,7 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
         }
     }
 
-    void verifyRedirectUris(ClientCRUDContext context) throws ClientPolicyException {
+    private void verifyRedirectUris(ClientCRUDContext context) throws ClientPolicyException {
         ClientRepresentation proposed = context.getProposedClientRepresentation();
         if (isAuthFlowWithRedirectEnabled(proposed)) {
             List<String> redirectUris = proposed.getRedirectUris();
@@ -275,7 +275,7 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
         if (postLogoutRedirectUris.isEmpty()) {
             return;
         }
-        String rootUrl = client.getRootUrl() != null || stored == null ? client.getRootUrl() : stored.getRootUrl();
+        String rootUrl = (client.getRootUrl() != null || stored == null) ? client.getRootUrl() : stored.getRootUrl();
         logger.tracef("Verifying post-logout redirect uris. Target client: %s, Effective post-logout uris: %s", client.getClientId(), postLogoutRedirectUris);
         verifyRedirectUris(rootUrl, postLogoutRedirectUris);
     }
