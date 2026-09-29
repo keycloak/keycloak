@@ -561,7 +561,7 @@ public class DPoPTest {
     @Test
     public void testDPoPProofInvalidSignature() throws Exception {
         testDPoPProofFailure(generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), Time.currentTimeSeconds(),
-                Algorithm.PS256, jwsEcHeader, rsaKeyPair.getPrivate(), null, new TestingDPoPGenerator()), "DPoP verification failure: org.keycloak.exceptions.TokenSignatureInvalidException: Invalid token signature");
+                Algorithm.PS256, jwsEcHeader, rsaKeyPair.getPrivate(), null, new TestingDPoPGenerator()), "DPoP verification failure: Invalid token signature");
     }
 
     @Test

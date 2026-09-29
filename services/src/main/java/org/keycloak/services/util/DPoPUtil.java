@@ -80,6 +80,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.cors.Cors;
+import org.keycloak.services.managers.InvalidBearerTokenException;
 import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.StringUtil;
@@ -269,7 +270,7 @@ public class DPoPUtil {
                         }
                         ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
                         if (clientModel == null) {
-                            throw new VerificationException("Client not found");
+                            throw new InvalidBearerTokenException(token, "Client not found");
                         }
                         if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseDPoP() && !isSchemeDPoP) {
                             throw new VerificationException("This client requires DPoP, but no DPoP Authorization header is present");

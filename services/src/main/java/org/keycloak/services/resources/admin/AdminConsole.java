@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.Path;
@@ -38,6 +37,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
+import org.keycloak.common.VerificationException;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.UriUtils;
@@ -205,14 +205,15 @@ public class AdminConsole {
         }
 
         RealmManager realmManager = new RealmManager(session);
-        AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
-                .setRealm(realm)
-                .setConnection(clientConnection)
-                .setHeaders(session.getContext().getRequestHeaders())
-                .authenticate();
-
-        if (authResult == null) {
-            throw new NotAuthorizedException("Bearer");
+        AuthenticationManager.AuthResult authResult;
+        try {
+            authResult = new AppAuthManager.BearerTokenAuthenticator(session)
+                    .setRealm(realm)
+                    .setConnection(clientConnection)
+                    .setHeaders(session.getContext().getRequestHeaders())
+                    .authenticateOrThrow();
+        } catch (VerificationException e) {
+            throw AdminRoot.toOAuth2Error(realm, e);
         }
 
         final String issuedFor = authResult.token().getIssuedFor();

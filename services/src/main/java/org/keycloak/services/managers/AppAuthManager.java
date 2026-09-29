@@ -24,6 +24,7 @@ import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
+import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakContext;
@@ -115,17 +116,19 @@ public class AppAuthManager extends AuthenticationManager {
      * Extracts the token string from the Authorization Bearer Header.
      *
      * @param headers
-     * @return the token string or {@literal null} of the Authorization header is missing
-     * @throws  NotAuthorizedException if the Authorization header is not of type Bearer, or the token string is missing.
+     * @return the token string
+     * @throws BearerCredentialsMissingException if the Authorization header is missing or carries no usable bearer token
      */
-    public static String extractAuthorizationHeaderToken(HttpHeaders headers) {
+    public static String extractAuthorizationHeaderToken(HttpHeaders headers) throws BearerCredentialsMissingException {
         String authHeader = headers.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader == null) {
-            return null;
+            logger.debug("Failed to verify identity token: Authorization header is missing");
+            throw new BearerCredentialsMissingException("Authorization header is missing");
         }
         AuthHeader parsedHeader = extractTokenStringFromAuthHeader(authHeader);
-        if (parsedHeader == null ){
-            throw new NotAuthorizedException(TOKEN_TYPE_BEARER);
+        if (parsedHeader == null) {
+            logger.debug("Failed to verify identity token: Authorization header does not carry a bearer token");
+            throw new BearerCredentialsMissingException("Authorization header does not carry a bearer token");
         }
         return parsedHeader.getToken();
     }
@@ -187,6 +190,17 @@ public class AppAuthManager extends AuthenticationManager {
         }
 
         public AuthResult authenticate() {
+            try {
+                return authenticateOrThrow();
+            } catch (VerificationException e) {
+                return null;
+            }
+        }
+
+        /**
+         * Like {@link #authenticate()}, but throws instead of returning null when authentication fails.
+         */
+        public AuthResult authenticateOrThrow() throws VerificationException {
             KeycloakContext ctx = session.getContext();
             if (realm == null) realm = ctx.getRealm();
             if (uriInfo == null) uriInfo = ctx.getUri();
@@ -196,7 +210,7 @@ public class AppAuthManager extends AuthenticationManager {
             if (tokenString == null) tokenString = extractAuthorizationHeaderToken(headers);
             // audience can be null
 
-            return verifyIdentityToken(session, realm, uriInfo, connection, true, true, audience, false, tokenString, headers,
+            return verifyIdentityTokenOrThrow(session, realm, uriInfo, connection, true, true, audience, false, tokenString, headers,
                     verifier -> {
                         DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenString));
                     });
