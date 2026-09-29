@@ -18,6 +18,7 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
@@ -277,6 +278,8 @@ public class KcSamlLogoutTest extends AbstractInitializedBaseBrokerTest {
                         assertThat(response.getStatusLine().getStatusCode(), is(200));
                         return null;
                     });
+
+            assertThat(AdminApiUtil.findUserByUsernameId(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin()).getUserSessions(), Matchers.empty());
 
             // Check whether logoutReceiver contains correct LogoutRequest
             assertThat(logoutReceiver.isMessageReceived(), is(true));
