@@ -49,11 +49,13 @@ import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.JobSpecFluent;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
+import io.javaoperatorsdk.operator.processing.dependent.Creator;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 
 @ApplicationScoped
-public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentResource<Job, Keycloak> {
+public class KeycloakUpdateJobDependentResource extends KubernetesDependentResource<Job, Keycloak> implements Creator<Job, Keycloak>, GarbageCollected<Keycloak> {
 
     // shared volume configuration
     private static final String WORK_DIR_VOLUME_NAME = "keycloak-update-job-temporary-workdir"; // unlikely to conflict
@@ -64,7 +66,7 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     public static final String KEYCLOAK_CR_HASH_ANNOTATION = "operator.keycloak.org/keycloak-hash";
 
     // Label
-    private static final String APP_LABEL_VALUE = "keycloak-update-job";
+    public static final String APP_LABEL_VALUE = "keycloak-update-job";
     private static final String LABEL_SELECTOR = "app=keycloak-update-job,app.kubernetes.io/managed-by=keycloak-operator";
 
     // container configuration
@@ -120,11 +122,11 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
         var labels = new HashMap<String ,String>();
         var optionalSpec = Optional.ofNullable(keycloak.getSpec().getUpdateSpec());
         optionalSpec.map(UpdateSpec::getLabels).ifPresent(labels::putAll);
+        labels.putAll(getLabels(keycloak));
         var builder = new ObjectMetaBuilder();
         builder.withName(name)
                 .withNamespace(keycloak.getMetadata().getNamespace())
                 .addToLabels(labels)
-                .addToLabels(getLabels(keycloak))
                 .withAnnotations(Map.of(KEYCLOAK_CR_HASH_ANNOTATION, keycloakHash(keycloak)));
         return builder.build();
     }
@@ -235,6 +237,7 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     private static Map<String, String> getLabels(HasMetadata keycloak) {
         var labels = Utils.allInstanceLabels(keycloak);
         labels.put(Constants.APP_LABEL, APP_LABEL_VALUE);
+        Utils.addJobLabels(labels, APP_LABEL_VALUE);
         return labels;
     }
 }
