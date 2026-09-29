@@ -13,7 +13,8 @@ import org.keycloak.utils.StringUtil;
 import org.jboss.logging.Logger;
 
 /**
- * Parameterized scope type that validates the parameter is an existing username in the realm.
+ * Parameterized scope type that validates the parameter is an existing username in the realm,
+ * or an email when the realm allows login with email.
  */
 public class UsernameScopeType implements ParameterizedScopeTypeProvider {
 
@@ -85,12 +86,20 @@ public class UsernameScopeType implements ParameterizedScopeTypeProvider {
         }
     }
 
-    protected UserModel resolveUser(ClientScopeModel scope, String parameter) throws InvalidScopeParameterException {
-        RealmModel realm = scope.getRealm();
+    /**
+     * Resolves the user a scope parameter refers to, by username or, when allowed by the realm, by email.
+     */
+    public static UserModel findUser(KeycloakSession session, RealmModel realm, String parameter) {
         UserModel targetUser = session.users().getUserByUsername(realm, parameter);
         if (targetUser == null && realm.isLoginWithEmailAllowed() && parameter.contains("@")) {
             targetUser = session.users().getUserByEmail(realm, parameter);
         }
+        return targetUser;
+    }
+
+    protected UserModel resolveUser(ClientScopeModel scope, String parameter) throws InvalidScopeParameterException {
+        RealmModel realm = scope.getRealm();
+        UserModel targetUser = findUser(session, realm, parameter);
         if (targetUser == null) {
             throw new InvalidScopeParameterException(String.format("User '%s' not found in realm '%s'", parameter, realm.getName()));
         }

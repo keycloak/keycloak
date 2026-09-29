@@ -59,6 +59,90 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
 public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
+    /**
+     * Verify that a client role with the same name as the realm role
+     * {@code credential-offer-create} does NOT authorize targeted credential offers.
+     * This prevents role namespace confusion attacks.
+     *
+     * @see <a href="https://github.com/keycloak/keycloak/issues/52665">#52665</a>
+     */
+    @Test
+    public void testClientRoleNameCollisionCannotAuthorizeTargetedOffer() {
+        UserRepresentation issuer = testRealm.admin().users().search(TEST_USER).get(0);
+        UserResource issuerResource = testRealm.admin().users().get(issuer.getId());
+        RoleRepresentation realmOfferRole = testRealm.admin().roles()
+                .get(CREDENTIAL_OFFER_CREATE.getName()).toRepresentation();
+
+        // Create a client role with the same name as the realm role
+        RoleRepresentation clientOfferRole = new RoleRepresentation();
+        clientOfferRole.setName(CREDENTIAL_OFFER_CREATE.getName());
+        clientOfferRole.setDescription("Unrelated application role with a colliding name");
+
+        // Remove realm role from issuer, add same-named client role
+        issuerResource.roles().realmLevel().remove(List.of(realmOfferRole));
+        testRealm.admin().clients().get(client.getId()).roles().create(clientOfferRole);
+        clientOfferRole = testRealm.admin().clients().get(client.getId()).roles()
+                .get(CREDENTIAL_OFFER_CREATE.getName()).toRepresentation();
+        issuerResource.roles().clientLevel(client.getId()).add(List.of(clientOfferRole));
+
+        try {
+            String token = getBearerToken(oauth, client);
+            assertThrows(IllegalStateException.class, () -> oauth.oid4vc()
+                            .credentialOfferUriRequest(jwtTypeCredentialScope.getCredentialConfigurationId())
+                            .preAuthorized(true)
+                            .targetUser("alice")
+                            .bearerToken(token)
+                            .send()
+                            .getCredentialOfferURI(),
+                    "A same-named client role must not satisfy the realm credential-offer privilege");
+        } finally {
+            wallet.logout(TEST_USER);
+            issuerResource.roles().clientLevel(client.getId()).remove(List.of(clientOfferRole));
+            testRealm.admin().clients().get(client.getId()).roles()
+                    .deleteRole(CREDENTIAL_OFFER_CREATE.getName());
+            issuerResource.roles().realmLevel().add(List.of(realmOfferRole));
+        }
+    }
+
+    /**
+     * Verify that a composite realm role containing {@code credential-offer-create}
+     * correctly authorizes targeted credential offers via {@code hasRole()} traversal.
+     *
+     * @see <a href="https://github.com/keycloak/keycloak/issues/52665">#52665</a>
+     */
+    @Test
+    public void testCompositeRealmRoleAuthorizesTargetedOffer() throws Exception {
+        UserRepresentation issuer = testRealm.admin().users().search(TEST_USER).get(0);
+        UserResource issuerResource = testRealm.admin().users().get(issuer.getId());
+        RoleRepresentation realmOfferRole = testRealm.admin().roles()
+                .get(CREDENTIAL_OFFER_CREATE.getName()).toRepresentation();
+
+        // Create a composite realm role containing the credential-offer-create role
+        RoleRepresentation delegatedOfferRole = new RoleRepresentation();
+        delegatedOfferRole.setName("credential-offer-delegator");
+        testRealm.admin().roles().create(delegatedOfferRole);
+        delegatedOfferRole = testRealm.admin().roles().get(delegatedOfferRole.getName()).toRepresentation();
+        testRealm.admin().roles().get(delegatedOfferRole.getName()).addComposites(List.of(realmOfferRole));
+
+        // Replace direct role with composite role
+        issuerResource.roles().realmLevel().remove(List.of(realmOfferRole));
+        issuerResource.roles().realmLevel().add(List.of(delegatedOfferRole));
+
+        try {
+            var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+            CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+                req.targetUser(ctx.getHolder());
+                req.preAuthorized(true);
+            });
+            assertNotNull(credOffer.getPreAuthorizedCode(),
+                    "Composite realm role should authorize targeted credential offer creation");
+        } finally {
+            issuerResource.roles().realmLevel().remove(List.of(delegatedOfferRole));
+            testRealm.admin().roles().deleteRole(delegatedOfferRole.getName());
+            issuerResource.roles().realmLevel().add(List.of(realmOfferRole));
+        }
+    }
+
     @Test
     public void testPreAuthOffer_RejectsExpirationBeyondConfiguredLifespan() {
         var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);

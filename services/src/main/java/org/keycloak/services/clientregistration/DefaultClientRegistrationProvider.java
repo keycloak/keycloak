@@ -39,6 +39,13 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+
+/**
+ * @deprecated This provider is deprecated for removal since Keycloak 26.8.
+ * Use the Admin REST API or the OpenID Connect dynamic client registration endpoint
+ * ({@code /realms/<realm>/clients-registrations/openid-connect}) instead.
+ */
+@Deprecated(forRemoval = true, since = "26.8")
 public class DefaultClientRegistrationProvider extends AbstractClientRegistrationProvider {
 
     public DefaultClientRegistrationProvider(KeycloakSession session) {

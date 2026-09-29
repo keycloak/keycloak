@@ -110,12 +110,12 @@ public class DefaultClientApi implements ClientApi {
         try {
             var current = typeProvider.get(clientId);
             
-            if (!typeProvider.hasPermission(current, AdminPermissionsSchema.MANAGE)) {
-                throw new jakarta.ws.rs.ForbiddenException();
-            }
-            
             if (current == null) {
                 throw new NotFoundException("Cannot find the specified client");
+            }
+            
+            if (!typeProvider.hasPermission(current, AdminPermissionsSchema.MANAGE)) {
+                throw new jakarta.ws.rs.ForbiddenException();
             }
             
             BaseClientRepresentation updated;
@@ -168,6 +168,9 @@ public class DefaultClientApi implements ClientApi {
     @Override
     public Response deleteClient() {
         try {
+            if (typeProvider.get(clientId) == null) {
+                throw new NotFoundException("Cannot find the specified client");
+            }
             typeProvider.delete(clientId); // TODO: not currently using the boolean return
         } catch (ServiceException e) {
             throw e.toWebApplicationException();

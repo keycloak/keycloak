@@ -2,7 +2,7 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Concepts for multi-cluster deployments"
+title="Concepts for multi-cluster (v1) deployments"
 summary="Understand multi-cluster deployment with synchronous replication."
 tileVisible="false" >
 

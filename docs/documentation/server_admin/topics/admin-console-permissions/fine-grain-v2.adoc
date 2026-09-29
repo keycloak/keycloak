@@ -148,7 +148,17 @@ The `view-members`, `manage-members`, and `impersonate-members` scopes cascade t
 
 *Allow carve-outs:* You can override a parent deny by granting an explicit allow for the same scope on a specific child group. The allow applies only to direct members of that child group. It does not cascade further to the child's own descendants. Members of deeper descendant groups remain denied unless they also have an explicit allow.
 
-A direct `view` permission on a specific user does not override a group membership deny. Group membership denies take precedence over user-level permissions. The only way to restore access to a user in a denied group subtree is to grant an explicit allow for the member scope (such as `view-members`) on the specific group the user belongs to.
+A direct `view` permission on a specific user does not override a group membership deny that uses a member scope. Denies on the member scopes (`view-members`, `manage-members`, and `impersonate-members`)
+take precedence over user-level permissions. The only way to restore access to a user in a denied group subtree is to grant an explicit allow for a member scope (such as `view-members`)
+on the specific group the user belongs to.
+
+Only the member scopes protect a group's members. A group permission that denies only a `view` or `manage` scope,
+does not block a user-level operation on a member of that group. In that case the user remains accessible through the
+corresponding user-level permission, and the group the administrator cannot access is simply filtered out from the user's
+group memberships.
+For example, an administrator with `view` on all users can still view a user who also belongs to a group they cannot access.
+Only the groups the administrator is allowed to see are returned for that user.
+Denying `view-members` (or `manage-members`) on that group is what protects its members and denies access to the user.
 
 For example, given a hierarchy `Department > Team A > Subteam X`:
 
@@ -205,6 +215,9 @@ The *Roles* realm resource type represents the roles in a realm. You can manage 
 
 The *map-roles* operation does not grant the ability to manage users or assign roles arbitrarily. The administrator must also
 have user role mapping permissions on the user.
+
+An administrator granted the *map-role* operation on a role can also view that role, including its attributes and composites,
+so that it can be selected when assigning roles to users and groups. There is no separate *view* operation for roles.
 
 If there is a client resource type permission for the *map-roles*, *map-roles-composite*, or *map-roles-client-scope* scopes,
 it will take precedence over any role resource type permission if the role is a client role.

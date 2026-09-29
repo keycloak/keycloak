@@ -288,6 +288,12 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
     }
 
     private boolean tryRedirectBroker(AuthenticationFlowContext context, OrganizationModel organization, UserModel user, String username, String domain) {
+        // an existing SSO session must be honoured as-is; redirecting to the broker under prompt=none
+        // would produce login_required even though the user is already authenticated (see #53154)
+        if (isSSOAuthentication(context.getAuthenticationSession())) {
+            return false;
+        }
+
         // the user has credentials set; do not redirect to allow the user to pick how to authenticate
         if (user != null && user.credentialManager().getFirstFactorCredentialsStream().findAny().isPresent()) {
             return false;

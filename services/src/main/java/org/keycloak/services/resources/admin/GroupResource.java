@@ -48,6 +48,7 @@ import org.keycloak.models.GroupModel.GroupPathChangeEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -109,9 +110,26 @@ public class GroupResource {
         GroupRepresentation rep = GroupUtils.toRepresentation(this.auth.groups(), group, true);
 
         if (rep.getClientRoles() != null) {
-            rep.getClientRoles().keySet().removeIf(clientId -> {
-                ClientModel client = realm.getClientByClientId(clientId);
-                return client == null || !auth.clients().canView(client);
+            rep.getClientRoles().entrySet().removeIf(entry -> {
+                ClientModel client = realm.getClientByClientId(entry.getKey());
+
+                if (client == null) {
+                    return true;
+                }
+
+                List<String> roles = entry.getValue();
+                roles.removeIf(roleName -> {
+                    RoleModel role = session.roles().getClientRole(client, roleName);
+                    return role == null || !auth.roles().canView(role);
+                });
+                return roles.isEmpty();
+            });
+        }
+
+        if (rep.getRealmRoles() != null) {
+            rep.getRealmRoles().removeIf(roleName -> {
+                RoleModel role = realm.getRole(roleName);
+                return role == null || !auth.roles().canView(role);
             });
         }
 

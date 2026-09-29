@@ -3156,7 +3156,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         RefreshToken refreshToken = oauth.parseRefreshToken(tokenRes.getRefreshToken());
         assertThat(refreshToken.getIssuedFor(), is(equalTo(TEST_CLIENT_NAME)));
         assertThat(refreshToken.getAudience()[0], is(equalTo(refreshToken.getIssuer())));
-        if (!isOfflineAccess) checkTokenExpiration(refreshToken, tokenRes.getRefreshExpiresIn());
+        checkTokenExpiration(refreshToken, tokenRes.getRefreshExpiresIn());
 
         IDToken idToken = oauth.verifyIDToken(tokenRes.getIdToken());
         assertThat(idToken.getPreferredUsername(), is(equalTo(username)));

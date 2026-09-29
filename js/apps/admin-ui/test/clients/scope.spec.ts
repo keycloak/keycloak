@@ -203,6 +203,7 @@ test.describe.serial("Client scopes evaluate subtab", () => {
   const clientName = "testClient";
   const userName = "admin-a";
   const secondUserName = "admin-b";
+  const searchUserName = "picker-target";
   const realmName = `clients-realm-${uuid()}`;
 
   test.beforeAll(async () => {
@@ -221,6 +222,16 @@ test.describe.serial("Client scopes evaluate subtab", () => {
     await adminClient.createUser({
       realm: realmName,
       username: secondUserName,
+      enabled: true,
+    });
+    // Username shares no prefix with the email or name, so the picker can
+    // only find this user through the email/first/last name search.
+    await adminClient.createUser({
+      realm: realmName,
+      username: searchUserName,
+      email: "findme@example.com",
+      firstName: "Pat",
+      lastName: "Lookup",
       enabled: true,
     });
   });
@@ -273,6 +284,34 @@ test.describe.serial("Client scopes evaluate subtab", () => {
 
     await selectUser(page, secondUserName);
     await assertAccessTokenContent(page, secondUserName);
+  });
+
+  test("search user picker by email and last name", async ({ page }) => {
+    await searchItem(page, "Search for client", clientName);
+    await clickTableRowItem(page, clientName);
+    await goToClientScopesTab(page);
+    await goToClientScopeEvaluateTab(page);
+
+    const userInput = page.getByTestId("user").getByRole("combobox");
+    const searchUserOption = page.getByRole("option", {
+      name: new RegExp(searchUserName),
+    });
+    const adminOption = page.getByRole("option", {
+      name: userName,
+      exact: true,
+    });
+
+    await userInput.fill("findme");
+    await expect(searchUserOption).toBeVisible();
+    await expect(adminOption).toBeHidden();
+
+    await userInput.fill("admin");
+    await expect(adminOption).toBeVisible();
+    await expect(searchUserOption).toBeHidden();
+
+    await userInput.fill("lookup");
+    await expect(searchUserOption).toBeVisible();
+    await expect(adminOption).toBeHidden();
   });
 });
 

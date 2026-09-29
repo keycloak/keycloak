@@ -123,6 +123,19 @@ public class Organizations {
         }
     }
 
+    public static void checkGroupMapperOrgPermission(KeycloakSession session, IdentityProviderMapperModel mapper, AdminPermissionEvaluator auth) {
+        Map<String, String> config = mapper.getConfig();
+        if (config == null || !Type.ORGANIZATION.name().equals(config.get(ConfigConstants.GROUP_TYPE))) {
+            return;
+        }
+
+        OrganizationProvider orgProvider = getProvider(session);
+        checkEnabled(orgProvider, auth);
+
+        OrganizationModel org = orgProvider.getById(config.get(ConfigConstants.ORGANIZATION_ID));
+        auth.orgs().requireManage(org);
+    }
+
     public static boolean canManageOrganizationGroup(KeycloakSession session, GroupModel group) {
         //  if it's not an organization group OR organizations are disabled, we don't need further checks
         if (!isOrganizationGroup(group) || !isEnabled(session)) {
@@ -457,7 +470,7 @@ public class Organizations {
         if (organizations.isEmpty()) {
             // no membership, any org that matches the domain
             return resolveByDomain(ofNullable(emailDomain)
-                    .map(provider::getByDomainName)
+                    .map(d -> getByDomainNameOrNull(provider, d))
                     .map(List::of)
                     .orElse(List.of()), emailDomain);
         }
@@ -469,6 +482,15 @@ public class Organizations {
         }
 
         return resolveByDomain(organizations, emailDomain);
+    }
+
+    private static OrganizationModel getByDomainNameOrNull(OrganizationProvider provider, String domain) {
+        try {
+            return provider.getByDomainName(domain);
+        } catch (ModelValidationException e) {
+            // malformed domain (e.g. a typo in the login username, or an unvalidated stored email) - treat as no match
+            return null;
+        }
     }
 
     public static OrganizationProvider getProvider(KeycloakSession session) {
