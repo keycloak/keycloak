@@ -183,7 +183,7 @@
                       <#if message.type = 'error'><span class="${properties.kcFeedbackErrorIcon!}"></span></#if>
                       <#if message.type = 'info'><span class="${properties.kcFeedbackInfoIcon!}"></span></#if>
                   </div>
-                      <span class="${properties.kcAlertTitleClass!}">${kcSanitize(message.summary)?no_esc}</span>
+                      <span class="${properties.kcAlertTitleClass!}">${message.summary}</span>
               </div>
           </#if>
 
