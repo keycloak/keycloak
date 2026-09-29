@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
@@ -46,7 +47,6 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.clientpolicy.condition.AcrCondition;
 import org.keycloak.services.clientpolicy.condition.AcrConditionFactory;
 import org.keycloak.services.clientpolicy.executor.AuthenticationFlowSelectorExecutor;
@@ -70,7 +70,10 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.LoginConfigTotpPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.account.custom.CustomAuthFlowOTPTest.LoginTotpPage;
 import org.keycloak.tests.utils.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.FlowUtil;
@@ -83,6 +86,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.By;
 
 import static org.keycloak.tests.oauth.RefreshTokenTest.assertScopes;
 
@@ -119,12 +123,20 @@ public class AcrAuthFlowTest {
     private static String PASSWORD_FLOW_ALIAS = "password-flow";
     private static String PASSWORD_OTP_FLOW_ALIAS = "password-otp-flow";
 
+    private static String NO_OTP_USER = "no-otp-user";
+
     // pages
     @InjectPage
     protected LoginTotpPage loginTotpPage;
 
     @InjectPage
+    protected LoginConfigTotpPage loginConfigTotpPage;
+
+    @InjectPage
     protected LoginPage loginPage;
+
+    @InjectWebDriver
+    protected ManagedWebDriver driver;
 
     private TimeBasedOTP totp = new TimeBasedOTP();
 
@@ -185,32 +197,6 @@ public class AcrAuthFlowTest {
         acrLoaMap.put("acr-password", 2);
         acrLoaMap.put("acr-otp", 3);
         return JsonSerialization.writeValueAsString(acrLoaMap);
-    }
-
-    /**
-     * Helper function to create a test user, optionally with OTP configured
-     *
-     * @param username   The username of the user to create
-     * @param password   The password to set on the user
-     * @param totpSecret If set, will configure a totp authenticator with this secret
-     * @return
-     */
-
-    private static UserRepresentation createTestUser(String username, String password, String totpSecret) {
-        UserBuilder builder = UserBuilder.create()
-                .id(KeycloakModelUtils.generateId())
-                .username(username)
-                .enabled(true)
-                .email(username + "@email.com")
-                .firstName(username)
-                .lastName(username)
-                .password(password);
-
-        if (totpSecret != null) {
-            builder.totpSecret(totpSecret);
-        }
-
-        return builder.build();
     }
 
     /**
@@ -434,6 +420,91 @@ public class AcrAuthFlowTest {
         logout(userId, tokens);
     }
 
+    @Test
+    public void test2FASetupBypassViaSessionRestart() {
+        startForcedOtpSetup();
+
+        restartAuthenticationSession();
+        authenticatePassword(NO_OTP_USER, PASSWORD);
+        loginConfigTotpPage.assertCurrent();
+    }
+
+    @Test
+    public void test2FASetupBypassViaSessionRestartDuringReAuth() {
+        setAcrClientPolicy(adminClient, managedRealm.getName(), "acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+
+        // Log in with password first, so the restart below goes through the re-authentication branch
+        loginWithAcr(List.of("acr-password"));
+        authenticatePassword(NO_OTP_USER, PASSWORD);
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        String noOtpUserId = getNoOtpUserId();
+        Assertions.assertEquals(1, managedRealm.admin().users().get(noOtpUserId).getUserSessions().size());
+
+        loginWithAcr(List.of("acr-otp"));
+        authenticatePassword(NO_OTP_USER, PASSWORD);
+        loginConfigTotpPage.assertCurrent();
+
+        restartAuthenticationSession();
+        Assertions.assertTrue(managedRealm.admin().users().get(noOtpUserId).getUserSessions().isEmpty());
+        authenticatePassword(NO_OTP_USER, PASSWORD);
+        loginConfigTotpPage.assertCurrent();
+    }
+
+    @Test
+    public void test2FASetupBypassViaRestartCookie() {
+        startForcedOtpSetup();
+
+        // Without AUTH_SESSION_ID the session is rebuilt from the KC_RESTART cookie
+        driver.driver().manage().deleteCookieNamed("AUTH_SESSION_ID");
+        driver.open(driver.getCurrentUrl());
+        authenticatePassword(NO_OTP_USER, PASSWORD);
+        loginConfigTotpPage.assertCurrent();
+    }
+
+    @Test
+    public void test2FASetupEnforcedLoaSurvivesRestart() {
+        startForcedOtpSetup();
+
+        restartAuthenticationSession();
+        authenticatePassword(NO_OTP_USER, PASSWORD);
+
+        // Log out and remove the configured OTP afterwards, so other tests start logged out with a user without OTP
+        String noOtpUserId = getNoOtpUserId();
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        managedRealm.cleanup().add(realm -> realm.users().get(noOtpUserId).credentials().stream()
+                .filter(credential -> "otp".equals(credential.getType()))
+                .forEach(credential -> realm.users().get(noOtpUserId).removeCredential(credential.getId())));
+        configureTOTP();
+
+        AccessTokenResponse response = oauth.client(CLIENT_ID, CLIENT_SECRET).doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(200, response.getStatusCode());
+        Assertions.assertEquals("acr-otp", oauth.verifyToken(response.getAccessToken()).getAcr());
+    }
+
+    private void startForcedOtpSetup() {
+        setAcrClientPolicy(adminClient, managedRealm.getName(), "acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+        loginWithAcr(List.of("acr-otp"));
+        authenticatePassword(NO_OTP_USER, PASSWORD);
+        loginConfigTotpPage.assertCurrent();
+    }
+
+    private void restartAuthenticationSession() {
+        // Swap the current login-actions sub-path for "restart", keeping the client_id/tab_id already in the URL.
+        driver.open(driver.getCurrentUrl().replaceFirst("/login-actions/[^/?]+", "/login-actions/restart"));
+    }
+
+    private String getNoOtpUserId() {
+        return managedRealm.admin().users().search(NO_OTP_USER).stream().findFirst().orElseThrow().getId();
+    }
+
+    private void configureTOTP() {
+        loginConfigTotpPage.assertCurrent();
+        setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
+        driver.findElement(By.id("totp")).sendKeys(totp.generateTOTP(loginConfigTotpPage.getTotpSecret()));
+        driver.findElement(By.cssSelector("input[type=\"submit\"], #saveTOTPBtn")).click();
+    }
+
     private void setAcrClientPolicy(Keycloak adminClient, String realm, String acr, String alias) {
         setAcrClientPolicy(adminClient, realm, acr, alias, null);
     }
@@ -543,8 +614,12 @@ public class AcrAuthFlowTest {
      * @param password The password to log in with
      */
     private void authenticatePassword(String password) {
+        authenticatePassword("test-user", password);
+    }
+
+    private void authenticatePassword(String username, String password) {
         loginPage.assertCurrent();
-        loginPage.fillLogin("test-user", password);
+        loginPage.fillLogin(username, password);
         loginPage.submit();
     }
 
@@ -612,10 +687,17 @@ public class AcrAuthFlowTest {
                     .lastName("test-user")
                     .password(PASSWORD)
                     .totpSecret(TOTP_SECRET);
+
+            UserBuilder noOtpUserBuilder = UserBuilder.create(NO_OTP_USER)
+                    .email(NO_OTP_USER + "@email.com")
+                    .firstName(NO_OTP_USER)
+                    .lastName(NO_OTP_USER)
+                    .password(PASSWORD);
+
             ClientScopeRepresentation scope = createScope();
 
             return realm.name("test")
-                    .users(userBuilder)
+                    .users(userBuilder, noOtpUserBuilder)
                     .clientScopes(scope)
                     .update(testRealm -> {
                         testRealm.setDefaultDefaultClientScopes(Collections.singletonList(scope.getName()));
