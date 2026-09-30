@@ -12,7 +12,7 @@
             "enabled": true,
             "email" : "bburke@redhat.com",
             "credentials" : [
-                { "type" : "Password",
+                { "type" : "password",
                   "value" : "password" }
             ],
             "realmRoles": [ "user" ]
