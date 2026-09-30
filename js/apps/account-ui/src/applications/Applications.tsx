@@ -171,13 +171,9 @@ export const Applications = () => {
                         className="pf-v5-u-pl-0 title-case"
                         component="a"
                         variant="link"
-                        onClick={() =>
-                          window.open(
-                            application.effectiveUrl,
-                            "_blank",
-                            "noopener,noreferrer",
-                          )
-                        }
+                        href={application.effectiveUrl}
+                        target="_blank"
+                        rel="noreferrer noopener"
                       >
                         {label(
                           t,
