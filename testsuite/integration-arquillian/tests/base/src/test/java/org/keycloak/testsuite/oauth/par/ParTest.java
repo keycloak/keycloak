@@ -81,6 +81,8 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesCo
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -898,6 +900,63 @@ public class ParTest extends AbstractClientPoliciesTest {
         oauth.loginForm().requestUri(requestUri).state(state).open();
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         Assert.assertFalse(errorResponse.isRedirected());
+    }
+
+    /**
+     * Verify that a PAR request_uri is consumed (single-use enforced) even when the authorization
+     * endpoint short-circuits via the prompt=none silent authentication path (existing SSO session).
+     *
+     * Regression test for CVE-2026-96446: without the fix in OIDCLoginProtocol.authenticated(),
+     * the PAR entry survives the silent auth flow and can be replayed to mint additional authorization codes.
+     */
+    @Test
+    public void testParSingleUseEnforcedOnSilentAuthentication() throws Exception {
+        // create client dynamically
+        String clientId = createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+            clientRep.setRequirePushedAuthorizationRequests(Boolean.TRUE);
+            clientRep.setRedirectUris(new ArrayList<String>(Arrays.asList(CLIENT_REDIRECT_URI)));
+        });
+        OIDCClientRepresentation oidcCRep = getClientDynamically(clientId);
+        String clientSecret = oidcCRep.getClientSecret();
+        assertEquals(Boolean.TRUE, oidcCRep.getRequirePushedAuthorizationRequests());
+        assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
+
+        oauth.client(clientId, clientSecret);
+        oauth.redirectUri(CLIENT_REDIRECT_URI);
+
+        // Step 1: Interactive login to establish an SSO session (must use PAR since client requires it)
+        ParResponse firstPar = oauth.doPushedAuthorizationRequest();
+        assertEquals(201, firstPar.getStatusCode());
+
+        // Step 2: Push a second PAR request (for the silent auth test) before nulling query params
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
+        assertEquals(201, pResp.getStatusCode());
+        String requestUri = pResp.getRequestUri();
+
+        // Keep the redirect URI so response parsing can recognize the successful callback.
+        // The remaining parameters are supplied by the PAR object.
+        oauth.scope(null);
+        oauth.responseType(null);
+        AuthorizationEndpointResponse firstLogin = oauth.loginForm().requestUri(firstPar.getRequestUri()).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        assertThat(firstLogin.isSuccess(), is(true));
+
+        // Step 3: First use of request_uri with prompt=none — must succeed via silent auth
+        oauth.loginForm().requestUri(requestUri).prompt("none").open();
+        AuthorizationEndpointResponse loginResponse = oauth.parseLoginResponse();
+        assertThat(loginResponse.isSuccess(), is(true));
+        String code = loginResponse.getCode();
+        assertThat(code, notNullValue());
+
+        // Step 4: Replay the same request_uri — must be rejected (PAR already consumed)
+        oauth.loginForm().requestUri(requestUri).prompt("none").open();
+        AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
+        Assert.assertFalse(errorResponse.isRedirected());
+        errorPage.assertCurrent();
+
+        // Step 5: Verify the code from the first (legitimate) use is still valid
+        oauth.redirectUri(CLIENT_REDIRECT_URI);
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        assertEquals(200, res.getStatusCode());
     }
 
     // PAR request_uri used by other client

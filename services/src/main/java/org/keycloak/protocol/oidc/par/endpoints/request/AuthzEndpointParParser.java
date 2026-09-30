@@ -24,7 +24,6 @@ import java.util.Set;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestParser;
@@ -53,15 +52,8 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
         super(session);
         this.session = session;
         this.client = client;
-        SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-        String key;
-        try {
-            key = requestUri.substring(ParEndpoint.REQUEST_URI_PREFIX_LENGTH);
-        } catch (RuntimeException re) {
-            logger.warnf(re,"Unable to parse request_uri: %s", requestUri);
-            throw new RuntimeException("Unable to parse request_uri");
-        }
-        Map<String, String> retrievedRequest = singleUseStore.remove(CACHE_KEY_PREFIX + key);
+        String key = getRequestObjectKey(requestUri);
+        Map<String, String> retrievedRequest = session.singleUseObjects().get(CACHE_KEY_PREFIX + key);
         if (retrievedRequest == null) {
             throw new RuntimeException("PAR not found. not issued or used multiple times.");
         }
@@ -112,6 +104,25 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
     @Override
     protected Set<String> keySet() {
         return requestParams.keySet();
+    }
+
+    /**
+     * Authorization servers that enforce one-time use of request_uri values do so at the point of authorization,
+     * not at the point of visiting the authorization endpoint
+     * OpenID CT: fapi2-security-profile-final-par-ensure-reused-request-uri-prior-to-auth-completion-succeeds
+     */
+    public static Map<String, String> removeRequestObject(KeycloakSession session, String requestUri) {
+        String key = getRequestObjectKey(requestUri);
+        return session.singleUseObjects().remove(CACHE_KEY_PREFIX + key);
+    }
+
+    private static String getRequestObjectKey(String requestUri) {
+        try {
+            return requestUri.substring(ParEndpoint.REQUEST_URI_PREFIX_LENGTH);
+        } catch (RuntimeException re) {
+            logger.warnf(re, "Unable to parse request_uri: %s", requestUri);
+            throw new RuntimeException("Unable to parse request_uri");
+        }
     }
 
 }
