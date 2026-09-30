@@ -224,6 +224,20 @@ Operators had to create the missing indexes manually.
 Invalid PostgreSQL indexes left by failed previous attempts are detected and recreated automatically.
 On databases without non-blocking support, {project_name} continues to log the SQL for manual execution.
 
+== Vert.x-based outbound HTTP client (experimental)
+// https://github.com/keycloak/keycloak/issues/49968
+
+{project_name} uses the Apache HTTP Client for all outgoing connections to external services such as identity providers, OCSP responders, and backchannel logout endpoints.
+As {project_name} already runs on Vert.x/Netty for inbound traffic, using a separate HTTP stack for outbound connections adds unnecessary complexity and dependency overhead.
+
+{project_name} now provides an experimental Vert.x-based HTTP client that replaces the Apache HTTP Client with Vert.x/Netty for all outgoing connections.
+To enable it, start {project_name} with `--features=http-client:v2`.
+
+When enabled, all outgoing HTTP traffic uses the Vert.x HTTP client.
+Existing configuration options work the same way.
+
+For more details, see the link:{server_guide_base_link}/outgoinghttp[Configuring outgoing HTTP requests] guide.
+
 == Helm Chart Operator install (experimental)
 // https://github.com/keycloak/keycloak/issues/42079
 

@@ -213,6 +213,17 @@ Custom login themes that override `social-providers.ftl` or apply CSS targeting 
 
 Test your custom login theme to ensure the identity provider buttons display correctly.
 
+=== Extension migration when using the Vert.x HTTP client
+
+When the experimental Vert.x HTTP client is enabled (`--features=http-client:v2`), `getHttpClient()` returns a compatibility bridge that translates Apache API calls to Vert.x internally, so existing extensions continue to work without changes.
+
+Extension providers should migrate to one of:
+
+* `SimpleHttp.create(session)` for general HTTP calls (GET, POST, PUT, DELETE with headers, parameters, and JSON/form bodies).
+* The provider-neutral helper methods on `HttpClientProvider`: `getString(uri)`, `getInputStream(uri)`, `postText(uri, text)`.
+
+These APIs work identically with both the Apache and Vert.x clients. For details, see the link:{server_guide_base_link}/outgoinghttp[Configuring outgoing HTTP requests] guide.
+
 === Token introspection `act` claim now uses user ID for `sub`
 // https://github.com/keycloak/keycloak/issues/51489
 
