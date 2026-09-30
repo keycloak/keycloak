@@ -48,6 +48,7 @@ public class MicrometerUserEventMetricsEventListenerProviderFactory implements E
     private static final String EVENTS_OPTION = "events";
     private static final String MAX_ERROR_TAGS_OPTION = "maxErrorTags";
     private static final String MAX_CLIENT_ID_TAGS_OPTION = "maxClientIdTags";
+    private static final String MAX_IDP_TAGS_OPTION = "maxIdpTags";
     private static final int DEFAULT_MAX_TAG_VALUES = 10000;
     private static final String DESCRIPTION_OF_EVENT_METER = "Keycloak user events";
     // Micrometer naming convention that separates lowercase words with a . (dot) character.
@@ -70,6 +71,8 @@ public class MicrometerUserEventMetricsEventListenerProviderFactory implements E
         int maxClientIdTags = config.getInt(MAX_CLIENT_ID_TAGS_OPTION, DEFAULT_MAX_TAG_VALUES);
         addTagCardinalityFilter(MicrometerUserEventMetricsEventListenerProvider.ERROR_TAG, maxErrorTags);
         addTagCardinalityFilter(MicrometerUserEventMetricsEventListenerProvider.CLIENT_ID_TAG, maxClientIdTags);
+        int maxIdpTags = config.getInt(MAX_IDP_TAGS_OPTION, DEFAULT_MAX_TAG_VALUES);
+        addTagCardinalityFilter(MicrometerUserEventMetricsEventListenerProvider.IDP_TAG, maxIdpTags);
 
         meterProvider = Counter.builder(USER_EVENTS_METER_NAME)
                 .description(DESCRIPTION_OF_EVENT_METER)
@@ -144,6 +147,12 @@ public class MicrometerUserEventMetricsEventListenerProviderFactory implements E
                 .type(ProviderConfigProperty.INTEGER_TYPE)
                 .defaultValue(DEFAULT_MAX_TAG_VALUES)
                 .helpText("Maximum number of distinct client ID tag values before new values are denied to prevent metrics cardinality explosion.")
+                .add()
+                .property()
+                .name(MAX_IDP_TAGS_OPTION)
+                .type(ProviderConfigProperty.INTEGER_TYPE)
+                .defaultValue(DEFAULT_MAX_TAG_VALUES)
+                .helpText("Maximum number of distinct identity provider tag values before new values are denied to prevent metrics cardinality explosion.")
                 .add()
                 .build();
     }

@@ -21,6 +21,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -31,6 +32,7 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
 import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -48,6 +50,7 @@ public class EventMetricsProviderWithTagsTest {
     RunOnServerClient runOnServer;
 
     private final static String CLIENT_ID = "CLIENT_ID";
+    private final static String REAL_IDP_ALIAS = "my-real-idp";
 
     @Test
     public void shouldCountSingleEventWithTagsAndFilter() {
@@ -81,10 +84,71 @@ public class EventMetricsProviderWithTagsTest {
         runOnServer.run(session -> {
             MatcherAssert.assertThat("Two metrics recorded",
                     Metrics.globalRegistry.find("keycloak.user").meters().size(), Matchers.equalTo(2));
-            MatcherAssert.assertThat("Searching for login error metric",
-                    Metrics.globalRegistry.counter("keycloak.user", "event", "login", "error", "ERROR", "realm", realmName, "client.id", CLIENT_ID, "idp", "IDENTITY_PROVIDER").count() == 1);
+            MatcherAssert.assertThat("Error event with non-existent IDP should have empty idp tag",
+                    Metrics.globalRegistry.counter("keycloak.user", "event", "login", "error", "ERROR", "realm", realmName, "client.id", CLIENT_ID, "idp", "").count() == 1);
             MatcherAssert.assertThat("Searching for refresh with unknown client",
                     Metrics.globalRegistry.counter("keycloak.user", "event", "refresh_token", "error", "client_not_found", "realm", realmName, "client.id", "unknown", "idp", "").count() == 1);
+        });
+    }
+
+    @Test
+    public void userProvidedIdpAliasShouldNotAppearInMetrics() {
+        String realmName = realm.getName();
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+
+            IdentityProviderModel idp = new IdentityProviderModel();
+            idp.setAlias(REAL_IDP_ALIAS);
+            idp.setProviderId("oidc");
+            idp.setEnabled(true);
+            session.identityProviders().create(idp);
+
+            // Successful event with a real IDP
+            EventBuilder eventBuilder = new EventBuilder(realm, session);
+            eventBuilder.event(EventType.LOGIN)
+                    .client(CLIENT_ID)
+                    .detail(Details.IDENTITY_PROVIDER, REAL_IDP_ALIAS);
+            eventBuilder.success();
+
+            // Error event with a real IDP
+            eventBuilder = new EventBuilder(realm, session);
+            eventBuilder.event(EventType.LOGIN)
+                    .client(CLIENT_ID)
+                    .detail(Details.IDENTITY_PROVIDER, REAL_IDP_ALIAS);
+            eventBuilder.error("some_error");
+
+            // Error event with a fake, attacker-provided IDP alias
+            eventBuilder = new EventBuilder(realm, session);
+            eventBuilder.event(EventType.LOGIN)
+                    .client(CLIENT_ID)
+                    .detail(Details.IDENTITY_PROVIDER, "attacker-provided-fake-idp");
+            eventBuilder.error("identity_provider_not_found");
+        });
+
+        runOnServer.run(session -> {
+            MatcherAssert.assertThat("Successful event with real IDP should have idp tag",
+                    Metrics.globalRegistry.counter("keycloak.user", "event", "login", "error", "",
+                            "realm", realmName, "client.id", CLIENT_ID, "idp", REAL_IDP_ALIAS).count(),
+                    Matchers.equalTo(1.0));
+
+            MatcherAssert.assertThat("Error event with real IDP should have idp tag",
+                    Metrics.globalRegistry.counter("keycloak.user", "event", "login", "error", "some_error",
+                            "realm", realmName, "client.id", CLIENT_ID, "idp", REAL_IDP_ALIAS).count(),
+                    Matchers.equalTo(1.0));
+
+            MatcherAssert.assertThat("Error event with fake IDP should have empty idp tag",
+                    Metrics.globalRegistry.counter("keycloak.user", "event", "login", "error", "identity_provider_not_found",
+                            "realm", realmName, "client.id", CLIENT_ID, "idp", "").count(),
+                    Matchers.equalTo(1.0));
+
+            boolean attackerIdpPresent = Metrics.globalRegistry.find("keycloak.user").meters().stream()
+                    .flatMap(m -> m.getId().getTags().stream())
+                    .filter(tag -> "idp".equals(tag.getKey()))
+                    .map(Tag::getValue)
+                    .anyMatch("attacker-provided-fake-idp"::equals);
+            MatcherAssert.assertThat("Attacker-provided IDP alias must not appear in any metric tag",
+                    attackerIdpPresent, Matchers.equalTo(false));
         });
     }
 
