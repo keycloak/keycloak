@@ -16,9 +16,15 @@
  */
 package org.keycloak.models.jpa.entities;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
@@ -60,6 +66,11 @@ public class OrganizationInvitationEntity implements OrganizationInvitationModel
 
     @Column(name = "INVITE_LINK", length = 2048)
     private String inviteLink;
+
+    @ElementCollection
+    @Column(name = "ROLE_ID")
+    @CollectionTable(name = "ORG_INVITATION_ROLE", joinColumns = { @JoinColumn(name = "INVITATION_ID") })
+    private Set<String> roleIds = new HashSet<>();
 
     public OrganizationInvitationEntity() {
     }
@@ -149,6 +160,17 @@ public class OrganizationInvitationEntity implements OrganizationInvitationModel
     @Override
     public void setInviteLink(String inviteLink) {
         this.inviteLink = inviteLink;
+    }
+
+    @Override
+    public Set<String> getRoleIds() {
+        return roleIds;
+    }
+
+    @Override
+    public void setRoleIds(Set<String> roleIds) {
+        this.roleIds.clear();
+        this.roleIds.addAll(roleIds);
     }
 
     @Override

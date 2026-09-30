@@ -18,6 +18,7 @@
 package org.keycloak.organization.admin.resource;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -147,8 +148,9 @@ public class OrganizationMemberResource {
     public Response inviteUser(@FormParam("email") String email,
                                @FormParam("firstName") String firstName,
                                @FormParam("lastName") String lastName,
-                               @Parameter(description = "Client id") @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
-        return new OrganizationInvitationResource(session, organization, adminEvent, auth).inviteUser(email, firstName, lastName, clientId);
+                               @Parameter(description = "Client id") @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId,
+                               @Parameter(description = "Ids of the realm or client roles granted to the user when the invitation is accepted") @FormParam("roles") List<String> roles) {
+        return new OrganizationInvitationResource(session, organization, adminEvent, auth).inviteUser(email, firstName, lastName, clientId, roles);
     }
 
     @POST
@@ -162,8 +164,9 @@ public class OrganizationMemberResource {
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "500", description = "Internal Server Error")
     })
-    public Response inviteExistingUser(@FormParam("id") String id) {
-        return new OrganizationInvitationResource(session, organization, adminEvent, auth).inviteExistingUser(id);
+    public Response inviteExistingUser(@FormParam("id") String id,
+                                       @Parameter(description = "Ids of the realm or client roles granted to the user when the invitation is accepted") @FormParam("roles") List<String> roles) {
+        return new OrganizationInvitationResource(session, organization, adminEvent, auth).inviteExistingUser(id, roles);
     }
 
     /**

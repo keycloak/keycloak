@@ -16,6 +16,8 @@
  */
 package org.keycloak.models;
 
+import java.util.Set;
+
 import org.keycloak.common.util.Time;
 
 /**
@@ -139,6 +141,30 @@ public interface OrganizationInvitationModel {
      * @param inviteLink the invitation link
      */
     void setInviteLink(String inviteLink);
+
+    /**
+     * Returns the ids of the roles granted to the invitee when the invitation is accepted.
+     *
+     * <p>Both accessors have a default so that implementations written before roles existed keep working, as the
+     * APIs in this module do not change between minor releases. An implementation that stores no roles reads back
+     * none, while one asked to store roles fails instead of dropping them, since the caller checked the permissions
+     * to grant them.
+     *
+     * @return the role ids, empty if the invitation grants no roles
+     */
+    default Set<String> getRoleIds() {
+        return Set.of();
+    }
+
+    /**
+     * Sets the ids of the roles granted to the invitee when the invitation is accepted.
+     *
+     * @param roleIds the role ids
+     * @throws UnsupportedOperationException if this invitation cannot store roles
+     */
+    default void setRoleIds(Set<String> roleIds) {
+        throw new UnsupportedOperationException("Roles are not supported by this invitation model");
+    }
 
     /**
      * Returns the current status of this invitation.

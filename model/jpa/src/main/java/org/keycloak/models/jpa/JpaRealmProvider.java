@@ -918,6 +918,10 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         // ClientProvider implementation
         String clientScopeMapping = JpaUtils.getTableNameForNativeQuery("SCOPE_MAPPING", em);
         em.createNativeQuery("delete from " + clientScopeMapping + " where ROLE_ID = :role").setParameter("role", role.getId()).executeUpdate();
+
+        // OrganizationProvider implementation
+        String orgInvitationRole = JpaUtils.getTableNameForNativeQuery("ORG_INVITATION_ROLE", em);
+        em.createNativeQuery("delete from " + orgInvitationRole + " where ROLE_ID = :role").setParameter("role", role.getId()).executeUpdate();
     }
 
     @Override
