@@ -60,8 +60,8 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         RealmBuilder.update(testRealm)
-                .clients(ClientBuilder.create().clientId("launchpad-test").baseUrl("").rootUrl("http://example.org/launchpad"))
-                .clients(ClientBuilder.create().clientId("dummy-test").baseUrl("/base-path").rootUrl("http://example.org/dummy"));
+                .clients(ClientBuilder.create().clientId("launchpad-test").baseUrl("").rootUrl(getAuthServerRoot().toString() + "launchpad"))
+                .clients(ClientBuilder.create().clientId("dummy-test").baseUrl("/base-path").rootUrl(getAuthServerRoot().toString() + "dummy"));
     }
 
     /**
@@ -74,10 +74,10 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
         oauth.doLogin("test-user@localhost", "password");
 
         driver.get(getAuthServerRoot().toString() + "realms/test/clients/launchpad-test/redirect");
-        assertEquals("http://example.org/launchpad", driver.getCurrentUrl());
+        assertEquals(getAuthServerRoot().toString() + "launchpad", driver.getCurrentUrl());
 
         driver.get(getAuthServerRoot().toString() + "realms/test/clients/dummy-test/redirect");
-        assertEquals("http://example.org/dummy/base-path", driver.getCurrentUrl());
+        assertEquals(getAuthServerRoot().toString() + "dummy/base-path", driver.getCurrentUrl());
     }
 
     @Test
@@ -114,7 +114,7 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
 
             URI logout = KeycloakUriBuilder.fromUri(suiteContext.getAuthServerInfo().getBrowserContextRoot().toURI())
                     .path("auth" + ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
-                    .queryParam(OIDCLoginProtocol.POST_LOGOUT_REDIRECT_URI_PARAM, "http://example.org/redirected")
+                    .queryParam(OIDCLoginProtocol.POST_LOGOUT_REDIRECT_URI_PARAM, getAuthServerRoot().toString() + "redirected")
                     .queryParam(OIDCLoginProtocol.ID_TOKEN_HINT, idTokenHint)
                     .build("test");
 
@@ -125,7 +125,7 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
             log.debug("check logout_error");
             EventAssertion.assertError(events.poll()).type(EventType.LOGOUT_ERROR)
                     .error(OAuthErrorException.INVALID_REDIRECT_URI).clientId(oauth.getClientId());
-            assertThat(driver.getCurrentUrl(), is(not(equalTo("http://example.org/redirected"))));
+            assertThat(driver.getCurrentUrl(), is(not(equalTo(getAuthServerRoot().toString() + "redirected"))));
         } finally {
             log.debug("removing disabled-client");
             adminClient.realm("test").clients().get(clientId).remove();
