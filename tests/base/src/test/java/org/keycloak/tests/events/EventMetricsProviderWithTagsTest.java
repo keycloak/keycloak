@@ -35,6 +35,8 @@ import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -51,6 +53,15 @@ public class EventMetricsProviderWithTagsTest {
 
     private final static String CLIENT_ID = "CLIENT_ID";
     private final static String REAL_IDP_ALIAS = "my-real-idp";
+
+    @BeforeEach
+    @AfterEach
+    public void clearMetrics() {
+        runOnServer.run(session -> {
+            Metrics.globalRegistry.find("keycloak.user").meters()
+                    .forEach(Metrics.globalRegistry::remove);
+        });
+    }
 
     @Test
     public void shouldCountSingleEventWithTagsAndFilter() {
