@@ -170,6 +170,10 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     @Override
     public OrganizationModel getByDomainName(String domainName) {
+        if (domainName == null) {
+            return null;
+        }
+
         if (realmCache == null) {
             return getDelegate().getByDomainName(domainName);
         }
