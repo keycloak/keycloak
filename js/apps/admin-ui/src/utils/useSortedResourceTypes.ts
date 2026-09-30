@@ -1,6 +1,8 @@
 import ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import { useMemo, useState } from "react";
 import { useAdminClient } from "../admin-client";
+import { useRealm } from "../context/realm-context/RealmContext";
+import useIsFeatureEnabled, { Feature } from "./useIsFeatureEnabled";
 import { useFetch } from "@keycloak/keycloak-ui-shared";
 import { sortBy } from "lodash-es";
 
@@ -12,6 +14,11 @@ export default function useSortedResourceTypes({
   clientId,
 }: UseSortedResourceTypesProps) {
   const { adminClient } = useAdminClient();
+  const { realmRepresentation } = useRealm();
+  const isFeatureEnabled = useIsFeatureEnabled();
+  const organizationsAvailable =
+    isFeatureEnabled(Feature.Organizations) &&
+    realmRepresentation.organizationsEnabled;
   const [resourceServer, setResourceServer] =
     useState<ResourceServerRepresentation>();
 
@@ -27,9 +34,14 @@ export default function useSortedResourceTypes({
   const resourceTypes = useMemo(() => {
     const allResourceTypes = resourceServer?.authorizationSchema?.resourceTypes;
     return allResourceTypes
-      ? sortBy(Object.values(allResourceTypes), "type")
+      ? sortBy(
+          Object.values(allResourceTypes).filter(
+            ({ type }) => type !== "Organizations" || organizationsAvailable,
+          ),
+          "type",
+        )
       : [];
-  }, [resourceServer]);
+  }, [resourceServer, organizationsAvailable]);
 
   return resourceTypes;
 }
