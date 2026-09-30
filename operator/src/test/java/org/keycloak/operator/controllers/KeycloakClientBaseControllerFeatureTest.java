@@ -62,4 +62,3 @@ public class KeycloakClientBaseControllerFeatureTest {
         assertFalse(KeycloakClientBaseController.hasFeatureEnabled(keycloakWithFeatures(List.of("docker"))));
     }
 }
-
