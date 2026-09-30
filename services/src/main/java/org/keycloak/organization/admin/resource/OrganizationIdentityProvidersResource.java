@@ -17,6 +17,7 @@
 
 package org.keycloak.organization.admin.resource;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -276,14 +277,13 @@ public class OrganizationIdentityProvidersResource {
     private IdentityProviderRepresentation toRepresentation(IdentityProviderModel idp) {
         IdentityProviderRepresentation rep = StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(session, realm, idp));
         OrganizationIdentityProviderLinkModel link = organizationProvider.getIdentityProviderLink(organization, idp);
-        if (link != null && rep.getOrganizationLinks() != null) {
-            rep.getOrganizationLinks().stream()
-                    .filter(l -> organization.getId().equals(l.getOrganizationId()))
-                    .findFirst()
-                    .ifPresent(l -> {
-                        l.setAutoMembership(link.isAutoMembership());
-                        l.setMembershipType(link.getMembershipType().name());
-                    });
+        if (link != null) {
+            OrganizationIdentityProviderLinkRepresentation linkRep = new OrganizationIdentityProviderLinkRepresentation(organization.getId());
+            linkRep.setAutoMembership(link.isAutoMembership());
+            linkRep.setMembershipType(link.getMembershipType().name());
+            rep.setOrganizationLinks(List.of(linkRep));
+        } else {
+            rep.setOrganizationLinks(null);
         }
         return rep;
     }

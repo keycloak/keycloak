@@ -1003,6 +1003,119 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
         }
     }
 
+    @Test
+    public void testGenericIdpEndpointStripsOrgLinksWithoutOrgPermission() {
+        String orgId;
+
+        try (
+                Keycloak manageOrgsClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("manage-orgs-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            RealmResource manageOrgsResource = manageOrgsClient.realm(realm.getName());
+
+            OrganizationRepresentation orgRep = createRepresentation("testLinkLeakOrg", "testLinkLeak.org");
+            try (Response response = manageOrgsResource.organizations().create(orgRep)) {
+                assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+                orgId = ApiUtil.getCreatedId(response);
+                realm.cleanup().add(r -> r.organizations().get(orgId).delete().close());
+            }
+
+            IdentityProviderRepresentation idpRep = new IdentityProviderRepresentation();
+            idpRep.setAlias("leakTestIdp");
+            idpRep.setProviderId("oidc");
+            manageOrgsResource.identityProviders().create(idpRep).close();
+            realm.cleanup().add(r -> r.identityProviders().get("leakTestIdp").remove());
+
+            try (Response response = manageOrgsResource.organizations().get(orgId).identityProviders().addIdentityProvider("leakTestIdp")) {
+                assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
+            }
+        }
+
+        // view-idps-only-admin has view-identity-providers but NO view-organizations
+        try (
+                Keycloak viewIdpsOnlyClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("view-idps-only-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            RealmResource viewIdpsResource = viewIdpsOnlyClient.realm(realm.getName());
+
+            // GET via generic endpoint — org links should be stripped
+            IdentityProviderRepresentation rep = viewIdpsResource.identityProviders().get("leakTestIdp").toRepresentation();
+            assertThat(rep, Matchers.notNullValue());
+            assertTrue(rep.getOrganizationLinks() == null || rep.getOrganizationLinks().isEmpty(),
+                    "Generic IdP GET should not expose organization links to admin without view-organizations permission");
+
+            // list via generic endpoint (non-brief) — org links should also be stripped
+            List<IdentityProviderRepresentation> idps = viewIdpsResource.identityProviders().find("leakTestIdp", false, null, null);
+            assertThat(idps, Matchers.not(Matchers.empty()));
+            for (IdentityProviderRepresentation listed : idps) {
+                assertTrue(listed.getOrganizationLinks() == null || listed.getOrganizationLinks().isEmpty(),
+                        "Generic IdP list should not expose organization links to admin without view-organizations permission");
+            }
+        }
+
+        // realm-admin (with manage-realm which implies view-organizations) SHOULD see the links
+        try (
+                Keycloak realmAdminClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("realm-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            IdentityProviderRepresentation rep = realmAdminClient.realm(realm.getName()).identityProviders().get("leakTestIdp").toRepresentation();
+            assertThat(rep.getOrganizationLinks(), Matchers.not(Matchers.empty()));
+        }
+    }
+
+    @Test
+    public void testOrgScopedIdpEndpointReturnsOnlyAuthorizedOrgLink() {
+        String orgAId;
+        String orgBId;
+
+        try (
+                Keycloak manageOrgsClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("manage-orgs-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            RealmResource manageOrgsResource = manageOrgsClient.realm(realm.getName());
+
+            OrganizationRepresentation orgARep = createRepresentation("testScopedOrgA", "testScopedOrgA.org");
+            try (Response response = manageOrgsResource.organizations().create(orgARep)) {
+                assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+                orgAId = ApiUtil.getCreatedId(response);
+                realm.cleanup().add(r -> r.organizations().get(orgAId).delete().close());
+            }
+
+            OrganizationRepresentation orgBRep = createRepresentation("testScopedOrgB", "testScopedOrgB.org");
+            try (Response response = manageOrgsResource.organizations().create(orgBRep)) {
+                assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+                orgBId = ApiUtil.getCreatedId(response);
+                realm.cleanup().add(r -> r.organizations().get(orgBId).delete().close());
+            }
+
+            // create IdP and link to both orgs
+            IdentityProviderRepresentation idpRep = new IdentityProviderRepresentation();
+            idpRep.setAlias("sharedIdp");
+            idpRep.setProviderId("oidc");
+            manageOrgsResource.identityProviders().create(idpRep).close();
+            realm.cleanup().add(r -> r.identityProviders().get("sharedIdp").remove());
+
+            try (Response response = manageOrgsResource.organizations().get(orgAId).identityProviders().addIdentityProvider("sharedIdp")) {
+                assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
+            }
+            try (Response response = manageOrgsResource.organizations().get(orgBId).identityProviders().addIdentityProvider("sharedIdp")) {
+                assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
+            }
+
+            // verify through Org A's endpoint — should see ONLY Org A's link
+            IdentityProviderRepresentation repViaOrgA = manageOrgsResource.organizations().get(orgAId)
+                    .identityProviders().get("sharedIdp").toRepresentation();
+            assertThat(repViaOrgA.getOrganizationLinks(), Matchers.hasSize(1));
+            assertThat(repViaOrgA.getOrganizationLinks().get(0).getOrganizationId(), equalTo(orgAId));
+
+            // verify through Org B's endpoint — should see ONLY Org B's link
+            IdentityProviderRepresentation repViaOrgB = manageOrgsResource.organizations().get(orgBId)
+                    .identityProviders().get("sharedIdp").toRepresentation();
+            assertThat(repViaOrgB.getOrganizationLinks(), Matchers.hasSize(1));
+            assertThat(repViaOrgB.getOrganizationLinks().get(0).getOrganizationId(), equalTo(orgBId));
+        }
+    }
+
     /**
      * Realm configuration with organizations enabled and test users
      */
@@ -1080,6 +1193,13 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID,
                             AdminRoles.VIEW_ORGANIZATIONS,
                             AdminRoles.MANAGE_IDENTITY_PROVIDERS));
+            realm.users(UserBuilder.create("view-idps-only-admin")
+                    .password("password")
+                    .name("view-idps", "only")
+                    .email("view-idps-only@localhost")
+                    .emailVerified(true)
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID,
+                            AdminRoles.VIEW_IDENTITY_PROVIDERS));
             realm.users(UserBuilder.create("test-user")
                     .password("password")
                     .name("test", "user")

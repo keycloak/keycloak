@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -55,6 +56,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.Urls;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
@@ -198,6 +200,21 @@ public class Organizations {
         if (representation.getConfig() != null) {
             representation.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
         }
+    }
+
+    public static void filterOrganizationLinks(IdentityProviderRepresentation rep, KeycloakSession session, AdminPermissionEvaluator auth) {
+        List<OrganizationIdentityProviderLinkRepresentation> links = rep.getOrganizationLinks();
+        if (links == null || links.isEmpty()) {
+            return;
+        }
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        List<OrganizationIdentityProviderLinkRepresentation> filtered = links.stream()
+                .filter(link -> {
+                    OrganizationModel org = orgProvider.getById(link.getOrganizationId());
+                    return org != null && auth.orgs().canView(org);
+                })
+                .collect(Collectors.toList());
+        rep.setOrganizationLinks(filtered.isEmpty() ? null : filtered);
     }
 
     public static Consumer<GroupModel> removeGroup(KeycloakSession session, RealmModel realm) {
