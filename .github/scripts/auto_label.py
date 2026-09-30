@@ -230,6 +230,13 @@ COPILOT_SAFETY_FLAGS = [
     "--no-custom-instructions",
     "--no-remote",
     "--no-remote-export",
+    "--disallow-temp-dir",
+    "--deny-url='*'",
+    "--deny-tool='shell(*)'",
+    "--deny-tool='read'",
+    "--deny-tool='write'",
+    "--no-workspace-context",
+    "--ignore-local-config"
 ]
 
 
