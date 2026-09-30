@@ -226,9 +226,9 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
     // we specifically need v2 enabled, so we can't simply check for client-admin-api
     // - the behavior is also version dependent later verions of keycloak presumably will have client-admin-api:v2
     //   enabled by default, so we'd need to check specifically for that feature being disabled, or remove this check altogether
-    private boolean hasFeatureEnabled(Keycloak keycloak) {
+    protected static boolean hasFeatureEnabled(Keycloak keycloak) {
         return Optional.ofNullable(keycloak.getSpec().getFeatureSpec()).map(FeatureSpec::getEnabledFeatures)
-                .filter(ef -> ef.contains(CLIENT_ADMIN_API_V2)).isPresent();
+                .filter(ef -> ef.contains(CLIENT_ADMIN_API_V2) || (ef.size() == 1 && ef.contains("preview"))).isPresent();
     }
 
     abstract boolean prepareRepresentation(S crRepresentation, T targetRepresentation, Context<?> context);
