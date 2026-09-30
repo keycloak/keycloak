@@ -13,6 +13,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -202,6 +203,62 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         errorPage.assertCurrent();
         assertEquals("Account is disabled, contact your administrator.", errorPage.getError());
+    }
+
+    @Test
+    public void loginWithBrokerDoesNotResetBruteForceFailureCountByDefault() {
+        assertEquals(1, failPasswordLoginThenLoginWithBroker());
+    }
+
+    @Test
+    public void loginWithBrokerResetsBruteForceFailureCountWhenEnabled() {
+        IdentityProviderResource identityProvider = adminClient.realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias());
+        IdentityProviderRepresentation representation = identityProvider.toRepresentation();
+        representation.getConfig().put(IdentityProviderModel.RESET_LOGIN_FAILURES, "true");
+        identityProvider.update(representation);
+
+        assertEquals(0, failPasswordLoginThenLoginWithBroker());
+    }
+
+    /**
+     * Fails one password login for the brokered user, then logs in successfully through the identity provider.
+     *
+     * @return the user's brute force failure count after the broker login
+     */
+    private Object failPasswordLoginThenLoginWithBroker() {
+        assumeFalse("Brute force protection does not apply to transient sessions", isUsingTransientSessions());
+
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+
+        consumerRealm.update(RealmBuilder.create().bruteForceProtected(true).failureFactor(3).build());
+
+        loginWithExistingUser();
+
+        Assertions.assertTrue(AccountHelper.updatePassword(consumerRealm, bc.getUserLogin(), "password"));
+
+        logoutFromConsumerRealm();
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
+        driver.manage().deleteAllCookies();
+
+        String userId = getConsumerUserRepresentation(bc.getUserLogin()).getId();
+
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+
+        loginPage.assertCurrent();
+        loginPage.login(bc.getUserLogin(), "invalid");
+
+        WaitUtils.waitForBruteForceExecutors(testingClient);
+        assertEquals(1, consumerRealm.attackDetection().bruteForceUserStatus(userId).get("numFailures"));
+
+        loginPage.clickSocial(bc.getIDPAlias());
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+
+        WaitUtils.waitForBruteForceExecutors(testingClient);
+        return consumerRealm.attackDetection().bruteForceUserStatus(userId).get("numFailures");
     }
 
     // KEYCLOAK-4181

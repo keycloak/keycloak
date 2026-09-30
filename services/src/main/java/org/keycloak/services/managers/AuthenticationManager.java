@@ -82,6 +82,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.DefaultActionTokenKey;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -1769,16 +1770,33 @@ public class AuthenticationManager {
         if (realm.isBruteForceProtected()) {
             UserModel user = lookupUserForBruteForceLog(session, realm, authSession);
             if (user != null) {
+                Set<String> authenticationCategories = new HashSet<>(AuthenticatorUtil.getAuthnCredentials(authSession));
+                if (isBrokeredLoginResettingLoginFailures(session, authSession)) {
+                    authenticationCategories.add(DefaultBruteForceProtector.IDENTITY_PROVIDER_CATEGORY);
+                }
                 BruteForceProtector bruteForceProtector = session.getProvider(BruteForceProtector.class);
                 bruteForceProtector.successfulLogin(
                         realm,
                         user,
                         session.getContext().getConnection(),
                         session.getContext().getHttpRequest().getUri(),
-                        Set.copyOf(AuthenticatorUtil.getAuthnCredentials(authSession))
+                        Set.copyOf(authenticationCategories)
                 );
             }
         }
+    }
+
+    /**
+     * Returns {@code true} if the current login was completed through an identity provider
+     * that is configured to reset the user's login failures on a successful login.
+     */
+    private static boolean isBrokeredLoginResettingLoginFailures(KeycloakSession session, AuthenticationSessionModel authSession) {
+        String providerAlias = authSession.getUserSessionNotes().get(Details.IDENTITY_PROVIDER);
+        if (providerAlias == null) {
+            return false;
+        }
+        IdentityProviderModel identityProvider = session.identityProviders().getByAlias(providerAlias);
+        return identityProvider != null && identityProvider.isResetLoginFailures();
     }
 
     public static String getAuthenticationCategory(KeycloakSession session, String authenticator) {
