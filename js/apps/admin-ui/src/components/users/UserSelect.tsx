@@ -173,12 +173,12 @@ export const UserSelect = ({
     <FormGroup
       label={t(label!)}
       isRequired={isRequired}
-      labelIcon={
+      labelHelp={
         <HelpItem
           helpText={
             <>
               <p>{helpText}</p>
-              <p className="pf-v5-u-mt-sm">{t("userSelectSearchHelp")}</p>
+              <p className="pf-v6-u-mt-sm">{t("userSelectSearchHelp")}</p>
             </>
           }
           fieldLabelId={t(label!)}
