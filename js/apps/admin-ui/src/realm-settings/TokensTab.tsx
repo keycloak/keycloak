@@ -780,12 +780,24 @@ export const RealmSettingsTokensTab = ({
                 }
                 try {
                   const parsed: unknown = JSON.parse(value);
-                  const isIssuerInfoElement = (element: unknown) =>
-                    typeof element === "object" &&
-                    element !== null &&
-                    !Array.isArray(element) &&
-                    "format" in element &&
-                    "data" in element;
+                  const isIssuerInfoElement = (element: unknown) => {
+                    if (
+                      typeof element !== "object" ||
+                      element === null ||
+                      Array.isArray(element)
+                    ) {
+                      return false;
+                    }
+                    if (!("format" in element) || !("data" in element)) {
+                      return false;
+                    }
+                    const { format, data } = element;
+                    return (
+                      typeof format === "string" &&
+                      format.trim().length > 0 &&
+                      data !== null
+                    );
+                  };
                   return (
                     (Array.isArray(parsed) &&
                       parsed.every(isIssuerInfoElement)) ||

@@ -646,6 +646,22 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
     }
 
     @Test
+    public void testIssuerInfoMalformedElementFallsBackToOmitted() throws IOException {
+        setRealmAttributes(Map.of(ISSUER_INFO_ATTR, "[{}]"));
+
+        try {
+            CredentialIssuer issuer = oauth.oid4vc()
+                    .doIssuerMetadataRequest()
+                    .getMetadata();
+
+            assertNull(issuer.getIssuerInfo(),
+                    "issuer_info should be omitted when an element misses format or data");
+        } finally {
+            setRealmAttributes(Map.of(ISSUER_INFO_ATTR, ""));
+        }
+    }
+
+    @Test
     public void testIssuerInfoOmittedWhenNotConfigured() throws IOException {
         CredentialIssuer issuer = oauth.oid4vc()
                 .doIssuerMetadataRequest()

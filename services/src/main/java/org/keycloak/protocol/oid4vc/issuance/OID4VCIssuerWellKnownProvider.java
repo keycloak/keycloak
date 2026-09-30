@@ -188,8 +188,16 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
             return null;
         }
         try {
-            return JsonSerialization.readValue(rawValue, new TypeReference<List<CredentialIssuer.IssuerInfo>>() {
-            });
+            List<CredentialIssuer.IssuerInfo> issuerInfo = JsonSerialization.readValue(rawValue,
+                    new TypeReference<List<CredentialIssuer.IssuerInfo>>() {
+                    });
+            if (issuerInfo == null || issuerInfo.stream().anyMatch(info -> info == null
+                    || info.getFormat() == null || info.getFormat().isBlank()
+                    || info.getData() == null || info.getData().isNull())) {
+                LOGGER.warnf("Invalid %s realm attribute. Skipping issuer_info.", ISSUER_INFO_ATTR);
+                return null;
+            }
+            return issuerInfo;
         } catch (IOException e) {
             LOGGER.warnf(e, "Failed to parse %s from realm attributes. Skipping issuer_info.", ISSUER_INFO_ATTR);
             return null;
