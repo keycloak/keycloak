@@ -23,7 +23,6 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyStore;
-import java.security.cert.X509Certificate;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -35,8 +34,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -104,19 +102,17 @@ public class LDAPStartTlsCloseTest {
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(ks, "password".toCharArray());
 
-        TrustManager[] trustAll = new TrustManager[] {
-            new X509TrustManager() {
-                public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
-                public void checkClientTrusted(X509Certificate[] chain, String authType) {}
-                public void checkServerTrusted(X509Certificate[] chain, String authType) {}
-            }
-        };
+        KeyStore trustStore = KeyStore.getInstance("PKCS12");
+        trustStore.load(null, null);
+        trustStore.setCertificateEntry("test-server", ks.getCertificate("test"));
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        tmf.init(trustStore);
 
         SSLContext serverContext = SSLContext.getInstance("TLSv1.2");
         serverContext.init(kmf.getKeyManagers(), null, null);
 
         SSLContext clientContext = SSLContext.getInstance("TLSv1.2");
-        clientContext.init(null, trustAll, null);
+        clientContext.init(null, tmf.getTrustManagers(), null);
 
         ServerSocket serverSocket = new ServerSocket(0, 50, InetAddress.getLoopbackAddress());
         Socket clientTcp = null;
