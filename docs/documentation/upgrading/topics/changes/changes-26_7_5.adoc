@@ -18,6 +18,14 @@ The implementation must perform an unfiltered lookup of the organization with th
 
 Consequently, `getByAlias` and `getByMember(UserModel)` are no longer subject to link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions], like `getById(String)` and `getByDomainName(String)`. Administrative callers are expected to check access to the returned organization themselves.
 
+=== Disabled clients are no longer added to the token audience
+
+A disabled or removed client is never added to the `aud` claim of a token, and its client roles are not present in the `resource_access` claim.
+Tokens are still issued, only without that client, so logins and refreshes keep succeeding.
+This change addresses CVE-2026-93999.
+
+For more details, see link:{adminguide_link}#_audience_disabled_clients[Disabled clients and the audience] in the {adminguide_name}.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

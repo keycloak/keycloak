@@ -118,6 +118,16 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
         }
         clientSessionCtx.setAttribute(Constants.GRANT_TYPE, OAuth2Constants.REFRESH_TOKEN);
 
+        final Collection<String> requestedAud = (Collection<String>) oldRefreshToken.getOtherClaims().get(Constants.REQUESTED_AUDIENCE);
+        if (requestedAud != null) {
+            clientSessionCtx.setAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS,
+                    requestedAud.stream()
+                            .map(clientId -> session.clients().getClientByClientId(realm, clientId))
+                            .filter(Objects::nonNull)
+                            .filter(ClientModel::isEnabled)
+                            .toArray(ClientModel[]::new));
+        }
+
         // recreate token.
         AccessToken newToken = tokenManager.createClientAccessToken(session, realm, authorizedClient, user, userSession, clientSessionCtx, userSession.isOffline());
 
@@ -136,15 +146,6 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
 
         if (oldRefreshToken.getAuthorization() != null) {
             newToken.setAuthorization(oldRefreshToken.getAuthorization());
-        }
-
-        final Collection<String> requestedAud = (Collection<String>) oldRefreshToken.getOtherClaims().get(Constants.REQUESTED_AUDIENCE);
-        if (requestedAud != null) {
-            validation.clientSessionCtx.setAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS,
-                    requestedAud.stream()
-                            .map(clientId -> session.clients().getClientByClientId(realm, clientId))
-                            .filter(Objects::nonNull)
-                            .toArray(ClientModel[]::new));
         }
 
         validation.clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, ctx.resourceParameter());
