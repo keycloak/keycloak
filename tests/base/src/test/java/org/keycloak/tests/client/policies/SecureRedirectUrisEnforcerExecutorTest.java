@@ -245,6 +245,19 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         });
     }
 
+    @Test
+    public void testCreateWithPlusPlaceholderAndNoRedirectUrisSucceeds() throws Exception {
+        setupSecureRedirectPolicy();
+
+        // "+" with no redirect uris to inherit expands to nothing — there is nothing to validate, and this must not blow up on a null list
+        createClientByAdmin(realm, generateSuffixedName("client-plus-empty"), OIDCLoginProtocol.LOGIN_PROTOCOL, rep -> {
+            rep.setStandardFlowEnabled(Boolean.FALSE);
+            rep.setImplicitFlowEnabled(Boolean.FALSE);
+            rep.setRedirectUris(null);
+            rep.getAttributes().put(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+");
+        });
+    }
+
     private void setupSecureRedirectPolicy() throws Exception {
         setupPolicy(
             realm,
