@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -239,6 +240,34 @@ public class GroupUtils {
 
         if (rep.getSubGroups() != null) {
             rep.getSubGroups().forEach(sub -> filterRolesInRepresentation(sub, realm, session, auth));
+        }
+    }
+
+    /**
+     * Checks that the caller is allowed to map every admin role the group (and its parents) grant.
+     * Walks into composite roles to find nested admin roles.
+     * Throws {@link jakarta.ws.rs.ForbiddenException} if the group carries admin roles the caller cannot map.
+     */
+    public static void checkAdminGroupRoles(GroupModel group, AdminPermissionEvaluator auth) {
+        if (!AdminRoles.groupHasAdminRoles(group)) {
+            return;
+        }
+        GroupModel current = group;
+        while (current != null) {
+            current.getRoleMappingsStream().forEach(role -> requireMapRoleRecursive(role, auth, new HashSet<>()));
+            current = current.getParent();
+        }
+    }
+
+    private static void requireMapRoleRecursive(RoleModel role, AdminPermissionEvaluator auth, Set<String> visited) {
+        if (!visited.add(role.getId())) {
+            return;
+        }
+        if (AdminRoles.isAdminRole(role)) {
+            auth.roles().requireMapRole(role);
+        }
+        if (role.isComposite()) {
+            role.getCompositesStream().forEach(child -> requireMapRoleRecursive(child, auth, visited));
         }
     }
 
