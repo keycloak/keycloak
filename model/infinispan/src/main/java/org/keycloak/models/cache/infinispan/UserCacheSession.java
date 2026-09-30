@@ -57,6 +57,8 @@ import org.keycloak.models.cache.infinispan.entities.CachedFederatedIdentityLink
 import org.keycloak.models.cache.infinispan.entities.CachedUser;
 import org.keycloak.models.cache.infinispan.entities.CachedUserConsent;
 import org.keycloak.models.cache.infinispan.entities.CachedUserConsents;
+import org.keycloak.models.cache.infinispan.entities.CachedUserIssuedVerifiableCredential;
+import org.keycloak.models.cache.infinispan.entities.CachedUserIssuedVerifiableCredentials;
 import org.keycloak.models.cache.infinispan.entities.CachedUserVerifiableCredential;
 import org.keycloak.models.cache.infinispan.entities.CachedUserVerifiableCredentials;
 import org.keycloak.models.cache.infinispan.entities.UserListQuery;
@@ -67,6 +69,7 @@ import org.keycloak.models.cache.infinispan.events.UserConsentsUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.UserFederationLinkRemovedEvent;
 import org.keycloak.models.cache.infinispan.events.UserFederationLinkUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.UserFullInvalidationEvent;
+import org.keycloak.models.cache.infinispan.events.UserIssuedVerifiableCredentialsUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.UserVerifiableCredentialsUpdatedEvent;
 import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
@@ -754,6 +757,10 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         return userId + ".verifiableCredentials";
     }
 
+    static String getIssuedVerifiableCredentialsCacheKey(String userId) {
+        return userId + ".issuedVerifiableCredentials";
+    }
+
     @Override
     public void addConsent(RealmModel realm, String userId, UserConsentModel consent) {
         invalidateConsent(userId);
@@ -942,26 +949,82 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
     @Override
     public IssuedVerifiableCredentialModel addIssuedVerifiableCredential(IssuedVerifiableCredentialModel issuedVc) {
+        invalidateIssuedVerifiableCredentials(issuedVc.getUserId());
         return getDelegate().addIssuedVerifiableCredential(issuedVc);
     }
 
     @Override
     public Stream<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsStreamByUser(String userId) {
-        return getDelegate().getIssuedVerifiableCredentialsStreamByUser(userId);
+        logger.tracev("getIssuedVerifiableCredentialsStreamByUser: {0}", userId);
+
+        String cacheKey = getIssuedVerifiableCredentialsCacheKey(userId);
+        if (invalidations.contains(userId) || invalidations.contains(cacheKey)) {
+            return getDelegate().getIssuedVerifiableCredentialsStreamByUser(userId);
+        }
+
+        CachedUserIssuedVerifiableCredentials cached = cache.get(cacheKey, CachedUserIssuedVerifiableCredentials.class);
+        if (cached != null && realmInvalidations.contains(cached.getRealm())) {
+            return getDelegate().getIssuedVerifiableCredentialsStreamByUser(userId);
+        }
+
+        if (cached == null) {
+            long loaded = cache.getCurrentRevision(cacheKey);
+            List<IssuedVerifiableCredentialModel> credentials = getDelegate().getIssuedVerifiableCredentialsStreamByUser(userId).toList();
+            RealmModel realm = session.getContext().getRealm();
+            cached = new CachedUserIssuedVerifiableCredentials(loaded, cacheKey, realm, credentials);
+            cache.addRevisioned(cached, startupRevision);
+            return credentials.stream();
+        }
+
+        return cached.getCredentials().stream().map(this::toIssuedCredentialModel);
+    }
+
+    @Override
+    public IssuedVerifiableCredentialModel getIssuedVerifiableCredentialById(String credentialId) {
+        return getDelegate().getIssuedVerifiableCredentialById(credentialId);
     }
 
     @Override
     public boolean removeIssuedVerifiableCredential(String credentialId) {
-        return getDelegate().removeIssuedVerifiableCredential(credentialId);
+        IssuedVerifiableCredentialModel credential = getDelegate().getIssuedVerifiableCredentialById(credentialId);
+        if (credential == null) {
+            return false;
+        }
+        invalidateIssuedVerifiableCredentials(credential.getUserId());
+        return getDelegate().removeIssuedVerifiableCredential(credential.getUserId(), credentialId);
     }
 
     @Override
     public boolean removeIssuedVerifiableCredential(String userId, String credentialId) {
+        invalidateIssuedVerifiableCredentials(userId);
         return getDelegate().removeIssuedVerifiableCredential(userId, credentialId);
+    }
+
+    private void invalidateIssuedVerifiableCredentials(String userId) {
+        cache.issuedVerifiableCredentialsInvalidation(userId, invalidations);
+        invalidationEvents.add(UserIssuedVerifiableCredentialsUpdatedEvent.create(userId));
+    }
+
+    private void invalidateAllIssuedVerifiableCredentials() {
+        cache.allIssuedVerifiableCredentialsInvalidation(invalidations);
+        invalidationEvents.add(UserIssuedVerifiableCredentialsUpdatedEvent.createAll());
+    }
+
+    private IssuedVerifiableCredentialModel toIssuedCredentialModel(CachedUserIssuedVerifiableCredential cachedCredential) {
+        IssuedVerifiableCredentialModel credential = new IssuedVerifiableCredentialModel();
+        credential.setId(cachedCredential.getId());
+        credential.setUserId(cachedCredential.getUserId());
+        credential.setVerifiableCredentialId(cachedCredential.getVerifiableCredentialId());
+        credential.setIssuedAt(cachedCredential.getIssuedAt());
+        credential.setExpiresAt(cachedCredential.getExpiresAt());
+        credential.setClientId(cachedCredential.getClientId());
+        credential.setRevision(cachedCredential.getRevision());
+        return credential;
     }
 
     @Override
     public void removeExpiredIssuedVerifiableCredentials() {
+        invalidateAllIssuedVerifiableCredentials();
         getDelegate().removeExpiredIssuedVerifiableCredentials();
     }
 

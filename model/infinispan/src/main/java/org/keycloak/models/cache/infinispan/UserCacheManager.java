@@ -20,6 +20,7 @@ package org.keycloak.models.cache.infinispan;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.models.cache.infinispan.entities.CachedUserIssuedVerifiableCredentials;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.models.cache.infinispan.events.UserCacheInvalidationEvent;
@@ -70,6 +71,9 @@ public class UserCacheManager extends CacheManager {
 
         // Verifiable credentials
         invalidations.add(UserCacheSession.getVerifiableCredentialsCacheKey(userId));
+
+        // Issued verifiable credentials
+        invalidations.add(UserCacheSession.getIssuedVerifiableCredentialsCacheKey(userId));
     }
 
     public void federatedIdentityLinkUpdatedInvalidation(String userId, Set<String> invalidations) {
@@ -91,6 +95,13 @@ public class UserCacheManager extends CacheManager {
         invalidations.add(UserCacheSession.getVerifiableCredentialsCacheKey(userId));
     }
 
+    public void issuedVerifiableCredentialsInvalidation(String userId, Set<String> invalidations) {
+        invalidations.add(UserCacheSession.getIssuedVerifiableCredentialsCacheKey(userId));
+    }
+
+    public void allIssuedVerifiableCredentialsInvalidation(Set<String> invalidations) {
+        addInvalidations(entry -> entry.getValue() instanceof CachedUserIssuedVerifiableCredentials, invalidations);
+    }
 
     @Override
     protected void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations) {

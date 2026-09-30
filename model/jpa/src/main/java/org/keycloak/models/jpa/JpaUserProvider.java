@@ -1188,6 +1188,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     }
 
     @Override
+    public IssuedVerifiableCredentialModel getIssuedVerifiableCredentialById(String credentialId) {
+        IssuedVerifiableCredentialEntity entity = em.find(IssuedVerifiableCredentialEntity.class, credentialId);
+        return entity == null ? null : toIssuedVcModel(entity);
+    }
+
+    @Override
     public boolean removeIssuedVerifiableCredential(String credentialId) {
         IssuedVerifiableCredentialEntity entity = em.find(IssuedVerifiableCredentialEntity.class, credentialId, LockModeType.PESSIMISTIC_WRITE);
         if (entity == null) {
