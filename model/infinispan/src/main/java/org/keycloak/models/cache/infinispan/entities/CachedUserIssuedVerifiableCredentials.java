@@ -27,10 +27,14 @@ public class CachedUserIssuedVerifiableCredentials extends AbstractRevisioned im
 
     private final List<CachedUserIssuedVerifiableCredential> credentials;
     private final String realmId;
+    private final long invalidationRevision;
 
-    public CachedUserIssuedVerifiableCredentials(long revision, String id, RealmModel realm, List<IssuedVerifiableCredentialModel> credentials) {
+    public CachedUserIssuedVerifiableCredentials(long revision, String id, RealmModel realm,
+                                                 List<IssuedVerifiableCredentialModel> credentials,
+                                                 long invalidationRevision) {
         super(revision, id);
         this.realmId = realm.getId();
+        this.invalidationRevision = invalidationRevision;
         this.credentials = credentials != null
                 ? credentials.stream()
                         .map(CachedUserIssuedVerifiableCredential::new)
@@ -40,6 +44,10 @@ public class CachedUserIssuedVerifiableCredentials extends AbstractRevisioned im
 
     public List<CachedUserIssuedVerifiableCredential> getCredentials() {
         return credentials;
+    }
+
+    public long getInvalidationRevision() {
+        return invalidationRevision;
     }
 
     @Override

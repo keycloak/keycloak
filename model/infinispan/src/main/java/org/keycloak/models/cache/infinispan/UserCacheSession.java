@@ -884,6 +884,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     @Override
     public boolean removeVerifiableCredential(String userId, String clientScopeId) {
         invalidateVerifiableCredentials(userId);
+        invalidateIssuedVerifiableCredentials(userId);
         return getDelegate().removeVerifiableCredential(userId, clientScopeId);
     }
 
@@ -967,12 +968,17 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         if (cached != null && realmInvalidations.contains(cached.getRealm())) {
             return getDelegate().getIssuedVerifiableCredentialsStreamByUser(userId);
         }
+        if (cached != null && cached.getInvalidationRevision() < cache.getIssuedVerifiableCredentialsInvalidationRevision()) {
+            cache.invalidateObject(cacheKey);
+            cached = null;
+        }
 
         if (cached == null) {
             long loaded = cache.getCurrentRevision(cacheKey);
+            long invalidationRevision = cache.getIssuedVerifiableCredentialsInvalidationRevision();
             List<IssuedVerifiableCredentialModel> credentials = getDelegate().getIssuedVerifiableCredentialsStreamByUser(userId).toList();
             RealmModel realm = session.getContext().getRealm();
-            cached = new CachedUserIssuedVerifiableCredentials(loaded, cacheKey, realm, credentials);
+            cached = new CachedUserIssuedVerifiableCredentials(loaded, cacheKey, realm, credentials, invalidationRevision);
             cache.addRevisioned(cached, startupRevision);
             return credentials.stream();
         }
@@ -1164,6 +1170,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     @Override
     public void preRemove(RealmModel realm, ClientModel client) {
         addRealmInvalidation(realm.getId()); // easier to just invalidate whole realm
+        invalidateAllIssuedVerifiableCredentials();
         getDelegate().preRemove(realm, client);
     }
 
@@ -1175,6 +1182,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     @Override
     public void preRemove(ClientScopeModel clientScope) {
         addRealmInvalidation(clientScope.getRealm().getId());
+        invalidateAllIssuedVerifiableCredentials();
         getDelegate().preRemove(clientScope);
     }
 
