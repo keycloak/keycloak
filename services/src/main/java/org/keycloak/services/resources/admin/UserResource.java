@@ -741,11 +741,17 @@ public class UserResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public void disableCredentialType(List<String> credentialTypes) {
-        auth.users().requireManage(user);
-        if (credentialTypes == null) return;
+        if (credentialTypes == null || credentialTypes.isEmpty()) {
+            auth.users().requireManage(user);
+            return;
+        }
         for (String type : credentialTypes) {
+            if (type == null || CredentialRepresentation.PASSWORD.equalsIgnoreCase(type)) {
+                auth.users().requireResetPassword(user);
+            } else {
+                auth.users().requireManage(user);
+            }
             user.credentialManager().disableCredentialType(type);
-
         }
     }
 
@@ -880,6 +886,11 @@ public class UserResource {
             if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
             else throw new ForbiddenException();
         }
+        // null type is treated as password for backwards compatibility
+        if (credential.getType() == null || CredentialRepresentation.PASSWORD.equalsIgnoreCase(credential.getType())) {
+            auth.users().requireResetPassword(user);
+        }
+
         user.credentialManager().removeStoredCredentialById(credentialId);
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
     }
@@ -953,6 +964,10 @@ public class UserResource {
             // we do this to make sure somebody can't phish ids
             if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
             else throw new ForbiddenException();
+        }
+        // null type is treated as password for backwards compatibility
+        if (credential.getType() == null || CredentialRepresentation.PASSWORD.equalsIgnoreCase(credential.getType())) {
+            auth.users().requireResetPassword(user);
         }
         user.credentialManager().moveStoredCredentialTo(credentialId, newPreviousCredentialId);
     }
