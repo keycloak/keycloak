@@ -261,7 +261,7 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
 
         ClientRepresentation effective = new ClientRepresentation();
         effective.setRedirectUris(redirectUris);
-        if (postLogoutAttribute != null) {
+        if (postLogoutAttribute != null && !postLogoutAttribute.isBlank()) {
             effective.setAttributes(Collections.singletonMap(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, postLogoutAttribute));
         }
         List<String> postLogoutRedirectUris = OIDCAdvancedConfigWrapper.fromClientRepresentation(effective).getPostLogoutRedirectUris();
