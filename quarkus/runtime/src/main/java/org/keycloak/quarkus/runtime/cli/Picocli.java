@@ -251,10 +251,8 @@ public class Picocli {
         }
 
         if (!options.includeBuildTime) {
-            if (autoBuildDisabled) {
-                if (!Configuration.getRawPersistedProperties().containsKey(Configuration.KC_OPTIMIZED)) {
+            if (autoBuildDisabled && !Configuration.getRawPersistedProperties().containsKey(Configuration.KC_OPTIMIZED)) {
                     throw new PropertyException("The `auto-build` option is `false`, but the current build is not from the `build` command. You should rerun the `build` command with the desired configuration.");
-                }
             }
             validateBuildtime();
             if (autoBuildDisabled) {
@@ -363,6 +361,7 @@ public class Picocli {
 
     private void validateBuildtime() {
         final List<String> ignoredBuildTime = new ArrayList<>();
+        
         // check for provider changes, or overrides of existing persisted options
         // we have to ignore things like the profile properties because the commands set them at runtime
         checkChangesInBuildOptions((key, oldValue, newValue) -> {
@@ -925,7 +924,7 @@ public class Picocli {
         }
     }
 
-    private static boolean isIgnoredPersistedOption(String key) {
+    public static boolean isIgnoredPersistedOption(String key) {
         return key.equals(Configuration.KC_OPTIMIZED) || key.equals(org.keycloak.common.util.Environment.PROFILE)
                 || key.equals(LaunchMode.current().getProfileKey());
     }

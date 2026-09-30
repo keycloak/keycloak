@@ -49,10 +49,6 @@ public abstract class AbstractCommand implements Callable<Integer> {
      * Get the effective profile used when the config is initialized
      */
     public String getInitProfile() {
-        if (Environment.isRebuildCheck()) {
-            // builds default to prod, if the profile is not overriden via the cli
-            return Environment.PROD_PROFILE_VALUE;
-        }
         // otherwise take the default profile, or what is persisted, or ultimately prod
         return Optional.ofNullable(this.getDefaultProfile())
                 .or(() -> Optional.ofNullable(

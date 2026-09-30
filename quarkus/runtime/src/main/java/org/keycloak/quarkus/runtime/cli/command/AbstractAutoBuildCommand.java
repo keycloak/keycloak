@@ -52,30 +52,31 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
                 runReAugmentation();
                 return Optional.of(REBUILT_EXIT_CODE);
             }
-            // clear the check, and change to the command runtime profile
-            String profile = org.keycloak.common.util.Environment.getProfile();
             Environment.setRebuildCheck(false);
-            String runtimeProfile = getInitProfile();
-            if (!Objects.equals(profile, runtimeProfile)) {
-                Environment.setProfile(runtimeProfile);
-                Configuration.resetConfig();
-            }
         }
         return Optional.empty();
     }
 
     boolean requiresReAugmentation() {
         Map<String, String> rawPersistedProperties = Configuration.getRawPersistedProperties();
-        if (picocli.isAutoBuildDisabled()) {
-            return false; // already validated
-        }
         if (rawPersistedProperties.isEmpty()) {
             return true; // no build yet
         }
-        // everything but the optimized value must match
+        
+        boolean isDev = isDevMode();
+        boolean persistedDev = org.keycloak.common.util.Environment.DEV_PROFILE_VALUE
+                .equals(Configuration.getRawPersistedProperties().get(org.keycloak.common.util.Environment.PROFILE));
+        if ((!isDev && persistedDev) || (isDev && !persistedDev)) {
+            return true;
+        }
+        if (picocli.isAutoBuildDisabled()) {
+            return false; // already validated
+        }
+        // everything but ignored must match
+        // build-time options are assumed to be unchanged based upon the run-time profile
         AtomicBoolean changed = new AtomicBoolean();
         picocli.checkChangesInBuildOptions((key, oldValue, newValue) -> {
-            if (key.equals(Configuration.KC_OPTIMIZED)) {
+            if (Picocli.isIgnoredPersistedOption(key)) {
                 return;
             }
             if (key.startsWith(Picocli.KC_PROVIDER_FILE_PREFIX) && oldValue != null && newValue != null
@@ -88,11 +89,20 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
     }
 
     private void runReAugmentation() {
+        String buildProfile = org.keycloak.common.util.Environment.DEV_PROFILE_VALUE;
         if(!isDevMode()) {
             spec.commandLine().getOut().println("Changes detected in configuration. Updating the server image.");
             if (Configuration.isOptimized()) {
                 picocli.checkChangesInBuildOptionsDuringAutoBuild(spec.commandLine().getOut());
             }
+            buildProfile = Environment.PROD_PROFILE_VALUE;
+        }
+        
+        // clear the check, and change to the command runtime profile
+        String currentProfile = org.keycloak.common.util.Environment.getProfile();
+        if (!Objects.equals(buildProfile, currentProfile)) {
+            Environment.setProfile(buildProfile);
+            Configuration.resetConfig();
         }
 
         directBuild();

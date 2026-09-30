@@ -540,7 +540,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertTrue(nonRunningPicocli.reaug);
         assertEquals("dev", nonRunningPicocli.getBuildProps().getProperty(org.keycloak.common.util.Environment.PROFILE));
     }
-
+    
     /**
      * Runs a fake build to setup the state of the persisted build properties
      */
@@ -576,6 +576,18 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertTrue(nonRunningPicocli.reaug);
     }
 
+    @Test
+    public void testAutoBuildDisabledReaugFromProdToDevExport() {
+        build("build", "--db=dev-file");
+        putEnvVar("KC_AUTO_BUILD", "false");
+
+        // it's allowed to rebuild, but any attempt to use a non dev profile after this point will
+        // given an error
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("--profile=dev", "export", "--file=file");
+        assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.reaug);
+    }
+    
     @Test
     public void testNoReaugFromProdToExport() {
         build("build", "--db=dev-file");
