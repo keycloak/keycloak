@@ -16,8 +16,8 @@
  */
 package org.keycloak.tests.webauthn.registration;
 
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.WebAuthnRealmData;
 import org.keycloak.tests.webauthn.AbstractWebAuthnVirtualTest;
 
 import com.webauthn4j.data.AuthenticatorAttachment;
@@ -38,7 +38,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
 @KeycloakIntegrationTest
-// This test should be ignored on Firefox: See https://github.com/keycloak/keycloak/issues/10368
 public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
 
     @Test
@@ -56,31 +55,20 @@ public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void authenticatorAttachmentPlatform() {
-        managedRealm.updateWithCleanup(r -> {
-                    if (isPasswordless()) {
-                        r.webAuthnPolicyPasswordlessAuthenticatorAttachment(AuthenticatorAttachment.PLATFORM.getValue());
-                        r.webAuthnPolicyPasswordlessUserVerificationRequirement(UserVerificationRequirement.DISCOURAGED.getValue());
-                        r.webAuthnPolicyPasswordlessCreateTimeout(3);
-                    } else {
-                        r.webAuthnPolicyAuthenticatorAttachment(AuthenticatorAttachment.PLATFORM.getValue());
-                        r.webAuthnPolicyUserVerificationRequirement(UserVerificationRequirement.DISCOURAGED.getValue());
-                        r.webAuthnPolicyCreateTimeout(3);
-                    }
-                    return r;
-                }
+        managedRealm.updateWithCleanup(r ->
+                r.webAuthn(isPasswordless(), builder -> builder
+                        .authenticatorAttachment(AuthenticatorAttachment.PLATFORM.getValue())
+                        .userVerificationRequirement(UserVerificationRequirement.DISCOURAGED.getValue())
+                        .timeout(3)
+                )
         );
 
         // It shouldn't be possible to register the authenticator
         getVirtualAuthManager().useAuthenticator(DEFAULT_BLE.getOptions());
 
-        RealmRepresentation rep = managedRealm.admin().toRepresentation();
-        if (isPasswordless()) {
-            assertEquals(AuthenticatorAttachment.PLATFORM.getValue(), rep.getWebAuthnPolicyPasswordlessAuthenticatorAttachment());
-            assertEquals(UserVerificationRequirement.DISCOURAGED.getValue(), rep.getWebAuthnPolicyPasswordlessUserVerificationRequirement());
-        } else {
-            assertEquals(AuthenticatorAttachment.PLATFORM.getValue(), rep.getWebAuthnPolicyAuthenticatorAttachment());
-            assertEquals(UserVerificationRequirement.DISCOURAGED.getValue(), rep.getWebAuthnPolicyUserVerificationRequirement());
-        }
+        WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
+        assertEquals(AuthenticatorAttachment.PLATFORM.getValue(), realmData.getAuthenticatorAttachment());
+        assertEquals(UserVerificationRequirement.DISCOURAGED.getValue(), realmData.getUserVerificationRequirement());
 
         registerDefaultUser(false);
 
@@ -105,15 +93,12 @@ public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
     }
 
     private void assertAuthenticatorAttachment(boolean shouldSuccess, AuthenticatorAttachment attachment) {
-        managedRealm.updateWithCleanup(r -> isPasswordless()
-                ? r.webAuthnPolicyPasswordlessAuthenticatorAttachment(attachment.getValue())
-                : r.webAuthnPolicyAuthenticatorAttachment(attachment.getValue())
+        managedRealm.updateWithCleanup(r ->
+                r.webAuthn(isPasswordless(), builder -> builder.authenticatorAttachment(attachment.getValue()))
         );
-        RealmRepresentation rep = managedRealm.admin().toRepresentation();
-        assertEquals(attachment.getValue(), isPasswordless()
-                ? rep.getWebAuthnPolicyPasswordlessAuthenticatorAttachment()
-                : rep.getWebAuthnPolicyAuthenticatorAttachment()
-        );
+
+        WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
+        assertEquals(attachment.getValue(), realmData.getAuthenticatorAttachment());
 
         registerDefaultUser(shouldSuccess);
 

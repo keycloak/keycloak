@@ -473,12 +473,14 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
     }
 
     private void updateRealmWithDefaultWebAuthnSettings() {
-        managedRealm.updateWithCleanup(r -> r.webAuthnPolicySignatureAlgorithms(List.of("ES256"))
-                .webAuthnPolicyAttestationConveyancePreference("none")
-                .webAuthnPolicyAuthenticatorAttachment("cross-platform")
-                .webAuthnPolicyRequireResidentKey("No")
-                .webAuthnPolicyRpId(null)
-                .webAuthnPolicyUserVerificationRequirement("preferred"));
+        managedRealm.updateWithCleanup(r -> r.webAuthn(false, builder ->
+                builder.signatureAlgorithms(List.of("ES256"))
+                        .attestationConveyancePreference("none")
+                        .authenticatorAttachment("cross-platform")
+                        .residentKey("discouraged")
+                        .rpId(null)
+                        .userVerificationRequirement("preferred")
+        ));
     }
 
     /**
