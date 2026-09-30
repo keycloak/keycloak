@@ -960,7 +960,9 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         logger.tracev("getIssuedVerifiableCredentialsStreamByUser: {0}", userId);
 
         String cacheKey = getIssuedVerifiableCredentialsCacheKey(userId);
-        if (invalidations.contains(userId) || invalidations.contains(cacheKey)) {
+        if (invalidations.contains(userId)
+                || invalidations.contains(cacheKey)
+                || cache.isAllIssuedVerifiableCredentialsInvalidationPending(invalidations)) {
             return getDelegate().getIssuedVerifiableCredentialsStreamByUser(userId);
         }
 
@@ -1030,9 +1032,12 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     }
 
     @Override
-    public void removeExpiredIssuedVerifiableCredentials() {
-        invalidateAllIssuedVerifiableCredentials();
-        getDelegate().removeExpiredIssuedVerifiableCredentials();
+    public int removeExpiredIssuedVerifiableCredentials() {
+        int removed = getDelegate().removeExpiredIssuedVerifiableCredentials();
+        if (removed > 0) {
+            invalidateAllIssuedVerifiableCredentials();
+        }
+        return removed;
     }
 
     @Override

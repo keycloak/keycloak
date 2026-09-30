@@ -43,7 +43,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.keycloak.testframework.remote.providers.runonserver.IssuedVerifiableCredentialTestHelper.add;
 import static org.keycloak.testframework.remote.providers.runonserver.IssuedVerifiableCredentialTestHelper.count;
-import static org.keycloak.testframework.remote.providers.runonserver.IssuedVerifiableCredentialTestHelper.removeExpired;
+import static org.keycloak.testframework.remote.providers.runonserver.IssuedVerifiableCredentialTestHelper.removeExpiredAndCount;
 import static org.keycloak.testframework.remote.providers.runonserver.IssuedVerifiableCredentialTestHelper.removeUserCredential;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -102,16 +102,19 @@ public class IssuedVerifiableCredentialCacheInvalidationTest {
         loadBalancer.node(writer);
         runOnServer.run(add(userId, scopeId, Time.currentTimeMillis() - 1));
 
+        assertIssuedCredentialCount(userId, 1);
+
         loadBalancer.node(reader);
         assertIssuedCredentialCount(userId, 1);
 
         loadBalancer.node(writer);
-        runOnServer.run(removeExpired());
+        assertEquals("1:0", runOnServer.fetch(removeExpiredAndCount(userId), String.class));
 
         loadBalancer.node(reader);
         assertIssuedCredentialCount(userId, 0);
 
         loadBalancer.node(writer);
+        assertEquals("0:0", runOnServer.fetch(removeExpiredAndCount(userId), String.class));
         assertTrue(runOnServer.fetch(removeUserCredential(userId, scopeId), Boolean.class));
     }
 
