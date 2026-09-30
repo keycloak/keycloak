@@ -1384,4 +1384,21 @@ public class OrganizationTest extends AbstractOrganizationTest {
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         }
     }
+
+    @Test
+    public void testGetByDomainNameWithMalformedDomain() {
+        createOrganization();
+
+        runOnServer.run(session -> {
+            OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+
+            assertNotNull(provider.getByDomainName("neworg.org"));
+
+            assertNull(provider.getByDomainName(null));
+
+            for (String malformed : List.of("", " ", "my_org", "neworg;org", "neworg org", "neworg.org.", "new_org.org", "2802@neworg.org", "*.")) {
+                assertNull(provider.getByDomainName(malformed), malformed);
+            }
+        });
+    }
 }
