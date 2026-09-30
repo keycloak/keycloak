@@ -85,6 +85,9 @@ through the broker if the sync mode is set to `FORCE`.
 |Case-sensitive username
 |If enabled, the original username from the identity provider is kept as is when federating users. Otherwise, the username from the identity provider is lower-cased and might not match the original value if it is case-sensitive. This setting only affects the username associated with the federated identity as usernames in the server are always in lower-case.
 
+|Reset brute force failures on login
+|When *ON*, a successful login through this identity provider resets the user's brute force detection login failures, the same way a successful password login does. Leave it *OFF* if the identity provider can log users in without them entering credentials, for example from an existing session at the identity provider, because each such login would also reset failures caused by someone guessing the user's password. See <<password-guess-brute-force-attacks, Brute force attacks>> for more information.
+
 |Show in Account console
 |Defines how the identity provider will be available from the account console. If set to `Always`, it is always available.
 If set to `When linked`, it will be shown only when the user is linked to it. Otherwise, if set to `Never`, it will not be available even if the user is linked to it.
