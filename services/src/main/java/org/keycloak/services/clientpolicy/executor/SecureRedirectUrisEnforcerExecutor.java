@@ -241,8 +241,9 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
     private void verifyPostLogoutRedirectUriUpdate(ClientRepresentation client, ClientModel stored) throws ClientPolicyException {
         Map<String, String> attrs = client.getAttributes();
 
+        boolean proposedPostLogoutAttribute = attrs != null && attrs.containsKey(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
         String postLogoutAttribute;
-        if (attrs != null && attrs.containsKey(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS)) {
+        if (proposedPostLogoutAttribute) {
             // The proposed representation explicitly sets post-logout URIs — validate them directly.
             postLogoutAttribute = attrs.get(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
         } else if (stored != null) {
@@ -261,7 +262,7 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
 
         ClientRepresentation effective = new ClientRepresentation();
         effective.setRedirectUris(redirectUris);
-        if (postLogoutAttribute != null) {
+        if (postLogoutAttribute != null && !postLogoutAttribute.isBlank()) {
             effective.setAttributes(Collections.singletonMap(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, postLogoutAttribute));
         }
         List<String> postLogoutRedirectUris = OIDCAdvancedConfigWrapper.fromClientRepresentation(effective).getPostLogoutRedirectUris();

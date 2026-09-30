@@ -114,24 +114,25 @@ Additionally, a partial update that omits the `post.logout.redirect.uris` attrib
 
 *Impact on existing clients*
 
-The following clients will be rejected by CREATE or UPDATE operations after upgrading:
+The following clients may be rejected by CREATE or UPDATE operations after upgrading:
 
-* Clients with both standard flow and implicit flow disabled that have HTTP redirect URIs
-  and either no explicit `post.logout.redirect.uris` attribute or the `{plus}` placeholder.
-  The absent or `{plus}` attribute inherits the client's redirect URIs; if those are HTTP,
-  validation now rejects them.
+* Clients with both standard flow and implicit flow disabled that have redirect URIs
+  that violate the executor's configured rules and either no explicit
+  `post.logout.redirect.uris` attribute or the `{plus}` placeholder.
+  The absent or `{plus}` attribute inherits the client's redirect URIs, which are
+  now validated as post-logout redirect URIs.
 
-* Clients that have an explicit HTTP `post.logout.redirect.uris` value stored in their
-  attributes — whether set before the policy was active or retained through the
-  partial-update bypass this fix addresses. Any partial admin update to such a client,
-  including routine changes like renaming, now triggers revalidation of the stored
-  post-logout URIs and is rejected if they violate the policy. Previously, partial admin
-  API updates that omitted the `attributes` map silently passed validation.
+* Clients that have an explicit `post.logout.redirect.uris` value stored in their
+  attributes that violates the executor's configured rules — whether set before
+  the policy was active or retained through the partial-update bypass this fix
+  addresses. Any partial admin update to such a client, including routine changes
+  like renaming, now triggers revalidation of the stored post-logout URIs.
 
-Before upgrading, audit clients matched by the `secure-redirect-uris-enforcer` policy for HTTP post-logout redirect URIs.
-Set `post.logout.redirect.uris` to `-` on affected clients to opt out of post-logout URI
-enforcement, or migrate their post-logout redirect URIs to HTTPS.
-Setting `-` also works after upgrading, so an affected client can still be remediated.
+Before upgrading, audit clients matched by the `secure-redirect-uris-enforcer`
+policy against all of its configured URI rules. Set `post.logout.redirect.uris`
+to `-` on affected clients to opt out of post-logout URI enforcement, or update
+their post-logout redirect URIs to satisfy those rules. Setting `-` also works
+after upgrading, so an affected client can still be remediated.
 
 === Secrets referenced by OIDC Client CRs now require a label
 // https://github.com/keycloak/keycloak/issues/52320
