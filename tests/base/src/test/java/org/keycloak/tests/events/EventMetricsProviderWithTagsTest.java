@@ -17,15 +17,18 @@
 
 package org.keycloak.tests.events;
 
+import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -45,7 +48,7 @@ import org.junit.jupiter.api.Test;
 @KeycloakIntegrationTest(config = EventMetricsProviderWithTagsTest.EventMetricsServerConfig.class)
 public class EventMetricsProviderWithTagsTest {
 
-    @InjectRealm
+    @InjectRealm(config = EventMetricsProviderWithTagsTest.EventMetricsRealmConfig.class)
     ManagedRealm realm;
 
     @InjectRunOnServer
@@ -107,15 +110,8 @@ public class EventMetricsProviderWithTagsTest {
         String realmName = realm.getName();
 
         runOnServer.run(session -> {
-            IdentityProviderModel idp = new IdentityProviderModel();
-            idp.setAlias(REAL_IDP_ALIAS);
-            idp.setProviderId("oidc");
-            idp.setEnabled(true);
-            session.identityProviders().create(idp);
-        });
-
-        runOnServer.run(session -> {
             RealmModel realm = session.getContext().getRealm();
+
             EventBuilder eventBuilder = new EventBuilder(realm, session);
             eventBuilder.event(EventType.LOGIN)
                     .client(CLIENT_ID)
@@ -161,6 +157,18 @@ public class EventMetricsProviderWithTagsTest {
             MatcherAssert.assertThat("Attacker-provided IDP alias must not appear in any metric tag",
                     attackerIdpPresent, Matchers.equalTo(false));
         });
+    }
+
+    public static class EventMetricsRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return realm.identityProviders(
+                    IdentityProviderBuilder.create()
+                            .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
+                            .alias(REAL_IDP_ALIAS)
+                            .build());
+        }
     }
 
     public static class EventMetricsServerConfig implements KeycloakServerConfig {
