@@ -255,8 +255,8 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
         // an unset attribute and the "+" placeholder both mean "same as the redirect uris", which are the
         // ones proposed by this update, falling back to the stored ones when the update does not change them
         List<String> redirectUris = client.getRedirectUris();
-        if (redirectUris == null && stored != null) {
-            redirectUris = new ArrayList<>(stored.getRedirectUris());
+        if (redirectUris == null) {
+            redirectUris = (stored != null) ? new ArrayList<>(stored.getRedirectUris()) : Collections.emptyList();
         }
 
         ClientRepresentation effective = new ClientRepresentation();
