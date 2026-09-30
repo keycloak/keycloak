@@ -434,6 +434,16 @@ public class PermissionsTest extends AbstractPermissionsTest {
                 realm.users().get(user.getId()).removeCredential("123");
             }
         }, Resource.USER, true);
+        invoke(realm -> realm.users().get(user.getId()).disableCredentialType(List.of(CredentialRepresentation.PASSWORD)),
+                Resource.USER, true);
+        invoke(realm -> {
+            CredentialRepresentation cred = realm.users().get(user.getId()).credentials().stream().findFirst().orElse(null);
+            if (cred != null) {
+                realm.users().get(user.getId()).moveCredentialToFirst(cred.getId());
+            } else {
+                realm.users().get(user.getId()).moveCredentialToFirst("123");
+            }
+        }, Resource.USER, true);
         invoke(realm -> realm.users().get(user.getId()).executeActionsEmail(List.of(UserModel.RequiredAction.UPDATE_PASSWORD.name())),
                 Resource.USER, true);
         invoke(realm -> realm.users().get(user.getId()).executeActionsEmail(List.of()), Resource.USER, true);
