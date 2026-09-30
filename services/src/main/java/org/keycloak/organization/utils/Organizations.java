@@ -306,41 +306,53 @@ public class Organizations {
     }
 
     public static void validateDomain(String rawDomain) {
+        getDomainValidationError(rawDomain).ifPresent(error -> {
+            throw new ModelValidationException(error);
+        });
+    }
+
+    public static boolean isValidDomain(String rawDomain) {
+        return !isBlank(rawDomain) && getDomainValidationError(rawDomain).isEmpty();
+    }
+
+    private static Optional<String> getDomainValidationError(String rawDomain) {
         if (isBlank(rawDomain)) {
-            return;
+            return Optional.empty();
         }
 
         String domain = rawDomain;
 
         if (rawDomain.contains(WILDCARD_PREFIX)) {
             if (rawDomain.length() == WILDCARD_PREFIX.length()) {
-                throw new ModelValidationException("Wildcard domain must specify a base domain: " + rawDomain);
+                return Optional.of("Wildcard domain must specify a base domain: " + rawDomain);
             }
 
             if (!rawDomain.startsWith(WILDCARD_PREFIX)) {
-                throw new ModelValidationException("Wildcard domain must start with the wildcard");
+                return Optional.of("Wildcard domain must start with the wildcard");
             }
 
             domain = rawDomain.substring(2);
 
             if (domain.contains("*")) {
-                throw new ModelValidationException("Multiple wildcards are not allowed: " + rawDomain);
+                return Optional.of("Multiple wildcards are not allowed: " + rawDomain);
             }
 
             int parts = getDomainPartsSize(domain);
 
             if (parts < MIN_DOMAIN_PARTS) {
-                throw new ModelValidationException("Domain must have at least " + MIN_DOMAIN_PARTS + " parts (e.g. 'example.com'): " + domain);
+                return Optional.of("Domain must have at least " + MIN_DOMAIN_PARTS + " parts (e.g. 'example.com'): " + domain);
             }
 
             if (parts > MAX_DOMAIN_PARTS) {
-                throw new ModelValidationException("Domain has too many parts (max " + MAX_DOMAIN_PARTS + " allowed): " + domain);
+                return Optional.of("Domain has too many parts (max " + MAX_DOMAIN_PARTS + " allowed): " + domain);
             }
         }
 
         if (isBlank(domain) || !EmailValidationUtil.isValidEmail("user@" + domain)) {
-            throw new ModelValidationException("Invalid domain format: " + rawDomain);
+            return Optional.of("Invalid domain format: " + rawDomain);
         }
+
+        return Optional.empty();
     }
 
 
@@ -487,7 +499,7 @@ public class Organizations {
         if (organizations.isEmpty()) {
             // no membership, any org that matches the domain
             return resolveByDomain(ofNullable(emailDomain)
-                    .map(d -> getByDomainNameOrNull(provider, d))
+                    .map(provider::getByDomainName)
                     .map(List::of)
                     .orElse(List.of()), emailDomain);
         }
@@ -499,15 +511,6 @@ public class Organizations {
         }
 
         return resolveByDomain(organizations, emailDomain);
-    }
-
-    private static OrganizationModel getByDomainNameOrNull(OrganizationProvider provider, String domain) {
-        try {
-            return provider.getByDomainName(domain);
-        } catch (ModelValidationException e) {
-            // malformed domain (e.g. a typo in the login username, or an unvalidated stored email) - treat as no match
-            return null;
-        }
     }
 
     public static OrganizationProvider getProvider(KeycloakSession session) {
