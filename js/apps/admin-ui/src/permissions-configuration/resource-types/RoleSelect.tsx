@@ -29,8 +29,8 @@ export const RoleSelect = ({ name, isRadio = false }: RoleSelectorProps) => {
     getValues,
     setValue,
     formState: { errors },
-  } = useFormContext<{ [key: string]: string[] }>();
-  const values = getValues(name);
+  } = useFormContext<{ [key: string]: string[] | undefined }>();
+  const values = getValues(name) || [];
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<Row[]>([]);
   const [filterType, setFilterType] = useState<FilterType>("clients");
