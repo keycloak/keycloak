@@ -380,6 +380,8 @@ public class OrganizationGroupResource {
             throw ErrorResponse.error("User is already a member of the group", Response.Status.CONFLICT);
         }
 
+        GroupUtils.checkAdminGroupRoles(group, auth);
+
         try {
             user.joinGroup(group);
             adminEvent.operation(OperationType.CREATE)
