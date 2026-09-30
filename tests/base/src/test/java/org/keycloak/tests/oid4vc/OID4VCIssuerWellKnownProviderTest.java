@@ -97,6 +97,7 @@ import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvide
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_REQUEST_ZIP_ALGS;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_RESPONSE_ENCRYPTION_REQUIRED;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.DEFLATE_COMPRESSION;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ISSUER_INFO_ATTR;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.SIGNED_METADATA_ALG_ATTR;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.SIGNED_METADATA_LIFESPAN_ATTR;
 
@@ -571,6 +572,102 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
 
         // Non-numeric value should be rejected (parsing exception)
         testBatchSizeValidation("invalid", false, null);
+    }
+
+    @Test
+    public void testIssuerInfoInUnsignedMetadata() throws IOException {
+        String issuerInfoJson = "[{\"format\":\"registration_cert\",\"data\":\"eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJEQSJ9.sig\"}]";
+        setRealmAttributes(Map.of(ISSUER_INFO_ATTR, issuerInfoJson));
+
+        try {
+            CredentialIssuer issuer = oauth.oid4vc()
+                    .doIssuerMetadataRequest()
+                    .getMetadata();
+
+            assertNotNull(issuer.getIssuerInfo(), "issuer_info should be present");
+            assertEquals(1, issuer.getIssuerInfo().size(), "issuer_info should have one element");
+            assertEquals("registration_cert", issuer.getIssuerInfo().get(0).getFormat());
+            assertEquals("eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJEQSJ9.sig", issuer.getIssuerInfo().get(0).getData().asText());
+        } finally {
+            setRealmAttributes(Map.of(ISSUER_INFO_ATTR, ""));
+        }
+    }
+
+    @Test
+    public void testIssuerInfoInSignedMetadata() throws IOException {
+        String issuerInfoJson = "[{\"format\":\"registration_cert\",\"data\":\"eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJEQSJ9.sig\"}]";
+        setRealmAttributes(Map.of(
+                SIGNED_METADATA_ALG_ATTR, "RS256",
+                SIGNED_METADATA_LIFESPAN_ATTR, "3600",
+                ISSUER_INFO_ATTR, issuerInfoJson
+        ));
+
+        try {
+            CredentialIssuerMetadataResponse response = oauth.oid4vc()
+                    .issuerMetadataRequest()
+                    .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JWT)
+                    .send();
+
+            assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+            assertEquals(MediaType.APPLICATION_JWT, response.getHeader(HttpHeaders.CONTENT_TYPE));
+
+            JWSInput jwsInput = (JWSInput) response.getContent();
+            assertNotNull(jwsInput, "Response should be signed metadata JWS");
+
+            Map<String, Object> claims = JsonSerialization.readValue(jwsInput.getContent(), Map.class);
+            assertNotNull(claims.get("issuer_info"), "issuer_info should be a top-level claim in signed metadata");
+
+            List<Map<String, Object>> issuerInfoList = (List<Map<String, Object>>) claims.get("issuer_info");
+            assertEquals(1, issuerInfoList.size());
+            assertEquals("registration_cert", issuerInfoList.get(0).get("format"));
+            assertEquals("eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJEQSJ9.sig", issuerInfoList.get(0).get("data"));
+        } finally {
+            setRealmAttributes(Map.of(
+                    SIGNED_METADATA_ALG_ATTR, "RS256",
+                    SIGNED_METADATA_LIFESPAN_ATTR, "3600",
+                    ISSUER_INFO_ATTR, ""
+            ));
+        }
+    }
+
+    @Test
+    public void testIssuerInfoInvalidJsonFallsBackToOmitted() throws IOException {
+        setRealmAttributes(Map.of(ISSUER_INFO_ATTR, "not-valid-json"));
+
+        try {
+            CredentialIssuer issuer = oauth.oid4vc()
+                    .doIssuerMetadataRequest()
+                    .getMetadata();
+
+            assertNull(issuer.getIssuerInfo(), "issuer_info should be omitted when configuration is invalid");
+        } finally {
+            setRealmAttributes(Map.of(ISSUER_INFO_ATTR, ""));
+        }
+    }
+
+    @Test
+    public void testIssuerInfoMalformedElementFallsBackToOmitted() throws IOException {
+        setRealmAttributes(Map.of(ISSUER_INFO_ATTR, "[{}]"));
+
+        try {
+            CredentialIssuer issuer = oauth.oid4vc()
+                    .doIssuerMetadataRequest()
+                    .getMetadata();
+
+            assertNull(issuer.getIssuerInfo(),
+                    "issuer_info should be omitted when an element misses format or data");
+        } finally {
+            setRealmAttributes(Map.of(ISSUER_INFO_ATTR, ""));
+        }
+    }
+
+    @Test
+    public void testIssuerInfoOmittedWhenNotConfigured() throws IOException {
+        CredentialIssuer issuer = oauth.oid4vc()
+                .doIssuerMetadataRequest()
+                .getMetadata();
+
+        assertNull(issuer.getIssuerInfo(), "issuer_info should be omitted when not configured");
     }
 
     /**

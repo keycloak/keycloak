@@ -281,6 +281,11 @@ The following table describes the available OID4VCI realm attributes:
 | `oid4vci.batch_credential_issuance.batch_size`
 | `2`
 | Maximum number of credentials that can be issued in a single batch request. Must be 2 or greater. Disabled if not set or invalid.
+
+| Issuer Info
+| `oid4vci.issuer_info`
+| Not set
+| JSON array of `issuer_info` elements published in the Credential Issuer Metadata as defined in ETSI TS 119 472-3, Section 4.2.3. Each element has a `format` and `data` member. Example: `[{"format": "registration_cert", "data": "<JWT>"}]`. Used for EUDI registration certificate support.
 |===
 
 ===== Time Claim Correlation Mitigation
