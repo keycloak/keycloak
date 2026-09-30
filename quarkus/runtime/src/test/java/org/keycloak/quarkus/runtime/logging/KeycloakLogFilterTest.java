@@ -59,39 +59,52 @@ public class KeycloakLogFilterTest {
 
     @Test
     public void suppressesGenericWarningForDefaultUnit() {
-        assertTrue(keycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
+        assertTrue(keycloakLogFilter.isKeycloakUnsupportedPropertiesWarning(
                 record(Level.WARNING, FASTBOOT, GENERIC_WARN, "<default>", Set.of("hibernate.order_inserts"))));
     }
 
     @Test
     public void suppressesOverrideWarningForDefaultUnit() {
-        assertTrue(keycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
+        assertTrue(keycloakLogFilter.isKeycloakUnsupportedPropertiesWarning(
                 record(Level.WARNING, FASTBOOT, OVERRIDE_WARN, "<default>", Set.of("hibernate.order_inserts"))));
     }
 
     @Test
     public void keepsWarningForUserDefinedUnit() {
-        assertFalse(keycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
+        assertFalse(keycloakLogFilter.isKeycloakUnsupportedPropertiesWarning(
                 record(Level.WARNING, FASTBOOT, GENERIC_WARN, "user-store", Set.of("hibernate.order_inserts"))));
     }
 
     @Test
+    public void suppressesWarningForKeycloakOptionOfNamedUnit() {
+        assertTrue(keycloakLogFilter.isKeycloakUnsupportedPropertiesWarning(
+                record(Level.WARNING, FASTBOOT, GENERIC_WARN, "user-store", Set.of("hibernate.use_sql_comments"))));
+    }
+
+    @Test
+    public void keepsWarningForNamedQueryPropertyOfNamedUnit() {
+        assertFalse(keycloakLogFilter.isKeycloakUnsupportedPropertiesWarning(
+                record(Level.WARNING, FASTBOOT, GENERIC_WARN, "user-store",
+                        Set.of("hibernate.use_sql_comments", "kc.query.deleteExpiredClientSessions[native]"))));
+    }
+
+    @Test
     public void keepsWarningWhenUserAddsOwnUnsupportedProperty() {
-        assertFalse(keycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
+        assertFalse(keycloakLogFilter.isKeycloakUnsupportedPropertiesWarning(
                 record(Level.WARNING, FASTBOOT, GENERIC_WARN, "<default>",
                         Set.of("hibernate.order_inserts", "hibernate.jdbc.fetch_size"))));
     }
 
     @Test
     public void suppressesWarningForKeycloakNamedQueryProperty() {
-        assertTrue(keycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
+        assertTrue(keycloakLogFilter.isKeycloakUnsupportedPropertiesWarning(
                 record(Level.WARNING, FASTBOOT, GENERIC_WARN, "<default>",
                         Set.of("hibernate.use_sql_comments", "kc.query.deleteExpiredClientSessions[native]"))));
     }
 
     @Test
     public void keepsUnrelatedWarningFromSameLogger() {
-        assertFalse(keycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
+        assertFalse(keycloakLogFilter.isKeycloakUnsupportedPropertiesWarning(
                 record(Level.WARNING, FASTBOOT,
                         "Persistence-unit [%s]: enabling best-effort backwards compatibility with '%2$s=%3$s'.",
                         "<default>")));
@@ -99,19 +112,19 @@ public class KeycloakLogFilterTest {
 
     @Test
     public void keepsNonWarningLevel() {
-        assertFalse(keycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
+        assertFalse(keycloakLogFilter.isKeycloakUnsupportedPropertiesWarning(
                 record(Level.INFO, FASTBOOT, GENERIC_WARN, "<default>", Set.of("hibernate.order_inserts"))));
     }
 
     @Test
     public void keepsWarningFromDifferentLogger() {
-        assertFalse(keycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
+        assertFalse(keycloakLogFilter.isKeycloakUnsupportedPropertiesWarning(
                 record(Level.WARNING, "org.hibernate.orm.deprecation", GENERIC_WARN, "<default>", Set.of("x"))));
     }
 
     @Test
     public void keepsWarningWithNoParameters() {
-        assertFalse(keycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
+        assertFalse(keycloakLogFilter.isKeycloakUnsupportedPropertiesWarning(
                 record(Level.WARNING, FASTBOOT, GENERIC_WARN)));
     }
 }

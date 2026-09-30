@@ -181,6 +181,13 @@ public final class PropertyMappers {
         return getMapper(property, null);
     }
 
+    /**
+     * All the mappers of the given property, e.g. of an option mapped to several Quarkus properties.
+     */
+    public static List<PropertyMapper<?>> getMappers(String property) {
+        return MAPPERS.getOrDefault(property, List.of());
+    }
+
     public static PropertyMapper<?> getMapperByCliKey(String cliKey) {
         return getKcKeyFromCliKey(cliKey).map(PropertyMappers::getMapper).orElse(null);
     }
@@ -404,6 +411,11 @@ public final class PropertyMappers {
      * Helper class for handling Mappers config for wildcards
      */
     private static class WildcardMappersConfig {
+
+        private static int wildcardValueLength(WildcardPropertyMapper<?> mapper, String key) {
+            return mapper.extractWildcardValue(key).orElseThrow().length();
+        }
+
         private final Set<WildcardPropertyMapper<?>> wildcardMappers = new HashSet<>();
         private final MultivaluedHashMap<String, WildcardPropertyMapper<?>> wildcardMapFrom = new MultivaluedHashMap<>();
 
@@ -426,9 +438,16 @@ public final class PropertyMappers {
             // for now we'll just limit ourselves to searching wildcards when we see a quarkus or
             // keycloak key
             if (key.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX) || key.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX)) {
-                return wildcardMappers.stream()
+                List<WildcardPropertyMapper<?>> matching = wildcardMappers.stream()
                         .filter(m -> m.matchesWildcardOptionName(key))
                         .toList();
+                if (matching.size() > 1) {
+                    // with overlapping prefixes, e.g. db-orm-scripts-generation-<datasource> and
+                    // db-orm-scripts-generation-create-target-<datasource>, the most specific options win
+                    int shortest = matching.stream().mapToInt(m -> wildcardValueLength(m, key)).min().orElseThrow();
+                    matching = matching.stream().filter(m -> wildcardValueLength(m, key) == shortest).toList();
+                }
+                return matching;
             }
             return Collections.emptyList();
         }

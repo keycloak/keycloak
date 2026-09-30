@@ -63,8 +63,10 @@ public abstract class KeycloakLogFilter implements Filter {
             "^\\[Context=(" + String.join("|", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME) + ")] ISPN000312: .*");
     // prefix of a Quarkus Hibernate ORM property in application properties
     private static final String QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX = "quarkus.hibernate-orm.unsupported-properties.";
+    private static final String QUARKUS_HIBERNATE_ORM_NAMED_UNSUPPORTED_PROPERTIES_PREFIX = "quarkus.hibernate-orm.\"<datasource>\".unsupported-properties.";
 
     private static volatile Set<String> keycloakDefaultUnsupportedProperties = null;
+    private static volatile Set<String> keycloakNamedUnitUnsupportedProperties = null;
 
     // Use this thread pool to asynchronously log from virtual threads, which could otherwise be pinned and lead to deadlocks.
     // A single thread ensures that all log entries appear in the correct order.
@@ -94,20 +96,37 @@ public abstract class KeycloakLogFilter implements Filter {
                 }
             }
         }
+        return unsupportedPropertyKeys(properties, QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX);
+    }
+
+    /**
+     * Hibernate unsupported properties Keycloak contributes to the persistence unit of a named datasource
+     * (through options like {@code db-debug-jpql-<datasource>}).
+     */
+    public static Set<String> collectNamedUnitUnsupportedHibernateProperties() {
+        return unsupportedPropertyKeys(new DatabasePropertyMappers().getPropertyMappers().stream().map(PropertyMapper::getTo),
+                QUARKUS_HIBERNATE_ORM_NAMED_UNSUPPORTED_PROPERTIES_PREFIX);
+    }
+
+    private static Set<String> unsupportedPropertyKeys(Stream<String> properties, String prefix) {
         return properties
                 .filter(Objects::nonNull)
-                .filter(p -> p.startsWith(QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX))
+                .filter(p -> p.startsWith(prefix))
                 .map(p -> {
-                    if (p.startsWith(QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX + "\"")) {
-                        return p.substring(QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX.length() + 1, p.length() - 1);
+                    if (p.startsWith(prefix + "\"")) {
+                        return p.substring(prefix.length() + 1, p.length() - 1);
                     }
-                    return p.substring(QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX.length());
+                    return p.substring(prefix.length());
                 })
                 .collect(Collectors.toUnmodifiableSet());
     }
 
     public static void setKeycloakDefaultUnsupportedProperties(Set<String> keycloakDefaultUnsupportedProperties) {
         KeycloakLogFilter.keycloakDefaultUnsupportedProperties = Set.copyOf(keycloakDefaultUnsupportedProperties);
+    }
+
+    public static void setKeycloakNamedUnitUnsupportedProperties(Set<String> keycloakNamedUnitUnsupportedProperties) {
+        KeycloakLogFilter.keycloakNamedUnitUnsupportedProperties = Set.copyOf(keycloakNamedUnitUnsupportedProperties);
     }
 
     protected abstract Class<? extends Handler> getHandlerClass();
@@ -148,8 +167,8 @@ public abstract class KeycloakLogFilter implements Filter {
         }
 
         // Suppress the Hibernate ORM "unsupported properties" WARN(s) that FastBootHibernatePersistenceProvider emits
-        // for the default persistence unit; see isDefaultPersistenceUnitUnsupportedPropertiesWarning.
-        if (isDefaultPersistenceUnitUnsupportedPropertiesWarning(record)) {
+        // for properties Keycloak contributes itself; see isKeycloakUnsupportedPropertiesWarning.
+        if (isKeycloakUnsupportedPropertiesWarning(record)) {
             return false;
         }
 
@@ -180,7 +199,7 @@ public abstract class KeycloakLogFilter implements Filter {
         return true;
     }
 
-    boolean isDefaultPersistenceUnitUnsupportedPropertiesWarning(LogRecord record) {
+    boolean isKeycloakUnsupportedPropertiesWarning(LogRecord record) {
         if (!Objects.equals(record.getLevel(), Level.WARNING)
                 || !"io.quarkus.hibernate.orm.runtime.FastBootHibernatePersistenceProvider".equals(record.getLoggerName())) {
             return false;
@@ -190,25 +209,38 @@ public abstract class KeycloakLogFilter implements Filter {
             return false;
         }
         Object[] parameters = record.getParameters();
-        if (parameters == null || parameters.length < 2 || !"<default>".equals(String.valueOf(parameters[0]))) {
+        if (parameters == null || parameters.length < 2) {
             return false;
         }
-        return isOnlyKeycloakContributed(parameters[1]);
+        if ("<default>".equals(String.valueOf(parameters[0]))) {
+            return isOnlyKeycloakContributed(parameters[1], getKeycloakDefaultUnsupportedProperties(), true);
+        }
+        // a persistence unit of a named datasource, defined through configuration
+        return isOnlyKeycloakContributed(parameters[1], getKeycloakNamedUnitUnsupportedProperties(), false);
     }
 
-    private boolean isOnlyKeycloakContributed(Object keys) {
+    private static Set<String> getKeycloakDefaultUnsupportedProperties() {
+        if (keycloakDefaultUnsupportedProperties == null) {
+            keycloakDefaultUnsupportedProperties = collectAllDefaultUnsupportedHibernateProperties();
+        }
+        return keycloakDefaultUnsupportedProperties;
+    }
+
+    private static Set<String> getKeycloakNamedUnitUnsupportedProperties() {
+        if (keycloakNamedUnitUnsupportedProperties == null) {
+            keycloakNamedUnitUnsupportedProperties = collectNamedUnitUnsupportedHibernateProperties();
+        }
+        return keycloakNamedUnitUnsupportedProperties;
+    }
+
+    private static boolean isOnlyKeycloakContributed(Object keys, Set<String> keycloakProperties, boolean namedQueries) {
         if (!(keys instanceof Collection<?> collection) || collection.isEmpty()) {
             return false;
         }
         for (Object key : collection) {
             String name = String.valueOf(key);
-
-            if (keycloakDefaultUnsupportedProperties == null) {
-                keycloakDefaultUnsupportedProperties = collectAllDefaultUnsupportedHibernateProperties();
-            }
-
-            if (!keycloakDefaultUnsupportedProperties.contains(name)
-                    && !name.startsWith(QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX)) {
+            if (!keycloakProperties.contains(name)
+                    && !(namedQueries && name.startsWith(QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX))) {
                 return false;
             }
         }
