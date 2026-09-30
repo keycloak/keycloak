@@ -7,6 +7,7 @@ import {
   useAlerts,
   SelectControl,
   NumberControl,
+  TextAreaControl,
 } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
@@ -767,6 +768,35 @@ export const RealmSettingsTokensTab = ({
               rules: { min: 2 },
             }}
             data-testid="batch-issuance-size"
+          />
+          <TextAreaControl
+            name={convertAttributeNameToForm("attributes.oid4vci.issuer_info")}
+            label={t("issuerInfo")}
+            labelIcon={t("issuerInfoHelp")}
+            rules={{
+              validate: (value: string) => {
+                if (!value) {
+                  return true;
+                }
+                try {
+                  const parsed: unknown = JSON.parse(value);
+                  const isIssuerInfoElement = (element: unknown) =>
+                    typeof element === "object" &&
+                    element !== null &&
+                    !Array.isArray(element) &&
+                    "format" in element &&
+                    "data" in element;
+                  return (
+                    (Array.isArray(parsed) &&
+                      parsed.every(isIssuerInfoElement)) ||
+                    t("issuerInfoInvalid")
+                  );
+                } catch {
+                  return t("issuerInfoInvalid");
+                }
+              },
+            }}
+            rows={6}
           />
 
           <Text
