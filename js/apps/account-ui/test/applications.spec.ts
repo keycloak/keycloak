@@ -42,26 +42,12 @@ test.describe("Applications", () => {
     await login(page, testBed.realm);
     await page.getByTestId("applications").click();
 
-    await page.evaluate(() => {
-      const win = window as Window & { __openCalls: unknown[][] };
-      win.__openCalls = [];
-      window.open = (...args) => {
-        win.__openCalls.push(args);
-        return null;
-      };
-    });
-
-    await page
+    const link = page
       .getByTestId("applications-list-item")
-      .getByText("External Application")
-      .click();
-
-    const openCalls = await page.evaluate(
-      () => (window as Window & { __openCalls: unknown[][] }).__openCalls,
-    );
-    expect(openCalls).toEqual([
-      [effectiveUrl, "_blank", "noopener,noreferrer"],
-    ]);
+      .getByRole("link", { name: /External Application/ });
+    await expect(link).toHaveAttribute("href", effectiveUrl);
+    await expect(link).toHaveAttribute("target", "_blank");
+    await expect(link).toHaveAttribute("rel", "noreferrer noopener");
   });
 
   test("sorts applications alphabetically", async ({ page }) => {
