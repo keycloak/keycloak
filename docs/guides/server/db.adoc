@@ -327,7 +327,11 @@ This is a known PgBouncer issue, tracked in https://github.com/pgbouncer/pgbounc
 Reloading PgBouncer after a failover or switchover makes it report the current value again.
 
 Setting `targetServerType` to `any` avoids the error, but it also removes the protection described above, so {project_name} might connect to a reader instance.
-Only use it if your routing sends connections exclusively to the writable primary.
+Only use it if your routing in PgBouncer sends database connections exclusively to the writable primary database.
+
+Set `targetServerType=any` via `db-url-properties`:
+
+<@kc.start parameters="--db postgres --db-url-properties='?targetServerType=any'"/>
 
 === Permissions of the database user
 
