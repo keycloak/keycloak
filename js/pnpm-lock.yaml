@@ -341,23 +341,23 @@ importers:
   libs/keycloak-admin-client:
     dependencies:
       '@microsoft/kiota-abstractions':
-        specifier: ^1.0.0-preview.86
-        version: 1.0.0-preview.99
+        specifier: 1.0.0-preview.103
+        version: 1.0.0-preview.103
       '@microsoft/kiota-http-fetchlibrary':
-        specifier: ^1.0.0-preview.80
-        version: 1.0.0-preview.99
+        specifier: 1.0.0-preview.103
+        version: 1.0.0-preview.103
       '@microsoft/kiota-serialization-form':
-        specifier: ^1.0.0-preview.74
-        version: 1.0.0-preview.99
+        specifier: 1.0.0-preview.103
+        version: 1.0.0-preview.103
       '@microsoft/kiota-serialization-json':
-        specifier: ^1.0.0-preview.86
-        version: 1.0.0-preview.99
+        specifier: 1.0.0-preview.103
+        version: 1.0.0-preview.103
       '@microsoft/kiota-serialization-multipart':
-        specifier: ^1.0.0-preview.67
-        version: 1.0.0-preview.99
+        specifier: 1.0.0-preview.103
+        version: 1.0.0-preview.103
       '@microsoft/kiota-serialization-text':
-        specifier: ^1.0.0-preview.79
-        version: 1.0.0-preview.99
+        specifier: 1.0.0-preview.103
+        version: 1.0.0-preview.103
       camelize-ts:
         specifier: ^3.0.0
         version: 3.0.0
@@ -1072,23 +1072,23 @@ packages:
     resolution: {integrity: sha512-LhKytJM5ZJkbHQVfW/3o747rZUNs/MGg6j/wt/9qwwqEOfvUDTYXXxIBuMgrRXhJ528p41iyz4zjBVHZU74Odg==}
     hasBin: true
 
-  '@microsoft/kiota-abstractions@1.0.0-preview.99':
-    resolution: {integrity: sha512-6qrlwGCO3DbvpA7tszqk7JNQPFPDg8gv5NGMTziwdtHqaQrUALKusm3vdJGPVGrbNiZL6/lBaY5NSUvLtlhRCg==}
+  '@microsoft/kiota-abstractions@1.0.0-preview.103':
+    resolution: {integrity: sha512-om7nKH8nWyEAQ0lgbIdKdrkmznhkdDJdliCnAIo31X/hlUah1aBzvfUx+pbyp67Q040yLK+2J6P7AnvGSoN/qQ==}
 
-  '@microsoft/kiota-http-fetchlibrary@1.0.0-preview.99':
-    resolution: {integrity: sha512-lIruiYf8L7DPG0Fm92QN5YK4zx4sh76EtTONUAqBCxt5AtEJ7KQceBajaXQsjfcndUAp9LmDVdqR44o8sc9/mA==}
+  '@microsoft/kiota-http-fetchlibrary@1.0.0-preview.103':
+    resolution: {integrity: sha512-DbhGL+pdVjtv2AVvxB4fxvNC/GMzKbYyeQsknaXJXwqnPR/oIClWjaXlIxWL5SBK72DOmrZ18leaWMB2vfWvpw==}
 
-  '@microsoft/kiota-serialization-form@1.0.0-preview.99':
-    resolution: {integrity: sha512-BdXxqNfy+5yWTyxpBguqJYy6E9RRotrDClRcUO89okFcR5N6s6xenjsvGw++q9KWNi7qcHrqaG8xlRz1TLk81Q==}
+  '@microsoft/kiota-serialization-form@1.0.0-preview.103':
+    resolution: {integrity: sha512-AD5Q59Qu61DfhaLLN7Mvgx4Zw0Zmftqx04XAbrRreC+r9hwT1BqTf0EReCraMzEoC4sdrp/8haI2Arm8dWUWuQ==}
 
-  '@microsoft/kiota-serialization-json@1.0.0-preview.99':
-    resolution: {integrity: sha512-kDmMYmB7XkRprlLviEynRPDkE45JDxqiuUopfBRMvNK4qhzFiJTXGLihZ2FG6fdVu9LbV3/W0QxbeGP35kDK6A==}
+  '@microsoft/kiota-serialization-json@1.0.0-preview.103':
+    resolution: {integrity: sha512-dTr8q6H42TSe+HaCPBXU4Pv6ypo7MjMGRo/r9GRbnCuy8VCWfe+Vh38rnAZJx4r8cmvOUD7Yw74IJ6q4Hjv3mg==}
 
-  '@microsoft/kiota-serialization-multipart@1.0.0-preview.99':
-    resolution: {integrity: sha512-cfviCAVTlZPD+MUgdTIgsX/IfHND+gKQhem3vJeo7l5Qqz2rvvVFXOHwECI19umO9Un1QFKe1V5wg+M+aj90+g==}
+  '@microsoft/kiota-serialization-multipart@1.0.0-preview.103':
+    resolution: {integrity: sha512-b3ePXYgFv/2TQtbzFQ8ZY+hzMtCRkz4Cx5y/Pf8vtoQu56KU0/9rYq5kA9wySDdCx/oZxfubQQRV/8QSTxmejw==}
 
-  '@microsoft/kiota-serialization-text@1.0.0-preview.99':
-    resolution: {integrity: sha512-gcBffQRI1soHVAiS4YjfMr3SQ9fC8xVUGMfarTTszU4PjpxyFOknaWoFdt/0rvMeavI9jOtbyvDKAf77cZyYIQ==}
+  '@microsoft/kiota-serialization-text@1.0.0-preview.103':
+    resolution: {integrity: sha512-FkiboqpNtT2F40xUC9LETHK9ckHd+WuocLJE70ljI4EYvD59MQDsrTERYAwbmkfPIJ6JRE4OfLXFVh510LG1/Q==}
 
   '@microsoft/tsdoc-config@0.17.1':
     resolution: {integrity: sha512-UtjIFe0C6oYgTnad4q1QP4qXwLhe6tIpNTRStJ2RZEPIkqQPREAwE5spzVxsdn9UaEMUqhh0AqSx3X4nWAKXWw==}
@@ -1460,8 +1460,8 @@ packages:
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
-  '@std-uritemplate/std-uritemplate@2.0.8':
-    resolution: {integrity: sha512-8oj7jKksoTRxjdPkWKX9FyOKDS8ORBm+ZfTSHm0f3eYha8cI0O1d57gyduOIAX7Y2uUukNDNlxlvGb+FFkE7yQ==}
+  '@std-uritemplate/std-uritemplate@2.0.12':
+    resolution: {integrity: sha512-s/R828vYTrFPgAOFAUiHuP4i1eSZHCO9PKVfzVR+2DFERJ/G71BpZJVObM2yy3xeMjMW3wB61gvanb6/pV1lJw==}
 
   '@swc/core-darwin-arm64@1.15.8':
     resolution: {integrity: sha512-M9cK5GwyWWRkRGwwCbREuj6r8jKdES/haCZ3Xckgkl8MUQJZA3XB7IXXK1IXRNeLjg6m7cnoMICpXv1v1hlJOg==}
@@ -2601,6 +2601,7 @@ packages:
   eslint@9.39.2:
     resolution: {integrity: sha512-LEyamqS7W5HB3ujJyvi0HQK/dtVINZvd5mAAp9eT5S/ujByGjiZLCzPcHVzuXbpJDJF/cxwHlfceVUDZ2lnSTw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -2817,8 +2818,8 @@ packages:
     resolution: {integrity: sha512-w9UMqWwJxHNOvoNzSJ2oPF5wvYcvP7jUvYzhp67yEhTi17ZDBBC1z9pTdGuzjD+EFIqLSYRweZjqfiPzQ06Ebg==}
     engines: {node: '>= 0.4'}
 
-  get-tsconfig@4.14.0:
-    resolution: {integrity: sha512-yTb+8DXzDREzgvYmh6s9vHsSVCHeC0G3PI5bEXNBHtmshPnO+S5O7qgLEOn0I5QvMy6kpZN8K1NKGyilLb93wA==}
+  get-tsconfig@4.14.3:
+    resolution: {integrity: sha512-++QEw4DIY7WGoukz+/+A/8dGYPT9l9yIadnmSgZ8Rjr3YVSVDipQSO9CdnJo9ePqFqUUqh+wk9uIaoiAwsiPkA==}
 
   glob-parent@5.1.2:
     resolution: {integrity: sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow==}
@@ -5282,37 +5283,37 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@microsoft/kiota-abstractions@1.0.0-preview.99':
+  '@microsoft/kiota-abstractions@1.0.0-preview.103':
     dependencies:
       '@opentelemetry/api': 1.9.0
-      '@std-uritemplate/std-uritemplate': 2.0.8
+      '@std-uritemplate/std-uritemplate': 2.0.12
       tinyduration: 3.4.1
       tslib: 2.8.1
 
-  '@microsoft/kiota-http-fetchlibrary@1.0.0-preview.99':
+  '@microsoft/kiota-http-fetchlibrary@1.0.0-preview.103':
     dependencies:
-      '@microsoft/kiota-abstractions': 1.0.0-preview.99
+      '@microsoft/kiota-abstractions': 1.0.0-preview.103
       '@opentelemetry/api': 1.9.0
       tslib: 2.8.1
 
-  '@microsoft/kiota-serialization-form@1.0.0-preview.99':
+  '@microsoft/kiota-serialization-form@1.0.0-preview.103':
     dependencies:
-      '@microsoft/kiota-abstractions': 1.0.0-preview.99
+      '@microsoft/kiota-abstractions': 1.0.0-preview.103
       tslib: 2.8.1
 
-  '@microsoft/kiota-serialization-json@1.0.0-preview.99':
+  '@microsoft/kiota-serialization-json@1.0.0-preview.103':
     dependencies:
-      '@microsoft/kiota-abstractions': 1.0.0-preview.99
+      '@microsoft/kiota-abstractions': 1.0.0-preview.103
       tslib: 2.8.1
 
-  '@microsoft/kiota-serialization-multipart@1.0.0-preview.99':
+  '@microsoft/kiota-serialization-multipart@1.0.0-preview.103':
     dependencies:
-      '@microsoft/kiota-abstractions': 1.0.0-preview.99
+      '@microsoft/kiota-abstractions': 1.0.0-preview.103
       tslib: 2.8.1
 
-  '@microsoft/kiota-serialization-text@1.0.0-preview.99':
+  '@microsoft/kiota-serialization-text@1.0.0-preview.103':
     dependencies:
-      '@microsoft/kiota-abstractions': 1.0.0-preview.99
+      '@microsoft/kiota-abstractions': 1.0.0-preview.103
       tslib: 2.8.1
 
   '@microsoft/tsdoc-config@0.17.1':
@@ -5696,7 +5697,7 @@ snapshots:
 
   '@standard-schema/spec@1.1.0': {}
 
-  '@std-uritemplate/std-uritemplate@2.0.8': {}
+  '@std-uritemplate/std-uritemplate@2.0.12': {}
 
   '@swc/core-darwin-arm64@1.15.8':
     optional: true
@@ -7232,7 +7233,7 @@ snapshots:
       es-errors: 1.3.0
       get-intrinsic: 1.3.0
 
-  get-tsconfig@4.14.0:
+  get-tsconfig@4.14.3:
     dependencies:
       resolve-pkg-maps: 1.0.0
     optional: true
@@ -8830,7 +8831,7 @@ snapshots:
   tsx@4.21.0:
     dependencies:
       esbuild: 0.27.7
-      get-tsconfig: 4.14.0
+      get-tsconfig: 4.14.3
     optionalDependencies:
       fsevents: 2.3.3
     optional: true
