@@ -1,0 +1,24 @@
+{
+  "schemas": ["urn:ietf:params:scim:api:messages:2.0:BulkRequest"],
+  "failOnErrors": 1,
+  "Operations": [
+    {
+      "method": "POST",
+      "path": "/Users",
+      "bulkId": "user-1",
+      "data": {
+        "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+        "userName": "ada@example.com"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/Groups",
+      "bulkId": "group-1",
+      "data": {
+        "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"],
+        "displayName": "Engineering"
+      }
+    }
+  ]
+}

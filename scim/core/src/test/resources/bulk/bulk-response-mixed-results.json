@@ -1,0 +1,25 @@
+{
+  "schemas": ["urn:ietf:params:scim:api:messages:2.0:BulkResponse"],
+  "Operations": [
+    {
+      "method": "POST",
+      "bulkId": "user-1",
+      "status": "201",
+      "location": "/Users/123",
+      "response": {
+        "id": "123",
+        "userName": "ada@example.com"
+      }
+    },
+    {
+      "method": "POST",
+      "bulkId": "group-1",
+      "status": "400",
+      "response": {
+        "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+        "detail": "Group already exists",
+        "status": "400"
+      }
+    }
+  ]
+}
