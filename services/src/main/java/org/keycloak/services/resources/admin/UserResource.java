@@ -231,6 +231,10 @@ public class UserResource {
             }
             profile.update(rep.getAttributes() != null);
             updateUserFromRep(profile, user, rep, session, true);
+            if (rep.getCredentials() != null && rep.getCredentials().stream()
+                    .anyMatch(c -> c.getType() == null || CredentialRepresentation.PASSWORD.equals(c.getType()))) {
+                auth.users().requireResetPassword(user);
+            }
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
 
             // we need to do it here as the attributes would be overwritten by what is in the rep

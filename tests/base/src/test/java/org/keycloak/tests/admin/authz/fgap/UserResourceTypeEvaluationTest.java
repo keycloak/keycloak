@@ -20,6 +20,7 @@ package org.keycloak.tests.admin.authz.fgap;
 import java.util.List;
 import java.util.Set;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -500,6 +501,124 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         List<CredentialRepresentation> credentials = users.get(search.get(0).getId()).credentials();
         assertThat(credentials, hasSize(1));
         users.get(search.get(0).getId()).setCredentialUserLabel(credentials.get(0).getId(), "User Label");
+    }
+
+    @Test
+    public void testGenericUserUpdateRejectsCredentialsWhenResetPasswordDenied() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowManage = createUserPolicy(realm, adminPermissionsClient, "Allow Manage Policy", myadmin.getId());
+        UserPolicyRepresentation denyReset = createUserPolicy(Logic.NEGATIVE, realm, adminPermissionsClient, "Deny Reset Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, userAlice.getId(), usersType, Set.of(VIEW, MANAGE), allowManage);
+        createPermission(adminPermissionsClient, userAlice.getId(), usersType, Set.of(RESET_PASSWORD), denyReset);
+
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setValue("attacker-selected-password");
+        credential.setTemporary(false);
+
+        UsersResource users = realmAdminClient.realm(realm.getName()).users();
+
+        // dedicated resetPassword is correctly denied
+        try {
+            users.get(userAlice.getId()).resetPassword(credential);
+            fail("Expected ForbiddenException for resetPassword");
+        } catch (ForbiddenException expected) {
+        }
+
+        // generic update with embedded credentials must also be denied
+        UserRepresentation alice = users.get(userAlice.getId()).toRepresentation();
+        alice.setCredentials(List.of(credential));
+        try {
+            users.get(userAlice.getId()).update(alice);
+            fail("Expected ForbiddenException for update with credentials");
+        } catch (ForbiddenException expected) {
+        }
+
+        // verify no credentials were created
+        assertThat(users.get(userAlice.getId()).credentials(), hasSize(0));
+    }
+
+    @Test
+    public void testGenericUserUpdateAllowsCredentialsWhenResetPasswordGranted() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowAll = createUserPolicy(realm, adminPermissionsClient, "Allow All Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, userAlice.getId(), usersType, Set.of(VIEW, MANAGE, RESET_PASSWORD), allowAll);
+
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setValue("new-password");
+        credential.setTemporary(false);
+
+        UsersResource users = realmAdminClient.realm(realm.getName()).users();
+        UserRepresentation alice = users.get(userAlice.getId()).toRepresentation();
+        alice.setCredentials(List.of(credential));
+        users.get(userAlice.getId()).update(alice);
+
+        assertThat(users.get(userAlice.getId()).credentials(), hasSize(1));
+    }
+
+    @Test
+    public void testGenericUserUpdateRejectsNonPasswordTypeWithValue() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowAll = createUserPolicy(realm, adminPermissionsClient, "Allow All Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, userAlice.getId(), usersType, Set.of(VIEW, MANAGE, RESET_PASSWORD), allowAll);
+
+        // credential with non-password type but a value — rejected by createCredentials
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType("otp");
+        credential.setValue("attacker-selected-password");
+
+        UsersResource users = realmAdminClient.realm(realm.getName()).users();
+        UserRepresentation alice = users.get(userAlice.getId()).toRepresentation();
+        alice.setCredentials(List.of(credential));
+        try {
+            users.get(userAlice.getId()).update(alice);
+            fail("Expected BadRequestException for non-password type with value");
+        } catch (BadRequestException expected) {
+        }
+
+        assertThat(users.get(userAlice.getId()).credentials(), hasSize(0));
+    }
+
+    @Test
+    public void testGenericUserUpdateWithoutCredentialsStillWorksWithManageOnly() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowManage = createUserPolicy(realm, adminPermissionsClient, "Allow Manage Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, userAlice.getId(), usersType, Set.of(VIEW, MANAGE), allowManage);
+
+        UsersResource users = realmAdminClient.realm(realm.getName()).users();
+        UserRepresentation alice = users.get(userAlice.getId()).toRepresentation();
+        alice.setEmail("updated-email@test.com");
+        users.get(userAlice.getId()).update(alice);
+
+        assertEquals("updated-email@test.com", users.get(userAlice.getId()).toRepresentation().getEmail());
+    }
+
+    @Test
+    public void testCreateUserRejectsCredentialsWhenResetPasswordDenied() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowManage = createUserPolicy(realm, adminPermissionsClient, "Allow Manage Policy", myadmin.getId());
+        UserPolicyRepresentation denyReset = createUserPolicy(Logic.NEGATIVE, realm, adminPermissionsClient, "Deny Reset Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, usersType, allowManage, Set.of(VIEW, MANAGE));
+        createAllPermission(adminPermissionsClient, usersType, denyReset, Set.of(RESET_PASSWORD));
+
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setValue("initial-password");
+
+        UsersResource users = realmAdminClient.realm(realm.getName()).users();
+
+        // create user with credentials should be rejected
+        UserRepresentation newUser = UserBuilder.create().username("user-with-creds").build();
+        newUser.setCredentials(List.of(credential));
+        try (Response response = users.create(newUser)) {
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+        }
+
+        // create user without credentials should succeed
+        UserRepresentation newUserNoCreds = UserBuilder.create().username("user-no-creds").build();
+        String userId = ApiUtil.getCreatedId(users.create(newUserNoCreds));
+        assertThat(userId, notNullValue());
     }
 
     @Test
