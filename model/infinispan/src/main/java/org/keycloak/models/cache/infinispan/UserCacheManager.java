@@ -20,7 +20,6 @@ package org.keycloak.models.cache.infinispan;
 import java.util.Map;
 import java.util.Set;
 
-import org.keycloak.models.cache.infinispan.entities.CachedUserIssuedVerifiableCredentials;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.models.cache.infinispan.events.UserCacheInvalidationEvent;
@@ -33,6 +32,8 @@ import org.jboss.logging.Logger;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class UserCacheManager extends CacheManager {
+
+    private static final String ALL_ISSUED_VERIFIABLE_CREDENTIALS_CACHE_KEY = "issuedVerifiableCredentials.all";
 
     private static final Logger logger = Logger.getLogger(UserCacheManager.class);
 
@@ -100,7 +101,13 @@ public class UserCacheManager extends CacheManager {
     }
 
     public void allIssuedVerifiableCredentialsInvalidation(Set<String> invalidations) {
-        addInvalidations(entry -> entry.getValue() instanceof CachedUserIssuedVerifiableCredentials, invalidations);
+        invalidations.add(ALL_ISSUED_VERIFIABLE_CREDENTIALS_CACHE_KEY);
+    }
+
+    public long getIssuedVerifiableCredentialsInvalidationRevision() {
+        long revision = counter.current();
+        Long existing = revisions.putIfAbsent(ALL_ISSUED_VERIFIABLE_CREDENTIALS_CACHE_KEY, revision);
+        return existing == null ? revision : existing;
     }
 
     @Override
