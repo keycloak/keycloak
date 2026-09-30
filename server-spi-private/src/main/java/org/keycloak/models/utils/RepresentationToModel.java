@@ -816,6 +816,9 @@ public class RepresentationToModel {
                     continue;
                 }
                 if (cred.getValue() != null && !cred.getValue().isEmpty()) {
+                    if (cred.getType() != null && !CredentialRepresentation.PASSWORD.equals(cred.getType())) {
+                        throw new ModelException("Credential type must be '" + CredentialRepresentation.PASSWORD + "' when value is provided, but was '" + cred.getType() + "'");
+                    }
                     RealmModel origRealm = session.getContext().getRealm();
                     try {
                         session.getContext().setRealm(realm);
