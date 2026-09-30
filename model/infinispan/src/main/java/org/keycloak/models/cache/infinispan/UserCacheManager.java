@@ -104,6 +104,10 @@ public class UserCacheManager extends CacheManager {
         invalidations.add(ALL_ISSUED_VERIFIABLE_CREDENTIALS_CACHE_KEY);
     }
 
+    public boolean isAllIssuedVerifiableCredentialsInvalidationPending(Set<String> invalidations) {
+        return invalidations.contains(ALL_ISSUED_VERIFIABLE_CREDENTIALS_CACHE_KEY);
+    }
+
     public long getIssuedVerifiableCredentialsInvalidationRevision() {
         long revision = counter.current();
         Long existing = revisions.putIfAbsent(ALL_ISSUED_VERIFIABLE_CREDENTIALS_CACHE_KEY, revision);

@@ -118,7 +118,9 @@ public interface UserVerifiableCredentialFederatedStorage {
 
     /**
      *  Remove expired issued verifiable credentials for all users.
+     *
+     * @return the number of removed issued credentials
      */
-    void removeExpiredIssuedVerifiableCredentials();
+    int removeExpiredIssuedVerifiableCredentials();
 
 }

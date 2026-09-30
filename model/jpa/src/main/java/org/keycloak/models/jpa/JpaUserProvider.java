@@ -1397,9 +1397,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     }
 
     @Override
-    public void removeExpiredIssuedVerifiableCredentials() {
+    public int removeExpiredIssuedVerifiableCredentials() {
         long currentTimeMillis = Time.currentTimeMillis();
-        em.createNamedQuery("deleteExpiredIssuedVcs")
+        return em.createNamedQuery("deleteExpiredIssuedVcs")
             .setParameter("currentTime", currentTimeMillis)
             .executeUpdate();
     }
