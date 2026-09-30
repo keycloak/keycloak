@@ -296,7 +296,7 @@ On databases that do not support non-blocking index creation, or when the migrat
 // https://github.com/keycloak/keycloak/issues/52121
 
 Caching of persistent user sessions in the embedded Infinispan can be disabled.
-Recent optimizations to the database layer, including async commits, improved indexes, and cheaper refresh-date updates, make persistent sessions without caching a viable default.
+Recent optimizations to the database layer, including async commits, improved indexes, and cheaper refresh-date updates, make persistent sessions without caching a viable option.
 Disabling the cache reduces memory usage and network traffic between nodes, enabling smoother rolling updates.
 
 Users may observe increased database connection usage and higher CPU usage on the database if they are using token introspection or token exchange extensively.
