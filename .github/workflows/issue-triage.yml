@@ -12,7 +12,7 @@ on:
         type: string
         default: ''
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '0 6 * * *'
 
 permissions:
   issues: write
