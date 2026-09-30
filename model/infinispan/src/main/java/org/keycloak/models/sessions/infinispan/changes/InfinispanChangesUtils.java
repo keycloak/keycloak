@@ -57,33 +57,21 @@ public class InfinispanChangesUtils {
                                                                                  SessionFunction<V> lifespanFunction,
                                                                                  SessionFunction<V> maxIdleFunction,
                                                                                  Supplier<K> keyGenerator) {
-        return createWithCache(session, cacheName, lifespanFunction, maxIdleFunction, keyGenerator, false);
-    }
-
-    /**
-     * @param writeTombstoneOnRemove see {@link CacheHolder#writeTombstoneOnRemove()}.
-     */
-    public static <K, V extends SessionEntity> CacheHolder<K, V> createWithCache(KeycloakSession session,
-                                                                                 String cacheName,
-                                                                                 SessionFunction<V> lifespanFunction,
-                                                                                 SessionFunction<V> maxIdleFunction,
-                                                                                 Supplier<K> keyGenerator,
-                                                                                 boolean writeTombstoneOnRemove) {
         var connections = session.getProvider(InfinispanConnectionProvider.class);
         var cache = connections.<K, SessionEntityWrapper<V>>getCache(cacheName);
         var sequencer = new ActionSequencer(connections.getExecutor(cacheName + "Replace"), false, null);
-        return new CacheHolder<>(cache, sequencer, lifespanFunction, maxIdleFunction, SessionAffinityService.create(cache, keyGenerator), writeTombstoneOnRemove);
+        return new CacheHolder<>(cache, sequencer, lifespanFunction, maxIdleFunction, SessionAffinityService.create(cache, keyGenerator));
     }
 
     public static <K, V extends SessionEntity> CacheHolder<K, V> createWithoutCache(SessionFunction<V> lifespanFunction,
                                                                                     SessionFunction<V> maxIdleFunction) {
-        return new CacheHolder<>(null, null, lifespanFunction, maxIdleFunction, null, false);
+        return new CacheHolder<>(null, null, lifespanFunction, maxIdleFunction, null);
     }
 
     public static <K, V extends SessionEntity> CacheHolder<K, V> createWithoutCache(SessionFunction<V> lifespanFunction,
                                                                                     SessionFunction<V> maxIdleFunction,
                                                                                     Supplier<K> keyGenerator) {
-        return new CacheHolder<>(null, null, lifespanFunction, maxIdleFunction, keyGenerator, false);
+        return new CacheHolder<>(null, null, lifespanFunction, maxIdleFunction, keyGenerator);
     }
 
     public static <K, V extends SessionEntity> void runOperationInCluster(
@@ -101,18 +89,8 @@ public class InfinispanChangesUtils {
 
         switch (operation) {
             case REMOVE:
-                if (cacheHolder.writeTombstoneOnRemove()) {
-                    // Leave a short-lived tombstone marker in place of the removed entry instead of a bare
-                    // remove(), so SessionResurrectionGuardListener observes a create/modify notification for
-                    // every deletion - even when the key wasn't cached at removal time - and can guard against
-                    // a concurrent stale re-insertion. See SessionResurrectionGuardListener for details.
-                    SessionEntityWrapper<V> tombstone = SessionEntityWrapper.createTombstoneMarker(sessionWrapper.getEntity());
-                    stage.dependsOn(CacheDecorators.ignoreReturnValues(cacheHolder.cache())
-                            .putAsync(key, tombstone, SessionEntityWrapper.TOMBSTONE_MARKER_LIFESPAN_MS, TimeUnit.MILLISECONDS));
-                } else {
-                    // Just remove it
-                    stage.dependsOn(CacheDecorators.ignoreReturnValues(cacheHolder.cache()).removeAsync(key));
-                }
+                // Just remove it
+                stage.dependsOn(CacheDecorators.ignoreReturnValues(cacheHolder.cache()).removeAsync(key));
                 break;
             case ADD:
                 CompletableFuture<?> future = CacheDecorators.ignoreReturnValues(cacheHolder.cache())
@@ -124,7 +102,7 @@ public class InfinispanChangesUtils {
                 break;
             case ADD_IF_ABSENT:
                 CompletableFuture<Void> putIfAbsentFuture = cacheHolder.cache().putIfAbsentAsync(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS)
-                        .thenCompose(existing -> handlePutIfAbsentResponse(cacheHolder, existing, key, task, sessionWrapper, logger));
+                        .thenCompose(existing -> handlePutIfAbsentResponse(cacheHolder, existing, key, task, logger));
                 stage.dependsOn(putIfAbsentFuture);
                 break;
             case REPLACE:
@@ -141,7 +119,6 @@ public class InfinispanChangesUtils {
             SessionEntityWrapper<V> existing,
             K key,
             MergedUpdate<V> task,
-            SessionEntityWrapper<V> sessionWrapper,
             Logger logger
     ) {
         if (existing == null) {
@@ -149,14 +126,6 @@ public class InfinispanChangesUtils {
                 logger.tracef("Add_if_absent successfully called for entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cacheHolder.cache().getName(), task.getLifespanMs(), task.getMaxIdleTimeMs());
             }
             return CompletableFutures.completedNull();
-        }
-        if (existing.isTombstoneMarker()) {
-            // The tombstone blocked putIfAbsent; try to overwrite it with a CAS replace. If the
-            // listener already removed the tombstone and the CAS fails, the session simply stays
-            // uncached until the next read loads it from the database.
-            logger.debugf("Existing entity in cache for key %s is a tombstone marker, treating as absent", key);
-            return cacheHolder.cache().replaceAsync(key, existing, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS)
-                    .thenApply(replaced -> null);
         }
         if (logger.isDebugEnabled()) {
             logger.debugf("Existing entity in cache for key: %s . Will update it", key);

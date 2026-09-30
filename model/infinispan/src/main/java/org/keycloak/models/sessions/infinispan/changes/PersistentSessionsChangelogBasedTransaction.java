@@ -19,8 +19,6 @@ package org.keycloak.models.sessions.infinispan.changes;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -85,9 +83,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         SessionUpdatesList<V> myUpdates = getUpdates(offline).get(key);
         if (myUpdates == null) {
             SessionEntityWrapper<V> wrappedEntity = getCache(offline).get(key);
-            if (wrappedEntity == null || wrappedEntity.isTombstoneMarker()) {
-                // A tombstone marker is a short-lived leftover of a concurrent removal (see
-                // SessionResurrectionGuardListener); it must never be treated as real session data.
+            if (wrappedEntity == null) {
                 return null;
             }
             wrappedEntity.getEntity().setOffline(offline);
@@ -225,7 +221,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
     private void lookupAndAndExecuteTask(K key, PersistentSessionUpdateTask<V> task) {
         // Lookup entity from cache
         SessionEntityWrapper<V> wrappedEntity = getCache(task.isOffline()).get(key);
-        if (wrappedEntity == null || wrappedEntity.isTombstoneMarker()) {
+        if (wrappedEntity == null) {
             LOG.tracef("Not present cache item for key %s", key);
             return;
         }
@@ -306,20 +302,12 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             return updatesList.getEntityWrapper();
         }
         SessionEntityWrapper<V> existing = null;
-        long lifespanMs = SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan);
         try {
             if (getCache(offline) != null) {
-                existing = getCache(offline).putIfAbsent(key, session, lifespanMs, TimeUnit.MILLISECONDS);
-                existing = resolveTombstoneOnImport(getCache(offline), key, existing, session, lifespanMs);
+                existing = getCache(offline).putIfAbsent(key, session, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS);
             }
         } catch (RuntimeException exception) {
-            // If the import fails, the transaction can continue with the data from the database. A
-            // tombstone marker must never leak out as if it were a real cached session - if resolution of
-            // one (e.g. the replace()/get() in resolveTombstoneOnImport) threw, clear it here so the
-            // fallback below is used instead.
-            if (existing != null && existing.isTombstoneMarker()) {
-                existing = null;
-            }
+            // If the import fails, the transaction can continue with the data from the database.
             LOG.debugf(exception, "Failed to import session %s", session);
         }
         if (existing == null) {
@@ -329,24 +317,6 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         }
         updates.put(key, new SessionUpdatesList<>(realmModel, existing));
         return existing;
-    }
-
-    /**
-     * If {@code existing} is a short-lived tombstone marker left behind by a concurrent removal (see
-     * {@link SessionEntityWrapper#isTombstoneMarker()}), it is not real session data and must not block an
-     * import. This attempts to atomically overwrite it with {@code session}, returning {@code null} on success
-     * so the caller treats the import as if the cache had been empty.
-     */
-    private SessionEntityWrapper<V> resolveTombstoneOnImport(Cache<K, SessionEntityWrapper<V>> cache, K key, SessionEntityWrapper<V> existing, SessionEntityWrapper<V> session, long lifespanMs) {
-        if (existing == null || !existing.isTombstoneMarker()) {
-            return existing;
-        }
-        if (cache.replace(key, existing, session, lifespanMs, TimeUnit.MILLISECONDS)) {
-            return null;
-        }
-        // Lost the race to another writer; use whatever is there now.
-        SessionEntityWrapper<V> current = cache.get(key);
-        return current != null && current.isTombstoneMarker() ? null : current;
     }
 
     /**
@@ -384,9 +354,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                 //nothing to import, already expired
                 return;
             }
-            long lifespanMs = SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan);
-            var future = cache.putIfAbsentAsync(key, session, lifespanMs, TimeUnit.MILLISECONDS)
-                    .thenCompose(existing -> resolveTombstoneOnImportAsync(cache, key, existing, session, lifespanMs))
+            var future = cache.putIfAbsentAsync(key, session, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS)
                     .exceptionally(throwable -> {
                         // If the import fails, the transaction can continue with the data from the database.
                         LOG.debugf(throwable, "Failed to import session %s", session);
@@ -398,17 +366,5 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
 
         CompletionStages.join(stage.freeze());
         allSessions.forEach((key, wrapper) -> updates.put(key, new SessionUpdatesList<>(realmModel, wrapper)));
-    }
-
-    /**
-     * Async counterpart of {@link #resolveTombstoneOnImport}, used by {@link #importSessionsConcurrently}.
-     */
-    private CompletionStage<SessionEntityWrapper<V>> resolveTombstoneOnImportAsync(Cache<K, SessionEntityWrapper<V>> cache, K key, SessionEntityWrapper<V> existing, SessionEntityWrapper<V> session, long lifespanMs) {
-        if (existing == null || !existing.isTombstoneMarker()) {
-            return CompletableFuture.completedFuture(existing);
-        }
-        return cache.replaceAsync(key, existing, session, lifespanMs, TimeUnit.MILLISECONDS)
-                .thenCompose(replaced -> replaced ? CompletableFuture.completedFuture(null) : cache.getAsync(key)
-                        .thenApply(current -> current != null && current.isTombstoneMarker() ? null : current));
     }
 }
