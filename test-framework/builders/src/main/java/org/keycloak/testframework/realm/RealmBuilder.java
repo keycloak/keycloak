@@ -591,8 +591,8 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
      * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
      */
     @Deprecated
-    public RealmBuilder webAuthnPolicyPasswordlessSignatureAlgorithms(List<String> algorithms) {
-        rep.setWebAuthnPolicySignatureAlgorithms(algorithms);
+public RealmBuilder webAuthnPolicyPasswordlessSignatureAlgorithms(List<String> algorithms) {
+        rep.setWebAuthnPolicyPasswordlessSignatureAlgorithms(algorithms);
         return this;
     }
 
