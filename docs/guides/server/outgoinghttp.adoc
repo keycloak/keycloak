@@ -19,16 +19,7 @@ To enable it:
 
 When enabled, all outgoing HTTP traffic, including identity provider federation, token exchange, backchannel logout, OCSP/CRL validation and SAML artifact resolution, uses the Vert.x HTTP client. All existing configuration options documented below (`socket-timeout-millis`, `max-pooled-per-route`, `proxy-mappings`, `NO_PROXY`, etc.) work the same way with both clients.
 
-=== Extension migration
-
 When the Vert.x client is enabled, `getHttpClient()` returns a compatibility bridge that translates Apache API calls to Vert.x internally, so existing extensions continue to work without changes.
-
-Extension providers should migrate to one of:
-
-* `SimpleHttp.create(session)` for general HTTP calls (GET, POST, PUT, DELETE with headers, parameters, and JSON/form bodies).
-* The provider-neutral helper methods on `HttpClientProvider`: `getString(uri)`, `getInputStream(uri, headers)`, `postText(uri, text)`, `postBinary(uri, body, headers)`.
-
-These APIs work identically with both the Apache and Vert.x clients.
 
 == Configuring trusted certificates for TLS connections
 
