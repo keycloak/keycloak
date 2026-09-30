@@ -1196,6 +1196,12 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
+    public IssuedVerifiableCredentialModel getIssuedVerifiableCredentialById(String issuedCredentialId) {
+        FederatedUserIssuedVerifiableCredentialEntity entity = em.find(FederatedUserIssuedVerifiableCredentialEntity.class, issuedCredentialId);
+        return entity == null ? null : toModel(entity);
+    }
+
+    @Override
     public boolean removeIssuedVerifiableCredential(String issuedCredentialId) {
         FederatedUserIssuedVerifiableCredentialEntity entity =  em.find(FederatedUserIssuedVerifiableCredentialEntity.class, issuedCredentialId);
         if (entity == null) return false;

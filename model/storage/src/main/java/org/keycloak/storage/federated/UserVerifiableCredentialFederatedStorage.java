@@ -92,6 +92,14 @@ public interface UserVerifiableCredentialFederatedStorage {
     Stream<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsStreamByUser(String userId);
 
     /**
+     * Gets an issued verifiable credential by its ID.
+     *
+     * @param issuedCredentialId the ID of the issued verifiable credential
+     * @return the issued credential, or {@code null} if not found
+     */
+    IssuedVerifiableCredentialModel getIssuedVerifiableCredentialById(String issuedCredentialId);
+
+    /**
      * Remove an issued verifiable credential by its ID.
      *
      * @param issuedCredentialId the ID of the issued verifiable credential to remove
