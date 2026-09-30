@@ -605,6 +605,36 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testCacheInvalidatedOnScimWrite() {
+        User created = client.users().create(createUser());
+        String userId = created.getId();
+
+        // Populate the user cache through the cache-aware Admin API.
+        UserRepresentation cached = realm.admin().users().get(userId).toRepresentation();
+        assertTrue(cached.isEnabled());
+
+        // PATCH: disable the user and change an attribute via SCIM.
+        client.users().patch(userId, PatchRequest.create()
+                .replace("active", "false")
+                .replace("name.givenName", "Zed")
+                .build());
+
+        UserRepresentation afterPatch = realm.admin().users().get(userId).toRepresentation();
+        assertFalse(afterPatch.isEnabled(), "SCIM PATCH active=false must invalidate the user cache");
+        assertEquals("Zed", afterPatch.getFirstName());
+
+        // PUT: re-enable the user and change the attribute again via SCIM.
+        User toUpdate = client.users().get(userId);
+        toUpdate.setActive(true);
+        toUpdate.getName().setGivenName("Yan");
+        client.users().update(toUpdate);
+
+        UserRepresentation afterPut = realm.admin().users().get(userId).toRepresentation();
+        assertTrue(afterPut.isEnabled(), "SCIM PUT active=true must invalidate the user cache");
+        assertEquals("Yan", afterPut.getFirstName());
+    }
+
+    @Test
     public void testValidateUserProfileOnUpdate() {
         User expected = client.users().create(createUser());
 
