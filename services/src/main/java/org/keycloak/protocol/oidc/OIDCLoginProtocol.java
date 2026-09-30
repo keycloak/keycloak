@@ -35,6 +35,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -48,6 +49,9 @@ import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
+import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
+import org.keycloak.protocol.oidc.endpoints.request.RequestUriType;
+import org.keycloak.protocol.oidc.par.endpoints.request.AuthzEndpointParParser;
 import org.keycloak.protocol.oidc.utils.LogoutUtil;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
@@ -57,6 +61,7 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -64,6 +69,7 @@ import org.keycloak.services.clientpolicy.context.ImplicitHybridTokenResponse;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ResourceAdminManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
@@ -219,6 +225,20 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     @Override
     public Response authenticated(AuthenticationSessionModel authSession, UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        // Authorization servers that enforce one-time use of request_uri values do so at the point of authorization,
+        // not at the point of visiting the authorization endpoint (RFC 9126 §4)
+        String requestUri = authSession.getAuthNote(Constants.AUTHORIZATION_REQUEST_URI);
+        RequestUriType requestUriType = Optional.ofNullable(requestUri)
+                .map(AuthorizationEndpointRequestParserProcessor::getRequestUriType)
+                .orElse(null);
+        if (requestUriType == RequestUriType.PAR && AuthzEndpointParParser.removeRequestObject(session, requestUri) == null) {
+            logger.warnf("PAR request_uri already consumed or not found for client %s in realm %s",
+                    authSession.getClient().getClientId(), realm.getName());
+            event.detail(Details.REASON, "PAR request_uri already consumed or not found");
+            event.error(Errors.INVALID_REQUEST);
+            throw new ErrorPageException(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+        }
+
         AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
 
         if (isOAuth2DeviceVerificationFlow(authSession)) {

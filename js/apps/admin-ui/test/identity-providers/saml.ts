@@ -15,11 +15,15 @@ export async function editSAMLSettings(page: Page, samlProviderName: string) {
   await switchOff(page, "#-switch");
   await confirmModal(page);
   await assertNotificationMessage(page, "Provider successfully updated");
+  await page.getByTestId("last-alert").getByRole("button").click();
+  await expect(page.getByTestId("last-alert")).toBeHidden();
   await goToIdentityProviders(page);
   await expect(page.getByText("Disabled")).toBeVisible();
 
   await clickTableRowItem(page, samlProviderName);
   await switchOn(page, "#-switch");
+  // Enabling the provider saves and resets the form before URL editing can begin.
+  await assertNotificationMessage(page, "Provider successfully updated");
 
   // Verify and configure settings
   await setUrl(page, "singleSignOnService", "invalid");

@@ -229,6 +229,10 @@ public final class Constants {
     // Default login protocol
     public static final String DEFAULT_PROTOCOL = OIDC_PROTOCOL;
 
+    // Auth note key for storing the request_uri from the authorization endpoint, used by OIDCLoginProtocol
+    // to enforce single-use PAR consumption at the point of authorization (RFC 9126 §4)
+    public static final String AUTHORIZATION_REQUEST_URI = "authorization_request_uri";
+
     // Internal note for storing authorization details response in client session context
     public static final String AUTHORIZATION_DETAILS_RESPONSE = "authorization_details_response";
 

@@ -397,6 +397,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     private Response buildAuthorizationCodeAuthorizationResponse(String requestUriParam) {
         this.event.event(EventType.LOGIN);
         authenticationSession.setAuthNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
+        authenticationSession.setAuthNote(Constants.AUTHORIZATION_REQUEST_URI, requestUriParam);
 
         // redirect if it is a PAR request because authentication can need a refresh (kerberos) and the single object is consumed now
         final boolean redirectToAuthenticationIfParRequest = requestUriParam != null
