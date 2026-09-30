@@ -107,15 +107,15 @@ public class EventMetricsProviderWithTagsTest {
         String realmName = realm.getName();
 
         runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-
             IdentityProviderModel idp = new IdentityProviderModel();
             idp.setAlias(REAL_IDP_ALIAS);
             idp.setProviderId("oidc");
             idp.setEnabled(true);
             session.identityProviders().create(idp);
+        });
 
-            // Successful event with a real IDP
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
             EventBuilder eventBuilder = new EventBuilder(realm, session);
             eventBuilder.event(EventType.LOGIN)
                     .client(CLIENT_ID)
