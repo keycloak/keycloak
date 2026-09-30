@@ -19,9 +19,12 @@ package org.keycloak.protocol.oid4vc.issuance;
 
 import java.io.IOException;
 import java.net.URI;
+import java.security.GeneralSecurityException;
+import java.security.cert.X509Certificate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -35,6 +38,7 @@ import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.VCFormat;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.CryptoUtils;
@@ -339,7 +343,17 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
     private void addCertificateHeaders(JWSBuilder jwsBuilder, KeyWrapper keyWrapper, RealmModel realm) {
         if (keyWrapper.getCertificateChain() != null && !keyWrapper.getCertificateChain().isEmpty()) {
-            jwsBuilder.x5c(keyWrapper.getCertificateChain());
+            List<X509Certificate> certificateChain = new ArrayList<>(keyWrapper.getCertificateChain());
+            try {
+                while (certificateChain.size() > 1
+                        && CertificateUtils.isSelfSigned(certificateChain.get(certificateChain.size() - 1))) {
+                    certificateChain.remove(certificateChain.size() - 1);
+                }
+            } catch (GeneralSecurityException e) {
+                LOGGER.warnf(e, "Failed to determine whether the trailing certificate is a self-signed trust anchor for realm '%s'. Using the configured certificate chain.", realm.getName());
+                certificateChain = keyWrapper.getCertificateChain();
+            }
+            jwsBuilder.x5c(certificateChain);
         } else if (keyWrapper.getCertificate() != null) {
             jwsBuilder.x5c(List.of(keyWrapper.getCertificate()));
         } else {

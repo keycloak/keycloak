@@ -221,7 +221,7 @@ Elliptic Curve cryptography with the P-256 curve and `ES256` algorithm is recomm
 
 [NOTE]
 ====
-The keystore may contain a self-signed root certificate so that {project_name} can load and validate the complete chain. {project_name} removes a trailing self-signed root certificate from the SD-JWT VC `x5c` header. It does not remove a non-self-signed trust anchor, which must therefore be omitted from the configured chain.
+The keystore may contain a self-signed root certificate so that {project_name} can load and validate the complete chain. {project_name} removes a trailing self-signed root certificate from the SD-JWT VC and signed issuer metadata `x5c` headers. It does not remove a non-self-signed trust anchor, which must therefore be omitted from the configured chain.
 
 For details about the keystore location and provider fields, see <<realm_keys,Configuring realm keys>>.
 ====

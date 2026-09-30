@@ -19,6 +19,7 @@ package org.keycloak.tests.oid4vc;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -32,6 +33,8 @@ import java.util.function.Function;
 import org.keycloak.VCFormat;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ComponentsResource;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
@@ -69,6 +72,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testsuite.util.oauth.Endpoints;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
 import org.keycloak.util.JsonSerialization;
@@ -111,7 +116,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerWellKnownProviderTest.VCTestServerWithKeystore.class)
 public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
 
     @InjectRunOnServer
@@ -244,6 +249,45 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
         assertTrue(run.apply(null), "IssuerMetadata on default endpoint URI");
         assertTrue(run.apply(endpoints.getOid4vcIssuerMetadata()), "IssuerMetadata on: " + endpoints.getOid4vcIssuerMetadata());
         assertTrue(run.apply(getSpecCompliantRealmMetadataPath()), "IssuerMetadata on: " + getSpecCompliantRealmMetadataPath());
+    }
+
+    @Test
+    public void testSignedMetadataWithJavaKeystoreChainExcludesSelfSignedRoot() {
+        assertDoesNotThrow(this::ensureMdocCompliantSigningConfiguration,
+                "A Java keystore containing the leaf and self-signed root should pass certificate-chain validation");
+        setRealmAttributes(Map.of(
+                SIGNED_METADATA_ALG_ATTR, Algorithm.ES256,
+                SIGNED_METADATA_LIFESPAN_ATTR, "3600"
+        ));
+
+        CredentialIssuerMetadataResponse response = oauth.oid4vc()
+                .issuerMetadataRequest()
+                .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JWT)
+                .send();
+
+        assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+        assertEquals(MediaType.APPLICATION_JWT, response.getHeader(HttpHeaders.CONTENT_TYPE));
+
+        JWSInput jwsInput = (JWSInput) response.getContent();
+        assertNotNull(jwsInput, "Response should be signed metadata JWS");
+        List<String> x5c = jwsInput.getHeader().getX5c();
+        assertNotNull(x5c);
+        assertEquals(1, x5c.size(), "The self-signed root must be omitted from the x5c header");
+
+        X509Certificate leaf = PemUtils.decodeCertificate(x5c.get(0));
+        assertEquals("CN=Mdoc Test Signer", leaf.getSubjectX500Principal().getName());
+
+        byte[] encodedSignatureInput = jwsInput.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8);
+        byte[] signature = jwsInput.getSignature();
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            KeyWrapper keyWrapper = session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.ES256);
+            assertNotNull(keyWrapper, "Active ES256 signing key should exist");
+            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, Algorithm.ES256);
+            assertNotNull(signatureProvider, "ES256 signature provider should exist");
+            SignatureVerifierContext verifier = signatureProvider.verifier(keyWrapper);
+            assertTrue(verifier.verify(encodedSignatureInput, signature), "JWS signature should be valid");
+        });
     }
 
     @Test
@@ -1086,6 +1130,14 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
                 session.realms().removeRealm(testRealm.getId());
             }
         });
+    }
+
+    public static class VCTestServerWithKeystore implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.OID4VC_VCI)
+                    .spiOption("keys", "java-keystore", "keystores-path", MdocTestSigningKey.keystoresBaseDir());
+        }
     }
 
     private String getSpecCompliantRealmMetadataPath() {
