@@ -30,6 +30,7 @@ import org.keycloak.authentication.authenticators.broker.IdpDetectExistingBroker
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
@@ -323,6 +324,21 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
             AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(cfgId);
             Assertions.assertEquals("legacySecretValue", config.getConfig().get("secret"));
         });
+    }
+
+    @Test
+    @DatabaseTest
+    public void testAuthenticatorReferenceNotMasked() {
+        AuthenticatorConfigRepresentation cfg = newConfig("referenceTest", Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE, "otp");
+        cfg.getConfig().put(Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE, "300");
+        cfg.getConfig().put("secret.key", "myRealSecret");
+        String cfgId = createConfig(executionId, cfg);
+
+        // GET should return the authenticator reference as-is and still mask the secret
+        AuthenticatorConfigRepresentation fetched = authMgmtResource.getAuthenticatorConfig(cfgId);
+        Assertions.assertEquals("otp", fetched.getConfig().get(Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE));
+        Assertions.assertEquals("300", fetched.getConfig().get(Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE));
+        Assertions.assertEquals(ComponentRepresentation.SECRET_VALUE, fetched.getConfig().get("secret.key"));
     }
 
     private String createConfig(String executionId, AuthenticatorConfigRepresentation cfg) {

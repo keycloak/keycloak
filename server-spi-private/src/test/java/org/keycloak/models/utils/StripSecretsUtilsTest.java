@@ -23,9 +23,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientSecretConstants;
+import org.keycloak.models.Constants;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -39,8 +41,10 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class StripSecretsUtilsTest {
 
@@ -362,6 +366,35 @@ public class StripSecretsUtilsTest {
         StripSecretsUtils.stripAuthenticatorConfig(Set.of("site.key"), rep);
 
         assertNull(rep.getConfig());
+    }
+
+    @Test
+    public void stripAuthenticatorConfigCommonPropertiesNotMasked() {
+        AuthenticatorConfigRepresentation rep = new AuthenticatorConfigRepresentation();
+        rep.setId("configId");
+        Map<String, String> config = new HashMap<>();
+        config.put(Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE, "otp");
+        config.put(Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE, "300");
+        config.put("secret.key", "raw-secret-value");
+        rep.setConfig(config);
+
+        Set<String> nonSecretNames = StripSecretsUtils.collectNonSecretAuthenticatorPropertyNames(Stream.of(
+                new ProviderConfigProperty("secret.key", "Secret", null, ProviderConfigProperty.PASSWORD, null, true)));
+
+        StripSecretsUtils.stripAuthenticatorConfig(nonSecretNames, rep);
+
+        assertEquals("otp", rep.getConfig().get(Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE));
+        assertEquals("300", rep.getConfig().get(Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE));
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getConfig().get("secret.key"));
+    }
+
+    @Test
+    public void collectNonSecretAuthenticatorPropertyNamesSecretTakesPrecedence() {
+        Set<String> nonSecretNames = StripSecretsUtils.collectNonSecretAuthenticatorPropertyNames(Stream.of(
+                new ProviderConfigProperty(Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE, "Reference", null, ProviderConfigProperty.PASSWORD, null, true)));
+
+        assertFalse(nonSecretNames.contains(Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE));
+        assertTrue(nonSecretNames.contains(Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE));
     }
 
 }
