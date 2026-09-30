@@ -71,6 +71,7 @@ import org.keycloak.services.resources.admin.fgap.UserPermissionEvaluator;
 import org.keycloak.services.util.DateUtil;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.SearchQueryUtils;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -172,6 +173,7 @@ public class UsersResource {
             RepresentationToModel.createFederatedIdentities(rep, session, realm, user);
             RepresentationToModel.createGroups(session, rep, realm, user, (g) -> {
                 auth.groups().requireManageMembership(g);
+                GroupUtils.checkAdminGroupRoles(g, auth);
                 user.joinGroup(g);
             });
 
@@ -215,6 +217,7 @@ public class UsersResource {
         for (GroupModel group : groups) {
             auth.groups().requireManageMembers(group);
             auth.groups().requireManageMembership(group);
+            GroupUtils.checkAdminGroupRoles(group, auth);
         }
 
         return true;
