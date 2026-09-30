@@ -653,3 +653,16 @@ This approach avoids the overhead of managing refresh tokens for machine-to-mach
 
 Kerberos credential delegation (the `gss delegation credential` protocol mapper) is now deprecated for security reasons and will be removed in a future release.
 
+=== Keycloak Realm Operator reached end of life
+// https://github.com/keycloak/keycloak/issues/52480
+
+The https://github.com/keycloak/keycloak-realm-operator[Keycloak Realm Operator] has reached its end of life and its repository will be archived.
+
+The Realm Operator was introduced as a temporary workaround to compensate mainly for
+the missing Client custom resources in the {project_name} Operator.
+Its `KeycloakRealm` and `KeycloakClient` custom resources are superseded by the following {project_name} Operator custom resources:
+
+* `KeycloakRealmImport` to create realm imports.
+  For more details, see the https://www.keycloak.org/operator/realm-import[Realm Import] guide.
+* `KeycloakOIDCClient` and `KeycloakSAMLClient`, available as a preview feature, to manage OIDC and SAML clients declaratively.
+  For more details, see the https://www.keycloak.org/operator/managing-clients[Managing Keycloak Clients] guide.
