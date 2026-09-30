@@ -28,15 +28,10 @@ import org.infinispan.util.concurrent.ActionSequencer;
 /**
  * Groups the {@link Cache}, the {@link ActionSequencer} (used by replace method) and the {@link SessionFunction} to
  * compute the lifespan, and the max-idle for this session entity.
- *
- * @param writeTombstoneOnRemove Whether a removal should write a short-lived tombstone marker instead of a bare
- *                               {@code remove()} - see {@code SessionResurrectionGuardListener}. Only set for
- *                               caches that are actually protected against session resurrection.
  */
 public record CacheHolder<K, V extends SessionEntity>(Cache<K, SessionEntityWrapper<V>> cache,
                                                       ActionSequencer sequencer,
                                                       SessionFunction<V> lifespanFunction,
                                                       SessionFunction<V> maxIdleFunction,
-                                                      Supplier<K> keyGenerator,
-                                                      boolean writeTombstoneOnRemove) {
+                                                      Supplier<K> keyGenerator) {
 }
