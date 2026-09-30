@@ -292,21 +292,17 @@ On PostgreSQL, if an invalid index exists from a previously failed `CREATE INDEX
 
 On databases that do not support non-blocking index creation, or when the migration strategy is set to `manual` or `validate`, {project_name} continues to log the SQL statement for manual execution without creating the index automatically.
 
-=== Caching of persistent user sessions disabled by default
+=== Disabling caching of persistent user sessions
 // https://github.com/keycloak/keycloak/issues/52121
 
-Caching of persistent user sessions in the embedded Infinispan cache is now disabled by default.
-Recent optimizations to the database layer, including async commits, improved indexes, and cheaper refresh-date updates, make persistent sessions without caching a viable default.
+Caching of persistent user sessions in the embedded Infinispan can be disabled.
+Recent optimizations to the database layer, including async commits, improved indexes, and cheaper refresh-date updates, make persistent sessions without caching a viable option.
 Disabling the cache reduces memory usage and network traffic between nodes, enabling smoother rolling updates.
 
-Users may observe increased database connection usage and higher CPU usage on the database.
+Users may observe increased database connection usage and higher CPU usage on the database if they are using token introspection or token exchange extensively.
 For users already using persistent sessions, the database's own caching layer should prevent any additional IOPS.
 
-To re-enable caching, set `+--spi-user-sessions--infinispan--use-caches=true+`.
-This option is provided as a temporary workaround.
-It is now deprecated and will be removed in a future release.
-
-See also the <<disabling-persistent-user-sessions-volatile-sessions-is-deprecated>> section below for related changes.
+To disable caching, set `+--spi-user-sessions--infinispan--use-caches=false+`.
 
 === Certificate Common Name truncated to 64 characters
 // https://github.com/keycloak/keycloak/issues/51778
@@ -625,7 +621,6 @@ The options `+spi-sticky-session-encoder--infinispan--should-attach-route+` and 
 The setting is still enabled by default to avoid breaking existing setups.
 To avoid the deprecation warning at startup, set those SPI options to `false`.
 
-[#disabling-persistent-user-sessions-volatile-sessions-is-deprecated]
 === Disabling persistent user sessions (volatile sessions) is deprecated
 // https://github.com/keycloak/keycloak/issues/52121
 

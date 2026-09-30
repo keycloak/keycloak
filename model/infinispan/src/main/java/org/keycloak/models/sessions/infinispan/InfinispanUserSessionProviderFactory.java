@@ -153,12 +153,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         if (!MultiSiteUtils.isPersistentSessionsEnabled()) {
             log.warn("Disabling the persistent-user-sessions feature is deprecated since Keycloak 26.8 and will not be supported in a future release. Persistent user sessions will become the only supported mode.");
         }
-        // Deprecated since 26.8: caching of persistent user sessions is disabled by default and will be removed in a future release.
-        boolean defaultUseCaches = !MultiSiteUtils.isPersistentSessionsEnabled();
-        useCaches = config.getBoolean(CONFIG_USE_CACHES, defaultUseCaches) && InfinispanUtils.isEmbeddedInfinispan() && !Profile.isFeatureEnabled(Profile.Feature.STATELESS);
-        if (useCaches && MultiSiteUtils.isPersistentSessionsEnabled()) {
-            log.warn("Caching of persistent user sessions is deprecated since Keycloak 26.8 and will be removed in a future release. Remove the spi-user-sessions--infinispan--use-caches option to disable caching.");
-        }
+        useCaches = config.getBoolean(CONFIG_USE_CACHES, DEFAULT_USE_CACHES) && InfinispanUtils.isEmbeddedInfinispan() && !Profile.isFeatureEnabled(Profile.Feature.STATELESS);
         expirationPeriodSeconds = getExpirationPeriodSeconds(config);
     }
 
@@ -422,7 +417,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         builder.property()
                 .name(CONFIG_USE_CACHES)
                 .type("boolean")
-                .helpText("Enable or disable caching of persistent user sessions. Disabled by default since Keycloak 26.8. When enabled, sessions are cached in the embedded Infinispan to reduce database load, but this is deprecated and will be removed in a future release. Caching is always disabled when the " + Profile.Feature.STATELESS.getUnversionedKey() + " feature is enabled or when using remote Infinispan.")
+                .helpText("Enable or disable caching of persistent user sessions in the embedded Infinispan. Caching is always disabled when the " + Profile.Feature.STATELESS.getUnversionedKey() + " feature is enabled or when using remote Infinispan.")
                 .add();
 
         builder.property()
