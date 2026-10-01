@@ -56,6 +56,17 @@ public class UserIssuedVerifiableCredentialsUpdatedEvent extends InvalidationEve
     }
 
     @Override
+    public int hashCode() {
+        return 31 * super.hashCode() + Boolean.hashCode(allUsers);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj)
+                && allUsers == ((UserIssuedVerifiableCredentialsUpdatedEvent) obj).allUsers;
+    }
+
+    @Override
     public String toString() {
         return String.format("UserIssuedVerifiableCredentialsUpdatedEvent [ userId=%s, allUsers=%s ]", getId(), allUsers);
     }
