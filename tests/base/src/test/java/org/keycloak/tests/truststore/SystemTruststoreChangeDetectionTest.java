@@ -168,6 +168,23 @@ public class SystemTruststoreChangeDetectionTest {
                 .until(() -> reloadCount() > before && generatedStoreSubjects().contains(subjectOf(recovered)));
     }
 
+    @Test
+    void deletedSourceDuringReloadKeepsLastGoodTruststoreAndRecovers() throws Exception {
+        long before = reloadCount();
+        // Unlike a file inside a directory source, a file listed in truststore-paths must exist because user
+        // explicitly configured it; deleting it fails the reload instead of removing its certificates
+        Files.delete(CHANGEDET_PEM);
+        Awaitility.await("a deleted source fails the reload and keeps the previously loaded truststore")
+                .during(IDLE_WINDOW)
+                .atMost(IDLE_WINDOW.plus(Duration.ofSeconds(8)))
+                .pollInterval(Duration.ofMillis(250))
+                .until(() -> reloadCount() == before && generatedStoreSubjects().contains(pemBaselineSubject));
+
+        X509Certificate restored = generateCa();
+        assertRotationDetected(() -> writePem(CHANGEDET_PEM, restored),
+                List.of(subjectOf(restored)), List.of(pemBaselineSubject));
+    }
+
     private void assertRotationDetected(IoAction mutation, List<String> mustAppear, List<String> mustDisappear)
             throws Exception {
         long before = reloadCount();
