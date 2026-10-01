@@ -13,6 +13,7 @@ import org.keycloak.broker.provider.HardcodedUserSessionAttributeMapper;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -30,15 +31,19 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.FederatedIdentityBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailServerConfiguration;
 import org.keycloak.testsuite.util.SecondBrowser;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.userprofile.UserProfileContext;
 
 import com.google.common.collect.ImmutableMap;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
@@ -1258,11 +1263,11 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
     /**
      * CVE-2026-92358: after a cross-browser confirmation completes through the original session,
-     * the fallback SUO proof must not survive successful linking / self-service unlink. Otherwise
-     * the same upstream identity could silently restore the removed federated link.
+     * the fallback SUO proof must be consumed so it cannot later restore a removed federated link.
+     * Unlink goes through the Account self-service API ({@code DELETE /account/linked-accounts/{alias}}).
      */
     @Test
-    public void testCrossBrowserLinkProofNotReusableAfterUnlink() {
+    public void testCrossBrowserLinkProofNotReusableAfterAccountUnlink() throws Exception {
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
 
         UserResource userResource = realm.users().get(createUser("consumer"));
@@ -1298,7 +1303,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertTrue(driver.getCurrentUrl().startsWith(getConsumerRoot() + "/auth/realms/master/app/"));
         assertEquals(1, userResource.getFederatedIdentity().size());
 
-        AccountHelper.deleteIdentityProvider(realm, "consumer", bc.getIDPAlias());
+        removeLinkedAccountViaAccountApi("consumer");
         assertEquals(0, userResource.getFederatedIdentity().size());
 
         AccountHelper.logout(realm, "consumer");
@@ -1316,7 +1321,95 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         waitForPage(driver, "account already exists", false);
         idpConfirmLinkPage.assertCurrent();
         assertFalse(AccountHelper.isIdentityProviderLinked(realm, "consumer", bc.getIDPAlias()),
-                "Residual account-link proof must not silently restore the federated identity");
+                "Consumed account-link proof must not silently restore the federated identity");
+    }
+
+    /**
+     * CVE-2026-92358: revoke an outstanding SUO proof via Account self-service unlink without first
+     * completing the original-session continuation (which itself consumes the proof).
+     */
+    @Test
+    public void testOutstandingLinkProofRevokedByAccountUnlink() throws Exception {
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+
+        UserResource userResource = realm.users().get(createUser("consumer"));
+        UserRepresentation consumerUser = userResource.toRepresentation();
+
+        consumerUser.setEmail(bc.getUserEmail());
+        consumerUser.setEmailVerified(true);
+        userResource.update(consumerUser);
+        configureSMTPServer();
+
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+
+        logInWithBroker(bc);
+
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
+        waitForPage(driver, "account already exists", false);
+        idpConfirmLinkPage.assertCurrent();
+        idpConfirmLinkPage.clickLinkAccount();
+        idpLinkEmailPage.assertCurrent();
+
+        String url = assertEmailAndGetUrl(mail.getLastReceivedMessage(), MailServerConfiguration.FROM, USER_EMAIL,
+                "Someone wants to link your ");
+
+        driver2.navigate().to(url);
+        driver2.findElement(By.linkText("» Click here to proceed")).click();
+        assertThat(driver2.findElement(By.className("instruction")).getText(), startsWith("You successfully confirmed linking your account"));
+
+        String federatedUserId = this instanceof KcSamlFirstBrokerLoginTest
+                ? bc.getUserLogin()
+                : AdminApiUtil.findUserByUsername(providerRealm, bc.getUserLogin()).getId();
+        FederatedIdentityRepresentation identity = FederatedIdentityBuilder.create()
+                .userId(federatedUserId)
+                .userName(bc.getUserLogin())
+                .identityProvider(bc.getIDPAlias())
+                .build();
+        try (Response response = userResource.addFederatedIdentity(bc.getIDPAlias(), identity)) {
+            assertEquals(204, response.getStatus());
+        }
+        assertEquals(1, userResource.getFederatedIdentity().size());
+
+        removeLinkedAccountViaAccountApi("consumer");
+        assertEquals(0, userResource.getFederatedIdentity().size());
+
+        AccountHelper.logout(realm, "consumer");
+        AccountHelper.logout(providerRealm, bc.getUserLogin());
+        driver.manage().deleteAllCookies();
+
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        logInWithBroker(bc);
+
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
+        waitForPage(driver, "account already exists", false);
+        idpConfirmLinkPage.assertCurrent();
+        assertFalse(AccountHelper.isIdentityProviderLinked(realm, "consumer", bc.getIDPAlias()),
+                "Outstanding account-link proof must be revoked by Account self-service unlink");
+    }
+
+    private void removeLinkedAccountViaAccountApi(String username) throws Exception {
+        oauth.realm(bc.consumerRealmName());
+        oauth.client("broker-app", "broker-app-secret");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest(username, "password");
+        assertEquals(200, tokenResponse.getStatusCode(), tokenResponse.getErrorDescription());
+
+        String accountUrl = getAccountUrl(getConsumerRoot(), bc.consumerRealmName()) + "/linked-accounts/" + bc.getIDPAlias();
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build();
+             SimpleHttpResponse response = SimpleHttpDefault.doDelete(accountUrl, httpClient)
+                     .auth(tokenResponse.getAccessToken())
+                     .acceptJson()
+                     .asResponse()) {
+            assertEquals(204, response.getStatus(), response.asString());
+        }
     }
 
     @Test

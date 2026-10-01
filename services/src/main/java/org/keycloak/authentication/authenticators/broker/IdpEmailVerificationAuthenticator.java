@@ -63,6 +63,13 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
 
     public static final String VERIFY_ACCOUNT_IDP_USERNAME = "VERIFY_ACCOUNT_IDP_USERNAME";
 
+    /**
+     * Set on the original authentication session when a cross-browser confirmation created a SUO proof.
+     * Same-browser confirmation never sets this note (no SUO); cross-browser continuation must win the
+     * atomic SUO consume before proceeding.
+     */
+    public static final String VERIFY_ACCOUNT_IDP_CROSS_BROWSER = "VERIFY_ACCOUNT_IDP_CROSS_BROWSER";
+
     public static final String IDP_LINK_CONFIRMATION_EMAIL_KEY = "IDP_LINK_CONFIRMATION_EMAIL_KEY";
 
     @Override
@@ -90,8 +97,18 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
             logger.debugf("User '%s' confirmed that wants to link with identity provider '%s' . Identity provider username is '%s' ", existingUser.getUsername(),
                     brokerContext.getIdpConfig().getAlias(), brokerContext.getUsername());
 
-            IdpVerifyAccountLinkActionTokenHandler.clearUserVerified(session, existingUser,
-                    brokerContext.getIdpConfig().getAlias(), brokerContext.getBrokerUserId());
+            boolean crossBrowser = Boolean.parseBoolean(authSession.getAuthNote(VERIFY_ACCOUNT_IDP_CROSS_BROWSER));
+            if (crossBrowser) {
+                boolean consumed = IdpVerifyAccountLinkActionTokenHandler.runIfUserVerified(session, existingUser,
+                        brokerContext.getIdpConfig(), brokerContext.getId(), () -> { });
+                if (!consumed) {
+                    Response challenge = context.form()
+                            .setError(Messages.STALE_CODE)
+                            .createErrorPage(Response.Status.BAD_REQUEST);
+                    context.failure(AuthenticationFlowError.EXPIRED_CODE, challenge);
+                    return;
+                }
+            }
 
             context.setUser(existingUser);
             context.success();
@@ -148,7 +165,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authSession).getEncodedId();
         IdpVerifyAccountLinkActionToken token = new IdpVerifyAccountLinkActionToken(
           existingUser.getId(), existingUser.getEmail(), absoluteExpirationInSecs, authSessionEncodedId,
-          brokerContext.getUsername(), brokerContext.getBrokerUserId(), brokerContext.getIdpConfig().getAlias(), authSession.getClient().getClientId()
+          brokerContext.getUsername(), brokerContext.getId(), brokerContext.getIdpConfig().getAlias(), authSession.getClient().getClientId()
         );
         UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo),
                 authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));
