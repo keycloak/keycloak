@@ -139,7 +139,7 @@ public final class Build extends AbstractCommand {
     public boolean isHelpAll() {
         return helpAllMixin != null ? helpAllMixin.allOptions : false;
     }
-    
+
     @Override
     public boolean usesPropertyMapperOptions() {
         return true;

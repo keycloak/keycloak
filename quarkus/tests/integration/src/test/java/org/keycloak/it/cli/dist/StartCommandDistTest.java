@@ -185,7 +185,6 @@ public class StartCommandDistTest {
         cliResult.assertMessage("Updating the configuration and installing your custom providers, if any. Please wait.");
         cliResult.assertMessage("Server configuration updated and persisted. Run the following command to review the configuration:");
         cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " show-config");
-        cliResult.assertMessage("Next time you run the server, just add --optimized to the command to ensure this build is used.");
         assertFalse(cliResult.getOutput().contains("--metrics-enabled"));
         assertTrue(cliResult.getErrorOutput().isBlank(), cliResult.getErrorOutput());
     }
@@ -215,7 +214,7 @@ public class StartCommandDistTest {
         cliResult.assertMessage("The previous optimized build will be overridden with the following build options:");
         cliResult.assertMessage("- db=postgres > db=dev-file"); // back to the default value
         cliResult.assertMessage("- features=preview > features=<unset>"); // no default value, the <unset> is shown
-        cliResult.assertMessage("To avoid that, run the 'build' command again and then start the optimized server instance using the '--optimized' flag.");
+        cliResult.assertMessage("To avoid that, run the 'build' command again and then start the server instance with the `auto-build` option set to `false`.");
         assertTrue(cliResult.getErrorOutput().isBlank());
         // should not show warning if the re-augmentation did not happen through the build command
         // an optimized server image should ideally be created by running a build

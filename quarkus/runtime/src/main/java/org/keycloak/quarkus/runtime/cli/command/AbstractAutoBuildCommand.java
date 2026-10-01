@@ -58,22 +58,24 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
     }
 
     boolean requiresReAugmentation() {
+        if (picocli.isAutoBuildDisabled()) {
+            return false; // will be validated by validateConfig
+        }
         Map<String, String> rawPersistedProperties = Configuration.getRawPersistedProperties();
         if (rawPersistedProperties.isEmpty()) {
             return true; // no build yet
         }
-        
+
+        // check to see if we're trying to switch into or out of the dev profile - no other profile
+        // is expected to influence build time options
         boolean isDev = isDevMode();
         boolean persistedDev = org.keycloak.common.util.Environment.DEV_PROFILE_VALUE
                 .equals(Configuration.getRawPersistedProperties().get(org.keycloak.common.util.Environment.PROFILE));
-        if ((!isDev && persistedDev) || (isDev && !persistedDev)) {
+        if (isDev ^ persistedDev) {
             return true;
         }
-        if (picocli.isAutoBuildDisabled()) {
-            return false; // already validated
-        }
-        // everything but ignored must match
-        // build-time options are assumed to be unchanged based upon the run-time profile
+
+        // everything not ignored must match
         AtomicBoolean changed = new AtomicBoolean();
         picocli.checkChangesInBuildOptions((key, oldValue, newValue) -> {
             if (Picocli.isIgnoredPersistedOption(key)) {
@@ -97,7 +99,7 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
             }
             buildProfile = Environment.PROD_PROFILE_VALUE;
         }
-        
+
         // clear the check, and change to the command runtime profile
         String currentProfile = org.keycloak.common.util.Environment.getProfile();
         if (!Objects.equals(buildProfile, currentProfile)) {
@@ -157,7 +159,7 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
     public boolean shouldStart() {
         return true;
     }
-    
+
     @Override
     public boolean usesPropertyMapperOptions() {
         return true;

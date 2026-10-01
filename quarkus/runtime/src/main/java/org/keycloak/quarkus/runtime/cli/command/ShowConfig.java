@@ -145,7 +145,7 @@ public final class ShowConfig extends AbstractCommand {
     public boolean isHelpAll() {
         return false;
     }
-    
+
     @Override
     public boolean usesPropertyMapperOptions() {
         return true;

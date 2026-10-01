@@ -45,7 +45,6 @@ import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.Main;
-import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.quarkus.runtime.cli.command.Tools;
 import org.keycloak.quarkus.runtime.cli.command.WindowsService;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
@@ -233,7 +232,6 @@ public class Picocli {
     public void validateConfig() {
         AbstractCommand abstractCommand = this.getParsedCommand().orElseThrow();
         if (abstractCommand.isOptimized()) {
-            // TODO: add an env variable to suppress this warning
             warn("%s is deprecated, please see the documentation for the usage of the 'auto-build' configuration option instead.".formatted(AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG));
         }
         if (!wasBuildEverRun()) {
@@ -361,7 +359,6 @@ public class Picocli {
 
     private void validateBuildtime() {
         final List<String> ignoredBuildTime = new ArrayList<>();
-        
         // check for provider changes, or overrides of existing persisted options
         // we have to ignore things like the profile properties because the commands set them at runtime
         checkChangesInBuildOptions((key, oldValue, newValue) -> {
@@ -944,7 +941,7 @@ public class Picocli {
             throw new IllegalStateException("Config should not be initialized until profile is determined");
         }
         this.parsedCommand = Optional.ofNullable(command);
-        
+
         // the order of the following calls is unfortunately important
         // as the static state needs to be set prior to loading the config
 
@@ -955,22 +952,22 @@ public class Picocli {
                 .or(() -> parsedCommand.map(AbstractCommand::getInitProfile)).orElse(Environment.PROD_PROFILE_VALUE);
 
         Environment.setProfile(profile);
-        
+
         // we're not yet using a command option for auto build - determine it directly
         // from the config - which can now be used given that the profile is set.
         // if the profile isn't correct, it will get adjusted in AbstractAutoBuildCommand
         String autoBuildValue = Configuration.getConfigValue(KC_AUTO_BUILD).getValue();
-        
-        if (autoBuildValue != null && initialRebuildCheck && !(command instanceof StartDev)) {
+
+        if (autoBuildValue != null && initialRebuildCheck) {
             if (autoBuildValue.equals(Boolean.FALSE.toString())) {
-                autoBuildDisabled = true;
+                autoBuildDisabled = !Environment.isDevProfile();
             } else if (!autoBuildValue.equals(Boolean.TRUE.toString())) {
                 throw new PropertyException("The `auto-build` option may only be `true` or `false`");
             }
         }
-        
+
         options = getIncludeOptions(command);
-                
+
         if (parsedCommand.filter(AbstractCommand::isHelpAll).isEmpty()) {
             parsedCommand.ifPresent(pc -> PropertyMappers.sanitizeDisabledMappers(pc, initialRebuildCheck && !autoBuildDisabled));
         }
@@ -982,7 +979,7 @@ public class Picocli {
             warn("Duplicated options present in CLI: %s".formatted(String.join(", ", duplicatedOptionsNames)));
         }
     }
-    
+
     public boolean isAutoBuildDisabled() {
         return autoBuildDisabled;
     }

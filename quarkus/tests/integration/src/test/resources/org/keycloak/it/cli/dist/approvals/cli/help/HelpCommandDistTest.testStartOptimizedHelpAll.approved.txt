@@ -13,7 +13,8 @@ Options:
 --import-realm       Import realms during startup by reading any realm configuration file from the
                        'data/import' directory.
 --optimized          Use this option to achieve an optimal startup time if you have previously
-                       built a server image using the 'build' command.
+                       built a server image using the 'build' command. DEPRECATED: see the
+                       `auto-build` configuration option instead.
 -v, --verbose        Print out error details when running this command.
 
 Cache:

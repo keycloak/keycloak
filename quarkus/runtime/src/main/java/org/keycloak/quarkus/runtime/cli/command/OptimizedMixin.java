@@ -25,7 +25,7 @@ import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.
 public final class OptimizedMixin {
 
     @CommandLine.Option(names = {OPTIMIZED_BUILD_OPTION_LONG},
-            description = "Use this option to achieve an optimal startup time if you have previously built a server image using the 'build' command.",
+            description = "Use this option to achieve an optimal startup time if you have previously built a server image using the 'build' command. DEPRECATED: see the `auto-build` configuration option instead.",
             paramLabel = NO_PARAM_LABEL,
             order = 1)
     boolean optimized;
