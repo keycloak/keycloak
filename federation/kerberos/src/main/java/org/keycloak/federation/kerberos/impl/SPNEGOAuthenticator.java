@@ -61,7 +61,7 @@ public class SPNEGOAuthenticator {
 
     public void authenticate() {
         if (log.isTraceEnabled()) {
-            log.trace("SPNEGO Login with token length: " + spnegoToken.length());
+            log.trace("SPNEGO Login with token length: " + (spnegoToken != null ? spnegoToken.length() : 0));
         }
 
         try {
