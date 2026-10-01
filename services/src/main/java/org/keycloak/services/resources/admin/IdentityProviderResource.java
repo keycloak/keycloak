@@ -35,6 +35,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
@@ -57,6 +58,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.organization.utils.Organizations;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
@@ -217,7 +219,13 @@ public class IdentityProviderResource {
         IdentityProviderModel updated = RepresentationToModel.toModel(realm, providerRep, session);
 
         if (updated.getConfig() != null && ComponentRepresentation.SECRET_VALUE.equals(updated.getConfig().get("clientSecret"))) {
-            updated.getConfig().put("clientSecret", identityProviderModel.getConfig() != null ? identityProviderModel.getConfig().get("clientSecret") : null);
+            if (canReuseMaskedClientSecret(updated)) {
+                updated.getConfig().put("clientSecret", identityProviderModel.getConfig() != null
+                        ? identityProviderModel.getConfig().get("clientSecret") : null);
+            } else {
+                // Sensitive destination/auth fields changed — do not forward the stored secret
+                updated.getConfig().remove("clientSecret");
+            }
         }
 
         if (!auth.hasOneAdminRole(AdminRoles.MANAGE_REALM)) {
@@ -231,6 +239,24 @@ public class IdentityProviderResource {
         session.identityProviders().update(updated);
         // update in case of legacy hide on login attr was used.
         providerRep.setHideOnLogin(updated.isHideOnLogin());
+    }
+
+    /**
+     * Reuse a masked {@code clientSecret} only when fields that determine where/how the secret
+     * is sent are unchanged. Otherwise a delegated IdP manager could rebind the stored secret
+     * to an attacker-controlled token endpoint.
+     */
+    private boolean canReuseMaskedClientSecret(IdentityProviderModel updated) {
+        Map<String, String> existing = identityProviderModel.getConfig() != null
+                ? identityProviderModel.getConfig() : Map.of();
+        Map<String, String> next = updated.getConfig() != null ? updated.getConfig() : Map.of();
+
+        return Objects.equals(existing.get(OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL),
+                next.get(OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL))
+                && Objects.equals(existing.get("clientId"), next.get("clientId"))
+                && Objects.equals(
+                        existing.getOrDefault("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST),
+                        next.getOrDefault("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST));
     }
 
 
