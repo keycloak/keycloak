@@ -1256,6 +1256,69 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertEquals(bc.getUserLogin(), identities.iterator().next().getUserName());
     }
 
+    /**
+     * CVE-2026-92358: after a cross-browser confirmation completes through the original session,
+     * the fallback SUO proof must not survive successful linking / self-service unlink. Otherwise
+     * the same upstream identity could silently restore the removed federated link.
+     */
+    @Test
+    public void testCrossBrowserLinkProofNotReusableAfterUnlink() {
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+
+        UserResource userResource = realm.users().get(createUser("consumer"));
+        UserRepresentation consumerUser = userResource.toRepresentation();
+
+        consumerUser.setEmail(bc.getUserEmail());
+        consumerUser.setEmailVerified(true);
+        userResource.update(consumerUser);
+        configureSMTPServer();
+
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+
+        logInWithBroker(bc);
+
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
+        waitForPage(driver, "account already exists", false);
+        idpConfirmLinkPage.assertCurrent();
+        idpConfirmLinkPage.clickLinkAccount();
+        idpLinkEmailPage.assertCurrent();
+
+        String url = assertEmailAndGetUrl(mail.getLastReceivedMessage(), MailServerConfiguration.FROM, USER_EMAIL,
+                "Someone wants to link your ");
+
+        driver2.navigate().to(url);
+        driver2.findElement(By.linkText("» Click here to proceed")).click();
+        assertThat(driver2.findElement(By.className("instruction")).getText(), startsWith("You successfully confirmed linking your account"));
+
+        idpLinkEmailPage.continueLink();
+        assertTrue(driver.getCurrentUrl().startsWith(getConsumerRoot() + "/auth/realms/master/app/"));
+        assertEquals(1, userResource.getFederatedIdentity().size());
+
+        AccountHelper.deleteIdentityProvider(realm, "consumer", bc.getIDPAlias());
+        assertEquals(0, userResource.getFederatedIdentity().size());
+
+        AccountHelper.logout(realm, "consumer");
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
+        driver.manage().deleteAllCookies();
+
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        logInWithBroker(bc);
+
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
+        waitForPage(driver, "account already exists", false);
+        idpConfirmLinkPage.assertCurrent();
+        assertFalse(AccountHelper.isIdentityProviderLinked(realm, "consumer", bc.getIDPAlias()),
+                "Residual account-link proof must not silently restore the federated identity");
+    }
+
     @Test
     public void testLinkAccountByEmailVerificationToEmailVerifiedUser() {
         // set up a user with verified email

@@ -30,6 +30,7 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.actiontoken.idpverifyemail.IdpVerifyAccountLinkActionToken;
+import org.keycloak.authentication.actiontoken.idpverifyemail.IdpVerifyAccountLinkActionTokenHandler;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -88,6 +89,9 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
 
             logger.debugf("User '%s' confirmed that wants to link with identity provider '%s' . Identity provider username is '%s' ", existingUser.getUsername(),
                     brokerContext.getIdpConfig().getAlias(), brokerContext.getUsername());
+
+            IdpVerifyAccountLinkActionTokenHandler.clearUserVerified(session, existingUser,
+                    brokerContext.getIdpConfig().getAlias(), brokerContext.getBrokerUserId());
 
             context.setUser(existingUser);
             context.success();

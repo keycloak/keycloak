@@ -35,6 +35,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -145,9 +146,38 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
     private void setUserVerifiedSingleObject(IdpVerifyAccountLinkActionToken token, RealmModel realm, KeycloakSession session, UserModel user) {
         int singleObjectLifespan = realm.getActionTokenGeneratedByUserLifespan();
-        String userId = user.getId();
-        String idpAlias = token.getIdentityProviderAlias();
-        session.singleUseObjects().put(getUserVerifiedSingleObjectKey(userId, idpAlias, token.getExternalId()), singleObjectLifespan, Map.of());
+        session.singleUseObjects().put(getUserVerifiedSingleObjectKey(user.getId(), token.getIdentityProviderAlias(), token.getExternalId()),
+                singleObjectLifespan, Map.of());
+    }
+
+    /**
+     * If a cross-browser account-link proof exists for this federated identity, remove it.
+     * Used when the original authentication session completes the link, or when the user
+     * explicitly unlinks the identity provider so a residual proof cannot silently restore it.
+     */
+    public static void clearUserVerified(KeycloakSession session, UserModel user, String idpAlias, String externalId) {
+        if (session == null || user == null || idpAlias == null || externalId == null) {
+            return;
+        }
+        session.singleUseObjects().remove(getUserVerifiedSingleObjectKey(user.getId(), idpAlias, externalId));
+    }
+
+    /**
+     * Revoke outstanding account-link proofs for a federated identity being removed.
+     * Brokered external IDs used in proofs are typically {@code alias.id}; also try the raw
+     * federated user id in case a custom provider stored the proof without the alias prefix.
+     */
+    public static void clearUserVerified(KeycloakSession session, UserModel user, FederatedIdentityModel link) {
+        if (link == null) {
+            return;
+        }
+        String idpAlias = link.getIdentityProvider();
+        String federatedUserId = link.getUserId();
+        if (federatedUserId == null) {
+            return;
+        }
+        clearUserVerified(session, user, idpAlias, idpAlias + "." + federatedUserId);
+        clearUserVerified(session, user, idpAlias, federatedUserId);
     }
 
     public static boolean runIfUserVerified(KeycloakSession session, UserModel user, IdentityProviderModel broker, String externalId, Runnable runnable) {
@@ -166,7 +196,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         return isUserVerified;
     }
 
-    private static String getUserVerifiedSingleObjectKey(String userId, String idpAlias, String externalId) {
+    static String getUserVerifiedSingleObjectKey(String userId, String idpAlias, String externalId) {
         return "kc.brokering.user.verified." + userId  + "." + idpAlias + "." + externalId;
     }
 
