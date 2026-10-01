@@ -9,6 +9,11 @@ inputs:
     required: false
     default: 'false'
 
+outputs:
+  cache-hit:
+    description: Whether the Maven cache was found for the exact key; only set when create-cache-if-it-doesnt-exist is true
+    value: ${{ steps.cache-maven-repository.outputs.cache-hit }}
+
 runs:
   using: composite
   steps:

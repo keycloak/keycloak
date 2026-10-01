@@ -200,6 +200,7 @@ jobs:
         run: ./mvnw install -DskipTests -f distribution/pom.xml
 
       - name: Build app servers
+        id: build-app-servers
         run: ./mvnw install -DskipTests -Pbuild-app-servers -f testsuite/integration-arquillian/servers/app-server/pom.xml
 
       - name: Run adapter tests
@@ -210,11 +211,11 @@ jobs:
 
       # Reuses the adapter distributions and app servers built above instead of building them again in a separate job
       - name: Run adapter tests (strict cookies)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.build-app-servers.conclusion == 'success' }}
         run: |
           TESTS="org.keycloak.testsuite.adapter.**"
           echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pfirefox-strict-cookies -Pauth-server-quarkus -Papp-server-wildfly -Dtest=$TESTS -Dapp.server.ssl.required=true "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -Dsurefire.reportsDirectory=target/surefire-reports-strict-cookies -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pfirefox-strict-cookies -Pauth-server-quarkus -Papp-server-wildfly -Dtest=$TESTS -Dapp.server.ssl.required=true "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -Dsurefire.reportNameSuffix=strict-cookies -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
@@ -963,7 +964,7 @@ jobs:
           sudo insmod fake_fips.ko
 
       - name: Run crypto tests
-        run: docker run --rm --workdir /github/workspace -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi9/ubi:latest .github/scripts/run-fips-ut.sh
+        run: docker run --rm --workdir /github/workspace -e "MAVEN_ARGS" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi9/ubi:latest .github/scripts/run-fips-ut.sh
 
   fips-integration-tests:
     name: FIPS IT
@@ -990,7 +991,7 @@ jobs:
           sudo insmod fake_fips.ko
 
       - name: Run base tests
-        run: docker run --rm --workdir /github/workspace -e "SUREFIRE_RERUN_FAILING_COUNT" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi9/ubi:latest .github/scripts/run-fips-it.sh ${{ matrix.mode }}
+        run: docker run --rm --workdir /github/workspace -e "SUREFIRE_RERUN_FAILING_COUNT" -e "MAVEN_ARGS" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi9/ubi:latest .github/scripts/run-fips-it.sh ${{ matrix.mode }}
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
@@ -1203,7 +1204,6 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
         with:
-          # test/clustering builds a Keycloak image from the tar.gz distribution, which is not part of the m2-keycloak.tzts archive
           download-dist: true
 
       - name: Run tests
@@ -1222,7 +1222,6 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
         with:
-          # test/clustering builds a Keycloak image from the tar.gz distribution, which is not part of the m2-keycloak.tzts archive
           download-dist: true
 
       - name: Run tests
@@ -1241,7 +1240,6 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
         with:
-          # test/clustering builds a Keycloak image from the tar.gz distribution, which is not part of the m2-keycloak.tzts archive
           download-dist: true
 
       - name: Run tests
@@ -1260,7 +1258,6 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
         with:
-          # test/clustering builds a Keycloak image from the tar.gz distribution, which is not part of the m2-keycloak.tzts archive
           download-dist: true
 
       - name: Run tests
@@ -1325,7 +1322,6 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
         with:
-          # test/clustering builds a Keycloak image from the tar.gz distribution, which is not part of the m2-keycloak.tzts archive
           download-dist: true
 
       - name: Run tests
@@ -1334,7 +1330,7 @@ jobs:
           KC_TEST_SERVER_IMAGES: "quay.io/keycloak/keycloak:${{ matrix.version }},-"
 
       - name: Run tests with stateless
-        run: ./mvnw verify -pl tests/clustering -Dsurefire.reportsDirectory=target/surefire-reports-stateless
+        run: ./mvnw verify -pl tests/clustering -Dsurefire.reportNameSuffix=stateless
         env:
           KC_TEST_SERVER_IMAGES: "quay.io/keycloak/keycloak:${{ matrix.version }},-"
           KC_TEST_SERVER_STATELESS: "true"
@@ -1358,7 +1354,6 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
         with:
-          # test/clustering builds a Keycloak image from the tar.gz distribution, which is not part of the m2-keycloak.tzts archive
           download-dist: true
 
       - name: Run tests

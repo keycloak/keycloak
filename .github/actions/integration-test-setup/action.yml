@@ -11,7 +11,7 @@ inputs:
     required: false
     default: "25"
   download-dist:
-    description: Download the Keycloak distribution tar.gz built by the build job into quarkus/dist/target
+    description: Download the Keycloak distribution tar.gz built by the build job into quarkus/dist/target, as it is not part of the m2-keycloak.tzts archive
     required: false
     default: "false"
 
