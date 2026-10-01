@@ -1933,6 +1933,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         }
     }
 
+    // TODO restore mid-test Keycloak restart coverage once https://github.com/keycloak/keycloak/issues/53396 is resolved
     @Test
     public void testOfflineRequestingPartyToken() throws Exception {
         ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);

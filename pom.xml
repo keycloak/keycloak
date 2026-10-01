@@ -239,6 +239,7 @@
 
         <!-- Testframework Settings -->
         <testframework.surefire.args>
+            ${surefire.system.args}
             -XX:+ExitOnOutOfMemoryError
             -XX:+HeapDumpOnOutOfMemoryError
             -Djava.util.logging.manager=org.jboss.logmanager.LogManager
