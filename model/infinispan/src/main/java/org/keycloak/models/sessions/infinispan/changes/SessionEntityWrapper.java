@@ -39,14 +39,9 @@ import org.infinispan.protostream.annotations.ProtoTypeId;
 @ProtoTypeId(Marshalling.SESSION_ENTITY_WRAPPER)
 public class SessionEntityWrapper<S extends SessionEntity> {
 
-    private static final String TOMBSTONE_MARKER_KEY = "tombstone";
-
-    /**
-     * Short lifespan for the tombstone marker itself, as a safety net: {@code SessionResurrectionGuardListener}
-     * removes the marker as soon as it observes it, so this expiry should normally never be reached; it only
-     * guards against that removal not happening for any reason.
-     */
-    public static final long TOMBSTONE_MARKER_LIFESPAN_MS = 5_000;
+    private static final String LOADING_MARKER_KEY = "loading";
+    public static final String CACHED_AT_KEY = "cachedAt";
+    public static final long LOADING_MARKER_LIFESPAN_MS = 60_000;
 
     private final UUID version;
     private final S entity;
@@ -121,24 +116,14 @@ public class SessionEntityWrapper<S extends SessionEntity> {
         return new SessionEntityWrapper<>(version, localMetadata, entity);
     }
 
-    /**
-     * Whether this wrapper is a short-lived tombstone marker, written by {@code InfinispanChangesUtils} in
-     * place of a bare {@code remove()} so that {@code SessionResurrectionGuardListener} observes a
-     * create/modify notification for every deletion (see that class for details). The wrapped entity, if
-     * any, is not meaningful in this case and must not be treated as real session state.
-     */
-    public boolean isTombstoneMarker() {
-        return localMetadata != null && localMetadata.containsKey(TOMBSTONE_MARKER_KEY);
+    public boolean isLoadingMarker() {
+        return localMetadata != null && localMetadata.containsKey(LOADING_MARKER_KEY);
     }
 
-    /**
-     * Creates a tombstone marker wrapping the given (already removed) entity purely for transport/marshalling
-     * purposes; see {@link #isTombstoneMarker()}.
-     */
-    public static <S extends SessionEntity> SessionEntityWrapper<S> createTombstoneMarker(S removedEntity) {
+    public static <S extends SessionEntity> SessionEntityWrapper<S> createLoadingMarker(S minimalEntity) {
         Map<String, String> metadata = new ConcurrentHashMap<>();
-        metadata.put(TOMBSTONE_MARKER_KEY, "true");
-        return new SessionEntityWrapper<>(metadata, removedEntity);
+        metadata.put(LOADING_MARKER_KEY, "true");
+        return new SessionEntityWrapper<>(metadata, minimalEntity);
     }
 
     public ClientModel getClientIfNeeded(RealmModel realm) {

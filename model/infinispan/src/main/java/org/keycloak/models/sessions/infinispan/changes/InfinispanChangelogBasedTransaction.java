@@ -17,15 +17,15 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -46,14 +46,36 @@ import org.jboss.logging.Logger;
 public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> implements SessionsChangelogBasedTransaction<K, V>, NonBlockingTransaction {
 
     public static final Logger logger = Logger.getLogger(InfinispanChangelogBasedTransaction.class);
+    public static final String LOADING_MARKERS_ATTR = "kc.volatile.loading.markers";
 
     protected final KeycloakSession kcSession;
     protected final Map<K, SessionUpdatesList<V>> updates = new HashMap<>();
     protected final CacheHolder<K, V> cacheHolder;
+    private String persistToDatabaseCacheName;
+    private long maxCacheLifespanMs = Long.MAX_VALUE;
+    private record PendingCacheOp<K, V extends SessionEntity>(K key, MergedUpdate<V> merged, SessionEntityWrapper<V> wrapper) {}
+    private final List<PendingCacheOp<K, V>> pendingCacheOps = new ArrayList<>();
 
     public InfinispanChangelogBasedTransaction(KeycloakSession kcSession, CacheHolder<K, V> cacheHolder) {
         this.kcSession = kcSession;
         this.cacheHolder = cacheHolder;
+    }
+
+    public void setPersistToDatabaseCacheName(String cacheName) {
+        this.persistToDatabaseCacheName = cacheName;
+    }
+
+    public void setMaxCacheLifespanMs(long maxCacheLifespanMs) {
+        this.maxCacheLifespanMs = maxCacheLifespanMs;
+    }
+
+    private void track(K key, SessionUpdatesList<V> updatesList) {
+        // JpaChangesPerformer reads isOffline() to decide which DB table to target.
+        // Currently, it is not set in any other place in the entity, so let's do it here.
+        if (persistToDatabaseCacheName != null) {
+            updatesList.getEntityWrapper().getEntity().setOffline(true);
+        }
+        updates.put(key, updatesList);
     }
 
 
@@ -88,7 +110,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
         RealmModel realm = kcSession.realms().getRealm(entity.getRealmId());
         SessionEntityWrapper<V> wrappedEntity = new SessionEntityWrapper<>(entity);
         SessionUpdatesList<V> myUpdates = new SessionUpdatesList<>(realm, wrappedEntity, persistenceState);
-        updates.put(key, myUpdates);
+        track(key, myUpdates);
 
         if (task != null) {
             // Run the update now, so reader in same transaction can see it
@@ -115,7 +137,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
             newUpdates.setUpdateTasks(existingUpdates.getUpdateTasks());
         }
 
-        updates.put(key, newUpdates);
+        track(key, newUpdates);
     }
 
 
@@ -123,16 +145,14 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
         SessionUpdatesList<V> myUpdates = updates.get(key);
         if (myUpdates == null) {
             SessionEntityWrapper<V> wrappedEntity = cacheHolder.cache().get(key);
-            if (wrappedEntity == null || wrappedEntity.isTombstoneMarker()) {
-                // A tombstone marker is a short-lived leftover of a concurrent removal (see
-                // SessionResurrectionGuardListener); it must never be treated as real session data.
+            if (wrappedEntity == null || wrappedEntity.isLoadingMarker()) {
                 return null;
             }
 
             RealmModel realm = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealmId());
 
             myUpdates = new SessionUpdatesList<>(realm, wrappedEntity);
-            updates.put(key, myUpdates);
+            track(key, myUpdates);
 
             return wrappedEntity;
         } else {
@@ -145,8 +165,19 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
         }
     }
 
+    public boolean isScheduledForRemoval(K key) {
+        SessionUpdatesList<V> myUpdates = updates.get(key);
+        if (myUpdates == null) {
+            return false;
+        }
+        return myUpdates.getUpdateTasks().stream()
+                .map(SessionUpdateTask::getOperation)
+                .anyMatch(SessionUpdateTask.CacheOperation.REMOVE::equals);
+    }
+
     @Override
     public void asyncCommit(AggregateCompletionStage<Void> stage, Consumer<DatabaseUpdate> databaseUpdates) {
+        JpaChangesPerformer<K, V> persister = null;
         for (Map.Entry<K, SessionUpdatesList<V>> entry : updates.entrySet()) {
             SessionUpdatesList<V> sessionUpdates = entry.getValue();
             SessionEntityWrapper<V> sessionWrapper = sessionUpdates.getEntityWrapper();
@@ -171,11 +202,31 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
             long lifespanMs = cacheHolder.lifespanFunction().apply(realm, sessionUpdates.getClient(), sessionWrapper.getEntity());
             long maxIdleTimeMs = cacheHolder.maxIdleFunction().apply(realm, sessionUpdates.getClient(), sessionWrapper.getEntity());
 
-            MergedUpdate<V> merged = MergedUpdate.computeUpdate(updateTasks, sessionWrapper, computeLifespan(maxIdleTimeMs, lifespanMs), computeMaxIdle(maxIdleTimeMs, lifespanMs));
+            MergedUpdate<V> merged = MergedUpdate.computeUpdate(updateTasks, sessionWrapper, effectiveLifespan(maxIdleTimeMs, lifespanMs, sessionWrapper), computeMaxIdle(maxIdleTimeMs, lifespanMs), maxCacheLifespanMs);
 
             if (merged != null) {
-                // Now run the operation in our cluster
-                InfinispanChangesUtils.runOperationInCluster(cacheHolder, entry.getKey(), merged, sessionWrapper, stage, logger);
+                if (persistToDatabaseCacheName != null) {
+                    pendingCacheOps.add(new PendingCacheOp<>(entry.getKey(), merged, sessionWrapper));
+                } else {
+                    InfinispanChangesUtils.runOperationInCluster(cacheHolder, entry.getKey(), merged, sessionWrapper, stage, logger);
+                }
+
+                // Persist REPLACE and REMOVE operations to DB for offline sessions (CREATE is handled
+                // directly by the provider via the persister). ADD_IF_ABSENT is skipped because the
+                // provider already wrote the row. Note: ADD_IF_ABSENT.merge(REPLACE) = ADD_IF_ABSENT,
+                // so post-create modifications in the same transaction (e.g. removeNote after
+                // createOfflineClientSession) are also skipped — they are applied to the cache entity
+                // via addAndExecute() but not separately persisted to DB. This is a pre-existing
+                // behavior: before DB persistence was added here, these modifications were also
+                // cache-only. The DB row created by the provider contains the initial state.
+                if (persistToDatabaseCacheName != null && merged.getOperation() != SessionUpdateTask.CacheOperation.ADD_IF_ABSENT
+                        && updateTasks.stream().anyMatch(SessionUpdateTask::requiresDatabasePersistence)) {
+                    if (persister == null) {
+                        persister = new JpaChangesPerformer<>(persistToDatabaseCacheName);
+                        databaseUpdates.accept(persister::write);
+                    }
+                    persister.registerChange(entry, merged);
+                }
             }
         }
     }
@@ -183,6 +234,13 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
     @Override
     public void asyncRollback(AggregateCompletionStage<Void> stage) {
         updates.clear();
+    }
+
+    @Override
+    public void asyncPostDatabaseCommit(AggregateCompletionStage<Void> stage) {
+        for (var op : pendingCacheOps) {
+            InfinispanChangesUtils.runOperationInCluster(cacheHolder, op.key(), op.merged(), op.wrapper(), stage, logger);
+        }
     }
 
     /**
@@ -195,6 +253,83 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
     public K generateKey() {
         assert cacheHolder.keyGenerator() != null;
         return cacheHolder.keyGenerator().get();
+    }
+
+
+    @SuppressWarnings("unchecked")
+    private Map<Object, SessionEntityWrapper<?>> getOrCreateVolatileLoadingMarkers() {
+        Map<Object, SessionEntityWrapper<?>> markers = (Map<Object, SessionEntityWrapper<?>>) kcSession.getAttribute(LOADING_MARKERS_ATTR);
+        if (markers == null) {
+            markers = new HashMap<>();
+            kcSession.setAttribute(LOADING_MARKERS_ATTR, markers);
+        }
+        return markers;
+    }
+
+    @SuppressWarnings("unchecked")
+    public void placeLoadingMarkers(Map<K, SessionEntityWrapper<V>> sessions) {
+        Map<Object, SessionEntityWrapper<?>> markers = getOrCreateVolatileLoadingMarkers();
+        for (var entry : sessions.entrySet()) {
+            K key = entry.getKey();
+            SessionEntityWrapper<V> marker = SessionEntityWrapper.createLoadingMarker(entry.getValue().getEntity());
+            SessionEntityWrapper<V> existing = cacheHolder.cache().putIfAbsent(key, marker, SessionEntityWrapper.LOADING_MARKER_LIFESPAN_MS, TimeUnit.MILLISECONDS);
+            if (existing == null) {
+                markers.put(key, marker);
+            }
+        }
+    }
+
+    /**
+     * @return {@code null} if this thread placed the marker (owns it),
+     *         a loading marker if another thread is loading, or the real cached entity.
+     */
+    public SessionEntityWrapper<V> placeLoadingMarker(K key, V minimalEntity) {
+        SessionEntityWrapper<V> marker = SessionEntityWrapper.createLoadingMarker(minimalEntity);
+        SessionEntityWrapper<V> existing = cacheHolder.cache().putIfAbsent(key, marker, SessionEntityWrapper.LOADING_MARKER_LIFESPAN_MS, TimeUnit.MILLISECONDS);
+        if (existing == null) {
+            getOrCreateVolatileLoadingMarkers().put(key, marker);
+        }
+        return existing;
+    }
+
+    @SuppressWarnings("unchecked")
+    public void cleanupLoadingMarker(K key) {
+        Map<Object, SessionEntityWrapper<?>> markers = (Map<Object, SessionEntityWrapper<?>>) kcSession.getAttribute(LOADING_MARKERS_ATTR);
+        if (markers == null) return;
+        SessionEntityWrapper<?> marker = markers.remove(key);
+        if (marker != null) {
+            cacheHolder.cache().remove(key, marker);
+        }
+    }
+
+    public boolean wasLoadingMarkerConsumed(K key) {
+        return !getOrCreateVolatileLoadingMarkers().containsKey(key);
+    }
+
+    @SuppressWarnings("unchecked")
+    public void cleanupLoadingMarkers(Map<K, SessionEntityWrapper<V>> sessions) {
+        Map<Object, SessionEntityWrapper<?>> markers = (Map<Object, SessionEntityWrapper<?>>) kcSession.getAttribute(LOADING_MARKERS_ATTR);
+        if (markers == null) return;
+        for (K key : sessions.keySet()) {
+            SessionEntityWrapper<?> marker = markers.remove(key);
+            if (marker != null) {
+                cacheHolder.cache().remove(key, marker);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private SessionEntityWrapper<V> getLoadingMarker(K key) {
+        Map<Object, SessionEntityWrapper<?>> markers = (Map<Object, SessionEntityWrapper<?>>) kcSession.getAttribute(LOADING_MARKERS_ATTR);
+        return markers != null ? (SessionEntityWrapper<V>) markers.get(key) : null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void consumeLoadingMarker(K key) {
+        Map<Object, SessionEntityWrapper<?>> markers = (Map<Object, SessionEntityWrapper<?>>) kcSession.getAttribute(LOADING_MARKERS_ATTR);
+        if (markers != null) {
+            markers.remove(key);
+        }
     }
 
     /**
@@ -220,35 +355,31 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
             // exists in transaction, avoid cache operation
             return updatesList.getEntityWrapper().getEntity();
         }
-        long lifespanMs = computeLifespan(maxIdle, lifespan);
-        long maxIdleMs = computeMaxIdle(maxIdle, lifespan);
-        SessionEntityWrapper<V> existing = cacheHolder.cache().putIfAbsent(key, session, lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
-        existing = resolveTombstoneOnImport(key, existing, session, lifespanMs, maxIdleMs);
+
+        SessionEntityWrapper<V> marker = getLoadingMarker(key);
+
+        if (marker != null) {
+            boolean replaced = cacheHolder.cache().replace(key, marker, session, effectiveLifespan(maxIdle, lifespan, session), TimeUnit.MILLISECONDS, computeMaxIdle(maxIdle, lifespan), TimeUnit.MILLISECONDS);
+            consumeLoadingMarker(key);
+            track(key, new SessionUpdatesList<>(realmModel, session));
+            if (!replaced) {
+                logger.debugf("CAS replace failed for key %s — session bound to transaction without caching.", key);
+            }
+            return null;
+        }
+
+        SessionEntityWrapper<V> existing = cacheHolder.cache().putIfAbsent(key, session, effectiveLifespan(maxIdle, lifespan, session), TimeUnit.MILLISECONDS, computeMaxIdle(maxIdle, lifespan), TimeUnit.MILLISECONDS);
         if (existing == null) {
             // keep track of the imported session for updates
-            updates.put(key, new SessionUpdatesList<>(realmModel, session));
+            track(key, new SessionUpdatesList<>(realmModel, session));
             return null;
         }
-        updates.put(key, new SessionUpdatesList<>(realmModel, existing));
+        if (existing.isLoadingMarker()) {
+            track(key, new SessionUpdatesList<>(realmModel, session));
+            return null;
+        }
+        track(key, new SessionUpdatesList<>(realmModel, existing));
         return existing.getEntity();
-    }
-
-    /**
-     * If {@code existing} is a short-lived tombstone marker left behind by a concurrent removal (see
-     * {@link SessionEntityWrapper#isTombstoneMarker()}), it is not real session data and must not block an
-     * import. This attempts to atomically overwrite it with {@code session}, returning {@code null} on success
-     * so the caller treats the import as if the cache had been empty.
-     */
-    private SessionEntityWrapper<V> resolveTombstoneOnImport(K key, SessionEntityWrapper<V> existing, SessionEntityWrapper<V> session, long lifespanMs, long maxIdleMs) {
-        if (existing == null || !existing.isTombstoneMarker()) {
-            return existing;
-        }
-        if (cacheHolder.cache().replace(key, existing, session, lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS)) {
-            return null;
-        }
-        // Lost the race to another writer; use whatever is there now.
-        SessionEntityWrapper<V> current = cacheHolder.cache().get(key);
-        return current != null && current.isTombstoneMarker() ? null : current;
     }
 
     /**
@@ -288,42 +419,62 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
                 //nothing to import, already expired
                 return;
             }
-            long lifespanMs = computeLifespan(maxIdle, lifespan);
-            long maxIdleMs = computeMaxIdle(maxIdle, lifespan);
-            var future = cacheHolder.cache().putIfAbsentAsync(key, session, lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS)
-                    .thenCompose(existing -> resolveTombstoneOnImportAsync(key, existing, session, lifespanMs, maxIdleMs));
-            // write result into concurrent hash map because the consumer is invoked in a different thread each time.
-            stage.dependsOn(future.thenAccept(existing -> allSessions.put(key, existing == null ? session : existing)));
+            long effectiveLifespan = effectiveLifespan(maxIdle, lifespan, session);
+            long effectiveMaxIdle = computeMaxIdle(maxIdle, lifespan);
+            SessionEntityWrapper<V> marker = getLoadingMarker(key);
+            if (marker != null) {
+                // Consuming before replaceAsync completes means an exceptional CAS leaves the marker
+                // cached until its TTL. Acceptable: a CAS exception implies cache unavailability,
+                // so the marker is likely already gone.
+                consumeLoadingMarker(key);
+                var future = cacheHolder.cache().replaceAsync(key, marker, session, effectiveLifespan, TimeUnit.MILLISECONDS, effectiveMaxIdle, TimeUnit.MILLISECONDS)
+                        .exceptionally(throwable -> {
+                            logger.debugf(throwable, "Failed to CAS replace session %s", session);
+                            return false;
+                        });
+                stage.dependsOn(future.thenAccept(replaced -> {
+                    allSessions.put(key, session);
+                    if (!replaced) {
+                        logger.debugf("CAS failed for client session %s — bound to transaction without caching", key);
+                    }
+                }));
+            } else {
+                SessionEntityWrapper<V> existing = cacheHolder.cache().get(key);
+                if (existing != null && !existing.isLoadingMarker()) {
+                    allSessions.put(key, existing);
+                } else {
+                    allSessions.put(key, session);
+                }
+            }
         });
 
         CompletionStages.join(stage.freeze());
-        allSessions.forEach((key, wrapper) -> updates.put(key, new SessionUpdatesList<>(realmModel, wrapper)));
-    }
-
-    /**
-     * Async counterpart of {@link #resolveTombstoneOnImport}, used by {@link #importSessionsConcurrently}.
-     */
-    private CompletionStage<SessionEntityWrapper<V>> resolveTombstoneOnImportAsync(K key, SessionEntityWrapper<V> existing, SessionEntityWrapper<V> session, long lifespanMs, long maxIdleMs) {
-        if (existing == null || !existing.isTombstoneMarker()) {
-            return CompletableFuture.completedFuture(existing);
-        }
-        return cacheHolder.cache().replaceAsync(key, existing, session, lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS)
-                .thenCompose(replaced -> replaced ? CompletableFuture.completedFuture(null) : cacheHolder.cache().getAsync(key)
-                        .thenApply(current -> current != null && current.isTombstoneMarker() ? null : current));
+        allSessions.forEach((key, wrapper) -> track(key, new SessionUpdatesList<>(realmModel, wrapper)));
     }
 
     private void lookupAndAndExecuteTask(K key, SessionUpdateTask<V> task) {
         // Lookup entity from cache
         SessionEntityWrapper<V> wrappedEntity = cacheHolder.cache().get(key);
-        if (wrappedEntity == null || wrappedEntity.isTombstoneMarker()) {
+        if (wrappedEntity == null) {
             logger.tracef("Not present cache item for key %s", key);
+            return;
+        }
+        if (wrappedEntity.isLoadingMarker()) {
+            if (task.getOperation() == SessionUpdateTask.CacheOperation.REMOVE) {
+                RealmModel realm = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealmId());
+                SessionUpdatesList<V> myUpdates = new SessionUpdatesList<>(realm, wrappedEntity);
+                track(key, myUpdates);
+                myUpdates.addAndExecute(task);
+                return;
+            }
+            logger.tracef("Loading marker found for key %s, skipping non-REMOVE task", key);
             return;
         }
 
         RealmModel realm = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealmId());
 
         SessionUpdatesList<V> myUpdates = new SessionUpdatesList<>(realm, wrappedEntity);
-        updates.put(key, myUpdates);
+        track(key, myUpdates);
 
         // Run the update now, so reader in same transaction can see it (TODO: Rollback may not work correctly. See if it's an issue..)
         myUpdates.addAndExecute(task);
@@ -335,5 +486,21 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
 
     protected long computeMaxIdle(long maxIdle, long lifespan) {
         return maxIdle;
+    }
+
+    protected final long effectiveLifespan(long maxIdle, long lifespan, SessionEntityWrapper<V> wrapper) {
+        long computed = computeLifespan(maxIdle, lifespan);
+        if (maxCacheLifespanMs == Long.MAX_VALUE || computed == SessionTimeouts.ENTRY_EXPIRED_FLAG) {
+            return computed;
+        }
+        String cachedAtStr = wrapper.getLocalMetadataNote(SessionEntityWrapper.CACHED_AT_KEY);
+        long now = Time.currentTimeMillis();
+        if (cachedAtStr == null) {
+            wrapper.getLocalMetadata().put(SessionEntityWrapper.CACHED_AT_KEY, String.valueOf(now));
+            return Math.min(computed, maxCacheLifespanMs);
+        }
+        long cachedAt = Long.parseLong(cachedAtStr);
+        long maxRemaining = cachedAt + maxCacheLifespanMs - now;
+        return maxRemaining > 0 ? Math.min(computed, maxRemaining) : 1;
     }
 }

@@ -33,7 +33,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 
 import org.keycloak.ServerStartupError;
-import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
 import org.keycloak.config.DatabaseOptions;
@@ -364,11 +363,6 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
     }
 
     private void checkMySQLBinlogFormat() {
-        if (!Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
-            // Only when we switch on stateless, the transaction isolation level for MySQL is set to READ COMMITTED,
-            // and only then we need to check the binlog format.
-            return;
-        }
         String db = Configuration.getConfigValue(DatabaseOptions.DB).getValue();
         Database.Vendor vendor = Database.getVendor(db).orElseThrow();
         if (!(Database.Vendor.MYSQL == vendor || Database.Vendor.MARIADB == vendor)) {
@@ -379,7 +373,7 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
              Statement statement = connection.createStatement();
              ResultSet rs = statement.executeQuery("SHOW VARIABLES LIKE 'binlog_format'")) {
             if (rs.next() && "STATEMENT".equalsIgnoreCase(rs.getString(2))) {
-                logger.errorf("%s 'binlog_format' is set to 'STATEMENT', which is incompatible with the READ COMMITTED transaction isolation level used by the stateless feature. "
+                logger.errorf("%s 'binlog_format' is set to 'STATEMENT', which is incompatible with the READ COMMITTED transaction isolation level. "
                         + "Change it to 'ROW' or 'MIXED' by running: SET GLOBAL binlog_format = 'ROW'", vendor);
             }
         } catch (SQLException e) {
