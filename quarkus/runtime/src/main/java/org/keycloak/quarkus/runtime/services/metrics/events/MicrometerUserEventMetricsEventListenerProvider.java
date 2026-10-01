@@ -116,8 +116,10 @@ public class MicrometerUserEventMetricsEventListenerProvider implements EventLis
             // When there is an error, the provider alias is user input and might not exist.
             // Validate it to avoid a metrics cardinality explosion.
             var realmSetInContext = session.getContext().getRealm();
+            boolean resetContextNeeded = false;
             if (realmSetInContext == null || !Objects.equals(realmSetInContext.getId(), event.getRealmId())) {
                 session.getContext().setRealm(session.realms().getRealm(event.getRealmId()));
+                resetContextNeeded = true;
             }
             try {
                 if (session.getContext().getRealm() != null) {
@@ -127,7 +129,9 @@ public class MicrometerUserEventMetricsEventListenerProvider implements EventLis
                     }
                 }
             } finally {
-                session.getContext().setRealm(realmSetInContext);
+                if (resetContextNeeded) {
+                    session.getContext().setRealm(realmSetInContext);
+                }
             }
         }
         return null;
