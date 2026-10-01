@@ -28,7 +28,9 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.oidc.mappers.HardcodedRole;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -47,6 +49,8 @@ import org.keycloak.tests.admin.authz.fgap.RealmAdminAccessTest.ServerConfig;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
@@ -361,6 +365,138 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
             try {
                 client.realm(realmName).users().get(target.getId()).update(target);
                 fail("Updating a user should be denied when the client role required by the policy is not in the client scope");
+            } catch (ForbiddenException e) {
+                // expected
+            }
+        }
+    }
+
+    @Test
+    public void testHardcodedRoleMapperDoesNotBypassRealmRolePolicy() {
+        String realmName = realm.getName();
+
+        RoleRepresentation customRole = new RoleRepresentation();
+        customRole.setName("custom-manager");
+        realm.admin().roles().create(customRole);
+        customRole = realm.admin().roles().get("custom-manager").toRepresentation();
+
+        // User does NOT have custom-manager — only query-users and view-users
+        UserRepresentation attacker = createUser("attacker", "password");
+        ClientRepresentation realmMgmt = realm.admin().clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation queryUsersRole = realm.admin().clients().get(realmMgmt.getId())
+                .roles().get(AdminRoles.QUERY_USERS).toRepresentation();
+        RoleRepresentation viewUsersRole = realm.admin().clients().get(realmMgmt.getId())
+                .roles().get(AdminRoles.VIEW_USERS).toRepresentation();
+        realm.admin().users().get(attacker.getId()).roles()
+                .clientLevel(realmMgmt.getId()).add(List.of(queryUsersRole, viewUsersRole));
+
+        RolePolicyRepresentation rolePolicy = createRolePolicy(realm, client,
+                "Custom Manager Role Policy", customRole.getId(), Logic.POSITIVE);
+        rolePolicy = client.admin().authorization().policies().role()
+                .findByName(rolePolicy.getName());
+        rolePolicy.setFetchRoles(false);
+        client.admin().authorization().policies().role()
+                .findById(rolePolicy.getId()).update(rolePolicy);
+        createAllPermission(client, AdminPermissionsSchema.USERS.getType(),
+                rolePolicy, Set.of(AdminPermissionsSchema.MANAGE));
+
+        // Client with a HardcodedRole mapper injecting custom-manager
+        ClientRepresentation maliciousClient = ClientConfigBuilder.create()
+                .clientId("malicious-client")
+                .publicClient(true)
+                .directAccessGrantsEnabled(true)
+                .build();
+        try (Response response = realm.admin().clients().create(maliciousClient)) {
+            maliciousClient.setId(ApiUtil.getCreatedId(response));
+        }
+        ProtocolMapperRepresentation mapper = toRepresentation(
+                HardcodedRole.create("inject-custom-manager", "custom-manager"));
+        realm.admin().clients().get(maliciousClient.getId())
+                .getProtocolMappers().createMapper(mapper).close();
+
+        try (Keycloak client = adminClientFactory.create()
+                .realm(realmName)
+                .clientId("malicious-client")
+                .username("attacker")
+                .password("password")
+                .build()) {
+            UserRepresentation target = client.realm(realmName).users().search("myadmin").get(0);
+            target.setLastName("should-not-update");
+            try {
+                client.realm(realmName).users().get(target.getId()).update(target);
+                fail("A HardcodedRole mapper injecting a custom role should not bypass FGAP role policy");
+            } catch (ForbiddenException e) {
+                // expected
+            }
+        }
+    }
+
+    @Test
+    public void testHardcodedRoleMapperDoesNotBypassClientRolePolicy() {
+        String realmName = realm.getName();
+
+        // Create a custom client with a client role
+        ClientRepresentation customApp = ClientConfigBuilder.create()
+                .clientId("custom-app")
+                .publicClient(true)
+                .directAccessGrantsEnabled(true)
+                .build();
+        try (Response response = realm.admin().clients().create(customApp)) {
+            customApp.setId(ApiUtil.getCreatedId(response));
+        }
+        RoleRepresentation appManagerRole = new RoleRepresentation();
+        appManagerRole.setName("app-manager");
+        realm.admin().clients().get(customApp.getId()).roles().create(appManagerRole);
+        appManagerRole = realm.admin().clients().get(customApp.getId())
+                .roles().get("app-manager").toRepresentation();
+
+        // User does NOT have app-manager — only query-users and view-users
+        UserRepresentation attacker = createUser("attacker", "password");
+        ClientRepresentation realmMgmt = realm.admin().clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation queryUsersRole = realm.admin().clients().get(realmMgmt.getId())
+                .roles().get(AdminRoles.QUERY_USERS).toRepresentation();
+        RoleRepresentation viewUsersRole = realm.admin().clients().get(realmMgmt.getId())
+                .roles().get(AdminRoles.VIEW_USERS).toRepresentation();
+        realm.admin().users().get(attacker.getId()).roles()
+                .clientLevel(realmMgmt.getId()).add(List.of(queryUsersRole, viewUsersRole));
+
+        RolePolicyRepresentation rolePolicy = createRolePolicy(realm, client,
+                "App Manager Policy", appManagerRole.getId(), Logic.POSITIVE);
+        rolePolicy = client.admin().authorization().policies().role()
+                .findByName(rolePolicy.getName());
+        rolePolicy.setFetchRoles(false);
+        client.admin().authorization().policies().role()
+                .findById(rolePolicy.getId()).update(rolePolicy);
+        createAllPermission(client, AdminPermissionsSchema.USERS.getType(),
+                rolePolicy, Set.of(AdminPermissionsSchema.MANAGE));
+
+        // Client with a HardcodedRole mapper injecting custom-app.app-manager
+        ClientRepresentation maliciousClient = ClientConfigBuilder.create()
+                .clientId("malicious-client")
+                .publicClient(true)
+                .directAccessGrantsEnabled(true)
+                .build();
+        try (Response response = realm.admin().clients().create(maliciousClient)) {
+            maliciousClient.setId(ApiUtil.getCreatedId(response));
+        }
+        ProtocolMapperRepresentation mapper = toRepresentation(
+                HardcodedRole.create("inject-app-manager", "custom-app.app-manager"));
+        realm.admin().clients().get(maliciousClient.getId())
+                .getProtocolMappers().createMapper(mapper).close();
+
+        try (Keycloak client = adminClientFactory.create()
+                .realm(realmName)
+                .clientId("malicious-client")
+                .username("attacker")
+                .password("password")
+                .build()) {
+            UserRepresentation target = client.realm(realmName).users().search("myadmin").get(0);
+            target.setLastName("should-not-update");
+            try {
+                client.realm(realmName).users().get(target.getId()).update(target);
+                fail("A HardcodedRole mapper injecting a client role should not bypass FGAP role policy");
             } catch (ForbiddenException e) {
                 // expected
             }
