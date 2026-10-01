@@ -452,10 +452,29 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
                 s -> s.identityProviders().getByAlias("masked-secret-idp").getConfig().get("clientSecret"), String.class);
         assertNull(storedSecret, "Credential must not be reused after clientAuthMethod change");
 
+        // Restore again, then change tokenIntrospectionUrl with masked secret
+        representation = resource.toRepresentation();
+        representation.getConfig().put("clientSecret", "real-partner-secret");
+        representation.getConfig().put("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST);
+        representation.getConfig().put("tokenIntrospectionUrl", "https://idp.example.com/introspect");
+        resource.update(representation);
+        adminEvents.poll();
+
+        representation = resource.toRepresentation();
+        representation.getConfig().put("tokenIntrospectionUrl", "https://attacker.example/introspect");
+        representation.getConfig().put("clientSecret", ComponentRepresentation.SECRET_VALUE);
+        resource.update(representation);
+        adminEvents.poll();
+
+        storedSecret = runOnServer.fetch(
+                s -> s.identityProviders().getByAlias("masked-secret-idp").getConfig().get("clientSecret"), String.class);
+        assertNull(storedSecret, "Credential must not be reused after tokenIntrospectionUrl change");
+
         // Unchanged sensitive fields: masked secret is reused
         representation = resource.toRepresentation();
         representation.getConfig().put("clientSecret", "real-partner-secret");
         representation.getConfig().put("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST);
+        representation.getConfig().put("tokenIntrospectionUrl", "https://idp.example.com/introspect");
         resource.update(representation);
         adminEvents.poll();
 
