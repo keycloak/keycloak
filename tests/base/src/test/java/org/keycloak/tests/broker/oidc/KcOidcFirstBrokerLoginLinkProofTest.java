@@ -1,6 +1,7 @@
 package org.keycloak.tests.broker.oidc;
 
 import java.io.IOException;
+import java.util.List;
 
 import jakarta.ws.rs.core.Response;
 
@@ -15,8 +16,11 @@ import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.realm.FederatedIdentityBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.IdpConfirmLinkPage;
 import org.keycloak.testframework.ui.page.IdpLinkEmailPage;
 import org.keycloak.testframework.ui.page.InfoPage;
@@ -32,6 +36,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -52,6 +57,9 @@ public class KcOidcFirstBrokerLoginLinkProofTest extends AbstractKcOidcBrokerTes
     @InjectSimpleHttp
     SimpleHttp simpleHttp;
 
+    @InjectRunOnServer(realmRef = "consumer")
+    RunOnServerClient runOnServer;
+
     @InjectWebDriver(ref = "driver2", lifecycle = LifeCycle.METHOD)
     ManagedWebDriver driver2;
 
@@ -60,6 +68,9 @@ public class KcOidcFirstBrokerLoginLinkProofTest extends AbstractKcOidcBrokerTes
 
     @InjectPage
     IdpLinkEmailPage idpLinkEmailPage;
+
+    @InjectPage
+    ErrorPage errorPage;
 
     @InjectPage(ref = "proceedPage2", webDriverRef = "driver2")
     ProceedPage proceedPage2;
@@ -78,22 +89,19 @@ public class KcOidcFirstBrokerLoginLinkProofTest extends AbstractKcOidcBrokerTes
     @Test
     public void testCrossBrowserLinkProofNotReusableAfterAccountUnlink() throws Exception {
         UserResource userResource = createConsumerWithPassword();
+        String consumerUserId = userResource.toRepresentation().getId();
 
         startBrokerLinkUntilEmailSent();
+        confirmLinkInSecondBrowser();
 
-        assertTrue(mailServer.waitForIncomingEmail(1));
-        String url = MailUtils.getPasswordResetEmailLink(mailServer.getLastReceivedMessage());
-
-        driver2.open(url);
-        proceedPage2.assertCurrent();
-        proceedPage2.clickProceedLink();
-        infoPage2.assertCurrent();
-        assertThat(infoPage2.getInfo(), startsWith("You successfully confirmed linking your account"));
+        assertTrue(isLinkProofPresent(consumerUserId), "Cross-browser confirmation should create the SUO proof");
 
         idpLinkEmailPage.continueLink();
-        assertTrue(oauth.parseLoginResponse().isSuccess());
-        assertEquals(1, userResource.getFederatedIdentity().size());
+        waitForFederatedIdentity(userResource, 1);
+        assertFalse(isLinkProofPresent(consumerUserId),
+                "Original-session continuation must consume the SUO proof before unlink runs");
 
+        clearRequiredActions(userResource);
         removeLinkedAccountViaAccountApi();
         assertEquals(0, userResource.getFederatedIdentity().size());
 
@@ -113,17 +121,12 @@ public class KcOidcFirstBrokerLoginLinkProofTest extends AbstractKcOidcBrokerTes
     @Test
     public void testOutstandingLinkProofRevokedByAccountUnlink() throws Exception {
         UserResource userResource = createConsumerWithPassword();
+        String consumerUserId = userResource.toRepresentation().getId();
 
         startBrokerLinkUntilEmailSent();
+        confirmLinkInSecondBrowser();
 
-        assertTrue(mailServer.waitForIncomingEmail(1));
-        String url = MailUtils.getPasswordResetEmailLink(mailServer.getLastReceivedMessage());
-
-        driver2.open(url);
-        proceedPage2.assertCurrent();
-        proceedPage2.clickProceedLink();
-        infoPage2.assertCurrent();
-        assertThat(infoPage2.getInfo(), startsWith("You successfully confirmed linking your account"));
+        assertTrue(isLinkProofPresent(consumerUserId));
 
         String federatedUserId = getProviderRealm().admin().users().search(getUserLogin(), true).get(0).getId();
         FederatedIdentityRepresentation identity = FederatedIdentityBuilder.create()
@@ -136,8 +139,11 @@ public class KcOidcFirstBrokerLoginLinkProofTest extends AbstractKcOidcBrokerTes
         }
         assertEquals(1, userResource.getFederatedIdentity().size());
 
+        clearRequiredActions(userResource);
         removeLinkedAccountViaAccountApi();
         assertEquals(0, userResource.getFederatedIdentity().size());
+        assertFalse(isLinkProofPresent(consumerUserId),
+                "Account unlink must revoke the outstanding SUO proof");
 
         AccountHelper.logout(getConsumerRealm().admin(), CONSUMER_USERNAME);
         AccountHelper.logout(getProviderRealm().admin(), getUserLogin());
@@ -152,6 +158,26 @@ public class KcOidcFirstBrokerLoginLinkProofTest extends AbstractKcOidcBrokerTes
         assertFalse(AccountHelper.isIdentityProviderLinked(getConsumerRealm().admin(), CONSUMER_USERNAME, getIdpAlias()));
     }
 
+    @Test
+    public void testOriginalSessionFailsWhenLinkProofAlreadyConsumed() throws Exception {
+        UserResource userResource = createConsumerWithPassword();
+        String consumerUserId = userResource.toRepresentation().getId();
+
+        startBrokerLinkUntilEmailSent();
+        confirmLinkInSecondBrowser();
+
+        assertTrue(isLinkProofPresent(consumerUserId));
+
+        // Simulate another path winning the atomic consume (e.g. concurrent fresh broker login).
+        consumeLinkProof(consumerUserId);
+        assertFalse(isLinkProofPresent(consumerUserId));
+
+        idpLinkEmailPage.continueLink();
+        errorPage.assertCurrent();
+        assertThat(errorPage.getError(), containsString("no longer valid"));
+        assertEquals(0, userResource.getFederatedIdentity().size());
+    }
+
     private void startBrokerLinkUntilEmailSent() {
         oauth.openLoginForm();
         logInWithBroker();
@@ -163,21 +189,68 @@ public class KcOidcFirstBrokerLoginLinkProofTest extends AbstractKcOidcBrokerTes
         idpLinkEmailPage.assertCurrent();
     }
 
+    private void confirmLinkInSecondBrowser() throws IOException {
+        assertTrue(mailServer.waitForIncomingEmail(1));
+        String url = MailUtils.getPasswordResetEmailLink(mailServer.getLastReceivedMessage());
+
+        driver2.open(url);
+        proceedPage2.assertCurrent();
+        proceedPage2.clickProceedLink();
+        infoPage2.assertCurrent();
+        assertThat(infoPage2.getInfo(), startsWith("You successfully confirmed linking your account"));
+    }
+
     private UserResource createConsumerWithPassword() {
         UserRepresentation user = new UserRepresentation();
         user.setUsername(CONSUMER_USERNAME);
         user.setEmail(getUserEmail());
+        user.setFirstName("Consumer");
+        user.setLastName("User");
         user.setEmailVerified(true);
         user.setEnabled(true);
         String userId = ApiUtil.getCreatedId(getConsumerRealm().admin().users().create(user));
+
+        UserResource userResource = getConsumerRealm().admin().users().get(userId);
+        clearRequiredActions(userResource);
 
         CredentialRepresentation cred = new CredentialRepresentation();
         cred.setType(CredentialRepresentation.PASSWORD);
         cred.setValue("password");
         cred.setTemporary(false);
-        UserResource userResource = getConsumerRealm().admin().users().get(userId);
         userResource.resetPassword(cred);
         return userResource;
+    }
+
+    private void clearRequiredActions(UserResource userResource) {
+        UserRepresentation rep = userResource.toRepresentation();
+        rep.setEmailVerified(true);
+        rep.setRequiredActions(List.of());
+        userResource.update(rep);
+    }
+
+    private void waitForFederatedIdentity(UserResource userResource, int expectedCount) {
+        webDriver.waiting().until(driver -> {
+            try {
+                return userResource.getFederatedIdentity().size() == expectedCount ? true : null;
+            } catch (RuntimeException ex) {
+                return null;
+            }
+        });
+    }
+
+    private String linkProofKey(String consumerUserId) {
+        String federatedUserId = getProviderRealm().admin().users().search(getUserLogin(), true).get(0).getId();
+        return "kc.brokering.user.verified." + consumerUserId + "." + getIdpAlias() + "." + federatedUserId;
+    }
+
+    private boolean isLinkProofPresent(String consumerUserId) {
+        String key = linkProofKey(consumerUserId);
+        return runOnServer.fetch(session -> session.singleUseObjects().contains(key), Boolean.class);
+    }
+
+    private void consumeLinkProof(String consumerUserId) {
+        String key = linkProofKey(consumerUserId);
+        runOnServer.run(session -> session.singleUseObjects().remove(key));
     }
 
     private void removeLinkedAccountViaAccountApi() throws IOException {
