@@ -91,6 +91,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     private static final boolean SECURE_REFERRAL_DEFAULT = true;
 
     private LDAPIdentityStoreRegistry ldapStoreRegistry;
+    private boolean disableKerberosAuthenticationRoundTrip;
 
     protected static final List<ProviderConfigProperty> configProperties;
 
@@ -321,6 +322,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             System.setProperty(LDAP_CONNECTION_POOL_PROTOCOL, "plain ssl");
         }
 
+        this.disableKerberosAuthenticationRoundTrip = config.getBoolean("disableKerberosAuthenticationRoundTrip", Boolean.FALSE);
         this.ldapStoreRegistry = new LDAPIdentityStoreRegistry();
     }
 
@@ -334,6 +336,13 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .type("boolean")
                 .helpText("Allow only secure LDAP referrals (deprecated)")
                 .defaultValue(SECURE_REFERRAL_DEFAULT)
+                .add()
+
+                .property()
+                .name("disableKerberosAuthenticationRoundTrip")
+                .type("boolean")
+                .helpText("Boolean to disable the local Kerberos service-ticket round trip in username/password authentication (deprecated).")
+                .defaultValue("false")
                 .add();
 
         return builder.build();
@@ -756,7 +765,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     }
 
     protected KerberosUsernamePasswordAuthenticator createKerberosUsernamePasswordAuthenticator(CommonKerberosConfig kerberosConfig) {
-        return new KerberosUsernamePasswordAuthenticator(kerberosConfig);
+        return new KerberosUsernamePasswordAuthenticator(kerberosConfig, disableKerberosAuthenticationRoundTrip);
     }
 
     private void setObjectFactoryBuilder() {

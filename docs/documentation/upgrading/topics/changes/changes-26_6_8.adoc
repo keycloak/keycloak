@@ -43,3 +43,17 @@ Previously, values longer than 64 characters, such as long client IDs, were used
 With the BouncyCastle 1.85 update, this caused certificate generation to fail.
 
 If you have tooling that inspects the CN of {project_name}-generated certificates and expects it to match a value longer than 64 characters, be aware that the CN may now be shorter.
+
+=== Kerberos username/password authenticator performs local service-ticket round trip
+
+Previously, the Kerberos provider authenticated the user only against the KDC server by performing an AS-REQ/AS-REP exchange. Consequently, authentication could succeed against an unintended or rogue KDC if it was inadvertently selected. This applied only to direct Kerberos username and password authentication, never to browser-based SPNEGO/negotiate authentication.
+
+Starting with this release, after authenticating the user, {project_name} performs an additional service-ticket round trip for its configured service principal. A service ticket is requested using TGS-REQ/TGS-REP and validated with the configured local keytab.
+
+Although no issues are expected, the previous behavior can be restored with the following provider options for the LDAP and Kerberos standalone providers:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-storage--ldap--disable-kerberos-authentication-round-trip true \
+  --spi-storage--kerberos--disable-kerberos-authentication-round-trip true
+----

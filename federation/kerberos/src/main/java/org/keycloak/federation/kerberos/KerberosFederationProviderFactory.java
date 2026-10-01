@@ -54,6 +54,8 @@ public class KerberosFederationProviderFactory implements UserStorageProviderFac
     private static final Logger logger = Logger.getLogger(KerberosFederationProviderFactory.class);
     public static final String PROVIDER_NAME = "kerberos";
 
+    private boolean disableKerberosAuthenticationRoundTrip;
+
     @Override
     public KerberosFederationProvider create(KeycloakSession session, ComponentModel model) {
         return new KerberosFederationProvider(session, new UserStorageProviderModel(model), this);
@@ -69,13 +71,8 @@ public class KerberosFederationProviderFactory implements UserStorageProviderFac
         return Profile.isFeatureEnabled(Profile.Feature.KERBEROS);
     }
 
-    protected static final List<ProviderConfigProperty> configProperties;
-
-    static {
-        configProperties = getConfigProps();
-    }
-
-    private static List<ProviderConfigProperty> getConfigProps() {
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
         return ProviderConfigurationBuilder.create()
                 .property().name(KerberosConstants.KERBEROS_REALM)
                 .label("kerberos-realm")
@@ -119,15 +116,9 @@ public class KerberosFederationProviderFactory implements UserStorageProviderFac
                 .build();
     }
 
-     @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
-        return configProperties;
-    }
-
-
     @Override
     public void init(Config.Scope config) {
-
+        this.disableKerberosAuthenticationRoundTrip = config.getBoolean("disableKerberosAuthenticationRoundTrip", Boolean.FALSE);
     }
 
     @Override
@@ -150,7 +141,7 @@ public class KerberosFederationProviderFactory implements UserStorageProviderFac
     }
 
     protected KerberosUsernamePasswordAuthenticator createKerberosUsernamePasswordAuthenticator(CommonKerberosConfig kerberosConfig) {
-        return new KerberosUsernamePasswordAuthenticator(kerberosConfig);
+        return new KerberosUsernamePasswordAuthenticator(kerberosConfig, disableKerberosAuthenticationRoundTrip);
     }
 
     @Override
@@ -177,6 +168,18 @@ public class KerberosFederationProviderFactory implements UserStorageProviderFac
         trimConfigValue(config, KerberosConstants.SERVER_PRINCIPAL);
         trimConfigValue(config, KerberosConstants.KERBEROS_REALM);
         trimConfigValue(config, KerberosConstants.KEYTAB);
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("disableKerberosAuthenticationRoundTrip")
+                .type("boolean")
+                .helpText("Boolean to disable the local Kerberos service-ticket round trip in username/password authentication (deprecated).")
+                .defaultValue("false")
+                .add()
+                .build();
     }
 
     private void trimConfigValue(ComponentModel config, String configKey) {
