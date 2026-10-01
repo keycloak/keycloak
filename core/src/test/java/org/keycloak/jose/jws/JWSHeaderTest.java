@@ -19,10 +19,12 @@ package org.keycloak.jose.jws;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPairGenerator;
+import java.util.Arrays;
 import java.util.Base64;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.util.JsonSerialization;
 
@@ -62,7 +64,46 @@ public class JWSHeaderTest {
         Assert.assertEquals("Unknown or unsupported token algorithm", e.getMessage());
     }
 
+    @Test
+    public void customAlgorithmWithVerifierContext() throws Exception {
+        String token = encode("{\"alg\":\"CUSTOM256\",\"typ\":\"JWT\",\"kid\":\"k1\"}") + "." + encode("{\"sub\":\"user\"}") + "." + encode("signature");
+
+        AccessToken accessToken = TokenVerifier.create(token, AccessToken.class)
+                .verifierContext(new CustomVerifier("signature"))
+                .verify()
+                .getToken();
+        Assert.assertEquals("user", accessToken.getSubject());
+
+        TokenVerifier<AccessToken> invalid = TokenVerifier.create(token, AccessToken.class)
+                .verifierContext(new CustomVerifier("other"));
+        Assert.assertThrows(VerificationException.class, invalid::verify);
+    }
+
     private static String encode(String s) {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(s.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static class CustomVerifier implements SignatureVerifierContext {
+
+        private final byte[] expectedSignature;
+
+        CustomVerifier(String expectedSignature) {
+            this.expectedSignature = expectedSignature.getBytes(StandardCharsets.UTF_8);
+        }
+
+        @Override
+        public String getKid() {
+            return "k1";
+        }
+
+        @Override
+        public String getAlgorithm() {
+            return "CUSTOM256";
+        }
+
+        @Override
+        public boolean verify(byte[] data, byte[] signature) {
+            return Arrays.equals(expectedSignature, signature);
+        }
     }
 }

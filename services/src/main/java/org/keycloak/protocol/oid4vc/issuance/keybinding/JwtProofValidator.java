@@ -153,7 +153,7 @@ public class JwtProofValidator extends AbstractProofValidator {
         Map<String, Object> headerClaims = JsonSerialization.mapper.convertValue(jwsHeader,
                 new TypeReference<>() {
                 });
-        String algorithm = jwsHeader.getAlgorithm().name();
+        String algorithm = jwsHeader.getRawAlgorithm();
         validateNoPrivateKeyInHeaderClaims(algorithm, headerClaims);
         KeyAttestationInfo attestationInfo = resolveHeaderAttestation(vcIssuanceContext, headerClaims);
 
@@ -179,7 +179,7 @@ public class JwtProofValidator extends AbstractProofValidator {
                 }
             }
         } else if (jwsHeader.getX5c() != null && !jwsHeader.getX5c().isEmpty()) {
-            jwk = AttestationValidatorUtil.resolveJwkFromProofX5c(jwsHeader.getX5c(), jwsHeader.getAlgorithm().name());
+            jwk = AttestationValidatorUtil.resolveJwkFromProofX5c(jwsHeader.getX5c(), algorithm);
         } else {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Missing binding key. JWT must contain either jwk, kid, or x5c in header.");
         }
@@ -198,9 +198,9 @@ public class JwtProofValidator extends AbstractProofValidator {
         AccessToken proofPayload = JsonSerialization.readValue(jwsInput.getContent(), AccessToken.class);
         validateProofPayload(vcIssuanceContext, proofPayload);
 
-        SignatureVerifierContext signatureVerifierContext = getVerifier(jwk, jwsHeader.getAlgorithm().name());
+        SignatureVerifierContext signatureVerifierContext = getVerifier(jwk, algorithm);
         if (signatureVerifierContext == null) {
-            throw new VCIssuerException(ErrorType.INVALID_PROOF, "No verifier configured for " + jwsHeader.getAlgorithm());
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "No verifier configured for " + algorithm);
         }
         if (!signatureVerifierContext.verify(jwsInput.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8),
                 jwsInput.getSignature())) {
@@ -289,8 +289,7 @@ public class JwtProofValidator extends AbstractProofValidator {
      * @throws VCIssuerException
      */
     private void validateJwsHeader(VCIssuanceContext vcIssuanceContext, JWSHeader jwsHeader) throws VCIssuerException {
-        String alg = Optional.ofNullable(jwsHeader.getAlgorithm())
-                .map(Enum::name)
+        String alg = Optional.ofNullable(jwsHeader.getRawAlgorithm())
                 .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "Missing jwsHeader claim alg"));
         if (!CryptoUtils.getSupportedAsymmetricSignatureAlgorithms(keycloakSession).contains(alg)) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Proof signature algorithm not supported: " + alg);

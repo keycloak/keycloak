@@ -97,9 +97,9 @@ public class DefaultTokenManager implements TokenManager {
         try {
             JWSInput jws = new JWSInput(token);
 
-            String signatureAlgorithm = jws.getHeader().getAlgorithm().name();
+            String signatureAlgorithm = jws.getHeader().getRawAlgorithm();
 
-            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, signatureAlgorithm);
+            SignatureProvider signatureProvider = signatureAlgorithm == null ? null : session.getProvider(SignatureProvider.class, signatureAlgorithm);
             if (signatureProvider == null) {
                 return null;
             }
@@ -177,11 +177,14 @@ public class DefaultTokenManager implements TokenManager {
 
     private <T> T verifyJWS(ClientModel client, Class<T> clazz, JWSInput jws, boolean allowNoneAlgorithm) {
         try {
-            String signatureAlgorithm = jws.getHeader().getAlgorithm().name();
+            String signatureAlgorithm = jws.getHeader().getRawAlgorithm();
+            if (signatureAlgorithm == null) {
+                return null;
+            }
             ClientSignatureVerifierProvider signatureProvider = session.getProvider(ClientSignatureVerifierProvider.class, signatureAlgorithm);
 
             if (signatureProvider == null) {
-                if (allowNoneAlgorithm && jws.getHeader().getAlgorithm().equals(org.keycloak.jose.jws.Algorithm.none)) {
+                if (allowNoneAlgorithm && org.keycloak.jose.jws.Algorithm.none.name().equals(signatureAlgorithm)) {
                     return jws.readJsonContent(clazz);
                 }
                 return null;
