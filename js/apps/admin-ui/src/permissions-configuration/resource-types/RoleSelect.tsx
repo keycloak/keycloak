@@ -118,6 +118,7 @@ export const RoleSelect = ({ name, isRadio = false }: RoleSelectorProps) => {
                     variant="link"
                     className="keycloak__client-authorization__policy-row-remove"
                     icon={<MinusCircleIcon />}
+                    aria-label={t("removeRole", { name: row.role.name })}
                     onClick={() => {
                       setValue(
                         name,

@@ -142,6 +142,9 @@ export const OrganizationSelect = ({
                     variant="link"
                     className="keycloak__client-authorization__policy-row-remove"
                     icon={<MinusCircleIcon />}
+                    aria-label={t("removeOrganization", {
+                      name: organization.name,
+                    })}
                     onClick={() => {
                       setValue(name!, [
                         ...convertOrganizations(
