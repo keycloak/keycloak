@@ -470,6 +470,48 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
     }
 
     @Test
+    public void maskedClientSecretNotReusedWhenDerivedTokenDestinationChanges() {
+        // GitHub derives tokenUrl from baseUrl at provider construction time; stored config often
+        // has no tokenUrl, so destination checks must include baseUrl itself.
+        IdentityProviderRepresentation newIdentityProvider = createRep("masked-secret-github", "github");
+        newIdentityProvider.getConfig().put("clientId", "github-client");
+        newIdentityProvider.getConfig().put("clientSecret", "real-github-secret");
+        newIdentityProvider.getConfig().put("baseUrl", "https://github.com");
+        create(newIdentityProvider);
+
+        IdentityProviderResource resource = managedRealm.admin().identityProviders().get("masked-secret-github");
+        IdentityProviderRepresentation representation = resource.toRepresentation();
+        assertEquals(ComponentRepresentation.SECRET_VALUE, representation.getConfig().get("clientSecret"));
+
+        representation.getConfig().put("baseUrl", "https://attacker.example");
+        representation.getConfig().put("clientSecret", ComponentRepresentation.SECRET_VALUE);
+        resource.update(representation);
+        adminEvents.poll();
+
+        assertNull(runOnServer.fetch(
+                        s -> s.identityProviders().getByAlias("masked-secret-github").getConfig().get("clientSecret"), String.class),
+                "Credential must not be reused after baseUrl change that derives a new token endpoint");
+        assertEquals("https://attacker.example",
+                runOnServer.fetch(s -> s.identityProviders().getByAlias("masked-secret-github").getConfig().get("baseUrl"), String.class));
+
+        // Unchanged baseUrl: masked secret is reused
+        representation = resource.toRepresentation();
+        representation.getConfig().put("clientSecret", "real-github-secret");
+        representation.getConfig().put("baseUrl", "https://github.com");
+        resource.update(representation);
+        adminEvents.poll();
+
+        representation = resource.toRepresentation();
+        representation.setDisplayName("Same GitHub destination");
+        representation.getConfig().put("clientSecret", ComponentRepresentation.SECRET_VALUE);
+        resource.update(representation);
+        adminEvents.poll();
+
+        assertEquals("real-github-secret", runOnServer.fetch(
+                s -> s.identityProviders().getByAlias("masked-secret-github").getConfig().get("clientSecret"), String.class));
+    }
+
+    @Test
     public void failUpdateAlias() {
         IdentityProviderRepresentation newIdentityProvider = createRep("fail-update-alias", "oidc");
         newIdentityProvider.getConfig().put("clientId", "clientId");
