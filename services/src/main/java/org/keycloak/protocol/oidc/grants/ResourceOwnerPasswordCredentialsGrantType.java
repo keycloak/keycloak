@@ -149,7 +149,7 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
             .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).generateAccessToken();
-        boolean useRefreshToken = clientConfig.isUseRefreshToken();
+        boolean useRefreshToken = clientConfig.generateRefreshToken(clientSessionCtx.isOfflineTokenRequested());
         if (useRefreshToken) {
             responseBuilder.generateRefreshToken();
             if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(responseBuilder.getRefreshToken().getType())) {

@@ -243,6 +243,28 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, val);
     }
 
+    /**
+     * If true even if isUseRefreshToken is false, a refresh token will be generated if the offline token (scope offline_access) is requested.
+     */
+    public boolean isUseRefreshTokenForOfflineToken() {
+        String val = getAttribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_OFFLINE_TOKEN, "false");
+        return Boolean.parseBoolean(val);
+    }
+
+    public void setUseRefreshTokenForOfflineToken(boolean enable) {
+        String val = String.valueOf(enable);
+        setAttribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_OFFLINE_TOKEN, val);
+    }
+
+    /**
+     * Returns whether a refresh token should be generated.
+     * Returns true if {@link #isUseRefreshToken()} is enabled, or if {@link #isUseRefreshTokenForOfflineToken()}
+     * is enabled and offline token (scope {@code offline_access}) is requested.
+     */
+    public boolean generateRefreshToken(boolean offlineToken) {
+        return isUseRefreshToken() || (isUseRefreshTokenForOfflineToken() && offlineToken);
+    }
+
     public boolean isStandardTokenExchangeEnabled() {
         String val = getAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, "false");
         return Boolean.parseBoolean(val);
