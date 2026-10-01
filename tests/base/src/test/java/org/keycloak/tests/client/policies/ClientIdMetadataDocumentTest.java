@@ -1048,6 +1048,10 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setRedirectUris(List.of("https://mcp.example.com/mcp/123abc"));
         assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_REDIRECTURI);
 
+        // a null entry in redirect_uris property, e.g. "redirect_uris": ["https://...", null]
+        cimd.getRepresentation().setRedirectUris(Arrays.asList(REDIRECT_URI, null));
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_MALFORMED_URL);
+
         // SSRF attack countermeasure
         // It checks if an address resolved from a property whose value is URI is loopback address.
         //  -> difficult to check because allowing loopback address is needed to fetch client metadata from loop-back addressed test-provider server

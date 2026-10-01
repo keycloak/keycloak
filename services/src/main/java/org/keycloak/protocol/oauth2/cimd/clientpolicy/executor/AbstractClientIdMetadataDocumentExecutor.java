@@ -642,6 +642,11 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             }
 
             clientOIDC = response.asJson(OIDCClientRepresentation.class);
+            if (clientOIDC == null) {
+                // e.g. the fetched document is the JSON literal null
+                getLogger().warn("client metadata does not have its content.");
+                throw invalidClientIdMetadata(ERR_METADATA_NOCONTENT);
+            }
 
             // to successfully convert it to Client Representation, intentionally augment it.
             augmentClientOIDC(clientOIDC);
@@ -700,6 +705,10 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
         // An authorization server MUST validate redirect URIs presented in an authorization request
         // against those in the metadata document.
+        if (clientOIDC.getRedirectUris() != null && clientOIDC.getRedirectUris().stream().anyMatch(Objects::isNull)) {
+            getLogger().warn("redirect_uris property in client metadata includes null.");
+            throw invalidClientIdMetadata(ERR_METADATA_MALFORMED_URL);
+        }
         if (clientOIDC.getRedirectUris() == null || RedirectUtils.verifyRedirectUri(session, clientOIDC.getClientUri(), redirectUri, Set.copyOf(clientOIDC.getRedirectUris()), true) == null) {
             getLogger().warnv("redirect_uri parameter does not exactly match the one of redirect_uris property in client metadata: redirectUri = {0}", redirectUri);
             throw invalidClientIdMetadata(ERR_METADATA_REDIRECTURI);
