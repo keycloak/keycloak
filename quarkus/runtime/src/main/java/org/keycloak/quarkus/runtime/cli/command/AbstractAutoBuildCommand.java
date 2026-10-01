@@ -58,19 +58,18 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
     }
 
     boolean requiresReAugmentation() {
+        if (picocli.isAutoBuildDisabled()) {
+            return false; // will be validated by validateConfig
+        }
         Map<String, String> rawPersistedProperties = Configuration.getRawPersistedProperties();
         if (rawPersistedProperties.isEmpty()) {
             return true; // no build yet
         }
-        
         boolean isDev = isDevMode();
         boolean persistedDev = org.keycloak.common.util.Environment.DEV_PROFILE_VALUE
                 .equals(Configuration.getRawPersistedProperties().get(org.keycloak.common.util.Environment.PROFILE));
         if ((!isDev && persistedDev) || (isDev && !persistedDev)) {
             return true;
-        }
-        if (picocli.isAutoBuildDisabled()) {
-            return false; // already validated
         }
         // everything but ignored must match
         // build-time options are assumed to be unchanged based upon the run-time profile

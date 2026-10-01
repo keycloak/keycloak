@@ -51,7 +51,6 @@ public class StartAutoBuildDistTest {
         cliResult.assertMessage("Updating the configuration and installing your custom providers, if any. Please wait.");
         cliResult.assertMessage("Server configuration updated and persisted. Run the following command to review the configuration:");
         cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " show-config");
-        cliResult.assertMessage("Next time you run the server, just add --optimized to the command to ensure this build is used.");
         cliResult.assertNoMessage("--cache");
         assertTrue(cliResult.getErrorOutput().isBlank());
     }

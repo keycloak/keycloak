@@ -45,7 +45,6 @@ import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.Main;
-import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.quarkus.runtime.cli.command.Tools;
 import org.keycloak.quarkus.runtime.cli.command.WindowsService;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
@@ -961,9 +960,9 @@ public class Picocli {
         // if the profile isn't correct, it will get adjusted in AbstractAutoBuildCommand
         String autoBuildValue = Configuration.getConfigValue(KC_AUTO_BUILD).getValue();
         
-        if (autoBuildValue != null && initialRebuildCheck && !(command instanceof StartDev)) {
+        if (autoBuildValue != null && initialRebuildCheck) {
             if (autoBuildValue.equals(Boolean.FALSE.toString())) {
-                autoBuildDisabled = true;
+                autoBuildDisabled = !Environment.isDevProfile();
             } else if (!autoBuildValue.equals(Boolean.TRUE.toString())) {
                 throw new PropertyException("The `auto-build` option may only be `true` or `false`");
             }
