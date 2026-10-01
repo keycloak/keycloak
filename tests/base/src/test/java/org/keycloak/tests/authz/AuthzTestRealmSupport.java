@@ -4,12 +4,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmsResource;
+import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -94,6 +96,10 @@ public abstract class AuthzTestRealmSupport {
     private void configureRealmForTestEvents(String realmName) {
         RealmRepresentation realmRepresentation = adminClient.realm(realmName).toRepresentation();
         realmRepresentation.setEventsEnabled(true);
+        // Include non-saveByDefault types (e.g. PERMISSION_TOKEN_ERROR) so admin-API event polling works.
+        realmRepresentation.setEnabledEventTypes(Arrays.stream(EventType.values())
+                .map(Enum::name)
+                .collect(Collectors.toList()));
         adminClient.realm(realmName).update(realmRepresentation);
     }
 
