@@ -189,9 +189,11 @@ public class SessionResurrectionConcurrencyTest {
                         "Session " + sessionId + " must not be resurrected after logout");
             } finally {
                 stopFlag.set(true);
-                assertTrue(doneLatch.await(30, TimeUnit.SECONDS), "Workers should complete within timeout");
+                boolean completed = doneLatch.await(30, TimeUnit.SECONDS);
                 executor.shutdown();
-                assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS), "Executor should terminate");
+                boolean terminated = executor.awaitTermination(10, TimeUnit.SECONDS);
+                assertTrue(completed, "Workers should complete within timeout");
+                assertTrue(terminated, "Executor should terminate");
             }
 
             assertTrue(successfulLookups.get() > 0,
@@ -274,9 +276,11 @@ public class SessionResurrectionConcurrencyTest {
             });
         }
 
-        assertTrue(doneLatch.await(30, TimeUnit.SECONDS), "Workers should complete within timeout");
+        boolean completed = doneLatch.await(30, TimeUnit.SECONDS);
         executor.shutdown();
-        assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS), "Executor should terminate");
+        boolean terminated = executor.awaitTermination(10, TimeUnit.SECONDS);
+        assertTrue(completed, "Workers should complete within timeout");
+        assertTrue(terminated, "Executor should terminate");
 
         assertTrue(errors.isEmpty(), "No errors expected during concurrent reads");
 

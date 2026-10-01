@@ -223,9 +223,11 @@ public class VolatileSessionResurrectionConcurrencyTest {
                         "Offline refresh should fail after logout — session must not be resurrected in cache");
             } finally {
                 stopFlag.set(true);
-                assertTrue(doneLatch.await(30, TimeUnit.SECONDS), "Workers should complete within timeout");
+                boolean completed = doneLatch.await(30, TimeUnit.SECONDS);
                 executor.shutdown();
-                assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS), "Executor should terminate");
+                boolean terminated = executor.awaitTermination(10, TimeUnit.SECONDS);
+                assertTrue(completed, "Workers should complete within timeout");
+                assertTrue(terminated, "Executor should terminate");
             }
 
             assertTrue(successfulLookups.get() > 0,
@@ -370,9 +372,11 @@ public class VolatileSessionResurrectionConcurrencyTest {
             });
         }
 
-        assertTrue(doneLatch.await(30, TimeUnit.SECONDS), "Workers should complete within timeout");
+        boolean completed = doneLatch.await(30, TimeUnit.SECONDS);
         executor.shutdown();
-        assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS), "Executor should terminate");
+        boolean terminated = executor.awaitTermination(10, TimeUnit.SECONDS);
+        assertTrue(completed, "Workers should complete within timeout");
+        assertTrue(terminated, "Executor should terminate");
 
         assertTrue(errors.isEmpty(), "All concurrent offline session lookups should succeed");
 
@@ -433,9 +437,11 @@ public class VolatileSessionResurrectionConcurrencyTest {
             });
         }
 
-        assertTrue(doneLatch.await(30, TimeUnit.SECONDS), "Workers should complete within timeout");
+        boolean completed = doneLatch.await(30, TimeUnit.SECONDS);
         executor.shutdown();
-        assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS), "Executor should terminate");
+        boolean terminated = executor.awaitTermination(10, TimeUnit.SECONDS);
+        assertTrue(completed, "Workers should complete within timeout");
+        assertTrue(terminated, "Executor should terminate");
 
         assertTrue(errors.isEmpty(), "Concurrent imports should not error");
 
@@ -515,9 +521,11 @@ public class VolatileSessionResurrectionConcurrencyTest {
             });
         }
 
-        assertTrue(doneLatch.await(30, TimeUnit.SECONDS), "Workers should complete within timeout");
+        boolean completed = doneLatch.await(30, TimeUnit.SECONDS);
         executor.shutdown();
-        assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS), "Executor should terminate");
+        boolean terminated = executor.awaitTermination(10, TimeUnit.SECONDS);
+        assertTrue(completed, "Workers should complete within timeout");
+        assertTrue(terminated, "Executor should terminate");
 
         assertTrue(errors.isEmpty(), "Concurrent bulk queries and imports should not error");
 
