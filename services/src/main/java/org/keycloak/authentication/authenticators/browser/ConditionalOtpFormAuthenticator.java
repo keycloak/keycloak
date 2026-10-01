@@ -107,6 +107,8 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
         SKIP_OTP, SHOW_OTP, ABSTAIN
     }
 
+    private boolean proxyConfigured;
+
     @Override
     public void authenticate(AuthenticationFlowContext context) {
         AuthenticatorConfigModel model = context.getAuthenticatorConfig();
@@ -192,7 +194,7 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
         }
         // Only do the skip-OTP rule when the request arrives via a trusted proxy. Protects against injected X-Forwarded-Host (or any matching header)
         // Inverted to allow white-lists, e.g. for specifying trusted remote hosts: X-Forwarded-Host: (1.2.3.4|1.2.3.5)
-        if (httpRequest.isProxyTrusted() && containsMatchingRequestHeader(
+        if (proxyConfigured && httpRequest.isProxyTrusted() && containsMatchingRequestHeader(
                 httpRequest.getHttpHeaders().getRequestHeaders(), config.get(SKIP_OTP_FOR_HTTP_HEADER))) {
             return SKIP_OTP;
         }
@@ -302,6 +304,10 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
             || config.containsKey(SKIP_OTP_FOR_HTTP_HEADER)
             || config.containsKey(FORCE_OTP_FOR_HTTP_HEADER)
             || config.containsKey(DEFAULT_OTP_OUTCOME);
+    }
+
+    public void setProxyConfigured(boolean proxyConfigured) {
+        this.proxyConfigured = proxyConfigured;
     }
 
     @Override
