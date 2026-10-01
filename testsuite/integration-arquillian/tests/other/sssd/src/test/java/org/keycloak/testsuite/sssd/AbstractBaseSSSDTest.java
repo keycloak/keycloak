@@ -16,11 +16,14 @@
  */
 package org.keycloak.testsuite.sssd;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.convert.DefaultListDelimiterHandler;
+import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.apache.commons.configuration2.io.FileHandler;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
@@ -65,11 +68,13 @@ public abstract class AbstractBaseSSSDTest extends AbstractTestRealmKeycloakTest
     protected static final String ADMIN_USER = "admin";
 
     @BeforeClass
-    public static void loadSSSDConfiguration() throws ConfigurationException {
-        InputStream is = SSSDTest.class.getClassLoader().getResourceAsStream(sssdConfigPath);
-        sssdConfig = new PropertiesConfiguration();
-        sssdConfig.load(is);
-        sssdConfig.setListDelimiter(',');
+    public static void loadSSSDConfiguration() throws ConfigurationException, IOException {
+        try (InputStream is = SSSDTest.class.getClassLoader().getResourceAsStream(sssdConfigPath)) {
+            sssdConfig = new PropertiesConfiguration();
+            sssdConfig.setListDelimiterHandler(new DefaultListDelimiterHandler(','));
+            FileHandler fh = new FileHandler(sssdConfig);
+            fh.load(is);
+        }
     }
 
     protected void testLoginFailure(String username, String password) {
