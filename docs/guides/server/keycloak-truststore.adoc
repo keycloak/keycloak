@@ -36,7 +36,7 @@ For example, to reload the system truststore every hour:
 
 <@kc.start parameters="--truststore-paths=/opt/truststore/myTrustStore.pem --truststore-paths-reload-period=1h" />
 
-The reload does not apply to database (JDBC) connections or to connections to a remote {jdgserver_name} server; these continue to use the trust material loaded at startup.
+The reload does not apply to database (JDBC) connections, HTTP Client v2 connection, or to connections to a remote {jdgserver_name} server; these continue to use the trust material loaded at startup.
 
 Removing a certificate takes effect for new connections only. Existing pooled or keep-alive connections keep using the trust established when they were opened, until those connections are closed.
 
