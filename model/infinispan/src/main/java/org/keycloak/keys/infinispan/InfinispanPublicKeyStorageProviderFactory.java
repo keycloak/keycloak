@@ -24,6 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.FutureTask;
 
 import org.keycloak.Config;
+import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.PublicKeyStorageProvider;
@@ -94,6 +96,16 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
             synchronized (this) {
                 if (keysCache == null) {
                     this.keysCache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME);
+
+                    ClusterProvider cluster = session.getProvider(ClusterProvider.class);
+                    cluster.registerListener(InfinispanCachePublicKeyProviderFactory.PUBLIC_KEY_STORAGE_INVALIDATION_EVENT, (ClusterEvent event) -> {
+                        PublicKeyStorageInvalidationEvent invalidationEvent = (PublicKeyStorageInvalidationEvent) event;
+                        keysCache.remove(invalidationEvent.getCacheKey());
+                    });
+
+                    cluster.registerListener(InfinispanCachePublicKeyProviderFactory.KEYS_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> {
+                        keysCache.clear();
+                    });
                 }
             }
         }

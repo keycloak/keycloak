@@ -24,6 +24,8 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.Config;
+import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.crl.CrlStorageProvider;
 import org.keycloak.crl.CrlStorageProviderFactory;
@@ -113,6 +115,11 @@ public class InfinispanCrlStorageProviderFactory implements CrlStorageProviderFa
             synchronized (this) {
                 if (crlCache == null) {
                     this.crlCache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.CRL_CACHE_NAME);
+
+                    ClusterProvider cluster = session.getProvider(ClusterProvider.class);
+                    cluster.registerListener(InfinispanCacheCrlProviderFactory.CRL_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> {
+                        crlCache.clear();
+                    });
                 }
             }
         }
