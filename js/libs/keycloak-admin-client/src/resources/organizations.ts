@@ -67,13 +67,15 @@ export class Organizations extends Resource<{ realm?: string }> {
     path: "/count",
   });
 
-  public findOne = this.makeRequest<{ id: string }, OrganizationRepresentation>(
-    {
-      method: "GET",
-      path: "/{id}",
-      urlParamKeys: ["id"],
-    },
-  );
+  public findOne = this.makeRequest<
+    { id: string },
+    OrganizationRepresentation | undefined
+  >({
+    method: "GET",
+    path: "/{id}",
+    urlParamKeys: ["id"],
+    catchNotFound: true,
+  });
 
   public create = this.makeRequest<OrganizationRepresentation, { id: string }>({
     method: "POST",

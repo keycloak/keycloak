@@ -88,6 +88,7 @@ image::images/oid4vci/authorization-code-flow.drawio.svg[Sequence diagram of the
 
 This flow is best suited for scenarios where the user should be in control and give explicit permission for each credential issued.
 
+[[_oid4vci_pre_authorized_code_flow]]
 ==== Pre-Authorized Code Flow
 
 The Pre-Authorized Code Flow is a non-interactive flow. The issuer creates a pre-approved credential offer, and the wallet can claim the credential without real-time user authentication. This is useful for bulk issuance, offline-capable scenarios, or when the user has already been authenticated through other means.
@@ -220,7 +221,7 @@ Elliptic Curve cryptography with the P-256 curve and `ES256` algorithm is recomm
 
 [NOTE]
 ====
-The keystore may contain a self-signed root certificate so that {project_name} can load and validate the complete chain. {project_name} removes a trailing self-signed root certificate from the SD-JWT VC `x5c` header. It does not remove a non-self-signed trust anchor, which must therefore be omitted from the configured chain.
+The keystore may contain a self-signed root certificate so that {project_name} can load and validate the complete chain. {project_name} removes a trailing self-signed root certificate from the SD-JWT VC and signed issuer metadata `x5c` headers. It does not remove a non-self-signed trust anchor, which must therefore be omitted from the configured chain.
 
 For details about the keystore location and provider fields, see <<realm_keys,Configuring realm keys>>.
 ====
@@ -280,6 +281,11 @@ The following table describes the available OID4VCI realm attributes:
 | `oid4vci.batch_credential_issuance.batch_size`
 | `2`
 | Maximum number of credentials that can be issued in a single batch request. Must be 2 or greater. Disabled if not set or invalid.
+
+| Issuer Info
+| `oid4vci.issuer_info`
+| Not set
+| JSON array of `issuer_info` elements published in the Credential Issuer Metadata as defined in ETSI TS 119 472-3, Section 4.2.3. Each element has a `format` and `data` member. Example: `[{"format": "registration_cert", "data": "<JWT>"}]`. Used for EUDI registration certificate support.
 |===
 
 ===== Time Claim Correlation Mitigation

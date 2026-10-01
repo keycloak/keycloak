@@ -118,6 +118,7 @@ import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
+import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.StringUtil;
 
@@ -230,6 +231,10 @@ public class UserResource {
             }
             profile.update(rep.getAttributes() != null);
             updateUserFromRep(profile, user, rep, session, true);
+            if (rep.getCredentials() != null && rep.getCredentials().stream()
+                    .anyMatch(c -> c.getType() == null || CredentialRepresentation.PASSWORD.equals(c.getType()))) {
+                auth.users().requireResetPassword(user);
+            }
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
 
             // we need to do it here as the attributes would be overwritten by what is in the rep
@@ -1243,6 +1248,7 @@ public class UserResource {
             throw ErrorResponse.error("Cannot access organization related group via non Organization API.", Status.BAD_REQUEST);
         }
         auth.groups().requireManageMembership(group);
+        GroupUtils.checkAdminGroupRoles(group, auth);
 
         if (!RoleUtils.isDirectMember(user.getGroupsStream(),group)){
             user.joinGroup(group);

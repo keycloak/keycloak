@@ -1,6 +1,7 @@
 import { usePreviewLogo } from "./LogoContext";
 import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import { Environment } from "../../environment-types";
+import { joinPath } from "../../utils/joinPath";
 import { usePreviewBackground } from "./BackgroundContext";
 import { LoginForm, LoginPage } from "@patternfly/react-core";
 
@@ -14,7 +15,11 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
   const contextBackground = usePreviewBackground();
 
   // Resources
-  const resourceUrlRoot = `/resources/${environment.resourceVersion}`;
+  const resourceUrlRoot = joinPath(
+    environment.adminBaseUrl,
+    "resources",
+    environment.resourceVersion,
+  );
   const loginResourceUrl = `${resourceUrlRoot}/login/keycloak.v2`;
 
   // Default login theme resources from local files

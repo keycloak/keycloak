@@ -66,4 +66,31 @@ describe("Tests the convert functions for attribute input", () => {
     //then
     expect(result).toEqual({ theKey: ["one", "two"] });
   });
+
+  it("converts prototype-name key safely", () => {
+    const result = keyValueToArray([{ key: "toString", value: "x" }]);
+
+    expect(Object.hasOwn(result, "toString")).toBe(true);
+    expect(result["toString"]).toEqual(["x"]);
+    expect(Object.getPrototypeOf(result)).toBeNull();
+  });
+
+  it("converts duplicate prototype-name keys safely", () => {
+    const result = keyValueToArray([
+      { key: "constructor", value: "a" },
+      { key: "constructor", value: "b" },
+    ]);
+
+    expect(Object.hasOwn(result, "constructor")).toBe(true);
+    expect(result["constructor"]).toEqual(["a", "b"]);
+    expect(Object.getPrototypeOf(result)).toBeNull();
+  });
+
+  it("converts __proto__ key without mutating prototype", () => {
+    const result = keyValueToArray([{ key: "__proto__", value: "x" }]);
+
+    expect(Object.hasOwn(result, "__proto__")).toBe(true);
+    expect(result["__proto__"]).toEqual(["x"]);
+    expect(Object.getPrototypeOf(result)).toBeNull();
+  });
 });

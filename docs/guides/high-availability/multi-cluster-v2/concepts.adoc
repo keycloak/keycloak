@@ -80,7 +80,7 @@ Without monitoring, a degraded state may go unnoticed until a subsequent failure
 
 [%autowidth]
 |===
-| Failure | Recovery | RPO^1^ | RT^2^
+| Failure | Expected behavior | RPO^1^ | RT^2^
 
 | Database node
 | If the writer instance fails, the database can promote a reader instance in the same or other site to be the new writer.

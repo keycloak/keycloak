@@ -44,8 +44,9 @@ public class WebAuthnErrorMessagesTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void registrationUserNotVerified() {
-        managedRealm.updateWithCleanup(r -> r
-                .webAuthnPolicyUserVerificationRequirement("required"));
+        managedRealm.updateWithCleanup(r -> r.webAuthn(false, builder ->
+                builder.userVerificationRequirement("required")
+        ));
 
         registerAndExpectError("user-not-verified",
                 tamperCreateOptions(
@@ -56,8 +57,9 @@ public class WebAuthnErrorMessagesTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void registrationUnmappedErrorFallsBackToGenericKey() {
-        managedRealm.updateWithCleanup(r -> r
-                .webAuthnPolicyAttestationConveyancePreference("direct"));
+        managedRealm.updateWithCleanup(r -> r.webAuthn(false, builder ->
+                builder.attestationConveyancePreference("direct")
+        ));
 
         registerAndExpectError("unmapped",
                 tamperCreateOptions("opts.publicKey.attestation = 'none';"),
@@ -106,8 +108,9 @@ public class WebAuthnErrorMessagesTest extends AbstractWebAuthnVirtualTest {
     public void authenticationUserNotVerified() {
         String username = registerUserWithPasskey("auth-user-not-verified");
 
-        managedRealm.updateWithCleanup(r -> r
-                .webAuthnPolicyUserVerificationRequirement("required"));
+        managedRealm.updateWithCleanup(r -> r.webAuthn(false, builder ->
+                builder.userVerificationRequirement("required")
+        ));
 
         loginAndExpectError(username,
                 tamperGetOptions("opts.publicKey.userVerification = 'discouraged';"),

@@ -32,6 +32,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -43,6 +44,7 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -65,6 +67,48 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     public void testRegistrationRedirectWhenSingleBroker() {
         OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
+    }
+
+    /**
+     * Regression test for https://github.com/keycloak/keycloak/issues/53154
+     *
+     * An unmanaged, credential-less organization member whose email domain matches the org domain (and the
+     * domain has {@code autoRedirect=true}) must receive a code on {@code prompt=none} when a valid SSO
+     * session already exists — not {@code error=login_required}.
+     *
+     * The bug: commit f4dab94 made {@code tryRedirectBroker} derive the email domain from the already-attached
+     * user profile when no domain was typed. With {@code prompt=none} there is no user input, so the domain
+     * always comes from the profile, the auto-redirect fires, and the passive check fails.
+     */
+    @Test
+    public void testPromptNoneSucceedsWithSsoSessionAndAutoRedirectEnabled() {
+        // autoRedirect=true is set by default on the org domain in createOrganization()
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+
+        // Establish an SSO session via a normal brokered first-login. bc.getUserEmail() is in the org
+        // domain (BrokerConfigurationWrapper returns getUserLogin()+"@"+orgName+".org"), and the provider
+        // realm is pre-populated with that user, so assertBrokerRegistration succeeds cleanly.
+        oauth.realm(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.scope("openid organization:" + organizationName);
+        assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
+
+        // With the SSO session active, prompt=none must succeed (OIDC Core §3.1.2.1).
+        // Without the fix, tryRedirectBroker sees the org-domain email and issues a 302 to the
+        // broker even though the user is already authenticated, causing login_required.
+        oauth.loginForm().prompt(OIDCLoginProtocol.PROMPT_VALUE_NONE).open();
+        AuthorizationEndpointResponse response = oauth.parseLoginResponse();
+        assertTrue(response.isSuccess(), "prompt=none should return a code when a valid SSO session exists");
+        assertNull(response.getError(), "No error expected but got: " + response.getError());
+        assertNotNull(response.getCode());
+
+        // Control: with autoRedirect disabled the same session must still succeed.
+        setDomainAutoRedirect(organization, false);
+        oauth.loginForm().prompt(OIDCLoginProtocol.PROMPT_VALUE_NONE).open();
+        response = oauth.parseLoginResponse();
+        assertTrue(response.isSuccess(), "prompt=none should also succeed when autoRedirect is false");
+        assertNull(response.getError());
+        assertNotNull(response.getCode());
     }
 
     @Test
@@ -111,11 +155,9 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        Assertions.assertTrue(loginPage.isUsernameInputPresent());
-        // registration link shown
+        Assertions.assertFalse(loginPage.isUsernameInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
         Assertions.assertTrue(loginPage.isRegisterLinkPresent());
-        // no need for password because the user does not exist
-        Assertions.assertFalse(loginPage.isPasswordInputPresent());
         Assertions.assertFalse(loginPage.isSocialButtonPresent(idpRep.getAlias()));
     }
 
@@ -129,9 +171,9 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        Assertions.assertEquals("Your email domain matches an organization but you don't have an account yet.", loginPage.getError());
-        Assertions.assertTrue(loginPage.isUsernameInputPresent());
-        Assertions.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertFalse(loginPage.isUsernameInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
+        // the public broker is still shown because admins control its visibility
         Assertions.assertTrue(loginPage.isSocialButtonPresent(idpRep.getAlias()));
 
         // no self-registration link because the user should register through the broker
@@ -145,9 +187,8 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
-        Assertions.assertTrue(loginPage.isUsernameInputPresent());
-        Assertions.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertFalse(loginPage.isUsernameInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
         // self-registration link shown because there is no public broker and user can choose to register
         Assertions.assertTrue(loginPage.isRegisterLinkPresent());
     }
@@ -833,14 +874,12 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage(bc.getUserEmail(), false, idp.getAlias(), false, false);
 
-        Assertions.assertFalse(loginPage.isPasswordInputPresent());
-        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
         Assertions.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
 
         openIdentityFirstLoginPage(bc.getUserEmail(), false, idp.getAlias(), false, false);
 
-        Assertions.assertFalse(loginPage.isPasswordInputPresent());
-        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
         Assertions.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
     }
 
@@ -1019,14 +1058,12 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         oauth.realm(bc.consumerRealmName());
         oauth.openLoginForm();
         loginPage.loginUsername("user@org-0.org");
-        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
         Assertions.assertTrue(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
         Assertions.assertFalse(loginPage.isSocialButtonPresent(org1Broker.getAlias()));
 
         oauth.realm(bc.consumerRealmName());
         oauth.openLoginForm();
         loginPage.loginUsername("user@org-1.org");
-        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
         Assertions.assertTrue(loginPage.isSocialButtonPresent(org1Broker.getAlias()));
         Assertions.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
     }
@@ -1321,6 +1358,8 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         // chrome requires refresh, otherwise Sign in button is not active
         driver.navigate().refresh();
 
+        loginPage.assertAttemptedUsernameAvailability(true);
+        loginPage.clickResetLogin();
         loginPage.loginUsername("test");
         // both realm and org idps because the user does not map to any organization
         assertTrue(loginPage.isSocialButtonPresent(orgIdp.getAlias()));

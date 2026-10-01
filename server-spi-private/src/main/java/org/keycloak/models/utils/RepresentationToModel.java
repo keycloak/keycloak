@@ -409,7 +409,12 @@ public class RepresentationToModel {
 
         if (resourceRep.getRegisteredNodes() != null) {
             for (Map.Entry<String, Integer> entry : resourceRep.getRegisteredNodes().entrySet()) {
-                client.registerNode(entry.getKey(), entry.getValue());
+                // Replace entry.getKey() with a normalised form:
+                String nodeKey = entry.getKey();
+                if (nodeKey.startsWith("[") && nodeKey.endsWith("]")) {
+                    nodeKey = nodeKey.substring(1, nodeKey.length() - 1);
+                }
+                client.registerNode(nodeKey, entry.getValue());
             }
         }
 
@@ -489,7 +494,11 @@ public class RepresentationToModel {
 
         if (rep.getRegisteredNodes() != null) {
             for (Map.Entry<String, Integer> entry : rep.getRegisteredNodes().entrySet()) {
-                resource.registerNode(entry.getKey(), entry.getValue());
+                String nodeKey = entry.getKey();
+                if (nodeKey.startsWith("[") && nodeKey.endsWith("]")) {
+                    nodeKey = nodeKey.substring(1, nodeKey.length() - 1);
+                }
+                resource.registerNode(nodeKey, entry.getValue());
             }
         }
 
@@ -854,6 +863,9 @@ public class RepresentationToModel {
                     continue;
                 }
                 if (cred.getValue() != null && !cred.getValue().isEmpty()) {
+                    if (cred.getType() != null && !CredentialRepresentation.PASSWORD.equals(cred.getType())) {
+                        throw new ModelException("Credential type must be '" + CredentialRepresentation.PASSWORD + "' when value is provided, but was '" + cred.getType() + "'");
+                    }
                     RealmModel origRealm = session.getContext().getRealm();
                     try {
                         session.getContext().setRealm(realm);

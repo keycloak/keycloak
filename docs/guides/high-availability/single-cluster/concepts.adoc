@@ -78,7 +78,7 @@ restore times for the events described:
 
 [%autowidth]
 |===
-| Failure | Recovery | RPO^1^ | RT^2^
+| Failure | Expected behavior | RPO^1^ | RT^2^
 
 | {project_name} Pod
 | Multiple {project_name} Pods run in a cluster. If one instance fails some incoming requests might receive an error message or are delayed for some seconds.
@@ -110,7 +110,7 @@ restore times for the events described:
 
 [%autowidth]
 |===
-| Failure | Recovery | RPO^1^ | RT^2^
+| Failure | Expected behavior | RPO^1^ | RT^2^
 
 | Database node^3^
 | If the writer instance fails, the database can promote a reader instance in the same or other zone to be the new writer.

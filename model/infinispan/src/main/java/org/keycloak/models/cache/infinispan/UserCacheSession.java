@@ -61,6 +61,7 @@ import org.keycloak.models.cache.infinispan.entities.CachedUserIssuedVerifiableC
 import org.keycloak.models.cache.infinispan.entities.CachedUserIssuedVerifiableCredentials;
 import org.keycloak.models.cache.infinispan.entities.CachedUserVerifiableCredential;
 import org.keycloak.models.cache.infinispan.entities.CachedUserVerifiableCredentials;
+import org.keycloak.models.cache.infinispan.entities.FederatedIdentityUserListQuery;
 import org.keycloak.models.cache.infinispan.entities.UserListQuery;
 import org.keycloak.models.cache.infinispan.events.CacheKeyInvalidatedEvent;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
@@ -518,7 +519,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
             if (adapter instanceof UserAdapter) {
-                query = new UserListQuery(loaded, cacheKey, realm, model.getId());
+                query = new FederatedIdentityUserListQuery(loaded, cacheKey, realm, model.getId(), socialLink.getIdentityProvider());
                 cache.addRevisioned(query, startupRevision, getLifespan(realm, adapter));
             }
 

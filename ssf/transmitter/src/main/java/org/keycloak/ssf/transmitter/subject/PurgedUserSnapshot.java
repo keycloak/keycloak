@@ -567,11 +567,12 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      *
      * <p>Compared against {@link SsfUtil#getIssuerUrl} rather than
      * {@code SubjectUserLookup.isRealmIssuer}: the transmitter's issuer is what
-     * {@code SecurityEventTokenMapper.buildUserSubjectId} actually stamps, and it is
-     * not always the realm issuer — a realm carrying a {@code frontendUrl} attribute
-     * uses that value verbatim, and the fallback resolves the base URI without the
-     * {@code FRONTEND} url type. Gating on the realm issuer would reject the
-     * transmitter's own subjects in those deployments and drop every purge.
+     * {@code SecurityEventTokenMapper.buildUserSubjectId} actually stamps, and it
+     * can differ from the realm issuer when neither a {@code frontendUrl} attribute
+     * nor a frontend hostname is configured — in that case the fallback resolves the
+     * base URI without the {@code FRONTEND} url type. Gating on the realm issuer
+     * would reject the transmitter's own subjects in those deployments and drop
+     * every purge.
      *
      * <p>Any failure to resolve the issuer is treated as "not ours", which costs at
      * most a snapshot miss that the live lookup then handles.

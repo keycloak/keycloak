@@ -3,9 +3,8 @@
 
 <@tmpl.guide
 title="Admin API v2: Filtering and Projection"
-summary="Filter and project client resources using the Admin API v2 query syntax.">
-
-<#include "/templates/experimental-feature.adoc">
+summary="Filter and project client resources using the Admin API v2 query syntax."
+preview="true">
 
 The Admin API v2 supports filtering clients using the `q` query parameter.
 The filter syntax is a subset of the link:{adminguide_link}#_scim_filtering_resources[SCIM filter syntax] defined in link:https://datatracker.ietf.org/doc/html/rfc7644#section-3.4.2.2[RFC 7644, Section 3.4.2.2]. All string comparisons are case-sensitive.
@@ -65,6 +64,15 @@ For the full syntax reference, including operator precedence and detailed exampl
 The `gt`, `ge`, `lt`, and `le` operators supported by the SCIM API are not available for client filtering.
 ====
 
+=== Fields without a value
+
+A comparison with a field that has no value is never true, and for every searchable field except `roles` the negated comparison is not true either.
+For example, neither `auth.method ne "client-secret"` nor `not (auth.method eq "client-secret")` returns SAML clients or public clients, because they have no authentication method. Use `not auth.method pr` to find them.
+The `roles` field is multi-valued: `roles ne "admin"` does not return clients without roles, but `not (roles eq "admin")` does, as described in <<Collection field matching>>.
+
+The `eq` and `ne` operators accept the `null` literal, but a comparison such as `description eq null` never matches any client, so it cannot be used to find clients where the field is absent.
+For details, see link:{adminguide_link}#_scim_filtering_null_values[Attributes without a value] in the {adminguide_name}.
+
 === Queryable fields
 
 Only the fields listed below can be used in filter expressions.
@@ -79,8 +87,8 @@ Using an unsearchable or unknown field returns HTTP 400, unlike the SCIM API whi
 ==== OIDC-specific fields
 
 These fields are available only for `openid-connect` clients.
-They resolve to `null` for SAML clients, so value-based comparisons like `eq`, `co`, or `sw` will not match.
-However, `eq null` and `not ... pr` will match because the field is genuinely absent.
+They resolve to `null` for SAML clients, so value-based comparisons like `eq`, `ne`, `co`, or `sw` do not match SAML clients.
+See <<Fields without a value>>.
 
 <@api.queryableFields group="openid-connect"/>
 
@@ -89,8 +97,8 @@ However, `eq null` and `not ... pr` will match because the field is genuinely ab
 ==== SAML-specific fields
 
 These fields are available only for `saml` clients.
-They resolve to `null` for OIDC clients, so value-based comparisons like `eq`, `co`, or `sw` will not match.
-However, `eq null` and `not ... pr` will match because the field is genuinely absent.
+They resolve to `null` for OIDC clients, so value-based comparisons like `eq`, `ne`, `co`, or `sw` do not match OIDC clients.
+See <<Fields without a value>>.
 
 <@api.queryableFields group="saml"/>
 
@@ -102,8 +110,10 @@ For multi-valued fields (type `Set<String>` in the tables above), the `eq`, `co`
 * `roles eq "admin"` - matches clients that have a role named `admin`
 * `roles co "adm"` - matches clients that have a role whose name contains `adm`
 
-The `ne` operator is the logical negation of `eq`: it matches if *no* element in the collection equals the value.
-For example, `roles ne "admin"` matches clients that do not have a role named `admin`.
+The `ne` operator matches if *any* element in the collection differs from the value.
+For example, `roles ne "admin"` matches clients that have at least one role other than `admin`, and it does not match clients without roles.
+To find clients that do not have a given role, negate the equality instead: `not (roles eq "admin")`.
+This form also matches clients without roles.
 
 To match clients that have multiple values, combine conditions with `and`:
 
@@ -168,6 +178,7 @@ The server returns HTTP 400 with a descriptive error message when:
 * The filter references an unknown field.
 * The filter references a field that is not searchable.
 * The filter uses an unsupported operator (e.g. `gt`, `ge`, `lt`, `le`).
+* The filter uses `null` with an operator other than `eq` or `ne`.
 
 [source,json]
 ----
