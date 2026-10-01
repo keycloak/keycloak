@@ -929,7 +929,10 @@ public class RealmCacheSession implements CacheRealmProvider {
         if (invalidations.contains(id)) {
             return getRoleDelegate().getRoleById(realm, id);
         } else if (managedRoles.containsKey(id)) {
-            return managedRoles.get(id);
+            RoleAdapter cachedRole = managedRoles.get(id);
+            if (realm.getId().equals(cachedRole.realm.getId())) {
+                return cachedRole;
+            }
         }
 
         CachedRole cached = getCachedRole(realm, id);
@@ -1174,7 +1177,10 @@ public class RealmCacheSession implements CacheRealmProvider {
         if (invalidations.contains(id) || listInvalidations.contains(realm.getId())) {
             return getClientDelegate().getClientById(realm, id);
         } else if (managedApplications.containsKey(id)) {
-            return managedApplications.get(id);
+            ClientModel cachedClient = managedApplications.get(id);
+            if (cachedClient == null || realm.getId().equals(cachedClient.getRealm().getId())) {
+                return cachedClient;
+            }
         }
         CachedClient cached = cache.get(id, CachedClient.class);
         if (cached != null && !cached.getRealm().equals(realm.getId())) {
