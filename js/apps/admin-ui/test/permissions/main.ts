@@ -68,6 +68,27 @@ export async function removeOrganization(page: Page, organizationName: string) {
     .click();
 }
 
+export async function pickRole(
+  page: Page,
+  type: "roles" | "client",
+  rowName: string,
+) {
+  await page.getByTestId("add-role-mapping-button").click();
+  await page.getByTestId(`${type}-role`).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("row", { name: rowName })
+    .getByRole("checkbox")
+    .click();
+  await page.getByTestId("assign").click();
+}
+
+export async function removeRole(page: Page, roleName: string) {
+  await page
+    .getByRole("button", { name: `Remove role ${roleName}`, exact: true })
+    .click();
+}
+
 export async function clickCreateNewPolicy(page: Page) {
   await page.getByTestId("select-createNewPolicy-button").click();
 }
