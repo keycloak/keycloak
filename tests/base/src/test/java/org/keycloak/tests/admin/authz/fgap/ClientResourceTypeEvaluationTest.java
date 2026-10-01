@@ -49,6 +49,8 @@ import org.keycloak.representations.idm.authorization.ClientScopePolicyRepresent
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
+import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RegexPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
@@ -347,6 +349,73 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         createPermission(client, user.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(VIEW), onlyMyAdminUserPolicy);
         clientApi.clientScopesEvaluate().generateAccessToken("openid", user.getId(), null);
+    }
+
+    @Test
+    public void testPolicyEvaluation() {
+        ClientRepresentation myResourceServer = realm.admin().clients().findByClientId("myresourceserver").get(0);
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        createPermission(client, myResourceServer.getId(), clientsType, Set.of(VIEW, MANAGE), onlyMyAdminUserPolicy);
+
+        UserRepresentation user = UserConfigBuilder.create()
+                .username(KeycloakModelUtils.generateId())
+                .build();
+        try (Response response = realm.admin().users().create(user)) {
+            user.setId(ApiUtil.getCreatedId(response));
+        }
+
+        ClientResource clientApi = realmAdminClient.realm(realm.getName()).clients().get(myResourceServer.getId());
+
+        PolicyEvaluationRequest request = new PolicyEvaluationRequest();
+        request.setUserId(user.getId());
+
+        try {
+            clientApi.authorization().policies().evaluate(request);
+            fail("no permissions to view the user.");
+        } catch (ForbiddenException e) {
+            assertEquals("You have no access to this user", e.getResponse().readEntity(OAuth2ErrorRepresentation.class).getError());
+        }
+
+        createPermission(client, user.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(VIEW), onlyMyAdminUserPolicy);
+        PolicyEvaluationResponse response = clientApi.authorization().policies().evaluate(request);
+        assertThat(response, notNullValue());
+    }
+
+    @Test
+    public void testPolicyEvaluationRequiresViewOnTargetClient() {
+        ClientRepresentation myResourceServer = realm.admin().clients().findByClientId("myresourceserver").get(0);
+        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        createPermission(client, myResourceServer.getId(), clientsType, Set.of(VIEW, MANAGE), onlyMyAdminUserPolicy);
+
+        UserRepresentation user = UserConfigBuilder.create()
+                .username(KeycloakModelUtils.generateId())
+                .build();
+        try (Response response = realm.admin().users().create(user)) {
+            user.setId(ApiUtil.getCreatedId(response));
+        }
+        createPermission(client, user.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(VIEW), onlyMyAdminUserPolicy);
+
+        ClientResource clientApi = realmAdminClient.realm(realm.getName()).clients().get(myResourceServer.getId());
+
+        PolicyEvaluationRequest request = new PolicyEvaluationRequest();
+        request.setUserId(user.getId());
+        request.setClientId(myclient.getId());
+
+        try {
+            clientApi.authorization().policies().evaluate(request);
+            fail("no permissions to view the client.");
+        } catch (ForbiddenException e) {
+            assertEquals("You have no access to this client", e.getResponse().readEntity(OAuth2ErrorRepresentation.class).getError());
+        }
+
+        createPermission(client, myclient.getId(), clientsType, Set.of(VIEW), onlyMyAdminUserPolicy);
+        PolicyEvaluationResponse response = clientApi.authorization().policies().evaluate(request);
+        assertThat(response, notNullValue());
     }
 
     @Test
