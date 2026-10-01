@@ -242,6 +242,20 @@ public class IdentityProviderResource {
     }
 
     /**
+     * Config keys that determine where/how a client secret is sent. Includes fields that some
+     * social providers use to derive the token endpoint at runtime (for example GitHub/OpenShift
+     * {@code baseUrl}, Microsoft {@code tenantId}, PayPal {@code sandbox}) so a masked secret
+     * cannot be rebound when only those fields change.
+     */
+    private static final String[] CLIENT_SECRET_DESTINATION_KEYS = {
+            OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL,
+            "clientId",
+            "baseUrl",
+            "tenantId",
+            "sandbox"
+    };
+
+    /**
      * Reuse a masked {@code clientSecret} only when fields that determine where/how the secret
      * is sent are unchanged. Otherwise a delegated IdP manager could rebind the stored secret
      * to an attacker-controlled token endpoint.
@@ -251,12 +265,14 @@ public class IdentityProviderResource {
                 ? identityProviderModel.getConfig() : Map.of();
         Map<String, String> next = updated.getConfig() != null ? updated.getConfig() : Map.of();
 
-        return Objects.equals(existing.get(OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL),
-                next.get(OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL))
-                && Objects.equals(existing.get("clientId"), next.get("clientId"))
-                && Objects.equals(
-                        existing.getOrDefault("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST),
-                        next.getOrDefault("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST));
+        for (String key : CLIENT_SECRET_DESTINATION_KEYS) {
+            if (!Objects.equals(existing.get(key), next.get(key))) {
+                return false;
+            }
+        }
+        return Objects.equals(
+                existing.getOrDefault("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST),
+                next.getOrDefault("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST));
     }
 
 
