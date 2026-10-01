@@ -532,9 +532,13 @@ public class SsfTransmitterPollDeliveryTests {
         String token = obtainReceiverToken(RECEIVER_POLL, RECEIVER_POLL_SECRET);
         StreamConfig stream = createPollStream(token, Set.of(CaepSessionRevoked.TYPE));
 
-        // Corrupt the signature so the token is well-formed but fails verification.
-        char last = token.charAt(token.length() - 1);
-        String tamperedToken = token.substring(0, token.length() - 1) + (last == 'A' ? 'B' : 'A');
+        // Corrupt the signature so the token is well-formed but fails
+        // verification. The first character of the segment always encodes
+        // signature bits, whereas the last one may only differ in base64url
+        // padding bits that decoding discards.
+        int signatureStart = token.lastIndexOf('.') + 1;
+        char first = token.charAt(signatureStart);
+        String tamperedToken = token.substring(0, signatureStart) + (first == 'A' ? 'B' : 'A') + token.substring(signatureStart + 1);
 
         try (SimpleHttpResponse response = http.doPost(pollEndpoint(RECEIVER_POLL, stream.getStreamId()))
                 .json(pollBodyAsMap(null, true, List.of()))
