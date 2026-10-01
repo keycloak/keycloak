@@ -1,0 +1,190 @@
+package org.keycloak.tests.broker.oidc;
+
+import java.io.IOException;
+
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.annotations.InjectSimpleHttp;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.mail.MailServer;
+import org.keycloak.testframework.mail.annotations.InjectMailServer;
+import org.keycloak.testframework.realm.FederatedIdentityBuilder;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.IdpConfirmLinkPage;
+import org.keycloak.testframework.ui.page.IdpLinkEmailPage;
+import org.keycloak.testframework.ui.page.InfoPage;
+import org.keycloak.testframework.ui.page.ProceedPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.broker.AbstractKcOidcBrokerTest;
+import org.keycloak.tests.utils.MailUtils;
+import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.MailServerConfiguration;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * CVE-2026-92358: cross-browser account-link SUO proofs must be consumed on successful link and
+ * revoked on Account self-service unlink.
+ */
+@KeycloakIntegrationTest
+public class KcOidcFirstBrokerLoginLinkProofTest extends AbstractKcOidcBrokerTest {
+
+    private static final String CONSUMER_USERNAME = "consumer";
+
+    @InjectMailServer
+    MailServer mailServer;
+
+    @InjectSimpleHttp
+    SimpleHttp simpleHttp;
+
+    @InjectWebDriver(ref = "driver2", lifecycle = LifeCycle.METHOD)
+    ManagedWebDriver driver2;
+
+    @InjectPage
+    IdpConfirmLinkPage idpConfirmLinkPage;
+
+    @InjectPage
+    IdpLinkEmailPage idpLinkEmailPage;
+
+    @InjectPage(ref = "proceedPage2", webDriverRef = "driver2")
+    ProceedPage proceedPage2;
+
+    @InjectPage(ref = "infoPage2", webDriverRef = "driver2")
+    InfoPage infoPage2;
+
+    @BeforeEach
+    void configureSmtp() {
+        getConsumerRealm().updateWithCleanup(r -> r.smtp(
+                MailServerConfiguration.HOST,
+                Integer.parseInt(MailServerConfiguration.PORT),
+                MailServerConfiguration.FROM));
+    }
+
+    @Test
+    public void testCrossBrowserLinkProofNotReusableAfterAccountUnlink() throws Exception {
+        UserResource userResource = createConsumerWithPassword();
+
+        startBrokerLinkUntilEmailSent();
+
+        assertTrue(mailServer.waitForIncomingEmail(1));
+        String url = MailUtils.getPasswordResetEmailLink(mailServer.getLastReceivedMessage());
+
+        driver2.open(url);
+        proceedPage2.assertCurrent();
+        proceedPage2.clickProceedLink();
+        infoPage2.assertCurrent();
+        assertThat(infoPage2.getInfo(), startsWith("You successfully confirmed linking your account"));
+
+        idpLinkEmailPage.continueLink();
+        assertTrue(oauth.parseLoginResponse().isSuccess());
+        assertEquals(1, userResource.getFederatedIdentity().size());
+
+        removeLinkedAccountViaAccountApi();
+        assertEquals(0, userResource.getFederatedIdentity().size());
+
+        AccountHelper.logout(getConsumerRealm().admin(), CONSUMER_USERNAME);
+        AccountHelper.logout(getProviderRealm().admin(), getUserLogin());
+        webDriver.cookies().deleteAll();
+
+        oauth.openLoginForm();
+        logInWithBroker();
+        logInAsUserInIDPForFirstTime();
+        updateAccountInformation();
+
+        idpConfirmLinkPage.assertCurrent();
+        assertFalse(AccountHelper.isIdentityProviderLinked(getConsumerRealm().admin(), CONSUMER_USERNAME, getIdpAlias()));
+    }
+
+    @Test
+    public void testOutstandingLinkProofRevokedByAccountUnlink() throws Exception {
+        UserResource userResource = createConsumerWithPassword();
+
+        startBrokerLinkUntilEmailSent();
+
+        assertTrue(mailServer.waitForIncomingEmail(1));
+        String url = MailUtils.getPasswordResetEmailLink(mailServer.getLastReceivedMessage());
+
+        driver2.open(url);
+        proceedPage2.assertCurrent();
+        proceedPage2.clickProceedLink();
+        infoPage2.assertCurrent();
+        assertThat(infoPage2.getInfo(), startsWith("You successfully confirmed linking your account"));
+
+        String federatedUserId = getProviderRealm().admin().users().search(getUserLogin(), true).get(0).getId();
+        FederatedIdentityRepresentation identity = FederatedIdentityBuilder.create()
+                .userId(federatedUserId)
+                .userName(getUserLogin())
+                .identityProvider(getIdpAlias())
+                .build();
+        try (Response response = userResource.addFederatedIdentity(getIdpAlias(), identity)) {
+            assertEquals(204, response.getStatus());
+        }
+        assertEquals(1, userResource.getFederatedIdentity().size());
+
+        removeLinkedAccountViaAccountApi();
+        assertEquals(0, userResource.getFederatedIdentity().size());
+
+        AccountHelper.logout(getConsumerRealm().admin(), CONSUMER_USERNAME);
+        AccountHelper.logout(getProviderRealm().admin(), getUserLogin());
+        webDriver.cookies().deleteAll();
+
+        oauth.openLoginForm();
+        logInWithBroker();
+        logInAsUserInIDPForFirstTime();
+        updateAccountInformation();
+
+        idpConfirmLinkPage.assertCurrent();
+        assertFalse(AccountHelper.isIdentityProviderLinked(getConsumerRealm().admin(), CONSUMER_USERNAME, getIdpAlias()));
+    }
+
+    private void startBrokerLinkUntilEmailSent() {
+        oauth.openLoginForm();
+        logInWithBroker();
+        logInAsUserInIDPForFirstTime();
+        updateAccountInformation();
+
+        idpConfirmLinkPage.assertCurrent();
+        idpConfirmLinkPage.clickLinkAccount();
+        idpLinkEmailPage.assertCurrent();
+    }
+
+    private UserResource createConsumerWithPassword() {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername(CONSUMER_USERNAME);
+        user.setEmail(getUserEmail());
+        user.setEmailVerified(true);
+        user.setEnabled(true);
+        String userId = ApiUtil.getCreatedId(getConsumerRealm().admin().users().create(user));
+
+        CredentialRepresentation cred = new CredentialRepresentation();
+        cred.setType(CredentialRepresentation.PASSWORD);
+        cred.setValue("password");
+        cred.setTemporary(false);
+        UserResource userResource = getConsumerRealm().admin().users().get(userId);
+        userResource.resetPassword(cred);
+        return userResource;
+    }
+
+    private void removeLinkedAccountViaAccountApi() throws IOException {
+        String token = oauth.doPasswordGrantRequest(CONSUMER_USERNAME, "password").getAccessToken();
+        String accountUrl = getConsumerRealm().getBaseUrl() + "/account/linked-accounts/" + getIdpAlias();
+        try (var response = simpleHttp.doDelete(accountUrl).auth(token).acceptJson().asResponse()) {
+            assertEquals(204, response.getStatus(), response.asString());
+        }
+    }
+}
