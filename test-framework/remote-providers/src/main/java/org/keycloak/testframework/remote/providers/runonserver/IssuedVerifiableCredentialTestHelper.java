@@ -44,11 +44,10 @@ public final class IssuedVerifiableCredentialTestHelper {
         return session -> session.users().removeVerifiableCredential(userId, scopeId);
     }
 
-    public static FetchOnServer removeExpiredAndCount(String userId) {
+    public static FetchOnServer removeExpiredAndCountRemaining(String userId) {
         return session -> {
-            int removed = session.users().removeExpiredIssuedVerifiableCredentials();
-            long remaining = session.users().getIssuedVerifiableCredentialsStreamByUser(userId).count();
-            return removed + ":" + remaining;
+            session.users().removeExpiredIssuedVerifiableCredentials();
+            return session.users().getIssuedVerifiableCredentialsStreamByUser(userId).count();
         };
     }
 }

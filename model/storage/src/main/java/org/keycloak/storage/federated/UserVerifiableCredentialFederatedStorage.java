@@ -118,9 +118,18 @@ public interface UserVerifiableCredentialFederatedStorage {
 
     /**
      *  Remove expired issued verifiable credentials for all users.
-     *
-     * @return the number of removed issued credentials
      */
-    int removeExpiredIssuedVerifiableCredentials();
+    void removeExpiredIssuedVerifiableCredentials();
+
+    /**
+     * Remove expired issued verifiable credentials for all users and return the number removed.
+     * Implementations that cannot provide the count retain the existing cleanup behavior and return {@code -1}.
+     *
+     * @return the number of removed issued credentials, or {@code -1} when it is unknown
+     */
+    default int removeExpiredIssuedVerifiableCredentialsWithCount() {
+        removeExpiredIssuedVerifiableCredentials();
+        return -1;
+    }
 
 }

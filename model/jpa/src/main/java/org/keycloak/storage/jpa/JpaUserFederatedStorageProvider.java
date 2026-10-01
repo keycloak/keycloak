@@ -1224,7 +1224,12 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public int removeExpiredIssuedVerifiableCredentials() {
+    public void removeExpiredIssuedVerifiableCredentials() {
+        removeExpiredIssuedVerifiableCredentialsWithCount();
+    }
+
+    @Override
+    public int removeExpiredIssuedVerifiableCredentialsWithCount() {
         long currentTime = Time.currentTimeMillis();
         int deletedCount = em.createNamedQuery("deleteExpiredFederatedIssuedVcs")
                 .setParameter("currentTime", currentTime)

@@ -401,9 +401,18 @@ public interface UserProvider extends Provider,
     /**
      * Remove all expired issued verifiable credentials across all realms.
      * This is called periodically by the scheduled cleanup task.
-     *
-     * @return the number of removed issued credentials
      */
-    int removeExpiredIssuedVerifiableCredentials();
+    void removeExpiredIssuedVerifiableCredentials();
+
+    /**
+     * Remove all expired issued verifiable credentials across all realms and return the number removed.
+     * Implementations that cannot provide the count retain the existing cleanup behavior and return {@code -1}.
+     *
+     * @return the number of removed issued credentials, or {@code -1} when it is unknown
+     */
+    default int removeExpiredIssuedVerifiableCredentialsWithCount() {
+        removeExpiredIssuedVerifiableCredentials();
+        return -1;
+    }
 
 }
