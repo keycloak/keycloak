@@ -302,4 +302,13 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
             }
         }
     }
+
+    @Override
+    public void lockForRevocation(RefreshToken refreshToken) {
+        RealmModel realm = session.getContext().getRealm();
+        if (!realm.isRevokeRefreshToken()) {
+            return;
+        }
+        createTemporaryExclusiveLockForTokenRefreshOperation(session, realm, refreshToken, new TokenManager());
+    }
 }
