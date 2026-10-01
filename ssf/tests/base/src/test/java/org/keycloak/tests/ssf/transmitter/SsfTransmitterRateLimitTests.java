@@ -146,8 +146,9 @@ public class SsfTransmitterRateLimitTests {
             String retryAfter = response.getFirstHeader("Retry-After");
             Assertions.assertNotNull(retryAfter, "429 must carry a Retry-After header");
             int retryAfterSeconds = Integer.parseInt(retryAfter);
-            Assertions.assertTrue(retryAfterSeconds > 0 && retryAfterSeconds <= 60,
-                    "Retry-After should be the remaining part of the 60s window, was " + retryAfter);
+            Assertions.assertTrue(retryAfterSeconds > 0 && retryAfterSeconds <= MIN_VERIFICATION_INTERVAL_SECONDS,
+                    "Retry-After should be the remaining part of the " + MIN_VERIFICATION_INTERVAL_SECONDS
+                            + "s verification interval, was " + retryAfter);
         }
     }
 

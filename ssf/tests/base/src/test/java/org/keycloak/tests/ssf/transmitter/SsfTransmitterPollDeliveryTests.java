@@ -523,6 +523,38 @@ public class SsfTransmitterPollDeliveryTests {
         }
     }
 
+    @Test
+    public void poll_invalidBearerToken_returnsInvalidTokenChallenge() throws Exception {
+
+        // RFC 6750 §3.1: a request that presented a bearer token which failed
+        // validation gets 401 with error="invalid_token", unlike the bare
+        // challenge for missing credentials or an unsupported scheme.
+        String token = obtainReceiverToken(RECEIVER_POLL, RECEIVER_POLL_SECRET);
+        StreamConfig stream = createPollStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        // Corrupt the signature so the token is well-formed but fails verification.
+        char last = token.charAt(token.length() - 1);
+        String tamperedToken = token.substring(0, token.length() - 1) + (last == 'A' ? 'B' : 'A');
+
+        try (SimpleHttpResponse response = http.doPost(pollEndpoint(RECEIVER_POLL, stream.getStreamId()))
+                .json(pollBodyAsMap(null, true, List.of()))
+                .auth(tamperedToken)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(401, response.getStatus(),
+                    "a bearer token failing verification must be rejected with 401");
+            String challenge = response.getFirstHeader("WWW-Authenticate");
+            Assertions.assertNotNull(challenge, "401 must carry a WWW-Authenticate challenge");
+            Assertions.assertTrue(challenge.startsWith("Bearer realm=\""), "challenge must use the Bearer scheme: " + challenge);
+            Assertions.assertTrue(challenge.contains("error=\"invalid_token\""),
+                    "rejected bearer token must be reported as invalid_token: " + challenge);
+            Assertions.assertEquals("invalid_token", response.asJson().path("error").asText(),
+                    "body must carry the same error code as the challenge");
+            Assertions.assertEquals("no-store", response.getFirstHeader("Cache-Control"),
+                    "auth error responses must not be cacheable");
+        }
+    }
+
     // --- stream delete cascade ---------------------------------------
 
     @Test
