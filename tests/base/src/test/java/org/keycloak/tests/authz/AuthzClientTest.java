@@ -33,6 +33,8 @@ public class AuthzClientTest {
 
     @Test
     public void testCreateWithEnvVars() throws Exception {
+        String previousRealm = System.getenv("KEYCLOAK_REALM");
+        String previousAuthServer = System.getenv("KEYCLOAK_AUTH_SERVER");
         setEnv("KEYCLOAK_REALM", "test");
         setEnv("KEYCLOAK_AUTH_SERVER", "http://test");
         try {
@@ -55,8 +57,8 @@ public class AuthzClientTest {
 
             MatcherAssert.assertThat(runtimeException.getMessage(), Matchers.containsString("Could not obtain configuration from server"));
         } finally {
-            removeEnv("KEYCLOAK_REALM");
-            removeEnv("KEYCLOAK_AUTH_SERVER");
+            restoreEnv("KEYCLOAK_REALM", previousRealm);
+            restoreEnv("KEYCLOAK_AUTH_SERVER", previousAuthServer);
         }
     }
 
@@ -74,6 +76,14 @@ public class AuthzClientTest {
         Field field = env.getClass().getDeclaredField("m");
         field.setAccessible(true);
         ((Map<String, String>) field.get(env)).put(key, value);
+    }
+
+    private static void restoreEnv(String key, String previousValue) throws Exception {
+        if (previousValue == null) {
+            removeEnv(key);
+        } else {
+            setEnv(key, previousValue);
+        }
     }
 
     @SuppressWarnings("unchecked")
