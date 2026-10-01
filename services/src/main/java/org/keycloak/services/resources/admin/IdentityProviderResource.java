@@ -249,6 +249,7 @@ public class IdentityProviderResource {
      */
     private static final String[] CLIENT_SECRET_DESTINATION_KEYS = {
             OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL,
+            OAuth2IdentityProviderConfig.TOKEN_INTROSPECTION_URL,
             "clientId",
             "baseUrl",
             "tenantId",
